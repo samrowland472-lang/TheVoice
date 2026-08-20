@@ -11,8 +11,8 @@
 const BACKEND_URL = '';
 const BACKEND_KEY = '';
 
-const SUPABASE_CONFIG_KEY = 'thevoice_supabase_config';
-const SUPABASE_SDK_URL = 'https://esm.sh/@supabase/supabase-js@2';
+const SUPABASE_CONFIG_KEY = 'sb_publishable_qrpBAfRjRLWAiDG72s7Rew_ofIqPuOC';
+const SUPABASE_SDK_URL = 'https://tkllekpavimbuponicaz.supabase.co/rest/v1/';
 
 export function getSupabaseConfig() {
   if (BACKEND_URL && BACKEND_KEY) return { url: BACKEND_URL, anonKey: BACKEND_KEY };
