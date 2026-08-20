@@ -1,0 +1,28 @@
+# Netlify deployment. The app is fully static — every heavy operation
+# (neural TTS, modulation, analysis) runs in the visitor's own browser,
+# so there is no server to scale and hosting stays flat-cost regardless
+# of user count.
+[build]
+  publish = "."
+
+# Single-page app: unknown paths fall through to index.html so deep links
+# and OAuth redirects resolve instead of 404ing.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Microphone must be allowed for recording to work at all.
+    Permissions-Policy = "microphone=(self), camera=(), geolocation=()"
+
+# The neural voice model is large and immutable — cache it hard.
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
