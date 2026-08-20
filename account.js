@@ -11,7 +11,7 @@
 const BACKEND_URL = '';
 const BACKEND_KEY = '';
 
-const SUPABASE_CONFIG_KEY = 'sb_publishable_qrpBAfRjRLWAiDG72s7Rew_ofIqPuOC';
+const SUPABASE_CONFIG_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrbGxla3BhdmltYnVwb25pY2F6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyNTEwMDMsImV4cCI6MjEwMjgyNzAwM30.NKPQT2eJTAp_iBMChXW4UFFTMUsGD75v2eHtbST9xMc';
 const SUPABASE_SDK_URL = 'https://tkllekpavimbuponicaz.supabase.co/rest/v1/';
 
 export function getSupabaseConfig() {
