@@ -1,0 +1,38 @@
+THE VOICE — simple deploy
+=========================
+
+This folder contains the entire website in ONE file. There are no
+folders to upload, nothing to build, and nothing that can arrive in the
+wrong place.
+
+TO PUT IT LIVE
+--------------
+Easiest:
+  1. Go to  netlify.com/drop
+  2. Drag THIS WHOLE FOLDER onto the page
+  3. You get a live web address straight away
+
+Via GitHub (if you want automatic updates later):
+  1. In your repository, click  Add file -> Upload files
+  2. Drag in  index.html  and  netlify.toml
+  3. Commit
+
+If your repository already has an old index.html, style.css and a js
+folder, delete those first. This single index.html replaces all of them.
+
+FIRST VISIT
+-----------
+The site opens on a screen saying "Awaiting configuration." with two
+boxes. Paste in your Supabase Project URL and anon/public key, then
+click Connect. The login screen appears and you can create an account.
+
+If you instead see the login screen straight away, this browser has
+already been configured. To change those settings, click the faint dot
+in the bottom-right corner.
+
+WHY ONE FILE
+------------
+The earlier version loaded its code from a separate "js" folder. If any
+of that folder went missing or arrived incomplete, the page still looked
+normal but nothing worked, with no error to explain why. Everything is
+now inlined into index.html, so that failure cannot happen.
