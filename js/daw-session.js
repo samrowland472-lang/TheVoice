@@ -29,7 +29,10 @@
   }
 
   function cloneNotes(n) {
-    return JSON.parse(JSON.stringify(n || {}));
+    var buf = n && n.buffer;
+    var copy = JSON.parse(JSON.stringify(n || {}));
+    if (buf) copy.buffer = buf;
+    return copy;
   }
 
   function makeSet() {
@@ -169,6 +172,8 @@
   var rackTitle = null;
   var padVoices = {};
   var devicesEl = null;
+  var browserEl = null;
+  var libItems = [];
   var meterRaf = 0;
   var timer = 0;
   var nextTime = 0;
@@ -794,13 +799,288 @@
   }
 
 
+  function playBufferShot(dest, buf, time, gain) {
+    if (!ctx || !dest || !buf) return;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(Math.max(0.05, gain == null ? 1 : gain), time);
+    g.connect(dest);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(g);
+    src.start(time);
+  }
+
+  function makeKickBuffer() {
+    ensureAudio();
+    var sr = ctx.sampleRate, len = Math.floor(sr * 0.42);
+    var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      var tm = i / sr;
+      d[i] = Math.sin(2 * Math.PI * (48 + 110 * Math.exp(-tm * 22)) * tm) * Math.exp(-tm * 7) * 0.95;
+    }
+    return buf;
+  }
+  function makeSnareBuffer() {
+    ensureAudio();
+    var sr = ctx.sampleRate, len = Math.floor(sr * 0.28);
+    var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      var tm = i / sr;
+      var nz = Math.random() * 2 - 1;
+      d[i] = (Math.sin(2 * Math.PI * 190 * tm) * 0.35 + nz * 0.7) * Math.exp(-tm * 14) * 0.85;
+    }
+    return buf;
+  }
+  function makeHatBuffer(open) {
+    ensureAudio();
+    var sr = ctx.sampleRate, len = Math.floor(sr * (open ? 0.32 : 0.08));
+    var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      var tm = i / sr;
+      d[i] = (Math.random() * 2 - 1) * Math.exp(-tm * (open ? 8 : 38)) * 0.45;
+    }
+    return buf;
+  }
+  function makeTomBuffer() {
+    ensureAudio();
+    var sr = ctx.sampleRate, len = Math.floor(sr * 0.36);
+    var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      var tm = i / sr;
+      d[i] = Math.sin(2 * Math.PI * (88 + 90 * Math.exp(-tm * 10)) * tm) * Math.exp(-tm * 6) * 0.7;
+    }
+    return buf;
+  }
+  function makeClapBuffer() {
+    ensureAudio();
+    var sr = ctx.sampleRate, len = Math.floor(sr * 0.22);
+    var buf = ctx.createBuffer(1, len, sr), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) {
+      var tm = i / sr;
+      var burst = (tm % 0.016) < 0.006 ? 1 : 0.25;
+      d[i] = (Math.random() * 2 - 1) * burst * Math.exp(-tm * 12) * 0.7;
+    }
+    return buf;
+  }
+  function makeLoopBuffer() {
+    ensureAudio();
+    var sr = ctx.sampleRate, beat = 60 / state.bpm, len = Math.floor(sr * beat * 4);
+    var buf = ctx.createBuffer(1, Math.max(sr, len), sr), d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) {
+      var tm = i / sr, env = Math.exp(-(tm % beat) * 8);
+      d[i] = Math.sin(2 * Math.PI * 110 * tm) * env * 0.28 + Math.sin(2 * Math.PI * 165 * tm) * env * 0.12;
+    }
+    return buf;
+  }
+
+  function ensureLib() {
+    if (libItems.length) return libItems;
+    libItems = [
+      { id: "inst-saw", cat: "Instruments", name: "Analog Saw", kind: "instrument", analog: { wave: "sawtooth", cutoff: 2400, res: 0.9, attack: 0.01, decay: 0.22 } },
+      { id: "inst-square", cat: "Instruments", name: "Analog Square", kind: "instrument", analog: { wave: "square", cutoff: 1600, res: 1.3, attack: 0.008, decay: 0.18 } },
+      { id: "inst-bass", cat: "Instruments", name: "Analog Bass", kind: "instrument", analog: { wave: "sawtooth", cutoff: 420, res: 1.5, attack: 0.012, decay: 0.3 } },
+      { id: "inst-keys", cat: "Instruments", name: "Analog Keys", kind: "instrument", analog: { wave: "triangle", cutoff: 3200, res: 0.7, attack: 0.02, decay: 0.35 } },
+      { id: "inst-pad", cat: "Instruments", name: "Analog Pad", kind: "instrument", analog: { wave: "sine", cutoff: 1400, res: 0.45, attack: 0.14, decay: 0.9 } },
+      { id: "smp-kick", cat: "Samples", name: "Kick", kind: "sample", make: makeKickBuffer },
+      { id: "smp-snare", cat: "Samples", name: "Snare", kind: "sample", make: makeSnareBuffer },
+      { id: "smp-hat", cat: "Samples", name: "Closed Hat", kind: "sample", make: function () { return makeHatBuffer(false); } },
+      { id: "smp-oh", cat: "Samples", name: "Open Hat", kind: "sample", make: function () { return makeHatBuffer(true); } },
+      { id: "smp-tom", cat: "Samples", name: "Tom", kind: "sample", make: makeTomBuffer },
+      { id: "smp-clap", cat: "Samples", name: "Clap", kind: "sample", make: makeClapBuffer },
+      { id: "smp-loop", cat: "Samples", name: "Pulse Loop", kind: "sample", make: makeLoopBuffer },
+    ];
+    return libItems;
+  }
+
+  function libById(id) {
+    ensureLib();
+    for (var i = 0; i < libItems.length; i++) if (libItems[i].id === id) return libItems[i];
+    return null;
+  }
+
+  function sampleBuffer(item) {
+    if (!item) return null;
+    if (item.buffer) return item.buffer;
+    if (item.make) item.buffer = item.make();
+    return item.buffer || null;
+  }
+
+  function previewLib(item) {
+    ensureAudio();
+    ctx.resume();
+    if (item.kind === "instrument") {
+      var dest = master || ctx.destination;
+      var a = item.analog;
+      var f = ctx.createBiquadFilter();
+      f.type = "lowpass";
+      f.frequency.value = a.cutoff;
+      f.Q.value = a.res;
+      f.connect(dest);
+      var g = envGain(f, ctx.currentTime, 0.22, a.attack, a.decay);
+      osc(a.wave, midiHz(12), g, ctx.currentTime, a.decay + 0.05);
+      return;
+    }
+    var buf = sampleBuffer(item);
+    if (!buf) return;
+    playBufferShot(master || ctx.destination, buf, ctx.currentTime, 0.9);
+  }
+
+  function applyInstrument(track, analog) {
+    var d = getDevice(track, "analog");
+    if (!d) return;
+    d.on = true;
+    d.wave = analog.wave;
+    d.cutoff = analog.cutoff;
+    d.res = analog.res;
+    d.attack = analog.attack;
+    d.decay = analog.decay;
+    ensureAudio();
+    applyDevices(track);
+    state.selectedTrackId = track.id;
+    paintDevices();
+    previewLib({ kind: "instrument", analog: analog });
+  }
+
+  function placeSampleClip(track, scene, buf, name) {
+    if (scene == null) scene = 0;
+    var c = clip(name, track.color, { buffer: buf });
+    track.clips[scene] = c;
+    state.selectedSession = { track: track, clip: c };
+    rebuildTrackUi();
+    paint();
+  }
+
+  function handleLibDrop(ev, track, scene, pad) {
+    if (!track) return;
+    var files = ev.dataTransfer && ev.dataTransfer.files;
+    if (files && files[0]) {
+      var f = files[0];
+      ensureAudio();
+      f.arrayBuffer().then(function (ab) { return ctx.decodeAudioData(ab.slice(0)); }).then(function (buf) {
+        var item = { id: "user-" + Date.now(), cat: "User", name: (f.name || "User").replace(/\.[^.]+$/, ""), kind: "sample", buffer: buf };
+        ensureLib();
+        libItems.push(item);
+        paintBrowser();
+        finishSampleDrop(track, scene, pad, buf, item.name);
+      }).catch(function () {});
+      return;
+    }
+    var raw = "";
+    try { raw = ev.dataTransfer.getData("application/x-voice-lib") || ev.dataTransfer.getData("text/plain"); } catch (e) {}
+    var spec = null;
+    try { spec = raw ? JSON.parse(raw) : null; } catch (e2) {}
+    if (!spec || spec.lib !== "voice") return;
+    var item = libById(spec.id);
+    if (!item) return;
+    if (item.kind === "instrument") {
+      applyInstrument(track, item.analog);
+      return;
+    }
+    var buf = sampleBuffer(item);
+    if (!buf) return;
+    finishSampleDrop(track, scene, pad, buf, item.name);
+  }
+
+  function finishSampleDrop(track, scene, pad, buf, name) {
+    ensureAudio();
+    ctx.resume();
+    if ((track.kind === "drums" || track.kind === "perc") && track.rack) {
+      ensureRack(track);
+      var p = pad || track.rack.pads.find(function (x) { return x.id === state.selectedPad; }) || track.rack.pads[0];
+      p.buffer = buf;
+      p.name = String(name || p.name).slice(0, 10);
+      state.selectedPad = p.id;
+      state.selectedSession = { track: track, clip: track.clips.find(function (c) { return !!c; }) || track.clips[0] };
+      paintRack();
+      trigRackPad(track, p, ctx.currentTime, 1);
+      return;
+    }
+    placeSampleClip(track, scene == null ? 0 : scene, buf, name);
+    if (state.view === "arrange") dropOnLane(track, Math.floor(state.step / STEPS_PER_BAR) || 0);
+    if (!state.playing && track.kind === "audio") {
+      state.queued[track.id] = track.clips[scene == null ? 0 : scene];
+      startTransport();
+    }
+  }
+
+  function enableDrop(node, getTarget) {
+    node.addEventListener("dragover", function (ev) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = "copy";
+      node.classList.add("drop-ok");
+    });
+    node.addEventListener("dragleave", function () { node.classList.remove("drop-ok"); });
+    node.addEventListener("drop", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      node.classList.remove("drop-ok");
+      var tgt = getTarget(ev) || {};
+      handleLibDrop(ev, tgt.track, tgt.scene, tgt.pad);
+    });
+  }
+
+  function paintBrowser() {
+    if (!browserEl) return;
+    ensureLib();
+    browserEl.replaceChildren();
+    browserEl.appendChild(el("div", "daw-brand", "Browser"));
+    var cats = [];
+    libItems.forEach(function (it) {
+      if (cats.indexOf(it.cat) < 0) cats.push(it.cat);
+    });
+    cats.forEach(function (cat) {
+      browserEl.appendChild(el("div", "daw-cat", cat));
+      libItems.filter(function (it) { return it.cat === cat; }).forEach(function (item) {
+        var b = el("button", "daw-lib", item.name);
+        b.type = "button";
+        b.draggable = true;
+        b.setAttribute("aria-label", item.name);
+        b.addEventListener("click", function () { previewLib(item); });
+        b.addEventListener("dragstart", function (ev) {
+          var payload = JSON.stringify({ lib: "voice", id: item.id });
+          ev.dataTransfer.setData("application/x-voice-lib", payload);
+          ev.dataTransfer.setData("text/plain", payload);
+          ev.dataTransfer.effectAllowed = "copy";
+        });
+        browserEl.appendChild(b);
+      });
+    });
+    var imp = el("button", "daw-btn", "Import audio");
+    imp.type = "button";
+    imp.style.marginTop = "8px";
+    imp.setAttribute("aria-label", "Import audio into browser");
+    imp.addEventListener("click", function () {
+      var inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = "audio/*,.wav,.mp3,.ogg,.m4a";
+      inp.addEventListener("change", function () {
+        var f = inp.files && inp.files[0];
+        if (!f) return;
+        ensureAudio();
+        f.arrayBuffer().then(function (ab) { return ctx.decodeAudioData(ab.slice(0)); }).then(function (buf) {
+          libItems.push({ id: "user-" + Date.now(), cat: "User", name: (f.name || "User").replace(/\.[^.]+$/, ""), kind: "sample", buffer: buf });
+          paintBrowser();
+          previewLib(libItems[libItems.length - 1]);
+        }).catch(function () {});
+      });
+      inp.click();
+    });
+    browserEl.appendChild(imp);
+    browserEl.appendChild(el("div", "daw-roll-hint", "Drag onto a clip slot, mixer strip, lane, or drum pad. Click to preview."));
+  }
+
+
   function playStepAt(track, clipObj, step, time) {
     if (!clipObj || !trackAudible(track)) return;
     var dest = trackNodes[track.id];
     var n = clipObj.notes || {};
     var i = step % (clipObj.length || STEPS);
-    if ((track.kind === "drums" || track.kind === "perc") && track.rack) {
+    if ((track.kind === "drums" || track.kind === "perc") && track.rack && !(n.buffer)) {
       playDrumRack(track, clipObj, i, time);
+      return;
+    }
+    if (n.buffer) {
+      if (n.buffer.duration <= 1.2 && i === 0) playBufferShot(dest, n.buffer, time, n.gain == null ? 1 : n.gain);
       return;
     }
     if (n.roll && n.roll.length) {
@@ -845,7 +1125,8 @@
         state.launched[id] = next;
         if (tr.kind === "pad" && !(next.notes && next.notes.roll && next.notes.roll.length)) startPad(tr, next);
         else stopPad(id);
-        if (tr.kind === "audio") startAudioLoop(tr, next);
+        var buf = next.notes && next.notes.buffer;
+        if (buf && buf.duration > 1.2) startAudioLoop(tr, next);
         else stopAudioLoop(id);
       }
       delete state.queued[id];
@@ -1036,7 +1317,7 @@
     var s = document.createElement("style");
     s.id = "daw-session-css";
     s.textContent =
-      "#daw-session{margin:-4px -4px 22px;border:1px solid var(--glass-border,rgba(63,198,255,.14));border-radius:16px;background:color-mix(in srgb,var(--surface,#121613) 88%, #000);overflow:hidden}" +
+      "#daw-session{margin:-4px -4px 22px;border:1px solid var(--glass-border,rgba(63,198,255,.14));border-radius:16px;background:color-mix(in srgb,var(--surface,#121613) 88%, #000);overflow:hidden;display:grid;grid-template-columns:minmax(150px,196px) 1fr}" +"#daw-session .daw-top{grid-column:1/-1}" +"#daw-session .daw-browser{grid-column:1;grid-row:2/span 10;border-right:1px solid var(--border,#263029);overflow:auto;max-height:min(72vh,780px);background:#0a0d0c;padding:8px}" +"#daw-session .daw-session-panel,#daw-session .daw-roll,#daw-session .daw-rack,#daw-session .daw-arrange,#daw-session .daw-mixer,#daw-session .daw-devices{grid-column:2}" +"#daw-session .daw-cat{font-family:Share Tech Mono,ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint,#4c5f56);padding:10px 6px 4px}" +"#daw-session .daw-lib{display:block;width:100%;text-align:left;margin:0 0 4px;padding:8px;border-radius:8px;border:1px solid var(--border,#263029);background:var(--surface-alt,#1a201c);color:var(--phosphor,#3fc6ff);font-family:Share Tech Mono,ui-monospace,monospace;font-size:11px;cursor:grab}" +"#daw-session .daw-lib:active{cursor:grabbing}" +"#daw-session .drop-ok{outline:2px dashed var(--phosphor,#3fc6ff);outline-offset:-2px}" +
       "#daw-session .daw-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border,#263029)}" +
       "#daw-session .daw-brand{font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-pos{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:12px;color:var(--ink-dim,#7d9689);min-width:7ch}" +
@@ -1526,6 +1807,7 @@
         ev.preventDefault();
         loadPadSample(track, pad);
       });
+      enableDrop(b, function () { return { track: track, pad: pad }; });
       rackPadsEl.appendChild(b);
     });
     rackStepsEl.replaceChildren();
@@ -2002,6 +2284,7 @@
             if (track.kind === "audio") loadAudioFile(track);
             else if (track.clips[scene]) openRoll(track, track.clips[scene]);
           });
+          enableDrop(btn, function () { return { track: track, scene: scene }; });
           gridEl.appendChild(btn);
         })(tr, sc);
       }
@@ -2048,6 +2331,7 @@
         var bar = Math.floor((ev.clientX - rect.left) / BAR_W);
         dropOnLane(tr, Math.max(0, Math.min(BARS - 1, bar)));
       });
+      enableDrop(lane, function () { return { track: tr, scene: 0 }; });
       row.appendChild(lab);
       row.appendChild(lane);
       arrangeLanes.appendChild(row);
@@ -2112,6 +2396,7 @@
         paintMixer();
         paintDevices();
       });
+      enableDrop(strip, function () { return { track: tr, scene: 0 }; });
       var tools = el("div", "daw-strip-tools");
       var up = el("button", "daw-btn", "↑");
       up.type = "button";
@@ -2364,6 +2649,11 @@
 
     root.appendChild(top);
 
+    browserEl = el("aside", "daw-browser");
+    browserEl.setAttribute("aria-label", "Browser");
+    root.appendChild(browserEl);
+    paintBrowser();
+
     sessionPanel = el("div", "daw-session-panel");
     var wrap = el("div", "daw-grid-wrap");
     gridEl = el("div", "daw-grid");
@@ -2392,6 +2682,7 @@
             if (track.kind === "audio") loadAudioFile(track);
             else if (track.clips[scene]) openRoll(track, track.clips[scene]);
           });
+          enableDrop(btn, function () { return { track: track, scene: scene }; });
           gridEl.appendChild(btn);
         })(tr, sc);
       }
@@ -2655,6 +2946,7 @@
         var bar = Math.floor((ev.clientX - rect.left) / BAR_W);
         dropOnLane(tr, Math.max(0, Math.min(BARS - 1, bar)));
       });
+      enableDrop(lane, function () { return { track: tr, scene: 0 }; });
       row.appendChild(lab);
       row.appendChild(lane);
       arrangeLanes.appendChild(row);
