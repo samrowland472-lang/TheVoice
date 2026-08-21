@@ -3022,6 +3022,17 @@
     });
     top.appendChild(learn);
 
+    var saveBtn = el("button", "daw-btn", "Save");
+    saveBtn.type = "button";
+    saveBtn.setAttribute("aria-label", "Save project");
+    saveBtn.addEventListener("click", saveProject);
+    top.appendChild(saveBtn);
+    var loadBtn = el("button", "daw-btn", "Load");
+    loadBtn.type = "button";
+    loadBtn.setAttribute("aria-label", "Load project");
+    loadBtn.addEventListener("click", loadProjectFile);
+    top.appendChild(loadBtn);
+
     var tsLab = el("label", "daw-ctl");
     tsLab.appendChild(document.createTextNode("Sig"));
     var ts = document.createElement("select");
@@ -3599,8 +3610,297 @@
     paintArrange();
   }
 
+  function bufferToB64(buf) {
+    if (!buf || !buf.getChannelData) return null;
+    var ch = buf.getChannelData(0);
+    var n = ch.length;
+    var bytes = new Uint8Array(n * 2);
+    for (var i = 0; i < n; i++) {
+      var s = Math.max(-1, Math.min(1, ch[i]));
+      var v = s < 0 ? s * 0x8000 : s * 0x7fff;
+      bytes[i * 2] = v & 255;
+      bytes[i * 2 + 1] = (v >> 8) & 255;
+    }
+    var bin = "";
+    var step = 0x8000;
+    for (var j = 0; j < bytes.length; j += step) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(j, Math.min(bytes.length, j + step)));
+    }
+    return { sr: buf.sampleRate, n: n, b64: btoa(bin) };
+  }
+
+  function b64ToBuffer(obj) {
+    if (!obj || !obj.b64) return null;
+    ensureAudio();
+    var raw = atob(obj.b64);
+    var n = obj.n || (raw.length / 2);
+    var buf = ctx.createBuffer(1, n, obj.sr || ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) {
+      var lo = raw.charCodeAt(i * 2);
+      var hi = raw.charCodeAt(i * 2 + 1);
+      var v = (hi << 8) | lo;
+      if (v & 0x8000) v = v - 0x10000;
+      d[i] = v / 0x8000;
+    }
+    return buf;
+  }
+
+  function encodeNotes(notes) {
+    if (!notes) return null;
+    var buf = notes.buffer;
+    var o = JSON.parse(JSON.stringify(notes, function (k, v) {
+      if (k === "buffer") return undefined;
+      return v;
+    }));
+    if (buf && buf.getChannelData) {
+      o.buffer = bufferToB64(buf);
+      o._buf = 1;
+    }
+    return o;
+  }
+
+  function decodeNotes(notes) {
+    if (!notes) return null;
+    if (notes._buf && notes.buffer) {
+      notes.buffer = b64ToBuffer(notes.buffer);
+      delete notes._buf;
+    }
+    return notes;
+  }
+
+  function encodePad(p) {
+    return {
+      id: p.id,
+      name: p.name,
+      synth: p.synth,
+      choke: p.choke,
+      gain: p.gain,
+      decay: p.decay,
+      open: !!p.open,
+      midi: p.midi,
+      buffer: p.buffer && p.buffer.getChannelData ? bufferToB64(p.buffer) : null,
+    };
+  }
+
+  function decodePad(p) {
+    if (p.buffer && p.buffer.b64) p.buffer = b64ToBuffer(p.buffer);
+    else p.buffer = null;
+    return p;
+  }
+
+  function snapshotProject() {
+    return {
+      v: 1,
+      kind: "the-voice-set",
+      bpm: state.bpm,
+      quantize: state.quantize,
+      timeNum: state.timeNum,
+      timeDen: state.timeDen,
+      loopOn: state.loopOn,
+      loopStart: state.loopStart,
+      loopEnd: state.loopEnd,
+      follow: state.follow,
+      masterVol: state.masterVol,
+      returnAVol: state.returnAVol,
+      returnBVol: state.returnBVol,
+      rollSnap: state.rollSnap,
+      rollScale: state.rollScale,
+      ccMap: state.ccMap,
+      selectedTrackId: state.selectedTrackId,
+      midiOctave: midiOctave,
+      extraReturns: extraReturns.map(function (r) {
+        return { name: r.name, volume: r.volume, delayTime: r.delay && r.delay.delayTime ? r.delay.delayTime.value : 0.2 };
+      }),
+      tracks: state.tracks.map(function (tr) {
+        return {
+          id: tr.id,
+          name: tr.name,
+          kind: tr.kind,
+          role: tr.role,
+          color: tr.color,
+          volume: tr.volume,
+          pan: tr.pan,
+          mute: tr.mute,
+          solo: tr.solo,
+          arm: tr.arm,
+          sendA: tr.sendA,
+          sendB: tr.sendB,
+          devices: tr.devices,
+          rack: tr.rack ? { pads: tr.rack.pads.map(encodePad) } : null,
+          clips: tr.clips.map(function (c) {
+            if (!c) return null;
+            return { name: c.name, color: c.color, length: c.length, notes: encodeNotes(c.notes) };
+          }),
+        };
+      }),
+      arrangeClips: state.arrangeClips.map(function (c) {
+        return {
+          id: c.id,
+          trackId: c.trackId,
+          start: c.start,
+          length: c.length,
+          name: c.name,
+          color: c.color,
+          notes: encodeNotes(c.notes),
+        };
+      }),
+    };
+  }
+
+  function clearGraph() {
+    Object.keys(trackNodes).forEach(function (id) {
+      try { trackNodes[id].disconnect(); } catch (e) {}
+    });
+    trackNodes = {};
+    trackGraph = {};
+    extraReturns.forEach(function (r) {
+      try { if (r.gain) r.gain.disconnect(); } catch (e2) {}
+    });
+    extraReturns = [];
+    Object.keys(warpHold || {}).forEach(stopWarpVoices);
+    Object.keys(audioHold || {}).forEach(stopAudioLoop);
+    Object.keys(padHold || {}).forEach(stopPad);
+  }
+
+  function reviveTrack(raw) {
+    var tr = {
+      id: raw.id,
+      name: raw.name,
+      kind: raw.kind,
+      role: raw.role || (raw.kind === "audio" ? "audio" : "midi"),
+      color: raw.color,
+      volume: raw.volume == null ? 0.85 : raw.volume,
+      pan: raw.pan || 0,
+      mute: !!raw.mute,
+      solo: !!raw.solo,
+      arm: !!raw.arm,
+      sendA: raw.sendA || 0,
+      sendB: raw.sendB || 0,
+      devices: raw.devices || defaultDevices(raw.kind),
+      clips: (raw.clips || []).map(function (c) {
+        if (!c) return null;
+        return { name: c.name, color: c.color, length: c.length || STEPS, notes: decodeNotes(c.notes) || {} };
+      }),
+    };
+    while (tr.clips.length < SCENES) tr.clips.push(null);
+    if (raw.rack) tr.rack = { pads: (raw.rack.pads || []).map(decodePad) };
+    return tr;
+  }
+
+  function applySnapshot(data) {
+    if (!data || data.kind !== "the-voice-set") throw new Error("Not a Voice set");
+    ensureAudio();
+    ctx.resume();
+    stopTransport();
+    clearGraph();
+    state.bpm = data.bpm || 112;
+    state.quantize = data.quantize == null ? 16 : data.quantize;
+    state.timeNum = data.timeNum || 4;
+    state.timeDen = data.timeDen || 4;
+    state.loopOn = data.loopOn !== false;
+    state.loopStart = data.loopStart || 0;
+    state.loopEnd = data.loopEnd || 8;
+    state.follow = data.follow !== false;
+    state.masterVol = data.masterVol == null ? 0.72 : data.masterVol;
+    state.returnAVol = data.returnAVol == null ? 0.85 : data.returnAVol;
+    state.returnBVol = data.returnBVol == null ? 0.7 : data.returnBVol;
+    state.rollSnap = data.rollSnap || 1;
+    state.rollScale = data.rollScale || "minor";
+    state.ccMap = data.ccMap || state.ccMap;
+    state.selectedTrackId = data.selectedTrackId || (data.tracks && data.tracks[0] && data.tracks[0].id);
+    state.launched = {};
+    state.queued = {};
+    state.selectedSession = null;
+    state.selectedArrange = null;
+    if (typeof data.midiOctave === "number") midiOctave = data.midiOctave;
+    state.tracks = (data.tracks || []).map(reviveTrack);
+    if (!state.tracks.length) state.tracks = makeSet();
+    state.arrangeClips = (data.arrangeClips || []).map(function (c) {
+      return {
+        id: c.id,
+        trackId: c.trackId,
+        start: c.start,
+        length: c.length,
+        name: c.name,
+        color: c.color,
+        notes: decodeNotes(c.notes),
+      };
+    });
+    state.tracks.forEach(function (tr) { wireTrack(tr); });
+    (data.extraReturns || []).forEach(function (r) {
+      var delay = ctx.createDelay(1);
+      delay.delayTime.value = r.delayTime || 0.2;
+      var fb = ctx.createGain();
+      fb.gain.value = 0.28;
+      delay.connect(fb);
+      fb.connect(delay);
+      var g = ctx.createGain();
+      g.gain.value = r.volume == null ? 0.75 : r.volume;
+      delay.connect(g);
+      g.connect(master);
+      extraReturns.push({ id: r.name || "ret", name: r.name || "Return", delay: delay, gain: g, volume: r.volume == null ? 0.75 : r.volume });
+    });
+    if (bpmInput) bpmInput.value = String(state.bpm);
+    applyMix();
+    rebuildTrackUi();
+    paintDevices();
+    paintWarp();
+    setMidiLabel("Loaded set");
+  }
+
+  function saveProject() {
+    var data = snapshotProject();
+    var json = JSON.stringify(data);
+    try { localStorage.setItem("voice-daw-project", json); } catch (e) {
+      try { localStorage.setItem("voice-daw-project", JSON.stringify(snapshotProjectSansAudio(data))); } catch (e2) {}
+    }
+    var blob = new Blob([json], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "the-voice-set.json";
+    a.click();
+    window.setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    setMidiLabel("Saved set");
+  }
+
+  function snapshotProjectSansAudio(data) {
+    var copy = JSON.parse(JSON.stringify(data));
+    (copy.tracks || []).forEach(function (tr) {
+      (tr.clips || []).forEach(function (c) {
+        if (c && c.notes) { delete c.notes.buffer; delete c.notes._buf; }
+      });
+      if (tr.rack && tr.rack.pads) tr.rack.pads.forEach(function (p) { p.buffer = null; });
+    });
+    return copy;
+  }
+
+  function loadProjectFile() {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "application/json,.json";
+    inp.addEventListener("change", function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      f.text().then(function (txt) {
+        applySnapshot(JSON.parse(txt));
+      }).catch(function () { setMidiLabel("Load failed"); });
+    });
+    inp.click();
+  }
+
+  function tryAutoload() {
+    try {
+      var raw = localStorage.getItem("voice-daw-project");
+      if (!raw) return;
+      applySnapshot(JSON.parse(raw));
+    } catch (e) {}
+  }
+
+
   function boot() {
     build();
+    tryAutoload();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
