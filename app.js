@@ -20,6 +20,7 @@ import { composeAudio, fadeOut, describeProject } from './project.js';
 import { createScene, createShape, setKeyframe, removeKeyframe, sampleShape,
          renderFrame, audioLevelTrack, EASING_NAMES } from './animation.js';
 import {
+  getSupabaseConfig,
   setSupabaseConfig,
   clearSupabaseConfig,
   isBackendConfigured,
@@ -29,8 +30,11 @@ import {
   signOutUser,
   getCurrentSession,
   onAuthChange,
+  canReachAuthSdk,
   fetchSubscriptionPlan,
   refreshSession,
+  checkSupabasePair,
+  verifyBackend,
 } from './account.js';
 import {
   getApiKey,
@@ -2174,26 +2178,66 @@ gateConnectBtn.addEventListener('click', async () => {
     setGateStatus('Enter both the project URL and the anon key.');
     return;
   }
-  setSupabaseConfig(url, key);
-  setGateStatus('Connecting…', 'info');
+
+  // Two checks, cheapest first. The local one catches the service_role key
+  // and a mismatched URL/key pair without a round trip; the network one is
+  // the only thing that can prove the project is actually there.
+  const pair = checkSupabasePair(url, key);
+  if (!pair.ok) {
+    setGateStatus(pair.message);
+    return;
+  }
+
+  gateConnectBtn.disabled = true;
+  const label = gateConnectBtn.textContent;
+  gateConnectBtn.textContent = 'CHECKING…';
+  setGateStatus(`Checking ${pair.url}…`, 'info');
   try {
-    await getCurrentSession();
-    setGateStatus('Connected.', 'info');
+    const probe = await verifyBackend(pair.url, pair.anonKey);
+    if (!probe.ok) {
+      setGateStatus(probe.message);
+      return;
+    }
+    // Only store credentials that have been proven to work, so a failed
+    // attempt cannot leave the site pointed at a dead project.
+    setSupabaseConfig(probe.url, probe.anonKey);
+    if (pair.url !== url.replace(/\/+$/, '')) {
+      setGateStatus(`Connected to ${probe.url} — the URL was tidied up for you.`, 'info');
+    } else {
+      setGateStatus('Connected.', 'info');
+    }
     gateSetupPanel.hidden = true;
     gateForms.hidden = false;
     // The job this button existed for is done — step it back so it stops
     // competing with the sign-in form it was blocking.
     gateSetupToggle.classList.remove('needed');
     gateSetupToggle.textContent = 'Change Supabase project';
+    applyProviderAvailability(probe);
   } catch (err) {
-    clearSupabaseConfig();
-    setGateStatus(err.message);
+    setGateStatus(err.message || 'Could not reach that project.');
+  } finally {
+    gateConnectBtn.disabled = false;
+    gateConnectBtn.textContent = label;
   }
 });
 
+/**
+ * Hide sign-in buttons for providers the project has not switched on.
+ *
+ * A Google button that returns "provider is not enabled" looks like the site
+ * is broken. If the project has not enabled it, better not to offer it.
+ */
+function applyProviderAvailability(probe) {
+  if (!probe || !Array.isArray(probe.providers)) return;
+  for (const btn of document.querySelectorAll('[data-provider]')) {
+    const name = btn.dataset.provider;
+    btn.hidden = probe.providers.length > 0 && !probe.providers.includes(name);
+  }
+}
+
 onAuthChange((event) => {
   if (event === 'SIGNED_OUT') showGate();
-});
+}).catch(() => {});
 
 async function bootstrapAuth() {
   if (!isBackendConfigured()) {
@@ -2202,10 +2246,40 @@ async function bootstrapAuth() {
   }
   try {
     const session = await getCurrentSession();
-    if (session) enterApp();
-    else showGate();
+    if (session) {
+      enterApp();
+      return;
+    }
   } catch {
-    showGate();
+    /* fall through to the gate, then diagnose below */
+  }
+  showGate();
+
+  // Prove the configured project is really reachable before someone types
+  // their password into a form that cannot submit anywhere. A sign-in that
+  // fails with no explanation is the single most demoralising way for this
+  // app to break, and it is exactly what a stale or mistyped URL produces.
+  const config = getSupabaseConfig();
+  if (!config) return;
+
+  // The SDK is fetched from a CDN on demand. If that fetch fails the form is
+  // present but inert, which reads exactly like a wrong password.
+  if (!(await canReachAuthSdk())) {
+    setGateStatus('Could not load the sign-in service. Check your internet connection and reload.');
+    return;
+  }
+  const probe = await verifyBackend(config.url, config.anonKey).catch(() => null);
+  if (!probe) return;
+  if (!probe.ok) {
+    setGateStatus(`${probe.message} Use "Change Supabase project" to fix it.`);
+    gateSetupToggle.classList.add('needed');
+    gateSetupPanel.hidden = false;
+    // Pre-fill what is currently stored, so the problem is visible rather
+    // than something to be guessed at.
+    gateSupabaseUrl.value = config.url;
+    gateSupabaseKey.value = config.anonKey;
+  } else {
+    applyProviderAvailability(probe);
   }
 }
 
@@ -2503,5 +2577,5 @@ syncModLabels();
 updateEngineChrome();
 renderClonedVoiceList();
 updateTextStats();
-bootstrapAuth();
-startUpgradeWatch();
+bootstrapAuth().catch(() => showGate());
+startUpgradeWatch().catch(() => {});
