@@ -124,6 +124,11 @@
     follow: true,
     punch: false,
     selectedArrange: null,
+    timeNum: 4,
+    timeDen: 4,
+    metro: false,
+    recording: false,
+    countIn: 0,
   };
   state.arrangeClips = seedArrange(state.tracks);
 
@@ -134,6 +139,9 @@
   var nextTime = 0;
   var padHold = {};
   var lastPadClip = {};
+  var metroGain = null;
+  var taps = [];
+  var bpmInput = null;
 
   function ensureAudio() {
     if (ctx) return;
@@ -142,6 +150,9 @@
     master = ctx.createGain();
     master.gain.value = 0.7;
     master.connect(ctx.destination);
+    metroGain = ctx.createGain();
+    metroGain.gain.value = 0.9;
+    metroGain.connect(ctx.destination);
     state.tracks.forEach(function (tr) {
       var g = ctx.createGain();
       g.gain.value = tr.volume;
@@ -152,6 +163,62 @@
 
   function secondsPerStep() {
     return 60 / state.bpm / 4;
+  }
+
+  function stepsPerBeat() {
+    return Math.max(1, Math.round(16 / state.timeDen));
+  }
+
+  function stepsPerBar() {
+    return Math.max(4, state.timeNum * stepsPerBeat());
+  }
+
+  function clickMetro(time, accent) {
+    if (!ctx || !metroGain) return;
+    var dest = metroGain;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, time);
+    g.gain.exponentialRampToValueAtTime(accent ? 0.45 : 0.18, time + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, time + (accent ? 0.09 : 0.045));
+    g.connect(dest);
+    var o = ctx.createOscillator();
+    o.type = "square";
+    o.frequency.setValueAtTime(accent ? 1760 : 1174, time);
+    o.connect(g);
+    o.start(time);
+    o.stop(time + 0.1);
+  }
+
+  function syncBpmField() {
+    if (bpmInput) bpmInput.value = String(state.bpm);
+  }
+
+  function tapTempo() {
+    var now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+    if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+    taps.push(now);
+    if (taps.length > 6) taps = taps.slice(-6);
+    if (taps.length < 2) return;
+    var sum = 0;
+    for (var i = 1; i < taps.length; i++) sum += taps[i] - taps[i - 1];
+    var avg = sum / (taps.length - 1);
+    state.bpm = Math.min(240, Math.max(40, Math.round(60000 / avg)));
+    syncBpmField();
+  }
+
+  function armRecord() {
+    ensureAudio();
+    ctx.resume();
+    state.recording = !state.recording;
+    if (state.recording) {
+      state.punch = true;
+      if (!state.playing) {
+        state.countIn = stepsPerBar();
+        state.metro = true;
+        startTransport();
+      }
+    }
+    paint();
   }
 
   function envGain(dest, t0, peak, a, d) {
@@ -355,6 +422,25 @@
     var stepDur = secondsPerStep();
     var arrange = state.view === "arrange";
     while (nextTime < horizon) {
+      if (state.countIn > 0) {
+        var spbCi = stepsPerBeat();
+        if (state.metro && state.countIn % spbCi === 0) {
+          var beatCi = Math.floor((stepsPerBar() - state.countIn) / spbCi) % state.timeNum;
+          clickMetro(nextTime, beatCi === 0);
+        }
+        state.countIn -= 1;
+        nextTime += stepDur;
+        paintPlayhead();
+        continue;
+      }
+      if (state.metro) {
+        var spb = stepsPerBeat();
+        if (state.step % spb === 0) {
+          var beatN = Math.floor(state.step / spb) % state.timeNum;
+          clickMetro(nextTime, beatN === 0);
+        }
+      }
+      if (state.recording) state.punch = true;
       if (arrange) {
         var loopStartStep = state.loopStart * STEPS_PER_BAR;
         var loopEndStep = Math.max(loopStartStep + STEPS_PER_BAR, state.loopEnd * STEPS_PER_BAR);
@@ -415,6 +501,7 @@
 
   function stopTransport() {
     state.playing = false;
+    state.countIn = 0;
     window.clearTimeout(timer);
     if (state.view !== "arrange") {
       state.launched = {};
@@ -484,6 +571,7 @@
       "#daw-session .daw-btn:hover{border-color:var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-btn.on{background:var(--phosphor,#3fc6ff);color:var(--phosphor-ink,#06170f);border-color:var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-btn.stop{color:var(--alert,#ff4d4d)}" +
+      "#daw-session .daw-btn.rec.on{background:var(--alert,#ff4d4d);color:#fff;border-color:var(--alert,#ff4d4d)}" +
       "#daw-session label.daw-ctl{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim,#7d9689)}" +
       "#daw-session select,#daw-session input[type=number]{min-height:44px;background:var(--ground,#0a0d0c);color:var(--ink,#d9f5e3);border:1px solid var(--border,#263029);border-radius:8px;padding:0 8px;font:inherit}" +
       "#daw-session .daw-grid-wrap{overflow:auto;padding:12px}" +
@@ -521,9 +609,15 @@
 
   function paintPlayhead() {
     if (!posEl) return;
-    var bar = Math.floor(state.step / 16) + 1;
-    var beat = (Math.floor(state.step / 4) % 4) + 1;
-    var six = (state.step % 4) + 1;
+    if (state.countIn > 0) {
+      posEl.textContent = "CNT " + Math.ceil(state.countIn / stepsPerBeat());
+      return;
+    }
+    var spBar = stepsPerBar();
+    var spBeat = stepsPerBeat();
+    var bar = Math.floor(state.step / spBar) + 1;
+    var beat = (Math.floor(state.step / spBeat) % state.timeNum) + 1;
+    var six = (state.step % spBeat) + 1;
     posEl.textContent = bar + "." + beat + "." + six;
   }
 
@@ -649,6 +743,10 @@
     if (loopBtn) loopBtn.classList.toggle("on", state.loopOn);
     var followBtn = root && root.querySelector("[data-follow]");
     if (followBtn) followBtn.classList.toggle("on", state.follow);
+    var recBtn = root && root.querySelector("[data-record]");
+    if (recBtn) recBtn.classList.toggle("on", state.recording);
+    var metroBtn = root && root.querySelector("[data-metro]");
+    if (metroBtn) metroBtn.classList.toggle("on", state.metro);
     if (state.view === "arrange") paintArrange();
   }
 
@@ -693,6 +791,58 @@
     top.appendChild(play);
     top.appendChild(stop);
 
+    var rec = el("button", "daw-btn rec", "Record");
+    rec.type = "button";
+    rec.setAttribute("data-record", "1");
+    rec.setAttribute("aria-label", "Record");
+    rec.addEventListener("click", armRecord);
+    top.appendChild(rec);
+
+    var metro = el("button", "daw-btn", "Metro");
+    metro.type = "button";
+    metro.setAttribute("data-metro", "1");
+    metro.setAttribute("aria-label", "Metronome");
+    metro.addEventListener("click", function () {
+      state.metro = !state.metro;
+      if (state.metro) {
+        ensureAudio();
+        ctx.resume();
+      }
+      paint();
+    });
+    top.appendChild(metro);
+
+    var tap = el("button", "daw-btn", "Tap");
+    tap.type = "button";
+    tap.setAttribute("aria-label", "Tap tempo");
+    tap.addEventListener("click", tapTempo);
+    top.appendChild(tap);
+
+    var tsLab = el("label", "daw-ctl");
+    tsLab.appendChild(document.createTextNode("Sig"));
+    var ts = document.createElement("select");
+    [
+      [4, 4, "4/4"],
+      [3, 4, "3/4"],
+      [5, 4, "5/4"],
+      [6, 8, "6/8"],
+      [7, 8, "7/8"],
+    ].forEach(function (row) {
+      var o = document.createElement("option");
+      o.value = row[0] + "/" + row[1];
+      o.textContent = row[2];
+      if (row[0] === state.timeNum && row[1] === state.timeDen) o.selected = true;
+      ts.appendChild(o);
+    });
+    ts.addEventListener("change", function () {
+      var parts = ts.value.split("/");
+      state.timeNum = Number(parts[0]) || 4;
+      state.timeDen = Number(parts[1]) || 4;
+      paintPlayhead();
+    });
+    tsLab.appendChild(ts);
+    top.appendChild(tsLab);
+
     var bpmLab = el("label", "daw-ctl");
     bpmLab.appendChild(document.createTextNode("BPM"));
     var bpm = document.createElement("input");
@@ -700,6 +850,7 @@
     bpm.min = "40";
     bpm.max = "240";
     bpm.value = String(state.bpm);
+    bpmInput = bpm;
     bpm.addEventListener("change", function () {
       state.bpm = Math.min(240, Math.max(40, Number(bpm.value) || 112));
     });
@@ -884,6 +1035,14 @@
     root.appendChild(arrangePanel);
 
     document.addEventListener("keydown", function (e) {
+      var tag = (e.target && e.target.tagName) || "";
+      var typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      if (!typing && e.code === "Space") {
+        e.preventDefault();
+        if (state.playing) stopTransport();
+        else startTransport();
+        return;
+      }
       if (e.key !== "Backspace" && e.key !== "Delete") return;
       if (!state.selectedArrange) return;
       var tag = (e.target && e.target.tagName) || "";
