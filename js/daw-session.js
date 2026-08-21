@@ -139,6 +139,9 @@
     masterVol: 0.72,
     returnAVol: 0.85,
     returnBVol: 0.7,
+    rollSnap: 1,
+    rollScale: "minor",
+    selectedNote: null,
   };
   state.arrangeClips = seedArrange(state.tracks);
 
@@ -150,6 +153,12 @@
   var returnAGain = null;
   var returnBGain = null;
   var mixerEl = null;
+  var rollEl = null;
+  var rollGrid = null;
+  var rollKeys = null;
+  var rollVel = null;
+  var rollTitle = null;
+  var noteSeq = 1;
   var meterRaf = 0;
   var timer = 0;
   var nextTime = 0;
@@ -646,6 +655,10 @@
     var dest = trackNodes[track.id];
     var n = clipObj.notes || {};
     var i = step % (clipObj.length || STEPS);
+    if (n.roll && n.roll.length) {
+      playRollStep(track, dest, n.roll, i, time);
+      return;
+    }
     if (track.kind === "drums") {
       if (n.k && n.k[i]) trigKick(dest, time);
       if (n.s && n.s[i]) trigSnare(dest, time);
@@ -682,7 +695,7 @@
         stopAudioLoop(id);
       } else {
         state.launched[id] = next;
-        if (tr.kind === "pad") startPad(tr, next);
+        if (tr.kind === "pad" && !(next.notes && next.notes.roll && next.notes.roll.length)) startPad(tr, next);
         else stopPad(id);
         if (tr.kind === "audio") startAudioLoop(tr, next);
         else stopAudioLoop(id);
@@ -916,6 +929,22 @@
       "#daw-session .daw-arrange{display:none;position:relative}" +
       "#daw-session.is-arrange .daw-session-panel{display:none}" +
       "#daw-session.is-arrange .daw-arrange{display:block}" +
+      "#daw-session.is-roll .daw-session-panel,#daw-session.is-roll .daw-arrange{display:none}" +
+      "#daw-session .daw-roll{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
+      "#daw-session.is-roll .daw-roll{display:flex}" +
+      "#daw-session .daw-roll-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
+      "#daw-session .daw-roll-body{display:flex;overflow:auto;max-height:min(440px,55vh);background:#0a0d0c}" +
+      "#daw-session .daw-keys{width:52px;flex:0 0 52px;position:sticky;left:0;z-index:3;background:#0a0d0c}" +
+      "#daw-session .daw-key{height:16px;box-sizing:border-box;border-bottom:1px solid #152018;padding:0 6px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:9px;line-height:16px;cursor:pointer;color:var(--ink-faint,#4c5f56)}" +
+      "#daw-session .daw-key.black{background:#070908;color:#3a4a44}" +
+      "#daw-session .daw-key.in-scale{color:var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-roll-grid{position:relative;flex:1;min-width:384px}" +
+      "#daw-session .daw-note{position:absolute;border-radius:3px;font-size:9px;color:#06170f;padding:0 4px;overflow:hidden;cursor:grab;z-index:2;box-sizing:border-box;line-height:16px;user-select:none}" +
+      "#daw-session .daw-note.sel{outline:2px solid #fff;outline-offset:0;z-index:4}" +
+      "#daw-session .daw-note-h{position:absolute;right:0;top:0;bottom:0;width:8px;cursor:ew-resize}" +
+      "#daw-session .daw-vel{position:relative;height:56px;margin-left:52px;border-top:1px solid var(--border,#263029);background:#0a0d0c}" +
+      "#daw-session .daw-vel-n{position:absolute;bottom:0;width:8px;background:var(--phosphor,#3fc6ff);cursor:ns-resize;border-radius:2px 2px 0 0}" +
+      "#daw-session .daw-roll-hint{padding:6px 12px;font-size:12px;color:var(--ink-dim,#7d9689)}" +
       "#daw-session .daw-arr-scroll{overflow:auto;max-height:min(520px,60vh)}" +
       "#daw-session .daw-arr-inner{position:relative;min-width:" + (88 + BARS * BAR_W) + "px}" +
       "#daw-session .daw-ruler{display:flex;margin-left:88px;height:44px;position:relative;border-bottom:1px solid var(--border,#263029);user-select:none}" +
@@ -1031,13 +1060,311 @@
     paintArrange();
   }
 
+  var ROLL_H = 16;
+  var ROLL_W = 24;
+  var PITCH_MAX = 36;
+  var SCALE_TONES = {
+    minor: [0, 2, 3, 5, 7, 8, 10],
+    major: [0, 2, 4, 5, 7, 9, 11],
+    penta: [0, 3, 5, 7, 10],
+    chrom: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  };
+  var PITCH_NAMES = ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"];
+
+  function pitchName(p) {
+    return PITCH_NAMES[((p % 12) + 12) % 12] + Math.floor(p / 12);
+  }
+
+  function inScale(p) {
+    var tones = SCALE_TONES[state.rollScale] || SCALE_TONES.minor;
+    return tones.indexOf(((p % 12) + 12) % 12) >= 0;
+  }
+
+  function isBlack(p) {
+    var n = ((p % 12) + 12) % 12;
+    return n === 1 || n === 4 || n === 6 || n === 9 || n === 11;
+  }
+
+  function snapStep(x) {
+    var s = state.rollSnap || 1;
+    return Math.max(0, Math.round(x / s) * s);
+  }
+
+  function ensureRoll(clipObj) {
+    if (!clipObj.notes) clipObj.notes = {};
+    if (clipObj.notes.roll && clipObj.notes.roll.length) return clipObj.notes.roll;
+    var roll = [];
+    var n = clipObj.notes;
+    function add(pitch, start, length, vel) {
+      roll.push({ id: "n" + noteSeq++, pitch: pitch, start: start, length: length || 1, vel: vel == null ? 0.85 : vel });
+    }
+    if (n.seq) {
+      n.seq.forEach(function (v, i) {
+        if (typeof v === "number" && v >= 0) add(v, i, 1, 0.85);
+      });
+    }
+    if (n.hits) {
+      n.hits.forEach(function (v, i) {
+        if (!v) return;
+        (n.chord || [0, 3, 7]).forEach(function (p) {
+          add(p + 12, i, 2, 0.7);
+        });
+      });
+    }
+    if (n.hold && n.chord) {
+      n.chord.forEach(function (p) {
+        add(p + 12, 0, clipObj.length || STEPS, 0.45);
+      });
+    }
+    clipObj.notes.roll = roll;
+    return roll;
+  }
+
+  function activeRollClip() {
+    var sel = state.selectedSession;
+    if (sel && sel.clip && sel.track && sel.track.kind !== "audio") return sel;
+    for (var i = 0; i < state.tracks.length; i++) {
+      var tr = state.tracks[i];
+      if (tr.kind === "audio" || tr.kind === "drums" || tr.kind === "perc") continue;
+      for (var s = 0; s < tr.clips.length; s++) {
+        if (tr.clips[s]) return { track: tr, clip: tr.clips[s] };
+      }
+    }
+    return null;
+  }
+
+  function openRoll(track, clipObj) {
+    if (!clipObj || track.kind === "audio") return;
+    state.selectedSession = { track: track, clip: clipObj };
+    state.selectedNote = null;
+    ensureRoll(clipObj);
+    setView("roll");
+  }
+
+  function getSelectedNote() {
+    var pair = activeRollClip();
+    if (!pair || !state.selectedNote) return null;
+    var roll = ensureRoll(pair.clip);
+    return roll.find(function (n) { return n.id === state.selectedNote; }) || null;
+  }
+
+  function deleteSelectedNote() {
+    var pair = activeRollClip();
+    if (!pair || !state.selectedNote) return;
+    pair.clip.notes.roll = ensureRoll(pair.clip).filter(function (n) { return n.id !== state.selectedNote; });
+    state.selectedNote = null;
+    paintRoll();
+  }
+
+  function trigRollNote(track, dest, t, pitch, dur, vel) {
+    vel = Math.max(0.05, Math.min(1, vel || 0.8));
+    dur = Math.max(0.05, dur || 0.2);
+    if (track.kind === "bass") {
+      var f = ctx.createBiquadFilter();
+      f.type = "lowpass";
+      f.frequency.value = 420;
+      f.Q.value = 0.8;
+      f.connect(dest);
+      var g = envGain(f, t, 0.4 * vel, 0.01, dur);
+      osc("sawtooth", midiHz(pitch), g, t, dur + 0.04);
+      return;
+    }
+    if (track.kind === "lead") {
+      var g2 = envGain(dest, t, 0.2 * vel, 0.008, dur);
+      osc("square", midiHz(pitch + 12), g2, t, dur + 0.02);
+      return;
+    }
+    var g3 = envGain(dest, t, 0.16 * vel, 0.015, dur);
+    osc("triangle", midiHz(pitch + 12), g3, t, dur + 0.02);
+  }
+
+  function playRollStep(track, dest, roll, i, time) {
+    roll.forEach(function (note) {
+      if (Math.floor(note.start + 1e-6) !== i) return;
+      var dur = Math.max(0.05, (note.length || 1) * secondsPerStep());
+      trigRollNote(track, dest, time, note.pitch, dur, note.vel);
+    });
+  }
+
+  function previewPitch(track, pitch) {
+    if (!track) return;
+    ensureAudio();
+    ctx.resume();
+    var dest = trackNodes[track.id];
+    if (!dest) return;
+    trigRollNote(track, dest, ctx.currentTime, pitch, 0.18, 0.8);
+  }
+
+  function paintRoll() {
+    if (!rollGrid || !rollKeys) return;
+    var pair = activeRollClip();
+    if (rollTitle) {
+      rollTitle.textContent = pair ? pair.track.name + " · " + pair.clip.name : "Piano roll";
+    }
+    if (!pair) {
+      rollKeys.replaceChildren();
+      rollGrid.replaceChildren();
+      if (rollVel) rollVel.replaceChildren();
+      return;
+    }
+    if (pair.track.kind === "drums" || pair.track.kind === "perc") {
+      rollKeys.replaceChildren();
+      rollGrid.replaceChildren(el("div", "daw-roll-hint", "Drum clips wait for the drum rack. Pick a MIDI clip."));
+      if (rollVel) rollVel.replaceChildren();
+      return;
+    }
+    var clipObj = pair.clip;
+    var roll = ensureRoll(clipObj);
+    var cols = clipObj.length || STEPS;
+    var gridH = (PITCH_MAX + 1) * ROLL_H;
+    var gridW = cols * ROLL_W;
+    rollGrid.style.width = gridW + "px";
+    rollGrid.style.height = gridH + "px";
+    var bg = "repeating-linear-gradient(180deg,";
+    var rows = [];
+    for (var p = PITCH_MAX; p >= 0; p--) {
+      var topC = inScale(p) ? (isBlack(p) ? "#101814" : "#15221c") : (isBlack(p) ? "#080a09" : "#0c100e");
+      rows.push(topC + " 0 " + ROLL_H + "px");
+    }
+    /* row colors applied per key; grid uses vertical steps */
+    rollGrid.style.backgroundImage =
+      "repeating-linear-gradient(90deg, transparent, transparent " + (ROLL_W - 1) + "px, #1c2a24 " + (ROLL_W - 1) + "px, #1c2a24 " + ROLL_W + "px)," +
+      "repeating-linear-gradient(90deg, transparent, transparent " + (ROLL_W * 4 - 1) + "px, #2a3d34 " + (ROLL_W * 4 - 1) + "px, #2a3d34 " + (ROLL_W * 4) + "px)";
+    rollGrid.style.backgroundColor = "#0c100e";
+
+    rollKeys.replaceChildren();
+    for (var k = PITCH_MAX; k >= 0; k--) {
+      (function (pitch) {
+        var key = el("div", "daw-key" + (isBlack(pitch) ? " black" : "") + (inScale(pitch) ? " in-scale" : ""), pitchName(pitch));
+        key.style.height = ROLL_H + "px";
+        key.addEventListener("pointerdown", function (ev) {
+          ev.preventDefault();
+          previewPitch(pair.track, pitch);
+        });
+        rollKeys.appendChild(key);
+      })(k);
+    }
+
+    rollGrid.replaceChildren();
+    roll.forEach(function (note) {
+      var node = el("div", "daw-note" + (state.selectedNote === note.id ? " sel" : ""), pitchName(note.pitch));
+      node.style.left = note.start * ROLL_W + "px";
+      node.style.top = (PITCH_MAX - note.pitch) * ROLL_H + "px";
+      node.style.width = Math.max(10, note.length * ROLL_W - 2) + "px";
+      node.style.height = ROLL_H - 2 + "px";
+      var alpha = 0.35 + 0.65 * (note.vel == null ? 0.85 : note.vel);
+      node.style.background = clipObj.color || pair.track.color;
+      node.style.opacity = String(alpha);
+      node.dataset.id = note.id;
+      var handle = el("div", "daw-note-h");
+      node.appendChild(handle);
+      bindNoteDrag(node, handle, note, pair, cols);
+      rollGrid.appendChild(node);
+    });
+
+    rollGrid.onpointerdown = function (ev) {
+      if (ev.target !== rollGrid) return;
+      var rect = rollGrid.getBoundingClientRect();
+      var start = snapStep((ev.clientX - rect.left) / ROLL_W);
+      var pitch = PITCH_MAX - Math.floor((ev.clientY - rect.top) / ROLL_H);
+      if (start < 0 || start >= cols) return;
+      if (pitch < 0 || pitch > PITCH_MAX) return;
+      var note = { id: "n" + noteSeq++, pitch: pitch, start: start, length: state.rollSnap || 1, vel: 0.85 };
+      if (note.start + note.length > cols) note.length = Math.max(state.rollSnap, cols - note.start);
+      roll.push(note);
+      state.selectedNote = note.id;
+      previewPitch(pair.track, pitch);
+      paintRoll();
+    };
+
+    if (rollVel) {
+      rollVel.replaceChildren();
+      rollVel.style.width = gridW + "px";
+      roll.forEach(function (note) {
+        var bar = el("div", "daw-vel-n");
+        bar.style.left = note.start * ROLL_W + "px";
+        bar.style.width = Math.max(6, note.length * ROLL_W - 4) + "px";
+        bar.style.height = Math.round((note.vel == null ? 0.85 : note.vel) * 52) + "px";
+        bar.dataset.id = note.id;
+        bar.addEventListener("pointerdown", function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          state.selectedNote = note.id;
+          var rect = rollVel.getBoundingClientRect();
+          function move(e) {
+            var y = 1 - (e.clientY - rect.top) / rect.height;
+            note.vel = Math.max(0.05, Math.min(1, y));
+            if (rollEl._velInp) rollEl._velInp.value = String(note.vel);
+            paintRoll();
+          }
+          function up() {
+            window.removeEventListener("pointermove", move);
+            window.removeEventListener("pointerup", up);
+          }
+          window.addEventListener("pointermove", move);
+          window.addEventListener("pointerup", up);
+          move(ev);
+        });
+        rollVel.appendChild(bar);
+      });
+    }
+    if (rollEl._velInp) {
+      var sn = getSelectedNote();
+      if (sn) rollEl._velInp.value = String(sn.vel == null ? 0.85 : sn.vel);
+    }
+  }
+
+  function bindNoteDrag(node, handle, note, pair, cols) {
+    function grab(ev, mode) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      state.selectedNote = note.id;
+      if (rollEl._velInp) rollEl._velInp.value = String(note.vel == null ? 0.85 : note.vel);
+      var ox = ev.clientX;
+      var oy = ev.clientY;
+      var os = note.start;
+      var ol = note.length;
+      var op = note.pitch;
+      function move(e) {
+        var dx = (e.clientX - ox) / ROLL_W;
+        var dy = (e.clientY - oy) / ROLL_H;
+        if (mode === "resize") {
+          note.length = Math.max(state.rollSnap || 1, snapStep(ol + dx));
+          if (note.start + note.length > cols) note.length = cols - note.start;
+        } else {
+          note.start = Math.max(0, Math.min(cols - note.length, snapStep(os + dx)));
+          note.pitch = Math.max(0, Math.min(PITCH_MAX, Math.round(op - dy)));
+        }
+        paintRoll();
+      }
+      function up() {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      paintRoll();
+    }
+    node.addEventListener("pointerdown", function (ev) {
+      if (ev.target === handle) return;
+      grab(ev, "move");
+    });
+    handle.addEventListener("pointerdown", function (ev) {
+      grab(ev, "resize");
+    });
+  }
+
   function setView(v) {
     state.view = v;
-    if (root) root.classList.toggle("is-arrange", v === "arrange");
+    if (root) {
+      root.classList.toggle("is-arrange", v === "arrange");
+      root.classList.toggle("is-roll", v === "roll");
+    }
     root.querySelectorAll("[data-view]").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-view") === v);
     });
     if (v === "arrange") paintArrange();
+    if (v === "roll") paintRoll();
     paint();
   }
 
@@ -1074,6 +1401,7 @@
     var metroBtn = root && root.querySelector("[data-metro]");
     if (metroBtn) metroBtn.classList.toggle("on", state.metro);
     if (state.view === "arrange") paintArrange();
+    if (state.view === "roll") paintRoll();
     paintMixer();
   }
 
@@ -1113,6 +1441,7 @@
           btn.addEventListener("dblclick", function (ev) {
             ev.preventDefault();
             if (track.kind === "audio") loadAudioFile(track);
+            else if (track.clips[scene]) openRoll(track, track.clips[scene]);
           });
           gridEl.appendChild(btn);
         })(tr, sc);
@@ -1335,6 +1664,7 @@
     }
     top.appendChild(viewBtn("session", "Session"));
     top.appendChild(viewBtn("arrange", "Arrange"));
+    top.appendChild(viewBtn("roll", "Roll"));
 
     var play = el("button", "daw-btn", "Play");
     play.setAttribute("data-play", "1");
@@ -1491,6 +1821,11 @@
           btn.addEventListener("click", function () {
             queueClip(track, scene);
           });
+          btn.addEventListener("dblclick", function (ev) {
+            ev.preventDefault();
+            if (track.kind === "audio") loadAudioFile(track);
+            else if (track.clips[scene]) openRoll(track, track.clips[scene]);
+          });
           gridEl.appendChild(btn);
         })(tr, sc);
       }
@@ -1526,6 +1861,72 @@
     sessionPanel.appendChild(wrap);
     sessionPanel.appendChild(el("div", "daw-hint", "Launch clips on the grid. They wait for the next bar, then play."));
     root.appendChild(sessionPanel);
+
+    rollEl = el("div", "daw-roll");
+    rollEl.setAttribute("aria-label", "Piano roll");
+    var rtop = el("div", "daw-roll-top");
+    rollTitle = el("div", "daw-brand", "Piano roll");
+    rtop.appendChild(rollTitle);
+    var snapLab = el("label", "daw-ctl");
+    snapLab.appendChild(document.createTextNode("Snap"));
+    var snap = document.createElement("select");
+    [[1, "1/16"], [2, "1/8"], [4, "1/4"]].forEach(function (pair) {
+      var o = document.createElement("option");
+      o.value = String(pair[0]);
+      o.textContent = pair[1];
+      if (pair[0] === state.rollSnap) o.selected = true;
+      snap.appendChild(o);
+    });
+    snap.addEventListener("change", function () {
+      state.rollSnap = Number(snap.value) || 1;
+    });
+    snapLab.appendChild(snap);
+    rtop.appendChild(snapLab);
+    var scLab = el("label", "daw-ctl");
+    scLab.appendChild(document.createTextNode("Scale"));
+    var scSel = document.createElement("select");
+    [["minor", "A minor"], ["major", "A major"], ["penta", "A penta"], ["chrom", "Chromatic"]].forEach(function (pair) {
+      var o = document.createElement("option");
+      o.value = pair[0];
+      o.textContent = pair[1];
+      if (pair[0] === state.rollScale) o.selected = true;
+      scSel.appendChild(o);
+    });
+    scSel.addEventListener("change", function () {
+      state.rollScale = scSel.value;
+      paintRoll();
+    });
+    scLab.appendChild(scSel);
+    rtop.appendChild(scLab);
+    var velLab = el("label", "daw-ctl");
+    velLab.appendChild(document.createTextNode("Vel"));
+    var velInp = document.createElement("input");
+    velInp.type = "range";
+    velInp.min = "0.05";
+    velInp.max = "1";
+    velInp.step = "0.01";
+    velInp.value = "0.85";
+    velInp.setAttribute("aria-label", "Note velocity");
+    velInp.addEventListener("input", function () {
+      var n = getSelectedNote();
+      if (!n) return;
+      n.vel = Number(velInp.value);
+      paintRoll();
+    });
+    velLab.appendChild(velInp);
+    rtop.appendChild(velLab);
+    rollEl._velInp = velInp;
+    rollEl.appendChild(rtop);
+    var body = el("div", "daw-roll-body");
+    rollKeys = el("div", "daw-keys");
+    rollGrid = el("div", "daw-roll-grid");
+    body.appendChild(rollKeys);
+    body.appendChild(rollGrid);
+    rollEl.appendChild(body);
+    rollVel = el("div", "daw-vel");
+    rollEl.appendChild(rollVel);
+    rollEl.appendChild(el("div", "daw-roll-hint", "Double-click a clip to edit. Draw notes, drag to move, pull the right edge to resize. Scale rows glow."));
+    root.appendChild(rollEl);
 
     arrangePanel = el("div", "daw-arrange");
     arrangePanel.setAttribute("aria-label", "Arrangement view");
@@ -1623,6 +2024,10 @@
         return;
       }
       if (e.key !== "Backspace" && e.key !== "Delete") return;
+      if (state.view === "roll") {
+        deleteSelectedNote();
+        return;
+      }
       if (!state.selectedArrange) return;
       var tag = (e.target && e.target.tagName) || "";
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
