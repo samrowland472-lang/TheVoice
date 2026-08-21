@@ -46,6 +46,7 @@
         arm: false,
         sendA: 0,
         sendB: 0,
+        role: "midi",
         clips: new Array(SCENES).fill(null),
       };
     });
@@ -157,6 +158,11 @@
   var metroGain = null;
   var taps = [];
   var bpmInput = null;
+  var fxDelay = null;
+  var fxConv = null;
+  var extraReturns = [];
+  var trackSeq = 1;
+  var audioHold = {};
 
   function ensureAudio() {
     if (ctx) return;
@@ -180,6 +186,7 @@
     var delayFilt = ctx.createBiquadFilter();
     delayFilt.type = "lowpass";
     delayFilt.frequency.value = 2400;
+    fxDelay = delay;
     delay.connect(delayFilt);
     delayFilt.connect(delayFb);
     delayFb.connect(delay);
@@ -197,6 +204,7 @@
         d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impLen, 2.4);
       }
     }
+    fxConv = conv;
     conv.buffer = imp;
     returnBGain = ctx.createGain();
     returnBGain.gain.value = state.returnBVol;
@@ -204,13 +212,16 @@
     returnBGain.connect(master);
 
     state.tracks.forEach(function (tr) {
-      wireTrack(tr, delay, conv);
+      wireTrack(tr);
     });
     applyMix();
     startMeters();
   }
 
   function wireTrack(tr, delayNode, convNode) {
+    delayNode = delayNode || fxDelay;
+    convNode = convNode || fxConv;
+    if (trackNodes[tr.id]) return;
     var input = ctx.createGain();
     var vol = ctx.createGain();
     vol.gain.value = tr.volume;
@@ -486,9 +497,149 @@
     try {
       h.g.disconnect();
     } catch (e2) {}
+
     delete padHold[id];
     delete lastPadClip[id];
   }
+
+  function startAudioLoop(tr, clipObj) {
+    stopAudioLoop(tr.id);
+    if (!ctx || !clipObj || !clipObj.notes || !clipObj.notes.buffer) return;
+    var dest = trackNodes[tr.id];
+    if (!dest) return;
+    var src = ctx.createBufferSource();
+    src.buffer = clipObj.notes.buffer;
+    src.loop = true;
+    src.connect(dest);
+    src.start();
+    audioHold[tr.id] = src;
+  }
+
+  function stopAudioLoop(id) {
+    var s = audioHold[id];
+    if (!s) return;
+    try { s.stop(); } catch (e) {}
+    try { s.disconnect(); } catch (e2) {}
+    delete audioHold[id];
+  }
+
+  function makeToneBuffer(freq) {
+    ensureAudio();
+    var beat = 60 / state.bpm;
+    var len = Math.floor(ctx.sampleRate * beat * 4);
+    var buf = ctx.createBuffer(1, Math.max(ctx.sampleRate, len), ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) {
+      var tm = i / ctx.sampleRate;
+      var env = Math.exp(-tm * 2.2);
+      var bar = (i / (ctx.sampleRate * beat)) % 4;
+      var click = bar % 1 < 0.08 ? 1 : 0.35;
+      d[i] = Math.sin(2 * Math.PI * freq * tm) * env * click * 0.28;
+    }
+    return buf;
+  }
+
+  function blankTrack(kind, name) {
+    var id = kind + "-" + trackSeq++;
+    return {
+      id: id,
+      name: name,
+      kind: kind,
+      role: kind === "audio" ? "audio" : "midi",
+      color: COLORS[state.tracks.length % COLORS.length],
+      volume: 0.85,
+      pan: 0,
+      mute: false,
+      solo: false,
+      arm: false,
+      sendA: 0,
+      sendB: 0,
+      clips: new Array(SCENES).fill(null),
+    };
+  }
+
+  function addTrack(kind) {
+    ensureAudio();
+    ctx.resume();
+    var nMidi = state.tracks.filter(function (x) { return x.role !== "audio"; }).length + 1;
+    var nAud = state.tracks.filter(function (x) { return x.role === "audio"; }).length + 1;
+    var tr;
+    if (kind === "audio") {
+      tr = blankTrack("audio", "Audio " + nAud);
+      tr.clips[0] = clip("Tone", tr.color, { buffer: makeToneBuffer(110 + nAud * 37) });
+    } else {
+      tr = blankTrack("midi", "MIDI " + nMidi);
+      tr.kind = "midi";
+      tr.clips[0] = clip("Stab", tr.color, { chord: [0, 3, 7], hits: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0] });
+    }
+    state.tracks.push(tr);
+    wireTrack(tr);
+    applyMix();
+    rebuildTrackUi();
+  }
+
+  function addReturn() {
+    ensureAudio();
+    ctx.resume();
+    var n = extraReturns.length + 3;
+    var delay = ctx.createDelay(1);
+    delay.delayTime.value = 0.18 + extraReturns.length * 0.07;
+    var fb = ctx.createGain();
+    fb.gain.value = 0.28;
+    delay.connect(fb);
+    fb.connect(delay);
+    var g = ctx.createGain();
+    g.gain.value = 0.75;
+    delay.connect(g);
+    g.connect(master);
+    extraReturns.push({ id: "ret-" + n, name: "Return " + n, delay: delay, gain: g, volume: 0.75 });
+    rebuildTrackUi();
+  }
+
+  function removeTrack(id) {
+    if (state.tracks.length <= 1) return;
+    stopPad(id);
+    stopAudioLoop(id);
+    delete state.launched[id];
+    delete state.queued[id];
+    state.arrangeClips = state.arrangeClips.filter(function (c) { return c.trackId !== id; });
+    delete trackGraph[id];
+    delete trackNodes[id];
+    state.tracks = state.tracks.filter(function (x) { return x.id !== id; });
+    rebuildTrackUi();
+    applyMix();
+  }
+
+  function moveTrack(id, dir) {
+    var i = -1;
+    state.tracks.forEach(function (tr, idx) { if (tr.id === id) i = idx; });
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= state.tracks.length) return;
+    var tmp = state.tracks[i];
+    state.tracks[i] = state.tracks[j];
+    state.tracks[j] = tmp;
+    rebuildTrackUi();
+  }
+
+  function loadAudioFile(track) {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "audio/*,.wav,.mp3,.ogg,.m4a";
+    inp.addEventListener("change", function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      ensureAudio();
+      f.arrayBuffer().then(function (ab) {
+        return ctx.decodeAudioData(ab.slice(0));
+      }).then(function (buf) {
+        track.clips[0] = clip((f.name || "Sample").replace(/\.[^.]+$/, ""), track.color, { buffer: buf });
+        rebuildTrackUi();
+        paint();
+      }).catch(function () {});
+    });
+    inp.click();
+  }
+
 
   function playStepAt(track, clipObj, step, time) {
     if (!clipObj || !trackAudible(track)) return;
@@ -507,6 +658,9 @@
       if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i]);
     } else if (track.kind === "perc") {
       if (n.seq && n.seq[i]) trigPerc(dest, time, i % 4 === 2);
+    } else if (track.kind === "midi" || track.kind === "keys") {
+      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i]);
     }
   }
 
@@ -525,10 +679,13 @@
       if (next === "stop") {
         delete state.launched[id];
         stopPad(id);
+        stopAudioLoop(id);
       } else {
         state.launched[id] = next;
         if (tr.kind === "pad") startPad(tr, next);
         else stopPad(id);
+        if (tr.kind === "audio") startAudioLoop(tr, next);
+        else stopAudioLoop(id);
       }
       delete state.queued[id];
     });
@@ -599,6 +756,7 @@
         if (state.loopOn && state.step >= loopEndStep) {
           state.step = loopStartStep;
           Object.keys(padHold).forEach(stopPad);
+    Object.keys(audioHold).forEach(stopAudioLoop);
         }
         if (state.step >= BARS * STEPS_PER_BAR) {
           if (state.loopOn) state.step = loopStartStep;
@@ -642,6 +800,7 @@
     if (state.view === "arrange") {
       state.step = state.loopOn ? state.loopStart * STEPS_PER_BAR : 0;
       Object.keys(padHold).forEach(stopPad);
+    Object.keys(audioHold).forEach(stopAudioLoop);
     } else {
       state.step = 0;
     }
@@ -660,6 +819,7 @@
       state.queued = {};
     }
     Object.keys(padHold).forEach(stopPad);
+    Object.keys(audioHold).forEach(stopAudioLoop);
     state.step = 0;
     paint();
     updatePlayheadPx();
@@ -752,7 +912,7 @@
       "#daw-session .daw-mini{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}" +
       "#daw-session .daw-mini .daw-btn{min-width:28px;min-height:32px;padding:4px 6px;font-size:11px}" +
       "#daw-session .daw-mini .daw-btn.on.arm{background:var(--alert,#ff4d4d);border-color:var(--alert,#ff4d4d);color:#fff}" +
-      "#daw-session .daw-knob-lab{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint,#4c5f56)}" +
+      "#daw-session .daw-strip-tools{display:flex;gap:4px}#daw-session .daw-knob-lab{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint,#4c5f56)}" +
       "#daw-session .daw-arrange{display:none;position:relative}" +
       "#daw-session.is-arrange .daw-session-panel{display:none}" +
       "#daw-session.is-arrange .daw-arrange{display:block}" +
@@ -931,6 +1091,223 @@
     });
   }
 
+  function rebuildSessionGrid() {
+    if (!gridEl) return;
+    gridEl.replaceChildren();
+    gridEl.style.gridTemplateColumns = "88px repeat(" + SCENES + ", minmax(88px,1fr)) 64px";
+    gridEl.appendChild(el("div", "daw-head", "Track"));
+    for (var s = 0; s < SCENES; s++) gridEl.appendChild(el("div", "daw-head", "Scene " + (s + 1)));
+    gridEl.appendChild(el("div", "daw-head", "Go"));
+    state.tracks.forEach(function (tr, ti) {
+      var lab = el("div", "daw-track", tr.name);
+      lab.style.color = tr.color;
+      gridEl.appendChild(lab);
+      for (var sc = 0; sc < SCENES; sc++) {
+        (function (track, scene) {
+          var btn = el("button", "daw-cell");
+          btn.type = "button";
+          btn.dataset.tr = String(ti);
+          btn.dataset.sc = String(scene);
+          btn.setAttribute("aria-label", track.name + " scene " + (scene + 1));
+          btn.addEventListener("click", function () { queueClip(track, scene); });
+          btn.addEventListener("dblclick", function (ev) {
+            ev.preventDefault();
+            if (track.kind === "audio") loadAudioFile(track);
+          });
+          gridEl.appendChild(btn);
+        })(tr, sc);
+      }
+      var stopT = el("button", "daw-cell", "■");
+      stopT.type = "button";
+      stopT.setAttribute("aria-label", "Stop " + tr.name);
+      stopT.addEventListener("click", function () {
+        state.queued[tr.id] = "stop";
+        if (!state.playing) {
+          delete state.launched[tr.id];
+          stopPad(tr.id);
+          stopAudioLoop(tr.id);
+        }
+        paint();
+      });
+      gridEl.appendChild(stopT);
+    });
+    var sceneLab = el("div", "daw-track", "Scene");
+    gridEl.appendChild(sceneLab);
+    for (var sc2 = 0; sc2 < SCENES; sc2++) {
+      (function (scene) {
+        var b = el("button", "daw-scene", "▶");
+        b.type = "button";
+        b.setAttribute("aria-label", "Launch scene " + (scene + 1));
+        b.addEventListener("click", function () { launchScene(scene); });
+        gridEl.appendChild(b);
+      })(sc2);
+    }
+    gridEl.appendChild(el("div", "", ""));
+  }
+
+  function rebuildArrangeLanes() {
+    if (!arrangeLanes) return;
+    arrangeLanes.replaceChildren();
+    state.tracks.forEach(function (tr) {
+      var row = el("div", "daw-lane-row");
+      var lab = el("div", "daw-lane-lab", tr.name);
+      lab.style.color = tr.color;
+      var lane = el("div", "daw-lane");
+      lane.dataset.track = tr.id;
+      lane.addEventListener("click", function (ev) {
+        if (ev.target.classList.contains("daw-clip")) return;
+        var rect = lane.getBoundingClientRect();
+        var bar = Math.floor((ev.clientX - rect.left) / BAR_W);
+        dropOnLane(tr, Math.max(0, Math.min(BARS - 1, bar)));
+      });
+      row.appendChild(lab);
+      row.appendChild(lane);
+      arrangeLanes.appendChild(row);
+    });
+    paintArrange();
+  }
+
+  function rebuildMixer() {
+    if (!mixerEl) return;
+    mixerEl.replaceChildren();
+    mixerEl._pendingMeters = {};
+    function knob(label, min, max, step, value, onin) {
+      var wrap = el("label", "daw-ctl");
+      wrap.style.flexDirection = "column";
+      wrap.style.gap = "2px";
+      wrap.appendChild(el("span", "daw-knob-lab", label));
+      var inp = document.createElement("input");
+      inp.type = "range";
+      inp.className = "daw-knob";
+      inp.min = String(min);
+      inp.max = String(max);
+      inp.step = String(step);
+      inp.value = String(value);
+      inp.setAttribute("aria-label", label);
+      inp.addEventListener("input", function () {
+        onin(Number(inp.value));
+        applyMix();
+      });
+      wrap.appendChild(inp);
+      return wrap;
+    }
+    function fader(value, onin, aria) {
+      var inp = document.createElement("input");
+      inp.type = "range";
+      inp.className = "daw-fader";
+      inp.min = "0";
+      inp.max = "1.2";
+      inp.step = "0.01";
+      inp.value = String(value);
+      inp.setAttribute("aria-label", aria);
+      inp.addEventListener("input", function () {
+        onin(Number(inp.value));
+        applyMix();
+      });
+      return inp;
+    }
+    function meter() {
+      var m = el("div", "daw-meter");
+      var i = document.createElement("i");
+      i.setAttribute("aria-hidden", "true");
+      m.appendChild(i);
+      return { box: m, fill: i };
+    }
+    state.tracks.forEach(function (tr) {
+      var strip = el("div", "daw-strip");
+      strip.setAttribute("data-mix-id", tr.id);
+      var name = el("div", "daw-strip-name", tr.name);
+      name.style.color = tr.color;
+      strip.appendChild(name);
+      var tools = el("div", "daw-strip-tools");
+      var up = el("button", "daw-btn", "↑");
+      up.type = "button";
+      up.setAttribute("aria-label", "Move " + tr.name + " earlier");
+      up.addEventListener("click", function () { moveTrack(tr.id, -1); });
+      var down = el("button", "daw-btn", "↓");
+      down.type = "button";
+      down.setAttribute("aria-label", "Move " + tr.name + " later");
+      down.addEventListener("click", function () { moveTrack(tr.id, 1); });
+      var del = el("button", "daw-btn stop", "×");
+      del.type = "button";
+      del.setAttribute("aria-label", "Remove " + tr.name);
+      del.addEventListener("click", function () { removeTrack(tr.id); });
+      tools.appendChild(up);
+      tools.appendChild(down);
+      tools.appendChild(del);
+      strip.appendChild(tools);
+      var row = el("div", "daw-fader-row");
+      var met = meter();
+      row.appendChild(met.box);
+      row.appendChild(fader(tr.volume, function (v) { tr.volume = v; }, tr.name + " volume"));
+      strip.appendChild(row);
+      strip.appendChild(knob("Pan", -1, 1, 0.01, tr.pan, function (v) { tr.pan = v; }));
+      strip.appendChild(knob("Delay", 0, 1, 0.01, tr.sendA, function (v) { tr.sendA = v; }));
+      strip.appendChild(knob("Hall", 0, 1, 0.01, tr.sendB, function (v) { tr.sendB = v; }));
+      var mini = el("div", "daw-mini");
+      [["mute", "M"], ["solo", "S"], ["arm", "A"]].forEach(function (pair) {
+        var b = el("button", "daw-btn", pair[1]);
+        b.type = "button";
+        b.setAttribute("data-act", pair[0]);
+        b.setAttribute("aria-label", tr.name + " " + pair[0]);
+        b.addEventListener("click", function () {
+          ensureAudio();
+          tr[pair[0]] = !tr[pair[0]];
+          applyMix();
+        });
+        mini.appendChild(b);
+      });
+      if (tr.kind === "audio") {
+        var load = el("button", "daw-btn", "Load");
+        load.type = "button";
+        load.setAttribute("aria-label", "Load audio onto " + tr.name);
+        load.addEventListener("click", function () { loadAudioFile(tr); });
+        mini.appendChild(load);
+      }
+      strip.appendChild(mini);
+      mixerEl.appendChild(strip);
+      if (trackGraph[tr.id]) trackGraph[tr.id].meter = met.fill;
+      else mixerEl._pendingMeters[tr.id] = met.fill;
+    });
+    function retStrip(title, key, aria) {
+      var strip = el("div", "daw-strip ret");
+      strip.appendChild(el("div", "daw-strip-name", title));
+      var row = el("div", "daw-fader-row");
+      row.appendChild(fader(state[key], function (v) { state[key] = v; }, aria));
+      strip.appendChild(row);
+      mixerEl.appendChild(strip);
+    }
+    retStrip("Delay", "returnAVol", "Delay return");
+    retStrip("Hall", "returnBVol", "Hall return");
+    extraReturns.forEach(function (ret) {
+      var strip = el("div", "daw-strip ret");
+      strip.appendChild(el("div", "daw-strip-name", ret.name));
+      var row = el("div", "daw-fader-row");
+      row.appendChild(fader(ret.volume, function (v) {
+        ret.volume = v;
+        if (ret.gain && ctx) ret.gain.gain.setTargetAtTime(v, ctx.currentTime, 0.01);
+      }, ret.name + " volume"));
+      strip.appendChild(row);
+      mixerEl.appendChild(strip);
+    });
+    var masterStrip = el("div", "daw-strip master");
+    masterStrip.appendChild(el("div", "daw-strip-name", "Master"));
+    var mrow = el("div", "daw-fader-row");
+    var mm = meter();
+    mm.fill.setAttribute("data-master-meter", "1");
+    mrow.appendChild(mm.box);
+    mrow.appendChild(fader(state.masterVol, function (v) { state.masterVol = v; }, "Master volume"));
+    masterStrip.appendChild(mrow);
+    mixerEl.appendChild(masterStrip);
+  }
+
+  function rebuildTrackUi() {
+    rebuildSessionGrid();
+    rebuildArrangeLanes();
+    rebuildMixer();
+    paint();
+  }
+
   function build() {
     var music = document.getElementById("music-view");
     if (!music || document.getElementById("daw-session")) return;
@@ -1072,6 +1449,22 @@
     tog("loopOn", "Loop", "data-loop");
     tog("punch", "Punch", "data-punch");
     tog("follow", "Follow", "data-follow");
+
+    var addMidi = el("button", "daw-btn", "+ MIDI");
+    addMidi.type = "button";
+    addMidi.setAttribute("aria-label", "Add MIDI track");
+    addMidi.addEventListener("click", function () { addTrack("midi"); });
+    var addAud = el("button", "daw-btn", "+ Audio");
+    addAud.type = "button";
+    addAud.setAttribute("aria-label", "Add audio track");
+    addAud.addEventListener("click", function () { addTrack("audio"); });
+    var addRet = el("button", "daw-btn", "+ Return");
+    addRet.type = "button";
+    addRet.setAttribute("aria-label", "Add return track");
+    addRet.addEventListener("click", addReturn);
+    top.appendChild(addMidi);
+    top.appendChild(addAud);
+    top.appendChild(addRet);
 
     root.appendChild(top);
 
@@ -1217,108 +1610,7 @@
 
     mixerEl = el("div", "daw-mixer");
     mixerEl.setAttribute("aria-label", "Mixer");
-
-    function knob(label, min, max, step, value, onin) {
-      var wrap = el("label", "daw-ctl");
-      wrap.style.flexDirection = "column";
-      wrap.style.gap = "2px";
-      wrap.appendChild(el("span", "daw-knob-lab", label));
-      var inp = document.createElement("input");
-      inp.type = "range";
-      inp.className = "daw-knob";
-      inp.min = String(min);
-      inp.max = String(max);
-      inp.step = String(step);
-      inp.value = String(value);
-      inp.setAttribute("aria-label", label);
-      inp.addEventListener("input", function () {
-        onin(Number(inp.value));
-        applyMix();
-      });
-      wrap.appendChild(inp);
-      return wrap;
-    }
-
-    function fader(value, onin, aria) {
-      var inp = document.createElement("input");
-      inp.type = "range";
-      inp.className = "daw-fader";
-      inp.min = "0";
-      inp.max = "1.2";
-      inp.step = "0.01";
-      inp.value = String(value);
-      inp.setAttribute("aria-label", aria);
-      inp.addEventListener("input", function () {
-        onin(Number(inp.value));
-        applyMix();
-      });
-      return inp;
-    }
-
-    function meter() {
-      var m = el("div", "daw-meter");
-      var i = document.createElement("i");
-      i.setAttribute("aria-hidden", "true");
-      m.appendChild(i);
-      return { box: m, fill: i };
-    }
-
-    state.tracks.forEach(function (tr) {
-      var strip = el("div", "daw-strip");
-      strip.setAttribute("data-mix-id", tr.id);
-      var name = el("div", "daw-strip-name", tr.name);
-      name.style.color = tr.color;
-      strip.appendChild(name);
-      var row = el("div", "daw-fader-row");
-      var met = meter();
-      row.appendChild(met.box);
-      row.appendChild(fader(tr.volume, function (v) { tr.volume = v; }, tr.name + " volume"));
-      strip.appendChild(row);
-      strip.appendChild(knob("Pan", -1, 1, 0.01, tr.pan, function (v) { tr.pan = v; }));
-      strip.appendChild(knob("Delay", 0, 1, 0.01, tr.sendA, function (v) { tr.sendA = v; }));
-      strip.appendChild(knob("Hall", 0, 1, 0.01, tr.sendB, function (v) { tr.sendB = v; }));
-      var mini = el("div", "daw-mini");
-      [["mute", "M"], ["solo", "S"], ["arm", "A"]].forEach(function (pair) {
-        var b = el("button", "daw-btn", pair[1]);
-        b.type = "button";
-        b.setAttribute("data-act", pair[0]);
-        b.setAttribute("aria-label", tr.name + " " + pair[0]);
-        b.addEventListener("click", function () {
-          ensureAudio();
-          tr[pair[0]] = !tr[pair[0]];
-          applyMix();
-        });
-        mini.appendChild(b);
-      });
-      strip.appendChild(mini);
-      mixerEl.appendChild(strip);
-      if (trackGraph[tr.id]) trackGraph[tr.id].meter = met.fill;
-      else {
-        if (!mixerEl._pendingMeters) mixerEl._pendingMeters = {};
-        mixerEl._pendingMeters[tr.id] = met.fill;
-      }
-    });
-
-    function retStrip(title, key, aria) {
-      var strip = el("div", "daw-strip ret");
-      strip.appendChild(el("div", "daw-strip-name", title));
-      var row = el("div", "daw-fader-row");
-      row.appendChild(fader(state[key], function (v) { state[key] = v; }, aria));
-      strip.appendChild(row);
-      mixerEl.appendChild(strip);
-    }
-    retStrip("Delay", "returnAVol", "Delay return");
-    retStrip("Hall", "returnBVol", "Hall return");
-
-    var masterStrip = el("div", "daw-strip master");
-    masterStrip.appendChild(el("div", "daw-strip-name", "Master"));
-    var mrow = el("div", "daw-fader-row");
-    var mm = meter();
-    mm.fill.setAttribute("data-master-meter", "1");
-    mrow.appendChild(mm.box);
-    mrow.appendChild(fader(state.masterVol, function (v) { state.masterVol = v; }, "Master volume"));
-    masterStrip.appendChild(mrow);
-    mixerEl.appendChild(masterStrip);
+    rebuildMixer();
     root.appendChild(mixerEl);
 
     document.addEventListener("keydown", function (e) {
