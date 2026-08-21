@@ -1070,6 +1070,208 @@
   }
 
 
+  var warpHold = {};
+  var warpEl = null;
+  var warpCanvas = null;
+  var warpTitle = null;
+  var markerSeq = 1;
+
+  function clipBeats(clipObj) {
+    return Math.max(0.25, (clipObj.length || STEPS) / 4);
+  }
+
+  function ensureMarkers(clipObj) {
+    if (!clipObj.notes) clipObj.notes = {};
+    var n = clipObj.notes;
+    if (n.gain == null) n.gain = 1;
+    if (!n.warpMode) n.warpMode = "beats";
+    if (n.warpOn == null) n.warpOn = true;
+    var dur = n.buffer ? n.buffer.duration : 1;
+    var beats = clipBeats(clipObj);
+    if (!n.markers || n.markers.length < 2) {
+      n.markers = [
+        { id: "w0", beat: 0, time: 0 },
+        { id: "w1", beat: beats, time: dur },
+      ];
+    } else {
+      n.markers[n.markers.length - 1].beat = beats;
+    }
+    n.markers.sort(function (a, b) { return a.beat - b.beat; });
+    return n.markers;
+  }
+
+  function stopWarpVoices(id) {
+    var list = warpHold[id] || [];
+    list.forEach(function (s) {
+      try { s.stop(); } catch (e) {}
+      try { s.disconnect(); } catch (e2) {}
+    });
+    warpHold[id] = [];
+  }
+
+  function holdVoice(id, node) {
+    if (!warpHold[id]) warpHold[id] = [];
+    warpHold[id].push(node);
+  }
+
+  function playWarpSeg(dest, buf, srcStart, srcDur, destDur, when, gain, mode, trackId) {
+    if (!ctx || !buf || destDur <= 0.01) return;
+    srcStart = Math.max(0, srcStart);
+    srcDur = Math.max(0.01, srcDur);
+    gain = Math.max(0.02, Math.min(1.5, gain == null ? 1 : gain));
+    mode = mode || "beats";
+    if (mode === "re-pitch") {
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = srcDur / destDur;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(gain, when);
+      src.connect(g);
+      g.connect(dest);
+      src.start(when, srcStart, srcDur);
+      try { src.stop(when + destDur + 0.02); } catch (e) {}
+      holdVoice(trackId, src);
+      holdVoice(trackId, g);
+      return;
+    }
+    if (mode === "beats") {
+      var src2 = ctx.createBufferSource();
+      src2.buffer = buf;
+      var g2 = ctx.createGain();
+      g2.gain.setValueAtTime(gain, when);
+      g2.gain.setValueAtTime(gain, when + Math.min(srcDur, destDur) * 0.85);
+      g2.gain.exponentialRampToValueAtTime(0.0001, when + destDur);
+      src2.connect(g2);
+      g2.connect(dest);
+      src2.start(when, srcStart, Math.min(srcDur, destDur));
+      try { src2.stop(when + destDur + 0.02); } catch (e3) {}
+      holdVoice(trackId, src2);
+      holdVoice(trackId, g2);
+      return;
+    }
+    var grain = mode === "texture" ? 0.18 : 0.08;
+    var hop = grain * (mode === "texture" ? 0.35 : 0.45);
+    for (var t = 0; t < destDur; t += hop) {
+      var srcPos = srcStart + (t / destDur) * srcDur;
+      if (srcPos >= buf.duration) break;
+      var gs = ctx.createBufferSource();
+      gs.buffer = buf;
+      gs.playbackRate.value = 1;
+      var gg = ctx.createGain();
+      var gt = when + t;
+      var gd = Math.min(grain, destDur - t);
+      gg.gain.setValueAtTime(0.0001, gt);
+      gg.gain.linearRampToValueAtTime(gain * 0.9, gt + gd * 0.25);
+      gg.gain.linearRampToValueAtTime(0.0001, gt + gd);
+      gs.connect(gg);
+      gg.connect(dest);
+      gs.start(gt, Math.max(0, srcPos), gd);
+      holdVoice(trackId, gs);
+      holdVoice(trackId, gg);
+    }
+  }
+
+  function playWarpedClip(track, clipObj, time) {
+    if (!clipObj || !clipObj.notes || !clipObj.notes.buffer) return;
+    var dest = trackNodes[track.id];
+    if (!dest) return;
+    stopWarpVoices(track.id);
+    var n = clipObj.notes;
+    var gain = n.gain == null ? 1 : n.gain;
+    if (!n.warpOn) {
+      playBufferShot(dest, n.buffer, time, gain);
+      return;
+    }
+    var markers = ensureMarkers(clipObj);
+    var beatSec = 60 / state.bpm;
+    for (var i = 0; i < markers.length - 1; i++) {
+      var a = markers[i], b = markers[i + 1];
+      var destDur = Math.max(0.02, (b.beat - a.beat) * beatSec);
+      var srcDur = Math.max(0.01, b.time - a.time);
+      playWarpSeg(dest, n.buffer, a.time, srcDur, destDur, time + a.beat * beatSec, gain, n.warpMode, track.id);
+    }
+  }
+
+  function activeWarpClip() {
+    var sel = state.selectedSession;
+    if (sel && sel.clip && sel.clip.notes && sel.clip.notes.buffer) return sel;
+    for (var i = 0; i < state.tracks.length; i++) {
+      var tr = state.tracks[i];
+      for (var s = 0; s < tr.clips.length; s++) {
+        if (tr.clips[s] && tr.clips[s].notes && tr.clips[s].notes.buffer) {
+          return { track: tr, clip: tr.clips[s] };
+        }
+      }
+    }
+    return null;
+  }
+
+  function openWarp(track, clipObj) {
+    if (!clipObj || !clipObj.notes || !clipObj.notes.buffer) return;
+    state.selectedSession = { track: track, clip: clipObj };
+    ensureMarkers(clipObj);
+    setView("warp");
+  }
+
+  function paintWarp() {
+    if (!warpEl || !warpCanvas) return;
+    var pair = activeWarpClip();
+    if (warpTitle) warpTitle.textContent = pair ? pair.track.name + " · " + pair.clip.name : "Warp";
+    var ctx2 = warpCanvas.getContext("2d");
+    var w = warpCanvas.width, h = warpCanvas.height;
+    ctx2.fillStyle = "#0a0d0c";
+    ctx2.fillRect(0, 0, w, h);
+    if (!pair) return;
+    var n = pair.clip.notes;
+    var buf = n.buffer;
+    var markers = ensureMarkers(pair.clip);
+    var data = buf.getChannelData(0);
+    var beats = clipBeats(pair.clip);
+    ctx2.strokeStyle = "#3fc6ff";
+    ctx2.beginPath();
+    var step = Math.max(1, Math.floor(data.length / w));
+    for (var x = 0; x < w; x++) {
+      var idx = Math.min(data.length - 1, x * step);
+      var amp = Math.abs(data[idx]);
+      var y = h / 2 - amp * (h * 0.42);
+      if (x === 0) ctx2.moveTo(x, y);
+      else ctx2.lineTo(x, y);
+    }
+    ctx2.stroke();
+    markers.forEach(function (m, i) {
+      var mx = (m.beat / beats) * w;
+      ctx2.fillStyle = i === 0 || i === markers.length - 1 ? "#ffb238" : "#7dffb3";
+      ctx2.fillRect(mx - 1, 0, 2, h);
+      ctx2.beginPath();
+      ctx2.moveTo(mx, 0);
+      ctx2.lineTo(mx + 6, 10);
+      ctx2.lineTo(mx - 6, 10);
+      ctx2.closePath();
+      ctx2.fill();
+    });
+    var tools = warpEl.querySelector("[data-warp-tools]");
+    if (tools) {
+      var g = tools.querySelector("[data-cgain]");
+      var mode = tools.querySelector("[data-wmode]");
+      var on = tools.querySelector("[data-warpon]");
+      if (g) g.value = String(n.gain == null ? 1 : n.gain);
+      if (mode) mode.value = n.warpMode || "beats";
+      if (on) on.classList.toggle("on", !!n.warpOn);
+    }
+  }
+
+  function timeAtBeat(markers, beat) {
+    for (var i = 0; i < markers.length - 1; i++) {
+      var a = markers[i], b = markers[i + 1];
+      if (beat >= a.beat && beat <= b.beat) {
+        var t = (beat - a.beat) / (b.beat - a.beat || 1);
+        return a.time + t * (b.time - a.time);
+      }
+    }
+    return markers[markers.length - 1].time;
+  }
+
+
   function playStepAt(track, clipObj, step, time) {
     if (!clipObj || !trackAudible(track)) return;
     var dest = trackNodes[track.id];
@@ -1080,7 +1282,7 @@
       return;
     }
     if (n.buffer) {
-      if (n.buffer.duration <= 1.2 && i === 0) playBufferShot(dest, n.buffer, time, n.gain == null ? 1 : n.gain);
+      if (i === 0) playWarpedClip(track, clipObj, time);
       return;
     }
     if (n.roll && n.roll.length) {
@@ -1121,13 +1323,13 @@
         delete state.launched[id];
         stopPad(id);
         stopAudioLoop(id);
+        stopWarpVoices(id);
       } else {
         state.launched[id] = next;
         if (tr.kind === "pad" && !(next.notes && next.notes.roll && next.notes.roll.length)) startPad(tr, next);
         else stopPad(id);
-        var buf = next.notes && next.notes.buffer;
-        if (buf && buf.duration > 1.2) startAudioLoop(tr, next);
-        else stopAudioLoop(id);
+        stopAudioLoop(id);
+        stopWarpVoices(id);
       }
       delete state.queued[id];
     });
@@ -1199,6 +1401,7 @@
           state.step = loopStartStep;
           Object.keys(padHold).forEach(stopPad);
     Object.keys(audioHold).forEach(stopAudioLoop);
+    Object.keys(warpHold).forEach(stopWarpVoices);
         }
         if (state.step >= BARS * STEPS_PER_BAR) {
           if (state.loopOn) state.step = loopStartStep;
@@ -1243,6 +1446,7 @@
       state.step = state.loopOn ? state.loopStart * STEPS_PER_BAR : 0;
       Object.keys(padHold).forEach(stopPad);
     Object.keys(audioHold).forEach(stopAudioLoop);
+    Object.keys(warpHold).forEach(stopWarpVoices);
     } else {
       state.step = 0;
     }
@@ -1262,6 +1466,7 @@
     }
     Object.keys(padHold).forEach(stopPad);
     Object.keys(audioHold).forEach(stopAudioLoop);
+    Object.keys(warpHold).forEach(stopWarpVoices);
     state.step = 0;
     paint();
     updatePlayheadPx();
@@ -1361,7 +1566,7 @@
       "#daw-session.is-roll .daw-session-panel,#daw-session.is-roll .daw-arrange{display:none}" +
       "#daw-session.is-rack .daw-session-panel,#daw-session.is-rack .daw-arrange,#daw-session.is-rack .daw-roll{display:none}" +
       "#daw-session .daw-rack{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
-      "#daw-session.is-rack .daw-rack{display:flex}#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
+      "#daw-session.is-rack .daw-rack{display:flex}" +"#daw-session.is-warp .daw-session-panel,#daw-session.is-warp .daw-arrange,#daw-session.is-warp .daw-roll,#daw-session.is-warp .daw-rack{display:none}" +"#daw-session .daw-warp{display:none;flex-direction:column;border-top:1px solid var(--border,#263029);grid-column:2}" +"#daw-session.is-warp .daw-warp{display:flex}" +"#daw-session .daw-warp-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +"#daw-session .daw-wave{width:100%;height:140px;background:#0a0d0c;display:block;cursor:crosshair}" +"#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-rack-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
       "#daw-session .daw-pads{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:8px;padding:12px;max-width:640px}" +
       "#daw-session .daw-pad{min-height:72px;border-radius:10px;border:1px solid var(--border,#263029);background:var(--surface-alt,#1a201c);color:var(--phosphor,#3fc6ff);font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}" +
@@ -2195,6 +2400,7 @@
       root.classList.toggle("is-roll", v === "roll");
       root.classList.toggle("is-rack", v === "rack");
       root.classList.toggle("is-dev", v === "dev");
+      root.classList.toggle("is-warp", v === "warp");
     }
     root.querySelectorAll("[data-view]").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-view") === v);
@@ -2203,6 +2409,7 @@
     if (v === "roll") paintRoll();
     if (v === "rack") paintRack();
     if (v === "dev") paintDevices();
+    if (v === "warp") paintWarp();
     paint();
   }
 
@@ -2243,6 +2450,7 @@
     if (state.view === "rack") paintRackCursor();
     paintMixer();
     if (devicesEl) paintDeviceSel();
+    if (state.view === "warp") paintWarp();
   }
 
   function paintMixer() {
@@ -2281,7 +2489,8 @@
           btn.addEventListener("click", function () { queueClip(track, scene); });
           btn.addEventListener("dblclick", function (ev) {
             ev.preventDefault();
-            if (track.kind === "audio") loadAudioFile(track);
+            if (track.clips[scene] && track.clips[scene].notes && track.clips[scene].notes.buffer) openWarp(track, track.clips[scene]);
+            else if (track.kind === "audio") loadAudioFile(track);
             else if (track.clips[scene]) openRoll(track, track.clips[scene]);
           });
           enableDrop(btn, function () { return { track: track, scene: scene }; });
@@ -2516,6 +2725,7 @@
     top.appendChild(viewBtn("roll", "Roll"));
     top.appendChild(viewBtn("rack", "Rack"));
     top.appendChild(viewBtn("dev", "Dev"));
+    top.appendChild(viewBtn("warp", "Warp"));
 
     var play = el("button", "daw-btn", "Play");
     play.setAttribute("data-play", "1");
@@ -2654,6 +2864,112 @@
     root.appendChild(browserEl);
     paintBrowser();
 
+    warpEl = el("div", "daw-warp");
+    warpEl.setAttribute("aria-label", "Warp");
+    var wtop = el("div", "daw-warp-top");
+    warpTitle = el("div", "daw-brand", "Warp");
+    wtop.appendChild(warpTitle);
+    var tools = el("div", "daw-warp-top");
+    tools.setAttribute("data-warp-tools", "1");
+    var onBtn = el("button", "daw-btn on", "Warp");
+    onBtn.type = "button";
+    onBtn.setAttribute("data-warpon", "1");
+    onBtn.setAttribute("aria-label", "Toggle warp");
+    onBtn.addEventListener("click", function () {
+      var pair = activeWarpClip();
+      if (!pair) return;
+      pair.clip.notes.warpOn = !pair.clip.notes.warpOn;
+      paintWarp();
+    });
+    tools.appendChild(onBtn);
+    var modeLab = el("label", "daw-ctl");
+    modeLab.appendChild(document.createTextNode("Mode"));
+    var mode = document.createElement("select");
+    mode.setAttribute("data-wmode", "1");
+    [["beats", "Beats"], ["tones", "Tones"], ["texture", "Texture"], ["re-pitch", "Re-Pitch"]].forEach(function (row) {
+      var o = document.createElement("option");
+      o.value = row[0];
+      o.textContent = row[1];
+      mode.appendChild(o);
+    });
+    mode.addEventListener("change", function () {
+      var pair = activeWarpClip();
+      if (!pair) return;
+      pair.clip.notes.warpMode = mode.value;
+    });
+    modeLab.appendChild(mode);
+    tools.appendChild(modeLab);
+    var gainLab = el("label", "daw-ctl");
+    gainLab.appendChild(document.createTextNode("Gain"));
+    var gain = document.createElement("input");
+    gain.type = "range";
+    gain.min = "0";
+    gain.max = "1.4";
+    gain.step = "0.01";
+    gain.setAttribute("data-cgain", "1");
+    gain.setAttribute("aria-label", "Clip gain");
+    gain.addEventListener("input", function () {
+      var pair = activeWarpClip();
+      if (!pair) return;
+      pair.clip.notes.gain = Number(gain.value);
+    });
+    gainLab.appendChild(gain);
+    tools.appendChild(gainLab);
+    wtop.appendChild(tools);
+    warpEl.appendChild(wtop);
+    warpCanvas = document.createElement("canvas");
+    warpCanvas.className = "daw-wave";
+    warpCanvas.width = 720;
+    warpCanvas.height = 140;
+    warpCanvas.setAttribute("aria-label", "Warp waveform");
+    warpCanvas.addEventListener("pointerdown", function (ev) {
+      var pair = activeWarpClip();
+      if (!pair) return;
+      var rect = warpCanvas.getBoundingClientRect();
+      var x = ev.clientX - rect.left;
+      var beats = clipBeats(pair.clip);
+      var beat = Math.max(0, Math.min(beats, (x / rect.width) * beats));
+      var markers = ensureMarkers(pair.clip);
+      var hit = null;
+      markers.forEach(function (m) {
+        var mx = (m.beat / beats) * rect.width;
+        if (Math.abs(mx - x) < 8) hit = m;
+      });
+      if (hit && (ev.altKey || ev.shiftKey) && hit !== markers[0] && hit !== markers[markers.length - 1]) {
+        pair.clip.notes.markers = markers.filter(function (m) { return m.id !== hit.id; });
+        paintWarp();
+        return;
+      }
+      if (hit) {
+        function move(e) {
+          var r = warpCanvas.getBoundingClientRect();
+          var nx = e.clientX - r.left;
+          var nb = Math.max(0.05, Math.min(beats - 0.05, (nx / r.width) * beats));
+          if (ev.altKey) {
+            var dur = pair.clip.notes.buffer.duration;
+            hit.time = Math.max(0, Math.min(dur, (nx / r.width) * dur));
+          } else {
+            hit.beat = nb;
+          }
+          markers.sort(function (a, b) { return a.beat - b.beat; });
+          paintWarp();
+        }
+        function up() {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+        }
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+        return;
+      }
+      markers.push({ id: "w" + markerSeq++, beat: beat, time: timeAtBeat(markers, beat) });
+      markers.sort(function (a, b) { return a.beat - b.beat; });
+      paintWarp();
+    });
+    warpEl.appendChild(warpCanvas);
+    warpEl.appendChild(el("div", "daw-roll-hint", "Warp locks the sample to tempo. Beats keeps pitch and gates slices. Re-Pitch stretches and changes pitch. Tones/Texture grain-stretch. Drag a marker to move it on the grid, Alt-drag to slide the sample time, Alt-click to delete. Gain is clip volume."));
+    root.appendChild(warpEl);
+
     sessionPanel = el("div", "daw-session-panel");
     var wrap = el("div", "daw-grid-wrap");
     gridEl = el("div", "daw-grid");
@@ -2679,7 +2995,8 @@
           });
           btn.addEventListener("dblclick", function (ev) {
             ev.preventDefault();
-            if (track.kind === "audio") loadAudioFile(track);
+            if (track.clips[scene] && track.clips[scene].notes && track.clips[scene].notes.buffer) openWarp(track, track.clips[scene]);
+            else if (track.kind === "audio") loadAudioFile(track);
             else if (track.clips[scene]) openRoll(track, track.clips[scene]);
           });
           enableDrop(btn, function () { return { track: track, scene: scene }; });
