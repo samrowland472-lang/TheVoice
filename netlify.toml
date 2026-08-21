@@ -5,6 +5,15 @@
 [build]
   publish = "."
 
+[functions]
+  directory = "netlify/functions"
+
+# Flick chat proxy — must sit above the SPA fallback.
+[[redirects]]
+  from = "/api/flick-chat"
+  to = "/.netlify/functions/flick-chat"
+  status = 200
+
 # Single-page app: unknown paths fall through to index.html so deep links
 # and OAuth redirects resolve instead of 404ing.
 [[redirects]]
