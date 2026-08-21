@@ -142,8 +142,10 @@
     rollSnap: 1,
     rollScale: "minor",
     selectedNote: null,
+    selectedPad: null,
   };
   state.arrangeClips = seedArrange(state.tracks);
+  attachDefaultRacks(state.tracks);
 
   var ctx = null;
   var master = null;
@@ -159,6 +161,11 @@
   var rollVel = null;
   var rollTitle = null;
   var noteSeq = 1;
+  var rackEl = null;
+  var rackPadsEl = null;
+  var rackStepsEl = null;
+  var rackTitle = null;
+  var padVoices = {};
   var meterRaf = 0;
   var timer = 0;
   var nextTime = 0;
@@ -475,6 +482,21 @@
     var g = envGain(dest, t, kind ? 0.2 : 0.12, 0.001, 0.07);
     noiseBurst(g, t, 0.08, kind ? 2400 : 5000);
   }
+  function trigTom(dest, t) {
+    var g = envGain(dest, t, 0.5, 0.004, 0.22);
+    var o = osc("sine", 180, g, t, 0.26);
+    o.frequency.exponentialRampToValueAtTime(88, t + 0.14);
+  }
+  function trigClap(dest, t) {
+    [0, 0.014, 0.028].forEach(function (off) {
+      noiseBurst(envGain(dest, t + off, 0.38, 0.001, 0.09), t + off, 0.1, 1600);
+    });
+  }
+  function trigRim(dest, t) {
+    var g = envGain(dest, t, 0.32, 0.001, 0.05);
+    osc("square", 400, g, t, 0.045);
+    noiseBurst(envGain(dest, t, 0.18, 0.001, 0.04), t, 0.05, 2600);
+  }
 
   function startPad(tr, clipObj) {
     stopPad(tr.id);
@@ -655,6 +677,10 @@
     var dest = trackNodes[track.id];
     var n = clipObj.notes || {};
     var i = step % (clipObj.length || STEPS);
+    if ((track.kind === "drums" || track.kind === "perc") && track.rack) {
+      playDrumRack(track, clipObj, i, time);
+      return;
+    }
     if (n.roll && n.roll.length) {
       playRollStep(track, dest, n.roll, i, time);
       return;
@@ -930,6 +956,22 @@
       "#daw-session.is-arrange .daw-session-panel{display:none}" +
       "#daw-session.is-arrange .daw-arrange{display:block}" +
       "#daw-session.is-roll .daw-session-panel,#daw-session.is-roll .daw-arrange{display:none}" +
+      "#daw-session.is-rack .daw-session-panel,#daw-session.is-rack .daw-arrange,#daw-session.is-rack .daw-roll{display:none}" +
+      "#daw-session .daw-rack{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
+      "#daw-session.is-rack .daw-rack{display:flex}" +
+      "#daw-session .daw-rack-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
+      "#daw-session .daw-pads{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:8px;padding:12px;max-width:640px}" +
+      "#daw-session .daw-pad{min-height:72px;border-radius:10px;border:1px solid var(--border,#263029);background:var(--surface-alt,#1a201c);color:var(--phosphor,#3fc6ff);font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}" +
+      "#daw-session .daw-pad.on{outline:2px solid var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-pad.hit{background:var(--phosphor,#3fc6ff);color:#06170f}" +
+      "#daw-session .daw-pad.has-sample{box-shadow:inset 0 -3px 0 var(--amber,#ffb238)}" +
+      "#daw-session .daw-steps{overflow:auto;padding:8px 12px 16px}" +
+      "#daw-session .daw-step-row{display:grid;grid-template-columns:72px repeat(16,minmax(22px,1fr));gap:4px;align-items:center;margin-bottom:4px}" +
+      "#daw-session .daw-step-lab{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim,#7d9689)}" +
+      "#daw-session .daw-step{min-height:28px;border-radius:4px;border:1px solid var(--border,#263029);background:#0a0d0c;cursor:pointer}" +
+      "#daw-session .daw-step.on{background:var(--phosphor,#3fc6ff);border-color:var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-step.now{box-shadow:inset 0 0 0 2px var(--alert,#ff4d4d)}" +
+      "#daw-session .daw-step.beat{background:#121a16}" +
       "#daw-session .daw-roll{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
       "#daw-session.is-roll .daw-roll{display:flex}" +
       "#daw-session .daw-roll-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
@@ -974,6 +1016,7 @@
     var beat = (Math.floor(state.step / spBeat) % state.timeNum) + 1;
     var six = (state.step % spBeat) + 1;
     posEl.textContent = bar + "." + beat + "." + six;
+    paintRackCursor();
   }
 
   function updatePlayheadPx() {
@@ -1133,8 +1176,288 @@
     return null;
   }
 
+  function defaultRack(kind) {
+    function pad(id, name, synth, choke, extra) {
+      var p = { id: id, name: name, synth: synth, choke: choke || 0, gain: 0.9, decay: 0.4, buffer: null, open: false };
+      if (extra) Object.keys(extra).forEach(function (k) { p[k] = extra[k]; });
+      return p;
+    }
+    if (kind === "perc") {
+      return {
+        pads: [
+          pad("sh", "Shake", "perc", 0, { gain: 0.7 }),
+          pad("rm", "Rim", "rim", 0),
+          pad("cl", "Clap", "clap", 0),
+          pad("tm", "Tom", "tom", 2),
+          pad("ch", "CH", "hat", 1, { open: false, gain: 0.65 }),
+          pad("oh", "OH", "hat", 1, { open: true, gain: 0.75 }),
+          pad("k2", "Kick", "kick", 0),
+          pad("s2", "Snare", "snare", 0),
+        ],
+      };
+    }
+    return {
+      pads: [
+        pad("k", "Kick", "kick", 0, { gain: 1 }),
+        pad("s", "Snare", "snare", 0),
+        pad("h", "CH", "hat", 1, { open: false, gain: 0.7 }),
+        pad("oh", "OH", "hat", 1, { open: true, gain: 0.8, decay: 0.35 }),
+        pad("t", "Tom", "tom", 2),
+        pad("c", "Clap", "clap", 0),
+        pad("p", "Perc", "perc", 0, { gain: 0.7 }),
+        pad("r", "Rim", "rim", 0),
+      ],
+    };
+  }
+
+  function attachDefaultRacks(tracks) {
+    tracks.forEach(function (tr) {
+      if (tr.kind !== "drums" && tr.kind !== "perc") return;
+      tr.rack = defaultRack(tr.kind);
+      tr.clips.forEach(function (c) {
+        if (c) ensureDrumSteps(c, tr);
+      });
+    });
+  }
+
+  function ensureRack(track) {
+    if (!track.rack) track.rack = defaultRack(track.kind === "perc" ? "perc" : "drums");
+    return track.rack;
+  }
+
+  function ensureDrumSteps(clipObj, track) {
+    if (!clipObj.notes) clipObj.notes = {};
+    if (clipObj.notes.steps) return clipObj.notes.steps;
+    var steps = {};
+    ensureRack(track).pads.forEach(function (p) {
+      steps[p.id] = emptyGrid();
+    });
+    var n = clipObj.notes;
+    if (n.k && steps.k) steps.k = n.k.slice();
+    if (n.s && steps.s) steps.s = n.s.slice();
+    if (n.h && steps.h) {
+      steps.h = n.h.map(function (v, i) { return i % 8 === 7 ? 0 : v; });
+      if (steps.oh) steps.oh = n.h.map(function (v, i) { return i % 8 === 7 && v ? 1 : 0; });
+    }
+    if (n.seq && track.kind === "perc") {
+      var pid = track.rack.pads[0].id;
+      steps[pid] = n.seq.map(function (v) { return v ? 1 : 0; });
+      while (steps[pid].length < STEPS) steps[pid].push(0);
+    }
+    clipObj.notes.steps = steps;
+    return steps;
+  }
+
+  function stopPadVoice(key, time) {
+    var g = padVoices[key];
+    if (!g || !ctx) return;
+    var t0 = time == null ? ctx.currentTime : time;
+    try {
+      g.gain.cancelScheduledValues(t0);
+      g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || 0.0001), t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.018);
+    } catch (e) {}
+  }
+
+  function synthInto(pad, dest, time) {
+    var s = pad.synth;
+    if (s === "kick") trigKick(dest, time);
+    else if (s === "snare") trigSnare(dest, time);
+    else if (s === "hat") trigHat(dest, time, !!pad.open);
+    else if (s === "tom") trigTom(dest, time);
+    else if (s === "clap") trigClap(dest, time);
+    else if (s === "rim") trigRim(dest, time);
+    else trigPerc(dest, time, false);
+  }
+
+  function trigRackPad(track, pad, time, vel) {
+    if (!trackAudible(track)) return;
+    ensureAudio();
+    var dest = trackNodes[track.id];
+    if (!dest) return;
+    var t0 = time == null ? ctx.currentTime : time;
+    var prefix = track.id + ":";
+    if (pad.choke) {
+      track.rack.pads.forEach(function (p) {
+        if (p.choke === pad.choke) stopPadVoice(prefix + p.id, t0);
+      });
+    } else {
+      stopPadVoice(prefix + pad.id, t0);
+    }
+    var g = ctx.createGain();
+    var peak = (pad.gain == null ? 0.9 : pad.gain) * (vel == null ? 1 : vel);
+    g.gain.setValueAtTime(Math.max(0.0001, peak), t0);
+    g.connect(dest);
+    padVoices[prefix + pad.id] = g;
+    if (pad.buffer) {
+      var src = ctx.createBufferSource();
+      src.buffer = pad.buffer;
+      src.connect(g);
+      src.start(t0);
+      var d = pad.decay == null ? 0.5 : pad.decay;
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + Math.max(0.05, d));
+    } else {
+      synthInto(pad, g, t0);
+    }
+    flashPad(pad.id);
+  }
+
+  function flashPad(id) {
+    if (!rackPadsEl) return;
+    var b = rackPadsEl.querySelector('[data-pad="' + id + '"]');
+    if (!b) return;
+    b.classList.add("hit");
+    window.setTimeout(function () { b.classList.remove("hit"); }, 80);
+  }
+
+  function playDrumRack(track, clipObj, i, time) {
+    ensureRack(track);
+    var steps = ensureDrumSteps(clipObj, track);
+    track.rack.pads.forEach(function (pad) {
+      var row = steps[pad.id];
+      if (row && row[i % (clipObj.length || STEPS)]) trigRackPad(track, pad, time, 0.95);
+    });
+  }
+
+  function activeRackPair() {
+    var sel = state.selectedSession;
+    if (sel && sel.track && (sel.track.kind === "drums" || sel.track.kind === "perc") && sel.clip) return sel;
+    for (var i = 0; i < state.tracks.length; i++) {
+      var tr = state.tracks[i];
+      if (tr.kind !== "drums" && tr.kind !== "perc") continue;
+      for (var s = 0; s < tr.clips.length; s++) {
+        if (tr.clips[s]) return { track: tr, clip: tr.clips[s] };
+      }
+    }
+    return null;
+  }
+
+  function openRack(track, clipObj) {
+    if (!track || (track.kind !== "drums" && track.kind !== "perc")) {
+      var pair = activeRackPair();
+      if (!pair) return;
+      track = pair.track;
+      clipObj = pair.clip;
+    }
+    if (!clipObj) clipObj = track.clips.find(function (c) { return !!c; });
+    if (!clipObj) {
+      clipObj = clip("Beat", track.color, {});
+      track.clips[0] = clipObj;
+    }
+    state.selectedSession = { track: track, clip: clipObj };
+    ensureRack(track);
+    ensureDrumSteps(clipObj, track);
+    if (!state.selectedPad) state.selectedPad = track.rack.pads[0].id;
+    setView("rack");
+  }
+
+  function loadPadSample(track, pad) {
+    var inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "audio/*,.wav,.mp3,.ogg,.m4a";
+    inp.addEventListener("change", function () {
+      var f = inp.files && inp.files[0];
+      if (!f) return;
+      ensureAudio();
+      f.arrayBuffer().then(function (ab) {
+        return ctx.decodeAudioData(ab.slice(0));
+      }).then(function (buf) {
+        pad.buffer = buf;
+        pad.name = (f.name || pad.name).replace(/\.[^.]+$/, "").slice(0, 10);
+        paintRack();
+        trigRackPad(track, pad, ctx.currentTime, 1);
+      }).catch(function () {});
+    });
+    inp.click();
+  }
+
+  function paintRack() {
+    if (!rackEl || !rackPadsEl || !rackStepsEl) return;
+    var pair = activeRackPair();
+    if (!pair) {
+      rackPadsEl.replaceChildren(el("div", "daw-roll-hint", "Add a drums clip, then open Rack."));
+      rackStepsEl.replaceChildren();
+      return;
+    }
+    var track = pair.track;
+    var clipObj = pair.clip;
+    ensureRack(track);
+    var steps = ensureDrumSteps(clipObj, track);
+    if (rackTitle) rackTitle.textContent = track.name + " · " + clipObj.name;
+    var sel = state.selectedPad || track.rack.pads[0].id;
+    var selPad = track.rack.pads.find(function (p) { return p.id === sel; }) || track.rack.pads[0];
+    state.selectedPad = selPad.id;
+    rackPadsEl.replaceChildren();
+    track.rack.pads.forEach(function (pad) {
+      var b = el("button", "daw-pad" + (pad.id === selPad.id ? " on" : "") + (pad.buffer ? " has-sample" : ""), pad.name);
+      b.type = "button";
+      b.dataset.pad = pad.id;
+      b.setAttribute("aria-label", pad.name + (pad.choke ? " choke " + pad.choke : ""));
+      b.addEventListener("click", function () {
+        state.selectedPad = pad.id;
+        ensureAudio();
+        ctx.resume();
+        trigRackPad(track, pad, ctx.currentTime, 1);
+        paintRack();
+      });
+      b.addEventListener("dblclick", function (ev) {
+        ev.preventDefault();
+        loadPadSample(track, pad);
+      });
+      rackPadsEl.appendChild(b);
+    });
+    rackStepsEl.replaceChildren();
+    track.rack.pads.forEach(function (pad) {
+      var row = el("div", "daw-step-row");
+      row.appendChild(el("div", "daw-step-lab", pad.name));
+      var grid = steps[pad.id] || (steps[pad.id] = emptyGrid());
+      for (var i = 0; i < STEPS; i++) {
+        (function (padRef, idx) {
+          var cell = el("button", "daw-step" + (grid[idx] ? " on" : "") + (idx % 4 === 0 ? " beat" : ""));
+          cell.type = "button";
+          cell.dataset.pad = padRef.id;
+          cell.dataset.st = String(idx);
+          cell.setAttribute("aria-label", padRef.name + " step " + (idx + 1));
+          cell.addEventListener("click", function () {
+            grid[idx] = grid[idx] ? 0 : 1;
+            if (grid[idx]) {
+              ensureAudio();
+              ctx.resume();
+              trigRackPad(track, padRef, ctx.currentTime, 0.9);
+            }
+            paintRack();
+          });
+          row.appendChild(cell);
+        })(pad, i);
+      }
+      rackStepsEl.appendChild(row);
+    });
+    var tools = rackEl.querySelector("[data-rack-tools]");
+    if (tools) {
+      var choke = tools.querySelector("[data-choke]");
+      var gain = tools.querySelector("[data-pgain]");
+      var decay = tools.querySelector("[data-pdecay]");
+      if (choke) choke.value = String(selPad.choke || 0);
+      if (gain) gain.value = String(selPad.gain == null ? 0.9 : selPad.gain);
+      if (decay) decay.value = String(selPad.decay == null ? 0.4 : selPad.decay);
+    }
+    paintRackCursor();
+  }
+
+  function paintRackCursor() {
+    if (!rackStepsEl) return;
+    var i = state.step % STEPS;
+    rackStepsEl.querySelectorAll("[data-st]").forEach(function (cell) {
+      cell.classList.toggle("now", state.playing && Number(cell.dataset.st) === i);
+    });
+  }
+
   function openRoll(track, clipObj) {
     if (!clipObj || track.kind === "audio") return;
+    if (track.kind === "drums" || track.kind === "perc") {
+      openRack(track, clipObj);
+      return;
+    }
     state.selectedSession = { track: track, clip: clipObj };
     state.selectedNote = null;
     ensureRoll(clipObj);
@@ -1359,12 +1682,14 @@
     if (root) {
       root.classList.toggle("is-arrange", v === "arrange");
       root.classList.toggle("is-roll", v === "roll");
+      root.classList.toggle("is-rack", v === "rack");
     }
     root.querySelectorAll("[data-view]").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-view") === v);
     });
     if (v === "arrange") paintArrange();
     if (v === "roll") paintRoll();
+    if (v === "rack") paintRack();
     paint();
   }
 
@@ -1402,6 +1727,7 @@
     if (metroBtn) metroBtn.classList.toggle("on", state.metro);
     if (state.view === "arrange") paintArrange();
     if (state.view === "roll") paintRoll();
+    if (state.view === "rack") paintRackCursor();
     paintMixer();
   }
 
@@ -1665,6 +1991,7 @@
     top.appendChild(viewBtn("session", "Session"));
     top.appendChild(viewBtn("arrange", "Arrange"));
     top.appendChild(viewBtn("roll", "Roll"));
+    top.appendChild(viewBtn("rack", "Rack"));
 
     var play = el("button", "daw-btn", "Play");
     play.setAttribute("data-play", "1");
@@ -1927,6 +2254,102 @@
     rollEl.appendChild(rollVel);
     rollEl.appendChild(el("div", "daw-roll-hint", "Double-click a clip to edit. Draw notes, drag to move, pull the right edge to resize. Scale rows glow."));
     root.appendChild(rollEl);
+
+    rackEl = el("div", "daw-rack");
+    rackEl.setAttribute("aria-label", "Drum rack");
+    var rktop = el("div", "daw-rack-top");
+    rackTitle = el("div", "daw-brand", "Drum rack");
+    rktop.appendChild(rackTitle);
+    var tools = el("div", "daw-rack-top");
+    tools.setAttribute("data-rack-tools", "1");
+    var chokeLab = el("label", "daw-ctl");
+    chokeLab.appendChild(document.createTextNode("Choke"));
+    var chokeSel = document.createElement("select");
+    chokeSel.setAttribute("data-choke", "1");
+    [["0", "Off"], ["1", "Hats"], ["2", "Toms"]].forEach(function (pair) {
+      var o = document.createElement("option");
+      o.value = pair[0];
+      o.textContent = pair[1];
+      chokeSel.appendChild(o);
+    });
+    chokeSel.addEventListener("change", function () {
+      var pair = activeRackPair();
+      if (!pair) return;
+      var pad = pair.track.rack.pads.find(function (p) { return p.id === state.selectedPad; });
+      if (!pad) return;
+      pad.choke = Number(chokeSel.value) || 0;
+    });
+    chokeLab.appendChild(chokeSel);
+    tools.appendChild(chokeLab);
+    var gainLab = el("label", "daw-ctl");
+    gainLab.appendChild(document.createTextNode("Gain"));
+    var gainInp = document.createElement("input");
+    gainInp.type = "range";
+    gainInp.min = "0";
+    gainInp.max = "1.2";
+    gainInp.step = "0.01";
+    gainInp.setAttribute("data-pgain", "1");
+    gainInp.setAttribute("aria-label", "Pad gain");
+    gainInp.addEventListener("input", function () {
+      var pair = activeRackPair();
+      if (!pair) return;
+      var pad = pair.track.rack.pads.find(function (p) { return p.id === state.selectedPad; });
+      if (!pad) return;
+      pad.gain = Number(gainInp.value);
+    });
+    gainLab.appendChild(gainInp);
+    tools.appendChild(gainLab);
+    var decLab = el("label", "daw-ctl");
+    decLab.appendChild(document.createTextNode("Decay"));
+    var decInp = document.createElement("input");
+    decInp.type = "range";
+    decInp.min = "0.05";
+    decInp.max = "2";
+    decInp.step = "0.01";
+    decInp.setAttribute("data-pdecay", "1");
+    decInp.setAttribute("aria-label", "Pad decay");
+    decInp.addEventListener("input", function () {
+      var pair = activeRackPair();
+      if (!pair) return;
+      var pad = pair.track.rack.pads.find(function (p) { return p.id === state.selectedPad; });
+      if (!pad) return;
+      pad.decay = Number(decInp.value);
+    });
+    decLab.appendChild(decInp);
+    tools.appendChild(decLab);
+    var loadBtn = el("button", "daw-btn", "Sample");
+    loadBtn.type = "button";
+    loadBtn.setAttribute("aria-label", "Load sample onto pad");
+    loadBtn.addEventListener("click", function () {
+      var pair = activeRackPair();
+      if (!pair) return;
+      var pad = pair.track.rack.pads.find(function (p) { return p.id === state.selectedPad; });
+      if (pad) loadPadSample(pair.track, pad);
+    });
+    tools.appendChild(loadBtn);
+    var clearBtn = el("button", "daw-btn", "Synth");
+    clearBtn.type = "button";
+    clearBtn.setAttribute("aria-label", "Use built-in synth on pad");
+    clearBtn.addEventListener("click", function () {
+      var pair = activeRackPair();
+      if (!pair) return;
+      var pad = pair.track.rack.pads.find(function (p) { return p.id === state.selectedPad; });
+      if (!pad) return;
+      pad.buffer = null;
+      paintRack();
+      ensureAudio();
+      ctx.resume();
+      trigRackPad(pair.track, pad, ctx.currentTime, 1);
+    });
+    tools.appendChild(clearBtn);
+    rktop.appendChild(tools);
+    rackEl.appendChild(rktop);
+    rackPadsEl = el("div", "daw-pads");
+    rackEl.appendChild(rackPadsEl);
+    rackStepsEl = el("div", "daw-steps");
+    rackEl.appendChild(rackStepsEl);
+    rackEl.appendChild(el("div", "daw-roll-hint", "Hit a pad to play. Draw the 16-step grid — it locks to the transport. Hats share choke group 1 so open/closed cut each other. Double-click a pad or Sample to drop in a file."));
+    root.appendChild(rackEl);
 
     arrangePanel = el("div", "daw-arrange");
     arrangePanel.setAttribute("aria-label", "Arrangement view");
