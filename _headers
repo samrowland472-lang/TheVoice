@@ -1,0 +1,7 @@
+# Netlify serves this even without netlify.toml, so the microphone
+# permission survives a plain drag-and-drop deploy.
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: microphone=(self), camera=(), geolocation=()
