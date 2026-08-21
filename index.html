@@ -1025,7 +1025,7 @@
     margin: 14px 0;
   }
 
-  #anim-canvas { width: 100%; max-width: 640px; height: auto; display: block; }
+  #anim-canvas, #anim-canvas-gl { width: 100%; max-width: 640px; height: auto; display: block; }
 
   .anim-transport {
     display: flex;
@@ -1794,6 +1794,214 @@ input:focus-visible,
   white-space: nowrap;
   border: 0;
 }
+
+/* Timing curve editor --------------------------------------------------
+   The graph is the control, not a picture of one: the two handles are
+   dragged directly, the way every animation tool does it. */
+.curve-editor { margin-top: 16px; }
+
+.curve-editor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.curve-note {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--phosphor);
+  text-transform: uppercase;
+}
+
+#anim-curve {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  aspect-ratio: 1;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 4px;
+  cursor: crosshair;
+  touch-action: none; /* dragging a handle must not scroll the page */
+}
+
+#anim-curve:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 2px; }
+
+.curve-help { margin-top: 8px; max-width: 260px; }
+
+/* File imports ---------------------------------------------------------
+   Any panel that accepts a drop says so while a file is over it — an
+   invisible drop target is indistinguishable from one that is broken. */
+[data-drop-zone] { position: relative; }
+
+[data-drop-zone].drop-active::after {
+  content: 'Drop to import';
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* must not swallow the drop it is advertising */
+  border: 2px dashed var(--phosphor);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ground) 82%, transparent);
+  color: var(--phosphor);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-drop-zone].drop-active::after { transition: none; }
+}
+
+/* Scene agent ----------------------------------------------------------
+   Sits above the stage because describing a scene is how you start one,
+   not a tool you reach for after building it by hand. */
+.agent-bar {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-alt);
+}
+
+.agent-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+#agent-prompt {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  background: var(--ground);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.9rem;
+}
+
+#agent-prompt:focus { outline: none; border-color: var(--phosphor); }
+#agent-prompt::placeholder { color: var(--ink-faint); }
+
+.agent-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.agent-example {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.agent-example:hover { border-color: var(--phosphor); color: var(--phosphor); }
+
+@media (max-width: 640px) {
+  .agent-row { flex-direction: column; }
+}
+
+/* Timeline -------------------------------------------------------------
+   Keyframes are dragged here directly. The canvas is sized in device
+   pixels by script so the diamonds and text stay sharp; CSS only controls
+   how wide it is. */
+.timeline-wrap {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  overflow-x: auto;
+}
+
+#anim-timeline {
+  display: block;
+  width: 100%;
+  min-width: 420px;   /* below this a timeline is unreadable — scroll instead */
+  cursor: pointer;
+  touch-action: none; /* dragging a keyframe must not scroll the page */
+}
+
+#anim-timeline:focus-visible { outline: 2px solid var(--phosphor); outline-offset: -2px; }
+
+/* 3D ------------------------------------------------------------------- */
+.camera-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-alt);
+}
+
+.camera-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  flex: 1;
+}
+
+.camera-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+}
+
+.camera-field input[type="range"] { width: 110px; }
+
+.camera-tip {
+  margin: 0;
+  font-size: 0.7rem;
+}
+
+/* Depth controls are meaningless until a scene has a camera. */
+.depth-only { display: none; }
+.anim-3d-on .depth-only { display: block; }
+
+.anim-3d-on #anim-canvas, .anim-3d-on #anim-canvas-gl { cursor: grab; }
+.anim-3d-on #anim-canvas:active, .anim-3d-on #anim-canvas-gl:active { cursor: grabbing; }
+
+@media (max-width: 640px) {
+  .camera-tip { display: none; }
+}
+
+/* Scene light ----------------------------------------------------------- */
+.light-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.light-title { color: var(--amber); }
 </style>
 </head>
 <body>
@@ -1923,7 +2131,7 @@ input:focus-visible,
     </section>
 
     <section class="panel controls-panel">
-      <div class="tab-panel active" data-panel="speak">
+      <div class="tab-panel active" data-panel="speak" data-drop-zone>
         <div class="engine-select" id="engine-select">
           <button class="engine-btn active" data-engine="neural" aria-pressed="true">
             <span class="engine-name">Neural</span>
@@ -1994,7 +2202,7 @@ input:focus-visible,
         <p class="hint hint-info" id="engine-hint" role="status" aria-live="polite"></p>
       </div>
 
-      <div class="tab-panel" data-panel="studio">
+      <div class="tab-panel" data-panel="studio" data-drop-zone>
         <p class="field-label">Record — live transcript, spectrum &amp; pitch, optional clone</p>
 
         <canvas id="record-canvas" height="90" role="img" aria-label="Recording level meter"></canvas>
@@ -2019,8 +2227,10 @@ input:focus-visible,
             <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg>
             Record
           </button>
+          <button id="studio-import-btn" class="btn">Import audio…</button>
           <span class="record-timer" id="record-timer">00:00</span>
         </div>
+        <p class="hint hint-info">Or drop an audio file anywhere on this panel.</p>
 
         <p class="hint" id="mic-hint" role="status" aria-live="polite"></p>
 
@@ -2137,13 +2347,14 @@ input:focus-visible,
     <ol class="chapter-list" id="chapter-list"></ol>
   </div>
 
-  <div id="modulate-view" hidden>
+  <div id="modulate-view" hidden data-drop-zone>
     <label class="field-label">Modulate</label>
     <p class="hint hint-info" style="margin-top:4px;">Change pitch and vocal character independently. Record in Voice Studio first, or load a clip from your Library.</p>
 
     <div class="mod-source" id="mod-source">
       <span class="hint hint-info" id="mod-source-label">No clip loaded.</span>
       <button id="mod-load-btn" class="btn">Use latest recording</button>
+      <button id="mod-import-btn" class="btn">Import audio…</button>
     </div>
 
     <div class="mod-presets" id="mod-presets"></div>
@@ -2173,18 +2384,71 @@ input:focus-visible,
     <audio id="mod-audio" controls hidden></audio>
   </div>
 
-  <div id="animate-view" hidden>
+  <div id="animate-view" hidden data-drop-zone>
     <label class="field-label">Animate</label>
     <p class="hint hint-info" style="margin-top:4px;">Build a scene from shapes and keyframes. Mark a shape "reactive" and load a voice clip to make it move with the audio.</p>
 
-    <div class="anim-stage">
+    <div class="agent-bar">
+      <label class="field-label" for="agent-prompt">Describe it</label>
+      <div class="agent-row">
+        <input type="text" id="agent-prompt"
+               placeholder="three blue circles that fade in and pulse to the music">
+        <button id="agent-go-btn" class="btn btn-primary">Create</button>
+      </div>
+      <p class="hint hint-info" id="agent-status">Type what you want and press Create.</p>
+      <div class="agent-examples" id="agent-examples"></div>
+    </div>
+
+    <div class="anim-stage" id="anim-stage">
       <canvas id="anim-canvas" width="640" height="360" role="img" aria-label="Animation preview"></canvas>
+      <!-- The GPU preview. A canvas can only ever hold one context type, so
+           the WebGL path needs its own element; whichever renderer is active
+           is the one that is visible. -->
+      <canvas id="anim-canvas-gl" width="640" height="360" role="img" aria-label="Animation preview" hidden></canvas>
     </div>
 
     <div class="anim-transport">
       <button id="anim-play-btn" class="btn btn-primary">Play</button>
       <input type="range" id="anim-time" min="0" max="5" step="0.01" value="0" aria-label="Scrub through the scene">
       <span class="anim-time-label" id="anim-time-label">0.00s</span>
+    </div>
+
+    <div class="camera-bar" id="camera-bar">
+      <label class="anim-check" for="anim-3d"><input type="checkbox" id="anim-3d"> 3D</label>
+      <div class="camera-controls" id="camera-controls" hidden>
+        <select id="anim-camera-preset" aria-label="Camera angle">
+          <option value="">Camera angle…</option>
+          <option value="front">Front on</option>
+          <option value="threeQuarter">Three quarter</option>
+          <option value="top">From above</option>
+          <option value="low">Low angle</option>
+        </select>
+        <label class="camera-field" for="anim-fov">Lens <span id="anim-fov-value">55°</span>
+          <input type="range" id="anim-fov" min="15" max="110" step="1" value="55"></label>
+        <button id="anim-camkey-btn" class="btn">Key camera</button>
+        <span class="camera-field" id="anim-camkey-count" hidden></span>
+        <button id="anim-camclear-btn" class="btn" hidden>Clear camera keys</button>
+        <span class="hint hint-info camera-tip">Drag the preview to orbit · scroll to dolly</span>
+      </div>
+      <div class="light-controls" id="light-controls" hidden>
+        <span class="camera-field light-title">Light</span>
+        <label class="camera-field" for="anim-light-az">From <span id="anim-light-az-value">40°</span>
+          <input type="range" id="anim-light-az" min="-180" max="180" step="5" value="40"></label>
+        <label class="camera-field" for="anim-light-el">Height <span id="anim-light-el-value">38°</span>
+          <input type="range" id="anim-light-el" min="-60" max="89" step="1" value="38"></label>
+        <label class="camera-field" for="anim-light-warm">Warmth <span id="anim-light-warm-value">0.50</span>
+          <input type="range" id="anim-light-warm" min="0" max="1" step="0.05" value="0.5"></label>
+        <button id="anim-lightkey-btn" class="btn">Key light</button>
+        <span class="camera-field" id="anim-lightkey-count" hidden></span>
+        <button id="anim-lightclear-btn" class="btn" hidden>Clear light keys</button>
+      </div>
+    </div>
+
+    <div class="timeline-wrap">
+      <canvas id="anim-timeline" height="140"
+              role="img"
+              aria-label="Timeline. Drag keyframes to change when they happen; drag the ruler to scrub."
+              tabindex="0"></canvas>
     </div>
 
     <div class="anim-toolbar">
@@ -2194,11 +2458,22 @@ input:focus-visible,
         <option value="triangle">Triangle</option>
         <option value="text">Text</option>
         <option value="wave">Wave</option>
+        <option value="image">Image</option>
+        <option value="cube">Cube (3D)</option>
+        <option value="sphere">Sphere (3D)</option>
+        <option value="pyramid">Pyramid (3D)</option>
       </select>
+      <button id="anim-undo-btn" class="btn" disabled title="Undo (Ctrl+Z)">Undo</button>
+      <button id="anim-redo-btn" class="btn" disabled title="Redo (Ctrl+Shift+Z)">Redo</button>
       <button id="anim-add-btn" class="btn">Add shape</button>
       <button id="anim-key-btn" class="btn" disabled>Set keyframe here</button>
       <button id="anim-delete-btn" class="btn" disabled>Delete shape</button>
       <button id="anim-voice-btn" class="btn">Load voice clip</button>
+      <button id="anim-import-audio-btn" class="btn">Import audio…</button>
+      <button id="anim-import-image-btn" class="btn">Import image…</button>
+      <button id="anim-open-btn" class="btn">Open scene…</button>
+      <button id="anim-save-btn" class="btn">Save scene</button>
+      <button id="anim-video-btn" class="btn btn-primary" disabled>Export video</button>
       <button id="anim-export-btn" class="btn" disabled>Export frames</button>
     </div>
 
@@ -2221,8 +2496,16 @@ input:focus-visible,
             <input type="range" id="anim-y" min="0" max="100" step="1" value="50"></div>
           <div class="control-item"><label for="anim-scale">Scale <span id="anim-scale-value">1.0</span></label>
             <input type="range" id="anim-scale" min="0.1" max="4" step="0.1" value="1"></div>
-          <div class="control-item"><label for="anim-rotation">Rotation <span id="anim-rotation-value">0</span></label>
+          <div class="control-item"><label for="anim-rotation">Spin <span id="anim-rotation-value">0</span></label>
             <input type="range" id="anim-rotation" min="-180" max="180" step="5" value="0"></div>
+          <div class="control-item depth-only" id="anim-extrude-row" hidden><label for="anim-extrude">Extrude <span id="anim-extrude-value">8</span></label>
+            <input type="range" id="anim-extrude" min="0" max="40" step="1" value="8"></div>
+          <div class="control-item depth-only"><label for="anim-z">Depth <span id="anim-z-value">0</span></label>
+            <input type="range" id="anim-z" min="-80" max="200" step="1" value="0"></div>
+          <div class="control-item depth-only"><label for="anim-rotx">Tilt X <span id="anim-rotx-value">0</span></label>
+            <input type="range" id="anim-rotx" min="-90" max="90" step="5" value="0"></div>
+          <div class="control-item depth-only"><label for="anim-roty">Turn Y <span id="anim-roty-value">0</span></label>
+            <input type="range" id="anim-roty" min="-90" max="90" step="5" value="0"></div>
           <div class="control-item"><label for="anim-opacity">Opacity <span id="anim-opacity-value">1.0</span></label>
             <input type="range" id="anim-opacity" min="0" max="1" step="0.05" value="1"></div>
           <div class="control-item"><label for="anim-easing">Easing</label>
@@ -2234,13 +2517,26 @@ input:focus-visible,
           <label class="anim-check"><input type="checkbox" id="anim-reactive"> React to voice</label>
         </div>
         <div class="anim-keyframes" id="anim-keyframes"></div>
+
+        <div class="curve-editor">
+          <div class="curve-editor-head">
+            <label class="field-label" for="anim-curve">Timing curve</label>
+            <span class="curve-note" id="anim-curve-note"></span>
+          </div>
+          <canvas id="anim-curve" width="240" height="240"
+                  role="img" aria-label="Timing curve editor — drag the two handles to shape the motion"
+                  tabindex="0"></canvas>
+          <p class="hint hint-info curve-help">Drag either handle. The curve is how the move is
+            paced: steep is fast, flat is slow. Take a handle past the top or bottom edge and the
+            motion overshoots and settles back.</p>
+        </div>
       </div>
     </div>
 
     <p class="hint" id="anim-hint" role="status" aria-live="polite"></p>
   </div>
 
-  <div id="music-view" hidden>
+  <div id="music-view" hidden data-drop-zone>
     <label class="field-label">Music</label>
     <p class="hint hint-info" style="margin-top:4px;">Every sound here is synthesised from scratch — no samples, no downloads. Build a beat, then layer a voice clip over it.</p>
 
@@ -2268,6 +2564,7 @@ input:focus-visible,
     <div class="control-row buttons-row">
       <button id="music-play-btn" class="btn btn-primary">Render &amp; play</button>
       <button id="music-voice-btn" class="btn">Layer voice over it</button>
+      <button id="music-import-btn" class="btn">Import audio…</button>
       <button id="music-clear-btn" class="btn">Clear</button>
       <button id="music-download-btn" class="btn" disabled>Download</button>
     </div>
@@ -2305,7 +2602,7 @@ input:focus-visible,
     </div>
   </div>
 
-  <div id="project-view" hidden>
+  <div id="project-view" hidden data-drop-zone>
     <label class="field-label">Project</label>
     <p class="hint hint-info" style="margin-top:4px;">Bring a voice take, a beat and a scene together into one finished piece.</p>
 
@@ -2354,6 +2651,7 @@ input:focus-visible,
     <div class="control-row buttons-row">
       <button id="project-build-btn" class="btn btn-primary">Build project</button>
       <button id="project-refresh-btn" class="btn">Refresh sources</button>
+      <button id="project-import-btn" class="btn">Import audio…</button>
       <button id="project-audio-btn" class="btn" disabled>Download audio</button>
       <button id="project-frames-btn" class="btn" disabled>Export video frames</button>
     </div>
@@ -2404,6 +2702,7 @@ input:focus-visible,
 
     <div class="library-toolbar">
       <span class="field-label">Clip Library</span>
+      <button id="library-import-btn" class="btn">Import clips…</button>
       <button id="clear-library-btn" class="btn">Clear all</button>
     </div>
 
@@ -3234,6 +3533,360 @@ function createClipLibrary() {
   };
 }
 
+// ---- autosave.js ----
+// Autosave: the work survives a reload.
+//
+// Everything a user builds in the animator, the sequencer and the lyrics
+// pad lived in memory only — an accidental refresh, a crashed tab or a
+// closed laptop took all of it. Finished audio was already safe in the clip
+// library; this covers the work in progress.
+//
+// Saves are debounced: gestures fire change events continuously, and
+// serializing a scene with embedded images on every slider pixel would make
+// the act of editing janky — the thing autosave exists to protect.
+//
+// A restored payload is untrusted: it may be from an older build, truncated
+// by a full quota, or hand-edited. Loading never throws; damaged pieces are
+// dropped one by one rather than the whole restore failing.
+
+function createAutosave({
+  key,
+  storage,
+  debounceMs = 800,
+  setTimer = (fn, ms) => setTimeout(fn, ms),
+  clearTimer = (id) => clearTimeout(id),
+} = {}) {
+  let pending = null;
+
+  const write = (makePayload) => {
+    let payload;
+    try {
+      payload = makePayload();
+    } catch {
+      return false; // a broken serializer must not take the app down
+    }
+    try {
+      storage.setItem(key, JSON.stringify({ savedAt: Date.now(), ...payload }));
+      return true;
+    } catch {
+      // Quota is the realistic failure — a scene with big embedded images
+      // shares 5MB with everything else on the origin. An autosave that
+      // throws is worse than one that quietly does not happen.
+      return false;
+    }
+  };
+
+  return {
+    /** Save soon. Repeated calls within the window collapse to one write. */
+    schedule(makePayload) {
+      if (pending !== null) clearTimer(pending);
+      pending = setTimer(() => {
+        pending = null;
+        write(makePayload);
+      }, debounceMs);
+    },
+
+    /** Save now — for the moments a debounce would miss: tab close, hide. */
+    flush(makePayload) {
+      if (pending !== null) {
+        clearTimer(pending);
+        pending = null;
+      }
+      return write(makePayload);
+    },
+
+    load() {
+      let raw;
+      try {
+        raw = storage.getItem(key);
+      } catch {
+        return null;
+      }
+      if (!raw) return null;
+      try {
+        const data = JSON.parse(raw);
+        return data && typeof data === 'object' ? data : null;
+      } catch {
+        return null;
+      }
+    },
+
+    clear() {
+      if (pending !== null) {
+        clearTimer(pending);
+        pending = null;
+      }
+      try {
+        storage.removeItem(key);
+      } catch {
+        /* nothing to clear */
+      }
+    },
+
+    hasPending: () => pending !== null,
+  };
+}
+
+/** Whether a saved workspace holds anything worth restoring. */
+function workspaceHasContent(ws) {
+  if (!ws || typeof ws !== 'object') return false;
+  const shapes = ws.scene && Array.isArray(ws.scene.shapes) ? ws.scene.shapes.length : 0;
+  const hits = ws.pattern && ws.pattern.grid && typeof ws.pattern.grid === 'object'
+    ? Object.values(ws.pattern.grid).some((row) => Array.isArray(row) && row.some(Boolean))
+    : false;
+  const lyrics = typeof ws.lyrics === 'string' && ws.lyrics.trim().length > 0;
+  return shapes > 0 || hits || lyrics;
+}
+
+/** One line saying what is about to come back, for the restore toast. */
+function describeWorkspace(ws) {
+  if (!ws) return '';
+  const bits = [];
+  const shapes = ws.scene && Array.isArray(ws.scene.shapes) ? ws.scene.shapes.length : 0;
+  if (shapes) bits.push(`${shapes} shape${shapes === 1 ? '' : 's'}`);
+  if (ws.scene && ws.scene.camera) bits.push('3D');
+  if (ws.pattern && ws.pattern.grid
+      && Object.values(ws.pattern.grid).some((r) => Array.isArray(r) && r.some(Boolean))) {
+    bits.push('a beat');
+  }
+  if (typeof ws.lyrics === 'string' && ws.lyrics.trim()) bits.push('lyrics');
+  return bits.join(' · ');
+}
+
+// ---- files.js ----
+// Bringing things in.
+//
+// The app could produce a great deal and accept nothing: ten download paths
+// and not one file input. You could record a voice but not import one,
+// export a scene but never open it again, and animate five built-in shapes
+// but never your own logo. This module is the missing half.
+//
+// Everything arriving here is untrusted. A file picked by a user is not
+// hostile in the way a network payload is, but it is routinely the wrong
+// type, far too large, or a JSON file written by a different version — so
+// every entry point validates before anything downstream sees it, and
+// reports what was wrong in words rather than throwing.
+
+// Generous enough for a full audiobook chapter, small enough that a
+// mis-picked video file is refused before it exhausts memory.
+const LIMITS = {
+  audio: 100 * 1024 * 1024,
+  image: 12 * 1024 * 1024,
+  json: 8 * 1024 * 1024,
+};
+
+const AUDIO_EXT = ['wav', 'mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'webm', 'flac', 'aiff', 'aif'];
+const IMAGE_EXT = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif'];
+
+function fileExtension(name) {
+  const m = /\.([a-z0-9]+)$/i.exec(String(name || ''));
+  return m ? m[1].toLowerCase() : '';
+}
+
+function formatBytes(n) {
+  if (!Number.isFinite(n) || n < 0) return '0 B';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Decide whether a file is the kind being asked for.
+ *
+ * Browsers are inconsistent about the MIME type they report — a .m4a often
+ * arrives as an empty string, and Windows reports .wav as audio/wave — so
+ * the extension is checked as well as the type, and either one matching is
+ * enough. Being strict here would reject files that work perfectly.
+ */
+function validateFile(file, kind) {
+  if (!file) return { ok: false, message: 'No file chosen.' };
+
+  const ext = fileExtension(file.name);
+  const type = String(file.type || '').toLowerCase();
+  const limit = LIMITS[kind];
+
+  const matches = {
+    audio: () => type.startsWith('audio/') || type.startsWith('video/') || AUDIO_EXT.includes(ext),
+    image: () => type.startsWith('image/') || IMAGE_EXT.includes(ext),
+    json: () => type === 'application/json' || type === 'text/plain' || ext === 'json',
+  }[kind];
+
+  if (!matches || !matches()) {
+    const expected = { audio: 'an audio file', image: 'an image', json: 'a saved .json file' }[kind] || 'a supported file';
+    return { ok: false, message: `That is not ${expected}. “${file.name}” looks like ${ext ? `a .${ext} file` : 'an unknown type'}.` };
+  }
+
+  if (limit && file.size > limit) {
+    return { ok: false, message: `“${file.name}” is ${formatBytes(file.size)} — the limit is ${formatBytes(limit)}.` };
+  }
+
+  // A zero-byte file decodes to nothing and produces a baffling error much
+  // further downstream, so it is caught here where the cause is obvious.
+  if (file.size === 0) {
+    return { ok: false, message: `“${file.name}” is empty.` };
+  }
+
+  return { ok: true, file, kind, ext };
+}
+
+/**
+ * Open the system file picker and resolve with the chosen file.
+ *
+ * The input is created per call and never attached to the document. A single
+ * reused input would keep the previous selection, so picking the same file
+ * twice in a row would silently fire no change event the second time.
+ */
+function pickFile(accept, { multiple = false } = {}) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept;
+    input.multiple = multiple;
+    input.style.position = 'fixed';
+    input.style.left = '-9999px';
+
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      input.remove();
+      resolve(value);
+    };
+
+    input.addEventListener('change', () => finish(multiple ? Array.from(input.files) : input.files[0] || null));
+    // Cancelling the dialog fires no `change` event in most browsers, which
+    // would leave the promise pending forever and the calling button stuck
+    // on "Loading…". `cancel` covers browsers that support it; the focus
+    // fallback covers the rest.
+    input.addEventListener('cancel', () => finish(multiple ? [] : null));
+    window.addEventListener('focus', () => {
+      setTimeout(() => finish(multiple ? [] : null), 600);
+    }, { once: true });
+
+    document.body.appendChild(input);
+    input.click();
+  });
+}
+
+const ACCEPT = {
+  audio: 'audio/*,video/webm,.wav,.mp3,.m4a,.aac,.ogg,.opus,.flac,.aiff',
+  image: 'image/*,.png,.jpg,.jpeg,.gif,.webp,.svg,.avif',
+  json: 'application/json,.json',
+};
+
+/** Pick a file of a given kind, validating before it is handed back. */
+async function pickValidated(kind) {
+  const file = await pickFile(ACCEPT[kind] || '*/*');
+  if (!file) return { ok: false, cancelled: true, message: '' };
+  return validateFile(file, kind);
+}
+
+function readText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error(`Could not read “${file.name}”.`));
+    reader.readAsText(file);
+  });
+}
+
+function readDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error(`Could not read “${file.name}”.`));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Parse JSON from a file, reporting a damaged file as such. */
+async function readJson(file) {
+  const text = await readText(file);
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error(`“${file.name}” is not valid JSON — it may be damaged or only partly saved.`);
+  }
+}
+
+/**
+ * Load an image and report its natural size.
+ *
+ * Resolving on `decode()` rather than `load` means the caller gets an image
+ * that is ready to draw; drawing one that has loaded but not decoded can
+ * paint nothing on the first frame.
+ */
+async function loadImage(dataUrl) {
+  const img = new Image();
+  img.src = dataUrl;
+  if (img.decode) {
+    await img.decode();
+  } else {
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error('That image could not be decoded.'));
+    });
+  }
+  return img;
+}
+
+/**
+ * Make any element accept dropped files.
+ *
+ * Dropping onto a page that is not expecting it makes the browser navigate
+ * away to the file — losing unsaved work — so the document-level handlers
+ * below suppress that everywhere, and only the registered zones act.
+ */
+function makeDropTarget(el, kind, onFile, { activeClass = 'drop-active' } = {}) {
+  if (!el) return () => {};
+  let depth = 0; // dragenter/leave fire per child; a counter avoids flicker
+
+  const over = (ev) => {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = 'copy';
+  };
+  const enter = (ev) => {
+    ev.preventDefault();
+    depth += 1;
+    el.classList.add(activeClass);
+  };
+  const leave = () => {
+    depth = Math.max(0, depth - 1);
+    if (depth === 0) el.classList.remove(activeClass);
+  };
+  const drop = (ev) => {
+    ev.preventDefault();
+    depth = 0;
+    el.classList.remove(activeClass);
+    const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+    if (!file) return;
+    onFile(validateFile(file, kind));
+  };
+
+  el.addEventListener('dragover', over);
+  el.addEventListener('dragenter', enter);
+  el.addEventListener('dragleave', leave);
+  el.addEventListener('drop', drop);
+
+  return () => {
+    el.removeEventListener('dragover', over);
+    el.removeEventListener('dragenter', enter);
+    el.removeEventListener('dragleave', leave);
+    el.removeEventListener('drop', drop);
+  };
+}
+
+/** Stop a stray drop from navigating the page away and losing the session. */
+function guardStrayDrops() {
+  const stop = (ev) => {
+    if (ev.target && ev.target.closest && ev.target.closest('[data-drop-zone]')) return;
+    ev.preventDefault();
+    if (ev.type === 'drop' && ev.dataTransfer) ev.dataTransfer.dropEffect = 'none';
+  };
+  document.addEventListener('dragover', stop);
+  document.addEventListener('drop', stop);
+}
+
 // ---- voice-effects.js ----
 // Real-time-capable audio effects applied offline to a recorded clip via
 // OfflineAudioContext — pure Web Audio DSP, no server and no ML needed for
@@ -3758,6 +4411,833 @@ const PRESETS = [
   { id: 'anon', name: 'Anonymised', semitones: -5, formant: 1.25 },
 ];
 
+// ---- easing.js ----
+// Timing curves.
+//
+// This is the part that decides whether motion looks designed or computed.
+// A move from A to B is arithmetic; how it accelerates out of A and settles
+// into B is the whole craft, which is why every professional animation tool
+// puts a draggable bezier handle in front of it.
+//
+// Two things here that the previous five fixed presets could not express:
+//
+//   - Arbitrary cubic-bezier curves, the same primitive CSS and After
+//     Effects use, so a curve can be authored rather than chosen.
+//   - Overshoot. A curve whose control points sit outside 0..1 carries the
+//     value past its target and lets it settle back — anticipation and
+//     follow-through, the thing that reads as "alive" rather than "moved".
+
+/**
+ * Solve a cubic bezier of the CSS form: fixed endpoints at (0,0) and (1,1),
+ * with two control points.
+ *
+ * The curve is parametric — x and y are both functions of an internal t —
+ * so finding y for a given x means first solving x(t) = x. Newton-Raphson
+ * converges in a handful of steps for the well-behaved curves that make up
+ * almost all real input; bisection is the fallback for the rest, because
+ * Newton can wander off a curve with a near-zero derivative and returning a
+ * wrong answer silently would be worse than being slow.
+ */
+function cubicBezier(x1, y1, x2, y2) {
+  // Coefficients of the polynomial form, so each sample is a few multiplies
+  // rather than a de Casteljau subdivision.
+  const cx = 3 * x1;
+  const bx = 3 * (x2 - x1) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * y1;
+  const by = 3 * (y2 - y1) - cy;
+  const ay = 1 - cy - by;
+
+  const sampleX = (t) => ((ax * t + bx) * t + cx) * t;
+  const sampleY = (t) => ((ay * t + by) * t + cy) * t;
+  const slopeX = (t) => (3 * ax * t + 2 * bx) * t + cx;
+
+  // x control points outside 0..1 would make x(t) non-monotonic, meaning one
+  // x maps to several t and the curve stops being a function of time. CSS
+  // forbids it for the same reason. y is deliberately unclamped — that is
+  // what allows overshoot.
+  const px1 = Math.min(1, Math.max(0, x1));
+  const px2 = Math.min(1, Math.max(0, x2));
+  const linear = px1 === x1 && px2 === x2 ? null : cubicBezier(px1, y1, px2, y2);
+  if (linear) return linear;
+
+  function solveT(x) {
+    let t = x;
+    for (let i = 0; i < 8; i++) {
+      const err = sampleX(t) - x;
+      if (Math.abs(err) < 1e-7) return t;
+      const d = slopeX(t);
+      if (Math.abs(d) < 1e-7) break; // flat here: Newton has nothing to follow
+      t -= err / d;
+    }
+    // Bisection always converges on a monotonic curve, just less quickly.
+    let lo = 0;
+    let hi = 1;
+    t = x;
+    for (let i = 0; i < 40; i++) {
+      const v = sampleX(t);
+      if (Math.abs(v - x) < 1e-7) return t;
+      if (v > x) hi = t;
+      else lo = t;
+      t = (lo + hi) / 2;
+    }
+    return t;
+  }
+
+  return function ease(x) {
+    // Outside the segment the curve is not defined; clamping keeps a
+    // rounding error at a keyframe boundary from producing a wild value.
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    return sampleY(solveT(x));
+  };
+}
+
+/**
+ * The named curves, as bezier control points.
+ *
+ * Naming them after what they do to a movement, rather than after the maths,
+ * is deliberate: someone choosing how a title should arrive is thinking
+ * "settle", not "cubic-bezier(0.22, 1, 0.36, 1)".
+ */
+const EASING_CURVES = {
+  linear: [0, 0, 1, 1],
+  ease: [0.25, 0.1, 0.25, 1],
+  easeIn: [0.42, 0, 1, 1],
+  easeOut: [0, 0, 0.58, 1],
+  easeInOut: [0.42, 0, 0.58, 1],
+  // Sharper versions — the difference between "moves" and "snaps".
+  quadIn: [0.11, 0, 0.5, 0],
+  quadOut: [0.5, 1, 0.89, 1],
+  quartIn: [0.5, 0, 0.75, 0],
+  quartOut: [0.25, 1, 0.5, 1],
+  expoIn: [0.7, 0, 0.84, 0],
+  expoOut: [0.16, 1, 0.3, 1],
+  // Settle: fast away, long glide in. The workhorse of interface motion.
+  settle: [0.22, 1, 0.36, 1],
+  // Overshoot: control points outside 0..1 on the y axis, so the value
+  // passes its target and comes back.
+  anticipate: [0.68, -0.6, 0.32, 1.6],
+  backIn: [0.36, 0, 0.66, -0.56],
+  backOut: [0.34, 1.56, 0.64, 1],
+};
+
+const EASING_NAMES = Object.keys(EASING_CURVES);
+
+// Curves that cannot be expressed as a single cubic bezier, because they
+// change direction more than once.
+const SPECIAL = {
+  // A real bounce: successive impacts, each smaller, each faster.
+  bounce(t) {
+    const n = 7.5625;
+    const d = 2.75;
+    if (t < 1 / d) return n * t * t;
+    if (t < 2 / d) { const u = t - 1.5 / d; return n * u * u + 0.75; }
+    if (t < 2.5 / d) { const u = t - 2.25 / d; return n * u * u + 0.9375; }
+    const u = t - 2.625 / d;
+    return n * u * u + 0.984375;
+  },
+  // A damped spring — overshoots, reverses, settles.
+  elastic(t) {
+    if (t === 0 || t === 1) return t;
+    return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
+  },
+  // No interpolation at all: hold the value, then cut. Essential for
+  // anything that should read as a switch rather than a movement.
+  // `hold` keeps the old value right up to the next keyframe; `step` cuts
+  // halfway between the two, for a change that lands between the beats.
+  hold(t) {
+    return t >= 1 ? 1 : 0;
+  },
+  step(t) {
+    return t >= 0.5 ? 1 : 0;
+  },
+};
+
+const SPECIAL_NAMES = Object.keys(SPECIAL);
+const ALL_EASING_NAMES = [...EASING_NAMES, ...SPECIAL_NAMES];
+
+// Solving a bezier is cheap but not free, and playback asks for the same
+// handful of curves sixty times a second.
+const cache = new Map();
+
+/**
+ * Resolve whatever a keyframe carries into a function of 0..1.
+ *
+ * Accepts a preset name, a four-number array of control points, or nothing —
+ * so old scenes, hand-edited files and the curve editor all feed the same
+ * path, and anything unrecognisable degrades to a sensible default rather
+ * than throwing mid-render.
+ */
+function resolveEasing(spec, fallback = 'ease') {
+  if (typeof spec === 'function') return spec;
+
+  if (Array.isArray(spec) && spec.length === 4 && spec.every((n) => Number.isFinite(n))) {
+    const key = spec.join(',');
+    if (!cache.has(key)) cache.set(key, cubicBezier(spec[0], spec[1], spec[2], spec[3]));
+    return cache.get(key);
+  }
+
+  const name = typeof spec === 'string' && (SPECIAL[spec] || EASING_CURVES[spec]) ? spec : fallback;
+  if (SPECIAL[name]) return SPECIAL[name];
+
+  const points = EASING_CURVES[name] || EASING_CURVES.ease;
+  const key = points.join(',');
+  if (!cache.has(key)) cache.set(key, cubicBezier(points[0], points[1], points[2], points[3]));
+  return cache.get(key);
+}
+
+/** The control points behind a name, for drawing it in a curve editor. */
+function easingPoints(spec) {
+  if (Array.isArray(spec) && spec.length === 4) return spec.slice();
+  if (typeof spec === 'string' && EASING_CURVES[spec]) return EASING_CURVES[spec].slice();
+  return EASING_CURVES.ease.slice();
+}
+
+/** Whether a curve leaves the 0..1 range — i.e. whether it overshoots. */
+function hasOvershoot(spec) {
+  const ease = resolveEasing(spec);
+  for (let i = 1; i < 100; i++) {
+    const y = ease(i / 100);
+    if (y < -0.001 || y > 1.001) return true;
+  }
+  return false;
+}
+
+// ---- camera3d.js ----
+// The step from motion graphics to 3D.
+//
+// Everything so far has been 2D by construction: a keyframe holds x and y,
+// rotation is a single number, and the renderer draws straight to a canvas
+// in screen coordinates. That model cannot express depth no matter how good
+// the easing is.
+//
+// This module adds the missing dimension as *maths*, not as a rendering
+// library. A point gains z, rotation gains three axes, and a camera turns
+// world coordinates into screen coordinates through a perspective
+// projection. The existing 2D canvas draws the result, so depth, parallax,
+// dollying and orbiting all work today with no dependencies — and when the
+// renderer is later swapped for WebGL, it is a renderer swap against a model
+// that is already three-dimensional, not a rewrite.
+//
+// Conventions, fixed here so nothing downstream has to guess: x runs right,
+// y runs DOWN (matching the screen and the existing 2D shapes), and z runs
+// away from the viewer. Angles are degrees, because that is what a person
+// types into a properties panel.
+
+const DEG = Math.PI / 180;
+
+// The world is 100 units across and 100 tall, matching the 0-100 coordinates
+// keyframes already use, with the frame centred on (50, 50).
+const WORLD_SPAN = 100;
+
+/**
+ * How far back a camera must sit for the 100-unit world to exactly fill the
+ * frame.
+ *
+ * Derived rather than guessed: the projection scales by focal/distance where
+ * focal = (height/2) / tan(fov/2). For the world's edge at 50 units to land
+ * on the frame edge at height/2, focal/distance must equal height/100, which
+ * reduces to 50 / tan(fov/2) — independent of the pixel size of the canvas,
+ * which is why a scene looks the same whatever it is exported at.
+ */
+function framingDistance(fov) {
+  return (WORLD_SPAN / 2) / Math.tan((fov / 2) * DEG);
+}
+
+function createCamera(fov = 55) {
+  return {
+    x: 50, y: 50, z: -framingDistance(fov),  // behind the world, looking along +z
+    rotX: 0, rotY: 0, rotZ: 0,
+    fov,                                      // vertical field of view, degrees
+    near: 0.5,
+  };
+}
+
+/** Rotate a point about the origin, in Z→Y→X order. */
+function rotatePoint(p, rotX, rotY, rotZ) {
+  let { x, y, z } = p;
+
+  if (rotZ) {
+    const c = Math.cos(rotZ * DEG), s = Math.sin(rotZ * DEG);
+    [x, y] = [x * c - y * s, x * s + y * c];
+  }
+  if (rotY) {
+    const c = Math.cos(rotY * DEG), s = Math.sin(rotY * DEG);
+    [x, z] = [x * c + z * s, -x * s + z * c];
+  }
+  if (rotX) {
+    const c = Math.cos(rotX * DEG), s = Math.sin(rotX * DEG);
+    [y, z] = [y * c - z * s, y * s + z * c];
+  }
+  return { x, y, z };
+}
+
+/**
+ * World space to camera space.
+ *
+ * Translate so the camera sits at the origin, then apply the camera's
+ * rotation inverted — turning the camera right must move the world left.
+ */
+function toCameraSpace(point, camera) {
+  const rel = { x: point.x - camera.x, y: point.y - camera.y, z: point.z - camera.z };
+  return rotatePoint(rel, -camera.rotX, -camera.rotY, -camera.rotZ);
+}
+
+/**
+ * Camera space to the screen.
+ *
+ * `visible` is false for anything at or behind the near plane. Projecting
+ * those anyway is the classic 3D bug: dividing by a negative z flips the
+ * point through the origin, so an object behind the camera appears upside
+ * down in front of it.
+ */
+function project(point, camera, width, height) {
+  const focal = (height / 2) / Math.tan((camera.fov / 2) * DEG);
+  if (point.z <= camera.near) {
+    return { x: 0, y: 0, scale: 0, depth: point.z, visible: false };
+  }
+  const scale = focal / point.z;
+  return {
+    x: width / 2 + point.x * scale,
+    y: height / 2 + point.y * scale,
+    scale,
+    depth: point.z,
+    visible: true,
+  };
+}
+
+/** World point straight to the screen, in the units the renderer wants. */
+function projectPoint(point, camera, width, height) {
+  return project(toCameraSpace(point, camera), camera, width, height);
+}
+
+/**
+ * Order shapes far-to-near.
+ *
+ * With no depth buffer, the only way a 2D canvas can render depth correctly
+ * is to draw the furthest thing first — the painter's algorithm. Sorting is
+ * by camera-space z rather than world z, since what counts is distance from
+ * the viewer, not position in the world.
+ */
+function depthSort(items, camera) {
+  return items
+    .map((item, i) => ({
+      item,
+      i,
+      depth: toCameraSpace({ x: item.x, y: item.y, z: item.z || 0 }, camera).z,
+    }))
+    // The index tiebreak keeps shapes at identical depth in their authored
+    // order, so a scene does not flicker as two coplanar shapes swap places
+    // between frames.
+    .sort((a, b) => (b.depth - a.depth) || (a.i - b.i))
+    .map((entry) => entry.item);
+}
+
+/**
+ * Orbit the camera around a target.
+ *
+ * The pitch is clamped just short of vertical: at exactly ±90° the camera's
+ * up vector becomes parallel to the axis it turns about and the view rolls
+ * unpredictably — gimbal lock, which reads to a user as the scene suddenly
+ * spinning on its own.
+ */
+function orbit(camera, target, deltaYaw, deltaPitch) {
+  const dx = camera.x - target.x;
+  const dy = camera.y - target.y;
+  const dz = camera.z - target.z;
+  const radius = Math.hypot(dx, dy, dz) || 1;
+
+  const yaw = Math.atan2(dx, dz) / DEG + deltaYaw;
+  const currentPitch = Math.asin(Math.min(1, Math.max(-1, -dy / radius))) / DEG;
+  const pitch = Math.min(89, Math.max(-89, currentPitch + deltaPitch));
+
+  const cp = Math.cos(pitch * DEG);
+
+  // The angles are derived, not guessed. toCameraSpace un-rotates by Y and
+  // then X, so for the target to land on the view axis the yaw must be
+  // turned to face back along the offset (hence +180) and the pitch must be
+  // inverted. Getting either sign wrong puts the subject behind the camera,
+  // where it vanishes rather than appearing wrong — which is why this is
+  // pinned by a test that projects the target and checks it lands dead
+  // centre.
+  return {
+    ...camera,
+    x: target.x + radius * cp * Math.sin(yaw * DEG),
+    y: target.y - radius * Math.sin(pitch * DEG),
+    z: target.z + radius * cp * Math.cos(yaw * DEG),
+    rotY: yaw + 180,
+    rotX: -pitch,
+    rotZ: 0,
+  };
+}
+
+/** Move the camera along its own view direction. */
+function dolly(camera, distance) {
+  const forward = rotatePoint({ x: 0, y: 0, z: 1 }, camera.rotX, camera.rotY, camera.rotZ);
+  return {
+    ...camera,
+    x: camera.x + forward.x * distance,
+    y: camera.y + forward.y * distance,
+    z: camera.z + forward.z * distance,
+  };
+}
+
+/** How far a camera sits from a point, for framing and for depth cueing. */
+function distanceTo(camera, point) {
+  return Math.hypot(camera.x - point.x, camera.y - point.y, camera.z - (point.z || 0));
+}
+
+const CAMERA_PRESETS = {
+  front: { rotX: 0, rotY: 0, rotZ: 0 },
+  threeQuarter: { rotX: -12, rotY: 28, rotZ: 0 },
+  top: { rotX: -70, rotY: 0, rotZ: 0 },
+  low: { rotX: 22, rotY: -18, rotZ: 0 },
+};
+
+// --- Animating the camera -----------------------------------------------
+//
+// A fixed viewpoint is what makes 3D read as "flat shapes at angles". The
+// camera moving is what makes it read as space, so the camera gets
+// keyframes of its own.
+
+/** Fold an angle into -180..180 without changing where it points. */
+function normalizeAngle(deg) {
+  let a = deg % 360;
+  if (a > 180) a -= 360;
+  if (a < -180) a += 360;
+  return a;
+}
+
+/**
+ * Interpolate two angles the short way round.
+ *
+ * Lerping 170° to -170° numerically sweeps 340° backwards through zero,
+ * when those two angles are 20° apart. On a camera that is not a subtle
+ * artefact: the view whips most of the way around the scene and back for
+ * what should be a small correction.
+ */
+function lerpAngle(a, b, t) {
+  const delta = normalizeAngle(normalizeAngle(b) - normalizeAngle(a));
+  return normalizeAngle(a) + delta * t;
+}
+
+/**
+ * The camera at a moment in time.
+ *
+ * `keyframes` may be empty or absent, in which case the static camera is
+ * used unchanged — so adding this costs nothing to a scene that does not
+ * move its camera.
+ */
+function sampleCamera(keyframes, time, fallback) {
+  if (!Array.isArray(keyframes) || keyframes.length === 0) return fallback;
+  if (keyframes.length === 1) return { ...fallback, ...keyframes[0] };
+
+  const sorted = keyframes;
+  if (time <= sorted[0].time) return { ...fallback, ...sorted[0] };
+  const last = sorted[sorted.length - 1];
+  if (time >= last.time) return { ...fallback, ...last };
+
+  let i = 0;
+  while (i < sorted.length - 1 && sorted[i + 1].time <= time) i++;
+  const a = sorted[i];
+  const b = sorted[i + 1];
+  const span = b.time - a.time;
+  const raw = span > 0 ? (time - a.time) / span : 0;
+  const t = typeof a.easeFn === 'function' ? a.easeFn(raw) : raw;
+
+  const num = (key, fb) => {
+    const av = a[key] === undefined ? fb : a[key];
+    const bv = b[key] === undefined ? fb : b[key];
+    return av + (bv - av) * t;
+  };
+  const ang = (key) => lerpAngle(
+    a[key] === undefined ? (fallback[key] || 0) : a[key],
+    b[key] === undefined ? (fallback[key] || 0) : b[key],
+    t,
+  );
+
+  return {
+    ...fallback,
+    x: num('x', fallback.x),
+    y: num('y', fallback.y),
+    z: num('z', fallback.z),
+    rotX: ang('rotX'),
+    rotY: ang('rotY'),
+    rotZ: ang('rotZ'),
+    fov: num('fov', fallback.fov),
+  };
+}
+
+/** Insert or replace a camera keyframe, keeping the list time-ordered. */
+function setCameraKeyframe(keyframes, time, camera, ease = 'ease') {
+  const list = Array.isArray(keyframes) ? keyframes : [];
+  const existing = list.find((k) => Math.abs(k.time - time) < 0.001);
+  const values = {
+    time,
+    x: camera.x, y: camera.y, z: camera.z,
+    rotX: camera.rotX, rotY: camera.rotY, rotZ: camera.rotZ,
+    fov: camera.fov,
+    ease,
+  };
+  if (existing) {
+    Object.assign(existing, values);
+    return list;
+  }
+  list.push(values);
+  list.sort((a, b) => a.time - b.time);
+  return list;
+}
+
+function removeCameraKeyframe(keyframes, time) {
+  if (!Array.isArray(keyframes)) return [];
+  const i = keyframes.findIndex((k) => Math.abs(k.time - time) < 0.001);
+  if (i === -1) return keyframes;
+  keyframes.splice(i, 1);
+  return keyframes;
+}
+
+// ---- light3d.js ----
+// The scene's light.
+//
+// A fixed key light made solids readable; making the light a property of
+// the scene makes it a storytelling tool — a sunrise is nothing but a light
+// keyframed from low-and-warm to high-and-neutral.
+//
+// The light is authored as angles, not as a vector. A person thinks "from
+// the left, low, warm", which is azimuth, elevation and warmth; the unit
+// vector the shading needs is derived. Angles also interpolate correctly
+// through keyframes with the same shortest-arc rule the camera uses.
+
+
+const TO_RAD = Math.PI / 180;
+
+function createLight() {
+  // Matches the old fixed light, so switching a scene to 3D looks the same
+  // before and after this feature existed.
+  return { azimuth: 40, elevation: 38, ambient: 0.35, warmth: 0.5 };
+}
+
+/**
+ * The direction the light TRAVELS, as a unit vector.
+ *
+ * Azimuth 0 shines straight into the scene from behind the viewer;
+ * positive azimuth swings the source toward the viewer's left, so the
+ * beam travels rightward (+x). Elevation raises the source, so the beam
+ * travels downward — +y, since y runs down the screen. Elevation 90 is
+ * noon: straight down.
+ */
+function lightDirection({ azimuth = 40, elevation = 38 } = {}) {
+  const el = Math.max(-89, Math.min(89, elevation)) * TO_RAD;
+  const az = azimuth * TO_RAD;
+  const v = {
+    x: Math.sin(az) * Math.cos(el),
+    y: Math.sin(el),
+    z: Math.cos(az) * Math.cos(el),
+  };
+  const len = Math.hypot(v.x, v.y, v.z) || 1;
+  return { x: v.x / len, y: v.y / len, z: v.z / len };
+}
+
+/**
+ * Per-channel multipliers for the light's colour temperature.
+ *
+ * 0 is cold (blue-leaning), 1 is warm (orange-leaning), 0.5 is neutral —
+ * exactly {1,1,1}, so a scene that never touches warmth renders exactly as
+ * it did before warmth existed. The excursions are deliberately gentle: a
+ * light that can turn a face fully orange stops reading as lighting and
+ * starts reading as recolouring.
+ */
+function lightTint(warmth = 0.5) {
+  const w = Math.max(0, Math.min(1, warmth)) - 0.5; // -0.5 .. 0.5
+  return {
+    r: 1 + w * 0.5,
+    g: 1 + w * 0.08,
+    b: 1 - w * 0.55,
+  };
+}
+
+/** The light at a moment in time, sampled through its keyframes. */
+function sampleLight(keyframes, time, fallback) {
+  if (!Array.isArray(keyframes) || keyframes.length === 0) return fallback;
+  if (keyframes.length === 1) return { ...fallback, ...stripMeta(keyframes[0]) };
+
+  const sorted = keyframes;
+  if (time <= sorted[0].time) return { ...fallback, ...stripMeta(sorted[0]) };
+  const last = sorted[sorted.length - 1];
+  if (time >= last.time) return { ...fallback, ...stripMeta(last) };
+
+  let i = 0;
+  while (i < sorted.length - 1 && sorted[i + 1].time <= time) i++;
+  const a = sorted[i];
+  const b = sorted[i + 1];
+  const span = b.time - a.time;
+  const raw = span > 0 ? (time - a.time) / span : 0;
+  const t = typeof a.easeFn === 'function' ? a.easeFn(raw) : raw;
+
+  const num = (key) => {
+    const av = a[key] === undefined ? fallback[key] : a[key];
+    const bv = b[key] === undefined ? fallback[key] : b[key];
+    return av + (bv - av) * t;
+  };
+  return {
+    ...fallback,
+    // Azimuth wraps like any heading; elevation and the scalars do not.
+    azimuth: lerpAngle(
+      a.azimuth === undefined ? fallback.azimuth : a.azimuth,
+      b.azimuth === undefined ? fallback.azimuth : b.azimuth,
+      t,
+    ),
+    elevation: num('elevation'),
+    ambient: num('ambient'),
+    warmth: num('warmth'),
+  };
+}
+
+function stripMeta(k) {
+  const { time, ease, easeFn, ...rest } = k;
+  return rest;
+}
+
+function setLightKeyframe(keyframes, time, light, ease = 'ease') {
+  const list = Array.isArray(keyframes) ? keyframes : [];
+  const existing = list.find((k) => Math.abs(k.time - time) < 0.001);
+  const values = {
+    time,
+    azimuth: light.azimuth,
+    elevation: light.elevation,
+    ambient: light.ambient,
+    warmth: light.warmth,
+    ease,
+  };
+  if (existing) {
+    Object.assign(existing, values);
+    return list;
+  }
+  list.push(values);
+  list.sort((a, b) => a.time - b.time);
+  return list;
+}
+
+function removeLightKeyframe(keyframes, time) {
+  if (!Array.isArray(keyframes)) return [];
+  const i = keyframes.findIndex((k) => Math.abs(k.time - time) < 0.001);
+  if (i !== -1) keyframes.splice(i, 1);
+  return keyframes;
+}
+
+// ---- mesh3d.js ----
+// Solid geometry.
+//
+// Billboards made the scene three-dimensional; this makes the *objects*
+// three-dimensional. A mesh is vertices and faces; rendering is: transform
+// to world space, cull the faces looking away, light the rest against a
+// directional light, project, and paint far-to-near. All of it is
+// arithmetic the 2D canvas can draw as filled polygons — no WebGL, no
+// dependencies — and because the pipeline stages are plain functions, each
+// is testable in Node without a browser.
+//
+// Meshes are unit-sized (roughly -0.5..0.5 per axis) and get scaled into
+// world units at render time, so one cube definition serves every cube.
+
+
+function cubeMesh() {
+  const v = [];
+  for (const x of [-0.5, 0.5]) for (const y of [-0.5, 0.5]) for (const z of [-0.5, 0.5]) v.push({ x, y, z });
+  // Wound counter-clockwise seen from outside, which is what culling keys on.
+  return {
+    vertices: v,
+    faces: [
+      [0, 1, 3, 2], // -x
+      [6, 7, 5, 4], // +x
+      [0, 4, 5, 1], // -y (top: y runs down)
+      [2, 3, 7, 6], // +y
+      [0, 2, 6, 4], // -z (front)
+      [1, 5, 7, 3], // +z (back)
+    ],
+  };
+}
+
+function pyramidMesh() {
+  const vertices = [
+    { x: 0, y: -0.5, z: 0 },                 // apex (up: y runs down)
+    { x: -0.5, y: 0.5, z: -0.5 },
+    { x: 0.5, y: 0.5, z: -0.5 },
+    { x: 0.5, y: 0.5, z: 0.5 },
+    { x: -0.5, y: 0.5, z: 0.5 },
+  ];
+  return {
+    vertices,
+    faces: [
+      [0, 1, 2], [0, 2, 3], [0, 3, 4], [0, 4, 1], // sides
+      [4, 3, 2, 1],                                // base
+    ],
+  };
+}
+
+/**
+ * A latitude/longitude sphere.
+ *
+ * Coarse on purpose: at ten segments the silhouette reads as a sphere once
+ * lit, and the faceting is a look, not a defect — flat-shaded low-poly is
+ * the honest aesthetic of a painter-sorted renderer.
+ */
+function sphereMesh(segments = 10, rings = 8) {
+  const vertices = [];
+  for (let r = 0; r <= rings; r++) {
+    const phi = (r / rings) * Math.PI;
+    for (let s = 0; s < segments; s++) {
+      const theta = (s / segments) * Math.PI * 2;
+      vertices.push({
+        x: 0.5 * Math.sin(phi) * Math.cos(theta),
+        y: -0.5 * Math.cos(phi),
+        z: 0.5 * Math.sin(phi) * Math.sin(theta),
+      });
+    }
+  }
+  const faces = [];
+  const at = (r, s) => r * segments + (s % segments);
+  for (let r = 0; r < rings; r++) {
+    for (let s = 0; s < segments; s++) {
+      // Wound to face outward — the reverse of the naive row order, which
+      // reads inside-out; the winding test is what catches this, because a
+      // wrong winding shows up visually only as a hole while orbiting. The
+      // pole rows collapse to triangles on their own since the duplicated
+      // pole vertices coincide.
+      faces.push([at(r + 1, s), at(r + 1, s + 1), at(r, s + 1), at(r, s)]);
+    }
+  }
+  return { vertices, faces };
+}
+
+const MESHES = {
+  cube: cubeMesh(),
+  pyramid: pyramidMesh(),
+  sphere: sphereMesh(),
+};
+
+function isMeshType(type) {
+  return Object.prototype.hasOwnProperty.call(MESHES, type);
+}
+
+/** Local unit mesh -> world-space vertices for one shape instance. */
+function transformVertices(mesh, { x, y, z = 0, size, rotX = 0, rotY = 0, rotZ = 0 }) {
+  return mesh.vertices.map((v) => {
+    const r = rotatePoint(v, rotX, rotY, rotZ);
+    return { x: x + r.x * size, y: y + r.y * size, z: z + r.z * size };
+  });
+}
+
+/** Unit normal of a face from its first three world-space vertices. */
+function faceNormal(verts, face) {
+  const a = verts[face[0]];
+  const b = verts[face[1]];
+  const c = verts[face[2]];
+  const u = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+  const w = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+  const n = {
+    x: u.y * w.z - u.z * w.y,
+    y: u.z * w.x - u.x * w.z,
+    z: u.x * w.y - u.y * w.x,
+  };
+  const len = Math.hypot(n.x, n.y, n.z) || 1;
+  return { x: n.x / len, y: n.y / len, z: n.z / len };
+}
+
+// One directional light, fixed in world space. The vector is the direction
+// the light TRAVELS: rightward, downward (y runs down, so downward is
+// positive) and into the scene — a key light at the viewer's upper left,
+// the way a portrait is lit. Getting the z sign wrong lights the backs of
+// objects while the camera looks at their fronts, leaving every visible
+// face clamped to the ambient floor. Components are deliberately unequal so
+// no two faces of a tilted cube land on the same intensity and merge.
+const L = { x: 0.5, y: 0.62, z: 0.6 };
+const LLEN = Math.hypot(L.x, L.y, L.z);
+const LIGHT_DIR = { x: L.x / LLEN, y: L.y / LLEN, z: L.z / LLEN };
+
+// Ambient keeps unlit faces readable instead of black — a scene tool, not a
+// physical renderer, wants no face to vanish into the background.
+const AMBIENT = 0.35;
+
+/** Lambert: how lit a face with this normal is, in ambient..1. */
+function lambert(normal, dir = LIGHT_DIR, ambient = AMBIENT) {
+  const facing = -(normal.x * dir.x + normal.y * dir.y + normal.z * dir.z);
+  return ambient + (1 - ambient) * Math.max(0, facing);
+}
+
+/** Scale a hex colour per channel, staying a valid hex. */
+function shadeChannels(hex, kr, kg, kb) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(hex));
+  const n = m ? parseInt(m[1], 16) : 0x3fc6ff;
+  const ch = (shift, k) => {
+    const v = Math.round(((n >> shift) & 0xff) * k);
+    return Math.min(255, Math.max(0, v)).toString(16).padStart(2, '0');
+  };
+  return `#${ch(16, kr)}${ch(8, kg)}${ch(0, kb)}`;
+}
+
+/** Scale a hex colour's brightness uniformly, staying a valid hex. */
+function shadeColor(hex, k) {
+  return shadeChannels(hex, k, k, k);
+}
+
+/**
+ * The full pipeline for one mesh instance: world transform, camera space,
+ * near-plane rejection, backface cull, lighting, projection, depth order.
+ *
+ * Returns drawable faces, each `{ points: [[px,py]...], color, depth }`,
+ * sorted far-to-near and ready for a canvas path. Pure — no canvas here —
+ * which is what makes the geometry testable in Node.
+ */
+function renderMesh(type, instance, camera, width, height, light = null) {
+  const mesh = MESHES[type];
+  if (!mesh) return [];
+
+  // The light is resolved once per mesh, not per face; omitting it keeps
+  // the built-in key light, so everything that predates scene lighting
+  // renders unchanged.
+  const dir = light && light.dir ? light.dir : LIGHT_DIR;
+  const ambient = light && Number.isFinite(light.ambient) ? light.ambient : AMBIENT;
+  const tint = light && light.tint ? light.tint : { r: 1, g: 1, b: 1 };
+
+  const world = transformVertices(mesh, instance);
+  const cam = world.map((v) => toCameraSpace(v, camera));
+
+  const out = [];
+  for (const face of mesh.faces) {
+    // Any vertex at or behind the near plane would project flipped through
+    // the origin; dropping the face is the safe form of clipping at this
+    // scale.
+    if (face.some((i) => cam[i].z <= camera.near)) continue;
+
+    // Backface cull in camera space. The camera looks along +z from the
+    // origin, so a face is visible when its normal points back toward the
+    // origin: normal · anyVertex < 0.
+    const n = faceNormal(cam, face);
+    const v0 = cam[face[0]];
+    if (n.x * v0.x + n.y * v0.y + n.z * v0.z >= 0) continue;
+
+    const worldNormal = faceNormal(world, face);
+    const points = face.map((i) => {
+      const p = project(cam[i], camera, width, height);
+      return [p.x, p.y];
+    });
+    const depth = face.reduce((sum, i) => sum + cam[i].z, 0) / face.length;
+
+    const lit = lambert(worldNormal, dir, ambient);
+    out.push({
+      points,
+      color: shadeChannels(instance.color, lit * tint.r, lit * tint.g, lit * tint.b),
+      depth,
+    });
+  }
+
+  // Painter order within the mesh: the far faces first, so near ones cover
+  // them. Faces of one convex solid never interleave wrongly under this.
+  out.sort((a, b) => b.depth - a.depth);
+  return out;
+}
+
 // ---- animation.js ----
 // Keyframe animation engine.
 //
@@ -3769,17 +5249,55 @@ const PRESETS = [
 // frame by frame — and can react to an audio track, which is what lets
 // voice and animation drive each other.
 
-const SHAPE_TYPES = ['circle', 'rect', 'triangle', 'text', 'wave'];
 
-const EASINGS = {
-  linear: (t) => t,
-  ease: (t) => t * t * (3 - 2 * t),
-  easeIn: (t) => t * t,
-  easeOut: (t) => t * (2 - t),
-  bounce: (t) => 1 - Math.abs(Math.cos(t * Math.PI * 2)) * (1 - t),
-};
 
-const EASING_NAMES = Object.keys(EASINGS);
+
+
+
+const SHAPE_TYPES = ['circle', 'rect', 'triangle', 'text', 'wave', 'image',
+                            'cube', 'sphere', 'pyramid'];
+
+// What a solid falls back to when the scene has no camera: its silhouette.
+// A 2D render of a mesh scene should degrade to flat shapes, not vanish.
+const MESH_FALLBACK = { cube: 'rect', sphere: 'circle', pyramid: 'triangle' };
+
+// Decoded images, keyed by the shape's `src`.
+//
+// renderFrame is synchronous — it has to be, because it is called per frame
+// from a rAF loop and during frame-by-frame export — but decoding an image
+// is not. So decoding happens once at import time and the result is cached
+// here; a frame drawn before the decode lands simply skips that shape
+// rather than stalling the loop or drawing a blank.
+const imageCache = new Map();
+
+function registerImage(src, img) {
+  imageCache.set(src, img);
+}
+
+function hasImage(src) {
+  return imageCache.has(src);
+}
+
+/** The decoded image behind a shape's src, for renderers that texture it. */
+function getImage(src) {
+  return imageCache.get(src) || null;
+}
+
+/** Re-decode any images a loaded scene refers to but this session lacks. */
+async function hydrateSceneImages(scene, decode) {
+  if (!scene || !Array.isArray(scene.shapes)) return;
+  const pending = new Set();
+  for (const shape of scene.shapes) {
+    if (shape.type === 'image' && shape.src && !imageCache.has(shape.src)) pending.add(shape.src);
+  }
+  await Promise.all([...pending].map(async (src) => {
+    try {
+      imageCache.set(src, await decode(src));
+    } catch {
+      /* a scene with one unreadable image should still open */
+    }
+  }));
+}
 
 let nextId = 1;
 
@@ -3789,10 +5307,19 @@ function createShape(type, atTime = 0) {
     type,
     label: `${type.charAt(0).toUpperCase()}${type.slice(1)} ${nextId - 1}`,
     text: type === 'text' ? 'THE VOICE' : '',
+    // Extrusion depth for text, in world units. Meaningless without a
+    // camera, so 2D scenes carry it inertly.
+    extrude: type === 'text' ? 8 : 0,
+    // Data URL for an imported image, so a saved scene stays self-contained
+    // rather than pointing at a file the recipient does not have.
+    src: '',
     // Whether this shape's scale is driven by the audio track's level.
     reactive: false,
     easing: 'ease',
     keyframes: [
+      // z and the extra rotation axes are absent by default. A scene with no
+      // camera renders through the original 2D path untouched; these only
+      // come into play once 3D is switched on, so no existing scene shifts.
       { time: atTime, x: 50, y: 50, scale: 1, rotation: 0, opacity: 1, color: '#3fc6ff' },
     ],
   };
@@ -3810,6 +5337,8 @@ function setKeyframe(shape, time, props) {
     return existing;
   }
   const base = sampleShape(shape, time);
+  // No `ease` here on purpose: a keyframe without one defers to the shape,
+  // and only picks up a curve of its own once someone authors one.
   const kf = { ...base, ...props, time };
   shape.keyframes.push(kf);
   shape.keyframes.sort((a, b) => a.time - b.time);
@@ -3850,17 +5379,41 @@ function sampleShape(shape, time) {
   const b = kfs[i + 1];
   const span = b.time - a.time;
   const raw = span > 0 ? (time - a.time) / span : 0;
-  const t = (EASINGS[shape.easing] || EASINGS.linear)(raw);
+  // Easing belongs to the segment, and a segment is identified by the
+  // keyframe it leaves from — so `a.ease` governs a→b. A shape-wide
+  // `easing` is the fallback, which is what old scenes carry.
+  const t = resolveEasing(a.ease, shape.easing || 'ease')(raw);
 
   return {
     time,
     x: lerp(a.x, b.x, t),
     y: lerp(a.y, b.y, t),
+    z: lerp(a.z || 0, b.z || 0, t),
     scale: lerp(a.scale, b.scale, t),
     rotation: lerp(a.rotation, b.rotation, t),
+    rotX: lerp(a.rotX || 0, b.rotX || 0, t),
+    rotY: lerp(a.rotY || 0, b.rotY || 0, t),
     opacity: lerp(a.opacity, b.opacity, t),
     color: lerpColor(a.color, b.color, t),
   };
+}
+
+/** Give a scene a camera, turning on the 3D path. */
+function enable3D(scene, fov = 55) {
+  if (!scene.camera) scene.camera = createCamera(fov);
+  // The light arrives with the camera: solids need something to be lit by,
+  // and a scene owning its light is what makes the light authorable.
+  if (!scene.light) scene.light = createLight();
+  return scene;
+}
+
+function disable3D(scene) {
+  delete scene.camera;
+  return scene;
+}
+
+function is3D(scene) {
+  return !!(scene && scene.camera);
 }
 
 /**
@@ -3871,23 +5424,126 @@ function renderFrame(ctx, scene, time, width, height, audioLevel = 0) {
   ctx.fillStyle = scene.background;
   ctx.fillRect(0, 0, width, height);
 
-  for (const shape of scene.shapes) {
-    const p = sampleShape(shape, time);
+  // A scene without a camera renders exactly as it always has. Perspective
+  // maps x and y through one uniform scale, while the 2D path stretches each
+  // to its own axis, so the two cannot agree on a non-square canvas — which
+  // means switching a scene to 3D would otherwise silently reflow it. Keeping
+  // both paths lets 3D be something a scene opts into.
+  const { camera, light: sceneLight, order } = resolveFrame(scene, time);
+
+  for (const entry of order) {
+    const shape = entry.shape;
+    const p = entry.p;
     if (p.opacity <= 0.001) continue;
 
-    const cx = (p.x / 100) * width;
-    const cy = (p.y / 100) * height;
+    // Solids take their own path: the mesh pipeline transforms, culls,
+    // lights and projects per face, so the billboard translate/rotate
+    // machinery below does not apply to them.
+    if (camera && isMeshType(shape.type)) {
+      const boost = shape.reactive ? 1 + audioLevel * 1.2 : 1;
+      // 18 world units matches the billboard size at z=0: the world is 100
+      // units tall, and billboards draw at 0.18 of the frame.
+      const meshSize = Math.max(0, 18 * p.scale * boost);
+      if (meshSize <= 0) continue;
+      const faces = renderMesh(shape.type, {
+        x: p.x, y: p.y, z: p.z || 0,
+        size: meshSize,
+        rotX: p.rotX || 0, rotY: p.rotY || 0, rotZ: p.rotation || 0,
+        color: p.color,
+      }, camera, width, height, sceneLight);
+      if (!faces.length) continue;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
+      for (const face of faces) {
+        ctx.beginPath();
+        ctx.moveTo(face.points[0][0], face.points[0][1]);
+        for (let i = 1; i < face.points.length; i++) ctx.lineTo(face.points[i][0], face.points[i][1]);
+        ctx.closePath();
+        ctx.fillStyle = face.color;
+        ctx.fill();
+        // Antialiasing leaves hairline gaps between adjacent filled faces;
+        // a one-pixel stroke in the face's own colour closes them.
+        ctx.strokeStyle = face.color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.restore();
+      continue;
+    }
+
+    let cx;
+    let cy;
+    let depthScale = 1;
+
+    if (camera && shape.type === 'text' && (shape.extrude || 0) > 0) {
+      const slices = textSlices(p, shape.extrude, camera, width, height);
+      if (!slices.length) continue;
+      const norm = framingDistance(camera.fov) / ((height / 2) / Math.tan((camera.fov / 2) * Math.PI / 180));
+      const boost = shape.reactive ? 1 + audioLevel * 1.2 : 1;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const slice of slices) {
+        const size = Math.min(width, height) * 0.18 * p.scale * boost * slice.scale * norm;
+        if (size <= 0.5) continue;
+        ctx.save();
+        ctx.translate(slice.x, slice.y);
+        if (p.rotX || p.rotY) {
+          const fx = Math.cos((p.rotY || 0) * Math.PI / 180);
+          const fy = Math.cos((p.rotX || 0) * Math.PI / 180);
+          ctx.scale(Math.max(0.001, Math.abs(fx)), Math.max(0.001, Math.abs(fy)));
+        }
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.font = `700 ${size * 0.5}px 'Chakra Petch', sans-serif`;
+        ctx.fillStyle = slice.front ? p.color : shadeColor(p.color, slice.shade);
+        ctx.fillText(shape.text || '', 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
+      continue;
+    }
+
+    if (camera) {
+      const projected = projectPoint({ x: p.x, y: p.y, z: p.z || 0 }, camera, width, height);
+      // Behind the camera: drawing it anyway would flip it through the
+      // origin and show it upside down in front of the viewer.
+      if (!projected.visible) continue;
+      cx = projected.x;
+      cy = projected.y;
+      // The projection's scale is normalised against the framing distance so
+      // that a shape at z=0 is exactly the size the 2D path would draw it.
+      depthScale = projected.scale * (framingDistance(camera.fov) / ((height / 2) / Math.tan((camera.fov / 2) * Math.PI / 180)));
+    } else {
+      cx = (p.x / 100) * width;
+      cy = (p.y / 100) * height;
+    }
     const reactBoost = shape.reactive ? 1 + audioLevel * 1.2 : 1;
-    const size = Math.min(width, height) * 0.18 * p.scale * reactBoost;
+    // An overshooting curve can carry scale below zero. Canvas throws on a
+    // negative arc radius, so clamp here: a shape that overshoots past
+    // nothing vanishes for those frames rather than taking the whole render
+    // loop down with it.
+    const size = Math.max(0, Math.min(width, height) * 0.18 * p.scale * reactBoost * depthScale);
+    if (size <= 0) continue;
 
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
     ctx.translate(cx, cy);
+    // Tilting a flat shape away from the viewer foreshortens it. This is a
+    // billboard, not a mesh — the shape stays a flat card facing the camera
+    // and is squashed along each axis — which is the honest 2.5D result and
+    // exactly what a WebGL mesh renderer would later replace.
+    if (camera && (p.rotX || p.rotY)) {
+      const fx = Math.cos((p.rotY || 0) * Math.PI / 180);
+      const fy = Math.cos((p.rotX || 0) * Math.PI / 180);
+      ctx.scale(Math.max(0.001, Math.abs(fx)), Math.max(0.001, Math.abs(fy)));
+    }
     ctx.rotate((p.rotation * Math.PI) / 180);
     ctx.fillStyle = p.color;
     ctx.strokeStyle = p.color;
 
-    switch (shape.type) {
+    const kind = !camera && MESH_FALLBACK[shape.type] ? MESH_FALLBACK[shape.type] : shape.type;
+    switch (kind) {
       case 'circle':
         ctx.beginPath();
         ctx.arc(0, 0, size / 2, 0, Math.PI * 2);
@@ -3910,6 +5566,20 @@ function renderFrame(ctx, scene, time, width, height, audioLevel = 0) {
         ctx.textBaseline = 'middle';
         ctx.fillText(shape.text || '', 0, 0);
         break;
+      case 'image': {
+        const img = imageCache.get(shape.src);
+        // Not decoded yet, or the source was unreadable: skip this shape
+        // rather than painting a placeholder into an export.
+        if (!img || !img.width) break;
+        // Fit inside the shape's box while keeping the image's own aspect
+        // ratio — stretching someone's logo to a square is never wanted.
+        const box = size * 1.6;
+        const ratio = img.width / img.height;
+        const w = ratio >= 1 ? box : box * ratio;
+        const h = ratio >= 1 ? box / ratio : box;
+        ctx.drawImage(img, -w / 2, -h / 2, w, h);
+        break;
+      }
       case 'wave': {
         ctx.lineWidth = Math.max(1, size * 0.05);
         ctx.beginPath();
@@ -3964,6 +5634,1075 @@ function deserializeScene(json) {
     if (Number.isFinite(n) && n >= nextId) nextId = n + 1;
   }
   return scene;
+}
+
+
+
+/**
+ * Everything a renderer needs for one frame, resolved once.
+ *
+ * The canvas renderer and the WebGL renderer both consume this, which is
+ * what guarantees they cannot disagree about sampling: the animated camera,
+ * the animated light and every shape's interpolated properties come from
+ * one place. A renderer differs only in how it puts pixels down.
+ */
+function resolveFrame(scene, time) {
+  // The camera may itself be animated. Resolving it per frame costs nothing
+  // when there are no camera keyframes, which is the common case.
+  const camera = scene.camera
+    ? sampleCamera(resolveCameraKeys(scene), time, scene.camera)
+    : null;
+
+  // The light samples through its keyframes exactly as the camera does.
+  // Everything derived from it — direction vector, tint — is computed once
+  // per frame rather than once per face.
+  let light = null;
+  if (camera) {
+    const base = scene.light || createLight();
+    const lit = sampleLight(resolveLightKeys(scene), time, base);
+    light = {
+      dir: lightDirection(lit),
+      ambient: Math.max(0, Math.min(0.9, lit.ambient)),
+      tint: lightTint(lit.warmth),
+    };
+  }
+
+  // Far-to-near, for renderers without a depth buffer — and for the
+  // transparent pass of the one with.
+  const order = camera
+    ? depthSort(scene.shapes.map((shape) => {
+        const p = sampleShape(shape, time);
+        return { shape, p, x: p.x, y: p.y, z: p.z || 0 };
+      }), camera)
+    : scene.shapes.map((shape) => ({ shape, p: sampleShape(shape, time) }));
+
+  return { camera, light, order };
+}
+
+/**
+ * Where each slice of an extruded text lands on screen.
+ *
+ * Extrusion by stacking: the glyph face is drawn repeatedly from the back
+ * of the solid to the front, each copy projected through the camera at its
+ * own depth. Because every slice is genuinely at a different z, parallax,
+ * foreshortening and dolly moves all behave — this is a discrete extrusion,
+ * not a drop shadow.
+ *
+ * The extrusion axis is the shape's local z, rotated by its tilt and turn,
+ * so a turned title extrudes sideways across the screen the way a solid
+ * would. Pure geometry, no canvas — which is what makes it testable.
+ */
+function textSlices(p, extrude, camera, width, height) {
+  const depth = Math.max(0, Math.min(60, extrude || 0));
+  // Enough slices that the flank reads as a surface, few enough that a
+  // dozen titles still render every frame.
+  const count = depth <= 0 ? 1 : Math.max(4, Math.min(16, Math.round(depth)));
+  const axis = rotatePoint({ x: 0, y: 0, z: 1 }, p.rotX || 0, p.rotY || 0, 0);
+
+  const out = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const t = count === 1 ? 0 : (i / (count - 1)) * depth;
+    const wx = p.x + axis.x * t;
+    const wy = p.y + axis.y * t;
+    const wz = (p.z || 0) + axis.z * t;
+    const projected = projectPoint({ x: wx, y: wy, z: wz }, camera, width, height);
+    if (!projected.visible) continue;
+    out.push({
+      x: projected.x,
+      y: projected.y,
+      wx, wy, wz,
+      scale: projected.scale,
+      depth: projected.depth,
+      front: i === 0,
+      // The flank darkens toward the back, which is what separates the
+      // side surface from the face without a real per-pixel light.
+      shade: i === 0 ? 1 : 0.55 - 0.25 * (count === 1 ? 0 : i / (count - 1)),
+    });
+  }
+  return out;
+}
+
+/**
+ * Camera keyframes with their easing functions resolved.
+ *
+ * The easing is stored as a name or control points, like every other
+ * keyframe, but sampleCamera lives in the maths module and must not depend
+ * on the easing registry — so the function is attached here, at the seam.
+ */
+function resolveCameraKeys(scene) {
+  const keys = scene.cameraKeyframes;
+  if (!Array.isArray(keys) || !keys.length) return null;
+  for (const k of keys) k.easeFn = resolveEasing(k.ease, 'ease');
+  return keys;
+}
+
+/** Record the camera's current position at `time`. */
+function setCameraKey(scene, time, ease = 'ease') {
+  if (!scene.camera) return null;
+  scene.cameraKeyframes = setCameraKeyframe(scene.cameraKeyframes, time, scene.camera, ease);
+  return scene.cameraKeyframes;
+}
+
+function removeCameraKey(scene, time) {
+  scene.cameraKeyframes = removeCameraKeyframe(scene.cameraKeyframes, time);
+  return scene.cameraKeyframes;
+}
+
+function cameraKeys(scene) {
+  return Array.isArray(scene && scene.cameraKeyframes) ? scene.cameraKeyframes : [];
+}
+
+function resolveLightKeys(scene) {
+  const keys = scene.lightKeyframes;
+  if (!Array.isArray(keys) || !keys.length) return null;
+  for (const k of keys) k.easeFn = resolveEasing(k.ease, 'ease');
+  return keys;
+}
+
+/** Record the light's current settings at `time`. */
+function setLightKey(scene, time, ease = 'ease') {
+  if (!scene.light) return null;
+  scene.lightKeyframes = setLightKeyframe(scene.lightKeyframes, time, scene.light, ease);
+  return scene.lightKeyframes;
+}
+
+function removeLightKey(scene, time) {
+  scene.lightKeyframes = removeLightKeyframe(scene.lightKeyframes, time);
+  return scene.lightKeyframes;
+}
+
+function lightKeys(scene) {
+  return Array.isArray(scene && scene.lightKeyframes) ? scene.lightKeyframes : [];
+}
+
+// ---- webgl3d.js ----
+// The WebGL renderer.
+//
+// The canvas renderer proved the model: scenes are already three-dimensional,
+// lit, and camera-driven. What it cannot give is a depth buffer — painter
+// sorting is per shape, so two solids passing through each other draw
+// wrongly — or smooth shading, or hundreds of objects. This renderer is the
+// swap the data model was built for: it consumes exactly the same resolved
+// frame as the canvas path (same sampled camera, same light, same
+// interpolated shapes) and differs only in how pixels go down.
+//
+// Deliberate constraints:
+// - WebGL1, one shader program, no extensions: runs on effectively every
+//   device that has a GPU at all.
+// - The projection is required to agree with camera3d's project() to the
+//   pixel — pinned by a parity test — so switching renderers never moves
+//   anything on screen.
+// - Failure anywhere returns null and the caller stays on the canvas path.
+//   A renderer that almost works is worse than the one that always does.
+
+
+
+
+const VERT = `
+attribute vec3 aPos;
+attribute vec3 aNormal;
+attribute vec2 aUV;
+uniform mat4 uMVP;
+uniform mat4 uModel;
+varying vec3 vNormal;
+varying vec2 vUV;
+void main() {
+  vNormal = mat3(uModel[0].xyz, uModel[1].xyz, uModel[2].xyz) * aNormal;
+  vUV = aUV;
+  gl_Position = uMVP * vec4(aPos, 1.0);
+}`;
+
+const FRAG = `
+precision mediump float;
+uniform vec3 uColor;
+uniform float uOpacity;
+uniform vec3 uLightDir;
+uniform float uAmbient;
+uniform vec3 uTint;
+uniform float uUnlit;
+uniform float uUseTex;
+uniform sampler2D uTex;
+varying vec3 vNormal;
+varying vec2 vUV;
+void main() {
+  vec3 n = normalize(vNormal);
+  // Two-sided: culling is off (the depth buffer already handles closed
+  // solids), so a face seen from behind lights as if its normal faced us.
+  if (!gl_FrontFacing) n = -n;
+  float lit = uAmbient + (1.0 - uAmbient) * max(0.0, dot(n, -uLightDir));
+  vec3 shade = mix(uTint * lit, vec3(1.0), uUnlit);
+  vec4 tex = mix(vec4(1.0), texture2D(uTex, vUV), uUseTex);
+  float a = uOpacity * tex.a;
+  if (a < 0.01) discard;
+  gl_FragColor = vec4(uColor * tex.rgb * shade, a);
+}`;
+
+/* ---------- Small column-major mat4 kit ---------- */
+
+function mat4Identity() {
+  return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+
+function mat4Multiply(a, b) {
+  const out = new Array(16);
+  for (let c = 0; c < 4; c++) {
+    for (let r = 0; r < 4; r++) {
+      out[c * 4 + r] = a[r] * b[c * 4] + a[4 + r] * b[c * 4 + 1]
+                     + a[8 + r] * b[c * 4 + 2] + a[12 + r] * b[c * 4 + 3];
+    }
+  }
+  return out;
+}
+
+function mat4Translate(x, y, z) {
+  const m = mat4Identity();
+  m[12] = x; m[13] = y; m[14] = z;
+  return m;
+}
+
+function mat4Scale(s) {
+  return [s, 0, 0, 0, 0, s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1];
+}
+
+const RAD = Math.PI / 180;
+
+function mat4RotX(deg) {
+  const c = Math.cos(deg * RAD), s = Math.sin(deg * RAD);
+  return [1, 0, 0, 0, 0, c, s, 0, 0, -s, c, 0, 0, 0, 0, 1];
+}
+
+function mat4RotY(deg) {
+  const c = Math.cos(deg * RAD), s = Math.sin(deg * RAD);
+  return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, 0, 0, 0, 1];
+}
+
+function mat4RotZ(deg) {
+  const c = Math.cos(deg * RAD), s = Math.sin(deg * RAD);
+  return [c, s, 0, 0, -s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+}
+
+/**
+ * Standard GL perspective. Verified against camera3d.project(): a point
+ * pushed through view+projection+viewport must land on the same pixel as
+ * the maths renderer puts it, or the two renderers would disagree about
+ * where things are the moment one replaced the other.
+ */
+function mat4Perspective(fovDeg, aspect, near, far) {
+  const f = 1 / Math.tan((fovDeg / 2) * RAD);
+  const nf = 1 / (near - far);
+  return [
+    f / aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, (far + near) * nf, -1,
+    0, 0, 2 * far * near * nf, 0,
+  ];
+}
+
+/**
+ * World -> GL camera space.
+ *
+ * Matches toCameraSpace exactly — translate, then the camera's rotation
+ * inverted in Z, Y, X order — followed by diag(1,-1,-1), which maps the
+ * scene's axes (y down, z away) onto GL's (y up, z toward the viewer).
+ * That diagonal has determinant +1: it flips two axes, so handedness and
+ * triangle winding both survive.
+ */
+function mat4View(camera) {
+  const flip = [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1];
+  let m = mat4Multiply(mat4RotZ(-camera.rotZ || 0), mat4Translate(-camera.x, -camera.y, -camera.z));
+  m = mat4Multiply(mat4RotY(-camera.rotY || 0), m);
+  m = mat4Multiply(mat4RotX(-camera.rotX || 0), m);
+  return mat4Multiply(flip, m);
+}
+
+/** Shape instance -> world, matching transformVertices: T · S · Rx · Ry · Rz. */
+function mat4Model({ x, y, z = 0, size = 1, rotX = 0, rotY = 0, rotZ = 0 }) {
+  let m = mat4Multiply(mat4RotY(rotY), mat4RotZ(rotZ));
+  m = mat4Multiply(mat4RotX(rotX), m);
+  m = mat4Multiply(mat4Scale(size), m);
+  return mat4Multiply(mat4Translate(x, y, z), m);
+}
+
+/** Push one world point through the full GL pipeline to screen pixels. */
+function glProjectPoint(point, camera, width, height) {
+  const v = mat4Multiply(mat4View(camera), mat4Translate(point.x, point.y, point.z));
+  const p = mat4Perspective(camera.fov, width / height, camera.near, 5000);
+  const m = mat4Multiply(p, v);
+  const cx = m[12], cy = m[13], cw = m[15];
+  if (cw <= 0) return { visible: false, x: 0, y: 0 };
+  return {
+    visible: true,
+    x: (cx / cw + 1) / 2 * width,
+    y: (1 - (cy / cw + 1) / 2) * height,
+  };
+}
+
+/* ---------- Geometry ---------- */
+
+function meshToBuffer(mesh, smooth) {
+  const data = [];
+  for (const face of mesh.faces) {
+    for (let i = 1; i < face.length - 1; i++) {
+      for (const idx of [face[0], face[i], face[i + 1]]) {
+        const v = mesh.vertices[idx];
+        let n;
+        if (smooth) {
+          // A unit sphere's smooth normal is its own position direction.
+          const len = Math.hypot(v.x, v.y, v.z) || 1;
+          n = { x: v.x / len, y: v.y / len, z: v.z / len };
+        } else {
+          const a = mesh.vertices[face[0]];
+          const b = mesh.vertices[face[1]];
+          const c = mesh.vertices[face[2]];
+          const u = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z };
+          const w = { x: c.x - a.x, y: c.y - a.y, z: c.z - a.z };
+          const cr = { x: u.y * w.z - u.z * w.y, y: u.z * w.x - u.x * w.z, z: u.x * w.y - u.y * w.x };
+          const len = Math.hypot(cr.x, cr.y, cr.z) || 1;
+          n = { x: cr.x / len, y: cr.y / len, z: cr.z / len };
+        }
+        data.push(v.x, v.y, v.z, n.x, n.y, n.z, 0, 0);
+      }
+    }
+  }
+  return data;
+}
+
+function circleGeometry(segments = 28) {
+  const data = [];
+  for (let i = 0; i < segments; i++) {
+    const a0 = (i / segments) * Math.PI * 2;
+    const a1 = ((i + 1) / segments) * Math.PI * 2;
+    data.push(0, 0, 0, 0, 0, -1, 0.5, 0.5,
+      Math.cos(a0) * 0.5, Math.sin(a0) * 0.5, 0, 0, 0, -1, 0, 0,
+      Math.cos(a1) * 0.5, Math.sin(a1) * 0.5, 0, 0, 0, -1, 0, 0);
+  }
+  return data;
+}
+
+function quadGeometry(hw = 0.5, hh = 0.5) {
+  // Two triangles, UVs with v=0 at the top — matching FLIP_Y uploads.
+  return [
+    -hw, -hh, 0, 0, 0, -1, 0, 0,  hw, -hh, 0, 0, 0, -1, 1, 0,  hw, hh, 0, 0, 0, -1, 1, 1,
+    -hw, -hh, 0, 0, 0, -1, 0, 0,  hw, hh, 0, 0, 0, -1, 1, 1,  -hw, hh, 0, 0, 0, -1, 0, 1,
+  ];
+}
+
+function triangleGeometry() {
+  return [
+    0, -0.5, 0, 0, 0, -1, 0.5, 0,
+    0.5, 0.5, 0, 0, 0, -1, 1, 1,
+    -0.5, 0.5, 0, 0, 0, -1, 0, 1,
+  ];
+}
+
+function waveGeometry(samples = 48) {
+  // A sine ribbon spanning x -1..1, matching the canvas wave's proportions.
+  const data = [];
+  const amp = 0.25, half = 0.035;
+  for (let i = 0; i < samples; i++) {
+    const x0 = -1 + (2 * i) / samples;
+    const x1 = -1 + (2 * (i + 1)) / samples;
+    const y0 = Math.sin(x0 * Math.PI * 2) * amp;
+    const y1 = Math.sin(x1 * Math.PI * 2) * amp;
+    data.push(
+      x0, y0 - half, 0, 0, 0, -1, 0, 0,  x1, y1 - half, 0, 0, 0, -1, 0, 0,  x1, y1 + half, 0, 0, 0, -1, 0, 0,
+      x0, y0 - half, 0, 0, 0, -1, 0, 0,  x1, y1 + half, 0, 0, 0, -1, 0, 0,  x0, y0 + half, 0, 0, 0, -1, 0, 0,
+    );
+  }
+  return data;
+}
+
+/* ---------- Renderer ---------- */
+
+function hexToRgb(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(hex));
+  const n = m ? parseInt(m[1], 16) : 0x3fc6ff;
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+function createGLRenderer(canvas) {
+  let gl;
+  try {
+    gl = canvas.getContext('webgl', {
+      // Needed so exported frames can be read back after the rAF that drew
+      // them; without it the buffer may already be cleared at toBlob time.
+      preserveDrawingBuffer: true,
+      antialias: true,
+      alpha: false,
+    });
+  } catch {
+    return null;
+  }
+  if (!gl) return null;
+
+  const compile = (type, src) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(sh) || 'shader failed');
+    }
+    return sh;
+  };
+
+  let prog;
+  try {
+    prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+  } catch {
+    return null;
+  }
+  gl.useProgram(prog);
+
+  const locs = {
+    aPos: gl.getAttribLocation(prog, 'aPos'),
+    aNormal: gl.getAttribLocation(prog, 'aNormal'),
+    aUV: gl.getAttribLocation(prog, 'aUV'),
+  };
+  for (const name of ['uMVP', 'uModel', 'uColor', 'uOpacity', 'uLightDir',
+                      'uAmbient', 'uTint', 'uUnlit', 'uUseTex', 'uTex']) {
+    locs[name] = gl.getUniformLocation(prog, name);
+  }
+
+  const upload = (data) => {
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    return { buf, count: data.length / 8 };
+  };
+
+  const geo = {
+    cube: upload(meshToBuffer(MESHES.cube, false)),
+    pyramid: upload(meshToBuffer(MESHES.pyramid, false)),
+    // Smooth normals are the one upgrade flat canvas shading cannot fake:
+    // the sphere finally shades as a ball, not a disco ball.
+    sphere: upload(meshToBuffer(MESHES.sphere, true)),
+    circle: upload(circleGeometry()),
+    rect: upload(quadGeometry()),
+    triangle: upload(triangleGeometry()),
+    wave: upload(waveGeometry()),
+    quad: upload(quadGeometry()),
+  };
+
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+  return { gl, prog, locs, geo, canvas, textures: new Map() };
+}
+
+function bindGeometry(r, g) {
+  const { gl, locs } = r;
+  gl.bindBuffer(gl.ARRAY_BUFFER, g.buf);
+  gl.enableVertexAttribArray(locs.aPos);
+  gl.vertexAttribPointer(locs.aPos, 3, gl.FLOAT, false, 32, 0);
+  gl.enableVertexAttribArray(locs.aNormal);
+  gl.vertexAttribPointer(locs.aNormal, 3, gl.FLOAT, false, 32, 12);
+  gl.enableVertexAttribArray(locs.aUV);
+  gl.vertexAttribPointer(locs.aUV, 2, gl.FLOAT, false, 32, 24);
+}
+
+/** A white-glyph texture for a piece of text, cached. */
+function textTexture(r, text) {
+  const key = `t:${text}`;
+  const hit = r.textures.get(key);
+  if (hit) return hit;
+
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d');
+  const font = "700 96px 'Chakra Petch', sans-serif";
+  ctx.font = font;
+  const w = Math.max(4, Math.ceil(ctx.measureText(text).width));
+  c.width = w + 24;
+  c.height = 128;
+  ctx.font = font;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, c.width / 2, c.height / 2 + 6);
+
+  const entry = { tex: makeTexture(r, c), aspect: c.width / c.height };
+  cacheTexture(r, key, entry);
+  return entry;
+}
+
+function imageTexture(r, src) {
+  const key = `i:${src.slice(0, 80)}:${src.length}`;
+  const hit = r.textures.get(key);
+  if (hit) return hit;
+  const img = getImage(src);
+  if (!img || !img.width) return null;
+  const entry = { tex: makeTexture(r, img), aspect: img.width / img.height };
+  cacheTexture(r, key, entry);
+  return entry;
+}
+
+function makeTexture(r, source) {
+  const { gl } = r;
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+  // Non-power-of-two textures in WebGL1 require clamp + no mipmaps.
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  return tex;
+}
+
+function cacheTexture(r, key, entry) {
+  // The cache is bounded the blunt way: text edits mint textures per
+  // keystroke, and a Map that only grows is a leak with a GPU attached.
+  if (r.textures.size > 64) {
+    for (const old of r.textures.values()) r.gl.deleteTexture(old.tex);
+    r.textures.clear();
+  }
+  r.textures.set(key, entry);
+}
+
+function drawCall(r, g, mvp, model, { color, opacity, unlit, tex, light }) {
+  const { gl, locs } = r;
+  bindGeometry(r, g);
+  gl.uniformMatrix4fv(locs.uMVP, false, new Float32Array(mvp));
+  gl.uniformMatrix4fv(locs.uModel, false, new Float32Array(model));
+  gl.uniform3fv(locs.uColor, color);
+  gl.uniform1f(locs.uOpacity, opacity);
+  gl.uniform1f(locs.uUnlit, unlit ? 1 : 0);
+  gl.uniform3fv(locs.uLightDir, light ? [light.dir.x, light.dir.y, light.dir.z] : [0, 0, 1]);
+  gl.uniform1f(locs.uAmbient, light ? light.ambient : 1);
+  gl.uniform3fv(locs.uTint, light ? [light.tint.r, light.tint.g, light.tint.b] : [1, 1, 1]);
+  gl.uniform1f(locs.uUseTex, tex ? 1 : 0);
+  if (tex) {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(locs.uTex, 0);
+  }
+  gl.drawArrays(gl.TRIANGLES, 0, g.count);
+}
+
+/**
+ * Render one frame of a 3D scene.
+ *
+ * Consumes resolveFrame — the same sampled camera, light and shapes as the
+ * canvas renderer — and returns false for anything it cannot render (no
+ * camera, lost context), so the caller can fall back rather than show black.
+ */
+function glRenderFrame(r, scene, time, audioLevel = 0) {
+  const { gl, canvas } = r;
+  if (gl.isContextLost && gl.isContextLost()) return false;
+  const frame = resolveFrame(scene, time);
+  if (!frame.camera) return false;
+
+  const width = canvas.width;
+  const height = canvas.height;
+  const camera = frame.camera;
+  const light = frame.light;
+
+  gl.viewport(0, 0, width, height);
+  const [br, bg2, bb] = hexToRgb(scene.background);
+  gl.clearColor(br, bg2, bb, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.useProgram(r.prog);
+
+  const view = mat4View(camera);
+  const proj = mat4Perspective(camera.fov, width / height, camera.near, 5000);
+  const vp = mat4Multiply(proj, view);
+
+  // Already far-to-near from resolveFrame: opaque work is depth-tested
+  // anyway, and the blended shapes need exactly this order.
+  for (const entry of frame.order) {
+    const shape = entry.shape;
+    const p = entry.p;
+    if (p.opacity <= 0.001) continue;
+    const boost = shape.reactive ? 1 + audioLevel * 1.2 : 1;
+    const size = 18 * p.scale * boost;
+    if (size <= 0) continue;
+
+    const opaque = p.opacity >= 0.999;
+    const color = hexToRgb(p.color);
+
+    if (isMeshType(shape.type)) {
+      gl.depthMask(opaque);
+      drawCall(r, r.geo[shape.type], mat4Multiply(vp, mat4Model({
+        x: p.x, y: p.y, z: p.z || 0, size,
+        rotX: p.rotX || 0, rotY: p.rotY || 0, rotZ: p.rotation || 0,
+      })), mat4Model({ x: 0, y: 0, z: 0, size: 1, rotX: p.rotX || 0, rotY: p.rotY || 0, rotZ: p.rotation || 0 }),
+      { color, opacity: p.opacity, unlit: false, tex: null, light });
+      continue;
+    }
+
+    if (shape.type === 'text') {
+      const entry2 = textTexture(r, shape.text || ' ');
+      // The same slice geometry as the canvas path — one source of truth
+      // for where the extrusion sits in space — but here each slice is a
+      // real quad in the depth buffer, so solids occlude it correctly.
+      const slices = textSlices(p, shape.extrude || 0, camera, width, height);
+      gl.depthMask(false);
+      const h = size * 0.5;
+      const axisModelBase = { rotX: p.rotX || 0, rotY: p.rotY || 0, rotZ: p.rotation || 0 };
+      for (const slice of slices) {
+        drawCall(r, r.geo.quad, mat4Multiply(vp, mat4Multiply(
+          mat4Model({ x: slice.wx, y: slice.wy, z: slice.wz, size: 1, ...axisModelBase }),
+          [entry2.aspect * h, 0, 0, 0, 0, h, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        )), mat4Identity(),
+        { color: color.map((c) => c * slice.shade), opacity: p.opacity, unlit: true, tex: entry2.tex, light });
+      }
+      gl.depthMask(true);
+      continue;
+    }
+
+    if (shape.type === 'image') {
+      const texEntry = imageTexture(r, shape.src);
+      if (!texEntry) continue;
+      const box = size * 1.6;
+      const w = texEntry.aspect >= 1 ? box : box * texEntry.aspect;
+      const hh = texEntry.aspect >= 1 ? box / texEntry.aspect : box;
+      gl.depthMask(false);
+      drawCall(r, r.geo.quad, mat4Multiply(vp, mat4Multiply(
+        mat4Model({ x: p.x, y: p.y, z: p.z || 0, size: 1,
+                    rotX: p.rotX || 0, rotY: p.rotY || 0, rotZ: p.rotation || 0 }),
+        [w, 0, 0, 0, 0, hh, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      )), mat4Identity(),
+      { color: [1, 1, 1], opacity: p.opacity, unlit: true, tex: texEntry.tex, light });
+      gl.depthMask(true);
+      continue;
+    }
+
+    // Flat billboards: unlit colour, genuinely oriented in space.
+    gl.depthMask(opaque);
+    drawCall(r, r.geo[shape.type] || r.geo.rect, mat4Multiply(vp, mat4Model({
+      x: p.x, y: p.y, z: p.z || 0, size,
+      rotX: p.rotX || 0, rotY: p.rotY || 0, rotZ: p.rotation || 0,
+    })), mat4Identity(),
+    { color, opacity: p.opacity, unlit: true, tex: null, light });
+  }
+  gl.depthMask(true);
+  return true;
+}
+
+// ---- videoexport.js ----
+// Exporting a video.
+//
+// Frame-by-frame PNGs were honest but not a deliverable: nobody wants three
+// hundred files and an editor to assemble them. MediaRecorder can capture a
+// canvas straight to a video file, in the browser, with no encoder to ship.
+//
+// The catch that shapes this module: MediaRecorder records in real time from
+// a live stream. Naively you would play the animation and record — but any
+// frame the browser is too slow to draw is simply a frame the recording
+// misses, so a heavy scene silently exports juddering and short. Instead the
+// canvas stream is driven manually: the recorder is given a 0 fps stream,
+// which captures only when explicitly asked, so we render frame n, request
+// exactly one capture, and move on. The result is frame-accurate regardless
+// of how slow the rendering is — a 30 fps export is 30 real frames per
+// second of output even if each took 200ms to draw.
+
+/** Codecs in order of preference; the first the browser admits to wins. */
+const CANDIDATES = [
+  { mime: 'video/mp4;codecs=avc1.42E01E', ext: 'mp4', label: 'MP4 (H.264)' },
+  { mime: 'video/webm;codecs=vp9', ext: 'webm', label: 'WebM (VP9)' },
+  { mime: 'video/webm;codecs=vp8', ext: 'webm', label: 'WebM (VP8)' },
+  { mime: 'video/webm', ext: 'webm', label: 'WebM' },
+];
+
+/**
+ * What this browser can actually produce, or null if it cannot record.
+ *
+ * Safari has historically claimed MediaRecorder while supporting no useful
+ * canvas codec, so the type is probed rather than assumed.
+ */
+function pickFormat(supports = (m) => typeof MediaRecorder !== 'undefined'
+    && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) {
+  for (const c of CANDIDATES) {
+    if (supports(c.mime)) return c;
+  }
+  return null;
+}
+
+function canRecord() {
+  return typeof MediaRecorder !== 'undefined'
+    && typeof HTMLCanvasElement !== 'undefined'
+    && !!HTMLCanvasElement.prototype.captureStream
+    && !!pickFormat();
+}
+
+/**
+ * A sensible bitrate for the frame size.
+ *
+ * Roughly 0.1 bits per pixel per frame, which keeps flat motion-graphic
+ * colour clean without producing a file nobody can upload. Clamped at both
+ * ends: too low turns gradients to mud, too high wastes minutes of encode
+ * on a 640x360 preview.
+ */
+function bitrateFor(width, height, fps) {
+  const raw = width * height * fps * 0.1;
+  return Math.round(Math.min(24_000_000, Math.max(1_500_000, raw)));
+}
+
+/** Total frames an export will contain. */
+function frameCount(duration, fps) {
+  return Math.max(1, Math.ceil(duration * fps));
+}
+
+/**
+ * Render a scene to a video file.
+ *
+ * `drawFrame(t)` must draw the given moment synchronously and return the
+ * canvas it drew to — which may differ between the WebGL and 2D renderers,
+ * so it is asked for rather than assumed.
+ *
+ * `onProgress(done, total)` is called per frame so a long export can show
+ * where it is; `shouldCancel()` lets the caller stop one.
+ */
+async function recordScene({
+  drawFrame,
+  duration,
+  fps = 30,
+  audioStream = null,
+  onProgress = () => {},
+  shouldCancel = () => false,
+  maxFrames = 1800,
+} = {}) {
+  const format = pickFormat();
+  if (!format) {
+    return { ok: false, message: 'This browser cannot record video. Export frames instead.' };
+  }
+
+  const total = Math.min(maxFrames, frameCount(duration, fps));
+  if (total < 1) return { ok: false, message: 'Nothing to export.' };
+
+  // Draw frame zero first: the stream must be created from the canvas that
+  // is actually being drawn to, and which that is depends on the renderer.
+  const canvas = drawFrame(0);
+  if (!canvas || !canvas.captureStream) {
+    return { ok: false, message: 'This browser cannot capture the preview.' };
+  }
+
+  // 0 fps means "capture only when asked" — the whole basis of frame
+  // accuracy here.
+  let stream;
+  try {
+    stream = canvas.captureStream(0);
+  } catch (err) {
+    return { ok: false, message: `Could not capture the preview: ${err.message || err}` };
+  }
+  const track = stream.getVideoTracks()[0];
+  if (!track || typeof track.requestFrame !== 'function') {
+    // Without manual capture the recording would drop frames on any scene
+    // heavy enough to matter, so this refuses rather than exporting junk.
+    return { ok: false, message: 'This browser cannot export frame-accurate video. Export frames instead.' };
+  }
+
+  if (audioStream) {
+    for (const a of audioStream.getAudioTracks()) stream.addTrack(a);
+  }
+
+  let recorder;
+  try {
+    recorder = new MediaRecorder(stream, {
+      mimeType: format.mime,
+      videoBitsPerSecond: bitrateFor(canvas.width, canvas.height, fps),
+    });
+  } catch (err) {
+    return { ok: false, message: `Could not start the recorder: ${err.message || err}` };
+  }
+
+  const chunks = [];
+  recorder.ondataavailable = (ev) => { if (ev.data && ev.data.size) chunks.push(ev.data); };
+
+  const finished = new Promise((resolve, reject) => {
+    recorder.onstop = resolve;
+    recorder.onerror = (ev) => reject(new Error((ev.error && ev.error.message) || 'Recording failed.'));
+  });
+
+  recorder.start();
+
+  let cancelled = false;
+  for (let i = 0; i < total; i++) {
+    if (shouldCancel()) { cancelled = true; break; }
+    drawFrame(i / fps);
+    track.requestFrame();
+    onProgress(i + 1, total);
+    // Yield to the browser: the encoder runs off the main thread but the
+    // capture callback does not, and without a gap the whole export is one
+    // unbroken task that freezes the tab and starves the encoder.
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((r) => setTimeout(r, 0));
+  }
+
+  // A stop() during the final requestFrame can lose the last chunk, so give
+  // the encoder one turn to drain before asking it to finish.
+  await new Promise((r) => setTimeout(r, 60));
+  try {
+    recorder.stop();
+    await finished;
+  } catch (err) {
+    return { ok: false, message: err.message || 'Recording failed.' };
+  }
+  for (const t of stream.getTracks()) t.stop();
+
+  if (cancelled) return { ok: false, cancelled: true, message: 'Export cancelled.' };
+  if (!chunks.length) return { ok: false, message: 'The recording came back empty.' };
+
+  const blob = new Blob(chunks, { type: format.mime });
+  return {
+    ok: true,
+    blob,
+    ext: format.ext,
+    label: format.label,
+    frames: total,
+    seconds: total / fps,
+  };
+}
+
+// ---- timeline.js ----
+// The timeline: where in time things happen.
+//
+// The curve editor made it possible to shape *how* a movement is paced, but
+// *when* it happens was still a list of chips you could only click. Timing
+// is half of animation — a move that lands two frames late reads as wrong
+// long before anyone can say why — so keyframes need to be dragged against
+// a ruler, not retyped.
+//
+// The geometry and the keyframe arithmetic live here, separate from the
+// canvas that draws them, because they are the parts that can be wrong in
+// ways a screenshot will not reveal.
+
+const ROW_HEIGHT = 26;
+const RULER_HEIGHT = 22;
+const GUTTER = 96;      // room for shape labels
+const RIGHT_PAD = 12;
+
+/** Where the plotting area starts and ends, in pixels. */
+function trackBounds(width) {
+  return { left: GUTTER, right: Math.max(GUTTER + 1, width - RIGHT_PAD) };
+}
+
+function timeToX(time, duration, width) {
+  const { left, right } = trackBounds(width);
+  if (duration <= 0) return left;
+  const t = Math.min(duration, Math.max(0, time));
+  return left + (t / duration) * (right - left);
+}
+
+function xToTime(x, duration, width) {
+  const { left, right } = trackBounds(width);
+  if (right <= left) return 0;
+  const ratio = (x - left) / (right - left);
+  return Math.min(duration, Math.max(0, ratio * duration));
+}
+
+function rowY(index) {
+  return RULER_HEIGHT + index * ROW_HEIGHT;
+}
+
+function rowAt(y) {
+  if (y < RULER_HEIGHT) return -1;   // the ruler, not a track
+  return Math.floor((y - RULER_HEIGHT) / ROW_HEIGHT);
+}
+
+function timelineHeight(shapeCount) {
+  return RULER_HEIGHT + Math.max(1, shapeCount) * ROW_HEIGHT;
+}
+
+/**
+ * Find the keyframe under a pointer.
+ *
+ * The tolerance is generous because a keyframe is a small diamond and a
+ * near miss that silently scrubs the playhead instead of grabbing the
+ * keyframe is a much worse outcome than a slightly sticky hit box.
+ */
+function hitTestKeyframe(shapes, x, y, duration, width, tolerance = 9) {
+  const row = rowAt(y);
+  if (row < 0 || row >= shapes.length) return null;
+  const shape = shapes[row];
+  let best = null;
+  let bestDist = tolerance;
+  for (let i = 0; i < shape.keyframes.length; i++) {
+    const kx = timeToX(shape.keyframes[i].time, duration, width);
+    const d = Math.abs(x - kx);
+    if (d <= bestDist) {
+      bestDist = d;
+      best = { shapeIndex: row, keyframeIndex: i, shape, keyframe: shape.keyframes[i] };
+    }
+  }
+  return best;
+}
+
+/** The smallest gap allowed between two keyframes, in seconds. */
+const MIN_GAP = 0.02;
+
+/**
+ * Move a keyframe to a new time.
+ *
+ * Two keyframes at the same instant give a zero-length segment, which makes
+ * the interpolation divide by zero and the easing meaningless — so a move
+ * that would land on top of a neighbour is blocked at a minimum gap rather
+ * than allowed and then producing NaN positions. Returns the time actually
+ * used, which is not always the one asked for.
+ */
+function moveKeyframe(shape, index, toTime, duration) {
+  const kfs = shape.keyframes;
+  if (index < 0 || index >= kfs.length) return null;
+
+  const lower = index > 0 ? kfs[index - 1].time + MIN_GAP : 0;
+  const upper = index < kfs.length - 1 ? kfs[index + 1].time - MIN_GAP : duration;
+
+  // A shape whose neighbours are already closer together than the minimum
+  // gap has nowhere legal to go; leave it where it is rather than shuffling
+  // the neighbours out of the way behind the user's back.
+  if (upper < lower) return kfs[index].time;
+
+  const clamped = Math.min(upper, Math.max(lower, toTime));
+  kfs[index].time = Math.round(clamped * 1000) / 1000;
+  return kfs[index].time;
+}
+
+/**
+ * Snap a time to a frame boundary.
+ *
+ * Animation is sampled per frame, so a keyframe at 1.007s and one at 1.000s
+ * are the same picture. Snapping keeps the data honest about that and makes
+ * keyframes line up across shapes, which is most of what makes a sequence
+ * feel deliberate.
+ */
+function snapToFrame(time, fps) {
+  if (!fps || fps <= 0) return time;
+  return Math.round(time * fps) / fps;
+}
+
+/** Nicely spaced ruler ticks — about one every 60px, on a 1/2/5 scale. */
+function rulerTicks(duration, width) {
+  const { left, right } = trackBounds(width);
+  const span = right - left;
+  // A track too narrow to fit even one label should draw no ruler at all,
+  // rather than a lone "0s" or a row of overlapping numbers.
+  if (span < 40 || duration <= 0) return [];
+  const target = duration / (span / 60);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(Math.max(target, 1e-6))));
+  const step = [1, 2, 5, 10].map((m) => m * magnitude).find((s) => s >= target) || magnitude * 10;
+  const ticks = [];
+  for (let t = 0; t <= duration + 1e-9; t += step) {
+    ticks.push(Math.round(t * 1000) / 1000);
+    if (ticks.length > 200) break; // never let a bad duration spin here
+  }
+  return ticks;
+}
+
+// ---- history.js ----
+// Undo.
+//
+// The app grew a curve editor and a draggable timeline in quick succession —
+// two tools whose whole point is to be fiddled with — while having no way
+// back from a mistake. A tool that punishes experimentation stops being used
+// for experimenting, which is most of what animation is.
+//
+// This stores whole scene snapshots rather than reversible commands. For a
+// scene of a few dozen shapes a snapshot is a few kilobytes, and the
+// simplicity buys correctness: there is no command that can forget to
+// reverse a field, and no pair of operations that can interleave into a
+// state neither expected. Command objects would be worth it for a document
+// of a hundred thousand elements; this is not that.
+
+const HISTORY_LIMIT = 60;
+
+function createHistory(initial, { limit = HISTORY_LIMIT } = {}) {
+  // Snapshots are serialized on the way in. Holding live object references
+  // would mean later edits mutate the history as well — the classic way an
+  // undo stack quietly becomes a stack of identical states.
+  const states = [JSON.stringify(initial)];
+  let index = 0;
+
+  const api = {
+    /**
+     * Record a state, if it differs from the current one.
+     *
+     * Identical pushes are the common case — every pointerup after a drag
+     * that changed nothing, every re-render — and letting them through
+     * would fill the stack with states that make Ctrl+Z appear broken.
+     */
+    push(state) {
+      const json = JSON.stringify(state);
+      if (json === states[index]) return false;
+
+      // Anything redoable is now unreachable: the timeline has branched.
+      states.length = index + 1;
+      states.push(json);
+
+      if (states.length > limit) {
+        states.shift();
+      } else {
+        index += 1;
+      }
+      return true;
+    },
+
+    undo() {
+      if (index <= 0) return null;
+      index -= 1;
+      return JSON.parse(states[index]);
+    },
+
+    redo() {
+      if (index >= states.length - 1) return null;
+      index += 1;
+      return JSON.parse(states[index]);
+    },
+
+    canUndo: () => index > 0,
+    canRedo: () => index < states.length - 1,
+
+    /** Current state, for callers that want to reconcile without moving. */
+    current: () => JSON.parse(states[index]),
+
+    /** Discard everything and start again from `state`. */
+    reset(state) {
+      states.length = 0;
+      states.push(JSON.stringify(state));
+      index = 0;
+    },
+
+    get length() { return states.length; },
+    get position() { return index; },
+  };
+
+  return api;
+}
+
+/**
+ * Whether a keyboard event is asking for undo or redo.
+ *
+ * Redo has three bindings in the wild — Ctrl+Y on Windows, Cmd+Shift+Z on
+ * Mac, Ctrl+Shift+Z on Linux — and someone who has to discover which one
+ * this app chose has already lost the work they were trying to recover.
+ */
+function historyIntent(ev) {
+  const mod = ev.metaKey || ev.ctrlKey;
+  if (!mod) return null;
+  const key = String(ev.key || '').toLowerCase();
+  if (key === 'z') return ev.shiftKey ? 'redo' : 'undo';
+  if (key === 'y') return 'redo';
+  return null;
+}
+
+/**
+ * Whether a keystroke should be left alone because the user is typing.
+ *
+ * Ctrl+Z inside a text box is the browser's own undo for that box, and
+ * stealing it to revert the scene would be actively destructive.
+ */
+function isTextEntry(target) {
+  if (!target) return false;
+  const tag = String(target.tagName || '').toLowerCase();
+  if (tag === 'textarea') return true;
+  if (target.isContentEditable) return true;
+  if (tag !== 'input') return false;
+  const type = String(target.type || 'text').toLowerCase();
+  return !['button', 'checkbox', 'radio', 'range', 'submit', 'reset', 'color', 'file'].includes(type);
 }
 
 // ---- music.js ----
@@ -4388,6 +7127,369 @@ const SONG_STRUCTURES = [
   { name: 'Ballad', sections: ['Intro', 'Verse', 'Chorus', 'Verse', 'Chorus', 'Outro'] },
   { name: 'Hip-hop', sections: ['Intro', 'Hook', 'Verse', 'Hook', 'Verse', 'Hook'] },
 ];
+
+// ---- agent.js ----
+// Describing a scene instead of building it.
+//
+// Two engines behind one box. The local one is pure pattern matching — it
+// costs nothing, works offline, and handles the shapes of request people
+// actually make most often ("three blue circles that fade in"). The remote
+// one calls Claude through a server function and handles anything.
+//
+// The local engine exists so the feature is not a paywall. Someone with no
+// API key still gets a working "describe it and it appears" box; the model
+// is what you reach for when the description outgrows the patterns.
+//
+// Everything the model returns is untrusted input. It is schema-constrained
+// server-side, but a scene arriving here is still clamped field by field
+// before it reaches the renderer — a rogue `scale: 1e9` or a 40-minute
+// duration would lock the browser up, and "the model wouldn't do that" is
+// not a safety property.
+
+const ENDPOINT_KEY = 'thevoice_agent_endpoint';
+
+const COLOR_WORDS = {
+  red: '#e4483d', crimson: '#d21f3c', orange: '#f08a24', amber: '#f5b301',
+  yellow: '#f2d024', lime: '#9fd356', green: '#3fbf72', emerald: '#1f9e6b',
+  teal: '#2bb3a3', cyan: '#3fd8e8', blue: '#3fc6ff', azure: '#2f8fe0',
+  indigo: '#5a5ae6', purple: '#9a5ae6', violet: '#b06ae8', magenta: '#e055b8',
+  pink: '#f06fa8', white: '#f2f7f3', grey: '#8a9490', gray: '#8a9490',
+  black: '#0a0d0c', gold: '#e8c14a', silver: '#c8d2cc',
+};
+// One typo above would ship a broken colour; strip anything that is not a
+// valid hex rather than trusting the table by eye.
+for (const [k, v] of Object.entries(COLOR_WORDS)) {
+  if (!/^#[0-9a-f]{6}$/i.test(v)) COLOR_WORDS[k] = '#3fc6ff';
+}
+
+const NUMBER_WORDS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6,
+  seven: 7, eight: 8, nine: 9, ten: 10, a: 1, an: 1, single: 1,
+};
+
+const SHAPE_WORDS = {
+  circle: 'circle', circles: 'circle', dot: 'circle', dots: 'circle', ball: 'circle', balls: 'circle',
+  orb: 'circle', orbs: 'circle', bubble: 'circle', bubbles: 'circle',
+  square: 'rect', squares: 'rect', rect: 'rect', rectangle: 'rect', rectangles: 'rect',
+  box: 'rect', boxes: 'rect', block: 'rect', blocks: 'rect', bar: 'rect', bars: 'rect',
+  triangle: 'triangle', triangles: 'triangle', arrow: 'triangle', arrows: 'triangle',
+  wave: 'wave', waves: 'wave', waveform: 'wave', line: 'wave', lines: 'wave',
+  text: 'text', word: 'text', words: 'text', title: 'text', heading: 'text', caption: 'text',
+  // Solids. Naming one switches the scene to 3D, since a described cube
+  // must not arrive as its flat silhouette.
+  cube: 'cube', cubes: 'cube', sphere: 'sphere', spheres: 'sphere',
+  globe: 'sphere', globes: 'sphere', pyramid: 'pyramid', pyramids: 'pyramid',
+};
+
+const MESH_TYPES = ['cube', 'sphere', 'pyramid'];
+
+const MAX_SHAPES = 12;
+const MAX_DURATION = 60;
+
+/** Pull a quoted or capitalised phrase to use as text content. */
+function extractText(input) {
+  const quoted = /["“'']([^"”'']{1,60})["”'']/.exec(input);
+  if (quoted) return quoted[1];
+  const saying = /\b(?:saying|reading|that says|says|spelling)\s+([a-z0-9 ,.!?'-]{1,60})/i.exec(input);
+  if (saying) return saying[1].trim().replace(/[.,]$/, '');
+  const shouty = /\b([A-Z][A-Z0-9]{2,}(?:\s+[A-Z][A-Z0-9]*)*)\b/.exec(input);
+  if (shouty) return shouty[1];
+  return '';
+}
+
+function extractCount(input) {
+  const digits = /\b(\d{1,2})\s+(?:\w+\s+){0,2}?(?:circles?|squares?|rect\w*|boxe?s?|triangles?|waves?|lines?|bars?|dots?|orbs?|shapes?|cubes?|spheres?|globes?|pyramids?)\b/i.exec(input);
+  if (digits) return Math.min(MAX_SHAPES, Math.max(1, parseInt(digits[1], 10)));
+  for (const [word, n] of Object.entries(NUMBER_WORDS)) {
+    if (n > 1 && new RegExp(`\\b${word}\\b`, 'i').test(input)) return Math.min(MAX_SHAPES, n);
+  }
+  return 1;
+}
+
+function extractColors(input) {
+  const found = [];
+  for (const [word, hex] of Object.entries(COLOR_WORDS)) {
+    if (new RegExp(`\\b${word}\\b`, 'i').test(input)) found.push(hex);
+  }
+  const hexes = input.match(/#[0-9a-f]{6}\b/gi);
+  if (hexes) found.push(...hexes.map((h) => h.toLowerCase()));
+  return found.length ? found : ['#3fc6ff'];
+}
+
+function extractShapeType(input) {
+  const lower = input.toLowerCase();
+  for (const [word, type] of Object.entries(SHAPE_WORDS)) {
+    if (new RegExp(`\\b${word}\\b`).test(lower)) return type;
+  }
+  return null;
+}
+
+function extractDuration(input) {
+  const m = /\b(\d{1,2}(?:\.\d)?)\s*(?:s\b|sec|second)/i.exec(input);
+  if (m) return Math.min(MAX_DURATION, Math.max(1, parseFloat(m[1])));
+  return 5;
+}
+
+/** Which movements were asked for. Several can apply at once. */
+function extractMotions(input) {
+  const t = input.toLowerCase();
+  const has = (...words) => words.some((w) => new RegExp(`\\b${w}`).test(t));
+  return {
+    fadeIn: has('fade in', 'fades in', 'fading in', 'appear', 'materiali'),
+    fadeOut: has('fade out', 'fades out', 'fading out', 'disappear', 'vanish'),
+    spin: has('spin', 'rotate', 'rotating', 'turning', 'twirl'),
+    pulse: has('puls', 'throb', 'beat', 'breath'),
+    bounce: has('bounce', 'bouncing', 'bouncy'),
+    zoom: has('zoom', 'grow', 'scale up', 'expand', 'burst'),
+    shrink: has('shrink', 'scale down', 'contract'),
+    slideLeft: has('from the right', 'slide left', 'right to left'),
+    slideRight: has('from the left', 'slide right', 'left to right'),
+    slideUp: has('from below', 'from the bottom', 'rise', 'slide up'),
+    slideDown: has('from above', 'from the top', 'fall', 'drop', 'slide down'),
+    drift: has('drift', 'float', 'wander', 'gentle'),
+    reactive: has('music', 'audio', 'voice', 'beat', 'sound', 'react'),
+  };
+}
+
+let nextLocalId = 1;
+
+/**
+ * Build a scene from a description, without a model.
+ *
+ * Returns null when the text does not describe anything buildable, so the
+ * caller can fall through to the remote agent rather than producing a
+ * confidently wrong scene.
+ */
+function parseLocalCommand(input) {
+  const text = String(input || '').trim();
+  if (!text) return null;
+
+  const type = extractShapeType(text);
+  const motions = extractMotions(text);
+  const anyMotion = Object.values(motions).some(Boolean);
+  // A request naming neither a shape nor a movement is not something the
+  // patterns can honour — say so rather than inventing a circle.
+  if (!type && !anyMotion) return null;
+
+  const shapeType = type || 'circle';
+  const count = extractCount(text);
+  const colors = extractColors(text);
+  const duration = extractDuration(text);
+  const content = shapeType === 'text' ? (extractText(text) || 'THE VOICE') : '';
+
+  const shapes = [];
+  for (let i = 0; i < count; i++) {
+    // Spread several shapes across the frame instead of stacking them.
+    const spread = count === 1 ? 50 : 18 + (64 * i) / (count - 1);
+    const color = colors[i % colors.length];
+    // Stagger entrances: simultaneous starts read as one object moving.
+    const delay = count === 1 ? 0 : (i / count) * Math.min(1.2, duration * 0.25);
+
+    const start = { time: delay, x: spread, y: 50, scale: 1, rotation: 0, opacity: 1, color, ease: 'settle' };
+    const end = { time: duration, x: spread, y: 50, scale: 1, rotation: 0, opacity: 1, color, ease: 'ease' };
+
+    if (motions.fadeIn) { start.opacity = 0; end.opacity = 1; }
+    if (motions.fadeOut) { end.opacity = 0; }
+    if (motions.spin) {
+      if (MESH_TYPES.includes(shapeType)) { start.rotY = 0; end.rotY = 360; }
+      else end.rotation = 360;
+      start.ease = 'linear';
+    }
+    if (motions.zoom) { start.scale = 0.2; end.scale = 1; start.ease = 'backOut'; }
+    if (motions.shrink) { start.scale = 1.6; end.scale = 0.4; }
+    if (motions.bounce) { start.y = 12; end.y = 50; start.ease = 'bounce'; }
+    if (motions.slideRight) { start.x = -12; end.x = spread; start.ease = 'expoOut'; }
+    if (motions.slideLeft) { start.x = 112; end.x = spread; start.ease = 'expoOut'; }
+    if (motions.slideUp) { start.y = 118; end.y = 50; start.ease = 'expoOut'; }
+    if (motions.slideDown) { start.y = -18; end.y = 50; start.ease = 'backOut'; }
+
+    const keyframes = [start];
+    if (motions.pulse) {
+      // A pulse needs a middle to swell into; two keyframes can only ramp.
+      const beats = Math.max(2, Math.round(duration));
+      for (let b = 1; b < beats; b++) {
+        keyframes.push({
+          ...start,
+          time: delay + ((duration - delay) * b) / beats,
+          scale: b % 2 ? 1.35 : 0.95,
+          opacity: end.opacity,
+          ease: 'easeInOut',
+        });
+      }
+    } else if (motions.drift) {
+      keyframes.push({ ...start, time: delay + (duration - delay) / 2,
+        x: spread + (i % 2 ? 8 : -8), y: 42, opacity: end.opacity, ease: 'easeInOut' });
+    }
+    keyframes.push(end);
+
+    shapes.push({
+      id: `a${nextLocalId++}`,
+      type: shapeType,
+      label: `${shapeType.charAt(0).toUpperCase()}${shapeType.slice(1)} ${i + 1}`,
+      text: content,
+      src: '',
+      reactive: motions.reactive,
+      easing: 'ease',
+      keyframes,
+    });
+  }
+
+  const named = Object.entries(motions).filter(([, on]) => on).map(([k]) => k);
+  return {
+    duration,
+    fps: 30,
+    background: '#0a0d0c',
+    shapes,
+    summary: `${count} ${shapeType}${count === 1 ? '' : 's'}${named.length ? `, ${named.join(' + ')}` : ''}, ${duration}s`,
+    source: 'local',
+  };
+}
+
+const clampNum = (v, lo, hi, fallback) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(hi, Math.max(lo, n));
+};
+
+const cleanHex = (v, fallback) =>
+  (/^#[0-9a-f]{6}$/i.test(String(v)) ? String(v).toLowerCase() : fallback);
+
+const VALID_TYPES = ['circle', 'rect', 'triangle', 'text', 'wave', 'image', 'cube', 'sphere', 'pyramid'];
+
+/**
+ * Clamp a scene from the model into something safe to render.
+ *
+ * The schema guarantees the shape of the JSON, not the sanity of the
+ * numbers in it. A scale of 1e9, a negative duration or 400 shapes are all
+ * schema-valid and would each hang the browser.
+ */
+function validateAgentScene(raw) {
+  if (!raw || typeof raw !== 'object') return { ok: false, message: 'The agent returned nothing usable.' };
+  if (!Array.isArray(raw.shapes) || !raw.shapes.length) {
+    return { ok: false, message: 'The agent returned a scene with no shapes in it.' };
+  }
+
+  const shapes = [];
+  for (const s of raw.shapes.slice(0, MAX_SHAPES)) {
+    if (!s || !Array.isArray(s.keyframes) || s.keyframes.length < 1) continue;
+    const type = VALID_TYPES.includes(s.type) ? s.type : 'circle';
+    const keyframes = s.keyframes
+      .slice(0, 60)
+      .map((k) => ({
+        time: clampNum(k && k.time, 0, MAX_DURATION, 0),
+        x: clampNum(k && k.x, -50, 150, 50),
+        y: clampNum(k && k.y, -50, 150, 50),
+        scale: clampNum(k && k.scale, 0, 8, 1),
+        rotation: clampNum(k && k.rotation, -3600, 3600, 0),
+        z: clampNum(k && k.z, -200, 400, 0),
+        rotX: clampNum(k && k.rotX, -3600, 3600, 0),
+        rotY: clampNum(k && k.rotY, -3600, 3600, 0),
+        opacity: clampNum(k && k.opacity, 0, 1, 1),
+        color: cleanHex(k && k.color, '#3fc6ff'),
+        ease: typeof (k && k.ease) === 'string' ? k.ease : 'ease',
+      }))
+      .sort((a, b) => a.time - b.time);
+    if (!keyframes.length) continue;
+
+    shapes.push({
+      id: `a${nextLocalId++}`,
+      type,
+      label: String(s.label || type).slice(0, 40),
+      text: String(s.text || '').slice(0, 120),
+      extrude: clampNum(s.extrude, 0, 40, type === 'text' ? 8 : 0),
+      src: '',
+      reactive: !!s.reactive,
+      easing: 'ease',
+      keyframes,
+    });
+  }
+
+  if (!shapes.length) return { ok: false, message: 'None of the shapes the agent returned could be used.' };
+
+  // The scene must last at least as long as its last keyframe, or the tail
+  // of the animation is unreachable.
+  const lastKey = Math.max(...shapes.map((s) => s.keyframes[s.keyframes.length - 1].time));
+  const duration = Math.max(1, Math.min(MAX_DURATION, Math.max(clampNum(raw.duration, 1, MAX_DURATION, 5), lastKey)));
+
+  return {
+    ok: true,
+    scene: {
+      duration,
+      fps: Math.round(clampNum(raw.fps, 1, 60, 30)),
+      background: cleanHex(raw.background, '#0a0d0c'),
+      shapes,
+    },
+    summary: String(raw.summary || '').slice(0, 300),
+  };
+}
+
+function getAgentEndpoint() {
+  try {
+    return localStorage.getItem(ENDPOINT_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function setAgentEndpoint(url) {
+  try {
+    if (url) localStorage.setItem(ENDPOINT_KEY, String(url).trim());
+    else localStorage.removeItem(ENDPOINT_KEY);
+  } catch {
+    /* private browsing: the local engine still works */
+  }
+}
+
+/** Derive the function URL from a Supabase project URL, so it need not be typed. */
+function defaultEndpointFor(supabaseUrl) {
+  const base = String(supabaseUrl || '').replace(/\/+$/, '');
+  return base ? `${base}/functions/v1/scene-agent` : '';
+}
+
+function isAgentConfigured(supabaseUrl) {
+  return !!(getAgentEndpoint() || defaultEndpointFor(supabaseUrl));
+}
+
+/**
+ * Ask the model for a scene.
+ *
+ * `accessToken` is the signed-in user's Supabase JWT — the function verifies
+ * it, which is what keeps the endpoint from being an anonymous relay to a
+ * paid API.
+ */
+async function requestScene({ prompt, scene = null, endpoint, accessToken, anonKey }) {
+  if (!endpoint) return { ok: false, message: 'No scene agent is configured.' };
+
+  let res;
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(anonKey ? { apikey: anonKey } : {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      body: JSON.stringify({ prompt, scene }),
+    });
+  } catch (err) {
+    return { ok: false, message: `Could not reach the scene agent: ${err.message || err}` };
+  }
+
+  let body = {};
+  try {
+    body = await res.json();
+  } catch {
+    return { ok: false, message: `The scene agent returned an unreadable response (${res.status}).` };
+  }
+
+  if (!res.ok) {
+    return { ok: false, message: body.error || `The scene agent failed (${res.status}).` };
+  }
+
+  const validated = validateAgentScene(body.scene);
+  if (!validated.ok) return validated;
+  return { ...validated, source: 'model', usage: body.usage || null };
+}
 
 // ---- project.js ----
 // Composition: assembling a finished piece from the parts made elsewhere.
@@ -6637,6 +9739,7 @@ const animKeyBtn = document.getElementById('anim-key-btn');
 const animDeleteBtn = document.getElementById('anim-delete-btn');
 const animVoiceBtn = document.getElementById('anim-voice-btn');
 const animExportBtn = document.getElementById('anim-export-btn');
+const animVideoBtn = document.getElementById('anim-video-btn');
 const animShapeList = document.getElementById('anim-shape-list');
 const animProps = document.getElementById('anim-props');
 const animKeyframesEl = document.getElementById('anim-keyframes');
@@ -6667,12 +9770,31 @@ let animRaf = null;
 let animStartedAt = 0;
 let animLevels = null;
 
-for (const name of EASING_NAMES) {
-  const opt = document.createElement('option');
-  opt.value = name;
-  opt.textContent = name;
-  animEasing.appendChild(opt);
+// Named after what they do to a movement, not after the maths — someone
+// choosing how a title should arrive is thinking "settle", not
+// "cubic-bezier(0.22, 1, 0.36, 1)".
+const EASING_LABELS = {
+  linear: 'Linear', ease: 'Ease', easeIn: 'Ease in', easeOut: 'Ease out',
+  easeInOut: 'Ease in-out', quadIn: 'Quad in', quadOut: 'Quad out',
+  quartIn: 'Quart in', quartOut: 'Quart out', expoIn: 'Expo in',
+  expoOut: 'Expo out', settle: 'Settle', anticipate: 'Anticipate',
+  backIn: 'Back in', backOut: 'Back out', bounce: 'Bounce',
+  elastic: 'Elastic', hold: 'Hold (no move)', step: 'Step',
+};
+function refreshEasingOptions() {
+  animEasing.innerHTML = '';
+  for (const name of ALL_EASING_NAMES) {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = EASING_LABELS[name] || name;
+    animEasing.appendChild(opt);
+  }
+  const custom = document.createElement('option');
+  custom.value = 'custom';
+  custom.textContent = 'Custom curve';
+  animEasing.appendChild(custom);
 }
+refreshEasingOptions();
 
 const animSelected = () => animScene.shapes.find((s) => s.id === animSelectedId) || null;
 
@@ -6684,8 +9806,9 @@ function animCurrentLevel(t) {
 
 function animDraw() {
   const t = parseFloat(animTime.value);
-  renderFrame(animCtx, animScene, t, animCanvas.width, animCanvas.height, animCurrentLevel(t));
+  animRenderAt(t);
   animTimeLabel.textContent = `${t.toFixed(2)}s`;
+  animDrawTimeline();
 }
 
 function animRenderShapeList() {
@@ -6719,6 +9842,7 @@ function animRenderShapeList() {
   animKeyBtn.disabled = !has;
   animDeleteBtn.disabled = !has;
   animExportBtn.disabled = animScene.shapes.length === 0;
+  animVideoBtn.disabled = animScene.shapes.length === 0;
 }
 
 function animRenderKeyframes() {
@@ -6763,9 +9887,16 @@ function animSyncProps() {
   animColor.value = p.color;
   animTextInput.value = shape.text || '';
   animReactive.checked = !!shape.reactive;
-  animEasing.value = shape.easing;
+  animExtrudeRow.hidden = !(shape.type === 'text' && is3D(animScene));
+  animExtrude.value = String(shape.extrude === undefined ? 8 : shape.extrude);
+  animExtrudeValue.textContent = animExtrude.value;
+  animZ.value = String(Math.round(p.z || 0));
+  animRotX.value = String(Math.round(p.rotX || 0));
+  animRotY.value = String(Math.round(p.rotY || 0));
+  anim3dSyncLabels();
   animSyncSliderLabels();
   animRenderKeyframes();
+  animSyncCurve();
 }
 
 function animSyncSliderLabels() {
@@ -6794,19 +9925,33 @@ function animCommit() {
   animDraw();
 }
 
-Object.values(animSliders).forEach((el) => el.addEventListener('input', animCommit));
+Object.values(animSliders).forEach((el) => {
+  el.addEventListener('input', animCommit);
+  // A slider fires `input` on every pixel of a drag. Recording each one
+  // would mean fifty presses of Ctrl+Z to walk back one gesture, so the
+  // snapshot is taken when the gesture ends.
+  el.addEventListener('change', animRecord);
+});
 animColor.addEventListener('input', animCommit);
+animColor.addEventListener('change', animRecord);
 animTextInput.addEventListener('input', () => {
   const shape = animSelected();
   if (shape) { shape.text = animTextInput.value; animDraw(); }
 });
+animTextInput.addEventListener('change', animRecord);
 animReactive.addEventListener('change', () => {
   const shape = animSelected();
   if (shape) { shape.reactive = animReactive.checked; animRenderShapeList(); animDraw(); }
+  animRecord();
 });
 animEasing.addEventListener('change', () => {
-  const shape = animSelected();
-  if (shape) { shape.easing = animEasing.value; animDraw(); }
+  if (animEasing.value === 'custom') {
+    // "Custom" is a state you arrive at by dragging, not one you pick;
+    // selecting it converts the current preset into editable handles.
+    animSetCurve(easingPoints(animCurveSpec()));
+    return;
+  }
+  animSetCurve(animEasing.value);
 });
 
 animTime.addEventListener('input', () => { animSyncProps(); animDraw(); });
@@ -6818,10 +9963,12 @@ animAddBtn.addEventListener('click', () => {
   animRenderShapeList();
   animSyncProps();
   animDraw();
+  animRecord();
 });
 
 animKeyBtn.addEventListener('click', () => {
   animCommit();
+  animRecord();
   showToast('Keyframe set');
 });
 
@@ -6833,6 +9980,7 @@ animDeleteBtn.addEventListener('click', () => {
   animRenderShapeList();
   animSyncProps();
   animDraw();
+  animRecord();
 });
 
 function animStop() {
@@ -6886,6 +10034,60 @@ animVoiceBtn.addEventListener('click', async () => {
 // Export renders every frame to PNG. Encoding real video in-browser needs
 // a codec library; PNG frames import directly into any editor, so this
 // stays honest about what it produces rather than mislabelling it.
+animVideoBtn.addEventListener('click', async () => {
+  if (!animScene.shapes.length) return;
+  if (!canRecord()) {
+    animHint.textContent = 'This browser cannot record video — use "Export frames" instead.';
+    return;
+  }
+
+  const total = frameCount(animScene.duration, animScene.fps);
+  const label = animVideoBtn.textContent;
+  let cancelled = false;
+  const cancel = () => { cancelled = true; };
+  animVideoBtn.addEventListener('click', cancel, { once: true });
+  animVideoBtn.textContent = 'Cancel';
+  animExportBtn.disabled = true;
+  animHint.textContent = '';
+
+  // Playback would fight the exporter for the canvas, and a scrubbing
+  // playhead would be recorded rather than the frames being asked for.
+  if (animPlaying) animStop();
+
+  try {
+    const result = await recordScene({
+      // Draw and hand back whichever canvas the active renderer used — the
+      // stream has to be captured from the one actually being painted.
+      drawFrame: (t) => { animRenderAt(t); return animActiveCanvas(); },
+      duration: animScene.duration,
+      fps: animScene.fps,
+      onProgress: (done) => {
+        animHint.textContent = `Recording frame ${done} of ${total}…`;
+      },
+      shouldCancel: () => cancelled,
+    });
+
+    if (!result.ok) {
+      animHint.textContent = result.message;
+      return;
+    }
+    const r = await downloadBlob(result.blob, `animation-${Date.now()}.${result.ext}`);
+    if (!r.ok) {
+      animHint.textContent = r.message || 'Save cancelled.';
+      return;
+    }
+    animHint.textContent = '';
+    showToast(`Exported ${result.seconds.toFixed(1)}s as ${result.label}`);
+  } catch (err) {
+    animHint.textContent = err.message || 'Could not export that video.';
+  } finally {
+    animVideoBtn.removeEventListener('click', cancel);
+    animVideoBtn.textContent = label;
+    animExportBtn.disabled = animScene.shapes.length === 0;
+    animRenderAt(parseFloat(animTime.value));
+  }
+});
+
 animExportBtn.addEventListener('click', async () => {
   if (!animScene.shapes.length) return;
   const total = Math.ceil(animScene.duration * animScene.fps);
@@ -6899,8 +10101,9 @@ animExportBtn.addEventListener('click', async () => {
     for (let f = 0; f < total; f++) {
       const t = f / animScene.fps;
       animExportBtn.textContent = `Frame ${f + 1}/${total}`;
-      renderFrame(animCtx, animScene, t, animCanvas.width, animCanvas.height, animCurrentLevel(t));
-      const blob = await new Promise((res) => animCanvas.toBlob(res, 'image/png'));
+      animRenderAt(t);
+      const source = animActiveCanvas();
+      const blob = await new Promise((res) => source.toBlob(res, 'image/png'));
       const r = await downloadBlob(blob, `frame-${String(f).padStart(4, '0')}.png`);
       if (!r.ok) {
         animHint.textContent = r.message || 'Export cancelled.';
@@ -6914,12 +10117,1080 @@ animExportBtn.addEventListener('click', async () => {
   }
 });
 
+const animStage = document.getElementById('anim-stage');
+const animGLCanvas = document.getElementById('anim-canvas-gl');
+// Created on first use, null if this device cannot: the canvas renderer is
+// the always-works fallback, and the switch is invisible except in quality.
+let animGL;
+
+function animGLRenderer() {
+  if (animGL === undefined) animGL = createGLRenderer(animGLCanvas);
+  return animGL;
+}
+
+/** The canvas the current frame was actually rendered to. */
+function animActiveCanvas() {
+  return !animGLCanvas.hidden ? animGLCanvas : animCanvas;
+}
+
+/**
+ * Draw the scene at `t` through whichever renderer applies: WebGL for 3D
+ * scenes when the device has it, the 2D canvas for everything else. Both
+ * consume the same resolved frame, so this switch changes fidelity, never
+ * position.
+ */
+function animRenderAt(t) {
+  const gl = is3D(animScene) ? animGLRenderer() : null;
+  const useGL = !!gl && glRenderFrame(gl, animScene, t, animCurrentLevel(t));
+  animGLCanvas.hidden = !useGL;
+  animCanvas.hidden = useGL;
+  if (!useGL) {
+    renderFrame(animCtx, animScene, t, animCanvas.width, animCanvas.height, animCurrentLevel(t));
+  }
+}
+
 function animOnShow() {
+  anim3dSync();
   animTime.max = String(animScene.duration);
   animRenderShapeList();
   animSyncProps();
   animDraw();
+  animDrawTimeline();
 }
+
+/* ---------- 3D ---------- */
+//
+// 3D is opt-in per scene. A scene without a camera renders through the
+// original 2D path unchanged, which is what lets this ship without
+// reflowing anything anyone has already made.
+const anim3dToggle = document.getElementById('anim-3d');
+const animCameraControls = document.getElementById('camera-controls');
+const animCameraPreset = document.getElementById('anim-camera-preset');
+const animFov = document.getElementById('anim-fov');
+const animFovValue = document.getElementById('anim-fov-value');
+const animZ = document.getElementById('anim-z');
+const animZValue = document.getElementById('anim-z-value');
+const animRotX = document.getElementById('anim-rotx');
+const animRotXValue = document.getElementById('anim-rotx-value');
+const animRotY = document.getElementById('anim-roty');
+const animRotYValue = document.getElementById('anim-roty-value');
+
+const ANIM_ORBIT_TARGET = { x: 50, y: 50, z: 0 };
+
+function anim3dSync() {
+  animSyncCameraKeys();
+  animSyncLight();
+  const on = is3D(animScene);
+  anim3dToggle.checked = on;
+  animCameraControls.hidden = !on;
+  animateView.classList.toggle('anim-3d-on', on);
+  if (on) {
+    animFov.value = String(Math.round(animScene.camera.fov));
+    animFovValue.textContent = `${Math.round(animScene.camera.fov)}°`;
+  }
+}
+
+anim3dToggle.addEventListener('change', () => {
+  if (anim3dToggle.checked) enable3D(animScene);
+  else disable3D(animScene);
+  anim3dSync();
+  animSyncProps();
+  animDraw();
+  animRecord();
+});
+
+animFov.addEventListener('input', () => {
+  if (!is3D(animScene)) return;
+  const fov = parseInt(animFov.value, 10);
+  animFovValue.textContent = `${fov}°`;
+  // Keep the camera the same distance from the subject while the lens
+  // changes, so this reads as changing lens rather than walking backwards.
+  const target = ANIM_ORBIT_TARGET;
+  const radius = distanceTo(animScene.camera, target);
+  animScene.camera.fov = fov;
+  const scaled = orbit(animScene.camera, target, 0, 0);
+  const currentRadius = distanceTo(scaled, target) || 1;
+  const k = radius / currentRadius;
+  animScene.camera.x = target.x + (scaled.x - target.x) * k;
+  animScene.camera.y = target.y + (scaled.y - target.y) * k;
+  animScene.camera.z = target.z + (scaled.z - target.z) * k;
+  animDraw();
+});
+animFov.addEventListener('change', () => { animAutoKeyCamera(); animRecord(); });
+
+animCameraPreset.addEventListener('change', () => {
+  const preset = CAMERA_PRESETS[animCameraPreset.value];
+  if (!preset || !is3D(animScene)) return;
+  // Presets are angles; put the camera on that angle at the framing
+  // distance so every preset frames the subject rather than landing the
+  // camera somewhere arbitrary.
+  const radius = framingDistance(animScene.camera.fov);
+  let cam = { ...animScene.camera, x: ANIM_ORBIT_TARGET.x, y: ANIM_ORBIT_TARGET.y, z: ANIM_ORBIT_TARGET.z - radius,
+              rotX: 0, rotY: 0, rotZ: 0 };
+  cam = orbit(cam, ANIM_ORBIT_TARGET, -preset.rotY, preset.rotX);
+  animScene.camera = cam;
+  animCameraPreset.value = '';
+  animDraw();
+  animRecord();
+});
+
+// Dragging the preview orbits; scrolling dollies.
+let orbitDrag = null;
+
+animStage.addEventListener('pointerdown', (ev) => {
+  if (!is3D(animScene)) return;
+  orbitDrag = { x: ev.clientX, y: ev.clientY };
+  animStage.setPointerCapture(ev.pointerId);
+  ev.preventDefault();
+});
+
+animStage.addEventListener('pointermove', (ev) => {
+  if (!orbitDrag || !is3D(animScene)) return;
+  const dx = ev.clientX - orbitDrag.x;
+  const dy = ev.clientY - orbitDrag.y;
+  orbitDrag = { x: ev.clientX, y: ev.clientY };
+  animScene.camera = orbit(animScene.camera, ANIM_ORBIT_TARGET, dx * 0.4, -dy * 0.4);
+  animDraw();
+});
+
+for (const type of ['pointerup', 'pointercancel']) {
+  animStage.addEventListener(type, () => {
+    if (orbitDrag) { orbitDrag = null; animAutoKeyCamera(); animRecord(); }
+  });
+}
+
+animStage.addEventListener('wheel', (ev) => {
+  if (!is3D(animScene)) return;
+  ev.preventDefault();
+  const step = -Math.sign(ev.deltaY) * 6;
+  const moved = dolly(animScene.camera, step);
+  // Never let a dolly pass through the subject: beyond that point the scene
+  // turns inside out and there is no obvious way back.
+  if (distanceTo(moved, ANIM_ORBIT_TARGET) > 12) {
+    animScene.camera = moved;
+    animAutoKeyCamera();
+  }
+  animDraw();
+}, { passive: false });
+
+// Depth and the two extra rotation axes write into the keyframe the same
+// way every other property does.
+function anim3dCommit() {
+  const shape = animSelected();
+  if (!shape) return;
+  setKeyframe(shape, parseFloat(animTime.value), {
+    z: parseFloat(animZ.value),
+    rotX: parseFloat(animRotX.value),
+    rotY: parseFloat(animRotY.value),
+  });
+  anim3dSyncLabels();
+  animRenderKeyframes();
+  animDraw();
+}
+
+const animExtrudeRow = document.getElementById('anim-extrude-row');
+const animExtrude = document.getElementById('anim-extrude');
+const animExtrudeValue = document.getElementById('anim-extrude-value');
+
+animExtrude.addEventListener('input', () => {
+  const shape = animSelected();
+  if (!shape) return;
+  shape.extrude = parseInt(animExtrude.value, 10);
+  animExtrudeValue.textContent = animExtrude.value;
+  animDraw();
+});
+animExtrude.addEventListener('change', animRecord);
+
+function anim3dSyncLabels() {
+  animZValue.textContent = animZ.value;
+  animRotXValue.textContent = animRotX.value;
+  animRotYValue.textContent = animRotY.value;
+}
+
+for (const el of [animZ, animRotX, animRotY]) {
+  el.addEventListener('input', anim3dCommit);
+  el.addEventListener('change', animRecord);
+}
+
+// --- Camera keyframes ---
+//
+// Keying the camera is what turns a viewpoint into a shot: dolly in over
+// four seconds, orbit past a title, pull back to reveal. The camera samples
+// through the same easing machinery as every shape.
+const animCamKeyBtn = document.getElementById('anim-camkey-btn');
+const animCamKeyCount = document.getElementById('anim-camkey-count');
+const animCamClearBtn = document.getElementById('anim-camclear-btn');
+
+function animSyncCameraKeys() {
+  const n = cameraKeys(animScene).length;
+  animCamKeyCount.hidden = n === 0;
+  animCamClearBtn.hidden = n === 0;
+  animCamKeyCount.textContent = `${n} key${n === 1 ? '' : 's'}`;
+}
+
+animCamKeyBtn.addEventListener('click', () => {
+  if (!is3D(animScene)) return;
+  setCameraKey(animScene, parseFloat(animTime.value));
+  animSyncCameraKeys();
+  animDraw();
+  animRecord();
+  showToast('Camera keyed here');
+});
+
+animCamClearBtn.addEventListener('click', () => {
+  animScene.cameraKeyframes = [];
+  animSyncCameraKeys();
+  animDraw();
+  animRecord();
+});
+
+// Once the camera is animated, moving it means moving it AT this moment:
+// orbit, dolly and lens changes re-key the playhead's frame rather than
+// silently editing a base camera the render no longer shows. This is the
+// auto-key behaviour every animation tool converges on, because the
+// alternative is a drag that visibly does nothing.
+function animAutoKeyCamera() {
+  if (!is3D(animScene) || !cameraKeys(animScene).length) return;
+  setCameraKey(animScene, parseFloat(animTime.value));
+  animSyncCameraKeys();
+}
+
+// --- The scene light ---
+const animLightControls = document.getElementById('light-controls');
+const animLightAz = document.getElementById('anim-light-az');
+const animLightAzValue = document.getElementById('anim-light-az-value');
+const animLightEl = document.getElementById('anim-light-el');
+const animLightElValue = document.getElementById('anim-light-el-value');
+const animLightWarm = document.getElementById('anim-light-warm');
+const animLightWarmValue = document.getElementById('anim-light-warm-value');
+const animLightKeyBtn = document.getElementById('anim-lightkey-btn');
+const animLightKeyCount = document.getElementById('anim-lightkey-count');
+const animLightClearBtn = document.getElementById('anim-lightclear-btn');
+
+function animSyncLight() {
+  const on = is3D(animScene);
+  animLightControls.hidden = !on;
+  if (!on) return;
+  // Scenes saved before the light existed arrive without one.
+  if (!animScene.light) animScene.light = createLight();
+  animLightAz.value = String(Math.round(animScene.light.azimuth));
+  animLightEl.value = String(Math.round(animScene.light.elevation));
+  animLightWarm.value = String(animScene.light.warmth);
+  animLightAzValue.textContent = `${Math.round(animScene.light.azimuth)}°`;
+  animLightElValue.textContent = `${Math.round(animScene.light.elevation)}°`;
+  animLightWarmValue.textContent = Number(animScene.light.warmth).toFixed(2);
+  const n = lightKeys(animScene).length;
+  animLightKeyCount.hidden = n === 0;
+  animLightClearBtn.hidden = n === 0;
+  animLightKeyCount.textContent = `${n} key${n === 1 ? '' : 's'}`;
+}
+
+// Like the camera: once the light is animated, editing it edits this
+// moment's keyframe rather than a base the render no longer shows.
+function animAutoKeyLight() {
+  if (!is3D(animScene) || !lightKeys(animScene).length) return;
+  setLightKey(animScene, parseFloat(animTime.value));
+  animSyncLight();
+}
+
+function animLightInput() {
+  if (!is3D(animScene)) return;
+  if (!animScene.light) animScene.light = createLight();
+  animScene.light.azimuth = parseFloat(animLightAz.value);
+  animScene.light.elevation = parseFloat(animLightEl.value);
+  animScene.light.warmth = parseFloat(animLightWarm.value);
+  animLightAzValue.textContent = `${Math.round(animScene.light.azimuth)}°`;
+  animLightElValue.textContent = `${Math.round(animScene.light.elevation)}°`;
+  animLightWarmValue.textContent = animScene.light.warmth.toFixed(2);
+  animAutoKeyLight();
+  animDraw();
+}
+
+for (const el of [animLightAz, animLightEl, animLightWarm]) {
+  el.addEventListener('input', animLightInput);
+  el.addEventListener('change', animRecord);
+}
+
+animLightKeyBtn.addEventListener('click', () => {
+  if (!is3D(animScene)) return;
+  setLightKey(animScene, parseFloat(animTime.value));
+  animSyncLight();
+  animDrawTimeline();
+  animRecord();
+  showToast('Light keyed here');
+});
+
+animLightClearBtn.addEventListener('click', () => {
+  animScene.lightKeyframes = [];
+  animSyncLight();
+  animDrawTimeline();
+  animRecord();
+});
+
+
+/* ---------- Autosave ---------- */
+//
+// The scene, the beat and the lyrics survive a reload. Saves are debounced
+// off the same chokepoints that record undo history; the restore runs once
+// at boot and only into pristine state, so it can never overwrite work.
+const workspaceStore = createAutosave({ key: 'thevoice_workspace_v2', storage: localStorage });
+
+function workspacePayload() {
+  // Live objects go straight in: JSON.stringify drops the attached easeFn
+  // functions, and the restore path revalidates everything anyway.
+  return {
+    scene: animScene,
+    pattern: musicPattern,
+    lyrics: (lyricsInput.value || '').slice(0, 20000),
+  };
+}
+
+function scheduleWorkspaceSave() {
+  workspaceStore.schedule(workspacePayload);
+}
+
+// The debounce would miss the moments that matter most.
+window.addEventListener('beforeunload', () => workspaceStore.flush(workspacePayload));
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) workspaceStore.flush(workspacePayload);
+});
+
+function restoreWorkspace() {
+  const ws = workspaceStore.load();
+  if (!workspaceHasContent(ws)) return;
+
+  let restored = false;
+
+  // The scene comes back only into an untouched editor: restoring over
+  // something someone has already started would be autosave destroying
+  // work instead of protecting it.
+  if (ws.scene && animScene.shapes.length === 0 && !is3D(animScene)) {
+    try {
+      const scene = deserializeScene(ws.scene);
+      hydrateSceneImages(scene, loadImage).then(() => animDraw());
+      animScene = scene;
+      animSelectedId = scene.shapes.length ? scene.shapes[0].id : null;
+      animTime.max = String(animScene.duration);
+      animTime.value = '0';
+      animHistory.reset(animScene);
+      anim3dSync();
+      animRenderShapeList();
+      animSyncProps();
+      animDraw();
+      restored = true;
+    } catch {
+      /* a damaged saved scene is dropped; the beat and lyrics still count */
+    }
+  }
+
+  if (ws.pattern && ws.pattern.grid && typeof ws.pattern.grid === 'object'
+      && !TRACKS.some((t) => musicPattern.grid[t.id].some(Boolean))) {
+    // Shape comes from this build's tracks, not the file: a workspace from
+    // a build with different drums must not add or drop rows.
+    for (const t of TRACKS) {
+      const row = Array.isArray(ws.pattern.grid[t.id]) ? ws.pattern.grid[t.id] : [];
+      musicPattern.grid[t.id] = Array.from({ length: STEPS }, (_, i) => !!row[i]);
+    }
+    musicPattern.bpm = Math.round(Math.min(300, Math.max(40, Number(ws.pattern.bpm) || 96)));
+    musicPattern.swing = Math.min(1, Math.max(0, Number(ws.pattern.swing) || 0));
+    musicBpm.value = String(musicPattern.bpm);
+    musicBpmValue.textContent = `${musicPattern.bpm} bpm`;
+    musicSwing.value = String(musicPattern.swing);
+    musicSwingValue.textContent = musicPattern.swing.toFixed(2);
+    if (musicSequencerBuilt) syncSequencer();
+    restored = true;
+  }
+
+  if (typeof ws.lyrics === 'string' && ws.lyrics.trim() && !lyricsInput.value.trim()) {
+    lyricsInput.value = ws.lyrics.slice(0, 20000);
+    renderLyricAnalysis();
+    restored = true;
+  }
+
+  if (restored) {
+    const what = describeWorkspace(ws);
+    showToast(what ? `Restored your work — ${what}` : 'Restored your work');
+  }
+}
+
+/* ---------- Undo ---------- */
+//
+// Snapshots are taken at the boundaries of an action, not on every change:
+// a drag mutates the scene on every pointermove, and recording each one
+// would mean fifty presses of Ctrl+Z to walk back one gesture.
+const animUndoBtn = document.getElementById('anim-undo-btn');
+const animRedoBtn = document.getElementById('anim-redo-btn');
+const animHistory = createHistory(animScene);
+
+function animSyncHistoryButtons() {
+  animUndoBtn.disabled = !animHistory.canUndo();
+  animRedoBtn.disabled = !animHistory.canRedo();
+}
+
+/** Record the scene as it stands. Safe to call more often than needed. */
+function animRecord() {
+  animHistory.push(animScene);
+  animSyncHistoryButtons();
+  scheduleWorkspaceSave();
+}
+
+function animRestore(state) {
+  if (!state) return;
+  animScene = state;
+  // The selected shape may not exist in the restored state.
+  if (!animScene.shapes.some((s) => s.id === animSelectedId)) {
+    animSelectedId = animScene.shapes.length ? animScene.shapes[0].id : null;
+  }
+  animTime.max = String(animScene.duration);
+  if (parseFloat(animTime.value) > animScene.duration) animTime.value = String(animScene.duration);
+  anim3dSync();
+  animRenderShapeList();
+  animSyncProps();
+  animDraw();
+  animSyncHistoryButtons();
+}
+
+function animUndo() {
+  // Anything done since the last commit would otherwise be skipped over —
+  // committing first makes the current state a place undo can return to.
+  animHistory.push(animScene);
+  animRestore(animHistory.undo());
+}
+
+function animRedo() {
+  animRestore(animHistory.redo());
+}
+
+animUndoBtn.addEventListener('click', animUndo);
+animRedoBtn.addEventListener('click', animRedo);
+
+document.addEventListener('keydown', (ev) => {
+  const intent = historyIntent(ev);
+  if (!intent) return;
+  // Ctrl+Z in a text box is that box's own undo; stealing it to revert the
+  // scene would destroy work rather than restore it.
+  if (isTextEntry(ev.target)) return;
+  if (animateView.hidden) return;
+  ev.preventDefault();
+  if (intent === 'undo') animUndo();
+  else animRedo();
+});
+
+/* ---------- Timeline ---------- */
+//
+// Keyframes were a row of chips you could click but not move, which left
+// timing — half of animation — as something you could only retype. Here
+// they are diamonds on a track, dragged against a ruler.
+const animTimelineCanvas = document.getElementById('anim-timeline');
+const animTimelineCtx = animTimelineCanvas.getContext('2d');
+
+let timelineDrag = null;   // { laneIndex, keyframeIndex } while dragging
+let timelineScrubbing = false;
+
+/**
+ * What the timeline shows, one lane per row.
+ *
+ * The camera is a lane like any shape — same hit testing, same dragging,
+ * same minimum-gap rules — because its keyframes are the same arithmetic.
+ * It sits first so the shot always reads top-down: camera, then subjects.
+ * The keyframes arrays are the live ones, so a drag mutates the real data.
+ */
+function timelineLanes() {
+  const lanes = [];
+  if (is3D(animScene)) {
+    lanes.push({ id: '__camera', label: 'Camera', keyframes: cameraKeys(animScene), isCamera: true });
+    // The light only earns a row once it is animated; an empty lane for a
+    // static light would just push the subjects down.
+    if (lightKeys(animScene).length) {
+      lanes.push({ id: '__light', label: 'Light', keyframes: lightKeys(animScene), isCamera: true });
+    }
+  }
+  for (const shape of animScene.shapes) lanes.push(shape);
+  return lanes;
+}
+
+/**
+ * Size the backing store to device pixels.
+ *
+ * A canvas sized only by CSS is drawn at 1x and upscaled, which turns
+ * hairlines and small labels to mush on any modern display.
+ */
+function timelineResize() {
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = animTimelineCanvas.clientWidth || 640;
+  const cssHeight = timelineHeight(timelineLanes().length);
+  const w = Math.round(cssWidth * dpr);
+  const h = Math.round(cssHeight * dpr);
+  // Assigning width or height reallocates the backing store and clears it.
+  // The timeline repaints on every playback frame to move the playhead, so
+  // only touch these when they have actually changed.
+  if (animTimelineCanvas.width !== w || animTimelineCanvas.height !== h) {
+    animTimelineCanvas.style.height = `${cssHeight}px`;
+    animTimelineCanvas.width = w;
+    animTimelineCanvas.height = h;
+    animTimelineCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  return { width: cssWidth, height: cssHeight };
+}
+
+function animDrawTimeline() {
+  const { width, height } = timelineResize();
+  const ctx = animTimelineCtx;
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue('--ink').trim() || '#e8efe9';
+  const dim = css.getPropertyValue('--ink-dim').trim() || '#8a9490';
+  const faint = css.getPropertyValue('--ink-faint').trim() || '#55605a';
+  const phosphor = css.getPropertyValue('--phosphor').trim() || '#3fc6ff';
+  const surface = css.getPropertyValue('--surface').trim() || '#121613';
+  const alt = css.getPropertyValue('--surface-alt').trim() || '#1a201c';
+
+  const duration = animScene.duration;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = surface;
+  ctx.fillRect(0, 0, width, height);
+
+  // Ruler
+  ctx.fillStyle = alt;
+  ctx.fillRect(0, 0, width, RULER_HEIGHT);
+  ctx.font = "10px 'Share Tech Mono', monospace";
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  for (const t of rulerTicks(duration, width)) {
+    const x = timeToX(t, duration, width);
+    ctx.strokeStyle = faint;
+    ctx.beginPath();
+    ctx.moveTo(x, RULER_HEIGHT - 5);
+    ctx.lineTo(x, RULER_HEIGHT);
+    ctx.stroke();
+    ctx.fillStyle = dim;
+    ctx.fillText(`${t}s`, x, RULER_HEIGHT / 2 - 1);
+  }
+
+  // Rows
+  const amber = css.getPropertyValue('--amber').trim() || '#e8c14a';
+  const lanes = timelineLanes();
+  ctx.textAlign = 'left';
+  for (let i = 0; i < lanes.length; i++) {
+    const shape = lanes[i];
+    const y = rowY(i);
+    const selected = shape.id === animSelectedId;
+    // The camera lane is amber throughout: it is part of the shot, not one
+    // of the subjects, and the colour keeps that distinction legible.
+    const laneInk = shape.isCamera ? amber : (selected ? phosphor : dim);
+
+    if (selected) {
+      ctx.fillStyle = alt;
+      ctx.fillRect(0, y, width, ROW_HEIGHT);
+    }
+    ctx.strokeStyle = faint;
+    ctx.globalAlpha = 0.4;
+    ctx.beginPath();
+    ctx.moveTo(0, y + ROW_HEIGHT);
+    ctx.lineTo(width, y + ROW_HEIGHT);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = laneInk;
+    ctx.font = "11px 'Share Tech Mono', monospace";
+    const label = shape.label.length > 13 ? `${shape.label.slice(0, 12)}…` : shape.label;
+    ctx.fillText(label, 8, y + ROW_HEIGHT / 2);
+
+    // The span a shape is alive for, so gaps are visible at a glance.
+    const kfs = shape.keyframes;
+    if (kfs.length > 1) {
+      const x0 = timeToX(kfs[0].time, duration, width);
+      const x1 = timeToX(kfs[kfs.length - 1].time, duration, width);
+      ctx.strokeStyle = shape.isCamera ? amber : (selected ? phosphor : faint);
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = selected || shape.isCamera ? 0.55 : 0.3;
+      ctx.beginPath();
+      ctx.moveTo(x0, y + ROW_HEIGHT / 2);
+      ctx.lineTo(x1, y + ROW_HEIGHT / 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    for (const kf of kfs) {
+      const x = timeToX(kf.time, duration, width);
+      const cy = y + ROW_HEIGHT / 2;
+      ctx.fillStyle = laneInk;
+      ctx.beginPath();
+      ctx.moveTo(x, cy - 5);
+      ctx.lineTo(x + 5, cy);
+      ctx.lineTo(x, cy + 5);
+      ctx.lineTo(x - 5, cy);
+      ctx.closePath();
+      ctx.fill();
+      // A keyframe carrying its own curve is marked, so an authored ease is
+      // visible without clicking through every one.
+      if (kf.ease !== undefined) {
+        ctx.fillStyle = surface;
+        ctx.beginPath();
+        ctx.arc(x, cy, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // Playhead, drawn last so it is never hidden behind a keyframe.
+  const px = timeToX(parseFloat(animTime.value) || 0, duration, width);
+  ctx.strokeStyle = phosphor;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, 0);
+  ctx.lineTo(px, height);
+  ctx.stroke();
+  ctx.fillStyle = phosphor;
+  ctx.beginPath();
+  ctx.moveTo(px - 4, 0);
+  ctx.lineTo(px + 4, 0);
+  ctx.lineTo(px, 6);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function timelinePointer(ev) {
+  const rect = animTimelineCanvas.getBoundingClientRect();
+  return { x: ev.clientX - rect.left, y: ev.clientY - rect.top, width: rect.width };
+}
+
+function timelineSeek(time) {
+  animTime.value = String(Math.min(animScene.duration, Math.max(0, time)));
+  animSyncProps();
+  animDraw();
+}
+
+animTimelineCanvas.addEventListener('pointerdown', (ev) => {
+  const { x, y, width } = timelinePointer(ev);
+  const duration = animScene.duration;
+
+  const lanes = timelineLanes();
+  const hit = hitTestKeyframe(lanes, x, y, duration, width);
+  if (hit) {
+    // Selecting the shape as well: dragging a keyframe of an unselected
+    // shape and having the properties panel keep showing a different one
+    // would be its own small betrayal. The camera lane changes no
+    // selection — it is not a subject.
+    if (!hit.shape.isCamera) animSelectedId = hit.shape.id;
+    timelineDrag = { laneIndex: hit.shapeIndex, keyframeIndex: hit.keyframeIndex };
+    animTimelineCanvas.setPointerCapture(ev.pointerId);
+    timelineSeek(hit.keyframe.time);
+    animRenderShapeList();
+    animDrawTimeline();
+    ev.preventDefault();
+    return;
+  }
+
+  const row = rowAt(y);
+  if (row >= 0 && row < lanes.length && !lanes[row].isCamera) {
+    animSelectedId = lanes[row].id;
+    animRenderShapeList();
+    animSyncProps();
+  }
+  timelineScrubbing = true;
+  animTimelineCanvas.setPointerCapture(ev.pointerId);
+  timelineSeek(xToTime(x, duration, width));
+  animDrawTimeline();
+  ev.preventDefault();
+});
+
+animTimelineCanvas.addEventListener('pointermove', (ev) => {
+  if (!timelineDrag && !timelineScrubbing) return;
+  const { x, width } = timelinePointer(ev);
+  const duration = animScene.duration;
+  const raw = xToTime(x, duration, width);
+
+  if (timelineDrag) {
+    const shape = timelineLanes()[timelineDrag.laneIndex];
+    if (!shape) return;
+    // Snap to frames unless alt is held. Two keyframes a thousandth apart
+    // are the same picture once sampled, and snapping is what lets timings
+    // line up across shapes.
+    const target = ev.altKey ? raw : snapToFrame(raw, animScene.fps);
+    const landed = moveKeyframe(shape, timelineDrag.keyframeIndex, target, duration);
+    if (landed !== null) timelineSeek(landed);
+    animRenderKeyframes();
+  } else {
+    timelineSeek(raw);
+  }
+  animDrawTimeline();
+});
+
+for (const type of ['pointerup', 'pointercancel']) {
+  animTimelineCanvas.addEventListener(type, () => {
+    const wasDragging = timelineDrag !== null;
+    timelineDrag = null;
+    timelineScrubbing = false;
+    animSyncProps();
+    animDrawTimeline();
+    // Scrubbing changes nothing; only a keyframe move is worth recording.
+    if (wasDragging) animRecord();
+  });
+}
+
+// Keyboard: move the playhead, and nudge the keyframe under it.
+animTimelineCanvas.addEventListener('keydown', (ev) => {
+  const frame = 1 / (animScene.fps || 30);
+  const step = ev.shiftKey ? frame * 10 : frame;
+  const t = parseFloat(animTime.value) || 0;
+
+  if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+    ev.preventDefault();
+    const dir = ev.key === 'ArrowRight' ? 1 : -1;
+    const shape = animSelected();
+    if (ev.altKey && shape) {
+      // Alt: carry the keyframe at the playhead rather than the playhead.
+      const i = shape.keyframes.findIndex((k) => Math.abs(k.time - t) < frame / 2);
+      if (i >= 0) {
+        const landed = moveKeyframe(shape, i, shape.keyframes[i].time + dir * step, animScene.duration);
+        if (landed !== null) timelineSeek(landed);
+        animRenderKeyframes();
+      }
+    } else {
+      timelineSeek(t + dir * step);
+    }
+    animDrawTimeline();
+  } else if (ev.key === 'Home') {
+    ev.preventDefault(); timelineSeek(0); animDrawTimeline();
+  } else if (ev.key === 'End') {
+    ev.preventDefault(); timelineSeek(animScene.duration); animDrawTimeline();
+  }
+});
+
+window.addEventListener('resize', () => {
+  if (!animateView.hidden) animDrawTimeline();
+});
+
+/* ---------- Scene agent ---------- */
+//
+// One box, two engines. The local pattern matcher answers instantly and
+// costs nothing; anything it cannot parse goes to the model, if one is
+// configured. The order matters — trying local first means the common
+// requests never incur a bill or a wait.
+const agentPrompt = document.getElementById('agent-prompt');
+const agentGoBtn = document.getElementById('agent-go-btn');
+const agentStatus = document.getElementById('agent-status');
+const agentExamples = document.getElementById('agent-examples');
+
+const AGENT_EXAMPLES = [
+  'three blue circles that fade in',
+  'a title saying "THE VOICE" bouncing in',
+  'five bars pulsing to the music',
+  'a red triangle spinning for 8 seconds',
+  'waves drifting across in teal and purple',
+];
+
+for (const example of AGENT_EXAMPLES) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'agent-example';
+  btn.textContent = example;
+  btn.addEventListener('click', () => {
+    agentPrompt.value = example;
+    agentPrompt.focus();
+  });
+  agentExamples.appendChild(btn);
+}
+
+/** Replace the scene with a generated one, keeping the panel in step. */
+function agentApplyScene(scene) {
+  animScene = {
+    duration: scene.duration,
+    fps: scene.fps,
+    background: scene.background,
+    shapes: scene.shapes,
+  };
+  // Solids only exist under a camera; a described cube must not silently
+  // arrive as its flat silhouette.
+  if (animScene.shapes.some((sh) => isMeshType(sh.type))) enable3D(animScene);
+  anim3dSync();
+  animSelectedId = animScene.shapes.length ? animScene.shapes[0].id : null;
+  animLevels = null;
+  animTime.max = String(animScene.duration);
+  animTime.value = '0';
+  animRenderShapeList();
+  animSyncProps();
+  animDraw();
+  animRecord();
+}
+
+async function agentCreate() {
+  const prompt = agentPrompt.value.trim();
+  if (!prompt) {
+    agentStatus.textContent = 'Describe what you want to see first.';
+    return;
+  }
+
+  // Local first: instant, free, and handles most of what people ask for.
+  const local = parseLocalCommand(prompt);
+  if (local) {
+    agentApplyScene(local);
+    agentStatus.textContent = `Built here on the spot — ${local.summary}. Edit any shape below.`;
+    showToast('Scene created');
+    return;
+  }
+
+  const config = getSupabaseConfig();
+  const endpoint = getAgentEndpoint() || defaultEndpointFor(config && config.url);
+  if (!endpoint) {
+    agentStatus.textContent = 'That needs the AI agent, which is not set up on this deployment yet. '
+      + 'Try naming a shape and a movement — "a red square that spins" — which works without it.';
+    return;
+  }
+
+  agentGoBtn.disabled = true;
+  const label = agentGoBtn.textContent;
+  agentGoBtn.textContent = 'Thinking…';
+  agentStatus.textContent = 'Asking the model…';
+  try {
+    const session = await getCurrentSession().catch(() => null);
+    const result = await requestScene({
+      prompt,
+      // Sending the current scene lets follow-ups like "make it slower"
+      // work on what is already there rather than starting over.
+      scene: animScene.shapes.length ? animScene : null,
+      endpoint,
+      accessToken: session && session.access_token,
+      anonKey: config && config.anonKey,
+    });
+    if (!result.ok) {
+      agentStatus.textContent = result.message;
+      return;
+    }
+    agentApplyScene(result.scene);
+    agentStatus.textContent = result.summary || 'Scene created.';
+    showToast('Scene created');
+  } catch (err) {
+    agentStatus.textContent = err.message || 'The scene agent failed.';
+  } finally {
+    agentGoBtn.disabled = false;
+    agentGoBtn.textContent = label;
+  }
+}
+
+agentGoBtn.addEventListener('click', agentCreate);
+agentPrompt.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Enter') { ev.preventDefault(); agentCreate(); }
+});
+
+/* ---------- Timing curve editor ---------- */
+//
+// The keyframe a segment leaves from owns that segment's curve, so editing
+// here always targets the keyframe at or before the playhead — the same
+// one whose chip is highlighted.
+const animCurveCanvas = document.getElementById('anim-curve');
+const animCurveCtx = animCurveCanvas.getContext('2d');
+const animCurveNote = document.getElementById('anim-curve-note');
+
+/** The keyframe whose outgoing segment the playhead currently sits in. */
+function animActiveKeyframe() {
+  const shape = animSelected();
+  if (!shape || !shape.keyframes.length) return null;
+  const t = parseFloat(animTime.value);
+  let found = shape.keyframes[0];
+  for (const kf of shape.keyframes) {
+    if (kf.time <= t + 0.0001) found = kf;
+  }
+  return found;
+}
+
+function animCurveSpec() {
+  const kf = animActiveKeyframe();
+  if (!kf) return 'ease';
+  return kf.ease === undefined ? (animSelected()?.easing || 'ease') : kf.ease;
+}
+
+// Handles live in curve space (0..1 on x, unbounded on y). The drawing pads
+// the box so an overshooting handle stays on screen instead of being cut
+// off at the edge it is meant to cross.
+const CURVE_PAD = 46;
+
+function curveToPixels(x, y) {
+  const size = animCurveCanvas.width;
+  const inner = size - CURVE_PAD * 2;
+  return [CURVE_PAD + x * inner, size - CURVE_PAD - y * inner];
+}
+
+function pixelsToCurve(px, py) {
+  const size = animCurveCanvas.width;
+  const inner = size - CURVE_PAD * 2;
+  return [(px - CURVE_PAD) / inner, (size - CURVE_PAD - py) / inner];
+}
+
+function animDrawCurve() {
+  const ctx = animCurveCtx;
+  const size = animCurveCanvas.width;
+  const spec = animCurveSpec();
+  const named = typeof spec === 'string';
+  const ease = resolveEasing(spec);
+  const points = easingPoints(spec);
+
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue('--ink').trim() || '#e8efe9';
+  const dim = css.getPropertyValue('--ink-faint').trim() || '#55605a';
+  const phosphor = css.getPropertyValue('--phosphor').trim() || '#3fc6ff';
+  const surface = css.getPropertyValue('--surface').trim() || '#121613';
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = surface;
+  ctx.fillRect(0, 0, size, size);
+
+  // The unit box: the region a non-overshooting curve stays inside.
+  const [bx0, by0] = curveToPixels(0, 1);
+  const [bx1, by1] = curveToPixels(1, 0);
+  ctx.strokeStyle = dim;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bx0, by0, bx1 - bx0, by1 - by0);
+
+  // Quarter gridlines, so the shape of the curve can be read off.
+  ctx.globalAlpha = 0.35;
+  for (let i = 1; i < 4; i++) {
+    const [gx] = curveToPixels(i / 4, 0);
+    const [, gy] = curveToPixels(0, i / 4);
+    ctx.beginPath(); ctx.moveTo(gx, by0); ctx.lineTo(gx, by1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx0, gy); ctx.lineTo(bx1, gy); ctx.stroke();
+  }
+  // The diagonal is linear — the reference every other curve is read against.
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath();
+  ctx.moveTo(...curveToPixels(0, 0));
+  ctx.lineTo(...curveToPixels(1, 1));
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+
+  // The curve itself, sampled from the same function playback uses — so
+  // what is drawn cannot drift from what is rendered.
+  ctx.strokeStyle = phosphor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= 120; i++) {
+    const x = i / 120;
+    const [px, py] = curveToPixels(x, ease(x));
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Handles are only meaningful for curves that are a single bezier.
+  if (named && !EASING_CURVES[spec]) {
+    animCurveCanvas.dataset.draggable = 'false';
+    return;
+  }
+  animCurveCanvas.dataset.draggable = 'true';
+
+  ctx.strokeStyle = ink;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1;
+  for (const [i, anchor] of [[0, [0, 0]], [1, [1, 1]]]) {
+    const [hx, hy] = [points[i * 2], points[i * 2 + 1]];
+    ctx.beginPath();
+    ctx.moveTo(...curveToPixels(anchor[0], anchor[1]));
+    ctx.lineTo(...curveToPixels(hx, hy));
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (let i = 0; i < 2; i++) {
+    const [px, py] = curveToPixels(points[i * 2], points[i * 2 + 1]);
+    ctx.fillStyle = phosphor;
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = surface;
+    ctx.beginPath();
+    ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function animSyncCurve() {
+  const kf = animActiveKeyframe();
+  const spec = animCurveSpec();
+  animEasing.value = typeof spec === 'string' && ALL_EASING_NAMES.includes(spec) ? spec : 'custom';
+  if (!kf) {
+    animCurveNote.textContent = '';
+  } else if (Array.isArray(spec)) {
+    animCurveNote.textContent = `${kf.time.toFixed(2)}s · custom`;
+  } else {
+    animCurveNote.textContent = `${kf.time.toFixed(2)}s${hasOvershoot(spec) ? ' · overshoots' : ''}`;
+  }
+  animDrawCurve();
+}
+
+/** Write a curve onto the keyframe that owns the current segment. */
+function animSetCurve(spec) {
+  const kf = animActiveKeyframe();
+  if (!kf) return;
+  kf.ease = spec;
+  animSyncCurve();
+  animDraw();
+}
+
+let curveDragging = -1;
+
+function curvePointerPos(ev) {
+  const rect = animCurveCanvas.getBoundingClientRect();
+  // The canvas is drawn at a fixed resolution but displayed responsively,
+  // so pointer coordinates need scaling into canvas space.
+  const scale = animCurveCanvas.width / rect.width;
+  return [(ev.clientX - rect.left) * scale, (ev.clientY - rect.top) * scale];
+}
+
+animCurveCanvas.addEventListener('pointerdown', (ev) => {
+  if (animCurveCanvas.dataset.draggable === 'false') return;
+  const points = easingPoints(animCurveSpec());
+  const [px, py] = curvePointerPos(ev);
+  let best = -1;
+  let bestDist = 22; // generous, so a handle is easy to grab on a touchscreen
+  for (let i = 0; i < 2; i++) {
+    const [hx, hy] = curveToPixels(points[i * 2], points[i * 2 + 1]);
+    const d = Math.hypot(px - hx, py - hy);
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  if (best < 0) return;
+  curveDragging = best;
+  animCurveCanvas.setPointerCapture(ev.pointerId);
+  ev.preventDefault();
+});
+
+animCurveCanvas.addEventListener('pointermove', (ev) => {
+  if (curveDragging < 0) return;
+  const points = easingPoints(animCurveSpec());
+  const [px, py] = curvePointerPos(ev);
+  let [cx, cy] = pixelsToCurve(px, py);
+  // x is clamped because a control point outside 0..1 would make the curve
+  // non-monotonic in time — one instant mapping to several values. y is
+  // left free: that is precisely what produces overshoot.
+  cx = Math.min(1, Math.max(0, cx));
+  cy = Math.min(2, Math.max(-1, cy));
+  points[curveDragging * 2] = Math.round(cx * 1000) / 1000;
+  points[curveDragging * 2 + 1] = Math.round(cy * 1000) / 1000;
+  animSetCurve(points);
+});
+
+for (const ev of ['pointerup', 'pointercancel']) {
+  animCurveCanvas.addEventListener(ev, () => {
+    if (curveDragging >= 0) animRecord();
+    curveDragging = -1;
+  });
+}
+
+// Keyboard equivalent, so the curve is not mouse-only. Arrows nudge the
+// first handle, shift+arrows the second.
+animCurveCanvas.addEventListener('keydown', (ev) => {
+  if (animCurveCanvas.dataset.draggable === 'false') return;
+  const step = ev.altKey ? 0.01 : 0.05;
+  const dx = ev.key === 'ArrowRight' ? step : ev.key === 'ArrowLeft' ? -step : 0;
+  const dy = ev.key === 'ArrowUp' ? step : ev.key === 'ArrowDown' ? -step : 0;
+  if (!dx && !dy) return;
+  ev.preventDefault();
+  const points = easingPoints(animCurveSpec());
+  const i = ev.shiftKey ? 1 : 0;
+  points[i * 2] = Math.round(Math.min(1, Math.max(0, points[i * 2] + dx)) * 1000) / 1000;
+  points[i * 2 + 1] = Math.round(Math.min(2, Math.max(-1, points[i * 2 + 1] + dy)) * 1000) / 1000;
+  animSetCurve(points);
+});
 
 /* ---------- Music ---------- */
 const sequencerEl = document.getElementById('sequencer');
@@ -6993,6 +11264,7 @@ function buildSequencer() {
         musicPattern.grid[track.id][i] = on;
         cell.classList.toggle('on', on);
         cell.setAttribute('aria-pressed', on ? 'true' : 'false');
+        scheduleWorkspaceSave();
       });
       steps.appendChild(cell);
     }
@@ -7012,15 +11284,18 @@ function syncSequencer() {
 
 musicPreset.addEventListener('change', () => {
   applyPreset(musicPattern, musicPreset.value);
+  scheduleWorkspaceSave();
   syncSequencer();
 });
 
 musicBpm.addEventListener('input', () => {
   musicPattern.bpm = parseInt(musicBpm.value, 10);
+  scheduleWorkspaceSave();
   musicBpmValue.textContent = `${musicBpm.value} bpm`;
 });
 musicSwing.addEventListener('input', () => {
   musicPattern.swing = parseFloat(musicSwing.value);
+  scheduleWorkspaceSave();
   musicSwingValue.textContent = parseFloat(musicSwing.value).toFixed(2);
 });
 musicBars.addEventListener('input', () => {
@@ -7126,6 +11401,7 @@ function resampleLinear(input, fromRate, toRate) {
 
 musicClearBtn.addEventListener('click', () => {
   for (const t of TRACKS) musicPattern.grid[t.id].fill(false);
+  scheduleWorkspaceSave();
   syncSequencer();
   musicHint.textContent = '';
 });
@@ -7180,7 +11456,7 @@ function renderLyricAnalysis() {
   }
 }
 
-lyricsInput.addEventListener('input', renderLyricAnalysis);
+lyricsInput.addEventListener('input', () => { renderLyricAnalysis(); scheduleWorkspaceSave(); });
 
 function musicOnShow() {
   if (!musicSequencerBuilt) {
@@ -7894,6 +12170,291 @@ function projectOnShow() {
   projectRefreshSources();
 }
 
+/* ---------- File imports ---------- */
+//
+// Every panel that produced something can now also accept something. The
+// shared shape is: pick or drop → validate → hand to the same code path the
+// in-app equivalent already uses, so an imported clip is indistinguishable
+// from a recorded one from that point on.
+
+guardStrayDrops();
+
+/** Report a rejected file the same way everywhere. */
+function importFailed(hintEl, result) {
+  if (result.cancelled) return true;
+  if (!result.ok) {
+    if (hintEl) hintEl.textContent = result.message;
+    else showToast(result.message, 'error');
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Take an audio file and make it the current recording.
+ *
+ * Decoding first is deliberate: it proves the browser can actually play the
+ * file before anything downstream depends on it. A .wav container holding a
+ * codec this browser lacks passes every extension and MIME check and then
+ * fails silently at playback, which is the confusing case worth catching
+ * here where the file name is still in hand.
+ */
+async function adoptAudioFile(file, hintEl) {
+  const buf = await decodeToAudioBuffer(file).catch(() => null);
+  if (!buf) {
+    const msg = `“${file.name}” could not be decoded. It may use a format this browser cannot play — try a .wav or .mp3.`;
+    if (hintEl) hintEl.textContent = msg;
+    else showToast(msg, 'error');
+    return null;
+  }
+  recordingBlob = file;
+  originalRecordingBlob = file;
+  recordingExt = fileExtension(file.name) || 'wav';
+  lastClipBlob = file;
+  lastClipExt = recordingExt;
+
+  await saveClipToLibrary({
+    engine: 'recording',
+    voiceLabel: `Imported · ${file.name}`,
+    text: '',
+    blob: file,
+    ext: recordingExt,
+    durationSec: buf.duration,
+  });
+  return buf;
+}
+
+// --- Voice Studio ---------------------------------------------------------
+const studioImportBtn = document.getElementById('studio-import-btn');
+
+async function studioAdopt(result) {
+  if (importFailed(micHint, result)) return;
+  micHint.textContent = '';
+  const buf = await adoptAudioFile(result.file, micHint);
+  if (!buf) return;
+  playbackAudio.src = URL.createObjectURL(result.file);
+  recordingResult.hidden = false;
+  showToast(`Imported ${result.file.name} · ${formatDuration(buf.duration)}`);
+}
+
+studioImportBtn.addEventListener('click', async () => {
+  studioAdopt(await pickValidated('audio'));
+});
+makeDropTarget(document.querySelector('[data-panel="studio"]'), 'audio', studioAdopt);
+
+// --- Speak: a script is a file too ---------------------------------------
+makeDropTarget(document.querySelector('[data-panel="speak"]'), 'json', async (result) => {
+  // Text files arrive here as the json kind, since both are read as text.
+  if (result.cancelled) return;
+  if (!result.ok) { showToast(result.message, 'error'); return; }
+  try {
+    const text = await readText(result.file);
+    textInput.value = text.slice(0, 50000);
+    updateTextStats();
+    showToast(`Loaded ${result.file.name}`);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+});
+
+// --- Modulate -------------------------------------------------------------
+const modImportBtn = document.getElementById('mod-import-btn');
+
+async function modAdopt(result) {
+  if (importFailed(modHint, result)) return;
+  modHint.textContent = '';
+  const buf = await adoptAudioFile(result.file, modHint);
+  if (!buf) return;
+  // Load it, don't merely offer it. Importing a file into this panel is an
+  // unambiguous request to modulate that file; making the user then press
+  // "Use latest recording" would be a step that communicates nothing.
+  modSourceBuffer = { data: buf.getChannelData(0), sampleRate: buf.sampleRate };
+  modSourceLabel.textContent = `Loaded ${result.file.name} · ${buf.duration.toFixed(1)}s`;
+  modApplyBtn.disabled = false;
+  showToast(`Loaded ${result.file.name} for modulation`);
+}
+
+modImportBtn.addEventListener('click', async () => {
+  modAdopt(await pickValidated('audio'));
+});
+makeDropTarget(modulateView, 'audio', modAdopt);
+
+// --- Music ----------------------------------------------------------------
+const musicImportBtn = document.getElementById('music-import-btn');
+
+async function musicAdopt(result) {
+  if (importFailed(musicHint, result)) return;
+  musicHint.textContent = '';
+  const buf = await adoptAudioFile(result.file, musicHint);
+  if (!buf) return;
+  showToast(`Imported ${result.file.name} — use "Layer voice over it" to mix`);
+}
+
+musicImportBtn.addEventListener('click', async () => {
+  musicAdopt(await pickValidated('audio'));
+});
+makeDropTarget(musicView, 'audio', musicAdopt);
+
+// --- Project --------------------------------------------------------------
+const projectImportBtn = document.getElementById('project-import-btn');
+
+async function projectAdopt(result) {
+  if (importFailed(projectHint, result)) return;
+  projectHint.textContent = '';
+  const buf = await adoptAudioFile(result.file, projectHint);
+  if (!buf) return;
+  await projectRefreshSources();
+  projectVoiceSel.value = 'session';
+  projectUpdateSummary();
+  showToast(`Imported ${result.file.name} · ${formatDuration(buf.duration)}`);
+}
+
+projectImportBtn.addEventListener('click', async () => {
+  projectAdopt(await pickValidated('audio'));
+});
+makeDropTarget(projectView, 'audio', projectAdopt);
+
+// --- Library --------------------------------------------------------------
+const libraryImportBtn = document.getElementById('library-import-btn');
+
+libraryImportBtn.addEventListener('click', async () => {
+  const files = await pickFile(ACCEPT.audio, { multiple: true });
+  if (!files || !files.length) return;
+  let added = 0;
+  const problems = [];
+  for (const file of files) {
+    const result = validateFile(file, 'audio');
+    if (!result.ok) { problems.push(result.message); continue; }
+    const buf = await decodeToAudioBuffer(file).catch(() => null);
+    if (!buf) { problems.push(`“${file.name}” could not be decoded.`); continue; }
+    await saveClipToLibrary({
+      engine: 'recording',
+      voiceLabel: `Imported · ${file.name}`,
+      text: '',
+      blob: file,
+      ext: fileExtension(file.name) || 'wav',
+      durationSec: buf.duration,
+    });
+    added += 1;
+  }
+  await renderLibrary();
+  // One clip failing out of twenty should not read as total failure.
+  showToast(added
+    ? `Imported ${added} clip${added === 1 ? '' : 's'}${problems.length ? `, ${problems.length} skipped` : ''}`
+    : 'Nothing could be imported.', added ? 'info' : 'error');
+  if (problems.length) libraryEmpty.textContent = problems[0];
+});
+
+// --- Animate --------------------------------------------------------------
+const animImportAudioBtn = document.getElementById('anim-import-audio-btn');
+const animImportImageBtn = document.getElementById('anim-import-image-btn');
+const animOpenBtn = document.getElementById('anim-open-btn');
+const animSaveBtn = document.getElementById('anim-save-btn');
+
+/** Drive the scene's reactive shapes from an imported track. */
+async function animAdoptAudio(result) {
+  if (importFailed(animHint, result)) return;
+  animHint.textContent = '';
+  const buf = await decodeToAudioBuffer(result.file).catch(() => null);
+  if (!buf) {
+    animHint.textContent = `“${result.file.name}” could not be decoded.`;
+    return;
+  }
+  animScene.duration = Math.max(1, buf.duration);
+  animTime.max = String(animScene.duration);
+  animLevels = audioLevelTrack(buf.getChannelData(0), buf.sampleRate, animScene.fps, animScene.duration);
+  animDraw();
+  showToast(`${result.file.name} loaded — mark a shape reactive to make it move`);
+}
+
+animImportAudioBtn.addEventListener('click', async () => {
+  animAdoptAudio(await pickValidated('audio'));
+});
+
+/** Add an imported image as a shape that can be keyframed like any other. */
+async function animAdoptImage(result) {
+  if (importFailed(animHint, result)) return;
+  animHint.textContent = '';
+  try {
+    const dataUrl = await readDataUrl(result.file);
+    const img = await loadImage(dataUrl);
+    registerImage(dataUrl, img);
+    const shape = createShape('image', parseFloat(animTime.value) || 0);
+    shape.src = dataUrl;
+    shape.label = result.file.name.replace(/\.[^.]+$/, '').slice(0, 40) || 'Image';
+    animScene.shapes.push(shape);
+    animSelectedId = shape.id;
+    animRenderShapeList();
+    animSyncProps();
+    animDraw();
+    showToast(`Added ${result.file.name}`);
+  } catch (err) {
+    animHint.textContent = err.message || 'That image could not be loaded.';
+  }
+}
+
+animImportImageBtn.addEventListener('click', async () => {
+  animAdoptImage(await pickValidated('image'));
+});
+
+// One drop zone, three kinds — dispatch on what was actually dropped so a
+// user does not have to aim at the right button.
+makeDropTarget(animateView, 'audio', () => {}, {});
+animateView.addEventListener('drop', async (ev) => {
+  const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if (!file) return;
+  const ext = fileExtension(file.name);
+  const type = String(file.type || '');
+  if (type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif'].includes(ext)) {
+    animAdoptImage(validateFile(file, 'image'));
+  } else if (ext === 'json') {
+    animOpenScene(validateFile(file, 'json'));
+  } else {
+    animAdoptAudio(validateFile(file, 'audio'));
+  }
+});
+
+/** Open a saved scene — the other half of an export that already existed. */
+async function animOpenScene(result) {
+  if (importFailed(animHint, result)) return;
+  try {
+    const data = await readJson(result.file);
+    const scene = deserializeScene(data);
+    await hydrateSceneImages(scene, loadImage);
+    animScene = scene;
+    animSelectedId = scene.shapes.length ? scene.shapes[0].id : null;
+    animLevels = null;
+    anim3dSync();
+    animTime.max = String(animScene.duration);
+    animTime.value = '0';
+    animRenderShapeList();
+    animSyncProps();
+    animDraw();
+    // Opening a file starts a new document: the history restarts from it.
+    // Without this, the first Ctrl+Z after any edit steps past the opened
+    // scene into whatever happened to be on screen before — and undoing
+    // into a different document is never what anyone means.
+    animHistory.reset(animScene);
+    animSyncHistoryButtons();
+    animHint.textContent = '';
+    showToast(`Opened ${result.file.name} — ${scene.shapes.length} shape${scene.shapes.length === 1 ? '' : 's'}`);
+  } catch (err) {
+    animHint.textContent = err.message || 'That file is not a scene.';
+  }
+}
+
+animOpenBtn.addEventListener('click', async () => {
+  animOpenScene(await pickValidated('json'));
+});
+
+animSaveBtn.addEventListener('click', async () => {
+  const json = serializeScene(animScene);
+  const blob = new Blob([json], { type: 'application/json' });
+  const r = await downloadBlob(blob, `scene-${Date.now()}.json`);
+  if (!r.ok) animHint.textContent = r.message || 'Save cancelled.';
+  else showToast('Scene saved — reopen it with "Open scene…"');
+});
+
 /* ---------- Init ---------- */
 // Tells the inline boot guard in the page that the module actually ran.
 window.__voiceBooted = true;
@@ -7905,6 +12466,7 @@ syncModLabels();
 updateEngineChrome();
 renderClonedVoiceList();
 updateTextStats();
+restoreWorkspace();
 bootstrapAuth().catch(() => showGate());
 startUpgradeWatch().catch(() => {});
 </script>
