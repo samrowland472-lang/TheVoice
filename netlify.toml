@@ -8,6 +8,10 @@
 [functions]
   directory = "netlify/functions"
 
+[[edge_functions]]
+  function = "flick-inject"
+  path = "/*"
+
 # Flick chat proxy — must sit above the SPA fallback.
 [[redirects]]
   from = "/api/flick-chat"
