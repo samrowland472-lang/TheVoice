@@ -1,115 +1,130 @@
-# The Voice
+# Backend setup
 
-A voice and animation studio that runs entirely in the browser. Neural
-speech synthesis, recording with live analysis, pitch/formant modulation,
-long-form audiobook rendering, and keyframe animation that can be driven
-by a voice track.
+Two things live on the server, and both exist for the same reason: a browser
+cannot be trusted to decide who has paid. The page reads the plan; only
+Stripe's webhook writes it.
 
-## Why it scales cheaply
+Everything here is one-time setup. Once it's done, upgrades happen on their
+own — someone pays in Stripe's tab, and the plan appears on their account.
 
-Every heavy operation — speech synthesis, modulation, spectral analysis,
-animation rendering — runs in the visitor's own browser. There is no
-inference server to pay for or scale, so hosting cost stays flat whether
-ten people use it or ten thousand.
+---
 
-## Deploy
+## 1. Create the database table
 
-Static hosting; no build step.
+In your Supabase project: **SQL Editor → New query**, paste the whole of
+`schema.sql` from this folder, and run it.
 
-**Netlify** — drag the folder onto netlify.com/drop, or connect the repo
-(`netlify.toml` is already configured).
+That creates:
 
-**Vercel** — `vercel deploy` in this directory (`vercel.json` included).
+- a `subscriptions` table holding each user's plan,
+- a read-only security policy: you can read your own row and nobody else's,
+  and **no** write policy at all, so nothing in a browser can grant a plan,
+- a trigger that gives every new signup a `free` row.
 
-**Anything else** — serve the folder. `index.html` is the entry point.
-`the-voice.html` is the same app as a single self-contained file if you
-prefer one file with no dependencies.
+You can confirm it worked under **Table Editor → subscriptions**.
 
-## Accounts
+## 2. Create the products in Stripe
 
-Sign-in uses Supabase. Either:
+In the Stripe dashboard, create one **Product** per paid tier (Studio and
+Pro, unless you've changed them in `js/billing.js`), each with a recurring
+monthly price.
 
-1. Fill in `BACKEND_URL` / `BACKEND_KEY` at the top of `js/account.js`, or
-2. Leave them blank and connect a project from the **Connect Supabase**
-   button on the entry gate.
+For each one you now need two values:
 
-**Use the Project URL, not the REST endpoint.** The dashboard shows several
-addresses and the one under "Connect" or in the API docs is
-`https://<ref>.supabase.co/rest/v1/`, which is for querying tables. What
-this app needs is the bare origin:
+| Value | Where to find it | Looks like |
+| --- | --- | --- |
+| **Price ID** | Product page → the price row | `price_1AbC…` |
+| **Payment Link** | Payment Links → create one for that price | `https://buy.stripe.com/…` |
 
-    https://<ref>.supabase.co
+## 3. Deploy the webhook
 
-The quickest way to read it is off the dashboard's own address bar —
-`supabase.com/dashboard/project/<ref>` — where `<ref>` plus `.supabase.co`
-is your Project URL. Pasting the wrong one is handled anyway: any Supabase
-endpoint URL is reduced to its origin on entry, and an already-saved bad one
-is repaired on load.
+Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then from
+the repository root:
 
-The anon key is public by design — Supabase enforces access server-side
-through row level security — so shipping it in the page is expected. The
-**service-role key must never go here**: it bypasses row level security
-entirely, so putting it in a web page hands every visitor full read/write
-access to the database. Pasting one is refused with an explanation.
+```bash
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
+supabase functions deploy stripe-webhook --no-verify-jwt
+supabase secrets set STRIPE_SECRET_KEY=sk_live_...
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...   # from step 4
+```
 
-For Google/Apple sign-in, enable those providers in your Supabase
-dashboard under Authentication → Providers.
+`--no-verify-jwt` is correct here and nowhere else: Stripe calls this
+endpoint, not a signed-in user, so there is no user token to check. The
+Stripe signature check inside the function is what authenticates the
+request — don't remove it.
 
-## Payments
+Before deploying, open `functions/stripe-webhook/index.ts` and fill in
+`PRICE_TO_PLAN` with the Price IDs from step 2:
 
-Plans link to Stripe Payment Links, set under Settings. Payment Links need
-no server. For automatic plan upgrades after payment you would add a
-Stripe webhook writing the plan to the user's Supabase record.
+```ts
+const PRICE_TO_PLAN: Record<string, string> = {
+  'price_1AbC...': 'studio',
+  'price_1XyZ...': 'pro',
+};
+```
 
-## Layout
+A price that isn't listed here is ignored, which fails closed: an
+unrecognised payment grants nothing rather than guessing a tier.
 
-- `index.html` / `style.css` — shell and styling
-- `js/` — one module per concern:
-  - `modulation.js` — phase vocoder, independent pitch and formant shift
-  - `pitch.js` — YIN fundamental frequency detection
-  - `animation.js` — keyframe scenes, voice-reactive rendering
-  - `chapters.js` — long-form text splitting
-  - `tts-neural.js` / `tts-browser.js` / `tts-elevenlabs.js` — voice engines
-  - `account.js` / `billing.js` — auth and plans
-- `the-voice.html` — generated single-file build
+## 4. Point Stripe at the webhook
 
-## Browser support
+In Stripe: **Developers → Webhooks → Add endpoint**.
 
-Chrome and Edge are the primary targets. Recording and live transcription
-need a secure context (https, or a local file opened directly) — the
-microphone is blocked in embedded iframes.
+- **URL**: `https://YOUR_PROJECT_REF.supabase.co/functions/v1/stripe-webhook`
+- **Events**: `checkout.session.completed`,
+  `customer.subscription.updated`, `customer.subscription.deleted`
 
-## Layout
+Stripe then shows a **Signing secret** (`whsec_…`) — that's the
+`STRIPE_WEBHOOK_SECRET` from step 3.
 
-    index.html          the page
-    style.css           all styles
-    js/                 ES modules, one concern each
-    tests/              pure-logic tests (node, no browser)
-    supabase/           database schema + Stripe webhook
-    build.py            bundles js/ into the single-file build
-    the-voice.html      the single-file build, ready to deploy
+The last two events matter as much as the first: they're what downgrades
+someone whose card later fails or who cancels. Without them, a cancelled
+subscription would keep its paid plan forever.
 
-`js/` is the source of truth. `index.html` loads the modules directly, so
-editing a module and reloading is the whole development loop — no build step
-while working.
+## 5. Paste the payment links into the site
 
-## Tests
+Sign in to your site, go to **Settings**, and paste each Payment Link
+against its plan. The Plans page then shows working upgrade buttons.
 
-    cd tests && for f in *.mjs; do node "$f"; done
+---
 
-The audio, animation, easing and billing logic is written as pure functions
-over plain data specifically so it can be tested this way, without a browser
-or a build.
+## Checking it works
 
-## Building the single file
+Use Stripe's **test mode** keys and card `4242 4242 4242 4242`.
 
-    python3 build.py
+1. Sign in to your site, go to Plans, click an upgrade button.
+2. Pay in the tab that opens.
+3. Switch back to the site.
 
-Merges the modules and inlines the CSS to produce `build/`. Copy
-`build/speakscape-standalone.html` over `the-voice.html` to update the
-deployable single file.
+The page notices you've returned, shows *"Confirming your payment with
+Stripe…"*, and switches to the new plan once the webhook lands — usually a
+second or two. **Check for updates** on the Plans page does the same thing
+on demand.
 
-The build refuses to run if two modules declare the same top-level name.
-Modules each have their own scope and a bundle does not, so a duplicate that
-works perfectly in development dies at parse time once merged — taking the
-whole app down rather than just that feature.
+If it doesn't update:
+
+- **Stripe → Developers → Webhooks → your endpoint** lists every delivery and
+  its response. A `400` means the signing secret doesn't match; a `500`
+  shows the error from the function.
+- **Supabase → Edge Functions → stripe-webhook → Logs** shows what the
+  function did with the event.
+- If the delivery succeeded but the plan didn't change, the Price ID is
+  probably missing from `PRICE_TO_PLAN`.
+
+Stripe retries failed deliveries for up to three days, so a webhook that
+fails once because of a typo will land by itself after you fix it.
+
+## Why the plan is read twice
+
+After a payment there are two answers to "what plan is this user on", and
+they disagree for a short while:
+
+- the **subscriptions row**, which the webhook writes and you can read
+  immediately;
+- the **plan inside the login token**, which is a snapshot from when the
+  token was issued and doesn't change until it's refreshed.
+
+The site prefers the row because it's the fresher of the two, and refreshes
+the token once the row changes so both agree. Both are written server-side —
+the browser only ever reads them.
