@@ -40,7 +40,12 @@
         kind: t.kind,
         color: COLORS[i % COLORS.length],
         volume: 0.85,
+        pan: 0,
         mute: false,
+        solo: false,
+        arm: false,
+        sendA: 0,
+        sendB: 0,
         clips: new Array(SCENES).fill(null),
       };
     });
@@ -73,6 +78,7 @@
     put("lead", 2, "Hook", { seq: [12, -1, 15, -1, 12, -1, 19, 17, 15, -1, 12, -1, 10, -1, 12, -1] });
 
     put("pad", 0, "Wash", { chord: [0, 7, 12], hold: true });
+    tracks.find(function (x) { return x.id === "pad"; }).sendB = 0.28;
     put("pad", 1, "Warm", { chord: [0, 3, 7, 10], hold: true });
     put("pad", 2, "Open", { chord: [0, 4, 7, 11], hold: true });
 
@@ -129,12 +135,21 @@
     metro: false,
     recording: false,
     countIn: 0,
+    masterVol: 0.72,
+    returnAVol: 0.85,
+    returnBVol: 0.7,
   };
   state.arrangeClips = seedArrange(state.tracks);
 
   var ctx = null;
   var master = null;
   var trackNodes = {};
+  var trackGraph = {};
+  var masterAnalyser = null;
+  var returnAGain = null;
+  var returnBGain = null;
+  var mixerEl = null;
+  var meterRaf = 0;
   var timer = 0;
   var nextTime = 0;
   var padHold = {};
@@ -149,16 +164,151 @@
     ctx = new AC();
     master = ctx.createGain();
     master.gain.value = 0.7;
-    master.connect(ctx.destination);
     metroGain = ctx.createGain();
     metroGain.gain.value = 0.9;
     metroGain.connect(ctx.destination);
+    masterAnalyser = ctx.createAnalyser();
+    masterAnalyser.fftSize = 256;
+    master.connect(masterAnalyser);
+    masterAnalyser.connect(ctx.destination);
+    master.gain.value = state.masterVol;
+
+    var delay = ctx.createDelay(1.0);
+    delay.delayTime.value = 0.38;
+    var delayFb = ctx.createGain();
+    delayFb.gain.value = 0.32;
+    var delayFilt = ctx.createBiquadFilter();
+    delayFilt.type = "lowpass";
+    delayFilt.frequency.value = 2400;
+    delay.connect(delayFilt);
+    delayFilt.connect(delayFb);
+    delayFb.connect(delay);
+    returnAGain = ctx.createGain();
+    returnAGain.gain.value = state.returnAVol;
+    delay.connect(returnAGain);
+    returnAGain.connect(master);
+
+    var conv = ctx.createConvolver();
+    var impLen = Math.floor(ctx.sampleRate * 1.3);
+    var imp = ctx.createBuffer(2, impLen, ctx.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = imp.getChannelData(ch);
+      for (var i = 0; i < impLen; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / impLen, 2.4);
+      }
+    }
+    conv.buffer = imp;
+    returnBGain = ctx.createGain();
+    returnBGain.gain.value = state.returnBVol;
+    conv.connect(returnBGain);
+    returnBGain.connect(master);
+
     state.tracks.forEach(function (tr) {
-      var g = ctx.createGain();
-      g.gain.value = tr.volume;
-      g.connect(master);
-      trackNodes[tr.id] = g;
+      wireTrack(tr, delay, conv);
     });
+    applyMix();
+    startMeters();
+  }
+
+  function wireTrack(tr, delayNode, convNode) {
+    var input = ctx.createGain();
+    var vol = ctx.createGain();
+    vol.gain.value = tr.volume;
+    var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+    if (pan.pan) pan.pan.value = tr.pan || 0;
+    var mute = ctx.createGain();
+    mute.gain.value = 1;
+    var analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    var sendA = ctx.createGain();
+    sendA.gain.value = tr.sendA || 0;
+    var sendB = ctx.createGain();
+    sendB.gain.value = tr.sendB || 0;
+    input.connect(vol);
+    vol.connect(pan);
+    pan.connect(mute);
+    mute.connect(analyser);
+    analyser.connect(master);
+    analyser.connect(sendA);
+    analyser.connect(sendB);
+    if (delayNode) sendA.connect(delayNode);
+    if (convNode) sendB.connect(convNode);
+    trackNodes[tr.id] = input;
+    trackGraph[tr.id] = {
+      vol: vol,
+      pan: pan,
+      mute: mute,
+      analyser: analyser,
+      sendA: sendA,
+      sendB: sendB,
+      meter: (mixerEl && mixerEl._pendingMeters && mixerEl._pendingMeters[tr.id]) || null,
+    };
+  }
+
+  function anySolo() {
+    return state.tracks.some(function (tr) {
+      return tr.solo;
+    });
+  }
+
+  function trackAudible(tr) {
+    if (tr.mute) return false;
+    if (anySolo() && !tr.solo) return false;
+    return true;
+  }
+
+  function applyMix() {
+    if (!ctx) return;
+    var soloed = anySolo();
+    state.tracks.forEach(function (tr) {
+      var g = trackGraph[tr.id];
+      if (!g) return;
+      var silent = tr.mute || (soloed && !tr.solo);
+      g.mute.gain.setTargetAtTime(silent ? 0 : 1, ctx.currentTime, 0.01);
+      g.vol.gain.setTargetAtTime(Math.max(0, Math.min(1.2, tr.volume)), ctx.currentTime, 0.01);
+      if (g.pan.pan) g.pan.pan.setTargetAtTime(Math.max(-1, Math.min(1, tr.pan || 0)), ctx.currentTime, 0.01);
+      g.sendA.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendA || 0)), ctx.currentTime, 0.01);
+      g.sendB.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendB || 0)), ctx.currentTime, 0.01);
+    });
+    if (master) master.gain.setTargetAtTime(state.masterVol, ctx.currentTime, 0.01);
+    if (returnAGain) returnAGain.gain.setTargetAtTime(state.returnAVol, ctx.currentTime, 0.01);
+    if (returnBGain) returnBGain.gain.setTargetAtTime(state.returnBVol, ctx.currentTime, 0.01);
+    paintMixer();
+  }
+
+  function meterLevel(analyser) {
+    if (!analyser) return 0;
+    var buf = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(buf);
+    var peak = 0;
+    for (var i = 0; i < buf.length; i++) {
+      var v = Math.abs((buf[i] - 128) / 128);
+      if (v > peak) peak = v;
+    }
+    return peak;
+  }
+
+  function startMeters() {
+    if (meterRaf) return;
+    function tick() {
+      meterRaf = window.requestAnimationFrame(tick);
+      state.tracks.forEach(function (tr) {
+        var g = trackGraph[tr.id];
+        if (!g || !g.meter) return;
+        var lvl = meterLevel(g.analyser);
+        g.peak = Math.max(lvl, (g.peak || 0) * 0.82);
+        g.meter.style.transform = "scaleY(" + Math.max(0.02, g.peak) + ")";
+      });
+      if (masterAnalyser && mixerEl) {
+        var mm = mixerEl.querySelector("[data-master-meter]");
+        if (mm) {
+          var ml = meterLevel(masterAnalyser);
+          mixerEl._mpeak = Math.max(ml, (mixerEl._mpeak || 0) * 0.82);
+          mm.style.transform = "scaleY(" + Math.max(0.02, mixerEl._mpeak) + ")";
+        }
+      }
+    }
+    tick();
   }
 
   function secondsPerStep() {
@@ -341,7 +491,7 @@
   }
 
   function playStepAt(track, clipObj, step, time) {
-    if (track.mute || !clipObj) return;
+    if (!clipObj || !trackAudible(track)) return;
     var dest = trackNodes[track.id];
     var n = clipObj.notes || {};
     var i = step % (clipObj.length || STEPS);
@@ -400,6 +550,8 @@
     state.tracks.forEach(function (tr) {
       var launched = state.launched[tr.id];
       if (!launched || launched === "stop") return;
+      var armedAny = state.tracks.some(function (x) { return x.arm; });
+      if (armedAny && !tr.arm) return;
       state.arrangeClips = state.arrangeClips.filter(function (c) {
         return !(c.trackId === tr.id && c.start === barStart && c.length === STEPS_PER_BAR);
       });
@@ -587,6 +739,20 @@
       "#daw-session .daw-head{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint,#4c5f56);padding:4px 8px}" +
       "#daw-session .daw-empty{color:var(--ink-faint,#4c5f56)}" +
       "#daw-session .daw-hint{padding:0 12px 10px;font-size:12px;color:var(--ink-dim,#7d9689)}" +
+      "#daw-session .daw-mixer{display:flex;gap:8px;overflow:auto;padding:12px;border-top:1px solid var(--border,#263029);align-items:stretch}" +
+      "#daw-session .daw-strip{flex:0 0 88px;min-width:88px;display:flex;flex-direction:column;gap:6px;align-items:center;padding:8px 6px;border:1px solid var(--border,#263029);border-radius:10px;background:var(--surface-alt,#1a201c)}" +
+      "#daw-session .daw-strip.master{border-color:var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-strip.ret{border-style:dashed}" +
+      "#daw-session .daw-strip-name{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim,#7d9689)}" +
+      "#daw-session .daw-fader-row{display:flex;gap:6px;height:120px;align-items:flex-end}" +
+      "#daw-session .daw-meter{width:10px;height:120px;border-radius:4px;background:#0a0d0c;overflow:hidden;display:flex;align-items:flex-end}" +
+      "#daw-session .daw-meter > i{display:block;width:100%;height:100%;transform-origin:bottom center;transform:scaleY(0.02);background:linear-gradient(to top,#3fc6ff,var(--amber,#ffb238) 70%,var(--alert,#ff4d4d));pointer-events:none}" +
+      "#daw-session .daw-fader{writing-mode:vertical-lr;direction:rtl;height:120px;width:28px;accent-color:var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-knob{width:100%;accent-color:var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-mini{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}" +
+      "#daw-session .daw-mini .daw-btn{min-width:28px;min-height:32px;padding:4px 6px;font-size:11px}" +
+      "#daw-session .daw-mini .daw-btn.on.arm{background:var(--alert,#ff4d4d);border-color:var(--alert,#ff4d4d);color:#fff}" +
+      "#daw-session .daw-knob-lab{font-family:'Share Tech Mono',ui-monospace,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint,#4c5f56)}" +
       "#daw-session .daw-arrange{display:none;position:relative}" +
       "#daw-session.is-arrange .daw-session-panel{display:none}" +
       "#daw-session.is-arrange .daw-arrange{display:block}" +
@@ -748,6 +914,21 @@
     var metroBtn = root && root.querySelector("[data-metro]");
     if (metroBtn) metroBtn.classList.toggle("on", state.metro);
     if (state.view === "arrange") paintArrange();
+    paintMixer();
+  }
+
+  function paintMixer() {
+    if (!mixerEl) return;
+    mixerEl.querySelectorAll("[data-mix-id]").forEach(function (strip) {
+      var id = strip.getAttribute("data-mix-id");
+      var tr = state.tracks.find(function (x) { return x.id === id; });
+      if (!tr) return;
+      strip.querySelectorAll("[data-act]").forEach(function (b) {
+        var act = b.getAttribute("data-act");
+        b.classList.toggle("on", !!tr[act]);
+        if (act === "arm") b.classList.toggle("arm", !!tr.arm);
+      });
+    });
   }
 
   function build() {
@@ -1033,6 +1214,112 @@
       ),
     );
     root.appendChild(arrangePanel);
+
+    mixerEl = el("div", "daw-mixer");
+    mixerEl.setAttribute("aria-label", "Mixer");
+
+    function knob(label, min, max, step, value, onin) {
+      var wrap = el("label", "daw-ctl");
+      wrap.style.flexDirection = "column";
+      wrap.style.gap = "2px";
+      wrap.appendChild(el("span", "daw-knob-lab", label));
+      var inp = document.createElement("input");
+      inp.type = "range";
+      inp.className = "daw-knob";
+      inp.min = String(min);
+      inp.max = String(max);
+      inp.step = String(step);
+      inp.value = String(value);
+      inp.setAttribute("aria-label", label);
+      inp.addEventListener("input", function () {
+        onin(Number(inp.value));
+        applyMix();
+      });
+      wrap.appendChild(inp);
+      return wrap;
+    }
+
+    function fader(value, onin, aria) {
+      var inp = document.createElement("input");
+      inp.type = "range";
+      inp.className = "daw-fader";
+      inp.min = "0";
+      inp.max = "1.2";
+      inp.step = "0.01";
+      inp.value = String(value);
+      inp.setAttribute("aria-label", aria);
+      inp.addEventListener("input", function () {
+        onin(Number(inp.value));
+        applyMix();
+      });
+      return inp;
+    }
+
+    function meter() {
+      var m = el("div", "daw-meter");
+      var i = document.createElement("i");
+      i.setAttribute("aria-hidden", "true");
+      m.appendChild(i);
+      return { box: m, fill: i };
+    }
+
+    state.tracks.forEach(function (tr) {
+      var strip = el("div", "daw-strip");
+      strip.setAttribute("data-mix-id", tr.id);
+      var name = el("div", "daw-strip-name", tr.name);
+      name.style.color = tr.color;
+      strip.appendChild(name);
+      var row = el("div", "daw-fader-row");
+      var met = meter();
+      row.appendChild(met.box);
+      row.appendChild(fader(tr.volume, function (v) { tr.volume = v; }, tr.name + " volume"));
+      strip.appendChild(row);
+      strip.appendChild(knob("Pan", -1, 1, 0.01, tr.pan, function (v) { tr.pan = v; }));
+      strip.appendChild(knob("Delay", 0, 1, 0.01, tr.sendA, function (v) { tr.sendA = v; }));
+      strip.appendChild(knob("Hall", 0, 1, 0.01, tr.sendB, function (v) { tr.sendB = v; }));
+      var mini = el("div", "daw-mini");
+      [["mute", "M"], ["solo", "S"], ["arm", "A"]].forEach(function (pair) {
+        var b = el("button", "daw-btn", pair[1]);
+        b.type = "button";
+        b.setAttribute("data-act", pair[0]);
+        b.setAttribute("aria-label", tr.name + " " + pair[0]);
+        b.addEventListener("click", function () {
+          ensureAudio();
+          tr[pair[0]] = !tr[pair[0]];
+          applyMix();
+        });
+        mini.appendChild(b);
+      });
+      strip.appendChild(mini);
+      mixerEl.appendChild(strip);
+      if (trackGraph[tr.id]) trackGraph[tr.id].meter = met.fill;
+      else {
+        if (!mixerEl._pendingMeters) mixerEl._pendingMeters = {};
+        mixerEl._pendingMeters[tr.id] = met.fill;
+      }
+    });
+
+    function retStrip(title, key, aria) {
+      var strip = el("div", "daw-strip ret");
+      strip.appendChild(el("div", "daw-strip-name", title));
+      var row = el("div", "daw-fader-row");
+      row.appendChild(fader(state[key], function (v) { state[key] = v; }, aria));
+      strip.appendChild(row);
+      mixerEl.appendChild(strip);
+    }
+    retStrip("Delay", "returnAVol", "Delay return");
+    retStrip("Hall", "returnBVol", "Hall return");
+
+    var masterStrip = el("div", "daw-strip master");
+    masterStrip.appendChild(el("div", "daw-strip-name", "Master"));
+    var mrow = el("div", "daw-fader-row");
+    var mm = meter();
+    mm.fill.setAttribute("data-master-meter", "1");
+    mrow.appendChild(mm.box);
+    mrow.appendChild(fader(state.masterVol, function (v) { state.masterVol = v; }, "Master volume"));
+    masterStrip.appendChild(mrow);
+    mixerEl.appendChild(masterStrip);
+    root.appendChild(mixerEl);
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
