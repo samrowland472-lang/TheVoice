@@ -47,6 +47,7 @@
         sendA: 0,
         sendB: 0,
         role: "midi",
+        devices: defaultDevices(t.kind),
         clips: new Array(SCENES).fill(null),
       };
     });
@@ -143,6 +144,7 @@
     rollScale: "minor",
     selectedNote: null,
     selectedPad: null,
+    selectedTrackId: "drums",
   };
   state.arrangeClips = seedArrange(state.tracks);
   attachDefaultRacks(state.tracks);
@@ -166,6 +168,7 @@
   var rackStepsEl = null;
   var rackTitle = null;
   var padVoices = {};
+  var devicesEl = null;
   var meterRaf = 0;
   var timer = 0;
   var nextTime = 0;
@@ -234,11 +237,58 @@
     startMeters();
   }
 
+  function defaultDevices(kind) {
+    var midi = kind !== "drums" && kind !== "perc" && kind !== "audio";
+    return [
+      { type: "analog", on: midi, wave: kind === "lead" ? "square" : kind === "keys" || kind === "pad" ? "triangle" : "sawtooth", cutoff: kind === "bass" ? 520 : 2400, res: 0.85, attack: 0.01, decay: 0.22 },
+      { type: "eq", on: true, low: 0, mid: 0, high: 0 },
+      { type: "comp", on: kind === "drums" || kind === "bass" || kind === "perc", thresh: -18, ratio: 3.2, attack: 0.01, release: 0.14 },
+      { type: "delay", on: kind === "pad" || kind === "lead", time: 0.3, fb: 0.28, mix: 0.2 },
+    ];
+  }
+
+  function getDevice(tr, type) {
+    if (!tr.devices) tr.devices = defaultDevices(tr.kind);
+    for (var i = 0; i < tr.devices.length; i++) {
+      if (tr.devices[i].type === type) return tr.devices[i];
+    }
+    return null;
+  }
+
+  function analogOf(tr) {
+    var d = getDevice(tr, "analog");
+    return d && d.on ? d : null;
+  }
+
   function wireTrack(tr, delayNode, convNode) {
     delayNode = delayNode || fxDelay;
     convNode = convNode || fxConv;
     if (trackNodes[tr.id]) return;
+    if (!tr.devices) tr.devices = defaultDevices(tr.kind);
     var input = ctx.createGain();
+    var analogFilt = ctx.createBiquadFilter();
+    analogFilt.type = "lowpass";
+    analogFilt.frequency.value = 18000;
+    analogFilt.Q.value = 0.7;
+    var eqLow = ctx.createBiquadFilter();
+    eqLow.type = "lowshelf";
+    eqLow.frequency.value = 120;
+    var eqMid = ctx.createBiquadFilter();
+    eqMid.type = "peaking";
+    eqMid.frequency.value = 1000;
+    eqMid.Q.value = 0.85;
+    var eqHigh = ctx.createBiquadFilter();
+    eqHigh.type = "highshelf";
+    eqHigh.frequency.value = 6500;
+    var comp = ctx.createDynamicsCompressor();
+    var dry = ctx.createGain();
+    var delaySend = ctx.createGain();
+    var insDelay = ctx.createDelay(1.5);
+    insDelay.delayTime.value = 0.3;
+    var delayFb = ctx.createGain();
+    delayFb.gain.value = 0.2;
+    var wet = ctx.createGain();
+    wet.gain.value = 0;
     var vol = ctx.createGain();
     vol.gain.value = tr.volume;
     var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
@@ -251,7 +301,19 @@
     sendA.gain.value = tr.sendA || 0;
     var sendB = ctx.createGain();
     sendB.gain.value = tr.sendB || 0;
-    input.connect(vol);
+    input.connect(analogFilt);
+    analogFilt.connect(eqLow);
+    eqLow.connect(eqMid);
+    eqMid.connect(eqHigh);
+    eqHigh.connect(comp);
+    comp.connect(dry);
+    comp.connect(delaySend);
+    delaySend.connect(insDelay);
+    insDelay.connect(delayFb);
+    delayFb.connect(insDelay);
+    insDelay.connect(wet);
+    dry.connect(vol);
+    wet.connect(vol);
     vol.connect(pan);
     pan.connect(mute);
     mute.connect(analyser);
@@ -268,8 +330,52 @@
       analyser: analyser,
       sendA: sendA,
       sendB: sendB,
+      analogFilt: analogFilt,
+      eqLow: eqLow,
+      eqMid: eqMid,
+      eqHigh: eqHigh,
+      comp: comp,
+      insDelay: insDelay,
+      delayFb: delayFb,
+      delaySend: delaySend,
+      dry: dry,
+      wet: wet,
       meter: (mixerEl && mixerEl._pendingMeters && mixerEl._pendingMeters[tr.id]) || null,
     };
+    applyDevices(tr);
+  }
+
+  function applyDevices(tr) {
+    if (!ctx) return;
+    var g = trackGraph[tr.id];
+    if (!g) return;
+    if (!tr.devices) tr.devices = defaultDevices(tr.kind);
+    var now = ctx.currentTime;
+    var analog = getDevice(tr, "analog") || {};
+    var eq = getDevice(tr, "eq") || {};
+    var compD = getDevice(tr, "comp") || {};
+    var del = getDevice(tr, "delay") || {};
+    if (g.analogFilt) {
+      g.analogFilt.frequency.setTargetAtTime(analog.on ? Math.max(80, analog.cutoff || 2000) : 18000, now, 0.02);
+      g.analogFilt.Q.setTargetAtTime(analog.on ? Math.max(0.2, analog.res || 0.7) : 0.7, now, 0.02);
+    }
+    var eqOn = !!eq.on;
+    if (g.eqLow) g.eqLow.gain.setTargetAtTime(eqOn ? eq.low || 0 : 0, now, 0.02);
+    if (g.eqMid) g.eqMid.gain.setTargetAtTime(eqOn ? eq.mid || 0 : 0, now, 0.02);
+    if (g.eqHigh) g.eqHigh.gain.setTargetAtTime(eqOn ? eq.high || 0 : 0, now, 0.02);
+    if (g.comp) {
+      g.comp.threshold.setTargetAtTime(compD.on ? (compD.thresh || -18) : 0, now, 0.02);
+      g.comp.ratio.setTargetAtTime(compD.on ? Math.max(1, compD.ratio || 1) : 1, now, 0.02);
+      g.comp.attack.setTargetAtTime(Math.max(0.001, compD.attack || 0.01), now, 0.02);
+      g.comp.release.setTargetAtTime(Math.max(0.02, compD.release || 0.12), now, 0.02);
+      g.comp.knee.setValueAtTime(8, now);
+    }
+    var mix = del.on ? Math.max(0, Math.min(0.95, del.mix || 0)) : 0;
+    if (g.insDelay) g.insDelay.delayTime.setTargetAtTime(Math.max(0.02, Math.min(1.2, del.time || 0.3)), now, 0.02);
+    if (g.delayFb) g.delayFb.gain.setTargetAtTime(del.on ? Math.max(0, Math.min(0.85, del.fb || 0)) : 0, now, 0.02);
+    if (g.wet) g.wet.gain.setTargetAtTime(mix, now, 0.02);
+    if (g.dry) g.dry.gain.setTargetAtTime(1 - mix * 0.45, now, 0.02);
+    if (g.delaySend) g.delaySend.gain.setTargetAtTime(del.on ? 1 : 0, now, 0.02);
   }
 
   function anySolo() {
@@ -296,6 +402,7 @@
       if (g.pan.pan) g.pan.pan.setTargetAtTime(Math.max(-1, Math.min(1, tr.pan || 0)), ctx.currentTime, 0.01);
       g.sendA.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendA || 0)), ctx.currentTime, 0.01);
       g.sendB.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendB || 0)), ctx.currentTime, 0.01);
+      applyDevices(tr);
     });
     if (master) master.gain.setTargetAtTime(state.masterVol, ctx.currentTime, 0.01);
     if (returnAGain) returnAGain.gain.setTargetAtTime(state.returnAVol, ctx.currentTime, 0.01);
@@ -459,24 +566,31 @@
     var g = envGain(dest, t, open ? 0.22 : 0.16, 0.001, open ? 0.18 : 0.05);
     noiseBurst(g, t, open ? 0.2 : 0.06, 7000);
   }
-  function trigBass(dest, t, semi) {
+  function trigBass(dest, t, semi, track) {
+    var analog = analogOf(track);
     var f = ctx.createBiquadFilter();
     f.type = "lowpass";
-    f.frequency.value = 420;
-    f.Q.value = 0.8;
+    f.frequency.value = analog ? analog.cutoff : 420;
+    f.Q.value = analog ? analog.res : 0.8;
     f.connect(dest);
-    var g = envGain(f, t, 0.38, 0.01, 0.22);
-    osc("sawtooth", midiHz(semi), g, t, 0.24);
+    var g = envGain(f, t, 0.38, analog ? analog.attack : 0.01, analog ? analog.decay : 0.22);
+    osc(analog ? analog.wave : "sawtooth", midiHz(semi), g, t, (analog ? analog.decay : 0.22) + 0.04);
   }
-  function trigChord(dest, t, semis, dur, peak) {
+  function trigChord(dest, t, semis, dur, peak, track) {
+    var analog = analogOf(track);
+    var wave = analog ? analog.wave : "triangle";
+    var atk = analog ? analog.attack : 0.02;
+    var d = analog ? analog.decay : dur;
     semis.forEach(function (s, i) {
-      var g = envGain(dest, t, (peak || 0.12) / (i + 1), 0.02, dur);
-      osc("triangle", midiHz(s + 12), g, t, dur + 0.02);
+      var g = envGain(dest, t, (peak || 0.12) / (i + 1), atk, d);
+      osc(wave, midiHz(s + 12), g, t, d + 0.02);
     });
   }
-  function trigLead(dest, t, semi) {
-    var g = envGain(dest, t, 0.18, 0.008, 0.2);
-    osc("square", midiHz(semi + 12), g, t, 0.22);
+  function trigLead(dest, t, semi, track) {
+    var analog = analogOf(track);
+    var wave = analog ? analog.wave : "square";
+    var g = envGain(dest, t, 0.18, analog ? analog.attack : 0.008, analog ? analog.decay : 0.2);
+    osc(wave, midiHz(semi + 12), g, t, (analog ? analog.decay : 0.2) + 0.02);
   }
   function trigPerc(dest, t, kind) {
     var g = envGain(dest, t, kind ? 0.2 : 0.12, 0.001, 0.07);
@@ -502,12 +616,19 @@
     stopPad(tr.id);
     if (!ctx || !clipObj) return;
     var dest = trackNodes[tr.id];
+    var analog = analogOf(tr);
     var g = ctx.createGain();
     g.gain.value = 0.08;
-    g.connect(dest);
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = analog ? analog.cutoff : 4200;
+    f.Q.value = analog ? analog.res : 0.7;
+    f.connect(dest);
+    g.connect(f);
+    var wave = analog ? analog.wave : "sine";
     var oscs = (clipObj.notes.chord || [0, 7, 12]).map(function (s, i) {
       var o = ctx.createOscillator();
-      o.type = "sine";
+      o.type = wave;
       o.frequency.value = midiHz(s + 12) * (i === 1 ? 1.003 : 1);
       o.connect(g);
       o.start();
@@ -585,6 +706,7 @@
       arm: false,
       sendA: 0,
       sendB: 0,
+      devices: defaultDevices(kind),
       clips: new Array(SCENES).fill(null),
     };
   }
@@ -690,16 +812,16 @@
       if (n.s && n.s[i]) trigSnare(dest, time);
       if (n.h && n.h[i]) trigHat(dest, time, i % 8 === 7);
     } else if (track.kind === "bass") {
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigBass(dest, time, n.seq[i]);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigBass(dest, time, n.seq[i], track);
     } else if (track.kind === "keys") {
-      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16);
+      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16, track);
     } else if (track.kind === "lead") {
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i]);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i], track);
     } else if (track.kind === "perc") {
       if (n.seq && n.seq[i]) trigPerc(dest, time, i % 4 === 2);
     } else if (track.kind === "midi" || track.kind === "keys") {
-      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16);
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i]);
+      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16, track);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i], track);
     }
   }
 
@@ -958,7 +1080,7 @@
       "#daw-session.is-roll .daw-session-panel,#daw-session.is-roll .daw-arrange{display:none}" +
       "#daw-session.is-rack .daw-session-panel,#daw-session.is-rack .daw-arrange,#daw-session.is-rack .daw-roll{display:none}" +
       "#daw-session .daw-rack{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
-      "#daw-session.is-rack .daw-rack{display:flex}" +
+      "#daw-session.is-rack .daw-rack{display:flex}#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-rack-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
       "#daw-session .daw-pads{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:8px;padding:12px;max-width:640px}" +
       "#daw-session .daw-pad{min-height:72px;border-radius:10px;border:1px solid var(--border,#263029);background:var(--surface-alt,#1a201c);color:var(--phosphor,#3fc6ff);font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}" +
@@ -1482,23 +1604,17 @@
   function trigRollNote(track, dest, t, pitch, dur, vel) {
     vel = Math.max(0.05, Math.min(1, vel || 0.8));
     dur = Math.max(0.05, dur || 0.2);
-    if (track.kind === "bass") {
-      var f = ctx.createBiquadFilter();
-      f.type = "lowpass";
-      f.frequency.value = 420;
-      f.Q.value = 0.8;
-      f.connect(dest);
-      var g = envGain(f, t, 0.4 * vel, 0.01, dur);
-      osc("sawtooth", midiHz(pitch), g, t, dur + 0.04);
-      return;
-    }
-    if (track.kind === "lead") {
-      var g2 = envGain(dest, t, 0.2 * vel, 0.008, dur);
-      osc("square", midiHz(pitch + 12), g2, t, dur + 0.02);
-      return;
-    }
-    var g3 = envGain(dest, t, 0.16 * vel, 0.015, dur);
-    osc("triangle", midiHz(pitch + 12), g3, t, dur + 0.02);
+    var analog = analogOf(track);
+    var wave = analog ? analog.wave : track.kind === "lead" ? "square" : track.kind === "bass" ? "sawtooth" : "triangle";
+    var atk = analog ? analog.attack : 0.01;
+    var dec = analog ? Math.max(dur, analog.decay) : dur;
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = analog ? analog.cutoff : track.kind === "bass" ? 420 : 8000;
+    f.Q.value = analog ? analog.res : 0.8;
+    f.connect(dest);
+    var g = envGain(f, t, (track.kind === "bass" ? 0.4 : 0.18) * vel, atk, dec);
+    osc(wave, midiHz(pitch + (track.kind === "bass" ? 0 : 12)), g, t, dec + 0.03);
   }
 
   function playRollStep(track, dest, roll, i, time) {
@@ -1677,12 +1793,126 @@
     });
   }
 
+  function selectedTrack() {
+    return state.tracks.find(function (tr) { return tr.id === state.selectedTrackId; }) || state.tracks[0];
+  }
+
+  function paintDeviceSel() {
+    if (!devicesEl) return;
+    var tr = selectedTrack();
+    var lab = devicesEl.querySelector("[data-dev-track]");
+    if (lab && tr) lab.textContent = tr.name;
+  }
+
+  function paintDevices() {
+    if (!devicesEl) return;
+    var tr = selectedTrack();
+    if (!tr) return;
+    if (!tr.devices) tr.devices = defaultDevices(tr.kind);
+    devicesEl.replaceChildren();
+    var head = el("div", "daw-dev");
+    head.appendChild(el("div", "daw-dev-h", "Track"));
+    var lab = el("div", "daw-strip-name", tr.name);
+    lab.setAttribute("data-dev-track", "1");
+    lab.style.color = tr.color;
+    head.appendChild(lab);
+    head.appendChild(el("div", "daw-roll-hint", "Click a mixer strip."));
+    devicesEl.appendChild(head);
+
+    function knob(dev, key, label, min, max, step) {
+      var wrap = el("label", "daw-ctl");
+      wrap.style.flexDirection = "column";
+      wrap.appendChild(el("span", "daw-knob-lab", label));
+      var inp = document.createElement("input");
+      inp.type = "range";
+      inp.className = "daw-knob";
+      inp.min = String(min);
+      inp.max = String(max);
+      inp.step = String(step);
+      inp.value = String(dev[key]);
+      inp.setAttribute("aria-label", label);
+      inp.addEventListener("input", function () {
+        ensureAudio();
+        dev[key] = Number(inp.value);
+        applyDevices(tr);
+      });
+      wrap.appendChild(inp);
+      return wrap;
+    }
+
+    function box(dev, title, bodyFn) {
+      var card = el("div", "daw-dev" + (dev.on ? "" : " off"));
+      var h = el("div", "daw-dev-h");
+      h.appendChild(document.createTextNode(title));
+      var tog = el("button", "daw-btn" + (dev.on ? " on" : ""), dev.on ? "On" : "Off");
+      tog.type = "button";
+      tog.setAttribute("aria-label", title + " on or off");
+      tog.addEventListener("click", function () {
+        ensureAudio();
+        ctx.resume();
+        dev.on = !dev.on;
+        applyDevices(tr);
+        paintDevices();
+      });
+      h.appendChild(tog);
+      card.appendChild(h);
+      bodyFn(card, dev);
+      devicesEl.appendChild(card);
+    }
+
+    var analog = getDevice(tr, "analog");
+    box(analog, "Analog", function (card, dev) {
+      var waveLab = el("label", "daw-ctl");
+      waveLab.appendChild(el("span", "daw-knob-lab", "Wave"));
+      var sel = document.createElement("select");
+      ["sawtooth", "square", "triangle", "sine"].forEach(function (w) {
+        var o = document.createElement("option");
+        o.value = w;
+        o.textContent = w;
+        if (w === dev.wave) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", function () {
+        dev.wave = sel.value;
+      });
+      waveLab.appendChild(sel);
+      card.appendChild(waveLab);
+      card.appendChild(knob(dev, "cutoff", "Cutoff", 80, 8000, 10));
+      card.appendChild(knob(dev, "res", "Res", 0.2, 12, 0.1));
+      card.appendChild(knob(dev, "attack", "Attack", 0.001, 0.4, 0.001));
+      card.appendChild(knob(dev, "decay", "Decay", 0.05, 1.2, 0.01));
+    });
+
+    var eq = getDevice(tr, "eq");
+    box(eq, "EQ Three", function (card, dev) {
+      card.appendChild(knob(dev, "low", "Low", -18, 18, 0.1));
+      card.appendChild(knob(dev, "mid", "Mid", -18, 18, 0.1));
+      card.appendChild(knob(dev, "high", "High", -18, 18, 0.1));
+    });
+
+    var comp = getDevice(tr, "comp");
+    box(comp, "Compressor", function (card, dev) {
+      card.appendChild(knob(dev, "thresh", "Thresh", -40, 0, 0.5));
+      card.appendChild(knob(dev, "ratio", "Ratio", 1, 12, 0.1));
+      card.appendChild(knob(dev, "attack", "Attack", 0.001, 0.2, 0.001));
+      card.appendChild(knob(dev, "release", "Release", 0.02, 0.8, 0.01));
+    });
+
+    var del = getDevice(tr, "delay");
+    box(del, "Delay", function (card, dev) {
+      card.appendChild(knob(dev, "time", "Time", 0.05, 0.9, 0.01));
+      card.appendChild(knob(dev, "fb", "Feedback", 0, 0.85, 0.01));
+      card.appendChild(knob(dev, "mix", "Mix", 0, 0.9, 0.01));
+    });
+  }
+
   function setView(v) {
     state.view = v;
     if (root) {
       root.classList.toggle("is-arrange", v === "arrange");
       root.classList.toggle("is-roll", v === "roll");
       root.classList.toggle("is-rack", v === "rack");
+      root.classList.toggle("is-dev", v === "dev");
     }
     root.querySelectorAll("[data-view]").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-view") === v);
@@ -1690,6 +1920,7 @@
     if (v === "arrange") paintArrange();
     if (v === "roll") paintRoll();
     if (v === "rack") paintRack();
+    if (v === "dev") paintDevices();
     paint();
   }
 
@@ -1729,6 +1960,7 @@
     if (state.view === "roll") paintRoll();
     if (state.view === "rack") paintRackCursor();
     paintMixer();
+    if (devicesEl) paintDeviceSel();
   }
 
   function paintMixer() {
@@ -1737,6 +1969,7 @@
       var id = strip.getAttribute("data-mix-id");
       var tr = state.tracks.find(function (x) { return x.id === id; });
       if (!tr) return;
+      strip.classList.toggle("sel", tr.id === state.selectedTrackId);
       strip.querySelectorAll("[data-act]").forEach(function (b) {
         var act = b.getAttribute("data-act");
         b.classList.toggle("on", !!tr[act]);
@@ -1874,6 +2107,11 @@
       var name = el("div", "daw-strip-name", tr.name);
       name.style.color = tr.color;
       strip.appendChild(name);
+      strip.addEventListener("click", function () {
+        state.selectedTrackId = tr.id;
+        paintMixer();
+        paintDevices();
+      });
       var tools = el("div", "daw-strip-tools");
       var up = el("button", "daw-btn", "↑");
       up.type = "button";
@@ -1992,6 +2230,7 @@
     top.appendChild(viewBtn("arrange", "Arrange"));
     top.appendChild(viewBtn("roll", "Roll"));
     top.appendChild(viewBtn("rack", "Rack"));
+    top.appendChild(viewBtn("dev", "Dev"));
 
     var play = el("button", "daw-btn", "Play");
     play.setAttribute("data-play", "1");
@@ -2436,6 +2675,11 @@
     mixerEl.setAttribute("aria-label", "Mixer");
     rebuildMixer();
     root.appendChild(mixerEl);
+
+    devicesEl = el("div", "daw-devices");
+    devicesEl.setAttribute("aria-label", "Devices");
+    root.appendChild(devicesEl);
+    paintDevices();
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
