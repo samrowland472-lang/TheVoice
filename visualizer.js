@@ -248,8 +248,12 @@ export function initVisualizer() {
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.mode-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.mode-btn').forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       mode = btn.dataset.mode;
     });
   });

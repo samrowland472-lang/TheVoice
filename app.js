@@ -9,8 +9,14 @@ import { encodeWav16 } from './wav-encode.js';
 import { createClipLibrary } from './clip-library.js';
 import { decodeToAudioBuffer, applyVoiceEffect } from './voice-effects.js';
 import { splitIntoChapters, concatAudio } from './chapters.js';
-import { PLANS, planFromSession, planLabel, checkoutUrl, getPaymentLinks, setPaymentLink } from './billing.js';
+import { PLANS, planFromSession, planLabel, checkoutUrl, getPaymentLinks, setPaymentLink,
+         resolvePlan, markAwaitingUpgrade, clearAwaitingUpgrade, awaitingUpgrade,
+         nextPollDelay, MAX_UPGRADE_POLLS } from './billing.js';
 import { modulate, PRESETS } from './modulation.js';
+import { createPattern, renderPattern, applyPreset, mixTracks, patternDuration,
+         TRACKS, STEPS, PRESET_PATTERNS } from './music.js';
+import { analyseLyrics, scaleChords, progressionInKey, KEYS, PROGRESSIONS } from './songcraft.js';
+import { composeAudio, fadeOut, describeProject } from './project.js';
 import { createScene, createShape, setKeyframe, removeKeyframe, sampleShape,
          renderFrame, audioLevelTrack, EASING_NAMES } from './animation.js';
 import {
@@ -23,6 +29,8 @@ import {
   signOutUser,
   getCurrentSession,
   onAuthChange,
+  fetchSubscriptionPlan,
+  refreshSession,
 } from './account.js';
 import {
   getApiKey,
@@ -108,15 +116,25 @@ const libraryView = document.getElementById('library-view');
 const settingsView = document.getElementById('settings-view');
 const accountView = document.getElementById('account-view');
 const plansView = document.getElementById('plans-view');
+const plansRefreshBtn = document.getElementById('plans-refresh-btn');
 const modulateView = document.getElementById('modulate-view');
 const animateView = document.getElementById('animate-view');
+const musicView = document.getElementById('music-view');
+const projectView = document.getElementById('project-view');
 
 function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
 }
 
 function switchSection(section) {
-  document.querySelectorAll('.sidebar-item').forEach((b) => b.classList.toggle('active', b.dataset.section === section));
+  document.querySelectorAll('.sidebar-item').forEach((b) => {
+    const isCurrent = b.dataset.section === section;
+    b.classList.toggle('active', isCurrent);
+    // A highlight says "you are here" to someone who can see it. aria-current
+    // is the same sentence for someone who cannot.
+    if (isCurrent) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
 
   const isConsole = section === 'speak' || section === 'studio';
   consoleView.hidden = !isConsole;
@@ -127,6 +145,8 @@ function switchSection(section) {
   plansView.hidden = section !== 'plans';
   modulateView.hidden = section !== 'modulate';
   animateView.hidden = section !== 'animate';
+  musicView.hidden = section !== 'music';
+  projectView.hidden = section !== 'project';
 
   if (isConsole) switchTab(section);
   if (section === 'library') renderLibrary();
@@ -134,6 +154,8 @@ function switchSection(section) {
   if (section === 'plans') renderPlans();
   if (section === 'modulate') refreshModSource();
   if (section === 'animate') animOnShow();
+  if (section === 'music') musicOnShow();
+  if (section === 'project') projectOnShow();
 }
 
 document.querySelectorAll('.sidebar-item').forEach((btn) => {
@@ -165,8 +187,12 @@ function setPlayingUI(isPlaying) {
 /* ---------- Engine selection ---------- */
 document.querySelectorAll('.engine-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.engine-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.engine-btn').forEach((b) => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     engine = btn.dataset.engine;
     stopPlayback();
     refreshVoiceOptions();
@@ -1334,18 +1360,27 @@ function animRenderShapeList() {
   animShapeList.innerHTML = '';
   for (const shape of animScene.shapes) {
     const li = document.createElement('li');
-    li.className = 'anim-shape-item' + (shape.id === animSelectedId ? ' selected' : '');
+    const btn = document.createElement('button');
+    const selected = shape.id === animSelectedId;
+    btn.type = 'button';
+    btn.className = 'anim-shape-item' + (selected ? ' selected' : '');
+    btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
     const name = document.createElement('span');
     name.textContent = shape.label;
     const kf = document.createElement('span');
     kf.className = 'anim-shape-kf';
+    // "3kf ~" reads as nonsense in speech; spell it out for the label only.
     kf.textContent = `${shape.keyframes.length}kf${shape.reactive ? ' ~' : ''}`;
-    li.append(name, kf);
-    li.addEventListener('click', () => {
+    btn.setAttribute('aria-label',
+      `${shape.label}, ${shape.keyframes.length} keyframe${shape.keyframes.length === 1 ? '' : 's'}`
+      + (shape.reactive ? ', reacts to voice' : ''));
+    btn.append(name, kf);
+    btn.addEventListener('click', () => {
       animSelectedId = shape.id;
       animRenderShapeList();
       animSyncProps();
     });
+    li.appendChild(btn);
     animShapeList.appendChild(li);
   }
   const has = !!animSelected();
@@ -1554,6 +1589,276 @@ function animOnShow() {
   animDraw();
 }
 
+/* ---------- Music ---------- */
+const sequencerEl = document.getElementById('sequencer');
+const musicPreset = document.getElementById('music-preset');
+const musicBpm = document.getElementById('music-bpm');
+const musicBpmValue = document.getElementById('music-bpm-value');
+const musicSwing = document.getElementById('music-swing');
+const musicSwingValue = document.getElementById('music-swing-value');
+const musicBars = document.getElementById('music-bars');
+const musicBarsValue = document.getElementById('music-bars-value');
+const musicPlayBtn = document.getElementById('music-play-btn');
+const musicVoiceBtn = document.getElementById('music-voice-btn');
+const musicClearBtn = document.getElementById('music-clear-btn');
+const musicDownloadBtn = document.getElementById('music-download-btn');
+const musicHint = document.getElementById('music-hint');
+const musicAudio = document.getElementById('music-audio');
+
+const songKey = document.getElementById('song-key');
+const songMode = document.getElementById('song-mode');
+const songProgression = document.getElementById('song-progression');
+const chordRow = document.getElementById('chord-row');
+const progressionNote = document.getElementById('progression-note');
+const lyricsInput = document.getElementById('lyrics-input');
+const lyricAnalysis = document.getElementById('lyric-analysis');
+
+const MUSIC_SR = 44100;
+let musicPattern = createPattern();
+let musicBlob = null;
+let musicSequencerBuilt = false;
+
+for (const name of Object.keys(PRESET_PATTERNS)) {
+  const opt = document.createElement('option');
+  opt.value = name;
+  opt.textContent = name;
+  musicPreset.appendChild(opt);
+}
+for (const k of KEYS) {
+  const opt = document.createElement('option');
+  opt.value = k;
+  opt.textContent = k;
+  songKey.appendChild(opt);
+}
+songKey.value = 'C';
+PROGRESSIONS.forEach((prog, i) => {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = `${prog.name} — ${prog.degrees.map((d) => ['I','ii','iii','IV','V','vi','vii'][d-1]).join('–')}`;
+  songProgression.appendChild(opt);
+});
+
+function buildSequencer() {
+  sequencerEl.innerHTML = '';
+  for (const track of TRACKS) {
+    const row = document.createElement('div');
+    row.className = 'seq-row';
+    const label = document.createElement('span');
+    label.className = 'seq-label';
+    label.textContent = track.name;
+    const steps = document.createElement('div');
+    steps.className = 'seq-steps';
+
+    for (let i = 0; i < STEPS; i++) {
+      const cell = document.createElement('button');
+      cell.className = 'seq-cell' + (i % 4 === 0 ? ' beat' : '');
+      cell.dataset.track = track.id;
+      cell.dataset.step = String(i);
+      cell.setAttribute('aria-label', `${track.name} step ${i + 1}`);
+      cell.setAttribute('aria-pressed', 'false');
+      cell.addEventListener('click', () => {
+        const on = !musicPattern.grid[track.id][i];
+        musicPattern.grid[track.id][i] = on;
+        cell.classList.toggle('on', on);
+        cell.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      steps.appendChild(cell);
+    }
+    row.append(label, steps);
+    sequencerEl.appendChild(row);
+  }
+  musicSequencerBuilt = true;
+}
+
+function syncSequencer() {
+  for (const cell of sequencerEl.querySelectorAll('.seq-cell')) {
+    const on = musicPattern.grid[cell.dataset.track][Number(cell.dataset.step)];
+    cell.classList.toggle('on', !!on);
+    cell.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
+musicPreset.addEventListener('change', () => {
+  applyPreset(musicPattern, musicPreset.value);
+  syncSequencer();
+});
+
+musicBpm.addEventListener('input', () => {
+  musicPattern.bpm = parseInt(musicBpm.value, 10);
+  musicBpmValue.textContent = `${musicBpm.value} bpm`;
+});
+musicSwing.addEventListener('input', () => {
+  musicPattern.swing = parseFloat(musicSwing.value);
+  musicSwingValue.textContent = parseFloat(musicSwing.value).toFixed(2);
+});
+musicBars.addEventListener('input', () => {
+  musicBarsValue.textContent = musicBars.value;
+});
+
+function renderCurrentBeat() {
+  const bars = parseInt(musicBars.value, 10);
+  return renderPattern(musicPattern, MUSIC_SR, bars);
+}
+
+musicPlayBtn.addEventListener('click', async () => {
+  const anyHits = TRACKS.some((t) => musicPattern.grid[t.id].some(Boolean));
+  if (!anyHits) {
+    musicHint.textContent = 'Nothing to play yet — tap some squares, or pick a starting pattern.';
+    return;
+  }
+  musicHint.textContent = '';
+  musicPlayBtn.disabled = true;
+  const label = musicPlayBtn.textContent;
+  musicPlayBtn.textContent = 'Rendering…';
+  await new Promise((r) => setTimeout(r, 20));
+  try {
+    const audio = renderCurrentBeat();
+    musicBlob = encodeWav16(audio, MUSIC_SR);
+    musicAudio.src = URL.createObjectURL(musicBlob);
+    musicAudio.hidden = false;
+    musicDownloadBtn.disabled = false;
+    musicAudio.play().catch(() => {});
+    saveClipToLibrary({
+      engine: 'recording',
+      voiceLabel: `Beat ${musicPattern.bpm}bpm`,
+      text: '',
+      blob: musicBlob,
+      ext: 'wav',
+      durationSec: audio.length / MUSIC_SR,
+    });
+  } catch (err) {
+    musicHint.textContent = err.message || 'Could not render that pattern.';
+  } finally {
+    musicPlayBtn.disabled = false;
+    musicPlayBtn.textContent = label;
+  }
+});
+
+musicVoiceBtn.addEventListener('click', async () => {
+  const source = modResultBlob || originalRecordingBlob || lastClipBlob;
+  if (!source) {
+    musicHint.textContent = 'No voice clip yet — record one in Voice Studio, or generate speech first.';
+    return;
+  }
+  musicHint.textContent = '';
+  musicVoiceBtn.disabled = true;
+  const label = musicVoiceBtn.textContent;
+  musicVoiceBtn.textContent = 'Mixing…';
+  try {
+    const buf = await decodeToAudioBuffer(source);
+    // Loop the beat out to at least the length of the voice, so a long
+    // take doesn't run off the end of a one-bar pattern.
+    const beatOneBar = patternDuration(musicPattern, 1);
+    const barsNeeded = Math.max(parseInt(musicBars.value, 10), Math.ceil(buf.duration / beatOneBar));
+    const beat = renderPattern(musicPattern, MUSIC_SR, barsNeeded);
+    const voice = buf.sampleRate === MUSIC_SR
+      ? buf.getChannelData(0)
+      : resampleLinear(buf.getChannelData(0), buf.sampleRate, MUSIC_SR);
+    const mixed = mixTracks(beat, voice, 0.75, 1);
+    musicBlob = encodeWav16(mixed, MUSIC_SR);
+    musicAudio.src = URL.createObjectURL(musicBlob);
+    musicAudio.hidden = false;
+    musicDownloadBtn.disabled = false;
+    showToast('Voice mixed over the beat');
+    saveClipToLibrary({
+      engine: 'recording',
+      voiceLabel: 'Voice + beat',
+      text: '',
+      blob: musicBlob,
+      ext: 'wav',
+      durationSec: mixed.length / MUSIC_SR,
+    });
+  } catch (err) {
+    musicHint.textContent = err.message || 'Could not mix that clip.';
+  } finally {
+    musicVoiceBtn.disabled = false;
+    musicVoiceBtn.textContent = label;
+  }
+});
+
+/** Sample-rate conversion so a mic recording lines up with the beat. */
+function resampleLinear(input, fromRate, toRate) {
+  const ratio = fromRate / toRate;
+  const outLen = Math.floor(input.length / ratio);
+  const out = new Float32Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const pos = i * ratio;
+    const idx = Math.floor(pos);
+    const frac = pos - idx;
+    const a = input[idx] || 0;
+    const b = input[idx + 1] !== undefined ? input[idx + 1] : a;
+    out[i] = a + (b - a) * frac;
+  }
+  return out;
+}
+
+musicClearBtn.addEventListener('click', () => {
+  for (const t of TRACKS) musicPattern.grid[t.id].fill(false);
+  syncSequencer();
+  musicHint.textContent = '';
+});
+
+musicDownloadBtn.addEventListener('click', async () => {
+  if (!musicBlob) return;
+  const result = await downloadBlob(musicBlob, `the-voice-beat-${Date.now()}.wav`);
+  if (result.ok) showToast('Downloaded');
+  else if (result.message) musicHint.textContent = result.message;
+});
+
+function renderChords() {
+  const progression = PROGRESSIONS[parseInt(songProgression.value || '0', 10)];
+  const chords = progressionInKey(progression, songKey.value, songMode.value);
+  chordRow.innerHTML = '';
+  for (const chord of chords) {
+    const card = document.createElement('div');
+    card.className = 'chord-card';
+    const name = document.createElement('div');
+    name.className = 'chord-name';
+    name.textContent = chord.name;
+    const numeral = document.createElement('div');
+    numeral.className = 'chord-numeral';
+    numeral.textContent = chord.numeral;
+    card.append(name, numeral);
+    chordRow.appendChild(card);
+  }
+  progressionNote.textContent = progression.note;
+}
+
+[songKey, songMode, songProgression].forEach((el) => el.addEventListener('change', renderChords));
+
+function renderLyricAnalysis() {
+  const text = lyricsInput.value;
+  lyricAnalysis.innerHTML = '';
+  if (!text.trim()) return;
+  for (const row of analyseLyrics(text)) {
+    if (!row.line) continue;
+    const div = document.createElement('div');
+    div.className = 'lyric-line';
+    const syl = document.createElement('span');
+    syl.className = 'lyric-syl';
+    syl.textContent = String(row.syllables);
+    const rhyme = document.createElement('span');
+    rhyme.className = 'lyric-rhyme';
+    rhyme.textContent = row.rhyme;
+    const txt = document.createElement('span');
+    txt.className = 'lyric-text';
+    txt.textContent = row.line;
+    div.append(syl, rhyme, txt);
+    lyricAnalysis.appendChild(div);
+  }
+}
+
+lyricsInput.addEventListener('input', renderLyricAnalysis);
+
+function musicOnShow() {
+  if (!musicSequencerBuilt) {
+    buildSequencer();
+    applyPreset(musicPattern, musicPreset.value);
+    renderChords();
+  }
+  syncSequencer();
+}
+
 /* ---------- Payment link settings ---------- */
 const linkStudioInput = document.getElementById('link-studio-input');
 const linkProInput = document.getElementById('link-pro-input');
@@ -1582,7 +1887,10 @@ const plansHint = document.getElementById('plans-hint');
 
 async function renderPlans() {
   const session = await getCurrentSession().catch(() => null);
-  const currentPlan = planFromSession(session);
+  // The subscriptions row is what the webhook writes, so it reflects a
+  // payment straight away; the JWT's copy lags until the token refreshes.
+  const tablePlan = await fetchSubscriptionPlan().catch(() => null);
+  const currentPlan = resolvePlan(session, tablePlan);
   const links = getPaymentLinks();
 
   plansCurrent.textContent = `Current plan: ${planLabel(currentPlan)}`;
@@ -1629,7 +1937,11 @@ async function renderPlans() {
         btn.disabled = true;
         btn.title = 'No payment link configured for this plan yet.';
       } else {
-        btn.addEventListener('click', () => window.open(url, '_blank', 'noopener'));
+        btn.addEventListener('click', () => {
+          markAwaitingUpgrade(plan.id);
+          window.open(url, '_blank', 'noopener');
+          startUpgradeWatch();
+        });
       }
       card.appendChild(btn);
     }
@@ -1637,11 +1949,109 @@ async function renderPlans() {
     planGrid.appendChild(card);
   }
 
-  if (!Object.keys(links).length) {
+  if (upgradeWatchMessage) {
+    plansHint.className = 'hint hint-info';
+    plansHint.textContent = upgradeWatchMessage;
+  } else if (!Object.keys(links).length) {
     plansHint.className = 'hint hint-info';
     plansHint.textContent = 'Add Stripe payment links in Settings to enable upgrades.';
   }
+
+  return currentPlan;
 }
+
+/* ---------- Picking up a completed payment ---------- */
+//
+// Checkout happens in Stripe's tab and the upgrade is applied by the webhook
+// on Supabase's servers. Neither of those touches this page, so a buyer who
+// switches back would otherwise sit looking at "Free" with nothing to
+// suggest the payment worked. Watch for the plan changing and say so.
+//
+// Note what this does NOT do: it never sets a plan. It only re-reads what
+// the server decided, so nothing here can be edited into a free upgrade.
+let upgradeWatchTimer = null;
+let upgradeWatchRunning = false;
+let upgradeWatchMessage = '';
+
+function stopUpgradeWatch(message = '') {
+  if (upgradeWatchTimer !== null) {
+    clearTimeout(upgradeWatchTimer);
+    upgradeWatchTimer = null;
+  }
+  upgradeWatchRunning = false;
+  upgradeWatchMessage = message;
+}
+
+async function startUpgradeWatch() {
+  const pending = awaitingUpgrade();
+  // Claim the watch synchronously: the baseline reads below are awaited, and
+  // a second call arriving in that gap would otherwise start a rival poller.
+  if (!pending || upgradeWatchRunning) return;
+  upgradeWatchRunning = true;
+
+  // Say so before the first check rather than after it — a buyer coming back
+  // from Stripe should not meet a page that looks like nothing happened.
+  upgradeWatchMessage = 'Confirming your payment with Stripe…';
+  if (!plansView.hidden) renderPlans();
+
+  const before = resolvePlan(
+    await getCurrentSession().catch(() => null),
+    await fetchSubscriptionPlan().catch(() => null),
+  );
+
+  let attempt = 0;
+  const poll = async () => {
+    upgradeWatchTimer = null;
+    const plan = await fetchSubscriptionPlan().catch(() => null);
+
+    if (plan && plan !== before && plan !== 'free') {
+      // Bring the token in line too, so anything reading app_metadata
+      // elsewhere sees the same plan the table does.
+      await refreshSession().catch(() => null);
+      clearAwaitingUpgrade();
+      stopUpgradeWatch('');
+      showToast(`You're on ${planLabel(plan)} — thanks.`);
+      if (!plansView.hidden) renderPlans();
+      return;
+    }
+
+    attempt += 1;
+    if (attempt >= MAX_UPGRADE_POLLS) {
+      // Stripe retries a failed webhook for hours, so "not yet" is a far
+      // more likely story than "it failed" — say so rather than alarming.
+      stopUpgradeWatch('Payment received. The upgrade can take a minute to land — reopen this page shortly, or use Check for updates.');
+      if (!plansView.hidden) renderPlans();
+      return;
+    }
+
+    upgradeWatchMessage = 'Confirming your payment with Stripe…';
+    if (!plansView.hidden) renderPlans();
+    upgradeWatchTimer = setTimeout(poll, nextPollDelay(attempt));
+  };
+
+  upgradeWatchTimer = setTimeout(poll, nextPollDelay(0));
+}
+
+// Coming back from the Stripe tab is the moment worth checking on.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) startUpgradeWatch();
+});
+
+plansRefreshBtn.addEventListener('click', async () => {
+  const label = plansRefreshBtn.textContent;
+  plansRefreshBtn.disabled = true;
+  plansRefreshBtn.textContent = 'Checking…';
+  stopUpgradeWatch('');
+  try {
+    await refreshSession().catch(() => null);
+    const plan = await renderPlans();
+    showToast(`Plan confirmed: ${planLabel(plan)}`);
+    if (plan !== 'free') clearAwaitingUpgrade();
+  } finally {
+    plansRefreshBtn.disabled = false;
+    plansRefreshBtn.textContent = label;
+  }
+});
 
 /* ---------- Account ---------- */
 const accountEmailDisplay = document.getElementById('account-email-display');
@@ -1680,15 +2090,22 @@ function setGateStatus(message, kind = 'error') {
 function showGate() {
   gate.hidden = false;
   appShell.hidden = true;
-  gateSetupToggle.hidden = false;
   gatePassword.value = '';
-  // Without a backend there is nobody to authenticate against, so point the
-  // owner at setup rather than letting them submit into a void.
+
+  // Without a backend there is nobody to authenticate against, so lead with
+  // setup rather than letting someone submit into a void. Once a project is
+  // connected the same control steps back to a quiet way to change it.
   const configured = isBackendConfigured();
   gateForms.hidden = !configured;
+  gateSetupToggle.hidden = false;
+  gateSetupToggle.classList.toggle('needed', !configured);
+  gateSetupToggle.textContent = configured ? 'Change Supabase project' : 'Connect Supabase';
+
   if (!configured) {
     gateSetupPanel.hidden = false;
-    setGateStatus('Awaiting configuration.', 'info');
+    setGateStatus('Connect a Supabase project to enable accounts.', 'info');
+  } else {
+    gateSetupPanel.hidden = true;
   }
 }
 
@@ -1764,6 +2181,10 @@ gateConnectBtn.addEventListener('click', async () => {
     setGateStatus('Connected.', 'info');
     gateSetupPanel.hidden = true;
     gateForms.hidden = false;
+    // The job this button existed for is done — step it back so it stops
+    // competing with the sign-in form it was blocking.
+    gateSetupToggle.classList.remove('needed');
+    gateSetupToggle.textContent = 'Change Supabase project';
   } catch (err) {
     clearSupabaseConfig();
     setGateStatus(err.message);
@@ -1788,7 +2209,292 @@ async function bootstrapAuth() {
   }
 }
 
+/* ---------- Project ---------- */
+const projectSummary = document.getElementById('project-summary');
+const projectVoiceSel = document.getElementById('project-voice');
+const projectBeatSel = document.getElementById('project-beat');
+const projectSceneSel = document.getElementById('project-scene');
+const projectVoiceGain = document.getElementById('project-voice-gain');
+const projectVoiceGainValue = document.getElementById('project-voice-gain-value');
+const projectBeatGain = document.getElementById('project-beat-gain');
+const projectBeatGainValue = document.getElementById('project-beat-gain-value');
+const projectOffset = document.getElementById('project-offset');
+const projectOffsetValue = document.getElementById('project-offset-value');
+const projectLoop = document.getElementById('project-loop');
+const projectFade = document.getElementById('project-fade');
+const projectBuildBtn = document.getElementById('project-build-btn');
+const projectRefreshBtn = document.getElementById('project-refresh-btn');
+const projectAudioBtn = document.getElementById('project-audio-btn');
+const projectFramesBtn = document.getElementById('project-frames-btn');
+const projectHint = document.getElementById('project-hint');
+const projectAudio = document.getElementById('project-audio');
+const projectStage = document.getElementById('project-stage');
+const projectCanvas = document.getElementById('project-canvas');
+const projectCtx = projectCanvas.getContext('2d');
+
+const PROJECT_SR = MUSIC_SR;
+let projectBlob = null;
+let projectMix = null;      // Float32Array of the last build
+let projectLevels = null;   // per-frame loudness, for the reactive scene
+let projectDuration = 0;
+let projectRaf = null;
+
+/** The take that hasn't been saved to the library yet, if there is one. */
+function projectSessionTake() {
+  return modResultBlob || originalRecordingBlob || lastClipBlob || null;
+}
+
+async function projectRefreshSources() {
+  const keep = projectVoiceSel.value;
+  projectVoiceSel.innerHTML = '<option value="">None</option>';
+
+  if (projectSessionTake()) {
+    const opt = document.createElement('option');
+    opt.value = 'session';
+    opt.textContent = 'This session’s latest take';
+    projectVoiceSel.appendChild(opt);
+  }
+
+  let clips = [];
+  try {
+    clips = await clipLibrary.listClips();
+  } catch {
+    /* library unavailable: the session take alone is still usable */
+  }
+  for (const clip of clips.slice(0, 50)) {
+    const opt = document.createElement('option');
+    opt.value = clip.id;
+    const when = new Date(clip.timestamp).toLocaleString();
+    opt.textContent = `${clip.voiceLabel || 'Clip'} · ${formatDuration(clip.durationSec)} · ${when}`;
+    projectVoiceSel.appendChild(opt);
+  }
+
+  // Keep the operator's choice across a refresh where the clip still exists.
+  if (keep && [...projectVoiceSel.options].some((o) => o.value === keep)) {
+    projectVoiceSel.value = keep;
+  } else if (!keep) {
+    projectVoiceSel.value = projectSessionTake() ? 'session' : '';
+  }
+
+  projectUpdateSummary();
+}
+
+/** Resolve the voice picker to a blob, or null. */
+async function projectVoiceBlob() {
+  const v = projectVoiceSel.value;
+  if (!v) return null;
+  if (v === 'session') return projectSessionTake();
+  const clips = await clipLibrary.listClips();
+  const clip = clips.find((c) => c.id === v);
+  return clip ? clip.blob : null;
+}
+
+function projectUsesBeat() {
+  return projectBeatSel.value === 'current' && TRACKS.some((t) => musicPattern.grid[t.id].some(Boolean));
+}
+
+function projectUsesScene() {
+  return projectSceneSel.value === 'current' && animScene.shapes.length > 0;
+}
+
+function projectUpdateSummary() {
+  const bits = [];
+  const voiceOpt = projectVoiceSel.selectedOptions[0];
+  if (projectVoiceSel.value) bits.push(`voice: ${voiceOpt.textContent.split(' · ')[0]}`);
+  if (projectBeatSel.value === 'current') {
+    bits.push(projectUsesBeat()
+      ? `beat: ${musicPattern.bpm}bpm × ${musicBars.value} bar${musicBars.value === '1' ? '' : 's'}`
+      : 'beat: pattern is empty');
+  }
+  if (projectSceneSel.value === 'current') {
+    bits.push(projectUsesScene()
+      ? `scene: ${animScene.shapes.length} shape${animScene.shapes.length === 1 ? '' : 's'}`
+      : 'scene: nothing drawn yet');
+  }
+  projectSummary.textContent = bits.length ? bits.join('  ·  ') : 'Nothing added yet.';
+}
+
+/**
+ * Render a beat bed long enough to sit under the whole piece.
+ *
+ * renderPattern appends a ring-out tail so the last hit isn't cut off, which
+ * means tiling its output would punch a half-second hole into the groove at
+ * every loop point. Render the bars actually needed in one pass instead, and
+ * the mixer never has to tile at all.
+ */
+function projectBeatBed(neededSec) {
+  const oneBar = patternDuration(musicPattern, 1);
+  const chosen = parseInt(musicBars.value, 10);
+  const bars = projectLoop.checked
+    ? Math.max(chosen, Math.ceil(neededSec / oneBar))
+    : chosen;
+  return renderPattern(musicPattern, PROJECT_SR, Math.min(bars, 64));
+}
+
+projectVoiceGain.addEventListener('input', () => {
+  projectVoiceGainValue.textContent = parseFloat(projectVoiceGain.value).toFixed(2);
+});
+projectBeatGain.addEventListener('input', () => {
+  projectBeatGainValue.textContent = parseFloat(projectBeatGain.value).toFixed(2);
+});
+projectOffset.addEventListener('input', () => {
+  projectOffsetValue.textContent = `${parseFloat(projectOffset.value).toFixed(1)}s`;
+});
+for (const el of [projectVoiceSel, projectBeatSel, projectSceneSel]) {
+  el.addEventListener('change', projectUpdateSummary);
+}
+projectRefreshBtn.addEventListener('click', () => {
+  projectRefreshSources();
+  projectHint.textContent = '';
+});
+
+projectBuildBtn.addEventListener('click', async () => {
+  const label = projectBuildBtn.textContent;
+  projectBuildBtn.disabled = true;
+  projectBuildBtn.textContent = 'Building…';
+  projectHint.textContent = '';
+  try {
+    const blob = await projectVoiceBlob();
+    if (!blob && !projectUsesBeat()) {
+      projectHint.textContent = 'Pick a voice clip, or build a beat in Music first — a project needs at least one of them.';
+      return;
+    }
+
+    let voice = null;
+    if (blob) {
+      const buf = await decodeToAudioBuffer(blob);
+      voice = buf.sampleRate === PROJECT_SR
+        ? buf.getChannelData(0)
+        : resampleLinear(buf.getChannelData(0), buf.sampleRate, PROJECT_SR);
+    }
+
+    const offsetSec = parseFloat(projectOffset.value);
+    const neededSec = voice ? offsetSec + voice.length / PROJECT_SR : 0;
+    const beat = projectUsesBeat() ? projectBeatBed(neededSec) : null;
+
+    const mix = composeAudio({
+      voice,
+      beat,
+      sampleRate: PROJECT_SR,
+      voiceGain: parseFloat(projectVoiceGain.value),
+      beatGain: parseFloat(projectBeatGain.value),
+      voiceOffsetSec: offsetSec,
+      loopBeat: projectLoop.checked,
+    });
+    if (projectFade.checked) fadeOut(mix, PROJECT_SR);
+
+    projectMix = mix;
+    projectDuration = mix.length / PROJECT_SR;
+    projectBlob = encodeWav16(mix, PROJECT_SR);
+
+    if (projectAudio.src) URL.revokeObjectURL(projectAudio.src);
+    projectAudio.src = URL.createObjectURL(projectBlob);
+    projectAudio.hidden = false;
+    projectAudioBtn.disabled = false;
+
+    // The payoff of combining the two halves: the scene reacts to the
+    // finished mix, not to the voice alone.
+    if (projectUsesScene()) {
+      animScene.duration = Math.max(1, projectDuration);
+      projectLevels = audioLevelTrack(mix, PROJECT_SR, animScene.fps, animScene.duration);
+      projectStage.hidden = false;
+      projectFramesBtn.disabled = false;
+      projectDrawAt(0);
+    } else {
+      projectLevels = null;
+      projectStage.hidden = true;
+      projectFramesBtn.disabled = true;
+    }
+
+    projectHint.textContent = '';
+    showToast(`Project built — ${formatDuration(projectDuration)}`);
+    saveClipToLibrary({
+      engine: 'recording',
+      voiceLabel: 'Project mix',
+      text: '',
+      blob: projectBlob,
+      ext: 'wav',
+      durationSec: projectDuration,
+    });
+    projectUpdateSummary();
+  } catch (err) {
+    projectHint.textContent = err.message || 'Could not build that project.';
+  } finally {
+    projectBuildBtn.disabled = false;
+    projectBuildBtn.textContent = label;
+  }
+});
+
+function projectLevelAt(t) {
+  if (!projectLevels || !projectLevels.length) return 0;
+  const i = Math.floor(t * animScene.fps);
+  return projectLevels[Math.max(0, Math.min(projectLevels.length - 1, i))] || 0;
+}
+
+function projectDrawAt(t) {
+  if (!projectUsesScene()) return;
+  renderFrame(projectCtx, animScene, t, projectCanvas.width, projectCanvas.height, projectLevelAt(t));
+}
+
+// Drive the scene from the audio element's own clock, so scrubbing and
+// pausing the preview move the picture with it rather than drifting.
+function projectFollowAudio() {
+  projectDrawAt(projectAudio.currentTime);
+  projectRaf = requestAnimationFrame(projectFollowAudio);
+}
+projectAudio.addEventListener('play', () => {
+  if (projectRaf === null) projectFollowAudio();
+});
+for (const ev of ['pause', 'ended', 'seeked']) {
+  projectAudio.addEventListener(ev, () => {
+    if (projectRaf !== null) { cancelAnimationFrame(projectRaf); projectRaf = null; }
+    projectDrawAt(projectAudio.currentTime);
+  });
+}
+
+projectAudioBtn.addEventListener('click', async () => {
+  if (!projectBlob) return;
+  const r = await downloadBlob(projectBlob, `project-${Date.now()}.wav`);
+  if (!r.ok) projectHint.textContent = r.message || 'Download cancelled.';
+});
+
+// Frames plus the WAV are what an editor needs to assemble the video. Encoding
+// a real video file in-browser needs a codec library, so this says what it
+// produces instead of mislabelling it.
+projectFramesBtn.addEventListener('click', async () => {
+  if (!projectUsesScene()) return;
+  const total = Math.ceil(animScene.duration * animScene.fps);
+  if (total > 300) {
+    projectHint.textContent = `That is ${total} frames — shorten the project before exporting.`;
+    return;
+  }
+  projectFramesBtn.disabled = true;
+  const label = projectFramesBtn.textContent;
+  try {
+    for (let f = 0; f < total; f++) {
+      projectFramesBtn.textContent = `Frame ${f + 1}/${total}`;
+      projectDrawAt(f / animScene.fps);
+      const blob = await new Promise((res) => projectCanvas.toBlob(res, 'image/png'));
+      const r = await downloadBlob(blob, `project-frame-${String(f).padStart(4, '0')}.png`);
+      if (!r.ok) {
+        projectHint.textContent = r.message || 'Export cancelled.';
+        break;
+      }
+    }
+  } finally {
+    projectFramesBtn.textContent = label;
+    projectFramesBtn.disabled = false;
+    projectDrawAt(projectAudio.currentTime);
+  }
+});
+
+function projectOnShow() {
+  projectRefreshSources();
+}
+
 /* ---------- Init ---------- */
+// Tells the inline boot guard in the page that the module actually ran.
+window.__voiceBooted = true;
 refreshVoiceOptions();
 refreshLongformVoices();
 loadPaymentLinkInputs();
@@ -1798,3 +2504,4 @@ updateEngineChrome();
 renderClonedVoiceList();
 updateTextStats();
 bootstrapAuth();
+startUpgradeWatch();

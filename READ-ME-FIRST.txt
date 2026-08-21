@@ -1,38 +1,46 @@
-THE VOICE — simple deploy
-=========================
+THE VOICE — the simplest way to put this online
+===============================================
 
-This folder contains the entire website in ONE file. There are no
-folders to upload, nothing to build, and nothing that can arrive in the
-wrong place.
+This folder is the whole site. index.html contains everything: the page,
+the styles and all the code. There is nothing to install and nothing to
+build.
 
-TO PUT IT LIVE
---------------
-Easiest:
-  1. Go to  netlify.com/drop
-  2. Drag THIS WHOLE FOLDER onto the page
-  3. You get a live web address straight away
+TO PUT IT ONLINE
+----------------
+1. Go to https://app.netlify.com/drop
+2. Drag THIS FOLDER onto the page.
+3. Netlify gives you a web address. That is your live site.
 
-Via GitHub (if you want automatic updates later):
-  1. In your repository, click  Add file -> Upload files
-  2. Drag in  index.html  and  netlify.toml
-  3. Commit
+That is the whole deployment. Nothing else is required to see it working.
 
-If your repository already has an old index.html, style.css and a js
-folder, delete those first. This single index.html replaces all of them.
+FIRST TIME YOU OPEN YOUR SITE
+-----------------------------
+The site asks you to sign in, and there is a large CONNECT SUPABASE button
+on that screen. Accounts need a free Supabase project behind them — the
+site cannot store logins on its own.
 
-FIRST VISIT
------------
-The site opens on a screen saying "Awaiting configuration." with two
-boxes. Paste in your Supabase Project URL and anon/public key, then
-click Connect. The login screen appears and you can create an account.
+  1. Sign up free at https://supabase.com and create a project.
+  2. In Supabase: Project Settings -> API.
+  3. Copy the "Project URL" and the "anon public" key.
+  4. Back on YOUR site (the Netlify address from above), click
+     CONNECT SUPABASE and paste both in.
 
-If you instead see the login screen straight away, this browser has
-already been configured. To change those settings, click the faint dot
-in the bottom-right corner.
+Once connected, that button becomes a quiet "Change Supabase project" link
+and the sign-in form appears. Create your account and you are in.
 
-WHY ONE FILE
-------------
-The earlier version loaded its code from a separate "js" folder. If any
-of that folder went missing or arrived incomplete, the page still looked
-normal but nothing worked, with no error to explain why. Everything is
-now inlined into index.html, so that failure cannot happen.
+The anon key is meant to be public — Supabase enforces access on its own
+servers. It is not a secret, and pasting it here is how it is designed to
+work.
+
+TAKING PAYMENTS (optional)
+--------------------------
+Only needed if you want to charge for plans. The full walkthrough is in
+supabase/README.md in the source zip: create the database table, deploy the
+Stripe webhook, then paste your Stripe payment links into Settings on your
+site.
+
+WHAT IF THE PAGE LOOKS EMPTY?
+-----------------------------
+Give it a few seconds on first load — the neural voices are fetched on
+demand. If a message appears saying the scripts did not load, the file was
+probably uploaded incompletely; drag the folder across again.

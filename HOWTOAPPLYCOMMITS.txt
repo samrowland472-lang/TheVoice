@@ -1,0 +1,44 @@
+APPLYING THE COMMITS
+====================
+
+I could not push to GitHub from this session: the credential it was given
+can read the repository but not write to it. GitHub returned 403 on the
+write endpoint (git-receive-pack) while the read endpoint returned 200, and
+the API refused to create the branch with "Resource not accessible by
+integration".
+
+The-voice-commits.bundle contains all 25 commits with their full history.
+Nothing is lost — this is the same work, just delivered as a file instead
+of a push.
+
+TO APPLY IT (on your own machine)
+---------------------------------
+Put the .bundle file somewhere you can find it, then:
+
+    git clone https://github.com/samrowland472-lang/SWCCS
+    cd SWCCS
+    git fetch /full/path/to/the-voice-commits.bundle \
+        claude/text-to-speech-animation-site-ew1txk:claude/text-to-speech-animation-site-ew1txk
+    git checkout claude/text-to-speech-animation-site-ew1txk
+    git push -u origin claude/text-to-speech-animation-site-ew1txk
+
+Use the real path to the bundle in place of /full/path/to/.
+
+TO CHECK IT BEFORE APPLYING
+---------------------------
+You can inspect the bundle without touching your repository:
+
+    git clone --branch claude/text-to-speech-animation-site-ew1txk \
+        the-voice-commits.bundle look-at-this
+    cd look-at-this && git log --oneline
+
+TO FIX THE PUSH FOR NEXT TIME
+-----------------------------
+On claude.ai: Settings -> Connectors -> reconnect GitHub, making sure
+SWCCS is included and write access is granted. A future session will then
+be able to push on its own.
+
+YOU DO NOT NEED ANY OF THIS TO USE THE SITE
+-------------------------------------------
+the-voice-simple.zip is the finished site, ready to deploy. The bundle
+only matters if you want the commit history in GitHub.

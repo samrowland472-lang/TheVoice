@@ -96,3 +96,89 @@ export function checkoutUrl(planId, session) {
   });
   return `${base}${sep}${params.toString()}`;
 }
+
+// --- Reconciling a payment with the running page -------------------------
+//
+// Paying happens in Stripe's tab, and the webhook lands a moment later on
+// Supabase's servers. Neither of those touches the page the user came from,
+// so without this the buyer returns to a tab that still says "Free" and has
+// no reason to think the payment worked.
+//
+// Two sources say what plan someone is on, and they disagree for a while:
+//
+//   - the JWT's app_metadata, which is a snapshot from when the token was
+//     issued and does not change until the token is refreshed;
+//   - the subscriptions row, which the webhook writes and RLS lets the user
+//     read immediately.
+//
+// The row is the fresher of the two, so it wins when it is readable. Both
+// are server-controlled; the browser is only ever reading.
+
+const AWAITING_KEY = 'thevoice_awaiting_upgrade';
+
+/**
+ * Pick the plan to show. `tablePlan` is the subscriptions row (or null when
+ * the table is unreachable), `session` supplies the JWT fallback.
+ */
+export function resolvePlan(session, tablePlan) {
+  if (PLANS.some((p) => p.id === tablePlan)) return tablePlan;
+  return planFromSession(session);
+}
+
+/** Remember that a checkout was started, so the return can be noticed. */
+export function markAwaitingUpgrade(planId) {
+  try {
+    localStorage.setItem(AWAITING_KEY, JSON.stringify({ planId, since: Date.now() }));
+  } catch {
+    /* private browsing: the manual refresh button still works */
+  }
+}
+
+export function clearAwaitingUpgrade() {
+  try {
+    localStorage.removeItem(AWAITING_KEY);
+  } catch {
+    /* nothing to clear */
+  }
+}
+
+/**
+ * The pending upgrade, if one was started recently.
+ *
+ * A stale marker is worse than none — someone who abandoned checkout a week
+ * ago should not be met with "confirming your payment" forever — so anything
+ * older than the window is treated as gone.
+ */
+export function awaitingUpgrade(maxAgeMs = 24 * 60 * 60 * 1000, now = Date.now()) {
+  let raw;
+  try {
+    raw = localStorage.getItem(AWAITING_KEY);
+  } catch {
+    return null;
+  }
+  if (!raw) return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed.since !== 'number') return null;
+  if (now - parsed.since > maxAgeMs) return null;
+  return parsed;
+}
+
+/**
+ * How long to wait before the next check, in ms.
+ *
+ * Webhooks usually land within a couple of seconds, so the first checks are
+ * quick; after that the delay backs off rather than hammering the database
+ * while someone leaves the tab open.
+ */
+export function nextPollDelay(attempt) {
+  const schedule = [1000, 2000, 3000, 5000, 8000];
+  return schedule[Math.min(attempt, schedule.length - 1)];
+}
+
+/** Total attempts before giving up and telling the user to check back. */
+export const MAX_UPGRADE_POLLS = 12;
