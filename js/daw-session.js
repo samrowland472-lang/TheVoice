@@ -148,6 +148,8 @@
     selectedNote: null,
     selectedPad: null,
     selectedTrackId: "drums",
+    ccMap: { 7: "volume", 10: "pan", 74: "cutoff" },
+    midiHooked: false,
   };
   state.arrangeClips = seedArrange(state.tracks);
   attachDefaultRacks(state.tracks);
@@ -240,6 +242,7 @@
     });
     applyMix();
     startMeters();
+    hookMidi();
   }
 
   function defaultDevices(kind) {
@@ -1793,27 +1796,27 @@
     if (kind === "perc") {
       return {
         pads: [
-          pad("sh", "Shake", "perc", 0, { gain: 0.7 }),
-          pad("rm", "Rim", "rim", 0),
-          pad("cl", "Clap", "clap", 0),
-          pad("tm", "Tom", "tom", 2),
-          pad("ch", "CH", "hat", 1, { open: false, gain: 0.65 }),
-          pad("oh", "OH", "hat", 1, { open: true, gain: 0.75 }),
-          pad("k2", "Kick", "kick", 0),
-          pad("s2", "Snare", "snare", 0),
+          pad("sh", "Shake", "perc", 0, { gain: 0.7, midi: 36 }),
+          pad("rm", "Rim", "rim", 0, { midi: 40 }),
+          pad("cl", "Clap", "clap", 0, { midi: 39 }),
+          pad("tm", "Tom", "tom", 2, { midi: 45 }),
+          pad("ch", "CH", "hat", 1, { open: false, gain: 0.65, midi: 42 }),
+          pad("oh", "OH", "hat", 1, { open: true, gain: 0.75, midi: 46 }),
+          pad("k2", "Kick", "kick", 0, { midi: 36 }),
+          pad("s2", "Snare", "snare", 0, { midi: 38 }),
         ],
       };
     }
     return {
       pads: [
-        pad("k", "Kick", "kick", 0, { gain: 1 }),
-        pad("s", "Snare", "snare", 0),
-        pad("h", "CH", "hat", 1, { open: false, gain: 0.7 }),
-        pad("oh", "OH", "hat", 1, { open: true, gain: 0.8, decay: 0.35 }),
-        pad("t", "Tom", "tom", 2),
-        pad("c", "Clap", "clap", 0),
-        pad("p", "Perc", "perc", 0, { gain: 0.7 }),
-        pad("r", "Rim", "rim", 0),
+        pad("k", "Kick", "kick", 0, { gain: 1, midi: 36 }),
+        pad("s", "Snare", "snare", 0, { midi: 38 }),
+        pad("h", "CH", "hat", 1, { open: false, gain: 0.7, midi: 42 }),
+        pad("oh", "OH", "hat", 1, { open: true, gain: 0.8, decay: 0.35, midi: 46 }),
+        pad("t", "Tom", "tom", 2, { midi: 45 }),
+        pad("c", "Clap", "clap", 0, { midi: 39 }),
+        pad("p", "Perc", "perc", 0, { gain: 0.7, midi: 37 }),
+        pad("r", "Rim", "rim", 0, { midi: 40 }),
       ],
     };
   }
@@ -2087,6 +2090,235 @@
     state.selectedNote = null;
     paintRoll();
   }
+
+  var liveNotes = {};
+  var keysHeld = {};
+  var recLive = {};
+  var midiOctave = 2;
+  var midiLearn = null;
+  var midiLabel = null;
+  var KEY_PITCH = {
+    KeyA: 0, KeyW: 1, KeyS: 2, KeyE: 3, KeyD: 4, KeyF: 5,
+    KeyT: 6, KeyG: 7, KeyY: 8, KeyH: 9, KeyU: 10, KeyJ: 11, KeyK: 12,
+    KeyO: 13, KeyL: 14, KeyP: 15, Semicolon: 16
+  };
+  var KEY_PADS = {
+    Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3,
+    Digit5: 4, Digit6: 5, Digit7: 6, Digit8: 7
+  };
+
+  function midiToPitch(note) {
+    return note - 33;
+  }
+
+  function startLiveNote(track, pitch, vel) {
+    if (!track || track.kind === "audio") return;
+    ensureAudio();
+    ctx.resume();
+    var dest = trackNodes[track.id];
+    if (!dest) return;
+    var key = track.id + ":" + pitch;
+    if (liveNotes[key]) stopLiveNote(track, pitch);
+    var analog = analogOf(track);
+    var wave = analog ? analog.wave : track.kind === "lead" ? "square" : track.kind === "bass" ? "sawtooth" : "triangle";
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = analog ? analog.cutoff : track.kind === "bass" ? 420 : 8000;
+    f.Q.value = analog ? analog.res : 0.8;
+    f.connect(dest);
+    var g = ctx.createGain();
+    var peak = (track.kind === "bass" ? 0.38 : 0.16) * Math.max(0.05, vel || 0.85);
+    var atk = analog ? analog.attack : 0.01;
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + Math.max(0.005, atk));
+    g.connect(f);
+    var o = ctx.createOscillator();
+    o.type = wave;
+    o.frequency.value = midiHz(pitch + (track.kind === "bass" ? 0 : 12));
+    o.connect(g);
+    o.start();
+    liveNotes[key] = { o: o, g: g };
+    if (state.recording) beginRecNote(track, pitch, vel);
+  }
+
+  function stopLiveNote(track, pitch) {
+    var key = track.id + ":" + pitch;
+    var v = liveNotes[key];
+    if (v && ctx) {
+      var t0 = ctx.currentTime;
+      try {
+        v.g.gain.cancelScheduledValues(t0);
+        v.g.gain.setValueAtTime(Math.max(0.0001, v.g.gain.value || 0.0001), t0);
+        v.g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.08);
+        v.o.stop(t0 + 0.1);
+      } catch (e) {}
+    }
+    delete liveNotes[key];
+    endRecNote(track, pitch);
+  }
+
+  function beginRecNote(track, pitch, vel) {
+    var clip = (state.selectedSession && state.selectedSession.track === track && state.selectedSession.clip)
+      || (track.clips || []).find(function (c) { return !!c; });
+    if (!clip || track.kind === "drums" || track.kind === "perc" || track.kind === "audio") return;
+    ensureRoll(clip);
+    recLive[pitch] = { clip: clip, start: state.playing ? (state.step % (clip.length || STEPS)) : 0, vel: vel || 0.85 };
+  }
+
+  function endRecNote(track, pitch) {
+    var rec = recLive[pitch];
+    if (!rec) return;
+    var len = state.playing ? (state.step % (rec.clip.length || STEPS)) - rec.start : (state.rollSnap || 1);
+    if (len <= 0) len = state.rollSnap || 1;
+    rec.clip.notes.roll.push({ id: "n" + noteSeq++, pitch: pitch, start: rec.start, length: len, vel: rec.vel });
+    delete recLive[pitch];
+    if (state.view === "roll") paintRoll();
+  }
+
+  function padForMidi(track, note) {
+    if (!track.rack) return null;
+    for (var i = 0; i < track.rack.pads.length; i++) {
+      if (track.rack.pads[i].midi === note) return track.rack.pads[i];
+    }
+    var idx = note - 36;
+    if (idx >= 0 && idx < track.rack.pads.length) return track.rack.pads[idx];
+    return null;
+  }
+
+  function playIncomingNote(note, vel) {
+    var tr = selectedTrack();
+    if (!tr) return;
+    if (midiLearn === "pad") {
+      if (tr.rack) {
+        var pad = tr.rack.pads.find(function (p) { return p.id === state.selectedPad; }) || tr.rack.pads[0];
+        pad.midi = note;
+        midiLearn = null;
+        setMidiLabel("Pad " + pad.name + " → " + note);
+        paintRack();
+      }
+      return;
+    }
+    ensureAudio();
+    ctx.resume();
+    if (tr.kind === "drums" || tr.kind === "perc") {
+      var p = padForMidi(tr, note);
+      if (p) trigRackPad(tr, p, ctx.currentTime, vel);
+      return;
+    }
+    startLiveNote(tr, midiToPitch(note), vel);
+  }
+
+  function releaseIncomingNote(note) {
+    var tr = selectedTrack();
+    if (!tr || tr.kind === "drums" || tr.kind === "perc") return;
+    stopLiveNote(tr, midiToPitch(note));
+  }
+
+  function midiCC(cc, val) {
+    if (midiLearn === "volume" || midiLearn === "pan" || midiLearn === "cutoff") {
+      state.ccMap[cc] = midiLearn;
+      midiLearn = null;
+      setMidiLabel("CC" + cc + " → " + state.ccMap[cc]);
+      return;
+    }
+    var dest = state.ccMap[cc];
+    if (!dest) return;
+    var tr = selectedTrack();
+    if (!tr) return;
+    if (dest === "volume") {
+      tr.volume = val * 1.2;
+      applyMix();
+    } else if (dest === "pan") {
+      tr.pan = val * 2 - 1;
+      applyMix();
+    } else if (dest === "cutoff") {
+      var a = getDevice(tr, "analog");
+      if (a) {
+        a.cutoff = 80 + val * 7920;
+        a.on = true;
+        applyDevices(tr);
+      }
+    }
+  }
+
+  function onMidiMessage(ev) {
+    var d = ev.data;
+    if (!d || d.length < 2) return;
+    var cmd = d[0] & 0xf0;
+    var n = d[1];
+    var v = d.length > 2 ? d[2] / 127 : 0;
+    if (cmd === 0x90 && d[2] > 0) playIncomingNote(n, v);
+    else if (cmd === 0x80 || (cmd === 0x90 && d[2] === 0)) releaseIncomingNote(n);
+    else if (cmd === 0xb0) midiCC(n, v);
+  }
+
+  function hookMidi() {
+    if (state.midiHooked) return;
+    state.midiHooked = true;
+    if (!navigator.requestMIDIAccess) {
+      setMidiLabel("Keys A–L");
+      return;
+    }
+    navigator.requestMIDIAccess({ sysex: false }).then(function (access) {
+      function bind(port) {
+        port.onmidimessage = onMidiMessage;
+      }
+      access.inputs.forEach(bind);
+      access.onstatechange = function (e) {
+        if (e.port && e.port.type === "input" && e.port.state === "connected") bind(e.port);
+      };
+      var n = 0;
+      access.inputs.forEach(function () { n += 1; });
+      setMidiLabel(n ? n + " MIDI in" : "MIDI wait");
+    }).catch(function () {
+      setMidiLabel("Keys A–L");
+    });
+  }
+
+  function setMidiLabel(text) {
+    if (midiLabel) midiLabel.textContent = text;
+  }
+
+  function handlePianoKey(code, down) {
+    var tr = selectedTrack();
+    if (!tr) return false;
+    if (KEY_PADS[code] != null && (tr.kind === "drums" || tr.kind === "perc") && tr.rack) {
+      if (down) {
+        var pad = tr.rack.pads[KEY_PADS[code]];
+        if (pad) {
+          if (midiLearn === "pad") {
+            midiLearn = null;
+            setMidiLabel("Click MIDI note for " + pad.name);
+            state.selectedPad = pad.id;
+            paintRack();
+            midiLearn = "pad";
+            return true;
+          }
+          ensureAudio();
+          ctx.resume();
+          trigRackPad(tr, pad, ctx.currentTime, 0.95);
+        }
+      }
+      return true;
+    }
+    if (KEY_PITCH[code] == null) return false;
+    var pitch = KEY_PITCH[code] + midiOctave * 12;
+    if (tr.kind === "drums" || tr.kind === "perc") {
+      if (down && tr.rack) {
+        var p2 = tr.rack.pads[KEY_PITCH[code] % tr.rack.pads.length];
+        if (p2) {
+          ensureAudio();
+          ctx.resume();
+          trigRackPad(tr, p2, ctx.currentTime, 0.9);
+        }
+      }
+      return true;
+    }
+    if (down) startLiveNote(tr, pitch, 0.85);
+    else stopLiveNote(tr, pitch);
+    return true;
+  }
+
 
   function trigRollNote(track, dest, t, pitch, dur, vel) {
     vel = Math.max(0.05, Math.min(1, vel || 0.8));
@@ -2767,6 +2999,29 @@
     tap.addEventListener("click", tapTempo);
     top.appendChild(tap);
 
+    midiLabel = el("div", "daw-pos", "Keys A–L");
+    midiLabel.setAttribute("aria-label", "MIDI status");
+    top.appendChild(midiLabel);
+    var oct = el("button", "daw-btn", "Oct " + midiOctave);
+    oct.type = "button";
+    oct.setAttribute("aria-label", "Keyboard octave");
+    oct.addEventListener("click", function () {
+      midiOctave = (midiOctave + 1) % 6;
+      oct.textContent = "Oct " + midiOctave;
+    });
+    top.appendChild(oct);
+    var learn = el("button", "daw-btn", "Learn");
+    learn.type = "button";
+    learn.setAttribute("aria-label", "MIDI learn");
+    learn.addEventListener("click", function () {
+      var tr = selectedTrack();
+      midiLearn = tr && (tr.kind === "drums" || tr.kind === "perc") ? "pad" : "cutoff";
+      learn.classList.add("on");
+      setMidiLabel(midiLearn === "pad" ? "Learn pad: hit MIDI key" : "Learn: move CC for cutoff");
+      window.setTimeout(function () { learn.classList.remove("on"); }, 4000);
+    });
+    top.appendChild(learn);
+
     var tsLab = el("label", "daw-ctl");
     tsLab.appendChild(document.createTextNode("Sig"));
     var ts = document.createElement("select");
@@ -3293,10 +3548,29 @@
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
       var typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
-      if (!typing && e.code === "Space") {
+      if (typing) return;
+      if (e.code === "Space") {
         e.preventDefault();
         if (state.playing) stopTransport();
         else startTransport();
+        return;
+      }
+      if (e.code === "KeyZ" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        midiOctave = Math.max(0, midiOctave - 1);
+        setMidiLabel("Oct " + midiOctave);
+        return;
+      }
+      if (e.code === "KeyX" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        midiOctave = Math.min(5, midiOctave + 1);
+        setMidiLabel("Oct " + midiOctave);
+        return;
+      }
+      if (keysHeld[e.code]) return;
+      if (handlePianoKey(e.code, true)) {
+        keysHeld[e.code] = true;
+        e.preventDefault();
         return;
       }
       if (e.key !== "Backspace" && e.key !== "Delete") return;
@@ -3305,14 +3579,20 @@
         return;
       }
       if (!state.selectedArrange) return;
-      var tag = (e.target && e.target.tagName) || "";
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       state.arrangeClips = state.arrangeClips.filter(function (c) {
         return c.id !== state.selectedArrange;
       });
       state.selectedArrange = null;
       paintArrange();
     });
+    document.addEventListener("keyup", function (e) {
+      var tag = (e.target && e.target.tagName) || "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (!keysHeld[e.code]) return;
+      delete keysHeld[e.code];
+      handlePianoKey(e.code, false);
+    });
+    hookMidi();
 
     music.insertBefore(root, music.firstChild);
     paint();
