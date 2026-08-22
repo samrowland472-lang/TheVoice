@@ -361,30 +361,40 @@ function trigSnare(t, vel, dest) {
 }
 
 function trigHat(t, vel, dest) {
-  trigHatKind(t, vel, dest, false);
+  chokeGroup(1, t, 'hihat');
+  return trigHatKind(t, vel, dest, false);
 }
 
 function trigOpenHat(t, vel, dest) {
-  trigHatKind(t, vel, dest, true);
+  chokeGroup(1, t, 'ohat');
+  return trigHatKind(t, vel, dest, true);
 }
 
-const hatVoices = [];
+const padVoices = {};
 
-function chokeHats(t) {
-  hatVoices.forEach((g) => {
-    try {
-      g.gain.cancelScheduledValues(t);
-      g.gain.setTargetAtTime(0.0008, t, 0.006);
-    } catch (_) {}
+function chokeGroup(group, t, exceptId) {
+  if (!group) return;
+  PADS.forEach((p) => {
+    if (p.choke !== group || p.id === exceptId) return;
+    (padVoices[p.id] || []).forEach((g) => {
+      try {
+        g.gain.cancelScheduledValues(t);
+        g.gain.setTargetAtTime(0.0008, t, 0.008);
+      } catch (_) {}
+    });
+    padVoices[p.id] = [];
   });
-  hatVoices.length = 0;
+}
+
+function rememberVoice(id, g) {
+  if (!g) return;
+  (padVoices[id] = padVoices[id] || []).push(g);
 }
 
 function trigHatKind(t, vel, dest, open) {
   const a = audio();
-  if (!a) return;
+  if (!a) return null;
   dest = dest || mix.hihat.input;
-  chokeHats(t);
   const { ctx } = a;
   const n = ctx.createBufferSource();
   const dur = open ? 0.5 : 0.12;
@@ -399,7 +409,112 @@ function trigHatKind(t, vel, dest, open) {
   const g = envGain(dest, t, vel * (open ? 0.5 : 0.55), 0.001, decay * 0.3, 0.12, decay, 0.02);
   n.connect(f); f.connect(g);
   n.start(t); n.stop(t + dur);
-  hatVoices.push(g);
+  rememberVoice(open ? 'ohat' : 'hihat', g);
+  return g;
+}
+
+function trigTom(t, vel, dest, freq) {
+  const { ctx } = audio();
+  dest = dest || mix.snare.input;
+  const osc = ctx.createOscillator();
+  const g = envGain(dest, t, vel * 0.72, 0.001, 0.09, 0.22, 0.2, 0.14);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.52, t + 0.14);
+  osc.connect(g);
+  osc.start(t); osc.stop(t + 0.45);
+  return g;
+}
+
+function trigRim(t, vel, dest) {
+  dest = dest || mix.snare.input;
+  const { ctx } = audio();
+  const osc = ctx.createOscillator();
+  const g = envGain(dest, t, vel * 0.55, 0.001, 0.012, 0.02, 0.03, 0.02);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(980, t);
+  osc.frequency.exponentialRampToValueAtTime(420, t + 0.03);
+  osc.connect(g);
+  osc.start(t); osc.stop(t + 0.06);
+  trigNoise(dest, t, vel * 0.2, 2400, 0.03, 0.06);
+  return g;
+}
+
+function trigCow(t, vel, dest) {
+  dest = dest || mix.clap.input;
+  const { ctx } = audio();
+  const o1 = ctx.createOscillator();
+  const o2 = ctx.createOscillator();
+  const g = envGain(dest, t, vel * 0.4, 0.001, 0.05, 0.15, 0.12, 0.08);
+  o1.type = 'square'; o2.type = 'square';
+  o1.frequency.value = 540;
+  o2.frequency.value = 800;
+  o1.connect(g); o2.connect(g);
+  o1.start(t); o2.start(t);
+  o1.stop(t + 0.22); o2.stop(t + 0.22);
+  return g;
+}
+
+function trigShaker(t, vel, dest) {
+  dest = dest || mix.hihat.input;
+  const { ctx } = audio();
+  const n = ctx.createBufferSource();
+  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.12), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  n.buffer = buf;
+  const f = ctx.createBiquadFilter();
+  f.type = 'bandpass';
+  f.frequency.value = 6500;
+  f.Q.value = 1.4;
+  const g = envGain(dest, t, vel * 0.45, 0.001, 0.03, 0.08, 0.05, 0.02);
+  n.connect(f); f.connect(g);
+  n.start(t); n.stop(t + 0.12);
+  return g;
+}
+
+function trigCym(t, vel, dest, hp, decay) {
+  dest = dest || mix.hihat.input;
+  const { ctx } = audio();
+  const n = ctx.createBufferSource();
+  const dur = Math.max(0.3, decay + 0.2);
+  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  n.buffer = buf;
+  const f = ctx.createBiquadFilter();
+  f.type = 'highpass';
+  f.frequency.value = hp;
+  const g = envGain(dest, t, vel * 0.48, 0.002, decay * 0.25, 0.2, decay, 0.04);
+  n.connect(f); f.connect(g);
+  n.start(t); n.stop(t + dur);
+  return g;
+}
+
+function trigKick2(t, vel, dest) {
+  dest = dest || mix.kick.input;
+  const { ctx } = audio();
+  const osc = ctx.createOscillator();
+  const g = envGain(dest, t, vel * 0.9, 0.001, 0.12, 0.25, 0.28, 0.16);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(90, t);
+  osc.frequency.exponentialRampToValueAtTime(32, t + 0.12);
+  osc.connect(g);
+  osc.start(t); osc.stop(t + 0.5);
+  return g;
+}
+
+function trigFx(t, vel, dest) {
+  dest = dest || mix.clap.input;
+  const { ctx } = audio();
+  const osc = ctx.createOscillator();
+  const g = envGain(dest, t, vel * 0.35, 0.001, 0.08, 0.1, 0.18, 0.1);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(420, t);
+  osc.frequency.exponentialRampToValueAtTime(80, t + 0.2);
+  osc.connect(g);
+  osc.start(t); osc.stop(t + 0.28);
+  return g;
 }
 
 function trigPerc(t, vel, dest) {
@@ -1685,13 +1800,57 @@ const KEY_MAP = { a: 60, w: 61, s: 62, e: 63, d: 64, f: 65, t: 66, g: 67, y: 68,
 const held = new Map();
 
 const PADS = [
-  { id: 'kick', name: 'Kick', key: '1', color: '#ff6b4a' },
-  { id: 'snare', name: 'Snare', key: '2', color: '#ffb238' },
-  { id: 'hihat', name: 'CH', key: '3', color: '#f0e27a' },
-  { id: 'ohat', name: 'OH', key: '4', color: '#e8d48a' },
-  { id: 'clap', name: 'Clap', key: '5', color: '#f0abfc' },
-  { id: 'perc', name: 'Perc', key: '6', color: '#7dff9a' },
+  { id: 'crash', name: 'Crash', key: 'q', color: '#b794f4', choke: 3, dest: 'hihat', kind: 'crash' },
+  { id: 'ride', name: 'Ride', key: 'w', color: '#d6bcfa', choke: 3, dest: 'hihat', kind: 'ride' },
+  { id: 'tomh', name: 'Tom H', key: 'e', color: '#63b3ed', choke: 2, dest: 'snare', kind: 'tomh' },
+  { id: 'clap', name: 'Clap', key: 'r', color: '#f0abfc', choke: 0, dest: 'clap', kind: 'clap' },
+  { id: 'ohat', name: 'OH', key: 'a', color: '#e8d48a', choke: 1, dest: 'hihat', kind: 'oh' },
+  { id: 'hihat', name: 'CH', key: 's', color: '#f0e27a', choke: 1, dest: 'hihat', kind: 'ch' },
+  { id: 'tomm', name: 'Tom M', key: 'd', color: '#4299e1', choke: 2, dest: 'snare', kind: 'tomm' },
+  { id: 'snare', name: 'Snare', key: 'f', color: '#ffb238', choke: 0, dest: 'snare', kind: 'snare' },
+  { id: 'shaker', name: 'Shaker', key: 'z', color: '#c8c070', choke: 1, dest: 'hihat', kind: 'shaker' },
+  { id: 'perc', name: 'Perc', key: 'x', color: '#7dff9a', choke: 0, dest: 'clap', kind: 'perc' },
+  { id: 'toml', name: 'Tom L', key: 'c', color: '#3182ce', choke: 2, dest: 'snare', kind: 'toml' },
+  { id: 'rim', name: 'Rim', key: 'v', color: '#e09a20', choke: 0, dest: 'snare', kind: 'rim' },
+  { id: 'kick', name: 'Kick', key: '1', color: '#ff6b4a', choke: 0, dest: 'kick', kind: 'kick' },
+  { id: 'kick2', name: 'Sub', key: '2', color: '#d94a32', choke: 0, dest: 'kick', kind: 'kick2' },
+  { id: 'cow', name: 'Cow', key: '3', color: '#9ae6b4', choke: 0, dest: 'clap', kind: 'cow' },
+  { id: 'fx', name: 'FX', key: '4', color: '#3fc6ff', choke: 0, dest: 'clap', kind: 'fx' },
 ];
+
+function destForPad(pad) {
+  return (mix[pad.dest] && mix[pad.dest].input) || mix.kick.input;
+}
+
+function trigKind(kind, t, vel, dest) {
+  switch (kind) {
+    case 'kick': trigKick(t, vel, dest); return null;
+    case 'kick2': return trigKick2(t, vel, dest);
+    case 'snare': trigSnare(t, vel, dest); return null;
+    case 'rim': return trigRim(t, vel, dest);
+    case 'ch': return trigHat(t, vel, dest);
+    case 'oh': return trigOpenHat(t, vel, dest);
+    case 'shaker': return trigShaker(t, vel, dest);
+    case 'clap': trigClap(t, vel, dest); return null;
+    case 'perc': trigPerc(t, vel, dest); return null;
+    case 'cow': return trigCow(t, vel, dest);
+    case 'tomh': return trigTom(t, vel, dest, 320);
+    case 'tomm': return trigTom(t, vel, dest, 210);
+    case 'toml': return trigTom(t, vel, dest, 140);
+    case 'ride': return trigCym(t, vel, dest, 4800, 0.55);
+    case 'crash': return trigCym(t, vel, dest, 3200, 0.85);
+    case 'fx': return trigFx(t, vel, dest);
+    default: return null;
+  }
+}
+
+function firePad(pad, t, vel) {
+  if (!pad) return;
+  const dest = destForPad(pad);
+  chokeGroup(pad.choke, t, pad.id);
+  const g = trigKind(pad.kind, t, vel, dest);
+  rememberVoice(pad.id, g);
+}
 
 function hitPad(id) {
   ensureMix();
@@ -1699,12 +1858,7 @@ function hitPad(id) {
   if (!a || !mix.kick) return;
   if (a.ctx.state === 'suspended') a.ctx.resume();
   const t = a.ctx.currentTime;
-  if (id === 'kick') trigKick(t, 0.95);
-  else if (id === 'snare') trigSnare(t, 0.95);
-  else if (id === 'hihat') trigHat(t, 0.95);
-  else if (id === 'ohat') trigOpenHat(t, 0.95);
-  else if (id === 'clap') trigClap(t, 0.95);
-  else if (id === 'perc') trigPerc(t, 0.95);
+  firePad(PADS.find((p) => p.id === id), t, 0.95);
   const el = document.querySelector(`[data-pad="${id}"]`);
   if (el) {
     el.classList.remove('hit');
@@ -1715,17 +1869,30 @@ function hitPad(id) {
 
 function paintPads() {
   const root = document.getElementById('abl-pads');
-  if (!root || root.dataset.ready) return;
-  root.dataset.ready = '1';
+  if (!root || root.dataset.ready === '16') return;
+  root.dataset.ready = '16';
   root.innerHTML = PADS.map((p) =>
-    `<button type="button" class="abl-pad" data-pad="${p.id}" style="--pad:${p.color}" aria-label="${p.name} pad">
-      <b>${p.name}</b><span>${p.key}</span>
+    `<button type="button" class="abl-pad" data-pad="${p.id}" style="--pad:${p.color}" aria-label="${p.name} pad. Choke group ${p.choke || 'off'}.">
+      <b>${p.name}</b><span>${p.key} <i data-choke="${p.id}">${p.choke ? 'G' + p.choke : '—'}</i></span>
     </button>`
   ).join('');
   root.querySelectorAll('[data-pad]').forEach((btn) => {
     btn.addEventListener('pointerdown', (ev) => {
+      if (ev.target && ev.target.dataset.choke) return;
       ev.preventDefault();
       hitPad(btn.dataset.pad);
+    });
+  });
+  root.querySelectorAll('[data-choke]').forEach((badge) => {
+    badge.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const pad = PADS.find((p) => p.id === badge.dataset.choke);
+      if (!pad) return;
+      pad.choke = (pad.choke + 1) % 5;
+      badge.textContent = pad.choke ? 'G' + pad.choke : '—';
+      const btn = badge.closest('[data-pad]');
+      if (btn) btn.setAttribute('aria-label', `${pad.name} pad. Choke group ${pad.choke || 'off'}.`);
     });
   });
 }
@@ -1742,11 +1909,13 @@ function bindKeys() {
       togglePlay();
       return;
     }
-    if (detail === 'drums' && /^[1-6]$/.test(ev.key)) {
-      ev.preventDefault();
-      const pad = PADS.find((p) => p.key === ev.key);
-      if (pad) hitPad(pad.id);
-      return;
+    if (detail === 'drums') {
+      const pad = PADS.find((p) => p.key === ev.key.toLowerCase() || p.key === ev.key);
+      if (pad) {
+        ev.preventDefault();
+        hitPad(pad.id);
+        return;
+      }
     }
     if (ev.code === 'Tab') {
       ev.preventDefault();
