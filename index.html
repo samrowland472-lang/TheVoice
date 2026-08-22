@@ -2254,6 +2254,7 @@ input:focus-visible,
             Record
           </button>
           <button id="studio-import-btn" class="btn">Import audio…</button>
+          <button id="studio-punch-btn" class="btn" type="button" disabled>Punch in</button>
           <span class="record-timer" id="record-timer">00:00</span>
         </div>
         <p class="hint hint-info">Or drop an audio file anywhere on this panel.</p>
@@ -8663,6 +8664,8 @@ function wireStudioEdit() {
 wireStudioEdit();
 
 function renderStudioTakes() {
+  const punchBtn = document.getElementById('studio-punch-btn');
+  if (punchBtn) punchBtn.disabled = !studioTakes.length || isRecording;
   const ul = document.getElementById('studio-takes');
   if (!ul) return;
   ul.replaceChildren();
@@ -8720,6 +8723,125 @@ function patchActiveTake(fields) {
   if (!take) return;
   Object.assign(take, fields);
   renderStudioTakes();
+}
+
+let studioPunching = false;
+let studioPunchWatch = 0;
+
+async function resampleBuffer(buf, sr) {
+  if (buf.sampleRate === sr) return buf;
+  const frames = Math.max(1, Math.ceil(buf.duration * sr));
+  const off = new OfflineAudioContext(1, frames, sr);
+  const src = off.createBufferSource();
+  src.buffer = buf;
+  src.connect(off.destination);
+  src.start();
+  return off.startRendering();
+}
+
+async function splicePunch(punchBlob) {
+  const orig = await decodeToAudioBuffer(recordingBlob);
+  let punch = await decodeToAudioBuffer(punchBlob);
+  punch = await resampleBuffer(punch, orig.sampleRate);
+  const o = orig.getChannelData(0);
+  const p = punch.getChannelData(0);
+  const a = Math.max(0, Math.min(o.length - 1, Math.floor(studioInN * o.length)));
+  let b = Math.max(a + 1, Math.floor(studioOutN * o.length));
+  b = Math.min(o.length, b);
+  const keepTail = o.subarray(b);
+  const outLen = a + p.length + keepTail.length;
+  const ctx3 = new OfflineAudioContext(1, outLen, orig.sampleRate);
+  const sliced = ctx3.createBuffer(1, outLen, orig.sampleRate);
+  const d = sliced.getChannelData(0);
+  d.set(o.subarray(0, a), 0);
+  d.set(p, a);
+  d.set(keepTail, a + p.length);
+  const wav = encodeWav16(d, orig.sampleRate);
+  recordingBlob = wav;
+  originalRecordingBlob = wav;
+  recordingExt = 'wav';
+  playbackAudio.src = URL.createObjectURL(wav);
+  playbackAudio.volume = 1;
+  patchActiveTake({ blob: wav, source: wav, ext: 'wav', durationSec: outLen / orig.sampleRate });
+  updateCloneAvailability();
+  await studioLoadWave(wav);
+  micHint.textContent = 'Punch applied — ' + (p.length / orig.sampleRate).toFixed(2) + 's dropped in.';
+}
+
+async function finishStudioPunch() {
+  if (!studioPunching) return;
+  studioPunching = false;
+  if (studioPunchWatch) cancelAnimationFrame(studioPunchWatch);
+  studioPunchWatch = 0;
+  try { playbackAudio.pause(); } catch (e) {}
+  playbackAudio.volume = 1;
+  const blob = await recorder.stop();
+  isRecording = false;
+  recordBtn.classList.remove('recording');
+  recordBtn.lastChild.textContent = ' Record';
+  clearInterval(recordTimerInterval);
+  currentAnalyser = null;
+  if (analysisRafId) { cancelAnimationFrame(analysisRafId); analysisRafId = null; }
+  resetReadouts();
+  if (blob && blob.size > 0) {
+    try { await splicePunch(blob); }
+    catch (err) { micHint.textContent = 'Punch failed.'; }
+  }
+  renderStudioTakes();
+}
+
+async function startStudioPunch() {
+  if (!recordingBlob || isRecording || studioPunching) {
+    micHint.textContent = 'Record a take first, then Punch in.';
+    return;
+  }
+  if (studioOutN - studioInN < 0.02) {
+    micHint.textContent = 'Widen In/Out on the waveform before punching.';
+    return;
+  }
+  try {
+    await recorder.start({
+      onTranscript: (text) => (transcriptBox.value = text),
+      onAnalyser: (analyser, sampleRate) => {
+        currentAnalyser = analyser;
+        currentSampleRate = sampleRate;
+        freqBytesBuf = new Uint8Array(analyser.frequencyBinCount);
+        floatTimeBuf = new Float32Array(analyser.fftSize);
+        if (!analysisRafId) analysisLoop();
+      },
+    });
+  } catch (err) {
+    micHint.textContent = describeMicError(err);
+    return;
+  }
+  studioPunching = true;
+  isRecording = true;
+  recordBtn.classList.add('recording');
+  recordBtn.lastChild.textContent = ' Stop punch';
+  recordSeconds = 0;
+  recordTimer.textContent = '00:00';
+  recordTimerInterval = setInterval(() => {
+    recordSeconds += 1;
+    recordTimer.textContent = formatTime(recordSeconds);
+  }, 1000);
+  const dur = playbackAudio.duration || (currentTake() && currentTake().durationSec) || 0;
+  const inT = studioInN * dur;
+  const outT = studioOutN * dur;
+  try {
+    playbackAudio.volume = 0.35;
+    playbackAudio.currentTime = inT;
+    await playbackAudio.play();
+  } catch (e) {}
+  micHint.textContent = 'Punching from In — Stop or wait for Out.';
+  const watch = () => {
+    if (!studioPunching) return;
+    if (playbackAudio.currentTime >= outT - 0.02 || playbackAudio.ended) {
+      finishStudioPunch();
+      return;
+    }
+    studioPunchWatch = requestAnimationFrame(watch);
+  };
+  watch();
 }
 
 
@@ -9348,6 +9470,10 @@ recordBtn.addEventListener('click', async () => {
       analysisRafId = null;
     }
     resetReadouts();
+    if (studioPunching) {
+      await finishStudioPunch();
+      return;
+    }
     const blob = await recorder.stop();
     if (blob && blob.size > 0) {
       recordingExt = blob.type.includes('ogg') ? 'ogg' : 'webm';
@@ -9363,6 +9489,14 @@ recordBtn.addEventListener('click', async () => {
     }
   }
 });
+
+const studioPunchBtn = document.getElementById('studio-punch-btn');
+if (studioPunchBtn) {
+  studioPunchBtn.addEventListener('click', () => {
+    if (studioPunching) finishStudioPunch();
+    else startStudioPunch();
+  });
+}
 
 useTranscriptBtn.addEventListener('click', () => {
   if (transcriptBox.value.trim()) {
