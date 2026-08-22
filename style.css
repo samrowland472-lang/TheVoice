@@ -3456,3 +3456,72 @@ html[data-avenue="music"] .shell.is-daw .main-area,
 @media (max-width: 720px) {
   .abl-pads { grid-template-columns: repeat(3, 1fr); }
 }
+
+.dj-desk {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 200px minmax(0, 1fr);
+  gap: 6px;
+  overflow: hidden;
+}
+.dj-desk .dj-deck {
+  min-height: 0;
+  overflow: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+.dj-mixer {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 0;
+  overflow: auto;
+  background: #0c1210;
+  border: 1px solid var(--border);
+  padding: 6px 4px;
+}
+.dj-mix-side {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  align-items: flex-end;
+}
+.dj-mixer .dj-eq {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 0;
+  flex: 1;
+}
+.dj-mixer .dj-eq-col input[type="range"] { height: min(12vh, 72px); }
+.dj-kill { padding: 2px 5px; min-width: 22px; }
+.dj-filter, .dj-ch-fader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.06em;
+}
+.dj-ch-fader input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  height: min(14vh, 88px);
+  width: 18px;
+  accent-color: var(--phosphor);
+}
+.dj-filter input { width: 72px; }
+.dj-mixer .dj-xf { padding: 4px 2px; width: 100%; }
+.dj-top { flex: none; gap: 8px; }
+.dj-transport { flex-wrap: wrap; gap: 4px; }
+.dj-transport .btn { padding: 4px 7px; font-size: 0.62rem; }
+@media (max-width: 960px) {
+  .dj-desk { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+  .dj-mixer { flex-direction: row; flex-wrap: wrap; }
+}

@@ -732,21 +732,34 @@ function deckHtml(d) {
     </div>
     <div class="dj-pads">${cues}</div>
     <div class="dj-loops"><span>Loop</span>${loops}<button type="button" class="btn" data-act="loop-off" data-deck="${d.id}">Off</button></div>
-    <div class="dj-eq">
+  </section>`;
+}
+
+function mixerHtml() {
+  const eq = (d) => `
+    <div class="dj-eq" data-eq-deck="${d.id}">
       ${['high', 'mid', 'low'].map((band) => `
         <div class="dj-eq-col">
-          <button type="button" class="dj-kill${d.kill[band] ? ' on' : ''}" data-act="kill" data-deck="${d.id}" data-band="${band}">${band.toUpperCase()} KILL</button>
-          <input type="range" min="-24" max="12" step="0.5" value="${d.eq[band]}" data-eq="${band}" data-deck="${d.id}" orient="vertical">
-          <span>${d.eq[band].toFixed(1)}</span>
+          <button type="button" class="dj-kill${d.kill[band] ? ' on' : ''}" data-act="kill" data-deck="${d.id}" data-band="${band}">${band[0].toUpperCase()}</button>
+          <input type="range" min="-24" max="12" step="0.5" value="${d.eq[band]}" data-eq="${band}" data-deck="${d.id}" orient="vertical" aria-label="${d.name} ${band}">
         </div>`).join('')}
-      <div class="dj-eq-col">
-        <span>FILTER</span>
-        <input type="range" min="0" max="1" step="0.01" value="${d.filter}" data-act="filter" data-deck="${d.id}">
-        <span>GAIN</span>
-        <input type="range" min="0" max="1" step="0.01" value="${d.gain}" data-act="gain" data-deck="${d.id}">
-      </div>
     </div>
-  </section>`;
+    <label class="dj-filter">FLT
+      <input type="range" min="0" max="1" step="0.01" value="${d.filter}" data-act="filter" data-deck="${d.id}" aria-label="${d.name} filter">
+    </label>
+    <label class="dj-ch-fader">${d.id.toUpperCase()}
+      <input type="range" min="0" max="1" step="0.01" value="${d.gain}" data-act="gain" data-deck="${d.id}" orient="vertical" aria-label="${d.name} channel fader">
+    </label>`;
+  return `
+    <aside class="dj-mixer" aria-label="Mixer">
+      <div class="dj-mix-side">${eq(decks.a)}</div>
+      <div class="dj-xf">
+        <span>A</span>
+        <input type="range" id="dj-xfader" min="0" max="1" step="0.001" value="${xfader}" aria-label="Crossfader">
+        <span>B</span>
+      </div>
+      <div class="dj-mix-side">${eq(decks.b)}</div>
+    </aside>`;
 }
 
 function paintDecks() {
@@ -763,14 +776,10 @@ function paintDecks() {
         <button type="button" class="btn" id="dj-rec">${recorder && recorder.state === 'recording' ? 'Stop rec' : 'Record mix'}</button>
         <span class="hint hint-info" id="dj-hw">${hw}</span>
       </div>
-      <div class="dj-decks">
+      <div class="dj-desk">
         ${deckHtml(decks.a)}
+        ${mixerHtml()}
         ${deckHtml(decks.b)}
-      </div>
-      <div class="dj-xf">
-        <span>A</span>
-        <input type="range" id="dj-xfader" min="0" max="1" step="0.001" value="${xfader}">
-        <span>B</span>
       </div>
     </div>
     <input type="file" id="dj-file" accept="audio/*" hidden>
