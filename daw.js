@@ -1,3 +1,4 @@
+import { initStudio, showStudio, studioPlay, studioStop } from './daw-studio.js';
 // The Voice DAW — Produce (session clips) + DJ Live (rekordbox-class decks).
 // Web Audio actually sounds. MIDI / audio interfaces are detected live.
 // Does not touch Animate. Existing sequencer in Music stays intact.
@@ -111,6 +112,7 @@ export function setDawMode(next) {
   const music = document.getElementById('music-view');
   if (music) music.classList.toggle('is-dj', mode === 'dj');
   if (mode === 'dj') paintDecks();
+  else showStudio();
 }
 
 function floatToBuffer(samples, sr) {
@@ -838,8 +840,11 @@ function tickWaves() {
 export function initDaw(options) {
   opts = options || {};
   ensureSession();
-  paintSession();
   paintDecks();
+  initStudio(opts, () => {
+    ensureCtx();
+    return { ctx, master, recDest };
+  });
   setDawMode('produce');
   document.querySelectorAll('.daw-mode').forEach((btn) => {
     btn.addEventListener('click', () => setDawMode(btn.dataset.dawMode));
@@ -847,8 +852,12 @@ export function initDaw(options) {
   hookMidi();
   if (!deckPaint) tickWaves();
   window.TheVoiceDAW = {
-    play: () => togglePlay(decks.a),
-    stop: () => { pauseDeck(decks.a); pauseDeck(decks.b); for (let t = 0; t < SESSION_TRACKS; t++) stopClip(t); },
+    play: () => { if (mode === 'dj') togglePlay(decks.a); else studioPlay(); },
+    stop: () => {
+      studioStop();
+      pauseDeck(decks.a); pauseDeck(decks.b);
+      for (let t = 0; t < SESSION_TRACKS; t++) stopClip(t);
+    },
     setBpm,
     xfade: (v) => { xfader = Math.max(0, Math.min(1, v)); applyXfade(); },
     view: setDawMode,
@@ -857,6 +866,6 @@ export function initDaw(options) {
 }
 
 export function showDaw() {
-  if (mode === 'produce') paintSession();
+  if (mode === 'produce') showStudio();
   else paintDecks();
 }

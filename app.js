@@ -189,6 +189,8 @@ function switchSection(section) {
   if (section === 'plans') renderPlans();
   if (section === 'modulate') refreshModSource();
   if (section === 'animate') animOnShow();
+  const shell = document.getElementById('app-shell');
+  if (shell) shell.classList.toggle('is-daw', section === 'music' || section === 'dj');
   if (section === 'music') { musicOnShow(); setDawMode('produce'); }
   if (section === 'dj') { musicOnShow(); setDawMode('dj'); }
   if (section === 'project') projectOnShow();

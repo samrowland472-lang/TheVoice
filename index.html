@@ -574,51 +574,48 @@
   </div>
 
   <div id="music-view" hidden data-drop-zone>
-    <div class="daw-head">
-      <div>
-        <label class="field-label">Music</label>
-        <p class="hint hint-info" style="margin-top:4px;">Produce clips in Session, or take a live set on two DJ decks. Any class-compliant MIDI controller or audio interface is detected automatically.</p>
-      </div>
+    <div class="daw-head abl-head">
       <div class="daw-modes" role="tablist" aria-label="Music mode">
-        <button type="button" class="daw-mode active" data-daw-mode="produce" role="tab" aria-selected="true">Produce</button>
+        <button type="button" class="daw-mode active" data-daw-mode="produce" role="tab" aria-selected="true">Session</button>
         <button type="button" class="daw-mode" data-daw-mode="dj" role="tab" aria-selected="false">DJ Live</button>
       </div>
+      <div id="abl-transport" class="abl-transport"></div>
     </div>
-    <div id="daw-produce" class="daw-pane">
-
-    <div class="music-controls">
-      <div class="control-item">
-        <label for="music-preset">Starting pattern</label>
-        <select id="music-preset"></select>
-      </div>
-      <div class="control-item">
-        <label for="music-bpm">Tempo <span id="music-bpm-value">96 bpm</span></label>
-        <input type="range" id="music-bpm" min="60" max="180" step="1" value="96">
-      </div>
-      <div class="control-item">
-        <label for="music-swing">Swing <span id="music-swing-value">0</span></label>
-        <input type="range" id="music-swing" min="0" max="0.8" step="0.05" value="0">
-      </div>
-      <div class="control-item">
-        <label for="music-bars">Bars <span id="music-bars-value">2</span></label>
-        <input type="range" id="music-bars" min="1" max="8" step="1" value="2">
-      </div>
-    </div>
-
-    <div class="sequencer" id="sequencer" role="group" aria-label="Drum sequencer"></div>
-
-    <div class="control-row buttons-row">
-      <button id="music-play-btn" class="btn btn-primary">Render &amp; play</button>
-      <button id="music-voice-btn" class="btn">Layer voice over it</button>
-      <button id="music-import-btn" class="btn">Import audio…</button>
-      <button id="music-clear-btn" class="btn">Clear</button>
-      <button id="music-download-btn" class="btn" disabled>Download</button>
-    </div>
-
-    <p class="hint" id="music-hint" role="status" aria-live="polite"></p>
-    <audio id="music-audio" controls hidden></audio>
-
-    <div class="songcraft">
+    <div id="daw-produce" class="daw-pane daw-studio">
+    <div class="abl-body">
+      <aside class="abl-browser" id="abl-browser"></aside>
+      <div class="abl-stage">
+        <div id="daw-session" class="daw-session"></div>
+        <div class="abl-detail">
+          <div class="abl-detail-tabs" role="tablist">
+            <button type="button" class="active" data-detail="drums">Drum Rack</button>
+            <button type="button" data-detail="keys">Piano Roll</button>
+            <button type="button" data-detail="writer">Writer</button>
+          </div>
+          <div id="abl-drums">
+            <div class="abl-legacy-inline">
+              <select id="music-preset" aria-label="Clip preset"></select>
+              <label class="abl-hidden-label">Tempo <span id="music-bpm-value">96 bpm</span>
+                <input type="range" id="music-bpm" min="60" max="180" step="1" value="96">
+              </label>
+              <label>Swing <span id="music-swing-value">0</span>
+                <input type="range" id="music-swing" min="0" max="0.8" step="0.05" value="0">
+              </label>
+              <span hidden><span id="music-bars-value">2</span>
+                <input type="range" id="music-bars" min="1" max="8" step="1" value="2">
+              </span>
+            </div>
+            <div class="sequencer" id="sequencer" role="group" aria-label="Drum rack"></div>
+          </div>
+          <div id="abl-keys" hidden>
+            <div class="abl-roll-wrap">
+              <div id="abl-playhead" class="abl-playhead"></div>
+              <canvas id="abl-roll" width="640" height="220" aria-label="Piano roll. Click to draw notes, right-click to delete, A to K plays."></canvas>
+            </div>
+            <p class="hint hint-info">Draw notes on the grid. A–K is a two-octave keyboard. Rec writes what you play into the clip.</p>
+          </div>
+          <div id="abl-writer" hidden>
+            <div class="songcraft">
       <h3 class="field-label" style="margin-bottom:10px;">Songwriting</h3>
       <div class="music-controls">
         <div class="control-item">
@@ -647,7 +644,20 @@
       <p class="hint hint-info">Counts are a spelling-based estimate, so unusual words may be a beat out.</p>
     </div>
 
-    <div id="daw-session" class="daw-session"></div>
+          </div>
+        </div>
+      </div>
+      <div class="abl-mixer" id="abl-mixer"></div>
+    </div>
+    <div class="abl-legacy" hidden>
+      <button id="music-play-btn" class="btn btn-primary">Render & play</button>
+      <button id="music-voice-btn" class="btn">Layer voice over it</button>
+      <button id="music-import-btn" class="btn">Import audio…</button>
+      <button id="music-clear-btn" class="btn">Clear</button>
+      <button id="music-download-btn" class="btn" disabled>Download</button>
+      <p class="hint" id="music-hint" role="status" aria-live="polite"></p>
+      <audio id="music-audio" controls hidden></audio>
+    </div>
     </div><!-- /daw-produce -->
 
     <div id="daw-live" class="daw-pane" hidden></div>
