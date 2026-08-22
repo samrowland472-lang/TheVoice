@@ -176,6 +176,8 @@
   var devicesEl = null;
   var browserEl = null;
   var libItems = [];
+  var liveEl = null;
+  var lastAnnouncedBar = -1;
   var meterRaf = 0;
   var timer = 0;
   var nextTime = 0;
@@ -430,9 +432,23 @@
     return peak;
   }
 
+  function dawOnScreen() {
+    var music = document.getElementById("music-view");
+    return !document.hidden && music && !music.hidden;
+  }
+
+  function stopMeters() {
+    if (meterRaf) window.cancelAnimationFrame(meterRaf);
+    meterRaf = 0;
+  }
+
   function startMeters() {
     if (meterRaf) return;
     function tick() {
+      if (!dawOnScreen()) {
+        meterRaf = 0;
+        return;
+      }
       meterRaf = window.requestAnimationFrame(tick);
       state.tracks.forEach(function (tr) {
         var g = trackGraph[tr.id];
@@ -1611,7 +1627,7 @@
       "#daw-session .daw-clip.sel{outline:2px solid #fff;outline-offset:1px}" +
       "#daw-session .daw-playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--alert,#ff4d4d);z-index:5;pointer-events:none;left:88px}" +
       "@media (prefers-reduced-motion: reduce){#daw-session .daw-playhead{transition:none}}" +
-      "#music-view.is-daw > *:not(#daw-session){display:none!important}" +"#music-view.is-daw{display:flex;flex-direction:column;flex:1;min-height:100%;padding:0;margin:0}" +"body.is-music-daw .main-area{max-width:none;padding:0;overflow:hidden}" +"body.is-music-daw .main-area .footer{display:none}" +"body.is-music-daw .sidebar{background:#070908;border-right-color:#1a2420}" +"#daw-session .daw-top{background:#070908;gap:6px;padding:6px 8px;border-bottom:1px solid #1c2a24;flex-wrap:wrap}" +"#daw-session .daw-brand{font-family:Chakra Petch,sans-serif;font-weight:700;font-size:13px;letter-spacing:.18em}" +"#daw-session .daw-btn{min-height:32px;min-width:32px;padding:4px 9px;border-radius:2px;font-family:Share Tech Mono,ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:#121816;border-color:#24332c}" +"#daw-session .daw-btn[data-play],#daw-session .daw-btn.stop,#daw-session .daw-btn.rec{min-height:36px;min-width:52px}" +"#daw-session select,#daw-session input[type=number]{min-height:32px;border-radius:2px;background:#050706}" +"#daw-session .daw-cell{min-height:44px;border-radius:2px;background:#101714;padding:6px 8px}" +"#daw-session .daw-cell.filled{background:color-mix(in srgb,var(--clip,#3fc6ff) 62%, #0a0d0c);color:#06170f;border-color:var(--clip,#3fc6ff);box-shadow:none;font-weight:600}" +"#daw-session .daw-cell.playing{outline:1px solid #fff;background:color-mix(in srgb,var(--clip,#3fc6ff) 82%, #fff)}" +"#daw-session .daw-scene{min-height:44px;border-radius:2px}" +"#daw-session .daw-strip,#daw-session .daw-dev{border-radius:2px;background:#101714}" +"#daw-session .daw-browser{background:#070908;padding:8px 6px;max-height:none}" +"#daw-session .daw-lib{border-radius:2px;background:#121816}" +"#daw-session .daw-mixer{background:#0c100e;padding:8px}" +"#daw-session .daw-devices{background:#0c100e}" +"#daw-session .daw-grid-wrap{padding:8px;background:#0a0d0c}" +"#daw-session .daw-fader{accent-color:#3fc6ff}" +"#daw-session .daw-hint,#daw-session .daw-roll-hint{color:#6a8076;font-size:11px}" +"@media (max-width:780px){#daw-session{grid-template-columns:1fr;min-height:auto}#daw-session .daw-browser{grid-row:auto;max-height:180px;border-right:0;border-bottom:1px solid #1c2a24}}";
+      "#music-view.is-daw > *:not(#daw-session){display:none!important}" +"#music-view.is-daw{display:flex;flex-direction:column;flex:1;min-height:100%;padding:0;margin:0}" +"body.is-music-daw .main-area{max-width:none;padding:0;overflow:hidden}" +"body.is-music-daw .main-area .footer{display:none}" +"body.is-music-daw .sidebar{background:#070908;border-right-color:#1a2420}" +"#daw-session .daw-top{background:#070908;gap:6px;padding:6px 8px;border-bottom:1px solid #1c2a24;flex-wrap:wrap}" +"#daw-session .daw-brand{font-family:Chakra Petch,sans-serif;font-weight:700;font-size:13px;letter-spacing:.18em}" +"#daw-session .daw-btn{min-height:32px;min-width:32px;padding:4px 9px;border-radius:2px;font-family:Share Tech Mono,ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:#121816;border-color:#24332c}" +"#daw-session .daw-btn[data-play],#daw-session .daw-btn.stop,#daw-session .daw-btn.rec{min-height:36px;min-width:52px}" +"#daw-session select,#daw-session input[type=number]{min-height:32px;border-radius:2px;background:#050706}" +"#daw-session .daw-cell{min-height:44px;border-radius:2px;background:#101714;padding:6px 8px}" +"#daw-session .daw-cell.filled{background:color-mix(in srgb,var(--clip,#3fc6ff) 62%, #0a0d0c);color:#06170f;border-color:var(--clip,#3fc6ff);box-shadow:none;font-weight:600}" +"#daw-session .daw-cell.playing{outline:1px solid #fff;background:color-mix(in srgb,var(--clip,#3fc6ff) 82%, #fff)}" +"#daw-session .daw-scene{min-height:44px;border-radius:2px}" +"#daw-session .daw-strip,#daw-session .daw-dev{border-radius:2px;background:#101714}" +"#daw-session .daw-browser{background:#070908;padding:8px 6px;max-height:none}" +"#daw-session .daw-lib{border-radius:2px;background:#121816}" +"#daw-session .daw-mixer{background:#0c100e;padding:8px}" +"#daw-session .daw-devices{background:#0c100e}" +"#daw-session .daw-grid-wrap{padding:8px;background:#0a0d0c}" +"#daw-session .daw-fader{accent-color:#3fc6ff}" +"#daw-session .daw-hint,#daw-session .daw-roll-hint{color:#6a8076;font-size:11px}" +"@media (max-width:780px){#daw-session{grid-template-columns:1fr;min-height:auto}#daw-session .daw-browser{grid-row:auto;max-height:180px;border-right:0;border-bottom:1px solid #1c2a24}}" +"#daw-session .daw-btn:focus-visible,#daw-session .daw-cell:focus-visible,#daw-session .daw-scene:focus-visible,#daw-session .daw-pad:focus-visible,#daw-session .daw-step:focus-visible,#daw-session .daw-lib:focus-visible,#daw-session .daw-key:focus-visible,#daw-session select:focus-visible,#daw-session input:focus-visible{outline:2px solid var(--phosphor,#3fc6ff);outline-offset:2px;z-index:6}" +"#daw-session .daw-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}" +"#daw-session .daw-help{padding:6px 10px;font-size:11px;color:#6a8076;border-top:1px solid #1c2a24;grid-column:1/-1;font-family:Share Tech Mono,ui-monospace,monospace}";
     document.head.appendChild(s);
   }
 
@@ -1627,6 +1643,13 @@
     var beat = (Math.floor(state.step / spBeat) % state.timeNum) + 1;
     var six = (state.step % spBeat) + 1;
     posEl.textContent = bar + "." + beat + "." + six;
+    posEl.setAttribute("aria-label", "Position " + bar + " " + beat + " " + six);
+    if (liveEl && bar !== lastAnnouncedBar) {
+      lastAnnouncedBar = bar;
+      liveEl.textContent = (state.playing ? "Playing " : "Stopped ") + "bar " + bar;
+    }
+    var playBtn = root && root.querySelector("[data-play]");
+    if (playBtn) playBtn.setAttribute("aria-pressed", state.playing ? "true" : "false");
     paintRackCursor();
   }
 
@@ -2695,14 +2718,33 @@
       strip.querySelectorAll("[data-act]").forEach(function (b) {
         var act = b.getAttribute("data-act");
         b.classList.toggle("on", !!tr[act]);
+        b.setAttribute("aria-pressed", tr[act] ? "true" : "false");
         if (act === "arm") b.classList.toggle("arm", !!tr.arm);
       });
     });
   }
 
+  function moveGridFocus(code) {
+    var active = document.activeElement;
+    if (!active || !gridEl || !gridEl.contains(active)) return false;
+    var tr = Number(active.dataset.tr);
+    var sc = Number(active.dataset.sc);
+    if (isNaN(tr) || isNaN(sc)) return false;
+    if (code === "ArrowLeft") sc -= 1;
+    if (code === "ArrowRight") sc += 1;
+    if (code === "ArrowUp") tr -= 1;
+    if (code === "ArrowDown") tr += 1;
+    if (tr < 0 || tr >= state.tracks.length || sc < 0 || sc >= SCENES) return true;
+    var next = gridEl.querySelector('[data-tr="' + tr + '"][data-sc="' + sc + '"]');
+    if (next) next.focus();
+    return true;
+  }
+
   function rebuildSessionGrid() {
     if (!gridEl) return;
     gridEl.replaceChildren();
+    gridEl.setAttribute("role", "grid");
+    gridEl.setAttribute("aria-label", "Session clip grid");
     gridEl.style.gridTemplateColumns = "88px repeat(" + SCENES + ", minmax(88px,1fr)) 64px";
     gridEl.appendChild(el("div", "daw-head", "Track"));
     for (var s = 0; s < SCENES; s++) gridEl.appendChild(el("div", "daw-head", "Scene " + (s + 1)));
@@ -2717,7 +2759,8 @@
           btn.type = "button";
           btn.dataset.tr = String(ti);
           btn.dataset.sc = String(scene);
-          btn.setAttribute("aria-label", track.name + " scene " + (scene + 1));
+          btn.setAttribute("role", "gridcell");
+          btn.setAttribute("aria-label", track.name + " scene " + (scene + 1) + (track.clips[scene] ? " " + track.clips[scene].name : " empty"));
           btn.addEventListener("click", function () { queueClip(track, scene); });
           btn.addEventListener("dblclick", function (ev) {
             ev.preventDefault();
@@ -2936,15 +2979,23 @@
     if (!music._dawObs) {
       music._dawObs = new MutationObserver(function () {
         document.body.classList.toggle("is-music-daw", !music.hidden);
+        if (music.hidden) stopMeters();
+        else startMeters();
       });
       music._dawObs.observe(music, { attributes: true, attributeFilter: ["hidden"] });
     }
+    document.addEventListener("visibilitychange", function () {
+      if (dawOnScreen()) startMeters();
+      else stopMeters();
+    });
 
     root = el("section", "");
     root.id = "daw-session";
     root.setAttribute("aria-label", "Session and arrangement");
 
     var top = el("div", "daw-top");
+    top.setAttribute("role", "toolbar");
+    top.setAttribute("aria-label", "Transport");
     top.appendChild(el("div", "daw-brand", "Live"));
     posEl = el("div", "daw-pos", "1.1.1");
     top.appendChild(posEl);
@@ -3131,6 +3182,10 @@
     top.appendChild(addRet);
 
     root.appendChild(top);
+    liveEl = el("div", "daw-live");
+    liveEl.setAttribute("aria-live", "polite");
+    liveEl.setAttribute("aria-atomic", "true");
+    root.appendChild(liveEl);
 
     browserEl = el("aside", "daw-browser");
     browserEl.setAttribute("aria-label", "Browser");
@@ -3262,7 +3317,8 @@
           btn.type = "button";
           btn.dataset.tr = String(ti);
           btn.dataset.sc = String(scene);
-          btn.setAttribute("aria-label", track.name + " scene " + (scene + 1));
+          btn.setAttribute("role", "gridcell");
+          btn.setAttribute("aria-label", track.name + " scene " + (scene + 1) + (track.clips[scene] ? " " + track.clips[scene].name : " empty"));
           btn.addEventListener("click", function () {
             queueClip(track, scene);
           });
@@ -3563,11 +3619,27 @@
     root.appendChild(devicesEl);
     paintDevices();
 
+    root.appendChild(el("div", "daw-help", "Arrows move the clip grid. Enter launches. Escape stops. Space plays unless a button is focused."));
+
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
       var typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
       if (typing) return;
+      if (e.code === "Escape") {
+        if (state.playing) {
+          e.preventDefault();
+          stopTransport();
+        }
+        return;
+      }
+      if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "ArrowUp" || e.code === "ArrowDown") {
+        if (moveGridFocus(e.code)) {
+          e.preventDefault();
+          return;
+        }
+      }
       if (e.code === "Space") {
+        if (tag === "BUTTON" || tag === "A") return;
         e.preventDefault();
         if (state.playing) stopTransport();
         else startTransport();
