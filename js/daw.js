@@ -358,11 +358,68 @@ function deckNow(d) {
 }
 
 function stopDeckAudio(d) {
+  if (d.lockTimer) {
+    clearTimeout(d.lockTimer);
+    d.lockTimer = 0;
+  }
+  if (d.grains) {
+    d.grains.forEach((g) => {
+      try { g.stop(); } catch (_) {}
+      try { g.disconnect(); } catch (_) {}
+    });
+    d.grains = [];
+  }
   if (d.src) {
     try { d.src.stop(); } catch (_) {}
     try { d.src.disconnect(); } catch (_) {}
     d.src = null;
   }
+}
+
+const GRAIN = 0.085;
+const GRAIN_FADE = 0.012;
+const GRAIN_HOP = 0.036;
+
+function scheduleGrain(d, when, offset) {
+  if (!d.buf || !d.nodes || offset >= d.buf.duration - 0.02) return;
+  const src = ctx.createBufferSource();
+  src.buffer = d.buf;
+  src.playbackRate.value = 1;
+  const g = ctx.createGain();
+  const dur = GRAIN;
+  g.gain.setValueAtTime(0, when);
+  g.gain.linearRampToValueAtTime(1, when + GRAIN_FADE);
+  g.gain.setValueAtTime(1, when + dur - GRAIN_FADE);
+  g.gain.linearRampToValueAtTime(0, when + dur);
+  src.connect(g);
+  g.connect(d.nodes.in);
+  src.start(when, Math.max(0, offset), dur);
+  d.grains = d.grains || [];
+  d.grains.push(src);
+  while (d.grains.length > 20) {
+    const old = d.grains.shift();
+    try { old.stop(); } catch (_) {}
+  }
+}
+
+function lockClock(d) {
+  if (!d.playing || !d.keylock || !ctx) return;
+  const look = 0.14;
+  while (d.lockNext < ctx.currentTime + look) {
+    const elapsed = (d.lockNext - d.t0) * (d.rate || 1);
+    let pos = d.off + elapsed;
+    if (d.loopOn && d.loopEnd > d.loopStart) {
+      const len = d.loopEnd - d.loopStart;
+      if (pos >= d.loopEnd && len > 0) pos = d.loopStart + ((pos - d.loopStart) % len);
+    }
+    if (pos >= d.buf.duration) {
+      pauseDeck(d);
+      return;
+    }
+    scheduleGrain(d, Math.max(d.lockNext, ctx.currentTime + 0.005), pos);
+    d.lockNext += GRAIN_HOP;
+  }
+  d.lockTimer = setTimeout(() => lockClock(d), 20);
 }
 
 function beginSlip(d) {
@@ -391,6 +448,16 @@ function startDeckAt(d, time) {
   if (!d.buf) return;
   if (!d.nodes) buildDeckGraph(d);
   stopDeckAudio(d);
+  const off = Math.max(0, Math.min(d.buf.duration - 0.01, time));
+  d.t0 = ctx.currentTime;
+  d.off = off;
+  d.cueAt = off;
+  d.playing = true;
+  if (d.keylock) {
+    d.lockNext = ctx.currentTime;
+    lockClock(d);
+    return;
+  }
   const src = ctx.createBufferSource();
   src.buffer = d.buf;
   src.playbackRate.value = d.rate || 1;
@@ -400,7 +467,6 @@ function startDeckAt(d, time) {
     src.loopEnd = d.loopEnd;
   }
   src.connect(d.nodes.in);
-  const off = Math.max(0, Math.min(d.buf.duration - 0.01, time));
   src.start(0, off);
   src.onended = () => {
     if (d.src !== src) return;
@@ -409,10 +475,6 @@ function startDeckAt(d, time) {
     d.src = null;
   };
   d.src = src;
-  d.t0 = ctx.currentTime;
-  d.off = off;
-  d.cueAt = off;
-  d.playing = true;
 }
 
 function pauseDeck(d) {
@@ -570,10 +632,14 @@ function syncToOther(d) {
   const other = d.id === 'a' ? decks.b : decks.a;
   const target = other.bpm || currentBpm();
   if (!d.origBpm) return;
+  const pos = deckNow(d);
   d.rate = target / d.origBpm;
   d.bpm = target;
   d.sync = true;
+  d.off = pos;
+  if (ctx) d.t0 = ctx.currentTime;
   if (d.src) d.src.playbackRate.value = d.rate;
+  if (d.keylock && d.playing) d.lockNext = ctx ? ctx.currentTime : d.lockNext;
   setBpm(target);
 }
 
@@ -656,6 +722,7 @@ function deckHtml(d) {
       <button type="button" class="dj-play" data-act="play" data-deck="${d.id}">${d.playing ? '❚❚' : '▶'}</button>
       <button type="button" class="btn" data-act="cue" data-deck="${d.id}">CUE</button>
       <button type="button" class="btn${d.sync ? ' on' : ''}" data-act="sync" data-deck="${d.id}">SYNC</button>
+      <button type="button" class="btn${d.keylock ? ' on' : ''}" data-act="keylock" data-deck="${d.id}" title="Master Tempo — change speed, keep pitch">MT</button>
       <button type="button" class="btn${d.slip ? ' on' : ''}" data-act="slip" data-deck="${d.id}">SLIP</button>
       <button type="button" class="btn" data-act="grid-nudge" data-dir="-1" data-deck="${d.id}" title="Nudge beatgrid earlier">GRID ‹</button>
       <button type="button" class="btn" data-act="grid-nudge" data-dir="1" data-deck="${d.id}" title="Nudge beatgrid later">›</button>
@@ -750,6 +817,10 @@ function bindDeckUi(root) {
       if (act === 'play') togglePlay(d);
       if (act === 'cue') cueDeck(d);
       if (act === 'sync') syncToOther(d);
+      if (act === 'keylock') {
+        d.keylock = !d.keylock;
+        if (d.playing) startDeckAt(d, deckNow(d));
+      }
       if (act === 'slip') {
         d.slip = !d.slip;
         if (!d.slip && d.slipActive) endSlip(d);
@@ -965,7 +1036,15 @@ function bindPlatters(root) {
       d.scratchAt = now;
       const natural = 2 * Math.PI * (33.333 / 60);
       const rate = da / dt / natural;
-      if (d.src) d.src.playbackRate.value = Math.max(-8, Math.min(8, rate));
+      if (d.keylock) {
+        d.off = Math.max(0, Math.min(d.buf.duration - 0.01, (d.off || 0) + (da / (2 * Math.PI)) * (60 / 33.333)));
+        if (ctx) {
+          d.t0 = ctx.currentTime;
+          d.lockNext = ctx.currentTime;
+        }
+      } else if (d.src) {
+        d.src.playbackRate.value = Math.max(-8, Math.min(8, rate));
+      }
     };
     const onUp = () => {
       if (!d.scratching) return;
@@ -978,9 +1057,7 @@ function bindPlatters(root) {
         return;
       }
       const pos = Math.max(0, (d.scratchOrigin || 0) + ((d.spinAcc || 0) / 360) * (60 / 33.333));
-      if (d.src) {
-        stopDeckAudio(d);
-      }
+      stopDeckAudio(d);
       d.off = pos;
       d.cueAt = pos;
       if (d.scratchWasPlaying) startDeckAt(d, pos);
@@ -1002,7 +1079,10 @@ function bindPlatters(root) {
       beginSlip(d);
       ensureCtx();
       if (!d.playing) startDeckAt(d, d.cueAt);
-      if (d.src) d.src.playbackRate.value = 0;
+      if (d.keylock) {
+        d.off = deckNow(d);
+        if (ctx) { d.t0 = ctx.currentTime; d.lockNext = ctx.currentTime; }
+      } else if (d.src) d.src.playbackRate.value = 0;
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
     });
