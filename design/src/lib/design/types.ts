@@ -154,12 +154,21 @@ export interface ProjectMeta {
   tags?: string[];
 }
 
-export interface BrandKit {
-  colors: string[];
-  fonts: string[];
+export interface BrandColor {
   name: string;
-  /** Hex → display name for brand swatches. */
-  colorNames?: Record<string, string>;
+  hex: string;
+}
+
+export interface BrandKit {
+  name: string;
+  /** Named brand colours — used by inspector swatches and new ink. */
+  colors: BrandColor[];
+  /** Preferred display (headline) font family. */
+  displayFont: string;
+  /** Preferred body font family. */
+  bodyFont: string;
+  /** Extra brand fonts available in the pairing list. */
+  fonts: string[];
 }
 
 export interface Viewport {
