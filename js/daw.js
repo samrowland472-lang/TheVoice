@@ -585,18 +585,19 @@ function deckHtml(d) {
     </header>
     <canvas class="dj-wave" data-wave="${d.id}"></canvas>
     <div class="dj-times">
-      <span data-now="${d.id}">${fmtTime(deckNow(d))}</span>
+      <span class="dj-now" data-now="${d.id}">${fmtTime(deckNow(d))}</span>
+      <span class="dj-bpm-lg">${d.bpm ? d.bpm.toFixed(1) : '—.—'}</span>
       <span data-remain="${d.id}">${d.buf ? fmtTime(Math.max(0, d.duration - deckNow(d))) : '0:00.0'}</span>
     </div>
     <div class="dj-transport">
-      <button type="button" class="btn btn-primary" data-act="play" data-deck="${d.id}">${d.playing ? 'Pause' : 'Play'}</button>
-      <button type="button" class="btn" data-act="cue" data-deck="${d.id}">Cue</button>
-      <button type="button" class="btn${d.sync ? ' on' : ''}" data-act="sync" data-deck="${d.id}">Sync</button>
+      <button type="button" class="dj-play" data-act="play" data-deck="${d.id}">${d.playing ? '❚❚' : '▶'}</button>
+      <button type="button" class="btn" data-act="cue" data-deck="${d.id}">CUE</button>
+      <button type="button" class="btn${d.sync ? ' on' : ''}" data-act="sync" data-deck="${d.id}">SYNC</button>
       <button type="button" class="btn${d.cue ? ' on' : ''}" data-act="pfl" data-deck="${d.id}">PFL</button>
-      <button type="button" class="btn" data-act="load" data-deck="${d.id}">Load file</button>
-      <button type="button" class="btn" data-act="beat" data-deck="${d.id}">Load beat</button>
+      <button type="button" class="btn" data-act="load" data-deck="${d.id}">Load</button>
+      <button type="button" class="btn" data-act="beat" data-deck="${d.id}">Beat</button>
     </div>
-    <div class="dj-cues">${cues}</div>
+    <div class="dj-pads">${cues}</div>
     <div class="dj-loops"><span>Loop</span>${loops}<button type="button" class="btn" data-act="loop-off" data-deck="${d.id}">Off</button></div>
     <div class="dj-eq">
       ${['high', 'mid', 'low'].map((band) => `
@@ -638,7 +639,6 @@ function paintDecks() {
         <input type="range" id="dj-xfader" min="0" max="1" step="0.001" value="${xfader}">
         <span>B</span>
       </div>
-      <p class="hint hint-info">Drop an audio file onto a deck, or load the current Produce beat. Hot cues 1–8, beat loops, 3-band EQ + kill, filter, sync, PFL. MIDI CCs: 1 filter A, 2 filter B, 8 crossfader, notes 36–43 / 48–55 hot cues. Any class-compliant controller or audio interface is picked up automatically.</p>
     </div>
     <input type="file" id="dj-file" accept="audio/*" hidden>
   `;

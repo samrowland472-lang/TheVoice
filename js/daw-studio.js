@@ -61,6 +61,9 @@ let pendingScene = -1;
 let currentScene = 0;
 let selectedScene = 0;
 let followSteps = 0;
+const SESS_TRACKS = STRIPS.filter((s) => s.id !== 'return' && s.id !== 'master');
+const liveClip = Object.fromEntries(SESS_TRACKS.map((s) => [s.id, 0]));
+const pendingClip = {};
 let prodView = 'session';
 let midiMapOn = false;
 let midiLearn = null;
@@ -471,28 +474,59 @@ function clipPlayRate(c) {
   return 1;
 }
 
+function trackHas(c, track) {
+  if (!c) return false;
+  if (track === 'keys') return !!(c.notes && c.notes.length) || !!c.buffer;
+  return !!(c.grid && c.grid[track] && c.grid[track].some(Boolean));
+}
+
+function liveSrc(track) {
+  const sc = liveClip[track];
+  if (sc == null || sc < 0) return null;
+  return clips[sc] || null;
+}
+
 function scheduleStep(st, t) {
   const p = pattern();
   if (!p || !p.grid) return;
   const vel = 0.9;
-  if (p.grid.kick && p.grid.kick[st % 16]) trigKick(t, vel);
-  if (p.grid.snare && p.grid.snare[st % 16]) trigSnare(t, vel);
-  if (p.grid.hihat && p.grid.hihat[st % 16]) trigHat(t, vel);
-  if (p.grid.clap && p.grid.clap[st % 16]) trigClap(t, vel);
-  if (p.grid.bass && p.grid.bass[st % 16]) trigBass(t, vel, (p.bassNotes && p.bassNotes[st % 16]) || 0);
-  notes.forEach((n) => {
-    if ((n.start % ROLL_STEPS) === (st % ROLL_STEPS)) trigKey(t, n.pitch, (n.vel || 100) / 100, n.length);
+  const i = st % 16;
+  SESS_TRACKS.forEach((s) => {
+    const src = liveSrc(s.id);
+    const grid = (src && src.grid) || p.grid;
+    if (s.id === 'keys') {
+      const ns = (src && src.notes) || notes;
+      ns.forEach((n) => {
+        if ((n.start % ROLL_STEPS) === (st % ROLL_STEPS)) trigKey(t, n.pitch, (n.vel || 100) / 100, n.length);
+      });
+      if (src && src.buffer && i === 0) {
+        ensureWarp(src);
+        trigBuffer(t, src.buffer, mix.keys && mix.keys.input, 0.85 * (src.gain || 1), clipPlayRate(src));
+      }
+      return;
+    }
+    if (!grid[s.id] || !grid[s.id][i]) return;
+    if (s.id === 'kick') trigKick(t, vel);
+    else if (s.id === 'snare') trigSnare(t, vel);
+    else if (s.id === 'hihat') trigHat(t, vel);
+    else if (s.id === 'clap') trigClap(t, vel);
+    else if (s.id === 'bass') trigBass(t, vel, (src && src.bassNotes && src.bassNotes[i]) || (p.bassNotes && p.bassNotes[i]) || 0);
   });
   if (metroOn && st % 4 === 0) trigMetro(t, st % 16 === 0);
-  const scene = clips[currentScene];
-  if (scene && scene.buffer && (st % 16) === 0) {
-    ensureWarp(scene);
-    trigBuffer(t, scene.buffer, mix.master && mix.master.input, 0.85 * (scene.gain || 1), clipPlayRate(scene));
-  }
 }
 
 function applyPending() {
-  if (pendingScene < 0) return;
+  let changed = false;
+  Object.keys(pendingClip).forEach((track) => {
+    liveClip[track] = pendingClip[track];
+    delete pendingClip[track];
+    changed = true;
+  });
+  if (pendingScene < 0) {
+    if (changed) paintSession();
+    return;
+  }
+  SESS_TRACKS.forEach((s) => { liveClip[s.id] = pendingScene; });
   const sceneClips = clips.filter((c) => c.scene === pendingScene && c.grid);
   if (sceneClips.length) {
     const p = pattern();
@@ -654,6 +688,8 @@ function highlightStep(st) {
     pos.textContent = `${bar}.${beat}.${(st % 4) + 1}`;
   }
   tickArrangePlayhead(st);
+  const ph = `${((st % 16) / 16) * 100}%`;
+  document.querySelectorAll('.abl-slot.playing').forEach((el) => { el.style.setProperty('--ph', ph); });
 }
 
 export function studioPlay() {
@@ -682,6 +718,7 @@ export function studioStop() {
   step = prodView === 'arrange' ? arr.loopStart : 0;
   highlightStep(step);
   syncTransport();
+  paintSession();
 }
 
 function togglePlay() {
@@ -1250,20 +1287,29 @@ function paintSession() {
   const sel = clips[selectedScene] || clips[0];
   const f = ensureFollow(sel);
   const actionOpts = FOLLOW_ACTIONS.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
+  const ph = playing ? ((step % 16) / 16) * 100 : 0;
   let html = '<div class="abl-session">';
-  html += '<div class="abl-session-h"><span>Session</span><span class="abl-muted">click launches · alt-click selects · right-click captures · follow fires on the next bar</span></div>';
-  html += '<div class="abl-scenes">';
+  html += '<div class="abl-matrix">';
+  html += '<div class="abl-matrix-corner"></div>';
+  SESS_TRACKS.forEach((s) => {
+    html += `<div class="abl-col-h" style="--strip:${s.color}">${s.name}</div>`;
+  });
+  html += '<div class="abl-col-h abl-col-stop">Stop</div>';
   for (let s = 0; s < 8; s++) {
     const c = clips[s];
-    const on = currentScene === s && playing;
-    const wait = pendingScene === s;
-    const picked = selectedScene === s;
-    const fol = c.follow && c.follow.on;
-    html += `<button type="button" class="abl-clip${c.grid ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}${picked ? ' selected' : ''}" data-scene="${s}" style="--clip:${c.color}">
-      <i></i><span>${c.name || (c.grid ? 'Clip' : 'Empty')}</span>${fol ? '<em class="abl-follow-badge">↪</em>' : ''}${c.grid ? `<b class="abl-preview" data-cue="scene:${s}" title="Preview without launching">▶</b>` : ''}
-    </button>`;
+    const sceneOn = pendingScene === s;
+    html += `<button type="button" class="abl-scene-launch${sceneOn ? ' queued' : ''}${currentScene === s && playing ? ' playing' : ''}" data-scene="${s}" title="Launch scene ${s + 1}">▶</button>`;
+    SESS_TRACKS.forEach((tr) => {
+      const filled = trackHas(c, tr.id);
+      const on = liveClip[tr.id] === s && playing && filled;
+      const wait = pendingClip[tr.id] === s;
+      const picked = selectedScene === s;
+      html += `<button type="button" class="abl-slot${filled ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}${picked ? ' selected' : ''}" data-scene="${s}" data-track="${tr.id}" style="--clip:${c.color};--ph:${on ? ph : 0}%">
+        <span>${filled ? (tr.id === 'keys' && c.buffer ? (c.name || 'Audio') : (c.name || tr.name)) : ''}</span>
+      </button>`;
+    });
+    html += `<button type="button" class="abl-scene-stop" data-stop-scene="${s}" title="Stop this scene's clips">■</button>`;
   }
-  html += '<button type="button" class="abl-scene-fire" id="abl-stop-clips">■</button>';
   html += '</div>';
   html += `<div class="abl-follow">
     <label class="abl-follow-on"><input type="checkbox" id="fol-on"${f.on ? ' checked' : ''}> Follow</label>
@@ -1304,18 +1350,6 @@ function paintSession() {
     ff.chance = Number(document.getElementById('fol-chance').value) || 0;
     const val = document.getElementById('fol-chance-val');
     if (val) val.textContent = `${ff.chance}%`;
-    root.querySelectorAll('.abl-clip').forEach((btn) => {
-      const scene = clips[Number(btn.dataset.scene)];
-      let badge = btn.querySelector('.abl-follow-badge');
-      const on = scene && scene.follow && scene.follow.on;
-      if (on && !badge) {
-        badge = document.createElement('em');
-        badge.className = 'abl-follow-badge';
-        badge.textContent = '↪';
-        btn.appendChild(badge);
-      }
-      if (!on && badge) badge.remove();
-    });
   };
   ['fol-on', 'fol-bars', 'fol-a', 'fol-b', 'fol-chance'].forEach((id) => {
     const el = document.getElementById(id);
@@ -1340,64 +1374,71 @@ function paintSession() {
     el.addEventListener('input', writeWarp);
     el.addEventListener('change', writeWarp);
   });
-  root.querySelectorAll('.abl-clip').forEach((btn) => {
+  function captureScene(s) {
+    const snap = snapshotPattern();
+    if (!snap) return;
+    const c = clips[s];
+    c.grid = snap.grid;
+    c.notes = snap.notes;
+    c.bassNotes = snap.bassNotes;
+    c.name = c.name || `Scene ${s + 1}`;
+  }
+  function launchSceneRow(s) {
+    selectedScene = s;
+    const c = clips[s];
+    if (!c.grid) captureScene(s);
+    pendingScene = s;
+    SESS_TRACKS.forEach((tr) => { pendingClip[tr.id] = s; });
+    followSteps = 0;
+    if (!playing) { applyPending(); studioPlay(); }
+    else paintSession();
+  }
+  function launchSlot(s, track) {
+    selectedScene = s;
+    const c = clips[s];
+    if (!trackHas(c, track)) {
+      captureScene(s);
+      paintSession();
+      return;
+    }
+    if (liveClip[track] === s && playing && pendingClip[track] == null) {
+      pendingClip[track] = -1;
+    } else {
+      pendingClip[track] = s;
+    }
+    if (!playing) { applyPending(); studioPlay(); }
+    else paintSession();
+  }
+  root.querySelectorAll('.abl-scene-launch').forEach((btn) => {
+    btn.addEventListener('click', () => launchSceneRow(Number(btn.dataset.scene)));
+  });
+  root.querySelectorAll('.abl-slot').forEach((btn) => {
     const s = Number(btn.dataset.scene);
+    const track = btn.dataset.track;
     btn.addEventListener('click', (ev) => {
-      const c = clips[s];
-      selectedScene = s;
-      if (ev.altKey) {
-        paintSession();
-        return;
-      }
-      if (!c.grid) {
-        const snap = snapshotPattern();
-        if (!snap) return;
-        c.grid = snap.grid;
-        c.notes = snap.notes;
-        c.bassNotes = snap.bassNotes;
-        c.name = `Scene ${s + 1}`;
-        paintSession();
-        return;
-      }
-      pendingScene = s;
-      followSteps = 0;
-      if (!playing) {
-        applyPending();
-        studioPlay();
-      } else {
-        paintSession();
-      }
+      if (ev.altKey) { selectedScene = s; paintSession(); return; }
+      launchSlot(s, track);
     });
     btn.addEventListener('contextmenu', (ev) => {
       ev.preventDefault();
-      const snap = snapshotPattern();
-      if (!snap) return;
-      const c = clips[s];
-      c.grid = snap.grid;
-      c.notes = snap.notes;
-      c.bassNotes = snap.bassNotes;
-      c.name = c.name || `Scene ${s + 1}`;
+      captureScene(s);
       selectedScene = s;
       paintSession();
     });
   });
-  root.querySelectorAll('.abl-clip .abl-preview').forEach((btn) => {
-    btn.addEventListener('click', (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      const s = Number(btn.dataset.cue.replace(/^scene:/, ''));
-      const c = clips[s];
-      if (!c || !c.grid) return;
-      startPreview({
-        grid: c.grid,
-        bassNotes: c.bassNotes || [],
-        notes: c.notes || [],
-        bpm: bpm(),
-      }, btn.dataset.cue);
+  root.querySelectorAll('[data-stop-scene]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      SESS_TRACKS.forEach((tr) => {
+        if (liveClip[tr.id] === Number(btn.dataset.stopScene) || pendingClip[tr.id] === Number(btn.dataset.stopScene)) {
+          pendingClip[tr.id] = -1;
+        }
+      });
+      if (!playing) applyPending();
+      else paintSession();
     });
   });
-  const stop = root.querySelector('#abl-stop-clips');
-  if (stop) stop.addEventListener('click', studioStop);
+  const stopAll = document.getElementById('abl-stop-clips');
+  if (stopAll) stopAll.addEventListener('click', studioStop);
 }
 
 function paintMixer() {
