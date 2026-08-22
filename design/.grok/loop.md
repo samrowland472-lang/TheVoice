@@ -5,8 +5,14 @@ Do **not** scaffold a new app. Do **not** add auth or a database. Visual languag
 
 ## Cadence
 
-Hourly automated pass (Grok automation `voice-design-100h-loop`). App notification on each ship. If the previous iteration is < 50 minutes old, polish that slice or skip.
+Every **5 minutes**. After each successful slice, **push to GitHub** `samrowland472-lang/TheVoice` on `main` under `design/`. If the previous iteration is < 4 minutes old, polish that slice or skip.
 
+## GitHub (required)
+
+Repo of record: **https://github.com/samrowland472-lang/TheVoice** — folder `design/`.
+Do not leave improvements only in the sandbox.
+
+## Product
 
 **The Voice Design** — local-first graphic studio (hub + artboard).
 TanStack Start, Zustand, canvas renderer, `localStorage` persistence.
@@ -60,13 +66,13 @@ Auth OFF, DB OFF.
 - Export PNG/JPG/SVG with 1×/2×/3×.
 - Templates including **100 Hour Loop**, Field Banner, Studio Manifesto, Reel Hook.
 - Studio chrome is full-bleed (no marketing sidebar on the board).
-- Layers panel: drag-to-reorder via grip handle (native DnD); ↑↓ still available.
+- Layers: drag-to-reorder via grip; Shift-click multi-select; dragging one selected layer moves the block.
 
 ## Iterations
 
-### 2026-08-22 — loop 0 (manual)
+### 2026-08-22T16:18Z — loop 2 (restore)
 
-Command palette, marquee, smart guides, clipboard, present, context menu, zoom HUD, inspector depth, hub search/duplicate, four new templates. Typecheck + production build + smoke clean.
+Workspace had been wiped to scaffold. Restored The Voice Design from TheVoice `design/`. Ignored broken `artifacts/` watch so Vite stays up. Typecheck + build + smoke clean. Preview back.
 
 ### 2026-08-22 — loop 1
 
