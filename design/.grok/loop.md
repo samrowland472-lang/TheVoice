@@ -66,6 +66,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-08-22T20:08Z — loop 7b (polish)
+
+Ruler polish: position labels on guides, col/row-resize cursor, double-click to delete, snap-to-8 while dragging. Typecheck + build + smoke clean.
+
 ### 2026-08-22T20:04Z — loop 7
 
 Rulers + manual guides. Drag from top/left ruler, snap while moving, drop on ruler to delete. Typecheck + build + smoke clean.

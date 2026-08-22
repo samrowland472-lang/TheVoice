@@ -20,6 +20,17 @@ function niceStep(raw: number) {
   return 5 * p;
 }
 
+function hitManualGuide(
+  p: { x: number; y: number },
+  guides: { id: string; axis: "x" | "y"; pos: number }[],
+  viewport: { x: number; y: number; zoom: number },
+) {
+  return guides.find((g) => {
+    if (g.axis === "x") return Math.abs(p.x - (viewport.x + g.pos * viewport.zoom)) < 6 && p.y > RULER;
+    return Math.abs(p.y - (viewport.y + g.pos * viewport.zoom)) < 6 && p.x > RULER;
+  });
+}
+
 export function CanvasStage() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLCanvasElement>(null);
@@ -175,6 +186,25 @@ export function CanvasStage() {
     }
     octx.restore();
 
+    octx.save();
+    octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    octx.font = "10px ui-monospace, SFMono-Regular, monospace";
+    octx.fillStyle = "#3fc6ff";
+    octx.textBaseline = "top";
+    for (const g of manuals) {
+      const label = String(Math.round(g.pos));
+      if (g.axis === "x") {
+        const sx = viewport.x + g.pos * viewport.zoom;
+        octx.textAlign = "left";
+        octx.fillText(label, sx + 6, RULER + 6);
+      } else {
+        const sy = viewport.y + g.pos * viewport.zoom;
+        octx.textAlign = "left";
+        octx.fillText(label, RULER + 6, sy + 4);
+      }
+    }
+    octx.restore();
+
     if (rulers) {
       octx.fillStyle = "#0c0f0d";
       octx.fillRect(0, 0, w, RULER);
@@ -317,10 +347,7 @@ export function CanvasStage() {
 
     if (rulers) {
       const manuals = doc.guides ?? [];
-      const hit = manuals.find((g) => {
-        if (g.axis === "x") return Math.abs(p.x - (viewport.x + g.pos * viewport.zoom)) < 6 && p.y > RULER;
-        return Math.abs(p.y - (viewport.y + g.pos * viewport.zoom)) < 6 && p.x > RULER;
-      });
+      const hit = hitManualGuide(p, manuals, viewport);
       if (hit) {
         drag.current = { mode: "guide", sx: p.x, sy: p.y, lx: hit.pos, ly: hit.pos, guideId: hit.id, guideAxis: hit.axis };
         return;
@@ -480,15 +507,29 @@ export function CanvasStage() {
   }
 
   function onPointerMove(e: React.PointerEvent) {
+    const wrap = wrapRef.current;
+    const p = pos(e);
     const st = drag.current;
-    if (!st) return;
+    if (!st) {
+      const { doc, viewport, rulers } = useDesign.getState();
+      if (wrap && doc && rulers) {
+        const hit = hitManualGuide(p, doc.guides ?? [], viewport);
+        if (p.y < RULER && p.x > RULER) wrap.style.cursor = "col-resize";
+        else if (p.x < RULER && p.y > RULER) wrap.style.cursor = "row-resize";
+        else if (hit?.axis === "x") wrap.style.cursor = "col-resize";
+        else if (hit?.axis === "y") wrap.style.cursor = "row-resize";
+        else wrap.style.cursor = "";
+      }
+      return;
+    }
     const { doc, viewport, snap: doSnap } = useDesign.getState();
     if (!doc) return;
-    const p = pos(e);
     const d = screenToDoc(p.x, p.y, viewport);
 
     if (st.mode === "guide" && st.guideId && st.guideAxis) {
-      useDesign.getState().moveGuide(st.guideId, st.guideAxis === "x" ? d.x : d.y);
+      let next = st.guideAxis === "x" ? d.x : d.y;
+      if (doSnap) next = snap(next, 8);
+      useDesign.getState().moveGuide(st.guideId, next);
       return;
     }
     if (st.mode === "pan") {
@@ -620,9 +661,17 @@ export function CanvasStage() {
   }
 
   function onDoubleClick(e: React.MouseEvent) {
-    const { doc, viewport } = useDesign.getState();
+    const { doc, viewport, rulers } = useDesign.getState();
     if (!doc) return;
-    const d = screenToDoc(pos(e).x, pos(e).y, viewport);
+    const p = pos(e);
+    if (rulers) {
+      const g = hitManualGuide(p, doc.guides ?? [], viewport);
+      if (g) {
+        useDesign.getState().removeGuide(g.id);
+        return;
+      }
+    }
+    const d = screenToDoc(p.x, p.y, viewport);
     const hit = hitTop(doc.nodes, d.x, d.y);
     if (hit?.kind === "text") useDesign.getState().setEditingText(hit.id);
   }
