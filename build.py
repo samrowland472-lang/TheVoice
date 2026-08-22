@@ -12,7 +12,7 @@ SCRATCH = os.path.join(ROOT, "build")
 FILES = [
     "background.js", "visualizer.js", "audio-engine.js", "pitch.js", "wav-encode.js",
     "clip-library.js", "autosave.js", "files.js", "voice-effects.js", "chapters.js", "modulation.js", "easing.js", "camera3d.js", "scenegraph.js", "selection.js", "path3d.js", "gltf.js", "light3d.js", "verbs.js", "physics.js", "mesh3d.js", "picking.js", "gizmo.js", "animation.js", "webgl3d.js", "videoexport.js", "timeline.js", "history.js", "music.js", "songcraft.js", "director.js", "casting.js", "agent.js", "project.js", "billing.js", "account.js", "tts-browser.js", "tts-neural.js",
-    "tts-elevenlabs.js", "recorder.js", "app.js",
+    "tts-elevenlabs.js", "recorder.js", "daw.js", "app.js",
 ]
 
 COLOR_REPLACEMENTS = []  # source files now own their final colors directly
@@ -133,7 +133,9 @@ def build_shell():
 
     entry = '<script type="module" src="js/app.js"></script>'
     if entry not in page:
-        raise SystemExit("index.html no longer loads js/app.js the way the build expects")
+        entry = "<!-- VOICE_MODULE_ENTRY -->"
+        if entry not in page:
+            raise SystemExit("index.html no longer loads js/app.js the way the build expects")
     # The merged JS is appended straight after this open tag.
     page = page[: page.index(entry)] + '<script type="module">\n'
 

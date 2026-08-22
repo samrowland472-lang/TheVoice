@@ -5,12 +5,19 @@
 [build]
   publish = "."
 
-# Single-page app: unknown paths fall through to index.html so deep links
-# and OAuth redirects resolve instead of 404ing.
+# Existing files (js, css, wav) are served as-is. The catch-all is last
+# and is NOT forced, so it only covers unknown paths / OAuth redirects.
+[[redirects]]
+  from = "/js/*"
+  to = "/js/:splat"
+  status = 200
+  force = false
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
 
 [[headers]]
   for = "/*"
@@ -18,11 +25,14 @@
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    # Microphone must be allowed for recording to work at all.
-    Permissions-Policy = "microphone=(self), camera=(), geolocation=()"
+    Permissions-Policy = "microphone=(self), camera=(), geolocation=(), midi=(self)"
 
-# The neural voice model is large and immutable — cache it hard.
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "public, max-age=60"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=60"

@@ -2076,3 +2076,200 @@ input:focus-visible,
   height: auto;
   pointer-events: none;
 }
+
+/* ---- DAW / DJ Live (Music section) ---- */
+.daw-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.daw-modes { display: flex; gap: 6px; }
+.daw-mode {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+.daw-mode.active {
+  background: var(--phosphor);
+  color: var(--phosphor-ink);
+  border-color: var(--phosphor);
+}
+.daw-kicker {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--phosphor);
+}
+.daw-session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 22px 0 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.daw-grid {
+  display: grid;
+  grid-template-columns: 52px repeat(4, minmax(70px, 1fr));
+  gap: 6px;
+}
+.daw-col-h, .daw-grid-corner {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: center;
+}
+.daw-scene {
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-family: 'Share Tech Mono', monospace;
+  cursor: pointer;
+}
+.daw-scene:hover { border-color: var(--phosphor); color: var(--phosphor); }
+.daw-clip {
+  min-height: 42px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+}
+.daw-clip.filled {
+  border-style: solid;
+  background: color-mix(in srgb, var(--clip, var(--phosphor)) 22%, var(--surface));
+  color: var(--ink);
+  border-color: var(--clip, var(--phosphor));
+}
+.daw-clip.playing {
+  box-shadow: inset 0 0 0 2px var(--clip, var(--phosphor));
+  animation: daw-pulse 1s linear infinite;
+}
+@keyframes daw-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
+
+.dj-shell { display: flex; flex-direction: column; gap: 14px; }
+.dj-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.dj-top input[type="number"] {
+  width: 72px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  font-family: 'Share Tech Mono', monospace;
+  padding: 4px 6px;
+}
+.dj-decks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 860px) {
+  .dj-decks { grid-template-columns: 1fr; }
+}
+.dj-deck {
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  padding: 12px;
+}
+.dj-deck.drop { outline: 2px dashed var(--phosphor); }
+.dj-deck-h {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  margin-bottom: 8px;
+}
+.dj-name { color: var(--phosphor); letter-spacing: 0.12em; }
+.dj-file { color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46%; }
+.dj-wave {
+  width: 100%;
+  height: 64px;
+  background: #050807;
+  display: block;
+}
+.dj-times {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  margin: 6px 0;
+}
+.dj-transport, .dj-cues, .dj-loops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+  align-items: center;
+}
+.dj-cue, .dj-loop {
+  width: 32px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--ink-dim);
+  font-family: 'Share Tech Mono', monospace;
+  cursor: pointer;
+  padding: 0;
+}
+.dj-cue.set { background: var(--phosphor); color: var(--phosphor-ink); border-color: var(--phosphor); }
+.dj-loop.on, .btn.on, .dj-kill.on {
+  background: var(--amber);
+  color: var(--amber-ink);
+  border-color: var(--amber);
+}
+.dj-eq {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.dj-eq-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--ink-dim);
+}
+.dj-eq-col input[type="range"] { writing-mode: vertical-lr; direction: rtl; height: 90px; width: 18px; }
+.dj-kill {
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-dim);
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.dj-xf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.dj-xf input { flex: 1; }
+#music-view.is-dj .songcraft { display: none; }
