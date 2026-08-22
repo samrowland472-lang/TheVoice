@@ -3581,7 +3581,26 @@ html[data-avenue="music"] .shell.is-daw .main-area,
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 2px 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.abl-dev-on {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid #1a1608;
+  background: #5a4a20;
+  padding: 0;
+  cursor: pointer;
+  flex: none;
+}
+.abl-dev-on.on {
+  background: #111;
+  box-shadow: 0 0 0 1px #ffe14a, 0 0 6px #ffe14a;
+}
+.abl-dev.bypassed { opacity: 0.42; }
+.abl-dev.bypassed .abl-dev-h { filter: grayscale(1); }
 .abl-dev[data-dev="delay"] .abl-dev-h { background: #7dff9a; }
 .abl-dev[data-dev="comp"] .abl-dev-h { background: #ffb238; }
 .abl-dev[data-dev="eq3"] .abl-dev-h { background: #3fc6ff; color: #041018; }

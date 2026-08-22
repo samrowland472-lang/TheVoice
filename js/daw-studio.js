@@ -35,23 +35,26 @@ let swing = 0;
 let keysCutoff = 1800;
 let keysRes = 0.8;
 let keysRel = 0.35;
-const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false };
+const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
 function applyFx() {
   ensureMix();
   const a = audio();
   if (!a || !mix._delay) return;
   const t = a.ctx.currentTime;
-  mix._send.gain.setTargetAtTime(fx.send, t, 0.02);
+  const delayOn = fx.on.delay !== false;
+  const compOn = fx.on.comp !== false;
+  const eqOn = fx.on.eq3 !== false;
+  mix._send.gain.setTargetAtTime(delayOn ? fx.send : 0, t, 0.02);
   mix._delay.delayTime.setTargetAtTime(Math.max(0.02, fx.delayMs / 1000), t, 0.03);
-  mix._delayFb.gain.setTargetAtTime(fx.delayFb, t, 0.02);
-  mix._delayWet.gain.setTargetAtTime(fx.delayWet, t, 0.02);
-  mix._comp.threshold.setTargetAtTime(fx.compTh, t, 0.02);
-  mix._comp.ratio.setTargetAtTime(fx.compRatio, t, 0.02);
+  mix._delayFb.gain.setTargetAtTime(delayOn ? fx.delayFb : 0, t, 0.02);
+  mix._delayWet.gain.setTargetAtTime(delayOn ? fx.delayWet : 0, t, 0.02);
+  mix._comp.threshold.setTargetAtTime(compOn ? fx.compTh : 0, t, 0.02);
+  mix._comp.ratio.setTargetAtTime(compOn ? fx.compRatio : 1, t, 0.02);
   if (mix._eq) {
-    mix._eq.low.gain.setTargetAtTime(fx.killL ? -72 : fx.eqL, t, 0.02);
-    mix._eq.mid.gain.setTargetAtTime(fx.killM ? -72 : fx.eqM, t, 0.02);
-    mix._eq.high.gain.setTargetAtTime(fx.killH ? -72 : fx.eqH, t, 0.02);
+    mix._eq.low.gain.setTargetAtTime(eqOn ? (fx.killL ? -72 : fx.eqL) : 0, t, 0.02);
+    mix._eq.mid.gain.setTargetAtTime(eqOn ? (fx.killM ? -72 : fx.eqM) : 0, t, 0.02);
+    mix._eq.high.gain.setTargetAtTime(eqOn ? (fx.killH ? -72 : fx.eqH) : 0, t, 0.02);
   }
 }
 
@@ -564,11 +567,11 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   o1.frequency.value = freq;
   o2.frequency.value = freq * 1.005;
   const f = ctx.createBiquadFilter();
-  const cut = Math.max(80, cutHz || keysCutoff);
+  const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
   f.type = 'lowpass';
   f.frequency.setValueAtTime(cut, t);
   f.frequency.exponentialRampToValueAtTime(Math.max(120, cut * 0.35), t + dur * 0.7);
-  f.Q.value = keysRes;
+  f.Q.value = fx.on.analog === false ? 0.3 : keysRes;
   const g = envGain(dest, t, vel * 0.28, 0.01, 0.08, 0.55, keysRel, dur);
   o1.connect(f); o2.connect(f); f.connect(g);
   o1.start(t); o2.start(t);
@@ -2086,17 +2089,24 @@ function paintDevices() {
   root.dataset.ready = '1';
   const knob = (id, label, min, max, step, val) =>
     `<label class="abl-dev-k">${label}<input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}"></label>`;
+  const onBtn = (id, label) => {
+    const on = fx.on[id] !== false;
+    return `<header class="abl-dev-h">
+      <button type="button" class="abl-dev-on${on ? ' on' : ''}" data-dev-on="${id}" aria-pressed="${on}" title="${label} on/off"></button>
+      ${label}
+    </header>`;
+  };
   root.innerHTML = `
-    <article class="abl-dev" data-dev="analog">
-      <header class="abl-dev-h">Analog</header>
+    <article class="abl-dev${fx.on.analog === false ? ' bypassed' : ''}" data-dev="analog">
+      ${onBtn('analog', 'Analog')}
       <div class="abl-dev-body">
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-rel', 'Rel', 0.05, 1.2, 0.01, keysRel)}
       </div>
     </article>
-    <article class="abl-dev" data-dev="delay">
-      <header class="abl-dev-h">Delay</header>
+    <article class="abl-dev${fx.on.delay === false ? ' bypassed' : ''}" data-dev="delay">
+      ${onBtn('delay', 'Delay')}
       <div class="abl-dev-body">
         ${knob('abl-send', 'Send', 0, 1, 0.01, fx.send)}
         ${knob('abl-delay', 'Time', 50, 900, 5, fx.delayMs)}
@@ -2104,15 +2114,15 @@ function paintDevices() {
         ${knob('abl-wet', 'Wet', 0, 1, 0.01, fx.delayWet)}
       </div>
     </article>
-    <article class="abl-dev" data-dev="comp">
-      <header class="abl-dev-h">Compressor</header>
+    <article class="abl-dev${fx.on.comp === false ? ' bypassed' : ''}" data-dev="comp">
+      ${onBtn('comp', 'Compressor')}
       <div class="abl-dev-body">
         ${knob('abl-comp', 'Th', -40, -4, 1, fx.compTh)}
         ${knob('abl-ratio', 'Ratio', 1, 12, 0.1, fx.compRatio)}
       </div>
     </article>
-    <article class="abl-dev" data-dev="eq3">
-      <header class="abl-dev-h">EQ Three</header>
+    <article class="abl-dev${fx.on.eq3 === false ? ' bypassed' : ''}" data-dev="eq3">
+      ${onBtn('eq3', 'EQ Three')}
       <div class="abl-dev-body">
         ${knob('abl-eq-l', 'Lo', -12, 12, 0.5, fx.eqL)}
         ${knob('abl-eq-m', 'Mid', -12, 12, 0.5, fx.eqM)}
@@ -2155,6 +2165,18 @@ function paintDevices() {
       fx[key] = !fx[key];
       el.classList.toggle('on', fx[key]);
       el.setAttribute('aria-pressed', fx[key] ? 'true' : 'false');
+      applyFx();
+    });
+  });
+  root.querySelectorAll('[data-dev-on]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.devOn;
+      fx.on[id] = fx.on[id] === false;
+      const on = fx.on[id] !== false;
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const card = btn.closest('.abl-dev');
+      if (card) card.classList.toggle('bypassed', !on);
       applyFx();
     });
   });
