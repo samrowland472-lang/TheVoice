@@ -31,6 +31,12 @@ export default async (request, context) => {
       '<script src="/js/daw-live.js" defer></script>\n</body>',
     );
   }
+  if (!html.includes("/js/site-chrome.js")) {
+    html = html.replace(
+      "</body>",
+      '<script src="/js/site-chrome.js" defer></script>\n</body>',
+    );
+  }
 
   return new Response(html, {
     status: res.status,
