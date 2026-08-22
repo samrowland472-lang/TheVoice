@@ -735,7 +735,143 @@
     };
   }
 
+  var undoStack = [];
+  var redoStack = [];
+  var undoLock = false;
+
+  function lightClip(c) {
+    if (!c) return null;
+    return { name: c.name, color: c.color, length: c.length, notes: cloneNotes(c.notes) };
+  }
+
+  function lightSnap() {
+    return {
+      tracks: state.tracks.map(function (tr) {
+        return {
+          id: tr.id,
+          name: tr.name,
+          kind: tr.kind,
+          role: tr.role,
+          color: tr.color,
+          volume: tr.volume,
+          pan: tr.pan,
+          mute: tr.mute,
+          solo: tr.solo,
+          arm: tr.arm,
+          sendA: tr.sendA,
+          sendB: tr.sendB,
+          devices: JSON.parse(JSON.stringify(tr.devices || [])),
+          clips: tr.clips.map(lightClip),
+        };
+      }),
+      arrangeClips: state.arrangeClips.map(function (c) {
+        return {
+          id: c.id,
+          trackId: c.trackId,
+          start: c.start,
+          length: c.length,
+          name: c.name,
+          color: c.color,
+          notes: cloneNotes(c.notes),
+        };
+      }),
+    };
+  }
+
+  function pushUndo() {
+    if (undoLock) return;
+    undoStack.push(lightSnap());
+    if (undoStack.length > 24) undoStack.shift();
+    redoStack.length = 0;
+  }
+
+  function restoreLight(snap) {
+    if (!snap) return;
+    undoLock = true;
+    var keep = {};
+    snap.tracks.forEach(function (s) { keep[s.id] = true; });
+    state.tracks.slice().forEach(function (tr) {
+      if (!keep[tr.id]) removeTrack(tr.id);
+    });
+    var next = [];
+    snap.tracks.forEach(function (s) {
+      var tr = state.tracks.find(function (x) { return x.id === s.id; });
+      if (!tr) {
+        tr = blankTrack(s.kind || "midi", s.name);
+        tr.id = s.id;
+        tr.kind = s.kind;
+        tr.role = s.role;
+        tr.color = s.color;
+        wireTrack(tr);
+      }
+      tr.name = s.name;
+      tr.volume = s.volume;
+      tr.pan = s.pan;
+      tr.mute = s.mute;
+      tr.solo = s.solo;
+      tr.arm = s.arm;
+      tr.sendA = s.sendA;
+      tr.sendB = s.sendB;
+      tr.devices = s.devices;
+      tr.clips = (s.clips || []).map(function (c) {
+        return c ? clip(c.name, c.color, cloneNotes(c.notes)) : null;
+      });
+      next.push(tr);
+    });
+    state.tracks = next;
+    state.arrangeClips = (snap.arrangeClips || []).map(function (c) {
+      return {
+        id: c.id,
+        trackId: c.trackId,
+        start: c.start,
+        length: c.length,
+        name: c.name,
+        color: c.color,
+        notes: cloneNotes(c.notes),
+      };
+    });
+    applyMix();
+    rebuildTrackUi();
+    paintArrange();
+    undoLock = false;
+  }
+
+  function undoEdit() {
+    if (!undoStack.length) return;
+    redoStack.push(lightSnap());
+    restoreLight(undoStack.pop());
+    setMidiLabel("Undo");
+  }
+
+  function redoEdit() {
+    if (!redoStack.length) return;
+    undoStack.push(lightSnap());
+    restoreLight(redoStack.pop());
+    setMidiLabel("Redo");
+  }
+
+  function duplicateSelectedClip() {
+    var sel = state.selectedSession;
+    if (!sel || !sel.track || !sel.clip) return;
+    var clips = sel.track.clips;
+    var from = clips.indexOf(sel.clip);
+    if (from < 0) {
+      for (var i = 0; i < clips.length; i++) if (clips[i] === sel.clip) from = i;
+    }
+    var dest = -1;
+    var start = from < 0 ? 0 : from + 1;
+    for (var j = start; j < SCENES; j++) if (!clips[j]) { dest = j; break; }
+    if (dest < 0) for (var k = 0; k < SCENES; k++) if (!clips[k]) { dest = k; break; }
+    if (dest < 0) return;
+    pushUndo();
+    clips[dest] = clip(sel.clip.name, sel.clip.color, cloneNotes(sel.clip.notes));
+    rebuildSessionGrid();
+    paint();
+    setMidiLabel("Dup " + sel.clip.name);
+  }
+
   function addTrack(kind) {
+    pushUndo();
     ensureAudio();
     ctx.resume();
     var nMidi = state.tracks.filter(function (x) { return x.role !== "audio"; }).length + 1;
@@ -756,6 +892,7 @@
   }
 
   function addReturn() {
+    pushUndo();
     ensureAudio();
     ctx.resume();
     var n = extraReturns.length + 3;
@@ -775,6 +912,7 @@
 
   function removeTrack(id) {
     if (state.tracks.length <= 1) return;
+    pushUndo();
     stopPad(id);
     stopAudioLoop(id);
     delete state.launched[id];
@@ -792,6 +930,7 @@
     state.tracks.forEach(function (tr, idx) { if (tr.id === id) i = idx; });
     var j = i + dir;
     if (i < 0 || j < 0 || j >= state.tracks.length) return;
+    pushUndo();
     var tmp = state.tracks[i];
     state.tracks[i] = state.tracks[j];
     state.tracks[j] = tmp;
@@ -809,6 +948,7 @@
       f.arrayBuffer().then(function (ab) {
         return ctx.decodeAudioData(ab.slice(0));
       }).then(function (buf) {
+        pushUndo();
         track.clips[0] = clip((f.name || "Sample").replace(/\.[^.]+$/, ""), track.color, { buffer: buf });
         rebuildTrackUi();
         paint();
@@ -962,6 +1102,7 @@
 
   function placeSampleClip(track, scene, buf, name) {
     if (scene == null) scene = 0;
+    pushUndo();
     var c = clip(name, track.color, { buffer: buf });
     track.clips[scene] = c;
     state.selectedSession = { track: track, clip: c };
@@ -1720,6 +1861,7 @@
   }
 
   function dropOnLane(track, bar) {
+    pushUndo();
     var src = state.selectedSession && state.selectedSession.track.id === track.id
       ? state.selectedSession.clip
       : state.launched[track.id] || (state.selectedSession && state.selectedSession.clip);
@@ -2109,6 +2251,7 @@
   function deleteSelectedNote() {
     var pair = activeRollClip();
     if (!pair || !state.selectedNote) return;
+    pushUndo();
     pair.clip.notes.roll = ensureRoll(pair.clip).filter(function (n) { return n.id !== state.selectedNote; });
     state.selectedNote = null;
     paintRoll();
@@ -3619,12 +3762,36 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the clip grid. Enter launches. Escape stops. Space plays unless a button is focused."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates a clip. Ctrl+Z / Shift+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
       var typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
       if (typing) return;
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyZ") {
+        e.preventDefault();
+        if (e.shiftKey) redoEdit();
+        else undoEdit();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyY") {
+        e.preventDefault();
+        redoEdit();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyD") {
+        e.preventDefault();
+        duplicateSelectedClip();
+        return;
+      }
+      if (e.shiftKey && e.code.indexOf("Digit") === 0) {
+        var sceneN = Number(e.code.slice(5));
+        if (sceneN >= 1 && sceneN <= SCENES) {
+          e.preventDefault();
+          launchScene(sceneN - 1);
+          return;
+        }
+      }
       if (e.code === "Escape") {
         if (state.playing) {
           e.preventDefault();
@@ -3669,6 +3836,7 @@
         return;
       }
       if (!state.selectedArrange) return;
+      pushUndo();
       state.arrangeClips = state.arrangeClips.filter(function (c) {
         return c.id !== state.selectedArrange;
       });
