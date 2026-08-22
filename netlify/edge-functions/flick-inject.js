@@ -37,6 +37,12 @@ export default async (request, context) => {
       '<script src="/js/daw-follow.js" defer></script>\n</body>',
     );
   }
+  if (!html.includes("/js/daw-cue.js")) {
+    html = html.replace(
+      "</body>",
+      '<script src="/js/daw-cue.js" defer></script>\n</body>',
+    );
+  }
   if (!html.includes("/js/site-chrome.js")) {
     html = html.replace(
       "</body>",
