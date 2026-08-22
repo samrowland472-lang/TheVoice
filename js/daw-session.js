@@ -1842,7 +1842,8 @@
     var i = local;
     if (n.reverse) i = loopStart + loopLen - 1 - phase;
     var xp = clipXpose(n);
-    var fadeMul = clipFadeMul(clipObj, posInClip) * (xfade == null ? 1 : xfade);
+    var gmul = n.gain == null ? 1 : n.gain;
+    var fadeMul = clipFadeMul(clipObj, posInClip) * (xfade == null ? 1 : xfade) * (n.buffer ? 1 : gmul);
     if (fadeMul < 0.02 && !n.buffer) return;
     if (n.buffer && clipObj.id) dest = xfDest(track, clipObj, time, Math.max(0.0001, fadeMul));
     else dest = fadedDest(dest, time, fadeMul);
@@ -1851,7 +1852,7 @@
       return;
     }
     if ((track.kind === "drums" || track.kind === "perc") && track.rack && !(n.buffer)) {
-      playDrumRack(track, clipObj, i, time, n.buffer ? 1 : clipFadeMul(clipObj, local));
+      playDrumRack(track, clipObj, i, time, (n.buffer ? 1 : clipFadeMul(clipObj, local)) * gmul);
       return;
     }
 
@@ -2374,6 +2375,8 @@
           node.style.left = (c.start / STEPS_PER_BAR) * BAR_W + "px";
           node.style.width = Math.max(24, (c.length / STEPS_PER_BAR) * BAR_W - 4) + "px";
           node.style.background = c.color;
+          var cg = (c.notes && c.notes.gain != null) ? c.notes.gain : 1;
+          node.style.opacity = String(0.4 + 0.6 * Math.max(0, Math.min(1.2, cg)) / 1.2);
           node.dataset.id = c.id;
           var fi = (c.notes && c.notes.fadeIn) || 0;
           var fo = (c.notes && c.notes.fadeOut) || 0;
@@ -2686,6 +2689,24 @@
       state.selectedArrange = clipObj.id;
       if (ev.shiftKey) {
         cycleClipColor(clipObj);
+        return;
+      }
+      if (ev.altKey) {
+        if (!clipObj.notes) clipObj.notes = {};
+        pushUndo();
+        var startY = ev.clientY;
+        var origG = clipObj.notes.gain == null ? 1 : clipObj.notes.gain;
+        function moveG(e) {
+          clipObj.notes.gain = Math.max(0, Math.min(1.4, origG - (e.clientY - startY) / 80));
+          paintArrange();
+        }
+        function upG() {
+          window.removeEventListener("pointermove", moveG);
+          window.removeEventListener("pointerup", upG);
+          setMidiLabel("Gain " + Math.round((clipObj.notes.gain || 0) * 100) + "%");
+        }
+        window.addEventListener("pointermove", moveG);
+        window.addEventListener("pointerup", upG);
         return;
       }
       paintArrange();
@@ -4697,7 +4718,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. Arrows nudge. Comma/period jump. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. Arrows nudge. Comma/period jump. Alt-drag clip for gain. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
