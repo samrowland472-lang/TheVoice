@@ -2185,7 +2185,7 @@
       "#daw-session .daw-roll-hint{padding:6px 12px;font-size:12px;color:var(--ink-dim,#7d9689)}" +
       "#daw-session .daw-arr-scroll{overflow:auto;max-height:min(520px,60vh)}" +
       "#daw-session .daw-arr-inner{position:relative;min-width:" + (88 + BARS * BAR_W) + "px}" +
-      "#daw-session .daw-ruler{display:flex;margin-left:88px;height:44px;position:relative;border-bottom:1px solid var(--border,#263029);user-select:none}" +"#daw-session .daw-loc{position:absolute;top:0;transform:translateX(-50%);min-width:18px;height:16px;padding:0 4px;font-size:9px;line-height:16px;background:#3fc6ff;color:#06170f;border:0;border-radius:0 0 3px 3px;z-index:5;cursor:pointer;font-family:Share Tech Mono,ui-monospace,monospace}" +"#daw-session .daw-loc.sel{outline:1px solid #fff;background:#7dffb3}" +
+      "#daw-session .daw-ruler{display:flex;margin-left:88px;height:44px;position:relative;border-bottom:1px solid var(--border,#263029);user-select:none}" +"#daw-session .daw-loc{position:absolute;top:0;transform:translateX(-50%);min-width:18px;height:16px;padding:0 4px;font-size:9px;line-height:16px;background:#3fc6ff;color:#06170f;border:0;border-radius:0 0 3px 3px;z-index:5;cursor:grab;font-family:Share Tech Mono,ui-monospace,monospace}" +"#daw-session .daw-loc.sel{outline:1px solid #fff;background:#7dffb3}" +
       "#daw-session .daw-bar{width:" + BAR_W + "px;flex:0 0 " + BAR_W + "px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;color:var(--ink-faint,#4c5f56);border-left:1px solid var(--border,#263029);padding:4px 6px}" +
       "#daw-session .daw-loop{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--phosphor,#3fc6ff) 16%, transparent);border:1px solid var(--phosphor,#3fc6ff);pointer-events:none;z-index:2}" +
       "#daw-session .daw-loop-h{position:absolute;top:0;width:12px;height:44px;background:var(--phosphor,#3fc6ff);cursor:ew-resize;pointer-events:auto;z-index:3}" +
@@ -2250,15 +2250,37 @@
       var n = el("button", "daw-loc" + (state.selectedLocator === loc.id ? " sel" : ""), loc.name);
       n.type = "button";
       n.style.left = (loc.bar * BAR_W) + "px";
-      n.title = "Locator " + loc.name + " — click to jump, double-click to rename";
+      n.title = "Locator " + loc.name + " — drag to move, click to jump, double-click to rename";
       n.setAttribute("aria-label", "Locator " + loc.name + " bar " + (loc.bar + 1));
-      n.addEventListener("click", function (ev) {
+      n.addEventListener("pointerdown", function (ev) {
         ev.preventDefault();
         ev.stopPropagation();
         state.selectedLocator = loc.id;
         state.selectedArrange = null;
-        jumpToStep(loc.bar * STEPS_PER_BAR);
-        paintLocators();
+        var startX = ev.clientX;
+        var orig = loc.bar;
+        var dragged = false;
+        n.style.cursor = "grabbing";
+        function move(e) {
+          var dx = e.clientX - startX;
+          if (!dragged && Math.abs(dx) < 5) return;
+          if (!dragged) { pushUndo(); dragged = true; }
+          loc.bar = Math.max(0, Math.min(BARS - 1, orig + Math.round(dx / BAR_W)));
+          n.style.left = (loc.bar * BAR_W) + "px";
+        }
+        function up() {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          n.style.cursor = "grab";
+          if (!dragged) jumpToStep(loc.bar * STEPS_PER_BAR);
+          else {
+            state.locators.sort(function (a, b) { return a.bar - b.bar; });
+            setMidiLabel(loc.name + " → bar " + (loc.bar + 1));
+          }
+          paintLocators();
+        }
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
       });
       n.addEventListener("dblclick", function (ev) {
         ev.preventDefault();
@@ -4628,7 +4650,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
