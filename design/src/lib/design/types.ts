@@ -108,10 +108,15 @@ export interface PathNode extends BaseNode {
 
 export interface PaintNode extends BaseNode {
   kind: "paint";
-  bitmap: string | null;
+  bitmap: string;
 }
 
-export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | BaseNode;
+export interface ShapeNode extends BaseNode {
+  kind: "rect" | "ellipse" | "line" | "polygon" | "star" | "arrow";
+  sides?: number;
+}
+
+export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | ShapeNode;
 
 export interface Artboard {
   width: number;
@@ -126,11 +131,11 @@ export interface DesignDocument {
   name: string;
   artboard: Artboard;
   nodes: DesignNode[];
-  /** Manual guides in document space (x = vertical lines, y = horizontal). */
-  guides: { x: number[]; y: number[] };
   updatedAt: number;
   createdAt: number;
   thumbnail?: string;
+  /** Manual ruler guides in artboard space. */
+  guides?: { id: string; axis: "x" | "y"; pos: number }[];
 }
 
 export interface ProjectMeta {

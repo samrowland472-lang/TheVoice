@@ -65,6 +65,7 @@ interface DesignState {
   undo: () => void;
   redo: () => void;
   commit: () => void;
+  restoreHistory: (slot: "past" | "future", index: number) => void;
   setBrush: (p: Partial<BrushSettings>) => void;
   setColor: (c: string) => void;
   setBrand: (b: BrandKit) => void;
@@ -385,6 +386,32 @@ export const useDesign = create<DesignState>((set, get) => ({
       doc: next,
       future: future.slice(1),
       past: [...past, snapshot(doc)],
+      dirty: true,
+    });
+  },
+
+  restoreHistory: (slot, index) => {
+    const { past, future, doc } = get();
+    if (!doc) return;
+    if (slot === "past") {
+      const target = past[index];
+      if (!target) return;
+      set({
+        doc: snapshot(target),
+        past: past.slice(0, index),
+        future: [...past.slice(index + 1).map(snapshot), snapshot(doc), ...future],
+        selection: [],
+        dirty: true,
+      });
+      return;
+    }
+    const target = future[index];
+    if (!target) return;
+    set({
+      doc: snapshot(target),
+      past: [...past, snapshot(doc), ...future.slice(0, index).map(snapshot)],
+      future: future.slice(index + 1),
+      selection: [],
       dirty: true,
     });
   },

@@ -148,6 +148,77 @@ export function LayersPanel() {
         )}
         {layers.length === 0 && <li className="px-2 py-6 text-center text-xs text-ink-faint">Empty artboard</li>}
       </ul>
+      <HistoryList />
+    </div>
+  );
+}
+
+function HistoryList() {
+  const past = useDesign((s) => s.past);
+  const future = useDesign((s) => s.future);
+  const restoreHistory = useDesign((s) => s.restoreHistory);
+  const undo = useDesign((s) => s.undo);
+  const redo = useDesign((s) => s.redo);
+
+  return (
+    <div className="shrink-0 border-t border-border">
+      <div className="px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">History</div>
+      <ul className="max-h-36 overflow-auto px-2 pb-2 scrollbar-thin">
+        {future
+          .map((_, i) => i)
+          .reverse()
+          .map((idx) => (
+            <li key={`f${idx}`}>
+              <button
+                type="button"
+                className="flex h-8 w-full items-center rounded-[8px] px-2 text-left text-[11px] text-ink-faint hover:bg-surface-alt hover:text-ink"
+                onClick={() => restoreHistory("future", idx)}
+              >
+                Redo {idx + 1}
+              </button>
+            </li>
+          ))}
+        <li>
+          <span className="flex h-8 items-center rounded-[8px] bg-phosphor/10 px-2 text-[11px] text-phosphor">Now</span>
+        </li>
+        {past
+          .map((_, i) => i)
+          .reverse()
+          .map((idx) => (
+            <li key={`p${idx}`}>
+              <button
+                type="button"
+                className="flex h-8 w-full items-center rounded-[8px] px-2 text-left text-[11px] text-ink-dim hover:bg-surface-alt hover:text-ink"
+                onClick={() => restoreHistory("past", idx)}
+              >
+                Step {idx + 1}
+              </button>
+            </li>
+          ))}
+        {past.length === 0 && future.length === 0 && (
+          <li className="px-2 py-3 text-center text-[11px] text-ink-faint">Undo stack is empty</li>
+        )}
+      </ul>
+      {(past.length > 0 || future.length > 0) && (
+        <div className="flex gap-1 px-2 pb-2">
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!past.length}
+            onClick={undo}
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!future.length}
+            onClick={redo}
+          >
+            Redo
+          </button>
+        </div>
+      )}
     </div>
   );
 }
