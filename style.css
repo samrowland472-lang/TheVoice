@@ -3054,3 +3054,11 @@ input:focus-visible,
 .abl-warp label { display: flex; align-items: center; gap: 6px; }
 .abl-warp input[type="number"] { width: 64px; }
 .abl-warp input[type="range"] { width: 90px; }
+
+.abl-midi {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  min-width: 8em;
+}
+#abl-midi-map.on { color: var(--ground); background: var(--phosphor); }

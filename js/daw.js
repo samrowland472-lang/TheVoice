@@ -1,4 +1,4 @@
-import { initStudio, showStudio, studioPlay, studioStop, setProdView, addVoiceClip } from './daw-studio.js';
+import { initStudio, showStudio, studioPlay, studioStop, setProdView, addVoiceClip, studioMidi } from './daw-studio.js';
 // The Voice DAW — Produce (session clips) + DJ Live (rekordbox-class decks).
 // Web Audio actually sounds. MIDI / audio interfaces are detected live.
 // Does not touch Animate. Existing sequencer in Music stays intact.
@@ -787,6 +787,10 @@ function hardwareStatus() {
 function onMidiMessage(ev) {
   const [status, d1, d2] = ev.data;
   const cmd = status & 0xf0;
+  if (mode !== 'dj') {
+    studioMidi(cmd, d1, d2);
+    return;
+  }
   const vel = d2 / 127;
   if (cmd === 0xb0) {
     if (d1 === 8 || d1 === 10) {

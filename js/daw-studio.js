@@ -43,6 +43,34 @@ let currentScene = 0;
 let selectedScene = 0;
 let followSteps = 0;
 let prodView = 'session';
+let midiMapOn = false;
+let midiLearn = null;
+const midiHeld = new Map();
+const MIDI_MAP_KEY = 'thevoice-midi-map';
+function defaultMidiMap() {
+  const m = {
+    'cc:7': { type: 'vol', id: 'master' },
+    'cc:1': { type: 'cut' },
+    'cc:10': { type: 'pan', id: 'master' },
+  };
+  STRIPS.forEach((s, i) => { m[`cc:${20 + i}`] = { type: 'vol', id: s.id }; });
+  return m;
+}
+function loadMidiMap() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(MIDI_MAP_KEY) || 'null');
+    if (raw && typeof raw === 'object') return { ...defaultMidiMap(), ...raw };
+  } catch (_) {}
+  return defaultMidiMap();
+}
+let midiMap = loadMidiMap();
+function saveMidiMap() {
+  try { localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(midiMap)); } catch (_) {}
+}
+function midiStatus(text) {
+  const el = document.getElementById('abl-midi');
+  if (el) el.textContent = text;
+}
 
 const FOLLOW_ACTIONS = [
   { id: 'none', label: 'No Action' },
@@ -1350,6 +1378,12 @@ function paintMixer() {
   }).join('');
   root.querySelectorAll('[data-vol]').forEach((el) => {
     el.addEventListener('input', () => {
+      if (midiMapOn) {
+        midiLearn = { type: 'vol', id: el.dataset.vol };
+        midiStatus(`Learn volume ${el.dataset.vol} — move a CC`);
+        syncTransport();
+        return;
+      }
       const m = mix[el.dataset.vol];
       m.level = parseFloat(el.value);
       m.vol.gain.setTargetAtTime(m.level, audio().ctx.currentTime, 0.02);
@@ -1357,6 +1391,12 @@ function paintMixer() {
   });
   root.querySelectorAll('[data-pan]').forEach((el) => {
     el.addEventListener('input', () => {
+      if (midiMapOn) {
+        midiLearn = { type: 'pan', id: el.dataset.pan };
+        midiStatus(`Learn pan ${el.dataset.pan} — move a CC`);
+        syncTransport();
+        return;
+      }
       const m = mix[el.dataset.pan];
       m.panVal = parseFloat(el.value);
       if (m.pan) m.pan.pan.setTargetAtTime(m.panVal, audio().ctx.currentTime, 0.02);
@@ -1718,6 +1758,11 @@ function syncTransport() {
   if (play) play.classList.toggle('playing', playing);
   if (rec) rec.classList.toggle('on', recOn);
   if (metro) metro.classList.toggle('on', metroOn);
+  const mapBtn = document.getElementById('abl-midi-map');
+  if (mapBtn) {
+    mapBtn.classList.toggle('on', midiMapOn);
+    mapBtn.textContent = midiMapOn ? (midiLearn ? 'Move a CC…' : 'MIDI Map on') : 'MIDI Map';
+  }
   const bpmEl = document.getElementById('abl-bpm');
   if (bpmEl && document.activeElement !== bpmEl) bpmEl.value = String(bpm());
 }
@@ -1744,6 +1789,8 @@ function paintTransport() {
       </select>
     </label>
     <span class="abl-spacer"></span>
+    <button type="button" id="abl-midi-map" title="MIDI Map — click a fader, then move a CC">MIDI Map</button>
+    <span class="abl-midi" id="abl-midi" aria-live="polite"></span>
     <button type="button" id="abl-bounce" title="Render the loop to a WAV — production itself is live">Bounce</button>
   `;
   root.querySelector('#abl-play').addEventListener('click', togglePlay);
@@ -1774,6 +1821,12 @@ function paintTransport() {
     }
   });
   root.querySelector('#abl-q').addEventListener('change', (e) => { quantize = parseFloat(e.target.value) || 0; });
+  root.querySelector('#abl-midi-map').addEventListener('click', () => {
+    midiMapOn = !midiMapOn;
+    midiLearn = null;
+    syncTransport();
+    paintMixer();
+  });
   root.querySelector('#abl-bounce').addEventListener('click', bounce);
 }
 
@@ -1795,6 +1848,103 @@ function tickMeters() {
     if (ph && playing) ph.style.left = `${((step % ROLL_STEPS) / ROLL_STEPS) * 100}%`;
   }
   metersOn = requestAnimationFrame(tickMeters);
+}
+
+export function studioMidi(cmd, d1, d2) {
+  const vel = (d2 || 0) / 127;
+  if (cmd === 0xb0) {
+    if (midiMapOn && midiLearn) {
+      midiMap[`cc:${d1}`] = { ...midiLearn };
+      saveMidiMap();
+      midiStatus(`CC ${d1} → ${midiLearn.type} ${midiLearn.id || ''}`.trim());
+      midiLearn = null;
+      midiMapOn = false;
+      syncTransport();
+      paintMixer();
+      applyMidiTarget(midiMap[`cc:${d1}`], vel);
+      return;
+    }
+    const target = midiMap[`cc:${d1}`];
+    if (target) applyMidiTarget(target, vel);
+    else midiStatus(`CC ${d1}`);
+    return;
+  }
+  if (cmd === 0x90 && d2 > 0) {
+    studioNoteOn(d1, vel);
+    midiStatus(`Note ${d1}`);
+    return;
+  }
+  if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) {
+    studioNoteOff(d1);
+  }
+}
+
+function applyMidiTarget(target, vel) {
+  if (!target) return;
+  ensureMix();
+  const a = audio();
+  if (!a) return;
+  if (target.type === 'vol') {
+    const m = mix[target.id];
+    if (!m) return;
+    m.level = vel * 1.4;
+    m.vol.gain.setTargetAtTime(m.level, a.ctx.currentTime, 0.02);
+    const el = document.querySelector(`[data-vol="${target.id}"]`);
+    if (el) el.value = String(m.level);
+  } else if (target.type === 'pan') {
+    const m = mix[target.id];
+    if (!m || !m.pan) return;
+    m.panVal = vel * 2 - 1;
+    m.pan.pan.setTargetAtTime(m.panVal, a.ctx.currentTime, 0.02);
+    const el = document.querySelector(`[data-pan="${target.id}"]`);
+    if (el) el.value = String(m.panVal);
+  } else if (target.type === 'cut') {
+    keysCutoff = 80 + vel * 8000;
+  }
+}
+
+function studioNoteOn(pitch, vel) {
+  ensureMix();
+  const a = audio();
+  if (!a || !mix.keys) return;
+  studioNoteOff(pitch);
+  const t = a.ctx.currentTime;
+  const freq = 440 * Math.pow(2, (pitch - 69) / 12);
+  const o1 = a.ctx.createOscillator();
+  const o2 = a.ctx.createOscillator();
+  o1.type = 'sawtooth';
+  o2.type = 'square';
+  o1.frequency.value = freq;
+  o2.frequency.value = freq * 1.005;
+  const f = a.ctx.createBiquadFilter();
+  f.type = 'lowpass';
+  f.frequency.value = keysCutoff;
+  f.Q.value = keysRes;
+  const g = a.ctx.createGain();
+  const v = Math.max(0.001, vel * 0.28);
+  g.gain.setValueAtTime(0.0008, t);
+  g.gain.exponentialRampToValueAtTime(v, t + 0.01);
+  o1.connect(f); o2.connect(f); f.connect(g); g.connect(mix.keys.input);
+  o1.start(t); o2.start(t);
+  midiHeld.set(pitch, { o1, o2, g });
+  if (recOn && playing) {
+    notes.push({ pitch, start: step % ROLL_STEPS, length: 2, vel: Math.round(vel * 127) });
+    paintRoll();
+  }
+}
+
+function studioNoteOff(pitch) {
+  const h = midiHeld.get(pitch);
+  if (!h) return;
+  const a = audio();
+  const t = a ? a.ctx.currentTime : 0;
+  try {
+    h.g.gain.cancelScheduledValues(t);
+    h.g.gain.setTargetAtTime(0.0008, t, 0.04);
+    h.o1.stop(t + 0.16);
+    h.o2.stop(t + 0.16);
+  } catch (_) {}
+  midiHeld.delete(pitch);
 }
 
 export function initStudio(options, audioGetter) {
