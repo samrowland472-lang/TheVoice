@@ -263,6 +263,7 @@
     countIn: 0,
     swing: 0,
     masterVol: 0.72,
+    xfade: 0.5,
     returnAVol: 0.85,
     returnBVol: 0.7,
     rollSnap: 1,
@@ -446,7 +447,10 @@
     insDelay.connect(wet);
     dry.connect(vol);
     wet.connect(vol);
-    vol.connect(pan);
+    var xf = ctx.createGain();
+    xf.gain.value = 1;
+    vol.connect(xf);
+    xf.connect(pan);
     pan.connect(mute);
     mute.connect(analyser);
     analyser.connect(master);
@@ -457,6 +461,7 @@
     trackNodes[tr.id] = input;
     trackGraph[tr.id] = {
       vol: vol,
+      xf: xf,
       pan: pan,
       mute: mute,
       analyser: analyser,
@@ -521,6 +526,26 @@
     return true;
   }
 
+  function xfMul(tr) {
+    var x = Math.max(0, Math.min(1, state.xfade == null ? 0.5 : state.xfade));
+    if (tr.xf === "A") return Math.cos((x * Math.PI) / 2);
+    if (tr.xf === "B") return Math.sin((x * Math.PI) / 2);
+    return 1;
+  }
+
+  function applyXfade() {
+    if (!ctx) return;
+    state.tracks.forEach(function (tr) {
+      var g = trackGraph[tr.id];
+      if (!g || !g.xf) return;
+      g.xf.gain.setTargetAtTime(xfMul(tr), ctx.currentTime, 0.015);
+    });
+    document.querySelectorAll("#daw-session .daw-xfade").forEach(function (el) {
+      if (document.activeElement === el) return;
+      el.value = String(state.xfade == null ? 0.5 : state.xfade);
+    });
+  }
+
   function applyMix() {
     if (!ctx) return;
     var soloed = anySolo();
@@ -532,6 +557,7 @@
       applyAutoAt(tr, state.step);
       applyDevices(tr);
     });
+    applyXfade();
     if (master) master.gain.setTargetAtTime(state.masterVol, ctx.currentTime, 0.01);
     if (returnAGain) returnAGain.gain.setTargetAtTime(state.returnAVol, ctx.currentTime, 0.01);
     if (returnBGain) returnBGain.gain.setTargetAtTime(state.returnBVol, ctx.currentTime, 0.01);
@@ -954,6 +980,7 @@
       role: kind === "audio" ? "audio" : "midi",
       color: COLORS[state.tracks.length % COLORS.length],
       volume: 0.85,
+      xf: "",
       pan: 0,
       mute: false,
       solo: false,
@@ -984,6 +1011,7 @@
           role: tr.role,
           color: tr.color,
           volume: tr.volume,
+          xf: tr.xf || "",
           pan: tr.pan,
           mute: tr.mute,
           solo: tr.solo,
@@ -1042,6 +1070,7 @@
       }
       tr.name = s.name;
       tr.volume = s.volume;
+      tr.xf = s.xf || "";
       tr.pan = s.pan;
       tr.mute = s.mute;
       tr.solo = s.solo;
@@ -2118,6 +2147,7 @@
       "#daw-session .daw-btn{min-height:44px;min-width:44px;padding:8px 12px;border:1px solid var(--border,#263029);border-radius:10px;background:var(--surface-alt,#1a201c);color:var(--ink,#d9f5e3);font:inherit;cursor:pointer}" +
       "#daw-session .daw-btn:hover{border-color:var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-btn.on{background:var(--phosphor,#3fc6ff);color:var(--phosphor-ink,#06170f);border-color:var(--phosphor,#3fc6ff)}" +
+      "#daw-session .daw-xfade{width:140px;min-height:32px;accent-color:var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-btn.stop{color:var(--alert,#ff4d4d)}" +
       "#daw-session .daw-btn.rec.on{background:var(--alert,#ff4d4d);color:#fff;border-color:var(--alert,#ff4d4d)}" +
       "#daw-session label.daw-ctl{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim,#7d9689)}" +
@@ -3966,6 +3996,21 @@
         load.addEventListener("click", function () { loadAudioFile(tr); });
         mini.appendChild(load);
       }
+      var xfRow = el("div", "daw-mini");
+      [["A", "A"], ["B", "B"]].forEach(function (pair) {
+        var b = el("button", "daw-btn", pair[1]);
+        b.type = "button";
+        b.setAttribute("data-xf", pair[0]);
+        b.setAttribute("aria-label", tr.name + " crossfader " + pair[1]);
+        b.classList.toggle("on", tr.xf === pair[0]);
+        b.addEventListener("click", function () {
+          tr.xf = tr.xf === pair[0] ? "" : pair[0];
+          applyMix();
+          rebuildMixer();
+        });
+        xfRow.appendChild(b);
+      });
+      strip.appendChild(xfRow);
       strip.appendChild(mini);
       mixerEl.appendChild(strip);
       if (trackGraph[tr.id]) trackGraph[tr.id].meter = met.fill;
@@ -4000,6 +4045,22 @@
     mrow.appendChild(mm.box);
     mrow.appendChild(fader(state.masterVol, function (v) { state.masterVol = v; }, "Master volume"));
     masterStrip.appendChild(mrow);
+    var xfWrap = el("label", "daw-ctl");
+    xfWrap.appendChild(el("span", "daw-knob-lab", "X-Fade A|B"));
+    var xfIn = document.createElement("input");
+    xfIn.type = "range";
+    xfIn.className = "daw-xfade";
+    xfIn.min = "0";
+    xfIn.max = "1";
+    xfIn.step = "0.01";
+    xfIn.value = String(state.xfade == null ? 0.5 : state.xfade);
+    xfIn.setAttribute("aria-label", "Crossfader A to B");
+    xfIn.addEventListener("input", function () {
+      state.xfade = Number(xfIn.value);
+      applyXfade();
+    });
+    xfWrap.appendChild(xfIn);
+    masterStrip.appendChild(xfWrap);
     mixerEl.appendChild(masterStrip);
   }
 
@@ -4069,6 +4130,20 @@
     stop.addEventListener("click", stopTransport);
     top.appendChild(play);
     top.appendChild(stop);
+    top.appendChild(el("span", "daw-knob-lab", "A|B"));
+    var xfTop = document.createElement("input");
+    xfTop.type = "range";
+    xfTop.className = "daw-xfade";
+    xfTop.min = "0";
+    xfTop.max = "1";
+    xfTop.step = "0.01";
+    xfTop.value = String(state.xfade == null ? 0.5 : state.xfade);
+    xfTop.setAttribute("aria-label", "Crossfader A to B");
+    xfTop.addEventListener("input", function () {
+      state.xfade = Number(xfTop.value);
+      applyXfade();
+    });
+    top.appendChild(xfTop);
 
     var rec = el("button", "daw-btn rec", "Record");
     rec.type = "button";
@@ -4959,6 +5034,7 @@
       follow: state.follow,
       locators: (state.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; }),
       masterVol: state.masterVol,
+      xfade: state.xfade,
       returnAVol: state.returnAVol,
       returnBVol: state.returnBVol,
       rollSnap: state.rollSnap,
@@ -4977,6 +5053,7 @@
           role: tr.role,
           color: tr.color,
           volume: tr.volume,
+          xf: tr.xf || "",
           pan: tr.pan,
           mute: tr.mute,
           solo: tr.solo,
@@ -5033,6 +5110,7 @@
       role: raw.role || (raw.kind === "audio" ? "audio" : "midi"),
       color: raw.color,
       volume: raw.volume == null ? 0.85 : raw.volume,
+      xf: raw.xf || "",
       pan: raw.pan || 0,
       mute: !!raw.mute,
       solo: !!raw.solo,
@@ -5074,6 +5152,7 @@
     state.locators = (data.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; });
     state.selectedLocator = null;
     state.masterVol = data.masterVol == null ? 0.72 : data.masterVol;
+    state.xfade = data.xfade == null ? 0.5 : data.xfade;
     state.returnAVol = data.returnAVol == null ? 0.85 : data.returnAVol;
     state.returnBVol = data.returnBVol == null ? 0.7 : data.returnBVol;
     state.rollSnap = data.rollSnap || 1;
