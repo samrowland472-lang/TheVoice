@@ -31,23 +31,22 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Image crop + rectangular mask.
-2. Manual guides + rulers (drag from edge, snap while moving).
-4. History panel (clickable undo stack).
-5. Pen tool: undo last point, close path, Escape to finish.
-6. Print / story safe-area overlay + optional bleed on export.
-7. Hub folders / tags for recents; pin a project.
-8. Brand kit: named colours + font pairing applied to new text.
-9. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
-10. Paint stroke undo (not the whole bitmap commit).
-11. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
-12. Contrast checker on text vs fill / artboard.
-13. Multi-page / artboard set for a campaign (story + square + banner).
-14. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
-15. Components / linked duplicates (edit one, update copies).
-16. Color-from-image palette into the brand kit.
-17. Present mode speaker notes / click-through frames.
-18. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
+1. Manual guides + rulers (drag from edge, snap while moving).
+2. History panel (clickable undo stack).
+3. Pen tool: undo last point, close path, Escape to finish.
+4. Print / story safe-area overlay + optional bleed on export.
+5. Hub folders / tags for recents; pin a project.
+6. Brand kit: named colours + font pairing applied to new text.
+7. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
+8. Paint stroke undo (not the whole bitmap commit).
+9. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
+10. Contrast checker on text vs fill / artboard.
+11. Multi-page / artboard set for a campaign (story + square + banner).
+12. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
+13. Components / linked duplicates (edit one, update copies).
+14. Color-from-image palette into the brand kit.
+15. Present mode speaker notes / click-through frames.
+16. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
 
 ## Done
 
@@ -63,8 +62,13 @@ Auth OFF, DB OFF.
 - Layers: drag-to-reorder via grip; Shift-click multi-select; block move.
 - Align: **Selection** (2+ objects, relative to their bounds) or **Artboard**. Distribute still uses selection span.
 - SVG export: linear gradients, images, paint bitmaps, wrapped tspans, paths, polygon/star/arrow/line, opacity, blend, shadows. XML escaped.
+- Image crop (normalized source rect) + rectangular mask (clip to node bounds / rounded radius); inspector crop sliders + reset / center 70%; canvas + PNG + SVG honor crop and clip.
 
 ## Iterations
+
+### 2026-08-22T19:15Z — loop 5
+
+Image crop + rectangular mask. Canvas drawImage uses crop source rect and clips to node (optional radius). SVG export clipPath + scaled image for crop. Inspector: crop X/Y/W/H % + Reset + Center 70%. Typecheck + build + smoke clean.
 
 ### 2026-08-22T18:18Z — loop 4
 
@@ -88,4 +92,4 @@ Command palette, marquee, smart guides, clipboard, present, inspector depth, tem
 
 ## Next recommended
 
-Image crop + rectangular mask.
+Manual guides + rulers (drag from edge, snap while moving).
