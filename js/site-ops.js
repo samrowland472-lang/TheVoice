@@ -2,7 +2,7 @@
   if (window.__voiceSiteOps) return;
   window.__voiceSiteOps = true;
 
-  var TEXT_CAP = 20000;
+  var WORD_CAP = 20000;
 
   function injectCss() {
     if (document.getElementById("site-ops-css")) return;
@@ -18,12 +18,22 @@
       "body.voice-ops #modulate-view,body.voice-ops #project-view,body.voice-ops #library-view,body.voice-ops #settings-view,body.voice-ops #longform-view,body.voice-ops #plans-view,body.voice-ops #account-view{max-width:920px}" +
       "body.voice-ops #settings-view input[type=password]{font-family:Share Tech Mono,ui-monospace,monospace;letter-spacing:.08em}" +
       "body.voice-ops .drop-ok{outline:2px dashed var(--phosphor,#3fc6ff);outline-offset:2px}" +
-      "body.voice-ops #console-view [data-panel=speak] .field-label::after{content:'  Ctrl+Enter to speak';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#4c5f56;margin-left:8px}";
+      "body.voice-ops #console-view [data-panel=speak] .field-label::after{content:'  Ctrl+Enter to speak';font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#4c5f56;margin-left:8px}" +
+      "body.voice-ops #word-cap{font-family:Share Tech Mono,ui-monospace,monospace;font-size:11px;color:#7d9689;letter-spacing:.04em}" +
+      "body.voice-ops #word-cap.warn{color:#ffb238}" +
+      "body.voice-ops #word-cap.full{color:#ff4d4d}";
     document.head.appendChild(s);
   }
 
-  function visible(el) {
-    return !!(el && !el.hidden && el.offsetParent !== null);
+  function wordsOf(s) {
+    var m = String(s || "").trim().match(/\S+/g);
+    return m ? m.length : 0;
+  }
+
+  function trimWords(s, n) {
+    var parts = String(s || "").match(/\S+\s*/g);
+    if (!parts || parts.length <= n) return s;
+    return parts.slice(0, n).join("").replace(/\s+$/, "");
   }
 
   function click(id) {
@@ -31,13 +41,51 @@
     if (b && !b.disabled) b.click();
   }
 
+  function ensureMeter(ta) {
+    var id = "word-cap";
+    var el = document.getElementById(id);
+    if (el) return el;
+    el = document.createElement("div");
+    el.id = id;
+    el.setAttribute("role", "status");
+    el.setAttribute("aria-live", "polite");
+    var stats = document.getElementById("text-stats");
+    if (stats && stats.parentNode) stats.parentNode.insertBefore(el, stats.nextSibling);
+    else ta.parentNode.insertBefore(el, ta.nextSibling);
+    return el;
+  }
+
+  function paintMeter(n) {
+    var el = document.getElementById("word-cap");
+    if (!el) return;
+    el.textContent = n.toLocaleString() + " / 20,000 words";
+    el.classList.toggle("warn", n >= 18000 && n < WORD_CAP);
+    el.classList.toggle("full", n >= WORD_CAP);
+  }
+
   function capText() {
-    var ta = document.getElementById("text-input");
-    if (!ta || ta._opsCap) return;
-    ta._opsCap = true;
-    ta.setAttribute("maxlength", String(TEXT_CAP));
-    ta.addEventListener("input", function () {
-      if (ta.value.length > TEXT_CAP) ta.value = ta.value.slice(0, TEXT_CAP);
+    var ids = ["text-input"];
+    var lf = document.querySelector("#longform-view textarea");
+    if (lf && lf.id) ids.push(lf.id);
+    ids.forEach(function (id) {
+      var ta = document.getElementById(id);
+      if (!ta || ta._opsCap) return;
+      ta._opsCap = true;
+      ta.removeAttribute("maxlength");
+      function apply() {
+        var n = wordsOf(ta.value);
+        if (n > WORD_CAP) {
+          ta.value = trimWords(ta.value, WORD_CAP);
+          n = WORD_CAP;
+        }
+        if (ta.id === "text-input") paintMeter(n);
+      }
+      if (ta.id === "text-input") ensureMeter(ta);
+      ta.addEventListener("input", apply);
+      ta.addEventListener("paste", function () {
+        window.setTimeout(apply, 0);
+      });
+      apply();
     });
   }
 
