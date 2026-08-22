@@ -274,6 +274,8 @@
     selectedTrackId: "drums",
     ccMap: { 7: "volume", 10: "pan", 74: "cutoff" },
     midiHooked: false,
+    mode: "prod",
+    noteMap: {},
   };
   state.arrangeClips = seedArrange(state.tracks);
   attachDefaultRacks(state.tracks);
@@ -375,6 +377,7 @@
     state.tracks.forEach(function (tr) {
       wireTrack(tr);
     });
+    ensureDeckGraph();
     applyMix();
     startMeters();
     hookMidi();
@@ -823,7 +826,776 @@
       if (document.activeElement === el) return;
       el.value = String(state.xfade == null ? 0.5 : state.xfade);
     });
+    applyDeckMix();
   }
+
+  var decks = {
+    A: { playing: false, rate: 1, vol: 0.85, sync: false, pfl: false, cueAt: 0, pos: 0, next: 0, timer: 0, name: "Empty", kind: null, trackId: null, clip: null, buf: null, t0: 0, off: 0 },
+    B: { playing: false, rate: 1, vol: 0.85, sync: false, pfl: false, cueAt: 0, pos: 0, next: 0, timer: 0, name: "Empty", kind: null, trackId: null, clip: null, buf: null, t0: 0, off: 0 },
+  };
+  var deckGraph = { A: null, B: null };
+  var djEl = null;
+  var recMix = null;
+  var recChunks = [];
+  var recDest = null;
+  var midiAccess = null;
+  var audioInNodes = { A: null, B: null };
+  var audioInStreams = { A: null, B: null };
+
+  function dummyDeckTrack(id, kind) {
+    return { id: "deck-" + id, name: "Deck " + id, kind: kind || "midi", devices: defaultDevices(kind || "midi"), color: id === "A" ? "#3fc6ff" : "#ffb238" };
+  }
+
+  function ensureDeckGraph() {
+    if (!ctx || !master) return;
+    ["A", "B"].forEach(function (id) {
+      if (deckGraph[id]) return;
+      var input = ctx.createGain();
+      var vol = ctx.createGain();
+      vol.gain.value = decks[id].vol;
+      var xf = ctx.createGain();
+      xf.gain.value = xfMul({ xf: id });
+      var pfl = ctx.createGain();
+      pfl.gain.value = 0;
+      var an = ctx.createAnalyser();
+      an.fftSize = 256;
+      input.connect(vol);
+      vol.connect(xf);
+      xf.connect(master);
+      vol.connect(pfl);
+      if (cueGain) pfl.connect(cueGain);
+      vol.connect(an);
+      deckGraph[id] = { in: input, vol: vol, xf: xf, pfl: pfl, analyser: an, src: null };
+    });
+  }
+
+  function applyDeckMix() {
+    if (!ctx) return;
+    ["A", "B"].forEach(function (id) {
+      var g = deckGraph[id];
+      var d = decks[id];
+      if (!g) return;
+      g.vol.gain.setTargetAtTime(Math.max(0, d.vol || 0), ctx.currentTime, 0.02);
+      g.pfl.gain.setTargetAtTime(d.pfl ? 1 : 0, ctx.currentTime, 0.02);
+      if (g.xf) g.xf.gain.setTargetAtTime(xfMul({ xf: id }), ctx.currentTime, 0.015);
+    });
+  }
+
+  function applyDeckRate(id) {
+    var d = decks[id];
+    var g = deckGraph[id];
+    if (!d || !g || !g.src || !g.src.playbackRate || !ctx) return;
+    try { g.src.playbackRate.setTargetAtTime(Math.max(0.01, d.rate || 1), ctx.currentTime, 0.03); } catch (e) {}
+  }
+
+  function deckPosSec(id) {
+    var d = decks[id];
+    if (!d || !d.buf || !ctx) return d ? d.cueAt : 0;
+    if (!d.playing) return d.cueAt;
+    var dt = (ctx.currentTime - (d.t0 || 0)) * (d.rate || 1) + (d.off || 0);
+    var dur = d.buf.duration || 1;
+    return ((dt % dur) + dur) % dur;
+  }
+
+  function stopDeckAudio(id) {
+    var g = deckGraph[id];
+    var d = decks[id];
+    if (d) {
+      window.clearTimeout(d.timer);
+      d.timer = 0;
+    }
+    if (g && g.src) {
+      try { g.src.stop(); } catch (e) {}
+      try { g.src.disconnect(); } catch (e2) {}
+      g.src = null;
+    }
+    try { stopPad("deck-" + id); } catch (e3) {}
+    try { stopWarpVoices("deck-" + id); } catch (e4) {}
+  }
+
+  function disconnectLineIn(id) {
+    if (audioInNodes[id]) {
+      try { audioInNodes[id].disconnect(); } catch (e) {}
+      audioInNodes[id] = null;
+    }
+    if (audioInStreams[id]) {
+      try { audioInStreams[id].getTracks().forEach(function (t) { t.stop(); }); } catch (e2) {}
+      audioInStreams[id] = null;
+    }
+  }
+
+  function loadDeck(id, clip, track) {
+    if (!decks[id]) return;
+    ensureAudio();
+    ensureDeckGraph();
+    ctx.resume();
+    stopDeckAudio(id);
+    disconnectLineIn(id);
+    var d = decks[id];
+    d.clip = clip || null;
+    d.trackId = track ? track.id : null;
+    d.buf = clip && clip.notes && clip.notes.buffer ? clip.notes.buffer : null;
+    d.kind = d.buf ? "audio" : (clip ? ((track && track.kind) || "midi") : null);
+    d.name = clip ? ((track ? track.name + " · " : "") + (clip.name || "Clip")) : "Empty";
+    d.cueAt = 0;
+    d.pos = 0;
+    d.playing = false;
+    d.off = 0;
+    paintDj();
+    setMidiLabel("Deck " + id + " · " + d.name);
+  }
+
+  function loadSelectedToDeck(id) {
+    var sel = state.selectedSession;
+    if (sel && sel.clip) {
+      loadDeck(id, sel.clip, sel.track);
+      return;
+    }
+    var launched = null, tr0 = null;
+    state.tracks.forEach(function (tr) {
+      if (!launched && state.launched[tr.id] && state.launched[tr.id] !== "stop") {
+        launched = state.launched[tr.id];
+        tr0 = tr;
+      }
+    });
+    if (launched) loadDeck(id, launched, tr0);
+    else setMidiLabel("Select a clip, then Load " + id);
+  }
+
+  function startPadTo(dest, tr, clipObj, holdKey) {
+    stopPad(holdKey);
+    if (!ctx || !clipObj || !dest) return;
+    var analog = analogOf(tr);
+    var g = ctx.createGain();
+    g.gain.value = 0.08;
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = analog ? analog.cutoff : 4200;
+    f.Q.value = analog ? analog.res : 0.7;
+    f.connect(dest);
+    g.connect(f);
+    var wave = analog ? analog.wave : "sine";
+    var oscs = (clipObj.notes.chord || [0, 7, 12]).map(function (s, i) {
+      var o = ctx.createOscillator();
+      o.type = wave;
+      o.frequency.value = midiHz(s + 12) * (i === 1 ? 1.003 : 1);
+      o.connect(g);
+      o.start();
+      return o;
+    });
+    padHold[holdKey] = { g: g, oscs: oscs };
+  }
+
+  function deckSched(id) {
+    var d = decks[id];
+    var g = deckGraph[id];
+    if (!d || !g || !d.playing || !d.clip || d.kind === "audio" || d.kind === "in") return;
+    var tr = (d.trackId && state.tracks.find(function (x) { return x.id === d.trackId; })) || dummyDeckTrack(id, d.kind);
+    var horizon = ctx.currentTime + 0.12;
+    var stepDur = secondsPerStep() / Math.max(0.25, d.rate || 1);
+    while (d.next < horizon) {
+      playStepAt(tr, d.clip, d.pos, d.next, 1, g.in);
+      d.next += stepDur;
+      d.pos += 1;
+      if (d.pos >= (d.clip.length || STEPS)) d.pos = 0;
+    }
+    d.timer = window.setTimeout(function () { deckSched(id); }, 25);
+  }
+
+  function playDeck(id) {
+    var d = decks[id];
+    if (!d) return;
+    ensureAudio();
+    ensureDeckGraph();
+    ctx.resume();
+    var g = deckGraph[id];
+    if (d.playing) return;
+    if (d.kind === "in") {
+      d.playing = true;
+      applyDeckMix();
+      paintDj();
+      return;
+    }
+    if (!d.clip && !d.buf) {
+      loadSelectedToDeck(id);
+      if (!d.clip && !d.buf) return;
+    }
+    stopDeckAudio(id);
+    d.playing = true;
+    if (d.kind === "audio" && d.buf) {
+      var src = ctx.createBufferSource();
+      src.buffer = d.buf;
+      src.loop = true;
+      src.playbackRate.value = d.rate || 1;
+      src.connect(g.in);
+      var off = Math.max(0, Math.min(d.buf.duration - 0.01, d.cueAt || 0));
+      src.start(0, off);
+      g.src = src;
+      d.t0 = ctx.currentTime;
+      d.off = off;
+    } else if (d.kind === "pad" || (d.clip && d.clip.notes && d.clip.notes.hold && !(d.clip.notes.roll && d.clip.notes.roll.length))) {
+      var tr = (d.trackId && state.tracks.find(function (x) { return x.id === d.trackId; })) || dummyDeckTrack(id, "pad");
+      startPadTo(g.in, tr, d.clip, "deck-" + id);
+    } else {
+      d.pos = 0;
+      d.next = ctx.currentTime + 0.02;
+      deckSched(id);
+    }
+    applyDeckMix();
+    paintDj();
+  }
+
+  function pauseDeck(id) {
+    var d = decks[id];
+    if (!d || !d.playing) return;
+    if (d.kind === "audio") d.cueAt = deckPosSec(id);
+    d.playing = false;
+    stopDeckAudio(id);
+    paintDj();
+  }
+
+  function toggleDeck(id) {
+    if (decks[id] && decks[id].playing) pauseDeck(id);
+    else playDeck(id);
+  }
+
+  function cueDeck(id) {
+    var d = decks[id];
+    if (!d) return;
+    if (d.playing) {
+      pauseDeck(id);
+      d.cueAt = d.cueAt || 0;
+      paintDj();
+      return;
+    }
+    playDeck(id);
+  }
+
+  function jogDeck(id, amount) {
+    var d = decks[id];
+    var g = deckGraph[id];
+    if (!d) return;
+    amount = Number(amount) || 0;
+    if (d.playing && g && g.src && g.src.playbackRate) {
+      var base = d.rate || 1;
+      try { g.src.playbackRate.setTargetAtTime(Math.max(0.01, base * (1 + amount * 0.2)), ctx.currentTime, 0.008); } catch (e) {}
+      window.clearTimeout(d._jogT);
+      d._jogT = window.setTimeout(function () { applyDeckRate(id); }, 90);
+    } else if (d.buf) {
+      d.cueAt = Math.max(0, Math.min((d.buf.duration || 1) - 0.01, (d.cueAt || 0) + amount * 0.08));
+      paintDjWave(id);
+    } else {
+      d.pos = Math.max(0, (d.pos || 0) + (amount > 0 ? 1 : -1));
+    }
+  }
+
+  function syncDeck(id) {
+    var d = decks[id];
+    if (!d) return;
+    d.sync = !d.sync;
+    if (d.sync) {
+      d.rate = 1;
+      applyDeckRate(id);
+    }
+    paintDj();
+  }
+
+  function handleDjMap(name, down) {
+    if (!name) return;
+    if (!down) return;
+    if (name === "playA") toggleDeck("A");
+    else if (name === "playB") toggleDeck("B");
+    else if (name === "cueA") cueDeck("A");
+    else if (name === "cueB") cueDeck("B");
+    else if (name === "syncA") syncDeck("A");
+    else if (name === "syncB") syncDeck("B");
+  }
+
+  function drawDeckWave(id) {
+    if (!djEl) return;
+    var cv = djEl.querySelector('[data-dj-wave="' + id + '"]');
+    if (!cv) return;
+    var ctx2 = cv.getContext("2d");
+    var w = cv.width, h = cv.height;
+    ctx2.fillStyle = "#070908";
+    ctx2.fillRect(0, 0, w, h);
+    var d = decks[id];
+    ctx2.strokeStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+    ctx2.beginPath();
+    if (d.buf && d.buf.getChannelData) {
+      var data = d.buf.getChannelData(0);
+      var step = Math.max(1, Math.floor(data.length / w));
+      for (var x = 0; x < w; x++) {
+        var amp = Math.abs(data[Math.min(data.length - 1, x * step)]);
+        var y = h / 2 - amp * (h * 0.42);
+        if (x === 0) ctx2.moveTo(x, y);
+        else ctx2.lineTo(x, y);
+      }
+      ctx2.stroke();
+      var pos = deckPosSec(id);
+      var px = (pos / (d.buf.duration || 1)) * w;
+      ctx2.fillStyle = "#ff4d4d";
+      ctx2.fillRect(px, 0, 2, h);
+      var cx = (d.cueAt / (d.buf.duration || 1)) * w;
+      ctx2.fillStyle = "#ffb238";
+      ctx2.fillRect(cx - 1, 0, 2, h);
+    } else if (d.clip) {
+      ctx2.strokeStyle = "#1c2a24";
+      for (var i = 0; i < 16; i++) {
+        ctx2.beginPath();
+        ctx2.moveTo((i / 16) * w, 0);
+        ctx2.lineTo((i / 16) * w, h);
+        ctx2.stroke();
+      }
+      ctx2.fillStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+      ctx2.font = "11px Share Tech Mono, monospace";
+      ctx2.fillText(d.name || "MIDI", 10, h / 2);
+      if (d.playing) {
+        var len = d.clip.length || STEPS;
+        var px2 = ((d.pos % len) / len) * w;
+        ctx2.fillStyle = "#ff4d4d";
+        ctx2.fillRect(px2, 0, 2, h);
+      }
+    } else if (d.kind === "in") {
+      var g = deckGraph[id];
+      ctx2.fillStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+      ctx2.font = "11px Share Tech Mono, monospace";
+      ctx2.fillText("LINE IN", 10, 20);
+      if (g && g.analyser) {
+        var buf = new Uint8Array(g.analyser.fftSize);
+        g.analyser.getByteTimeDomainData(buf);
+        ctx2.strokeStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+        ctx2.beginPath();
+        for (var x2 = 0; x2 < w; x2++) {
+          var v = (buf[Math.floor((x2 / w) * buf.length)] - 128) / 128;
+          var y2 = h / 2 + v * (h * 0.4);
+          if (x2 === 0) ctx2.moveTo(x2, y2);
+          else ctx2.lineTo(x2, y2);
+        }
+        ctx2.stroke();
+      }
+    } else {
+      ctx2.fillStyle = "#4c5f56";
+      ctx2.font = "11px Share Tech Mono, monospace";
+      ctx2.fillText("Load a clip or line-in", 10, h / 2);
+    }
+  }
+
+  function paintDjWave(id) { drawDeckWave(id); }
+
+  var djRaf = 0;
+  function tickDjWaves() {
+    if (!djEl || !root || !root.classList.contains("is-dj")) {
+      djRaf = 0;
+      return;
+    }
+    djRaf = window.requestAnimationFrame(tickDjWaves);
+    drawDeckWave("A");
+    drawDeckWave("B");
+  }
+
+  function paintDj() {
+    if (!djEl) return;
+    ["A", "B"].forEach(function (id) {
+      var d = decks[id];
+      var name = djEl.querySelector('[data-dj-name="' + id + '"]');
+      if (name) name.textContent = "Deck " + id + " · " + (d.name || "Empty");
+      var play = djEl.querySelector('[data-dj-play="' + id + '"]');
+      if (play) {
+        play.classList.toggle("on", !!d.playing);
+        play.textContent = d.playing ? "Pause" : "Play";
+      }
+      var sync = djEl.querySelector('[data-dj-sync="' + id + '"]');
+      if (sync) sync.classList.toggle("on", !!d.sync);
+      var pfl = djEl.querySelector('[data-dj-pfl="' + id + '"]');
+      if (pfl) pfl.classList.toggle("on", !!d.pfl);
+      var rate = djEl.querySelector('[data-dj-rate="' + id + '"]');
+      if (rate && document.activeElement !== rate) rate.value = String(d.rate);
+      var vol = djEl.querySelector('[data-dj-vol="' + id + '"]');
+      if (vol && document.activeElement !== vol) vol.value = String(d.vol);
+      var rateLab = djEl.querySelector('[data-dj-rate-lab="' + id + '"]');
+      if (rateLab) rateLab.textContent = Math.round((d.rate || 1) * 100) + "%";
+      drawDeckWave(id);
+    });
+    var recBtn = djEl.querySelector("[data-dj-rec]");
+    if (recBtn) recBtn.classList.toggle("on", !!(recMix && recMix.state === "recording"));
+    if (root && root.classList.contains("is-dj") && !djRaf) tickDjWaves();
+  }
+
+  function bindJog(node, id) {
+    node.addEventListener("pointerdown", function (ev) {
+      ev.preventDefault();
+      node.setPointerCapture(ev.pointerId);
+      var last = ev.clientX;
+      function move(e) {
+        var dx = e.clientX - last;
+        last = e.clientX;
+        jogDeck(id, dx / 40);
+      }
+      function up() {
+        node.releasePointerCapture(ev.pointerId);
+        node.removeEventListener("pointermove", move);
+        node.removeEventListener("pointerup", up);
+      }
+      node.addEventListener("pointermove", move);
+      node.addEventListener("pointerup", up);
+    });
+  }
+
+  function populateIo() {
+    if (!djEl) return;
+    var midiSel = djEl.querySelector("[data-dj-midi]");
+    if (midiSel) {
+      midiSel.replaceChildren();
+      var o0 = document.createElement("option");
+      o0.value = "";
+      o0.textContent = midiAccess ? "MIDI inputs" : "No MIDI access";
+      midiSel.appendChild(o0);
+      if (midiAccess) {
+        midiAccess.inputs.forEach(function (p) {
+          var o = document.createElement("option");
+          o.value = p.id;
+          o.textContent = p.name || p.id;
+          midiSel.appendChild(o);
+        });
+      }
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    navigator.mediaDevices.enumerateDevices().then(function (list) {
+      function fill(sel, kind, blank) {
+        if (!sel) return;
+        var cur = sel.value;
+        sel.replaceChildren();
+        var z = document.createElement("option");
+        z.value = "";
+        z.textContent = blank;
+        sel.appendChild(z);
+        list.filter(function (d) { return d.kind === kind; }).forEach(function (d) {
+          var o = document.createElement("option");
+          o.value = d.deviceId;
+          o.textContent = d.label || (kind + " " + d.deviceId.slice(0, 6));
+          sel.appendChild(o);
+        });
+        if (cur) sel.value = cur;
+      }
+      fill(djEl.querySelector("[data-dj-in-a]"), "audioinput", "Deck A input");
+      fill(djEl.querySelector("[data-dj-in-b]"), "audioinput", "Deck B input");
+      fill(djEl.querySelector("[data-dj-out]"), "audiooutput", "Output device");
+    }).catch(function () {});
+  }
+
+  function lineInDeck(id, deviceId) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMidiLabel("No audio capture");
+      return;
+    }
+    ensureAudio();
+    ensureDeckGraph();
+    ctx.resume();
+    var extra = {
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+    };
+    if (deviceId) extra.deviceId = { exact: deviceId };
+    navigator.mediaDevices.getUserMedia({ audio: extra }).then(function (stream) {
+      disconnectLineIn(id);
+      stopDeckAudio(id);
+      var src = ctx.createMediaStreamSource(stream);
+      src.connect(deckGraph[id].in);
+      audioInNodes[id] = src;
+      audioInStreams[id] = stream;
+      var d = decks[id];
+      d.kind = "in";
+      d.clip = null;
+      d.buf = null;
+      d.name = "Line in";
+      d.playing = true;
+      applyDeckMix();
+      populateIo();
+      paintDj();
+      setMidiLabel("Deck " + id + " line-in");
+    }).catch(function () {
+      setMidiLabel("Input denied");
+    });
+  }
+
+  function setOutputDevice(id) {
+    if (!ctx || !id) return;
+    if (typeof ctx.setSinkId === "function") {
+      ctx.setSinkId(id).then(function () { setMidiLabel("Output set"); }).catch(function () { setMidiLabel("Output failed"); });
+    } else setMidiLabel("Output lock n/a");
+  }
+
+  function toggleRecordMix() {
+    ensureAudio();
+    ctx.resume();
+    if (recMix && recMix.state === "recording") {
+      try { recMix.stop(); } catch (e) {}
+      paintDj();
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      setMidiLabel("Recorder n/a");
+      return;
+    }
+    if (!recDest) {
+      recDest = ctx.createMediaStreamDestination();
+      master.connect(recDest);
+    }
+    recChunks = [];
+    try {
+      recMix = new MediaRecorder(recDest.stream);
+    } catch (e2) {
+      setMidiLabel("Recorder n/a");
+      return;
+    }
+    recMix.ondataavailable = function (ev) {
+      if (ev.data && ev.data.size) recChunks.push(ev.data);
+    };
+    recMix.onstop = function () {
+      var blob = new Blob(recChunks, { type: recMix.mimeType || "audio/webm" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "the-voice-dj-mix.webm";
+      a.click();
+      window.setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+      recMix = null;
+      setMidiLabel("Mix saved");
+      paintDj();
+    };
+    recMix.start(200);
+    setMidiLabel("Recording mix");
+    paintDj();
+  }
+
+  function handleDjKey(e) {
+    if (state.view !== "dj") return false;
+    if (e.code === "KeyF") { toggleDeck("A"); return true; }
+    if (e.code === "KeyG") { cueDeck("A"); return true; }
+    if (e.code === "KeyH") { cueDeck("B"); return true; }
+    if (e.code === "KeyJ") { toggleDeck("B"); return true; }
+    if (e.code === "KeyT") { syncDeck("A"); return true; }
+    if (e.code === "KeyY") { syncDeck("B"); return true; }
+    return false;
+  }
+
+  function buildDjPanel() {
+    djEl = el("div", "daw-dj");
+    djEl.setAttribute("aria-label", "DJ live");
+    var io = el("div", "daw-dj-io");
+    io.appendChild(el("div", "daw-brand", "DJ Live"));
+    var midiSel = document.createElement("select");
+    midiSel.setAttribute("data-dj-midi", "1");
+    midiSel.setAttribute("aria-label", "MIDI inputs");
+    io.appendChild(midiSel);
+    function inSel(which, lab) {
+      var s = document.createElement("select");
+      s.setAttribute("data-dj-in-" + which.toLowerCase(), "1");
+      s.setAttribute("aria-label", lab);
+      var o = document.createElement("option");
+      o.value = "";
+      o.textContent = lab;
+      s.appendChild(o);
+      s.addEventListener("change", function () {
+        if (s.value) lineInDeck(which, s.value);
+      });
+      io.appendChild(s);
+    }
+    inSel("A", "Deck A input");
+    inSel("B", "Deck B input");
+    var outSel = document.createElement("select");
+    outSel.setAttribute("data-dj-out", "1");
+    outSel.setAttribute("aria-label", "Audio output");
+    var oo = document.createElement("option");
+    oo.value = "";
+    oo.textContent = "Output device";
+    outSel.appendChild(oo);
+    outSel.addEventListener("change", function () { if (outSel.value) setOutputDevice(outSel.value); });
+    io.appendChild(outSel);
+    var rec = el("button", "daw-btn rec", "Rec mix");
+    rec.type = "button";
+    rec.setAttribute("data-dj-rec", "1");
+    rec.setAttribute("aria-label", "Record DJ mix");
+    rec.addEventListener("click", toggleRecordMix);
+    io.appendChild(rec);
+    var learnSel = document.createElement("select");
+    learnSel.setAttribute("data-dj-learn", "1");
+    learnSel.setAttribute("aria-label", "MIDI learn target");
+    [["xfade", "XF"], ["volA", "Vol A"], ["volB", "Vol B"], ["pitchA", "Pitch A"], ["pitchB", "Pitch B"], ["jogA", "Jog A"], ["jogB", "Jog B"], ["playA", "Play A"], ["cueA", "Cue A"], ["playB", "Play B"], ["cueB", "Cue B"], ["syncA", "Sync A"], ["syncB", "Sync B"]].forEach(function (row) {
+      var o = document.createElement("option");
+      o.value = row[0];
+      o.textContent = "Learn " + row[1];
+      learnSel.appendChild(o);
+    });
+    io.appendChild(learnSel);
+    var armLearn = el("button", "daw-btn", "Arm MIDI");
+    armLearn.type = "button";
+    armLearn.setAttribute("aria-label", "Arm MIDI learn for DJ control");
+    armLearn.addEventListener("click", function () {
+      midiLearn = learnSel.value;
+      armLearn.classList.add("on");
+      setMidiLabel("Move hardware for " + midiLearn);
+      window.setTimeout(function () { armLearn.classList.remove("on"); }, 5000);
+    });
+    io.appendChild(armLearn);
+    djEl.appendChild(io);
+
+    var board = el("div", "daw-dj-board");
+    function deckCol(id) {
+      var col = el("div", "daw-dj-deck");
+      col.setAttribute("data-dj-deck", id);
+      var title = el("div", "daw-brand");
+      title.setAttribute("data-dj-name", id);
+      title.textContent = "Deck " + id + " · Empty";
+      col.appendChild(title);
+      var tools = el("div", "daw-dj-tools");
+      var load = el("button", "daw-btn", "Load clip");
+      load.type = "button";
+      load.setAttribute("aria-label", "Load selected clip onto deck " + id);
+      load.addEventListener("click", function () { loadSelectedToDeck(id); });
+      tools.appendChild(load);
+      var line = el("button", "daw-btn", "Line in");
+      line.type = "button";
+      line.setAttribute("aria-label", "Route audio interface into deck " + id);
+      line.addEventListener("click", function () { lineInDeck(id); });
+      tools.appendChild(line);
+      var play = el("button", "daw-btn", "Play");
+      play.type = "button";
+      play.setAttribute("data-dj-play", id);
+      play.setAttribute("aria-label", "Play deck " + id);
+      play.addEventListener("click", function () { toggleDeck(id); });
+      tools.appendChild(play);
+      var cue = el("button", "daw-btn", "Cue");
+      cue.type = "button";
+      cue.setAttribute("aria-label", "Cue deck " + id);
+      cue.addEventListener("click", function () { cueDeck(id); });
+      tools.appendChild(cue);
+      var sync = el("button", "daw-btn", "Sync");
+      sync.type = "button";
+      sync.setAttribute("data-dj-sync", id);
+      sync.setAttribute("aria-label", "Sync deck " + id + " to BPM");
+      sync.addEventListener("click", function () { syncDeck(id); });
+      tools.appendChild(sync);
+      var pfl = el("button", "daw-btn", "CUE");
+      pfl.type = "button";
+      pfl.setAttribute("data-dj-pfl", id);
+      pfl.setAttribute("aria-label", "Headphones cue deck " + id);
+      pfl.addEventListener("click", function () {
+        decks[id].pfl = !decks[id].pfl;
+        applyDeckMix();
+        paintDj();
+      });
+      tools.appendChild(pfl);
+      col.appendChild(tools);
+      var wave = document.createElement("canvas");
+      wave.className = "daw-dj-wave";
+      wave.width = 420;
+      wave.height = 88;
+      wave.setAttribute("data-dj-wave", id);
+      wave.setAttribute("aria-label", "Deck " + id + " waveform");
+      wave.addEventListener("pointerdown", function (ev) {
+        var d = decks[id];
+        if (!d.buf) return;
+        var rect = wave.getBoundingClientRect();
+        var x = (ev.clientX - rect.left) / rect.width;
+        d.cueAt = x * d.buf.duration;
+        if (d.playing && d.kind === "audio") {
+          pauseDeck(id);
+          playDeck(id);
+        } else paintDjWave(id);
+      });
+      col.appendChild(wave);
+      var jog = el("div", "daw-dj-jog", id);
+      jog.setAttribute("aria-label", "Deck " + id + " jog");
+      bindJog(jog, id);
+      col.appendChild(jog);
+      var pitch = el("label", "daw-ctl");
+      pitch.appendChild(document.createTextNode("Pitch"));
+      var rate = document.createElement("input");
+      rate.type = "range";
+      rate.min = "0.84";
+      rate.max = "1.16";
+      rate.step = "0.001";
+      rate.value = "1";
+      rate.className = "daw-knob";
+      rate.setAttribute("data-dj-rate", id);
+      rate.setAttribute("aria-label", "Deck " + id + " pitch");
+      var rateLab = el("span", "daw-pos");
+      rateLab.setAttribute("data-dj-rate-lab", id);
+      rateLab.textContent = "100%";
+      rate.addEventListener("input", function () {
+        decks[id].rate = Number(rate.value);
+        applyDeckRate(id);
+        rateLab.textContent = Math.round(decks[id].rate * 100) + "%";
+      });
+      pitch.appendChild(rate);
+      pitch.appendChild(rateLab);
+      col.appendChild(pitch);
+      var volL = el("label", "daw-ctl");
+      volL.appendChild(document.createTextNode("Level"));
+      var vol = document.createElement("input");
+      vol.type = "range";
+      vol.min = "0";
+      vol.max = "1.2";
+      vol.step = "0.01";
+      vol.value = "0.85";
+      vol.className = "daw-knob";
+      vol.setAttribute("data-dj-vol", id);
+      vol.setAttribute("aria-label", "Deck " + id + " volume");
+      vol.addEventListener("input", function () {
+        decks[id].vol = Number(vol.value);
+        applyDeckMix();
+      });
+      volL.appendChild(vol);
+      col.appendChild(volL);
+      return col;
+    }
+    board.appendChild(deckCol("A"));
+    var mid = el("div", "daw-dj-mid");
+    mid.appendChild(el("div", "daw-knob-lab", "Crossfader"));
+    var xf = document.createElement("input");
+    xf.type = "range";
+    xf.min = "0";
+    xf.max = "1";
+    xf.step = "0.01";
+    xf.value = String(state.xfade == null ? 0.5 : state.xfade);
+    xf.className = "daw-xfade";
+    xf.setAttribute("aria-label", "DJ crossfader");
+    xf.addEventListener("input", function () {
+      state.xfade = Number(xf.value);
+      applyXfade();
+    });
+    mid.appendChild(xf);
+    mid.appendChild(el("div", "daw-roll-hint", "A ← → B"));
+    board.appendChild(mid);
+    board.appendChild(deckCol("B"));
+    djEl.appendChild(board);
+    djEl.appendChild(el("div", "daw-roll-hint", "Production stays on Session/Arrange. DJ Live is two independent decks. Load a clip or route any audio interface (Line in). MIDI controllers: Arm MIDI, then move a knob or pad. Pitch-bend jogs platters. F/G and J/H are play/cue. Rec mix records the master bus."));
+    return djEl;
+  }
+
+  function setMode(m) {
+    state.mode = m;
+    if (root) {
+      root.classList.toggle("is-dj", m === "dj");
+    }
+    root.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-mode") === m);
+    });
+    if (m === "dj") {
+      state.view = "dj";
+      ensureAudio();
+      ensureDeckGraph();
+      applyDeckMix();
+      populateIo();
+      paintDj();
+    } else if (state.view === "dj") {
+      setView("session");
+    }
+    paint();
+  }
+
 
   function applyMix() {
     if (!ctx) return;
@@ -2599,7 +3371,7 @@
       "#daw-session.is-roll .daw-session-panel,#daw-session.is-roll .daw-arrange{display:none}" +
       "#daw-session.is-rack .daw-session-panel,#daw-session.is-rack .daw-arrange,#daw-session.is-rack .daw-roll{display:none}" +
       "#daw-session .daw-rack{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
-      "#daw-session.is-rack .daw-rack{display:flex}" +"#daw-session.is-warp .daw-session-panel,#daw-session.is-warp .daw-arrange,#daw-session.is-warp .daw-roll,#daw-session.is-warp .daw-rack{display:none}" +"#daw-session .daw-warp{display:none;flex-direction:column;border-top:1px solid var(--border,#263029);grid-column:2}" +"#daw-session.is-warp .daw-warp{display:flex}" +"#daw-session .daw-warp-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +"#daw-session .daw-wave{width:100%;height:140px;background:#0a0d0c;display:block;cursor:crosshair}" +"#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
+      "#daw-session.is-rack .daw-rack{display:flex}" +"#daw-session.is-warp .daw-session-panel,#daw-session.is-warp .daw-arrange,#daw-session.is-warp .daw-roll,#daw-session.is-warp .daw-rack{display:none}" +"#daw-session .daw-warp{display:none;flex-direction:column;border-top:1px solid var(--border,#263029);grid-column:2}" +"#daw-session.is-warp .daw-warp{display:flex}" +"#daw-session .daw-warp-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +"#daw-session .daw-wave{width:100%;height:140px;background:#0a0d0c;display:block;cursor:crosshair}" +"#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session.is-dj .daw-session-panel,#daw-session.is-dj .daw-arrange,#daw-session.is-dj .daw-roll,#daw-session.is-dj .daw-rack,#daw-session.is-dj .daw-warp,#daw-session.is-dj .daw-env,#daw-session.is-dj .daw-prod-views{display:none!important}#daw-session .daw-dj{display:none;grid-column:2;flex-direction:column;border-top:1px solid #1c2a24;background:#0a0d0c}#daw-session.is-dj .daw-dj{display:flex}#daw-session .daw-dj-io{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #1c2a24}#daw-session .daw-dj-board{display:grid;grid-template-columns:1fr 120px 1fr;gap:10px;padding:10px}#daw-session .daw-dj-deck{border:1px solid #24332c;background:#101714;padding:8px;display:flex;flex-direction:column;gap:8px}#daw-session .daw-dj-tools{display:flex;flex-wrap:wrap;gap:4px}#daw-session .daw-dj-wave{width:100%;height:88px;background:#070908;display:block;cursor:crosshair}#daw-session .daw-dj-jog{width:88px;height:88px;border-radius:50%;margin:4px auto;border:3px solid #3fc6ff;background:radial-gradient(circle at 40% 40%,#1a2420,#070908);color:#3fc6ff;font-family:Chakra Petch,sans-serif;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:ew-resize;user-select:none}#daw-session .daw-dj-deck:last-child .daw-dj-jog{border-color:#ffb238;color:#ffb238}#daw-session .daw-dj-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}#daw-session.is-dj .daw-mixer{grid-column:2}@media (max-width:900px){#daw-session .daw-dj-board{grid-template-columns:1fr}}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-rack-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
       "#daw-session .daw-pads{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:8px;padding:12px;max-width:640px}" +
       "#daw-session .daw-pad{min-height:72px;border-radius:10px;border:1px solid var(--border,#263029);background:var(--surface-alt,#1a201c);color:var(--phosphor,#3fc6ff);font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}" +
@@ -3816,14 +4588,26 @@
   }
 
   function midiCC(cc, val) {
-    if (midiLearn === "volume" || midiLearn === "pan" || midiLearn === "cutoff") {
+    var djCc = { xfade: 1, volA: 1, volB: 1, pitchA: 1, pitchB: 1, jogA: 1, jogB: 1 };
+    if (midiLearn && (djCc[midiLearn] || midiLearn === "volume" || midiLearn === "pan" || midiLearn === "cutoff")) {
       state.ccMap[cc] = midiLearn;
+      setMidiLabel("CC" + cc + " → " + midiLearn);
       midiLearn = null;
-      setMidiLabel("CC" + cc + " → " + state.ccMap[cc]);
       return;
     }
     var dest = state.ccMap[cc];
     if (!dest) return;
+    if (dest === "xfade") {
+      state.xfade = val;
+      applyXfade();
+      return;
+    }
+    if (dest === "volA") { decks.A.vol = val * 1.2; applyDeckMix(); return; }
+    if (dest === "volB") { decks.B.vol = val * 1.2; applyDeckMix(); return; }
+    if (dest === "pitchA") { decks.A.rate = 0.84 + val * 0.32; applyDeckRate("A"); paintDj(); return; }
+    if (dest === "pitchB") { decks.B.rate = 0.84 + val * 0.32; applyDeckRate("B"); paintDj(); return; }
+    if (dest === "jogA") { jogDeck("A", (val - 0.5) * 2); return; }
+    if (dest === "jogB") { jogDeck("B", (val - 0.5) * 2); return; }
     var tr = selectedTrack();
     if (!tr) return;
     if (dest === "volume") {
@@ -3848,9 +4632,28 @@
     var cmd = d[0] & 0xf0;
     var n = d[1];
     var v = d.length > 2 ? d[2] / 127 : 0;
-    if (cmd === 0x90 && d[2] > 0) playIncomingNote(n, v);
-    else if (cmd === 0x80 || (cmd === 0x90 && d[2] === 0)) releaseIncomingNote(n);
-    else if (cmd === 0xb0) midiCC(n, v);
+    if (cmd === 0xe0) {
+      var ch = d[0] & 0x0f;
+      var pb = ((d[2] << 7) | d[1]) / 16383;
+      jogDeck(ch % 2 === 0 ? "A" : "B", (pb - 0.5) * 2);
+      return;
+    }
+    if (cmd === 0x90 && d[2] > 0) {
+      if (midiLearn && /^(play|cue|sync)[AB]$/.test(midiLearn)) {
+        if (!state.noteMap) state.noteMap = {};
+        state.noteMap[n] = midiLearn;
+        setMidiLabel("Note " + n + " → " + midiLearn);
+        midiLearn = null;
+        return;
+      }
+      if (state.noteMap && state.noteMap[n]) {
+        handleDjMap(state.noteMap[n], 1);
+        return;
+      }
+      playIncomingNote(n, v);
+    } else if (cmd === 0x80 || (cmd === 0x90 && d[2] === 0)) {
+      releaseIncomingNote(n);
+    } else if (cmd === 0xb0) midiCC(n, v);
   }
 
   function hookMidi() {
@@ -3861,16 +4664,24 @@
       return;
     }
     navigator.requestMIDIAccess({ sysex: false }).then(function (access) {
+      midiAccess = access;
       function bind(port) {
         port.onmidimessage = onMidiMessage;
       }
       access.inputs.forEach(bind);
       access.onstatechange = function (e) {
         if (e.port && e.port.type === "input" && e.port.state === "connected") bind(e.port);
+        populateIo();
+        var n = 0;
+        var names = [];
+        access.inputs.forEach(function (p) { n += 1; names.push(p.name || p.id); });
+        setMidiLabel(n ? names.join(" · ") : "MIDI wait");
       };
       var n = 0;
-      access.inputs.forEach(function () { n += 1; });
-      setMidiLabel(n ? n + " MIDI in" : "MIDI wait");
+      var names = [];
+      access.inputs.forEach(function (p) { n += 1; names.push(p.name || p.id); });
+      setMidiLabel(n ? names.join(" · ") : "MIDI wait");
+      populateIo();
     }).catch(function () {
       setMidiLabel("Keys A–L");
     });
@@ -4333,15 +5144,28 @@
       root.classList.toggle("is-rack", v === "rack");
       root.classList.toggle("is-dev", v === "dev");
       root.classList.toggle("is-warp", v === "warp");
+      root.classList.toggle("is-dj", v === "dj");
     }
     root.querySelectorAll("[data-view]").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-view") === v);
+    });
+    root.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.classList.toggle("on", b.getAttribute("data-mode") === (v === "dj" ? "dj" : "prod"));
     });
     if (v === "arrange") paintArrange();
     if (v === "roll") paintRoll();
     if (v === "rack") paintRack();
     if (v === "dev") paintDevices();
     if (v === "warp") paintWarp();
+    if (v === "dj") {
+      state.mode = "dj";
+      ensureAudio();
+      ensureDeckGraph();
+      populateIo();
+      paintDj();
+    } else if (state.mode === "dj") {
+      state.mode = "prod";
+    }
     paint();
   }
 
@@ -4741,12 +5565,31 @@
       });
       return b;
     }
-    top.appendChild(viewBtn("session", "Session"));
-    top.appendChild(viewBtn("arrange", "Arrange"));
-    top.appendChild(viewBtn("roll", "Roll"));
-    top.appendChild(viewBtn("rack", "Rack"));
-    top.appendChild(viewBtn("dev", "Dev"));
-    top.appendChild(viewBtn("warp", "Warp"));
+    function modeBtn(id, label) {
+      var b = el("button", "daw-btn" + (id === "prod" ? " on" : ""), label);
+      b.type = "button";
+      b.setAttribute("data-mode", id);
+      b.setAttribute("aria-label", label + " section");
+      b.addEventListener("click", function () {
+        if (id === "dj") setView("dj");
+        else if (state.view === "dj") setView("session");
+        else setMode(id);
+        root.querySelectorAll("[data-mode]").forEach(function (x) {
+          x.classList.toggle("on", x.getAttribute("data-mode") === id);
+        });
+      });
+      return b;
+    }
+    top.appendChild(modeBtn("prod", "Production"));
+    top.appendChild(modeBtn("dj", "DJ Live"));
+    var prodViews = el("span", "daw-prod-views");
+    prodViews.appendChild(viewBtn("session", "Session"));
+    prodViews.appendChild(viewBtn("arrange", "Arrange"));
+    prodViews.appendChild(viewBtn("roll", "Roll"));
+    prodViews.appendChild(viewBtn("rack", "Rack"));
+    prodViews.appendChild(viewBtn("dev", "Dev"));
+    prodViews.appendChild(viewBtn("warp", "Warp"));
+    top.appendChild(prodViews);
 
     var play = el("button", "daw-btn", "Play");
     play.setAttribute("data-play", "1");
@@ -4823,6 +5666,14 @@
     learn.type = "button";
     learn.setAttribute("aria-label", "MIDI learn");
     learn.addEventListener("click", function () {
+      if (state.view === "dj" && djEl) {
+        var sel = djEl.querySelector("[data-dj-learn]");
+        midiLearn = (sel && sel.value) || "xfade";
+        learn.classList.add("on");
+        setMidiLabel("Move hardware for " + midiLearn);
+        window.setTimeout(function () { learn.classList.remove("on"); }, 5000);
+        return;
+      }
       var tr = selectedTrack();
       midiLearn = tr && (tr.kind === "drums" || tr.kind === "perc") ? "pad" : "cutoff";
       learn.classList.add("on");
@@ -5438,6 +6289,8 @@
     rebuildMixer();
     root.appendChild(mixerEl);
 
+    root.appendChild(buildDjPanel());
+
     devicesEl = el("div", "daw-devices");
     devicesEl.setAttribute("aria-label", "Devices");
     root.appendChild(devicesEl);
@@ -5506,6 +6359,10 @@
       if ((e.code === "Minus" || e.code === "NumpadSubtract") && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         nudgeClipTranspose(e.shiftKey ? -12 : -1);
+        return;
+      }
+      if (handleDjKey(e)) {
+        e.preventDefault();
         return;
       }
       if (e.code === "Escape") {
@@ -5696,6 +6553,9 @@
       rollSnap: state.rollSnap,
       rollScale: state.rollScale,
       ccMap: state.ccMap,
+      noteMap: state.noteMap || {},
+      mode: state.mode,
+      decks: { A: { vol: decks.A.vol, rate: decks.A.rate }, B: { vol: decks.B.vol, rate: decks.B.rate } },
       selectedTrackId: state.selectedTrackId,
       midiOctave: midiOctave,
       extraReturns: extraReturns.map(function (r) {
@@ -5815,6 +6675,14 @@
     state.rollSnap = data.rollSnap || 1;
     state.rollScale = data.rollScale || "minor";
     state.ccMap = data.ccMap || state.ccMap;
+    state.noteMap = data.noteMap || {};
+    if (data.decks) {
+      ["A", "B"].forEach(function (id) {
+        if (!data.decks[id]) return;
+        if (data.decks[id].vol != null) decks[id].vol = data.decks[id].vol;
+        if (data.decks[id].rate != null) decks[id].rate = data.decks[id].rate;
+      });
+    }
     state.selectedTrackId = data.selectedTrackId || (data.tracks && data.tracks[0] && data.tracks[0].id);
     state.launched = {};
     state.queued = {};
