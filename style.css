@@ -2892,3 +2892,27 @@ input:focus-visible,
 @media (max-width: 780px) {
   .studio-chain { grid-template-columns: 1fr; }
 }
+
+/* ---- Gate / Settings console ---- */
+.gate-forms .field-label {
+  text-align: left;
+  margin-top: 10px;
+}
+.gate-pass-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.gate-pass-row input { flex: 1; }
+.gate-pass-row .btn {
+  flex: none;
+  padding: 10px 12px;
+  font-size: 0.72rem;
+}
+.settings-block {
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-block:last-child { border-bottom: 0; }
+#key-fingerprint { margin: 6px 0 10px; }

@@ -19,8 +19,13 @@
   <h1 class="gate-title">The Voice</h1>
 
   <div class="gate-forms" id="gate-forms">
-    <input type="email" id="gate-email" placeholder="Email" autocomplete="email">
-    <input type="password" id="gate-password" placeholder="Password" autocomplete="current-password">
+    <label class="field-label" for="gate-email">Email</label>
+    <input type="email" id="gate-email" placeholder="you@studio.local" autocomplete="username" required>
+    <label class="field-label" for="gate-password">Password</label>
+    <div class="gate-pass-row">
+      <input type="password" id="gate-password" placeholder="Password" autocomplete="current-password" required>
+      <button type="button" class="btn" id="gate-show-pass" aria-pressed="false" title="Show password">Show</button>
+    </div>
     <div class="gate-actions">
       <button class="btn btn-primary" id="gate-login-btn">Log in</button>
       <button class="btn" id="gate-signup-btn">Create account</button>
@@ -297,13 +302,28 @@
   </div>
 
   <div id="settings-view" hidden class="settings-page">
-    <label class="field-label" for="api-key-input">ElevenLabs API key (optional)</label>
-    <input type="password" id="api-key-input" placeholder="sk_...">
-    <div class="control-row buttons-row">
-      <button id="save-key-btn" class="btn btn-primary">Save key</button>
-      <button id="clear-key-btn" class="btn">Clear key</button>
-    </div>
-    <div id="key-status" role="status" aria-live="polite" class="hint" hidden></div>
+    <section class="settings-block">
+      <label class="field-label">Session</label>
+      <p class="account-email-display" id="settings-email">Not signed in</p>
+      <div class="control-row buttons-row">
+        <button type="button" id="settings-signout" class="btn">Sign out</button>
+      </div>
+    </section>
+
+    <section class="settings-block">
+      <label class="field-label" for="api-key-input">ElevenLabs API key</label>
+      <p class="hint hint-info" id="key-fingerprint">No key on this browser.</p>
+      <div class="gate-pass-row">
+        <input type="password" id="api-key-input" placeholder="sk_… paste to replace" autocomplete="off" spellcheck="false">
+        <button type="button" class="btn" id="show-key-btn" aria-pressed="false">Show</button>
+      </div>
+      <div class="control-row buttons-row">
+        <button id="save-key-btn" class="btn btn-primary">Save key</button>
+        <button id="test-key-btn" class="btn">Test key</button>
+        <button id="clear-key-btn" class="btn">Clear key</button>
+      </div>
+      <div id="key-status" role="status" aria-live="polite" class="hint" hidden></div>
+    </section>
 
     <label class="field-label" style="margin-top:26px;">Stripe payment links</label>
     <input type="text" id="link-studio-input" placeholder="Studio plan link">

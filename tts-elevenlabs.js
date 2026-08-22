@@ -13,6 +13,38 @@ export function setApiKey(key) {
   else localStorage.removeItem(KEY_STORAGE);
 }
 
+export function keyFingerprint(key) {
+  const k = String(key || '');
+  if (k.length < 8) return '';
+  return `${k.slice(0, 3)}••••${k.slice(-4)}`;
+}
+
+export async function probeElevenLabsKey(apiKey) {
+  const key = String(apiKey || '').trim();
+  if (!key) return { ok: false, message: 'Paste a key first.' };
+  if (!/^sk_/i.test(key)) return { ok: false, message: 'ElevenLabs keys start with sk_.' };
+  try {
+    const res = await fetch(`${API_BASE}/user`, { headers: { 'xi-api-key': key } });
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, message: 'ElevenLabs rejected this key.' };
+    }
+    if (!res.ok) return { ok: false, message: `ElevenLabs HTTP ${res.status}` };
+    let data = {};
+    try { data = await res.json(); } catch (_) { data = {}; }
+    const tier = data.subscription && data.subscription.tier;
+    return { ok: true, message: tier ? `Key works · ${tier}` : 'Key works.', data };
+  } catch (err) {
+    if (err instanceof TypeError) {
+      return {
+        ok: false,
+        cors: true,
+        message: "Couldn't reach ElevenLabs from the browser (CORS). The key stays on this device; cloning will prove it.",
+      };
+    }
+    return { ok: false, message: (err && err.message) || 'Could not test that key.' };
+  }
+}
+
 export function getClonedVoices() {
   try {
     return JSON.parse(localStorage.getItem(VOICES_STORAGE) || '[]');

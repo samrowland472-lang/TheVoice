@@ -76,6 +76,8 @@ import {
   removeClonedVoice,
   cloneVoice,
   synthesize,
+  probeElevenLabsKey,
+  keyFingerprint,
 } from './tts-elevenlabs.js';
 
 initBackground();
@@ -196,6 +198,7 @@ function switchSection(section) {
   if (isConsole) switchTab(section);
   if (section === 'library') renderLibrary();
   if (section === 'account') renderAccountView();
+  if (section === 'settings') renderSettings();
   if (section === 'plans') renderPlans();
   if (section === 'modulate') refreshModSource();
   if (section === 'animate') animOnShow();
@@ -1077,21 +1080,87 @@ cloneVoiceBtn.addEventListener('click', async () => {
 });
 
 /* ---------- Settings ---------- */
-apiKeyInput.value = getApiKey();
-updateCloneAvailability();
+const keyFingerprintEl = document.getElementById('key-fingerprint');
+const showKeyBtn = document.getElementById('show-key-btn');
+const testKeyBtn = document.getElementById('test-key-btn');
+const settingsEmail = document.getElementById('settings-email');
+const settingsSignout = document.getElementById('settings-signout');
 
-saveKeyBtn.addEventListener('click', () => {
-  setApiKey(apiKeyInput.value.trim());
+function paintKeyFingerprint() {
+  const key = getApiKey();
+  if (keyFingerprintEl) {
+    keyFingerprintEl.textContent = key
+      ? `Saved on this browser: ${keyFingerprint(key)}`
+      : 'No key on this browser.';
+  }
+}
+
+async function renderSettings() {
+  paintKeyFingerprint();
+  const session = await getCurrentSession().catch(() => null);
+  if (settingsEmail) settingsEmail.textContent = session && session.user
+    ? session.user.email
+    : 'Not signed in';
+}
+
+updateCloneAvailability();
+paintKeyFingerprint();
+
+saveKeyBtn.addEventListener('click', async () => {
+  const typed = apiKeyInput.value.trim();
+  if (!typed) {
+    keyStatus.hidden = false;
+    keyStatus.className = 'hint';
+    keyStatus.textContent = 'Paste a new key to replace the saved one.';
+    return;
+  }
+  setApiKey(typed);
+  apiKeyInput.value = '';
+  paintKeyFingerprint();
   keyStatus.hidden = false;
   keyStatus.className = 'hint hint-info';
-  keyStatus.textContent = 'Key saved to this browser.';
+  keyStatus.textContent = `Saved ${keyFingerprint(typed)}. Testing…`;
   showToast('ElevenLabs key saved');
   updateCloneAvailability();
+  const probe = await probeElevenLabsKey(typed);
+  keyStatus.className = probe.ok ? 'hint hint-info' : 'hint';
+  keyStatus.textContent = probe.ok
+    ? `${probe.message} · ${keyFingerprint(typed)}`
+    : probe.message;
 });
+
+if (testKeyBtn) {
+  testKeyBtn.addEventListener('click', async () => {
+    const typed = apiKeyInput.value.trim() || getApiKey();
+    keyStatus.hidden = false;
+    keyStatus.className = 'hint hint-info';
+    keyStatus.textContent = 'Talking to ElevenLabs…';
+    const probe = await probeElevenLabsKey(typed);
+    keyStatus.className = probe.ok ? 'hint hint-info' : 'hint';
+    keyStatus.textContent = probe.message;
+  });
+}
+
+if (showKeyBtn) {
+  showKeyBtn.addEventListener('click', () => {
+    const show = apiKeyInput.type === 'password';
+    apiKeyInput.type = show ? 'text' : 'password';
+    showKeyBtn.textContent = show ? 'Hide' : 'Show';
+    showKeyBtn.setAttribute('aria-pressed', show ? 'true' : 'false');
+  });
+}
+
+if (settingsSignout) {
+  settingsSignout.addEventListener('click', async () => {
+    await signOutUser();
+    showGate();
+  });
+}
 
 clearKeyBtn.addEventListener('click', () => {
   setApiKey('');
   apiKeyInput.value = '';
+  paintKeyFingerprint();
   keyStatus.hidden = false;
   keyStatus.className = 'hint hint-info';
   keyStatus.textContent = 'Key cleared.';
@@ -4190,6 +4259,9 @@ const gateConnectBtn = document.getElementById('gate-connect-btn');
 function setGateStatus(message, kind = 'error') {
   gateStatus.textContent = message || '';
   gateStatus.className = `gate-status${kind === 'info' ? ' info' : ''}`;
+  const bad = kind !== 'info' && !!message;
+  if (gateEmail) gateEmail.setAttribute('aria-invalid', bad ? 'true' : 'false');
+  if (gatePassword) gatePassword.setAttribute('aria-invalid', bad ? 'true' : 'false');
 }
 
 function showGate() {
@@ -4211,6 +4283,7 @@ function showGate() {
     setGateStatus('Connect a Supabase project to enable accounts.', 'info');
   } else {
     gateSetupPanel.hidden = true;
+    setTimeout(() => { try { gateEmail.focus(); } catch (_) {} }, 0);
   }
 }
 
@@ -4256,6 +4329,22 @@ gateSignupBtn.addEventListener('click', () => attemptAuth('signup'));
 gatePassword.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') attemptAuth('login');
 });
+gateEmail.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!gatePassword.value) gatePassword.focus();
+    else attemptAuth('login');
+  }
+});
+const gateShowPass = document.getElementById('gate-show-pass');
+if (gateShowPass) {
+  gateShowPass.addEventListener('click', () => {
+    const show = gatePassword.type === 'password';
+    gatePassword.type = show ? 'text' : 'password';
+    gateShowPass.textContent = show ? 'Hide' : 'Show';
+    gateShowPass.setAttribute('aria-pressed', show ? 'true' : 'false');
+  });
+}
 
 document.querySelectorAll('.oauth-btn').forEach((btn) => {
   btn.addEventListener('click', async () => {
