@@ -452,7 +452,6 @@
     var compD = getDevice(tr, "comp") || {};
     var del = getDevice(tr, "delay") || {};
     if (g.analogFilt) {
-      g.analogFilt.frequency.setTargetAtTime(analog.on ? Math.max(80, analog.cutoff || 2000) : 18000, now, 0.02);
       g.analogFilt.Q.setTargetAtTime(analog.on ? Math.max(0.2, analog.res || 0.7) : 0.7, now, 0.02);
     }
     var eqOn = !!eq.on;
@@ -537,16 +536,22 @@
     var pan = Math.max(-1, Math.min(1, (tr.pan || 0) + (autoAt(tr, "autoPan", step, 0.5) - 0.5) * 2));
     var sA = Math.max(0, Math.min(1, (tr.sendA || 0) + autoAt(tr, "autoSendA", step, 0)));
     var sB = Math.max(0, Math.min(1, (tr.sendB || 0) + autoAt(tr, "autoSendB", step, 0)));
+    var analog = getDevice(tr, "analog") || {};
+    var base = analog.on ? Math.max(80, analog.cutoff || 2000) : 18000;
+    var cutN = Math.max(0, Math.min(1, autoAt(tr, "autoCut", step, 1)));
+    var hz = 80 * Math.pow(base / 80, cutN);
     if (time != null) {
       g.vol.gain.setValueAtTime(val, time);
       if (g.pan && g.pan.pan) g.pan.pan.setValueAtTime(pan, time);
       if (g.sendA) g.sendA.gain.setValueAtTime(sA, time);
       if (g.sendB) g.sendB.gain.setValueAtTime(sB, time);
+      if (g.analogFilt) g.analogFilt.frequency.setValueAtTime(hz, time);
     } else {
       g.vol.gain.setTargetAtTime(val, ctx.currentTime, 0.01);
       if (g.pan && g.pan.pan) g.pan.pan.setTargetAtTime(pan, ctx.currentTime, 0.01);
       if (g.sendA) g.sendA.gain.setTargetAtTime(sA, ctx.currentTime, 0.01);
       if (g.sendB) g.sendB.gain.setTargetAtTime(sB, ctx.currentTime, 0.01);
+      if (g.analogFilt) g.analogFilt.frequency.setTargetAtTime(hz, ctx.currentTime, 0.01);
     }
   }
 
@@ -896,6 +901,7 @@
           autoPan: (tr.autoPan || []).map(function (p) { return { step: p.step, v: p.v }; }),
           autoSendA: (tr.autoSendA || []).map(function (p) { return { step: p.step, v: p.v }; }),
           autoSendB: (tr.autoSendB || []).map(function (p) { return { step: p.step, v: p.v }; }),
+          autoCut: (tr.autoCut || []).map(function (p) { return { step: p.step, v: p.v }; }),
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -954,6 +960,7 @@
       tr.autoPan = (s.autoPan || []).map(function (p) { return { step: p.step, v: p.v }; });
       tr.autoSendA = (s.autoSendA || []).map(function (p) { return { step: p.step, v: p.v }; });
       tr.autoSendB = (s.autoSendB || []).map(function (p) { return { step: p.step, v: p.v }; });
+      tr.autoCut = (s.autoCut || []).map(function (p) { return { step: p.step, v: p.v }; });
       next.push(tr);
     });
     state.tracks = next;
@@ -2019,7 +2026,7 @@
         ctx2.stroke();
       }
       var pts = ensureAuto(tr, key, defV);
-      ctx2.strokeStyle = key === "autoPan" ? "#c9a6ff" : key === "autoSendA" ? "#3fc6ff" : key === "autoSendB" ? "#ffb238" : (tr.color || "#3fc6ff");
+      ctx2.strokeStyle = key === "autoPan" ? "#c9a6ff" : key === "autoSendA" ? "#3fc6ff" : key === "autoSendB" ? "#ffb238" : key === "autoCut" ? "#7dffb3" : (tr.color || "#3fc6ff");
       ctx2.lineWidth = 1.5;
       ctx2.beginPath();
       pts.forEach(function (p, i) {
@@ -3237,6 +3244,7 @@
       autoLane("autoPan", "Pan", 0.5, "pan automation");
       autoLane("autoSendA", "Dly", 0, "delay send automation");
       autoLane("autoSendB", "Hall", 0, "hall send automation");
+      autoLane("autoCut", "Cut", 1, "filter cutoff automation");
     });
     paintArrange();
   }
@@ -4299,6 +4307,7 @@
           autoPan: tr.autoPan || [],
           autoSendA: tr.autoSendA || [],
           autoSendB: tr.autoSendB || [],
+          autoCut: tr.autoCut || [],
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -4356,6 +4365,7 @@
     tr.autoPan = raw.autoPan || null;
     tr.autoSendA = raw.autoSendA || null;
     tr.autoSendB = raw.autoSendB || null;
+    tr.autoCut = raw.autoCut || null;
     return tr;
   }
 
