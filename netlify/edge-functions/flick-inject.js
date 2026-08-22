@@ -16,6 +16,7 @@ export default async (request, context) => {
   // Only files that actually ship in /js. Phantom loop leftovers
   // (daw-session, site-chrome, …) 404 as index.html and crash the page.
   const scripts = [
+    ["js/flick-studio.js", '<script type="module" src="/js/flick-studio.js"></script>'],
     [
       "js/flick.js",
       '<script src="/js/flick.js" data-name="Flick" data-site="The Voice" data-endpoint="/api/flick-chat" defer></script>',

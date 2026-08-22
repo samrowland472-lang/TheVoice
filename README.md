@@ -16,7 +16,7 @@ Serve the folder (any static host) so `index.html` and the `js/` directory sit t
 - Command bar in the transport (Ctrl/⌘+K): `play`, `128 bpm`, `mute kick`, `scene 1`.
 - Animate — keyframes, 3D, parenting, JKL shuttle, onion skin, driven sine/cosine/ramp keys, nested coprime cycles.
 
-Flick (the spark) talks to `/api/flick-chat` when an `XAI_API_KEY` is set on the host. Without it, local DAW commands still run.
+Flick (the spark) is built into the site — not a separate app. It talks to `/api/flick-chat` when an `XAI_API_KEY` is set on the host. Without it, local commands still run across Speak, Animate, Voice Studio, Library, Project, and Music.
 
 ## Tests
 
@@ -37,6 +37,7 @@ for f in *-test.mjs; do node "$f" || exit 1; done
 | `mod-test.mjs` | Phase vocoder, pitch and formant shifting |
 | `pitch-test.mjs` | YIN pitch detection |
 | `speak-script-test.mjs` | Word cap, sentence queue |
+| `flick-studio-test.mjs` | Flick directives + natural language for every section |
 
 `js/` is the source of truth. `build.py` bundles it.
 

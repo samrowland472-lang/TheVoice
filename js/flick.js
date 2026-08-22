@@ -8,12 +8,12 @@
   var name = (script && script.getAttribute("data-name")) || "Flick";
   var welcome =
     (script && script.getAttribute("data-welcome")) ||
-    "I'm Flick. I can drive Music — play, tempo, mute, launch scenes — and help with Speak, Studio, and the rest of The Voice.";
+    "I'm Flick — built into The Voice, not a separate app. Ask me to speak a line, record a take, build a scene, drive Music, open Library, or mix a Project.";
   var starters = [
+    "Speak this: The night is a river",
+    "Animate a blue sphere orbiting a cube",
+    "Open Voice Studio and record",
     "Play the set at 128 BPM",
-    "Mute drums and launch scene 1",
-    "Show arrangement view",
-    "How do I clone a voice?",
   ];
 
   var host = document.createElement("div");
@@ -58,19 +58,19 @@
     name +
     ' chat">' +
     '    <div class="head">' +
-    '      <div><div class="title"></div><div class="sub">Can drive Music</div></div>' +
+    '      <div><div class="title"></div><div class="sub">Built into The Voice</div></div>' +
     '      <button class="icon-btn" type="button" aria-label="Close chat">×</button>' +
     "    </div>" +
     '    <div class="thread"></div>' +
     '    <div class="composer">' +
-    '      <textarea rows="1" maxlength="4000" placeholder="Ask Flick, or tell Music what to do…"></textarea>' +
+    '      <textarea rows="1" maxlength="4000" placeholder="Ask Flick to speak, animate, record, play…"></textarea>' +
     '      <button class="send" type="button" aria-label="Send">↑</button>' +
     "    </div>" +
     "  </div>" +
     '  <button class="fab" type="button" aria-label="Open ' +
     name +
     '" aria-expanded="false">' +
-    '    <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 4 L18.1 13.4 L28 16 L18.1 18.6 L16 28 L13.9 18.6 L4 16 L13.9 13.4 Z"/></svg>' +
+    '    <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 4 L18.1 13.4 L28 16 L18.1 18.6 L16 28 L13.9 18.6 L4 16 L13.9 13.4 Z"></path></svg>' +
     "  </button>" +
     "</div>";
 
@@ -86,18 +86,36 @@
   var busy = false;
   var open = false;
 
+  function studio() {
+    return window.TheVoiceFlick || null;
+  }
   function daw() {
     return window.TheVoiceDAW || null;
   }
-  function runDaw(text) {
+  function runStudio(text) {
+    var s = studio();
+    if (s && typeof s.applyText === "function") {
+      try { s.applyText(text); return; } catch (e) {}
+    }
     var d = daw();
-    if (!d || !text) return;
-    try { d.applyText(text); } catch (e) {}
+    if (d && typeof d.applyText === "function") {
+      try { d.applyText(text); } catch (e2) {}
+    }
   }
   function showText(text) {
+    var s = studio();
+    if (s && s.strip) return s.strip(text) || text;
     var d = daw();
     if (d && d.strip) return d.strip(text) || text;
-    return String(text || "").replace(/DAW:\s*\{[^\n]+\}\s*/g, "").trim();
+    return String(text || "")
+      .replace(/\b(VOICE|DAW|SPEAK|ANIM|APP|STUDIO|LONG|MOD|LIB|PROJ):\s*\{[^\n]+\}\s*/g, "")
+      .trim();
+  }
+  function currentSection() {
+    var s = studio();
+    if (s && typeof s.currentSection === "function") return s.currentSection();
+    var b = document.querySelector(".sidebar-item.active");
+    return (b && b.getAttribute("data-section")) || "speak";
   }
 
   function setOpen(next) {
@@ -158,7 +176,7 @@
     input.value = "";
     messages.push({ role: "user", content: value });
     if (messages.length > 24) messages = messages.slice(-24);
-    runDaw(value);
+    runStudio(value);
     busy = true;
     sendBtn.disabled = true;
     render();
@@ -175,7 +193,10 @@
     fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: payload }),
+      body: JSON.stringify({
+        messages: payload,
+        context: { section: currentSection() },
+      }),
     })
       .then(function (res) {
         return res.json().then(function (body) {
@@ -196,7 +217,7 @@
           return;
         }
         var reply = String(out.body.text);
-        runDaw(reply);
+        runStudio(reply);
         messages.push({ role: "assistant", content: reply });
         render();
       })
@@ -206,7 +227,7 @@
         messages.push({
           role: "assistant",
           content:
-            "Flick is offline on this deploy until the site owner connects an API key. Local Music commands still run.",
+            "Flick is offline on this deploy until the site owner connects an API key. Local studio commands still run.",
         });
         render();
       });
