@@ -2148,7 +2148,7 @@
       "#daw-session .daw-lane-lab{width:88px;flex:0 0 88px;display:flex;align-items:center;padding:0 10px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;position:sticky;left:0;z-index:4;background:var(--surface,#121613)}" +
       "#daw-session .daw-lane{position:relative;flex:1;min-width:" + (BARS * BAR_W) + "px;background-image:repeating-linear-gradient(90deg,transparent,transparent " + (BAR_W - 1) + "px,var(--border,#263029) " + (BAR_W - 1) + "px,var(--border,#263029) " + BAR_W + "px)}" +"#daw-session .daw-auto{height:32px;flex:1;min-width:" + (BARS * BAR_W) + "px;display:block;cursor:crosshair;background:#070908}" +"#daw-session .daw-auto-lab{width:88px;flex:0 0 88px;font-family:Share Tech Mono,ui-monospace,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#4c5f56;display:flex;align-items:center;padding:0 8px}" +
       "#daw-session .daw-clip{position:absolute;top:6px;height:36px;border-radius:6px;padding:6px 8px;font-size:11px;color:#06170f;overflow:hidden;white-space:nowrap;cursor:grab;z-index:1}" +
-      "#daw-session .daw-clip.sel{outline:2px solid #fff;outline-offset:1px}" +"#daw-session .daw-fade-in,#daw-session .daw-fade-out{position:absolute;top:0;width:10px;height:100%;cursor:ew-resize;z-index:2;background:linear-gradient(to right,rgba(6,23,15,.55),transparent)}" +"#daw-session .daw-fade-out{right:0;left:auto;background:linear-gradient(to left,rgba(6,23,15,.55),transparent)}" +"#daw-session .daw-clip .daw-fade-in{left:0}" +"#daw-session .daw-resize-l,#daw-session .daw-resize-r{position:absolute;bottom:0;width:12px;height:12px;cursor:ew-resize;z-index:3;background:#06170f;opacity:.55}" +"#daw-session .daw-resize-l{left:0}" +"#daw-session .daw-resize-r{right:0}" +"#daw-session .daw-loop-tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(6,23,15,.55);z-index:1}" +
+      "#daw-session .daw-clip.sel{outline:2px solid #fff;outline-offset:1px}" +"#daw-session .daw-fade-in,#daw-session .daw-fade-out{position:absolute;top:0;width:10px;height:100%;cursor:ew-resize;z-index:2;background:linear-gradient(to right,rgba(6,23,15,.55),transparent)}" +"#daw-session .daw-fade-out{right:0;left:auto;background:linear-gradient(to left,rgba(6,23,15,.55),transparent)}" +"#daw-session .daw-clip .daw-fade-in{left:0}" +"#daw-session .daw-resize-l,#daw-session .daw-resize-r{position:absolute;bottom:0;width:12px;height:12px;cursor:ew-resize;z-index:3;background:#06170f;opacity:.55}" +"#daw-session .daw-resize-l{left:0}" +"#daw-session .daw-resize-r{right:0}" +"#daw-session .daw-loop-tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(6,23,15,.55);z-index:1}" +"#daw-session .daw-loop-brace{position:absolute;left:0;top:0;height:5px;background:#3fc6ff;opacity:.75;z-index:2;pointer-events:none}" +"#daw-session .daw-loop-grip{position:absolute;right:-5px;top:0;width:10px;height:14px;cursor:ew-resize;background:#3fc6ff;pointer-events:auto;z-index:4;border-radius:0 0 2px 0}" +
       "#daw-session .daw-playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--alert,#ff4d4d);z-index:5;pointer-events:none;left:88px}" +
       "@media (prefers-reduced-motion: reduce){#daw-session .daw-playhead{transition:none}}" +
       "#music-view.is-daw > *:not(#daw-session){display:none!important}" +"#music-view.is-daw{display:flex;flex-direction:column;flex:1;min-height:100%;padding:0;margin:0}" +"body.is-music-daw .main-area{max-width:none;padding:0;overflow:hidden}" +"body.is-music-daw .main-area .footer{display:none}" +"body.is-music-daw .sidebar{background:#070908;border-right-color:#1a2420}" +"#daw-session .daw-top{background:#070908;gap:6px;padding:6px 8px;border-bottom:1px solid #1c2a24;flex-wrap:wrap}" +"#daw-session .daw-brand{font-family:Chakra Petch,sans-serif;font-weight:700;font-size:13px;letter-spacing:.18em}" +"#daw-session .daw-btn{min-height:32px;min-width:32px;padding:4px 9px;border-radius:2px;font-family:Share Tech Mono,ui-monospace,monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:#121816;border-color:#24332c}" +"#daw-session .daw-btn[data-play],#daw-session .daw-btn.stop,#daw-session .daw-btn.rec{min-height:36px;min-width:52px}" +"#daw-session select,#daw-session input[type=number]{min-height:32px;border-radius:2px;background:#050706}" +"#daw-session .daw-cell{min-height:44px;border-radius:2px;background:#101714;padding:6px 8px}" +"#daw-session .daw-cell.filled{background:color-mix(in srgb,var(--clip,#3fc6ff) 62%, #0a0d0c);color:#06170f;border-color:var(--clip,#3fc6ff);box-shadow:none;font-weight:600}" +"#daw-session .daw-cell.playing{outline:1px solid #fff;background:color-mix(in srgb,var(--clip,#3fc6ff) 82%, #fff)}" +"#daw-session .daw-scene{min-height:44px;border-radius:2px}" +"#daw-session .daw-strip,#daw-session .daw-dev{border-radius:2px;background:#101714}" +"#daw-session .daw-browser{background:#070908;padding:8px 6px;max-height:none}" +"#daw-session .daw-lib{border-radius:2px;background:#121816}" +"#daw-session .daw-mixer{background:#0c100e;padding:8px}" +"#daw-session .daw-devices{background:#0c100e}" +"#daw-session .daw-grid-wrap{padding:8px;background:#0a0d0c}" +"#daw-session .daw-fader{accent-color:#3fc6ff}" +"#daw-session .daw-hint,#daw-session .daw-roll-hint{color:#6a8076;font-size:11px}" +"@media (max-width:780px){#daw-session{grid-template-columns:1fr;min-height:auto}#daw-session .daw-browser{grid-row:auto;max-height:180px;border-right:0;border-bottom:1px solid #1c2a24}}" +"#daw-session .daw-btn:focus-visible,#daw-session .daw-cell:focus-visible,#daw-session .daw-scene:focus-visible,#daw-session .daw-pad:focus-visible,#daw-session .daw-step:focus-visible,#daw-session .daw-lib:focus-visible,#daw-session .daw-key:focus-visible,#daw-session select:focus-visible,#daw-session input:focus-visible{outline:2px solid var(--phosphor,#3fc6ff);outline-offset:2px;z-index:6}" +"#daw-session .daw-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}" +"#daw-session .daw-help{padding:6px 10px;font-size:11px;color:#6a8076;border-top:1px solid #1c2a24;grid-column:1/-1;font-family:Share Tech Mono,ui-monospace,monospace}";
@@ -2233,11 +2233,22 @@
           node.appendChild(rl);
           node.appendChild(rr);
           var ln = c.notes || {};
-          if (ln.loop !== false && ln.loopLen && ln.loopLen < c.length) {
-            for (var tickAt = ln.loopLen; tickAt < c.length; tickAt += ln.loopLen) {
-              var tick = el("i", "daw-loop-tick");
-              tick.style.left = (tickAt / c.length * 100) + "%";
-              node.appendChild(tick);
+          if (ln.loop !== false) {
+            var ll = Math.max(4, ln.loopLen || c.length);
+            var brace = el("i", "daw-loop-brace");
+            brace.style.width = Math.min(100, (ll / c.length) * 100) + "%";
+            brace.title = "Loop " + ll + " steps — drag end to change";
+            var grip = el("i", "daw-loop-grip");
+            grip.setAttribute("aria-label", "Loop length");
+            bindLoopBrace(grip, c);
+            brace.appendChild(grip);
+            node.appendChild(brace);
+            if (ll < c.length) {
+              for (var tickAt = ll; tickAt < c.length; tickAt += ll) {
+                var tick = el("i", "daw-loop-tick");
+                tick.style.left = (tickAt / c.length * 100) + "%";
+                node.appendChild(tick);
+              }
             }
           }
           bindClipDrag(node, c);
@@ -2365,6 +2376,33 @@
     if (notes.seq) notes.seq = cropArr(notes.seq);
     if (notes.hits) notes.hits = cropArr(notes.hits);
     notes.offset = (notes.offset || 0) + delta;
+  }
+
+  function bindLoopBrace(handle, clipObj) {
+    handle.addEventListener("pointerdown", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!clipObj.notes) clipObj.notes = {};
+      pushUndo();
+      state.selectedArrange = clipObj.id;
+      clipObj.notes.loop = true;
+      var startX = ev.clientX;
+      var orig = clipObj.notes.loopLen || clipObj.length || STEPS;
+      function move(e) {
+        var dx = e.clientX - startX;
+        var steps = Math.round(dx / (BAR_W / STEPS_PER_BAR));
+        var next = Math.max(4, Math.min(clipObj.length || STEPS, orig + steps));
+        clipObj.notes.loopLen = next;
+        paintArrange();
+      }
+      function up() {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        setMidiLabel("Loop " + (clipObj.notes.loopLen || 0));
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
   }
 
   function bindResizeHandle(handle, clipObj, edge) {
@@ -4442,7 +4480,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
