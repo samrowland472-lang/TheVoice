@@ -71,6 +71,10 @@ export type StudioState = {
   transformSpace: TransformSpace;
   onionSkin: boolean;
   poseClipboard: PoseClipboard | null;
+  playblastOpen: boolean;
+  playblasting: boolean;
+  playblastFrame: number;
+  playblastTotal: number;
 };
 
 type StudioActions = {
@@ -106,6 +110,7 @@ type StudioActions = {
   setMobilePanel: (v: StudioState["mobilePanel"]) => void;
   setTransformSpace: (v: TransformSpace) => void;
   setOnionSkin: (v: boolean) => void;
+  setPlayblastOpen: (v: boolean) => void;
   stepFrame: (dir: 1 | -1) => void;
   shuttle: (dir: 1 | -1) => void;
   setInPoint: () => void;
@@ -281,6 +286,10 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   transformSpace: "local",
   onionSkin: false,
   poseClipboard: null,
+  playblastOpen: false,
+  playblasting: false,
+  playblastFrame: 0,
+  playblastTotal: 0,
 
   hydrate: () => {
     if (typeof window === "undefined") return;
@@ -452,6 +461,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   setMobilePanel: (v) => set({ mobilePanel: v }),
   setTransformSpace: (v) => set({ transformSpace: v }),
   setOnionSkin: (v) => set({ onionSkin: v }),
+  setPlayblastOpen: (v) => set({ playblastOpen: v }),
 
   stepFrame: (dir) => {
     const { currentTime, fps, playbackStart, playbackEnd, loop, duration } = get();

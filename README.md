@@ -25,7 +25,7 @@ npm run dev
 
 ## The Voice (React animation studio)
 
-The next-gen 3D animation room lives in [`animate/`](./animate) — pose, key, graph editor, nested cycle expressions, multi-select. Auto-saves in the browser.
+The next-gen 3D animation room lives in [`animate/`](./animate) — pose, key, graph editor, nested cycle expressions, multi-select, playblast. Auto-saves in the browser.
 
 ```bash
 cd animate

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { cancelPlayblast, runPlayblast, type PlayblastFormat, type PlayblastRange, type PlayblastSize } from "@/lib/studio/playblast";
 import { useStudio } from "@/lib/studio/store";
 
 export function Welcome() {
@@ -57,6 +59,7 @@ export function HelpOverlay() {
     ["⌘D", "Duplicate"],
     ["⌘A", "Select all"],
     ["⌘K", "Command palette"],
+    ["File → Playblast", "WebM movie or PNG sequence of the I/O range"],
     ["1–4", "Wire / Solid / Material / Rendered"],
     ["Scroll timeline", "Zoom time. Over labels: scroll tracks"],
     ["Curves", "Double-click or ⌘-click inserts a key. Drag handles; Alt breaks"],
@@ -87,6 +90,179 @@ export function HelpOverlay() {
           Close
         </button>
       </div>
+    </div>
+  );
+}
+
+export function PlayblastDialog() {
+  const open = useStudio((s) => s.playblastOpen);
+  const blasting = useStudio((s) => s.playblasting);
+  const hasCamera = useStudio((s) => Object.values(s.nodes).some((n) => n.kind === "camera"));
+  const [format, setFormat] = useState<PlayblastFormat>("webm");
+  const [size, setSize] = useState<PlayblastSize>("viewport");
+  const [range, setRange] = useState<PlayblastRange>("playback");
+  const [shotCamera, setShotCamera] = useState(false);
+  const [hideGrid, setHideGrid] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!open) return null;
+
+  const close = () => {
+    if (blasting) return;
+    useStudio.getState().setPlayblastOpen(false);
+  };
+
+  const run = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await runPlayblast({ format, size, range, shotCamera: shotCamera && hasCamera, hideGrid });
+      useStudio.getState().setPlayblastOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Playblast failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-40 grid place-items-center bg-bg/70 p-4" onClick={close}>
+      <div
+        className="w-[min(100%,400px)] rounded-lg border border-border bg-surface p-5 shadow-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="font-display text-lg font-semibold text-fg">Playblast</p>
+        <p className="mt-1 text-sm text-muted">
+          Capture the viewport, frame-accurate across the work range. Gizmos stay off.
+        </p>
+        <label className="mt-4 block text-2xs font-medium uppercase tracking-wider text-subtle">
+          Format
+        </label>
+        <div className="mt-1 flex gap-1">
+          {(
+            [
+              ["webm", "WebM movie"],
+              ["png", "PNG sequence (zip)"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={`h-8 rounded-sm px-2 text-xs ${
+                format === id ? "bg-surface-2 text-fg" : "text-muted hover:text-fg"
+              }`}
+              onClick={() => setFormat(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="mt-3 block text-2xs font-medium uppercase tracking-wider text-subtle">
+          Size
+        </label>
+        <div className="mt-1 flex gap-1">
+          {(
+            [
+              ["viewport", "Viewport"],
+              ["720", "1280×720"],
+              ["1080", "1920×1080"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={`h-8 rounded-sm px-2 text-xs ${
+                size === id ? "bg-surface-2 text-fg" : "text-muted hover:text-fg"
+              }`}
+              onClick={() => setSize(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="mt-3 block text-2xs font-medium uppercase tracking-wider text-subtle">
+          Range
+        </label>
+        <div className="mt-1 flex gap-1">
+          {(
+            [
+              ["playback", "In–out"],
+              ["full", "Full duration"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={`h-8 rounded-sm px-2 text-xs ${
+                range === id ? "bg-surface-2 text-fg" : "text-muted hover:text-fg"
+              }`}
+              onClick={() => setRange(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="mt-3 flex h-8 items-center gap-2 text-xs text-muted">
+          <input
+            type="checkbox"
+            checked={hideGrid}
+            onChange={(e) => setHideGrid(e.target.checked)}
+          />
+          Hide grid
+        </label>
+        {hasCamera ? (
+          <label className="flex h-8 items-center gap-2 text-xs text-muted">
+            <input
+              type="checkbox"
+              checked={shotCamera}
+              onChange={(e) => setShotCamera(e.target.checked)}
+            />
+            Look through shot camera
+          </label>
+        ) : null}
+        {error ? <p className="mt-2 text-xs text-key">{error}</p> : null}
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            className="h-9 flex-1 rounded-md bg-fg text-sm font-medium text-bg disabled:opacity-50"
+            disabled={busy || blasting}
+            onClick={() => void run()}
+          >
+            {busy ? "Capturing…" : "Playblast"}
+          </button>
+          <button
+            type="button"
+            className="h-9 rounded-md px-3 text-sm text-muted hover:text-fg"
+            onClick={close}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function PlayblastProgress() {
+  const blasting = useStudio((s) => s.playblasting);
+  const frame = useStudio((s) => s.playblastFrame);
+  const total = useStudio((s) => s.playblastTotal);
+  if (!blasting) return null;
+  const pct = total > 0 ? Math.round((frame / total) * 100) : 0;
+  return (
+    <div className="pointer-events-auto absolute bottom-3 left-3 z-30 w-[min(100%-24px,280px)] rounded-md border border-border bg-surface-2 p-3 shadow-panel">
+      <p className="text-xs font-medium text-fg">Playblast {frame} / {total}</p>
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface">
+        <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
+      </div>
+      <button
+        type="button"
+        className="mt-2 text-2xs text-muted hover:text-fg"
+        onClick={() => cancelPlayblast()}
+      >
+        Cancel (Esc)
+      </button>
     </div>
   );
 }

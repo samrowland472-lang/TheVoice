@@ -9,6 +9,7 @@ import {
   Cylinder,
   Download,
   Eye,
+  Film,
   Ghost,
   Grid3x3,
   HelpCircle,
@@ -133,6 +134,10 @@ export function Menubar() {
           {
             label: "Import JSON",
             action: () => fileRef.current?.click(),
+          },
+          {
+            label: "Playblast…",
+            action: () => useStudio.getState().setPlayblastOpen(true),
           },
         ]}
       />
@@ -390,6 +395,11 @@ export function Toolbar() {
         <Eye className="size-3.5" />
       </IconBtn>
       <span className="mx-1 hidden h-5 w-px bg-border lg:block" />
+      <span className="hidden lg:inline-flex">
+        <IconBtn label="Playblast" onClick={() => useStudio.getState().setPlayblastOpen(true)}>
+          <Film className="size-3.5" />
+        </IconBtn>
+      </span>
       <span className="hidden lg:inline-flex">
         <IconBtn label="Export JSON" onClick={exportProject}>
           <Download className="size-3.5" />

@@ -1,10 +1,11 @@
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { useEffect, useState, type ReactNode } from "react";
+import { cancelPlayblast } from "@/lib/studio/playblast";
 import { useStudio } from "@/lib/studio/store";
 import { CommandPalette } from "./CommandPalette";
 import { Menubar, MobileDock, StatusBar, Toolbar } from "./Chrome";
 import { Inspector } from "./Inspector";
-import { HelpOverlay, Welcome } from "./Overlays";
+import { HelpOverlay, PlayblastDialog, PlayblastProgress, Welcome } from "./Overlays";
 import { Outliner } from "./Outliner";
 import { Timeline } from "./Timeline";
 import { Viewport } from "./Viewport";
@@ -113,9 +114,14 @@ export function StudioApp() {
       else if (e.key === "4") s.setShading("rendered");
       else if (e.key === "?" || e.key === "F1") s.setHelpOpen(true);
       else if (e.key === "Escape") {
+        if (s.playblasting) {
+          cancelPlayblast();
+          return;
+        }
         s.setCommandOpen(false);
         s.setHelpOpen(false);
         s.setWelcomeOpen(false);
+        s.setPlayblastOpen(false);
         s.setMobilePanel("none");
       } else if (e.key === "Delete" || e.key === "Backspace") {
         if (s.selectedKeys.length || s.selectedKeyIndex !== null) s.deleteSelectedKey();
@@ -151,6 +157,7 @@ export function StudioApp() {
                       <Viewport />
                       <div className="pointer-events-none absolute inset-0 z-30">
                         <Welcome />
+                        <PlayblastProgress />
                       </div>
                     </div>
                   </Panel>
@@ -172,6 +179,7 @@ export function StudioApp() {
               <div className="absolute inset-0">
                 <Viewport />
                 <Welcome />
+                <PlayblastProgress />
               </div>
               {mobilePanel === "outliner" ? (
                 <Drawer onClose={() => useStudio.getState().setMobilePanel("none")}>
@@ -200,6 +208,7 @@ export function StudioApp() {
       {desktop ? null : <MobileDock />}
       <CommandPalette />
       <HelpOverlay />
+      <PlayblastDialog />
     </div>
   );
 }

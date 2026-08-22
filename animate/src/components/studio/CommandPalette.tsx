@@ -37,6 +37,9 @@ export function CommandPalette() {
             </Item>
             <Item onSelect={() => run(() => useStudio.getState().copyPose())}>Copy pose</Item>
             <Item onSelect={() => run(() => useStudio.getState().pastePose())}>Paste pose</Item>
+            <Item onSelect={() => run(() => useStudio.getState().setPlayblastOpen(true))}>
+              Playblast viewport
+            </Item>
             <Item onSelect={() => run(() => useStudio.getState().setOnionSkin(!useStudio.getState().onionSkin))}>
               Toggle onion skin
             </Item>

@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { evalNode } from "@/lib/studio/eval";
+import { registerCapture } from "@/lib/studio/playblast";
 import { objectRegistry, registerObject } from "@/lib/studio/registry";
 import { childIds, useStudio } from "@/lib/studio/store";
 import type { MeshShape, SceneNode, Shading } from "@/lib/studio/types";
@@ -293,6 +294,10 @@ function Driver() {
   useFrame((_, delta) => {
     const d = Math.min(delta, 0.1);
     const s = useStudio.getState();
+    if (s.playblasting) {
+      (gl.domElement as HTMLCanvasElement).dataset.ready = "1";
+      return;
+    }
     let t = s.currentTime;
     if (s.playing && !s.transforming) {
       t += d * s.speed;
@@ -380,6 +385,7 @@ function Gizmo() {
   const tool = useStudio((s) => s.tool);
   const playing = useStudio((s) => s.playing);
   const welcomeOpen = useStudio((s) => s.welcomeOpen);
+  const playblasting = useStudio((s) => s.playblasting);
   const snap = useStudio((s) => s.snap);
   const space = useStudio((s) => s.transformSpace);
   const [object, setObject] = useState<THREE.Object3D | null>(null);
@@ -389,7 +395,7 @@ function Gizmo() {
     if (next !== object) setObject(next);
   });
 
-  if (!object || tool === "select" || playing || welcomeOpen) return null;
+  if (!object || tool === "select" || playing || welcomeOpen || playblasting) return null;
   const node = selectedId ? useStudio.getState().nodes[selectedId] : null;
   if (!node || node.locked) return null;
 
@@ -525,6 +531,15 @@ function Marquee({
   return null;
 }
 
+function CaptureBridge() {
+  const { gl, scene, camera } = useThree();
+  useEffect(() => {
+    registerCapture({ gl, scene, camera });
+    return () => registerCapture(null);
+  }, [gl, scene, camera]);
+  return null;
+}
+
 function ViewportScene({
   onBox,
 }: {
@@ -535,6 +550,7 @@ function ViewportScene({
   const shading = useStudio((s) => s.shading);
   const transforming = useStudio((s) => s.transforming);
   const tool = useStudio((s) => s.tool);
+  const playblasting = useStudio((s) => s.playblasting);
 
   return (
     <>
@@ -549,6 +565,7 @@ function ViewportScene({
       <SceneGraph />
       <Driver />
       <Gizmo />
+      <CaptureBridge />
       <Marquee onBox={onBox} />
       {grid ? (
         <Grid
@@ -575,7 +592,7 @@ function ViewportScene({
         makeDefault
         enableDamping
         dampingFactor={0.08}
-        enabled={!transforming && !lookThrough}
+        enabled={!transforming && !lookThrough && !playblasting}
         enableRotate={tool !== "select"}
         minDistance={1.2}
         maxDistance={40}
