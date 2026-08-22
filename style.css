@@ -3687,3 +3687,42 @@ html[data-avenue="music"] .shell.is-daw .main-area,
 #daw-produce .abl-pad { max-height: min(7vh, 48px); }
 #daw-produce .abl-session { padding: 6px 8px 0; }
 
+/* App chrome: one screen, except Animate (Claude) */
+html, body { height: 100%; }
+body { overflow: hidden; }
+.shell {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.sidebar {
+  height: 100%;
+  max-height: 100dvh;
+  overflow-y: auto;
+  padding: 16px 12px;
+}
+.main-area {
+  min-height: 0 !important;
+  height: 100%;
+  overflow: auto;
+  padding: 18px 22px 24px;
+}
+.main-area .footer { padding-top: 20px; }
+
+body:has(#animate-view:not([hidden])) {
+  overflow: auto;
+  height: auto;
+}
+body:has(#animate-view:not([hidden])) .shell {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+body:has(#animate-view:not([hidden])) .main-area {
+  min-height: 100vh !important;
+  height: auto;
+  overflow: visible;
+}
+
+
