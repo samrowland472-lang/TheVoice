@@ -444,6 +444,7 @@ export function CanvasStage() {
       }
       paintRef.current = off;
       drag.current = { mode: "paint", sx: d.x, sy: d.y, lx: d.x, ly: d.y, created: layer.id };
+      useDesign.getState().beginPaintStroke(layer.id);
       stamp(d.x, d.y, d.x, d.y);
       return;
     }
@@ -679,9 +680,6 @@ export function CanvasStage() {
 
   function onPointerUp(e: React.PointerEvent) {
     const st = drag.current;
-    if (st?.mode === "paint") {
-      useDesign.getState().commit();
-    }
     if (st?.mode === "create") {
       useDesign.getState().setTool("select");
     }

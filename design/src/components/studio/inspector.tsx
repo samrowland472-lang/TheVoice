@@ -401,8 +401,8 @@ function ShadowEditor({ node }: { node: DesignNode }) {
 function TextFields({ node }: { node: TextNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const brand = useDesign((s) => s.brand);
-  const display = brand.fonts[0] || "Chakra Petch";
-  const body = brand.fonts[1] || "Outfit";
+  const display = brand.displayFont || "Chakra Petch";
+  const body = brand.bodyFont || "Outfit";
   return (
     <>
       <Field label="Copy">
@@ -640,19 +640,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Swatches({ colors, onPick }: { colors: string[]; onPick: (c: string) => void }) {
-  const names = useDesign((s) => s.brand.colorNames);
+function Swatches({ colors, onPick }: { colors: { name: string; hex: string }[]; onPick: (c: string) => void }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {colors.map((c) => (
         <button
-          key={c}
+          key={c.hex}
           type="button"
           className="size-6 rounded-full border border-border"
-          style={{ background: c }}
-          onClick={() => onPick(c)}
-          aria-label={names?.[c.toLowerCase()] ?? names?.[c] ?? c}
-          title={names?.[c.toLowerCase()] ?? names?.[c] ?? c}
+          style={{ background: c.hex }}
+          onClick={() => onPick(c.hex)}
+          aria-label={c.name}
+          title={c.name}
         />
       ))}
     </div>

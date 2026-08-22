@@ -312,26 +312,25 @@ export function HubView() {
         </p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           {brand.colors.map((c) => (
-            <div key={c} className="flex w-16 flex-col items-center gap-1">
+            <div key={c.hex} className="flex w-16 flex-col items-center gap-1">
               <button
                 type="button"
                 className="size-10 rounded-full border border-border"
-                style={{ background: c }}
-                aria-label={`Remove ${brand.colorNames?.[c] ?? c}`}
-                onClick={() => {
-                  const colorNames = { ...brand.colorNames };
-                  delete colorNames[c];
-                  setBrand({ ...brand, colors: brand.colors.filter((x) => x !== c), colorNames });
-                }}
+                style={{ background: c.hex }}
+                aria-label={`Remove ${c.name}`}
+                onClick={() => setBrand({ ...brand, colors: brand.colors.filter((x) => x.hex !== c.hex) })}
                 title="Remove"
               />
               <input
                 className="w-full bg-transparent text-center font-mono text-[9px] text-ink-dim outline-none"
-                value={brand.colorNames?.[c] ?? ""}
+                value={c.name}
                 placeholder="name"
-                aria-label={`Name for ${c}`}
+                aria-label={`Name for ${c.hex}`}
                 onChange={(e) =>
-                  setBrand({ ...brand, colorNames: { ...brand.colorNames, [c]: e.target.value } })
+                  setBrand({
+                    ...brand,
+                    colors: brand.colors.map((x) => (x.hex === c.hex ? { ...x, name: e.target.value } : x)),
+                  })
                 }
               />
             </div>
@@ -346,7 +345,9 @@ export function HubView() {
           <Button
             size="sm"
             onClick={() => {
-              if (!brand.colors.includes(newColor)) setBrand({ ...brand, colors: [...brand.colors, newColor] });
+              if (!brand.colors.some((x) => x.hex === newColor)) {
+                setBrand({ ...brand, colors: [...brand.colors, { name: "Swatch", hex: newColor }] });
+              }
             }}
           >
             Add colour
@@ -357,8 +358,8 @@ export function HubView() {
             Display
             <select
               className="mt-1 h-10 w-full rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
-              value={brand.fonts[0] ?? "Chakra Petch"}
-              onChange={(e) => setBrand({ ...brand, fonts: [e.target.value, brand.fonts[1] ?? "Outfit", ...brand.fonts.slice(2)] })}
+              value={brand.displayFont}
+              onChange={(e) => setBrand({ ...brand, displayFont: e.target.value })}
             >
               {CANVAS_FONTS.map((f) => (
                 <option key={f.id} value={f.family}>
@@ -371,8 +372,8 @@ export function HubView() {
             Body
             <select
               className="mt-1 h-10 w-full rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
-              value={brand.fonts[1] ?? "Outfit"}
-              onChange={(e) => setBrand({ ...brand, fonts: [brand.fonts[0] ?? "Chakra Petch", e.target.value, ...brand.fonts.slice(2)] })}
+              value={brand.bodyFont}
+              onChange={(e) => setBrand({ ...brand, bodyFont: e.target.value })}
             >
               {CANVAS_FONTS.map((f) => (
                 <option key={f.id} value={f.family}>
@@ -383,10 +384,10 @@ export function HubView() {
           </label>
         </div>
         <p className="mt-4 text-ink">
-          <span className="text-2xl font-semibold tracking-[-0.03em]" style={{ fontFamily: brand.fonts[0] }}>
+          <span className="text-2xl font-semibold tracking-[-0.03em]" style={{ fontFamily: brand.displayFont }}>
             The Voice
           </span>
-          <span className="ml-3 text-sm text-ink-dim" style={{ fontFamily: brand.fonts[1] }}>
+          <span className="ml-3 text-sm text-ink-dim" style={{ fontFamily: brand.bodyFont }}>
             A mix that holds a room.
           </span>
         </p>

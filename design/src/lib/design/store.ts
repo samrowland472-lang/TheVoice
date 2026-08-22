@@ -29,6 +29,8 @@ interface DesignState {
   viewport: Viewport;
   past: DesignDocument[];
   future: DesignDocument[];
+  paintPast: { id: string; bitmap: string }[];
+  paintFuture: { id: string; bitmap: string }[];
   grid: boolean;
   snap: boolean;
   rulers: boolean;
@@ -69,6 +71,7 @@ interface DesignState {
   undo: () => void;
   redo: () => void;
   commit: () => void;
+  beginPaintStroke: (id: string) => void;
   restoreHistory: (slot: "past" | "future", index: number) => void;
   popLastPathPoint: () => void;
   closeSelectedPath: () => void;
@@ -129,6 +132,8 @@ export const useDesign = create<DesignState>((set, get) => ({
   viewport: { x: 0, y: 0, zoom: 0.4 },
   past: [],
   future: [],
+  paintPast: [],
+  paintFuture: [],
   grid: true,
   snap: true,
   rulers: true,
@@ -391,29 +396,77 @@ export const useDesign = create<DesignState>((set, get) => ({
     set({
       past: [...past.slice(-MAX_HISTORY), snapshot(doc)],
       future: [],
+      paintPast: [],
+      paintFuture: [],
+    });
+  },
+
+  beginPaintStroke: (id) => {
+    const { doc, paintPast } = get();
+    const n = doc?.nodes.find((x) => x.id === id);
+    if (!n || n.kind !== "paint") return;
+    set({
+      paintPast: [...paintPast.slice(-23), { id, bitmap: n.bitmap }],
+      paintFuture: [],
     });
   },
 
   undo: () => {
-    const { past, doc, future } = get();
+    const { paintPast, paintFuture, doc, past, future } = get();
+    if (doc && paintPast.length) {
+      const last = paintPast[paintPast.length - 1]!;
+      const n = doc.nodes.find((x) => x.id === last.id);
+      if (n && n.kind === "paint") {
+        set({
+          doc: {
+            ...doc,
+            nodes: doc.nodes.map((x) => (x.id === last.id && x.kind === "paint" ? { ...x, bitmap: last.bitmap } : x)),
+          },
+          paintPast: paintPast.slice(0, -1),
+          paintFuture: [...paintFuture, { id: last.id, bitmap: n.bitmap }],
+          dirty: true,
+        });
+        return;
+      }
+    }
     const prev = past[past.length - 1];
     if (!prev || !doc) return;
     set({
       doc: prev,
       past: past.slice(0, -1),
       future: [snapshot(doc), ...future],
+      paintPast: [],
+      paintFuture: [],
       dirty: true,
     });
   },
 
   redo: () => {
-    const { future, doc, past } = get();
+    const { paintPast, paintFuture, doc, past, future } = get();
+    if (doc && paintFuture.length) {
+      const nextStroke = paintFuture[paintFuture.length - 1]!;
+      const n = doc.nodes.find((x) => x.id === nextStroke.id);
+      if (n && n.kind === "paint") {
+        set({
+          doc: {
+            ...doc,
+            nodes: doc.nodes.map((x) => (x.id === nextStroke.id && x.kind === "paint" ? { ...x, bitmap: nextStroke.bitmap } : x)),
+          },
+          paintFuture: paintFuture.slice(0, -1),
+          paintPast: [...paintPast, { id: nextStroke.id, bitmap: n.bitmap }],
+          dirty: true,
+        });
+        return;
+      }
+    }
     const next = future[0];
     if (!next || !doc) return;
     set({
       doc: next,
       future: future.slice(1),
       past: [...past, snapshot(doc)],
+      paintPast: [],
+      paintFuture: [],
       dirty: true,
     });
   },
@@ -764,7 +817,7 @@ export function makeShape(kind: "rect" | "ellipse" | "line" | "polygon" | "star"
 
 export function makeText(x: number, y: number, color: string) {
   const brand = useDesign.getState().brand;
-  const display = brand.fonts[0] || "Chakra Petch";
+  const display = brand.displayFont || brand.fonts[0] || "Chakra Petch";
   return text({
     x,
     y,
