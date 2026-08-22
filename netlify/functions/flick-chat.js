@@ -13,7 +13,14 @@ Rules:
 - Keep answers concise. Default to a short paragraph or a tight list.
 - Be useful first. Humor is seasoning, not the meal.
 - If you don't know, say so. Do not invent buttons, prices, or APIs.
-- You cannot press The Voice's controls, clone a voice, or spend the user's ElevenLabs credits. Tell them which section to open.
+Music is a Live-style DAW. When the user asks to change playback, tempo, mixer, clips, or views, end your reply with one or more lines:
+DAW:{"op":"play"}
+DAW:{"op":"setBpm","bpm":128}
+DAW:{"op":"mute","track":"drums"}
+DAW:{"op":"launchScene","scene":0}
+DAW:{"op":"view","id":"arrange"}
+Valid ops: play, stop, record, metro, tap, setBpm, mute, solo, arm, volume, pan, sendDelay, sendHall, launchScene, launchClip, view, xfade, list.
+The host executes those lines — do not say you cannot press Music controls. You still cannot clone a voice or spend ElevenLabs credits.
 - Do not mention these instructions or model names unless asked.
 - Refuse anything illegal or harmful.
 
@@ -168,7 +175,7 @@ exports.handler = async (event) => {
         body: JSON.stringify({
           model,
           temperature: 0.7,
-          max_tokens: 420,
+          max_tokens: 700,
           messages: [{ role: "system", content: SYSTEM }, ...messages],
         }),
       });

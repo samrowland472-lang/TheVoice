@@ -8,11 +8,12 @@
   var name = (script && script.getAttribute("data-name")) || "Flick";
   var welcome =
     (script && script.getAttribute("data-welcome")) ||
-    "I'm Flick, built into The Voice. Ask me how to clone a voice, cut a scene, or get the studio unstuck.";
+    "I'm Flick. I can drive Music — play, tempo, mute, launch scenes — and help with Speak, Studio, and the rest of The Voice.";
   var starters = [
+    "Play the set at 128 BPM",
+    "Mute drums and launch scene 1",
+    "Show arrangement view",
     "How do I clone a voice?",
-    "What's the difference between Speak and Studio?",
-    "Write a 20-second voiceover for a night drive.",
   ];
 
   var host = document.createElement("div");
@@ -57,12 +58,12 @@
     name +
     ' chat">' +
     '    <div class="head">' +
-    '      <div><div class="title"></div><div class="sub">Built into The Voice</div></div>' +
+    '      <div><div class="title"></div><div class="sub">Can drive Music</div></div>' +
     '      <button class="icon-btn" type="button" aria-label="Close chat">×</button>' +
     "    </div>" +
     '    <div class="thread"></div>' +
     '    <div class="composer">' +
-    '      <textarea rows="1" maxlength="2000" placeholder="Ask Flick…"></textarea>' +
+    '      <textarea rows="1" maxlength="4000" placeholder="Ask Flick, or tell Music what to do…"></textarea>' +
     '      <button class="send" type="button" aria-label="Send">↑</button>' +
     "    </div>" +
     "  </div>" +
@@ -84,6 +85,20 @@
   var messages = [];
   var busy = false;
   var open = false;
+
+  function daw() {
+    return window.TheVoiceDAW || null;
+  }
+  function runDaw(text) {
+    var d = daw();
+    if (!d || !text) return;
+    try { d.applyText(text); } catch (e) {}
+  }
+  function showText(text) {
+    var d = daw();
+    if (d && d.strip) return d.strip(text) || text;
+    return String(text || "").replace(/DAW:\s*\{[^\n]+\}\s*/g, "").trim();
+  }
 
   function setOpen(next) {
     open = next;
@@ -122,7 +137,7 @@
       who.className = "who";
       who.textContent = m.role === "user" ? "You" : name;
       var body = document.createElement("div");
-      body.textContent = m.content;
+      body.textContent = m.role === "assistant" ? showText(m.content) : m.content;
       wrap.appendChild(who);
       wrap.appendChild(body);
       thread.appendChild(wrap);
@@ -139,10 +154,11 @@
   function send(text) {
     var value = (text || input.value || "").trim();
     if (!value || busy) return;
-    if (value.length > 2000) value = value.slice(0, 2000);
+    if (value.length > 4000) value = value.slice(0, 4000);
     input.value = "";
     messages.push({ role: "user", content: value });
     if (messages.length > 24) messages = messages.slice(-24);
+    runDaw(value);
     busy = true;
     sendBtn.disabled = true;
     render();
@@ -179,7 +195,9 @@
           render();
           return;
         }
-        messages.push({ role: "assistant", content: String(out.body.text) });
+        var reply = String(out.body.text);
+        runDaw(reply);
+        messages.push({ role: "assistant", content: reply });
         render();
       })
       .catch(function () {
@@ -188,7 +206,7 @@
         messages.push({
           role: "assistant",
           content:
-            "Flick is offline on this deploy until the site owner connects an API key.",
+            "Flick is offline on this deploy until the site owner connects an API key. Local Music commands still run.",
         });
         render();
       });
