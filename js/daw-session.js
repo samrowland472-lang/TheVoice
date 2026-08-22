@@ -494,7 +494,7 @@
       if (!g) return;
       var silent = tr.mute || (soloed && !tr.solo);
       g.mute.gain.setTargetAtTime(silent ? 0 : 1, ctx.currentTime, 0.01);
-      g.vol.gain.setTargetAtTime(Math.max(0, Math.min(1.2, tr.volume)), ctx.currentTime, 0.01);
+      applyAutoAt(tr, state.step);
       if (g.pan.pan) g.pan.pan.setTargetAtTime(Math.max(-1, Math.min(1, tr.pan || 0)), ctx.currentTime, 0.01);
       g.sendA.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendA || 0)), ctx.currentTime, 0.01);
       g.sendB.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendB || 0)), ctx.currentTime, 0.01);
@@ -504,6 +504,39 @@
     if (returnAGain) returnAGain.gain.setTargetAtTime(state.returnAVol, ctx.currentTime, 0.01);
     if (returnBGain) returnBGain.gain.setTargetAtTime(state.returnBVol, ctx.currentTime, 0.01);
     paintMixer();
+  }
+
+  function autoMaxStep() {
+    return BARS * STEPS_PER_BAR;
+  }
+
+  function ensureAuto(tr) {
+    if (!tr.autoVol || tr.autoVol.length < 2) {
+      tr.autoVol = [{ step: 0, v: 1 }, { step: autoMaxStep(), v: 1 }];
+    }
+    tr.autoVol.sort(function (a, b) { return a.step - b.step; });
+    return tr.autoVol;
+  }
+
+  function autoVolAt(tr, step) {
+    var pts = ensureAuto(tr);
+    if (step <= pts[0].step) return pts[0].v;
+    for (var i = 0; i < pts.length - 1; i++) {
+      var a = pts[i], b = pts[i + 1];
+      if (step >= a.step && step <= b.step) {
+        var t = (step - a.step) / (b.step - a.step || 1);
+        return a.v + (b.v - a.v) * t;
+      }
+    }
+    return pts[pts.length - 1].v;
+  }
+
+  function applyAutoAt(tr, step, time) {
+    var g = trackGraph[tr.id];
+    if (!g || !ctx) return;
+    var val = Math.max(0, Math.min(1.2, tr.volume * autoVolAt(tr, step)));
+    if (time != null) g.vol.gain.setValueAtTime(val, time);
+    else g.vol.gain.setTargetAtTime(val, ctx.currentTime, 0.01);
   }
 
   function meterLevel(analyser) {
@@ -848,6 +881,7 @@
           sendB: tr.sendB,
           devices: JSON.parse(JSON.stringify(tr.devices || [])),
           clips: tr.clips.map(lightClip),
+          autoVol: (tr.autoVol || []).map(function (p) { return { step: p.step, v: p.v }; }),
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -902,6 +936,7 @@
       tr.clips = (s.clips || []).map(function (c) {
         return c ? clip(c.name, c.color, cloneNotes(c.notes)) : null;
       });
+      tr.autoVol = (s.autoVol || []).map(function (p) { return { step: p.step, v: p.v }; });
       next.push(tr);
     });
     state.tracks = next;
@@ -1689,12 +1724,14 @@
           } else if (c) {
             playStepAt(tr, c, state.step - c.start, swingTime(state.step, nextTime));
           }
+          applyAutoAt(tr, state.step, nextTime);
         });
       } else {
         if (state.step % quantizeSteps() === 0) applyQueue();
         state.tracks.forEach(function (tr) {
           var c = state.launched[tr.id];
           if (c) playStepAt(tr, c, state.step, swingTime(state.step, nextTime));
+          applyAutoAt(tr, state.step, nextTime);
         });
       }
       nextTime += stepDur;
@@ -1873,7 +1910,7 @@
       "#daw-session .daw-loop-h{position:absolute;top:0;width:12px;height:44px;background:var(--phosphor,#3fc6ff);cursor:ew-resize;pointer-events:auto;z-index:3}" +
       "#daw-session .daw-lane-row{display:flex;align-items:stretch;height:" + LANE_H + "px;border-bottom:1px solid var(--border,#263029)}" +
       "#daw-session .daw-lane-lab{width:88px;flex:0 0 88px;display:flex;align-items:center;padding:0 10px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;position:sticky;left:0;z-index:4;background:var(--surface,#121613)}" +
-      "#daw-session .daw-lane{position:relative;flex:1;min-width:" + (BARS * BAR_W) + "px;background-image:repeating-linear-gradient(90deg,transparent,transparent " + (BAR_W - 1) + "px,var(--border,#263029) " + (BAR_W - 1) + "px,var(--border,#263029) " + BAR_W + "px)}" +
+      "#daw-session .daw-lane{position:relative;flex:1;min-width:" + (BARS * BAR_W) + "px;background-image:repeating-linear-gradient(90deg,transparent,transparent " + (BAR_W - 1) + "px,var(--border,#263029) " + (BAR_W - 1) + "px,var(--border,#263029) " + BAR_W + "px)}" +"#daw-session .daw-auto{height:32px;flex:1;min-width:" + (BARS * BAR_W) + "px;display:block;cursor:crosshair;background:#070908}" +"#daw-session .daw-auto-lab{width:88px;flex:0 0 88px;font-family:Share Tech Mono,ui-monospace,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#4c5f56;display:flex;align-items:center;padding:0 8px}" +
       "#daw-session .daw-clip{position:absolute;top:6px;height:36px;border-radius:6px;padding:6px 8px;font-size:11px;color:#06170f;overflow:hidden;white-space:nowrap;cursor:grab;z-index:1}" +
       "#daw-session .daw-clip.sel{outline:2px solid #fff;outline-offset:1px}" +
       "#daw-session .daw-playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--alert,#ff4d4d);z-index:5;pointer-events:none;left:88px}" +
@@ -1945,6 +1982,85 @@
       loopEl.style.width = Math.max(BAR_W, (state.loopEnd - state.loopStart) * BAR_W) + "px";
     }
     updatePlayheadPx();
+    state.tracks.forEach(paintAutoLane);
+  }
+
+  function paintAutoLane(tr) {
+    if (!arrangeLanes) return;
+    var cv = arrangeLanes.querySelector('canvas.daw-auto[data-track="' + tr.id + '"]');
+    if (!cv) return;
+    var w = cv.width, h = cv.height;
+    var ctx2 = cv.getContext("2d");
+    ctx2.fillStyle = "#070908";
+    ctx2.fillRect(0, 0, w, h);
+    var pts = ensureAuto(tr);
+    ctx2.strokeStyle = tr.color || "#3fc6ff";
+    ctx2.lineWidth = 1.5;
+    ctx2.beginPath();
+    pts.forEach(function (p, i) {
+      var x = (p.step / autoMaxStep()) * w;
+      var y = (1 - p.v) * (h - 6) + 3;
+      if (i === 0) ctx2.moveTo(x, y);
+      else ctx2.lineTo(x, y);
+    });
+    ctx2.stroke();
+    ctx2.fillStyle = "#ffb238";
+    pts.forEach(function (p) {
+      var x = (p.step / autoMaxStep()) * w;
+      var y = (1 - p.v) * (h - 6) + 3;
+      ctx2.fillRect(x - 3, y - 3, 6, 6);
+    });
+  }
+
+  function bindAutoCanvas(cv, tr) {
+    cv.addEventListener("pointerdown", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      var rect = cv.getBoundingClientRect();
+      function pos(e) {
+        var x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        var y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        return { step: Math.round(x * autoMaxStep()), v: 1 - y };
+      }
+      var pts = ensureAuto(tr);
+      var p = pos(ev);
+      var hit = -1;
+      var thresh = autoMaxStep() / (cv.width / 10);
+      pts.forEach(function (pt, i) {
+        if (Math.abs(pt.step - p.step) < thresh) hit = i;
+      });
+      if (ev.altKey && hit >= 0 && pts.length > 2) {
+        pushUndo();
+        pts.splice(hit, 1);
+        paintAutoLane(tr);
+        applyAutoAt(tr, state.step);
+        return;
+      }
+      pushUndo();
+      var pt;
+      if (hit < 0) {
+        pt = { step: p.step, v: p.v };
+        pts.push(pt);
+      } else {
+        pt = pts[hit];
+      }
+      function move(e) {
+        var q = pos(e);
+        pt.step = q.step;
+        pt.v = Math.max(0, Math.min(1, q.v));
+        pts.sort(function (a, b) { return a.step - b.step; });
+        paintAutoLane(tr);
+        applyAutoAt(tr, state.step);
+      }
+      function up() {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        applyMix();
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      move(ev);
+    });
   }
 
   function bindClipDrag(node, clipObj) {
@@ -3074,6 +3190,18 @@
       row.appendChild(lab);
       row.appendChild(lane);
       arrangeLanes.appendChild(row);
+      var autoRow = el("div", "daw-lane-row");
+      autoRow.style.height = "32px";
+      autoRow.appendChild(el("div", "daw-auto-lab", "Vol"));
+      var cv = document.createElement("canvas");
+      cv.className = "daw-auto";
+      cv.dataset.track = tr.id;
+      cv.height = 32;
+      cv.width = BARS * BAR_W;
+      cv.setAttribute("aria-label", tr.name + " volume automation");
+      bindAutoCanvas(cv, tr);
+      autoRow.appendChild(cv);
+      arrangeLanes.appendChild(autoRow);
     });
     paintArrange();
   }
@@ -4132,6 +4260,7 @@
             if (!c) return null;
             return { name: c.name, color: c.color, length: c.length, notes: encodeNotes(c.notes) };
           }),
+          autoVol: tr.autoVol || [],
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -4185,6 +4314,7 @@
     };
     while (tr.clips.length < SCENES) tr.clips.push(null);
     if (raw.rack) tr.rack = { pads: (raw.rack.pads || []).map(decodePad) };
+    tr.autoVol = raw.autoVol || null;
     return tr;
   }
 
