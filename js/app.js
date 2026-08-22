@@ -19,7 +19,7 @@ import { initDaw, setDawMode, showDaw } from './daw.js';
 import { emitVoice } from './bus.js';
 import { wordCount, clipToWords, chunkScript, formatEta, MAX_SPEAK_WORDS } from './speak-script.js';
 import { analyseLyrics, scaleChords, progressionInKey, KEYS, PROGRESSIONS } from './songcraft.js';
-import { composeAudio, fadeOut, describeProject } from './project.js';
+import { composeAudio, fadeOut, describeProject, loopToLength } from './project.js';
 import { createScene, createShape, setKeyframe, removeKeyframe, sampleShape,
          renderFrame, audioLevelTrack, registerImage, hydrateSceneImages,
          serializeScene, deserializeScene, enable3D, disable3D, is3D,
@@ -426,6 +426,7 @@ function stopPlayback() {
   renderHighlight('', null, null);
   releasePlaybackWait();
   if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
+  if (typeof stopProjectPlay === 'function') stopProjectPlay();
 }
 
 playBtn.addEventListener('click', async () => {
@@ -4628,6 +4629,15 @@ const projectAudioBtn = document.getElementById('project-audio-btn');
 const projectFramesBtn = document.getElementById('project-frames-btn');
 const projectHint = document.getElementById('project-hint');
 const projectAudio = document.getElementById('project-audio');
+const projectTransport = document.getElementById('project-transport');
+const projectPlay = document.getElementById('project-play');
+const projectScrub = document.getElementById('project-scrub');
+const projectScrubFill = document.getElementById('project-scrub-fill');
+const projectPos = document.getElementById('project-pos');
+const projectVuFill = document.getElementById('project-vu-fill');
+const projectSaveBtn = document.getElementById('project-save-btn');
+const projectLoadBtn = document.getElementById('project-load-btn');
+const projectRecipeFile = document.getElementById('project-recipe-file');
 const projectStage = document.getElementById('project-stage');
 const projectCanvas = document.getElementById('project-canvas');
 const projectCtx = projectCanvas.getContext('2d');
@@ -4638,6 +4648,11 @@ let projectMix = null;      // Float32Array of the last build
 let projectLevels = null;   // per-frame loudness, for the reactive scene
 let projectDuration = 0;
 let projectRaf = null;
+
+function stopProjectPlay() {
+  if (projectAudio && !projectAudio.paused) projectAudio.pause();
+  if (projectPlay) projectPlay.textContent = '▶';
+}
 
 /** The take that hasn't been saved to the library yet, if there is one. */
 function projectSessionTake() {
@@ -4676,6 +4691,19 @@ async function projectRefreshSources() {
     projectVoiceSel.value = projectSessionTake() ? 'session' : '';
   }
 
+  const beatKeep = projectBeatSel.value;
+  projectBeatSel.innerHTML = '<option value="">None</option><option value="current">Current Music pattern</option>';
+  for (const clip of clips.slice(0, 50)) {
+    if (!clip.blob) continue;
+    const opt = document.createElement('option');
+    opt.value = `clip:${clip.id}`;
+    opt.textContent = `Clip · ${clip.title || clip.voiceLabel || 'Audio'} · ${formatDuration(clip.durationSec)}`;
+    projectBeatSel.appendChild(opt);
+  }
+  if (beatKeep && [...projectBeatSel.options].some((o) => o.value === beatKeep)) {
+    projectBeatSel.value = beatKeep;
+  }
+
   projectUpdateSummary();
 }
 
@@ -4690,7 +4718,9 @@ async function projectVoiceBlob() {
 }
 
 function projectUsesBeat() {
-  return projectBeatSel.value === 'current' && TRACKS.some((t) => musicPattern.grid[t.id].some(Boolean));
+  const v = projectBeatSel.value;
+  if (v && v.startsWith('clip:')) return true;
+  return v === 'current' && TRACKS.some((t) => musicPattern.grid[t.id].some(Boolean));
 }
 
 function projectUsesScene() {
@@ -4705,6 +4735,8 @@ function projectUpdateSummary() {
     bits.push(projectUsesBeat()
       ? `beat: ${musicPattern.bpm}bpm × ${musicBars.value} bar${musicBars.value === '1' ? '' : 's'}`
       : 'beat: pattern is empty');
+  } else if (projectBeatSel.value.startsWith('clip:')) {
+    bits.push(`beat: ${projectBeatSel.selectedOptions[0].textContent}`);
   }
   if (projectSceneSel.value === 'current') {
     bits.push(projectUsesScene()
@@ -4722,6 +4754,26 @@ function projectUpdateSummary() {
  * every loop point. Render the bars actually needed in one pass instead, and
  * the mixer never has to tile at all.
  */
+async function projectBeatSamples(neededSec) {
+  const v = projectBeatSel.value;
+  if (v && v.startsWith('clip:')) {
+    const clips = await clipLibrary.listClips();
+    const clip = clips.find((c) => c.id === v.slice(5));
+    if (!clip) return null;
+    const buf = await decodeToAudioBuffer(clip.blob);
+    let samples = buf.sampleRate === PROJECT_SR
+      ? buf.getChannelData(0)
+      : resampleLinear(buf.getChannelData(0), buf.sampleRate, PROJECT_SR);
+    const need = Math.max(1, Math.round(neededSec * PROJECT_SR));
+    if (projectLoop.checked && samples.length && samples.length < need) {
+      samples = loopToLength(samples, need);
+    }
+    return samples;
+  }
+  if (v !== 'current') return null;
+  return projectBeatBed(neededSec);
+}
+
 function projectBeatBed(neededSec) {
   const oneBar = patternDuration(musicPattern, 1);
   const chosen = parseInt(musicBars.value, 10);
@@ -4770,7 +4822,7 @@ projectBuildBtn.addEventListener('click', async () => {
 
     const offsetSec = parseFloat(projectOffset.value);
     const neededSec = voice ? offsetSec + voice.length / PROJECT_SR : 0;
-    const beat = projectUsesBeat() ? projectBeatBed(neededSec) : null;
+    const beat = projectUsesBeat() ? await projectBeatSamples(neededSec) : null;
 
     const mix = composeAudio({
       voice,
@@ -4789,8 +4841,12 @@ projectBuildBtn.addEventListener('click', async () => {
 
     if (projectAudio.src) URL.revokeObjectURL(projectAudio.src);
     projectAudio.src = URL.createObjectURL(projectBlob);
-    projectAudio.hidden = false;
+    projectAudio.hidden = true;
+    if (projectTransport) projectTransport.hidden = false;
     projectAudioBtn.disabled = false;
+    if (projectPlay) projectPlay.textContent = '▶';
+    if (projectPos) projectPos.textContent = formatDuration(projectDuration);
+    if (projectScrubFill) projectScrubFill.style.width = '0%';
 
     // The payoff of combining the two halves: the scene reacts to the
     // finished mix, not to the voice alone.
@@ -4816,6 +4872,7 @@ projectBuildBtn.addEventListener('click', async () => {
       ext: 'wav',
       durationSec: projectDuration,
     });
+    emitVoice('project-mix', { duration: projectDuration });
     projectUpdateSummary();
   } catch (err) {
     projectHint.textContent = err.message || 'Could not build that project.';
@@ -4857,6 +4914,97 @@ projectAudioBtn.addEventListener('click', async () => {
   const r = await downloadBlob(projectBlob, `project-${Date.now()}.wav`);
   if (!r.ok) projectHint.textContent = r.message || 'Download cancelled.';
 });
+
+if (projectPlay) {
+  projectPlay.addEventListener('click', () => {
+    if (!projectAudio.src) return;
+    if (typeof stopPlayback === 'function') stopPlayback();
+    if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
+    if (projectAudio.paused) {
+      projectAudio.play().catch(() => {});
+      projectPlay.textContent = '■';
+    } else {
+      projectAudio.pause();
+      projectPlay.textContent = '▶';
+    }
+  });
+}
+if (projectScrub) {
+  projectScrub.addEventListener('click', (ev) => {
+    if (!projectAudio.duration) return;
+    const r = projectScrub.getBoundingClientRect();
+    projectAudio.currentTime = ((ev.clientX - r.left) / r.width) * projectAudio.duration;
+  });
+}
+projectAudio.addEventListener('timeupdate', () => {
+  if (!projectAudio.duration) return;
+  if (projectScrubFill) projectScrubFill.style.width = `${(projectAudio.currentTime / projectAudio.duration) * 100}%`;
+  if (projectPos) projectPos.textContent = `${formatDuration(projectAudio.currentTime)} / ${formatDuration(projectAudio.duration)}`;
+  if (projectVuFill && projectMix) {
+    const i = Math.floor(projectAudio.currentTime * PROJECT_SR);
+    let peak = 0;
+    for (let k = 0; k < 512 && i + k < projectMix.length; k++) {
+      const a = Math.abs(projectMix[i + k]);
+      if (a > peak) peak = a;
+    }
+    const db = peak > 0.00001 ? 20 * Math.log10(peak) : -60;
+    projectVuFill.style.height = `${Math.max(0, Math.min(100, (db + 60) / 60 * 100))}%`;
+    projectVuFill.classList.toggle('clip', db > -1);
+  }
+});
+projectAudio.addEventListener('ended', () => {
+  if (projectPlay) projectPlay.textContent = '▶';
+});
+
+function projectRecipe() {
+  return {
+    kind: 'thevoice-project',
+    v: 1,
+    voice: projectVoiceSel.value,
+    beat: projectBeatSel.value,
+    scene: projectSceneSel.value,
+    voiceGain: parseFloat(projectVoiceGain.value),
+    beatGain: parseFloat(projectBeatGain.value),
+    offset: parseFloat(projectOffset.value),
+    loop: projectLoop.checked,
+    fade: projectFade.checked,
+  };
+}
+
+if (projectSaveBtn) {
+  projectSaveBtn.addEventListener('click', async () => {
+    const json = JSON.stringify(projectRecipe(), null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const r = await downloadBlob(blob, `thevoice-project-${Date.now()}.json`);
+    if (r.ok) showToast('Project recipe saved');
+    else if (r.message) projectHint.textContent = r.message;
+  });
+}
+if (projectLoadBtn && projectRecipeFile) {
+  projectLoadBtn.addEventListener('click', () => projectRecipeFile.click());
+  projectRecipeFile.addEventListener('change', async () => {
+    const file = projectRecipeFile.files && projectRecipeFile.files[0];
+    projectRecipeFile.value = '';
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || data.kind !== 'thevoice-project') throw new Error('Not a The Voice project recipe.');
+      await projectRefreshSources();
+      if (data.voice) projectVoiceSel.value = data.voice;
+      if (data.beat) projectBeatSel.value = data.beat;
+      if (data.scene) projectSceneSel.value = data.scene;
+      if (data.voiceGain != null) { projectVoiceGain.value = data.voiceGain; projectVoiceGain.dispatchEvent(new Event('input')); }
+      if (data.beatGain != null) { projectBeatGain.value = data.beatGain; projectBeatGain.dispatchEvent(new Event('input')); }
+      if (data.offset != null) { projectOffset.value = data.offset; projectOffset.dispatchEvent(new Event('input')); }
+      if (typeof data.loop === 'boolean') projectLoop.checked = data.loop;
+      if (typeof data.fade === 'boolean') projectFade.checked = data.fade;
+      projectUpdateSummary();
+      showToast('Recipe loaded — hit Build mix');
+    } catch (err) {
+      projectHint.textContent = err.message || 'Could not read that recipe.';
+    }
+  });
+}
 
 // Frames plus the WAV are what an editor needs to assemble the video. Encoding
 // a real video file in-browser needs a codec library, so this says what it

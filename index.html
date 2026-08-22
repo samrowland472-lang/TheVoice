@@ -732,7 +732,7 @@
         <label for="project-beat">Beat</label>
         <select id="project-beat">
           <option value="">None</option>
-          <option value="current">Current beat pattern</option>
+          <option value="current">Current Music pattern</option>
         </select>
       </div>
       <div class="control-item">
@@ -764,15 +764,24 @@
     </div>
 
     <div class="control-row buttons-row">
-      <button id="project-build-btn" class="btn btn-primary">Build project</button>
+      <button id="project-build-btn" class="btn btn-primary">Build mix</button>
       <button id="project-refresh-btn" class="btn">Refresh sources</button>
       <button id="project-import-btn" class="btn">Import audio…</button>
-      <button id="project-audio-btn" class="btn" disabled>Download audio</button>
+      <button id="project-save-btn" class="btn">Save recipe</button>
+      <button id="project-load-btn" class="btn">Load recipe…</button>
+      <button id="project-audio-btn" class="btn" disabled>Download WAV</button>
       <button id="project-frames-btn" class="btn" disabled>Export video frames</button>
     </div>
 
     <p class="hint" id="project-hint" role="status" aria-live="polite"></p>
-    <audio id="project-audio" controls hidden></audio>
+    <div class="project-transport" id="project-transport" hidden>
+      <button type="button" id="project-play" class="clip-play" aria-label="Play mix">▶</button>
+      <button type="button" class="clip-scrub" id="project-scrub" aria-label="Seek mix"><div class="clip-scrub-fill" id="project-scrub-fill"></div></button>
+      <span class="clip-pos" id="project-pos">0:00</span>
+      <div class="studio-vu project-vu" aria-label="Mix meter"><div class="studio-vu-fill" id="project-vu-fill"></div></div>
+    </div>
+    <audio id="project-audio" hidden></audio>
+    <input type="file" id="project-recipe-file" accept="application/json,.json" hidden>
 
     <div class="anim-stage" id="project-stage" hidden>
       <canvas id="project-canvas" width="640" height="360" role="img" aria-label="Project preview"></canvas>

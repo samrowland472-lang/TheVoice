@@ -2993,3 +2993,14 @@ input:focus-visible,
   min-width: 72px;
   text-align: right;
 }
+
+/* ---- Project mix deck ---- */
+.project-transport {
+  display: grid;
+  grid-template-columns: 36px 1fr auto 16px;
+  gap: 10px;
+  align-items: stretch;
+  margin: 14px 0 8px;
+  min-height: 36px;
+}
+.project-vu { height: 36px; }
