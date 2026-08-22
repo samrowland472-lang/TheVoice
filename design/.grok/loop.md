@@ -20,7 +20,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Hub folders / tags for recents; pin a project.
+1. Hub folders / tags for recents (pin done).
 2. Brand kit: named colours + font pairing applied to new text.
 5. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
 6. Paint stroke undo (not the whole bitmap commit).
@@ -41,8 +41,13 @@ Auth OFF, DB OFF.
 - History panel: clickable undo stack under Layers (Now / Step N / Redo).
 - Pen: ⌫ last point, Enter or click first point to close, Esc / double-click to finish. Rubber-band preview.
 - Safe area overlay (story/print-aware) + bleed on PNG/JPG with crop marks.
+- Pin projects in Recents (persisted, sort pinned first, phosphor accent).
 
 ## Iterations
+
+### 2026-08-22T21:07Z — loop 11
+
+Pin projects in hub Recents. Toggle pin on cards; pinned sort first and keep pin across saves. Typecheck + build + smoke clean.
 
 ### 2026-08-22T20:23Z — loop 10
 
@@ -66,4 +71,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Hub folders / tags for recents; pin a project.
+Hub folders / tags for recents; brand kit font pairing on new text.
