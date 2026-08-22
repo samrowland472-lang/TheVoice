@@ -35,6 +35,91 @@
     return copy;
   }
 
+  function reversedBuffer(buf) {
+    if (!buf || !buf.getChannelData) return buf;
+    if (buf._rev) return buf._rev;
+    ensureAudio();
+    var out = ctx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+    for (var c = 0; c < buf.numberOfChannels; c++) {
+      var s = buf.getChannelData(c);
+      var d = out.getChannelData(c);
+      for (var i = 0; i < s.length; i++) d[i] = s[s.length - 1 - i];
+    }
+    buf._rev = out;
+    out._fwd = buf;
+    return out;
+  }
+
+  function selectedClip() {
+    return (state.selectedSession && state.selectedSession.clip) || null;
+  }
+
+  function clipXpose(n) {
+    return (n && n.transpose) || 0;
+  }
+
+  function toggleClipReverse() {
+    var clip = selectedClip();
+    if (!clip) return;
+    if (!clip.notes) clip.notes = {};
+    pushUndo();
+    clip.notes.reverse = !clip.notes.reverse;
+    paint();
+    paintWarp();
+    paintRoll();
+    setMidiLabel(clip.notes.reverse ? "Reverse" : "Forward");
+  }
+
+  function nudgeClipTranspose(delta) {
+    var clip = selectedClip();
+    if (!clip) return;
+    if (!clip.notes) clip.notes = {};
+    pushUndo();
+    clip.notes.transpose = Math.max(-24, Math.min(24, clipXpose(clip.notes) + delta));
+    paint();
+    paintWarp();
+    paintRoll();
+    setMidiLabel((clip.notes.transpose > 0 ? "+" : "") + clip.notes.transpose + " st");
+  }
+
+  function syncXformUi(rootEl, clip) {
+    if (!rootEl) return;
+    var n = clip && clip.notes;
+    var xp = rootEl.querySelector("[data-xpose]");
+    var rv = rootEl.querySelector("[data-rev]");
+    if (xp) xp.value = String(n && n.transpose ? n.transpose : 0);
+    if (rv) rv.classList.toggle("on", !!(n && n.reverse));
+  }
+
+  function bindClipXform(container) {
+    var lab = el("label", "daw-ctl");
+    lab.appendChild(document.createTextNode("Trans"));
+    var inp = document.createElement("input");
+    inp.type = "number";
+    inp.min = "-24";
+    inp.max = "24";
+    inp.step = "1";
+    inp.value = "0";
+    inp.setAttribute("data-xpose", "1");
+    inp.setAttribute("aria-label", "Clip transpose in semitones");
+    inp.addEventListener("change", function () {
+      var clip = selectedClip();
+      if (!clip) return;
+      if (!clip.notes) clip.notes = {};
+      pushUndo();
+      clip.notes.transpose = Math.max(-24, Math.min(24, Number(inp.value) || 0));
+      setMidiLabel((clip.notes.transpose > 0 ? "+" : "") + clip.notes.transpose + " st");
+    });
+    lab.appendChild(inp);
+    container.appendChild(lab);
+    var rev = el("button", "daw-btn", "Rev");
+    rev.type = "button";
+    rev.setAttribute("data-rev", "1");
+    rev.setAttribute("aria-label", "Reverse clip");
+    rev.addEventListener("click", toggleClipReverse);
+    container.appendChild(rev);
+  }
+
   function makeSet() {
     var tracks = TRACKS.map(function (t, i) {
       return {
@@ -1275,16 +1360,17 @@
     warpHold[id].push(node);
   }
 
-  function playWarpSeg(dest, buf, srcStart, srcDur, destDur, when, gain, mode, trackId) {
+  function playWarpSeg(dest, buf, srcStart, srcDur, destDur, when, gain, mode, trackId, rateMul) {
     if (!ctx || !buf || destDur <= 0.01) return;
     srcStart = Math.max(0, srcStart);
     srcDur = Math.max(0.01, srcDur);
     gain = Math.max(0.02, Math.min(1.5, gain == null ? 1 : gain));
     mode = mode || "beats";
+    rateMul = rateMul || 1;
     if (mode === "re-pitch") {
       var src = ctx.createBufferSource();
       src.buffer = buf;
-      src.playbackRate.value = srcDur / destDur;
+      src.playbackRate.value = (srcDur / destDur) * rateMul;
       var g = ctx.createGain();
       g.gain.setValueAtTime(gain, when);
       src.connect(g);
@@ -1298,6 +1384,7 @@
     if (mode === "beats") {
       var src2 = ctx.createBufferSource();
       src2.buffer = buf;
+      src2.playbackRate.value = rateMul;
       var g2 = ctx.createGain();
       g2.gain.setValueAtTime(gain, when);
       g2.gain.setValueAtTime(gain, when + Math.min(srcDur, destDur) * 0.85);
@@ -1317,7 +1404,7 @@
       if (srcPos >= buf.duration) break;
       var gs = ctx.createBufferSource();
       gs.buffer = buf;
-      gs.playbackRate.value = 1;
+      gs.playbackRate.value = rateMul;
       var gg = ctx.createGain();
       var gt = when + t;
       var gd = Math.min(grain, destDur - t);
@@ -1339,8 +1426,19 @@
     stopWarpVoices(track.id);
     var n = clipObj.notes;
     var gain = n.gain == null ? 1 : n.gain;
+    var buf = n.reverse ? reversedBuffer(n.buffer) : n.buffer;
+    var rate = Math.pow(2, clipXpose(n) / 12);
     if (!n.warpOn) {
-      playBufferShot(dest, n.buffer, time, gain);
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = rate;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(gain, time);
+      src.connect(g);
+      g.connect(dest);
+      src.start(time);
+      holdVoice(track.id, src);
+      holdVoice(track.id, g);
       return;
     }
     var markers = ensureMarkers(clipObj);
@@ -1349,7 +1447,7 @@
       var a = markers[i], b = markers[i + 1];
       var destDur = Math.max(0.02, (b.beat - a.beat) * beatSec);
       var srcDur = Math.max(0.01, b.time - a.time);
-      playWarpSeg(dest, n.buffer, a.time, srcDur, destDur, time + a.beat * beatSec, gain, n.warpMode, track.id);
+      playWarpSeg(dest, buf, a.time, srcDur, destDur, time + a.beat * beatSec, gain, n.warpMode, track.id, rate);
     }
   }
 
@@ -1419,6 +1517,7 @@
       if (mode) mode.value = n.warpMode || "beats";
       if (on) on.classList.toggle("on", !!n.warpOn);
     }
+    syncXformUi(warpEl, pair.clip);
   }
 
   function timeAtBeat(markers, beat) {
@@ -1444,17 +1543,20 @@
     if (!clipObj || !trackAudible(track)) return;
     var dest = trackNodes[track.id];
     var n = clipObj.notes || {};
-    var i = step % (clipObj.length || STEPS);
+    var len = clipObj.length || STEPS;
+    var i = step % len;
+    if (n.reverse) i = len - 1 - i;
+    var xp = clipXpose(n);
     if ((track.kind === "drums" || track.kind === "perc") && track.rack && !(n.buffer)) {
       playDrumRack(track, clipObj, i, time);
       return;
     }
     if (n.buffer) {
-      if (i === 0) playWarpedClip(track, clipObj, time);
+      if ((n.reverse ? len - 1 - i : i) === 0) playWarpedClip(track, clipObj, time);
       return;
     }
     if (n.roll && n.roll.length) {
-      playRollStep(track, dest, n.roll, i, time);
+      playRollStep(track, dest, n.roll, i, time, xp);
       return;
     }
     if (track.kind === "drums") {
@@ -1462,16 +1564,16 @@
       if (n.s && n.s[i]) trigSnare(dest, time);
       if (n.h && n.h[i]) trigHat(dest, time, i % 8 === 7);
     } else if (track.kind === "bass") {
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigBass(dest, time, n.seq[i], track);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigBass(dest, time, n.seq[i] + xp, track);
     } else if (track.kind === "keys") {
-      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16, track);
+      if (n.hits && n.hits[i]) trigChord(dest, time, (n.chord || [0, 3, 7]).map(function (s) { return s + xp; }), 0.28, 0.16, track);
     } else if (track.kind === "lead") {
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i], track);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i] + xp, track);
     } else if (track.kind === "perc") {
       if (n.seq && n.seq[i]) trigPerc(dest, time, i % 4 === 2);
     } else if (track.kind === "midi" || track.kind === "keys") {
-      if (n.hits && n.hits[i]) trigChord(dest, time, n.chord || [0, 3, 7], 0.28, 0.16, track);
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i], track);
+      if (n.hits && n.hits[i]) trigChord(dest, time, (n.chord || [0, 3, 7]).map(function (s) { return s + xp; }), 0.28, 0.16, track);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i] + xp, track);
     }
   }
 
@@ -2510,11 +2612,12 @@
     osc(wave, midiHz(pitch + (track.kind === "bass" ? 0 : 12)), g, t, dec + 0.03);
   }
 
-  function playRollStep(track, dest, roll, i, time) {
+  function playRollStep(track, dest, roll, i, time, xp) {
+    xp = xp || 0;
     roll.forEach(function (note) {
       if (Math.floor(note.start + 1e-6) !== i) return;
       var dur = Math.max(0.05, (note.length || 1) * secondsPerStep());
-      trigRollNote(track, dest, time, note.pitch, dur, note.vel);
+      trigRollNote(track, dest, time, note.pitch + xp, dur, note.vel);
     });
   }
 
@@ -2533,6 +2636,7 @@
     if (rollTitle) {
       rollTitle.textContent = pair ? pair.track.name + " · " + pair.clip.name : "Piano roll";
     }
+    if (pair) syncXformUi(rollEl, pair.clip);
     if (!pair) {
       rollKeys.replaceChildren();
       rollGrid.replaceChildren();
@@ -3417,6 +3521,7 @@
     });
     gainLab.appendChild(gain);
     tools.appendChild(gainLab);
+    bindClipXform(tools);
     wtop.appendChild(tools);
     warpEl.appendChild(wtop);
     warpCanvas = document.createElement("canvas");
@@ -3593,6 +3698,7 @@
     velLab.appendChild(velInp);
     rtop.appendChild(velLab);
     rollEl._velInp = velInp;
+    bindClipXform(rtop);
     rollEl.appendChild(rtop);
     var body = el("div", "daw-roll-body");
     rollKeys = el("div", "daw-keys");
@@ -3793,7 +3899,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates a clip. Ctrl+Z / Shift+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
@@ -3822,6 +3928,21 @@
           launchScene(sceneN - 1);
           return;
         }
+      }
+      if (e.code === "KeyR" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        toggleClipReverse();
+        return;
+      }
+      if ((e.code === "Equal" || e.code === "NumpadAdd") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        nudgeClipTranspose(e.shiftKey ? 12 : 1);
+        return;
+      }
+      if ((e.code === "Minus" || e.code === "NumpadSubtract") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        nudgeClipTranspose(e.shiftKey ? -12 : -1);
+        return;
       }
       if (e.code === "Escape") {
         if (state.playing) {
