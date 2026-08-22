@@ -11,11 +11,13 @@ export function LayersPanel() {
   const reorder = useDesign((s) => s.reorder);
   const reorderInsert = useDesign((s) => s.reorderInsert);
   const listRef = useRef<HTMLUListElement>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
+  const dragIdsRef = useRef<string[] | null>(null);
+  const [dragIds, setDragIds] = useState<string[] | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null);
 
   if (!doc) return null;
   const layers = [...doc.nodes].reverse();
+  const draggingSet = dragIds ? new Set(dragIds) : null;
 
   const indexFromY = (clientY: number) => {
     const items = listRef.current?.querySelectorAll<HTMLElement>("[data-layer-id]");
@@ -29,9 +31,21 @@ export function LayersPanel() {
     return items.length;
   };
 
-  const finish = (id: string, clientY: number) => {
-    reorderInsert(id, indexFromY(clientY));
-    setDragId(null);
+  const autoScroll = (clientY: number) => {
+    const list = listRef.current;
+    if (!list || list.scrollHeight <= list.clientHeight + 1) return;
+    const r = list.getBoundingClientRect();
+    if (clientY < r.top || clientY > r.bottom) return;
+    const edge = 16;
+    if (clientY < r.top + edge) list.scrollTop -= 8;
+    else if (clientY > r.bottom - edge) list.scrollTop += 8;
+  };
+
+  const finish = (clientY: number) => {
+    const ids = dragIdsRef.current;
+    if (ids?.length) reorderInsert(ids, indexFromY(clientY));
+    dragIdsRef.current = null;
+    setDragIds(null);
     setDropAt(null);
   };
 
@@ -41,7 +55,7 @@ export function LayersPanel() {
       <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
         {layers.map((n, i) => {
           const active = selection.includes(n.id);
-          const dragging = dragId === n.id;
+          const dragging = draggingSet?.has(n.id) ?? false;
           return (
             <li key={n.id} data-layer-id={n.id} className="relative">
               {dropAt === i && (
@@ -55,31 +69,40 @@ export function LayersPanel() {
                 )}
               >
                 <span
-                  className="grid size-7 shrink-0 cursor-grab place-items-center text-ink-faint touch-none active:cursor-grabbing"
+                  className="grid size-7 shrink-0 cursor-grab place-items-center text-ink-faint touch-none select-none active:cursor-grabbing"
                   aria-label="Reorder layer"
                   onPointerDown={(e) => {
                     if (e.button !== 0) return;
                     e.currentTarget.setPointerCapture(e.pointerId);
-                    setDragId(n.id);
+                    const sel = useDesign.getState().selection;
+                    const group = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
+                    dragIdsRef.current = group;
+                    setDragIds(group);
                     setDropAt(i);
-                    if (!selection.includes(n.id)) select([n.id]);
+                    if (!sel.includes(n.id)) select([n.id]);
                   }}
                   onPointerMove={(e) => {
-                    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+                    if (!dragIdsRef.current) return;
+                    autoScroll(e.clientY);
                     setDropAt(indexFromY(e.clientY));
                   }}
                   onPointerUp={(e) => {
-                    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-                    finish(n.id, e.clientY);
+                    if (!dragIdsRef.current) return;
+                    finish(e.clientY);
                   }}
                   onPointerCancel={() => {
-                    setDragId(null);
+                    dragIdsRef.current = null;
+                    setDragIds(null);
                     setDropAt(null);
                   }}
                 >
                   <GripVertical className="size-3.5" />
                 </span>
-                <button type="button" className="min-w-0 flex-1 truncate px-1 text-left" onClick={() => select([n.id])}>
+                <button
+                  type="button"
+                  className="min-w-0 flex-1 truncate px-1 text-left"
+                  onClick={(e) => select([n.id], e.shiftKey)}
+                >
                   {n.name || n.kind}
                 </button>
                 <button
