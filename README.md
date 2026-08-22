@@ -12,6 +12,16 @@ Everything heavy runs in the visitor's browser. Accounts are optional — use **
 - **Voice** — Clone, Dub, Shape, Speak (long-form lives here), Talk (72-hour thread), Signal (radio cycle)
 - **Flick AI** — Assemble a voice take, a beat, and a scene into one cut. Flick talks to `/api/flick-chat` when `XAI_API_KEY` is set; local commands still run without it.
 
+## AETHER (React animation studio)
+
+The next-gen 3D animation room lives in [`aether/`](./aether) — pose, key, graph editor, nested cycle expressions. Auto-saves in the browser.
+
+```bash
+cd aether
+npm install
+npm run dev
+```
+
 ## Open it
 
 Serve the folder so `index.html` and `js/` sit together. `theme.css` and `ui-shell.js` are design-only — they do not change the engines.

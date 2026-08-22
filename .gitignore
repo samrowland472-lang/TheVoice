@@ -24,3 +24,6 @@ CLEANUP-LIST.txt
 # (`npm install playwright --no-save`) and must never be committed.
 node_modules/
 package-lock.json
+
+# AETHER React studio keeps its own lockfile
+!aether/package-lock.json
