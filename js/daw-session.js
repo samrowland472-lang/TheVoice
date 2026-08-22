@@ -28,6 +28,40 @@
     return { name: name, color: color, notes: notes, length: STEPS };
   }
 
+  function activeEditableClip() {
+    if (state.view === "arrange" && state.selectedArrange) {
+      for (var i = 0; i < state.arrangeClips.length; i++) {
+        if (state.arrangeClips[i].id === state.selectedArrange) return state.arrangeClips[i];
+      }
+    }
+    return state.selectedSession && state.selectedSession.clip;
+  }
+
+  function renameClip(c) {
+    if (!c) c = activeEditableClip();
+    if (!c) return;
+    var next = window.prompt("Clip name", c.name || "");
+    if (next == null) return;
+    next = String(next).trim();
+    if (!next) return;
+    pushUndo();
+    c.name = next;
+    paint();
+    paintArrange();
+    setMidiLabel(next);
+  }
+
+  function cycleClipColor(c) {
+    if (!c) c = activeEditableClip();
+    if (!c) return;
+    pushUndo();
+    var i = COLORS.indexOf(c.color);
+    c.color = COLORS[(i + 1 + COLORS.length) % COLORS.length];
+    paint();
+    paintArrange();
+    setMidiLabel("Color");
+  }
+
   function cloneNotes(n) {
     var buf = n && n.buffer;
     var copy = JSON.parse(JSON.stringify(n || {}));
@@ -2514,9 +2548,18 @@
   }
 
   function bindClipDrag(node, clipObj) {
+    node.addEventListener("dblclick", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      renameClip(clipObj);
+    });
     node.addEventListener("pointerdown", function (ev) {
       ev.preventDefault();
       state.selectedArrange = clipObj.id;
+      if (ev.shiftKey) {
+        cycleClipColor(clipObj);
+        return;
+      }
       paintArrange();
       var startX = ev.clientX;
       var orig = clipObj.start;
@@ -3589,7 +3632,7 @@
           btn.dataset.sc = String(scene);
           btn.setAttribute("role", "gridcell");
           btn.setAttribute("aria-label", track.name + " scene " + (scene + 1) + (track.clips[scene] ? " " + track.clips[scene].name : " empty"));
-          btn.addEventListener("click", function () { queueClip(track, scene); });
+          btn.addEventListener("click", function (ev) { if (ev.shiftKey && track.clips[scene]) { cycleClipColor(track.clips[scene]); return; } if (ev.altKey && track.clips[scene]) { renameClip(track.clips[scene]); return; } queueClip(track, scene); });
           btn.addEventListener("dblclick", function (ev) {
             ev.preventDefault();
             if (track.clips[scene] && track.clips[scene].notes && track.clips[scene].notes.buffer) openWarp(track, track.clips[scene]);
@@ -4215,7 +4258,9 @@
           btn.dataset.sc = String(scene);
           btn.setAttribute("role", "gridcell");
           btn.setAttribute("aria-label", track.name + " scene " + (scene + 1) + (track.clips[scene] ? " " + track.clips[scene].name : " empty"));
-          btn.addEventListener("click", function () {
+          btn.addEventListener("click", function (ev) {
+            if (ev.shiftKey && track.clips[scene]) { cycleClipColor(track.clips[scene]); return; }
+            if (ev.altKey && track.clips[scene]) { renameClip(track.clips[scene]); return; }
             queueClip(track, scene);
           });
           btn.addEventListener("dblclick", function (ev) {
@@ -4516,7 +4561,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
@@ -4546,6 +4591,16 @@
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyL") {
         e.preventDefault();
         toggleClipLoop();
+        return;
+      }
+      if (e.code === "F2") {
+        e.preventDefault();
+        renameClip();
+        return;
+      }
+      if (e.shiftKey && e.code === "KeyC" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        cycleClipColor();
         return;
       }
       if (e.shiftKey && e.code.indexOf("Digit") === 0) {
