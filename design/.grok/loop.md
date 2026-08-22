@@ -83,4 +83,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Magic layout: replace-board vs append; structured JSON schema; preview before apply.
+Mobile studio: tool overflow menu, export always reachable, inspector sheets.
