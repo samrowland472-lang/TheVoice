@@ -20,8 +20,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Multi-page / artboard set for a campaign (story + square + banner).
-2. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
+1. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
+2. Components / linked duplicates (edit one, update copies).
 11. Components / linked duplicates (edit one, update copies).
 12. Color-from-image palette into the brand kit.
 13. Present mode speaker notes / click-through frames.
@@ -42,8 +42,13 @@ Auth OFF, DB OFF.
 - Paint stroke undo: ⌘Z pops the last brush/eraser stroke without cloning the whole document.
 - Mobile studio: tool overflow, always-on Export, inspector as a bottom sheet.
 - Contrast checker: WCAG ratio on text vs overlapping fill or artboard, with Fix.
+- Campaign set: story + square + banner pages, magic-scaled from the current board.
 
 ## Iterations
+
+### 2026-08-22T22:28Z — loop 18
+
+Campaign artboards. Story / Square / Banner strip; + page for more formats. Typecheck + build + smoke clean.
 
 ### 2026-08-22T22:23Z — loop 17
 
@@ -91,4 +96,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Multi-page / artboard set for a campaign (story + square + banner).
+PDF-quality export (vector-ish or high-DPI print PNG with crop marks).

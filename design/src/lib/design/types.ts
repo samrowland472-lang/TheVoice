@@ -138,6 +138,8 @@ export interface DesignDocument {
   thumbnail?: string;
   /** Manual ruler guides in artboard space. */
   guides?: { id: string; axis: "x" | "y"; pos: number }[];
+  /** Shared id for a campaign set (story + square + banner). */
+  campaignId?: string;
 }
 
 export interface ProjectMeta {
@@ -152,6 +154,7 @@ export interface ProjectMeta {
   pinned?: boolean;
   folder?: string;
   tags?: string[];
+  campaignId?: string;
 }
 
 export interface BrandColor {

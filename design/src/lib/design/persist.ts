@@ -66,6 +66,7 @@ export function saveDoc(doc: DesignDocument) {
     pinned: prev?.pinned,
     folder: prev?.folder,
     tags: prev?.tags,
+    campaignId: doc.campaignId ?? prev?.campaignId,
   });
   saveIndex(index.slice(0, 40));
 }

@@ -18,6 +18,7 @@ import type {
 } from "./types";
 
 const MAX_HISTORY = 60;
+const CAMPAIGN_FORMATS = ["ig-story", "ig-post", "x-post"] as const;
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | null;
 
@@ -50,6 +51,8 @@ interface DesignState {
   open: (id: string) => void;
   fromTemplate: (templateId: string) => string;
   fromBlank: (formatId: string) => string;
+  makeCampaign: () => string[];
+  addCampaignPage: (formatId: string) => string;
   save: () => void;
   remove: (id: string) => void;
   togglePin: (id: string) => void;
@@ -200,6 +203,45 @@ export const useDesign = create<DesignState>((set, get) => ({
       index: loadIndex(),
     });
     return doc.id;
+  },
+
+  makeCampaign: () => {
+    const { doc } = get();
+    if (!doc) return [];
+    get().save();
+    const live = get().doc!;
+    const cid = live.campaignId ?? uid("camp");
+    const named = { ...live, campaignId: cid, updatedAt: Date.now() };
+    saveDoc(named);
+    const ids = [named.id];
+    const have = new Set(
+      loadIndex()
+        .filter((p) => p.campaignId === cid)
+        .map((p) => p.formatId),
+    );
+    have.add(named.artboard.formatId);
+    for (const formatId of CAMPAIGN_FORMATS) {
+      if (have.has(formatId)) continue;
+      const page = cloneToFormat(named, formatId, cid);
+      saveDoc(page);
+      ids.push(page.id);
+      have.add(formatId);
+    }
+    set({ doc: named, dirty: false, index: loadIndex() });
+    return ids;
+  },
+
+  addCampaignPage: (formatId) => {
+    const { doc } = get();
+    if (!doc) return "";
+    get().save();
+    const live = get().doc!;
+    const cid = live.campaignId ?? uid("camp");
+    if (!live.campaignId) saveDoc({ ...live, campaignId: cid });
+    const page = cloneToFormat({ ...live, campaignId: cid }, formatId, cid);
+    saveDoc(page);
+    set({ index: loadIndex(), doc: live.campaignId ? live : { ...live, campaignId: cid } });
+    return page.id;
   },
 
   save: () => {
@@ -837,6 +879,38 @@ export function ensurePaintLayer(doc: DesignDocument): DesignNode {
   const layer = paintLayer(doc.artboard.width, doc.artboard.height);
   useDesign.getState().addNode(layer, true);
   return layer;
+}
+
+function cloneToFormat(src: DesignDocument, formatId: string, campaignId: string): DesignDocument {
+  const fmt = formatById(formatId);
+  const sx = fmt.width / src.artboard.width;
+  const sy = fmt.height / src.artboard.height;
+  const nodes = src.nodes.map((n) => ({
+    ...n,
+    id: uid(n.kind.slice(0, 2)),
+    x: n.x * sx,
+    y: n.y * sy,
+    w: n.w * sx,
+    h: n.h * (n.kind === "text" ? 1 : sy),
+    ...(n.kind === "text" ? { fontSize: (n as { fontSize: number }).fontSize * Math.min(sx, sy) } : {}),
+  }));
+  return {
+    ...src,
+    id: uid("doc"),
+    name: `${src.name.replace(/ · .+$/, "")} · ${fmt.label}`,
+    campaignId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    thumbnail: undefined,
+    artboard: {
+      ...src.artboard,
+      width: fmt.width,
+      height: fmt.height,
+      formatId: fmt.id,
+      name: fmt.label,
+    },
+    nodes: nodes as DesignNode[],
+  };
 }
 
 void uid;
