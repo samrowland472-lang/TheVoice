@@ -2297,6 +2297,53 @@
     });
   }
 
+  function selectedLocatorObj() {
+    var id = state.selectedLocator;
+    if (!id) return null;
+    for (var i = 0; i < state.locators.length; i++) {
+      if (state.locators[i].id === id) return state.locators[i];
+    }
+    return null;
+  }
+
+  function nudgeLocator(bars) {
+    var loc = selectedLocatorObj();
+    if (!loc) return false;
+    pushUndo();
+    loc.bar = Math.max(0, Math.min(BARS - 1, loc.bar + bars));
+    state.locators.sort(function (a, b) { return a.bar - b.bar; });
+    paintLocators();
+    setMidiLabel(loc.name + " → bar " + (loc.bar + 1));
+    return true;
+  }
+
+  function jumpLocator(dir) {
+    if (!state.locators.length) return false;
+    var sorted = state.locators.slice().sort(function (a, b) { return a.bar - b.bar; });
+    var idx = -1;
+    for (var i = 0; i < sorted.length; i++) {
+      if (sorted[i].id === state.selectedLocator) { idx = i; break; }
+    }
+    var loc;
+    if (idx < 0) {
+      var bar = Math.floor(state.step / STEPS_PER_BAR);
+      if (dir > 0) {
+        loc = sorted.filter(function (l) { return l.bar > bar; })[0] || sorted[0];
+      } else {
+        var before = sorted.filter(function (l) { return l.bar < bar; });
+        loc = before.length ? before[before.length - 1] : sorted[sorted.length - 1];
+      }
+    } else {
+      idx = (idx + dir + sorted.length) % sorted.length;
+      loc = sorted[idx];
+    }
+    state.selectedLocator = loc.id;
+    jumpToStep(loc.bar * STEPS_PER_BAR);
+    paintLocators();
+    setMidiLabel(loc.name);
+    return true;
+  }
+
   function updatePlayheadPx() {
     if (!playheadEl || !arrangeScroll) return;
     var x = 88 + (state.step / STEPS_PER_BAR) * BAR_W;
@@ -4650,7 +4697,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. Arrows nudge. Comma/period jump. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
@@ -4720,6 +4767,16 @@
           e.preventDefault();
           stopTransport();
         }
+        return;
+      }
+      if (state.view === "arrange" && (e.code === "Comma" || e.code === "Period")) {
+        e.preventDefault();
+        jumpLocator(e.code === "Period" ? 1 : -1);
+        return;
+      }
+      if (state.view === "arrange" && state.selectedLocator && (e.code === "ArrowLeft" || e.code === "ArrowRight")) {
+        e.preventDefault();
+        nudgeLocator((e.code === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 4 : 1));
         return;
       }
       if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "ArrowUp" || e.code === "ArrowDown") {
