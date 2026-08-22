@@ -33,6 +33,20 @@ let swing = 0;
 let keysCutoff = 1800;
 let keysRes = 0.8;
 let keysRel = 0.35;
+const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2 };
+
+function applyFx() {
+  ensureMix();
+  const a = audio();
+  if (!a || !mix._delay) return;
+  const t = a.ctx.currentTime;
+  mix._send.gain.setTargetAtTime(fx.send, t, 0.02);
+  mix._delay.delayTime.setTargetAtTime(Math.max(0.02, fx.delayMs / 1000), t, 0.03);
+  mix._delayFb.gain.setTargetAtTime(fx.delayFb, t, 0.02);
+  mix._delayWet.gain.setTargetAtTime(fx.delayWet, t, 0.02);
+  mix._comp.threshold.setTargetAtTime(fx.compTh, t, 0.02);
+  mix._comp.ratio.setTargetAtTime(fx.compRatio, t, 0.02);
+}
 
 const mix = {};
 const notes = []; // { pitch, start, length, vel } in 16th-notes
@@ -224,8 +238,11 @@ function ensureMix() {
   const fb = ctx.createGain();
   fb.gain.value = 0.35;
   const wet = ctx.createGain();
-  wet.gain.value = 1;
-  mix.keys.analyser.connect(delay);
+  wet.gain.value = 0.7;
+  const send = ctx.createGain();
+  send.gain.value = 0.45;
+  mix.keys.analyser.connect(send);
+  send.connect(delay);
   delay.connect(fb);
   fb.connect(delay);
   delay.connect(wet);
@@ -240,7 +257,12 @@ function ensureMix() {
   comp.connect(mix.master.input);
   mix.master.analyser.connect(master);
   mix._delay = delay;
+  mix._delayFb = fb;
+  mix._delayWet = wet;
+  mix._send = send;
+  mix._comp = comp;
   mix._bus = bus;
+  applyFx();
 }
 
 function applyMute() {
@@ -1692,6 +1714,12 @@ function paintBrowser() {
       <label>Cut <input id="abl-cut" type="range" min="200" max="8000" value="${keysCutoff}"></label>
       <label>Res <input id="abl-res" type="range" min="0.2" max="18" step="0.1" value="${keysRes}"></label>
       <label>Rel <input id="abl-rel" type="range" min="0.05" max="1.2" step="0.01" value="${keysRel}"></label>
+      <label>Send <input id="abl-send" type="range" min="0" max="1" step="0.01" value="${fx.send}"></label>
+      <label>Delay <input id="abl-delay" type="range" min="50" max="900" step="5" value="${fx.delayMs}"></label>
+      <label>Fdbk <input id="abl-fdbk" type="range" min="0" max="0.85" step="0.01" value="${fx.delayFb}"></label>
+      <label>Wet <input id="abl-wet" type="range" min="0" max="1" step="0.01" value="${fx.delayWet}"></label>
+      <label>Comp <input id="abl-comp" type="range" min="-40" max="-4" step="1" value="${fx.compTh}"></label>
+      <label>Ratio <input id="abl-ratio" type="range" min="1" max="12" step="0.1" value="${fx.compRatio}"></label>
     </div>
   `;
   root.querySelectorAll('[data-preset]').forEach((btn) => {
@@ -1737,6 +1765,20 @@ function paintBrowser() {
   if (cut) cut.addEventListener('input', () => { keysCutoff = parseFloat(cut.value); });
   if (res) res.addEventListener('input', () => { keysRes = parseFloat(res.value); });
   if (rel) rel.addEventListener('input', () => { keysRel = parseFloat(rel.value); });
+  const bindFx = (id, key, parse) => {
+    const el = root.querySelector(id);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      fx[key] = parse(el.value);
+      applyFx();
+    });
+  };
+  bindFx('#abl-send', 'send', parseFloat);
+  bindFx('#abl-delay', 'delayMs', (v) => parseFloat(v));
+  bindFx('#abl-fdbk', 'delayFb', parseFloat);
+  bindFx('#abl-wet', 'delayWet', parseFloat);
+  bindFx('#abl-comp', 'compTh', parseFloat);
+  bindFx('#abl-ratio', 'compRatio', parseFloat);
 }
 
 function setDetail(name) {
