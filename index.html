@@ -808,6 +808,17 @@
   .studio-trim label { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim); display: flex; align-items: center; gap: 8px; flex: 1; min-width: 140px; }
   .studio-trim input[type=range] { flex: 1; accent-color: var(--phosphor); }
 
+  .studio-takes {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 0;
+    padding: 0;
+  }
+  .studio-takes:empty { display: none; }
+  .studio-takes .btn { min-height: 36px; }
+
   .effects-row {
     display: flex;
     flex-wrap: wrap;
@@ -2246,6 +2257,7 @@ input:focus-visible,
           <span class="record-timer" id="record-timer">00:00</span>
         </div>
         <p class="hint hint-info">Or drop an audio file anywhere on this panel.</p>
+        <ul class="studio-takes" id="studio-takes" aria-label="Recording takes"></ul>
 
         <p class="hint" id="mic-hint" role="status" aria-live="polite"></p>
 
@@ -8638,6 +8650,7 @@ function wireStudioEdit() {
       originalRecordingBlob = wav;
       recordingExt = 'wav';
       playbackAudio.src = URL.createObjectURL(wav);
+      patchActiveTake({ blob: wav, source: wav, ext: 'wav', durationSec: (b - a) / buf.sampleRate });
       updateCloneAvailability();
       await studioLoadWave(wav);
       micHint.textContent = 'Trim applied — ' + ((b - a) / buf.sampleRate).toFixed(2) + 's kept.';
@@ -8648,6 +8661,67 @@ function wireStudioEdit() {
   });
 }
 wireStudioEdit();
+
+function renderStudioTakes() {
+  const ul = document.getElementById('studio-takes');
+  if (!ul) return;
+  ul.replaceChildren();
+  studioTakes.forEach((take) => {
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn' + (take.id === studioActiveTake ? ' btn-primary' : '');
+    b.setAttribute('aria-pressed', take.id === studioActiveTake ? 'true' : 'false');
+    const dur = take.durationSec ? ' · ' + Number(take.durationSec).toFixed(1) + 's' : '';
+    b.textContent = take.label + dur;
+    b.setAttribute('aria-label', take.label + dur + (take.id === studioActiveTake ? ', selected' : ''));
+    b.addEventListener('click', () => activateTake(take.id));
+    li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
+
+function currentTake() {
+  return studioTakes.find((x) => x.id === studioActiveTake) || null;
+}
+
+function activateTake(id) {
+  const take = studioTakes.find((x) => x.id === id);
+  if (!take || !playbackAudio) return;
+  studioActiveTake = id;
+  recordingBlob = take.blob;
+  originalRecordingBlob = take.source;
+  recordingExt = take.ext;
+  playbackAudio.src = URL.createObjectURL(take.blob);
+  recordingResult.hidden = false;
+  studioLoadWave(take.blob);
+  document.querySelectorAll('.effect-btn').forEach((b) => b.classList.remove('active'));
+  resetEffectBtn.hidden = take.blob === take.source;
+  effectHint.textContent = '';
+  updateCloneAvailability();
+  renderStudioTakes();
+}
+
+function pushTake(blob, ext, durationSec, label) {
+  const take = {
+    id: 'take-' + Date.now() + '-' + studioTakes.length,
+    blob,
+    source: blob,
+    ext: ext || 'webm',
+    durationSec: durationSec || 0,
+    label: label || ('Take ' + (studioTakes.length + 1)),
+  };
+  studioTakes.push(take);
+  activateTake(take.id);
+}
+
+function patchActiveTake(fields) {
+  const take = currentTake();
+  if (!take) return;
+  Object.assign(take, fields);
+  renderStudioTakes();
+}
+
 
 const transcriptBox = document.getElementById('transcript-box');
 const useTranscriptBtn = document.getElementById('use-transcript-btn');
@@ -8670,6 +8744,8 @@ let activeSource = null; // 'synth' | 'element' | null
 let recordingBlob = null;
 let originalRecordingBlob = null;
 let recordingExt = 'webm';
+let studioTakes = [];
+let studioActiveTake = null;
 let lastClipBlob = null;
 let lastClipExt = '';
 let recordTimerInterval = null;
@@ -9274,16 +9350,8 @@ recordBtn.addEventListener('click', async () => {
     resetReadouts();
     const blob = await recorder.stop();
     if (blob && blob.size > 0) {
-      recordingBlob = blob;
-      originalRecordingBlob = blob;
       recordingExt = blob.type.includes('ogg') ? 'ogg' : 'webm';
-      playbackAudio.src = URL.createObjectURL(blob);
-      recordingResult.hidden = false;
-      studioLoadWave(blob);
-      resetEffectBtn.hidden = true;
-      effectHint.textContent = '';
-      document.querySelectorAll('.effect-btn').forEach((b) => b.classList.remove('active'));
-      updateCloneAvailability();
+      pushTake(blob, recordingExt, recordSeconds, 'Take ' + (studioTakes.length + 1));
       saveClipToLibrary({
         engine: 'recording',
         voiceLabel: null,
@@ -9329,6 +9397,7 @@ document.querySelectorAll('.effect-btn').forEach((btn) => {
       recordingBlob = wavBlob;
       recordingExt = 'wav';
       playbackAudio.src = URL.createObjectURL(wavBlob);
+      patchActiveTake({ blob: wavBlob, ext: 'wav' });
       studioLoadWave(wavBlob);
       document.querySelectorAll('.effect-btn').forEach((b) => b.classList.toggle('active', b === btn));
       resetEffectBtn.hidden = false;
@@ -9356,6 +9425,7 @@ resetEffectBtn.addEventListener('click', () => {
   recordingBlob = originalRecordingBlob;
   recordingExt = originalRecordingBlob.type.includes('ogg') ? 'ogg' : 'webm';
   playbackAudio.src = URL.createObjectURL(originalRecordingBlob);
+  patchActiveTake({ blob: originalRecordingBlob });
   studioLoadWave(originalRecordingBlob);
   document.querySelectorAll('.effect-btn').forEach((b) => b.classList.remove('active'));
   resetEffectBtn.hidden = true;
@@ -12458,9 +12528,8 @@ async function studioAdopt(result) {
   micHint.textContent = '';
   const buf = await adoptAudioFile(result.file, micHint);
   if (!buf) return;
-  playbackAudio.src = URL.createObjectURL(result.file);
-  recordingResult.hidden = false;
-  studioLoadWave(result.file);
+  const ext = (result.file.name.split('.').pop() || 'wav').toLowerCase();
+  pushTake(result.file, ext, buf.duration, result.file.name.replace(/\.[^.]+$/, ''));
   showToast(`Imported ${result.file.name} · ${formatDuration(buf.duration)}`);
 }
 
