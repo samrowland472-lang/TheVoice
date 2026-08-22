@@ -77,6 +77,7 @@ const arr = {
 let arrUid = 1;
 function nextArrId() { return 'a' + (arrUid++); }
 let envParam = 'vol';
+const cue = { on: false, timer: null, step: 0, next: 0, snap: null, dest: null, id: '' };
 
 function defaultEnv() {
   return {
@@ -291,9 +292,9 @@ function trigClap(t, vel, dest) {
   trigNoise(dest || mix.clap.input, t, vel * 0.7, 1000, 0.14, 0.28);
 }
 
-function trigBass(t, vel, semi, cutMul) {
+function trigBass(t, vel, semi, cutMul, dest) {
   const { ctx } = audio();
-  const dest = mix.bass.input;
+  dest = dest || mix.bass.input;
   const freq = 110 * Math.pow(2, (semi || 0) / 12);
   const osc = ctx.createOscillator();
   const f = ctx.createBiquadFilter();
@@ -309,9 +310,9 @@ function trigBass(t, vel, semi, cutMul) {
   osc.start(t); osc.stop(t + 0.42);
 }
 
-function trigKey(t, pitch, vel, lengthBeats, cutHz) {
+function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const { ctx } = audio();
-  const dest = mix.keys.input;
+  dest = dest || mix.keys.input;
   const freq = 440 * Math.pow(2, (pitch - 69) / 12);
   const dur = Math.max(0.05, lengthBeats * stepDur());
   const o1 = ctx.createOscillator();
@@ -1082,7 +1083,7 @@ function paintSession() {
     const picked = selectedScene === s;
     const fol = c.follow && c.follow.on;
     html += `<button type="button" class="abl-clip${c.grid ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}${picked ? ' selected' : ''}" data-scene="${s}" style="--clip:${c.color}">
-      <i></i><span>${c.name || (c.grid ? 'Clip' : 'Empty')}</span>${fol ? '<em class="abl-follow-badge">↪</em>' : ''}
+      <i></i><span>${c.name || (c.grid ? 'Clip' : 'Empty')}</span>${fol ? '<em class="abl-follow-badge">↪</em>' : ''}${c.grid ? `<b class="abl-preview" data-cue="scene:${s}" title="Preview without launching">▶</b>` : ''}
     </button>`;
   }
   html += '<button type="button" class="abl-scene-fire" id="abl-stop-clips">■</button>';
@@ -1168,6 +1169,21 @@ function paintSession() {
       c.name = c.name || `Scene ${s + 1}`;
       selectedScene = s;
       paintSession();
+    });
+  });
+  root.querySelectorAll('.abl-clip .abl-preview').forEach((btn) => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const s = Number(btn.dataset.cue.replace(/^scene:/, ''));
+      const c = clips[s];
+      if (!c || !c.grid) return;
+      startPreview({
+        grid: c.grid,
+        bassNotes: c.bassNotes || [],
+        notes: c.notes || [],
+        bpm: bpm(),
+      }, btn.dataset.cue);
     });
   });
   const stop = root.querySelector('#abl-stop-clips');
@@ -1389,6 +1405,87 @@ function bindKeys() {
   document.addEventListener('keyup', (ev) => held.delete(ev.key));
 }
 
+function snapFromPreset(name) {
+  const src = opts.PRESET_PATTERNS && opts.PRESET_PATTERNS[name];
+  if (!src) return null;
+  const grid = {};
+  ['kick', 'snare', 'hihat', 'clap', 'bass'].forEach((id) => {
+    grid[id] = new Array(16).fill(false);
+    (src[id] || []).forEach((st) => { grid[id][st] = true; });
+  });
+  return { grid, bassNotes: new Array(16).fill(0), notes: [], bpm: bpm() };
+}
+
+function ensureCue() {
+  const a = audio();
+  if (!a) return null;
+  if (cue.dest) return cue.dest;
+  const g = a.ctx.createGain();
+  g.gain.value = 0.72;
+  g.connect(a.ctx.destination);
+  cue.dest = g;
+  return g;
+}
+
+export function stopPreview() {
+  cue.on = false;
+  if (cue.timer) { clearTimeout(cue.timer); cue.timer = null; }
+  cue.snap = null;
+  cue.id = '';
+  const a = audio();
+  if (cue.dest && a) cue.dest.gain.setTargetAtTime(0, a.ctx.currentTime, 0.03);
+  document.querySelectorAll('.abl-preview.on').forEach((el) => el.classList.remove('on'));
+}
+
+function scheduleCue(st, t) {
+  const snap = cue.snap;
+  const dest = cue.dest;
+  if (!snap || !snap.grid || !dest) return;
+  const vel = 0.85;
+  const i = st % 16;
+  if (snap.grid.kick && snap.grid.kick[i]) trigKick(t, vel, dest);
+  if (snap.grid.snare && snap.grid.snare[i]) trigSnare(t, vel, dest);
+  if (snap.grid.hihat && snap.grid.hihat[i]) trigHat(t, vel, dest);
+  if (snap.grid.clap && snap.grid.clap[i]) trigClap(t, vel, dest);
+  if (snap.grid.bass && snap.grid.bass[i]) trigBass(t, vel, (snap.bassNotes && snap.bassNotes[i]) || 0, 1, dest);
+  (snap.notes || []).forEach((n) => {
+    if ((n.start % 16) === i) trigKey(t, n.pitch, ((n.vel || 100) / 100) * 0.9, n.length, keysCutoff, dest);
+  });
+}
+
+function cueClock() {
+  if (!cue.on) return;
+  const a = audio();
+  if (!a) return;
+  while (cue.next < a.ctx.currentTime + 0.12) {
+    scheduleCue(cue.step, cue.next);
+    cue.step += 1;
+    if (cue.step >= 32) cue.step = 0;
+    cue.next += stepDur();
+  }
+  cue.timer = setTimeout(cueClock, 20);
+}
+
+function startPreview(snap, id) {
+  ensureMix();
+  const a = audio();
+  if (!a || !snap) return;
+  if (a.ctx.state === 'suspended') a.ctx.resume();
+  const dest = ensureCue();
+  if (!dest) return;
+  if (cue.on && cue.id === id) { stopPreview(); return; }
+  stopPreview();
+  dest.gain.cancelScheduledValues(a.ctx.currentTime);
+  dest.gain.setValueAtTime(0.72, a.ctx.currentTime);
+  cue.on = true;
+  cue.snap = snap;
+  cue.id = id || '';
+  cue.step = 0;
+  cue.next = a.ctx.currentTime + 0.03;
+  cueClock();
+  document.querySelectorAll(`.abl-preview[data-cue="${id}"]`).forEach((el) => el.classList.add('on'));
+}
+
 function paintBrowser() {
   const root = document.getElementById('abl-browser');
   if (!root) return;
@@ -1400,7 +1497,10 @@ function paintBrowser() {
     <button type="button" class="abl-lib" data-lib="keys">Analog</button>
     <button type="button" class="abl-lib" data-lib="bass">Bass</button>
     <div class="abl-browser-sec">Clips</div>
-    ${presets.map((n) => `<button type="button" class="abl-lib" data-preset="${n}">${n}</button>`).join('')}
+    ${presets.map((n) => `<div class="abl-lib-row">
+      <button type="button" class="abl-preview" data-cue="preset:${n}" title="Preview without loading">▶</button>
+      <button type="button" class="abl-lib" data-preset="${n}">${n}</button>
+    </div>`).join('')}
     <div class="abl-browser-sec">Devices</div>
     <div class="abl-knobs">
       <label>Cut <input id="abl-cut" type="range" min="200" max="8000" value="${keysCutoff}"></label>
@@ -1418,6 +1518,14 @@ function paintBrowser() {
         cell.classList.toggle('on', !!on);
       });
       if (!playing) studioPlay();
+    });
+  });
+  root.querySelectorAll('[data-cue]').forEach((btn) => {
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const name = btn.dataset.cue.replace(/^preset:/, '');
+      startPreview(snapFromPreset(name), btn.dataset.cue);
     });
   });
   root.querySelectorAll('[data-lib]').forEach((btn) => {
