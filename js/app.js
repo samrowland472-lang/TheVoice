@@ -424,6 +424,7 @@ function stopPlayback() {
   setPlayingUI(false);
   renderHighlight('', null, null);
   releasePlaybackWait();
+  if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
 }
 
 playBtn.addEventListener('click', async () => {
@@ -1203,9 +1204,29 @@ const statTopVoice = document.getElementById('stat-top-voice');
 const clearLibraryBtn = document.getElementById('clear-library-btn');
 const librarySearchInput = document.getElementById('library-search');
 const libraryEngineFilter = document.getElementById('library-engine-filter');
+const librarySort = document.getElementById('library-sort');
 const libraryNoMatch = document.getElementById('library-no-match');
+const libraryPlayer = document.getElementById('library-player');
 
-const ENGINE_LABELS = { neural: 'Neural', elevenlabs: 'ElevenLabs', recording: 'Recording' };
+const ENGINE_LABELS = { neural: 'Neural', browser: 'Browser', elevenlabs: 'ElevenLabs', recording: 'Recording' };
+
+let libraryObjectUrls = [];
+let libraryPlayingId = null;
+
+function revokeLibraryUrls() {
+  libraryObjectUrls.forEach((u) => URL.revokeObjectURL(u));
+  libraryObjectUrls = [];
+}
+
+function stopLibraryPlay() {
+  if (libraryPlayer) {
+    libraryPlayer.pause();
+    libraryPlayer.removeAttribute('src');
+  }
+  libraryPlayingId = null;
+  document.querySelectorAll('.clip-card.is-playing').forEach((c) => c.classList.remove('is-playing'));
+  document.querySelectorAll('.clip-play').forEach((b) => { b.textContent = '▶'; });
+}
 
 function probeDuration(blob) {
   return new Promise((resolve) => {
@@ -1253,44 +1274,105 @@ async function renderLibrary() {
   applyLibraryFilters();
 }
 
+function clipHaystack(clip) {
+  return [clip.text, clip.title, clip.voiceLabel, clip.engine, ENGINE_LABELS[clip.engine]]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
 function applyLibraryFilters() {
   const query = librarySearchInput.value.trim().toLowerCase();
   const engineFilter = libraryEngineFilter.value;
+  const sort = librarySort ? librarySort.value : 'newest';
 
-  const filtered = allClips.filter((clip) => {
+  let filtered = allClips.filter((clip) => {
     if (engineFilter !== 'all' && clip.engine !== engineFilter) return false;
-    if (query && !(clip.text || '').toLowerCase().includes(query)) return false;
+    if (query && !clipHaystack(clip).includes(query)) return false;
     return true;
+  });
+  filtered = filtered.slice().sort((a, b) => {
+    if (sort === 'oldest') return a.timestamp - b.timestamp;
+    if (sort === 'longest') return (b.durationSec || 0) - (a.durationSec || 0);
+    if (sort === 'az') return String(a.title || a.text || '').localeCompare(String(b.title || b.text || ''));
+    return b.timestamp - a.timestamp;
   });
 
   libraryNoMatch.hidden = !(allClips.length > 0 && filtered.length === 0);
+  revokeLibraryUrls();
   clipListEl.innerHTML = '';
 
   for (const clip of filtered) {
     const card = document.createElement('div');
-    card.className = 'clip-card';
+    card.className = 'clip-card' + (libraryPlayingId === clip.id ? ' is-playing' : '');
+    card.dataset.id = clip.id;
 
     const meta = document.createElement('div');
     meta.className = 'clip-meta';
     const badge = document.createElement('span');
     badge.className = `clip-badge clip-badge-${clip.engine}`;
     badge.textContent = ENGINE_LABELS[clip.engine] || clip.engine;
+    const voice = document.createElement('span');
+    voice.className = 'clip-voice';
+    voice.textContent = clip.voiceLabel || '';
     const time = document.createElement('span');
     time.className = 'clip-time';
     const durationLabel = clip.durationSec ? ` · ${formatDuration(clip.durationSec)}` : '';
     time.textContent = new Date(clip.timestamp).toLocaleString() + durationLabel;
-    meta.append(badge, time);
+    meta.append(badge, voice, time);
+
+    const title = document.createElement('input');
+    title.className = 'clip-title';
+    title.value = clip.title || (clip.text || 'Untitled').slice(0, 80);
+    title.setAttribute('aria-label', 'Clip title');
+    title.addEventListener('change', async () => {
+      clip.title = title.value.trim();
+      await clipLibrary.updateClip(clip.id, { title: clip.title });
+    });
 
     const textEl = document.createElement('p');
     textEl.className = 'clip-text';
     textEl.textContent = clip.text || '(recording — no transcript)';
 
-    const audioEl = document.createElement('audio');
-    audioEl.controls = true;
-    audioEl.src = URL.createObjectURL(clip.blob);
+    const transport = document.createElement('div');
+    transport.className = 'clip-transport';
+    const playBtnClip = document.createElement('button');
+    playBtnClip.type = 'button';
+    playBtnClip.className = 'clip-play';
+    playBtnClip.textContent = libraryPlayingId === clip.id && libraryPlayer && !libraryPlayer.paused ? '■' : '▶';
+    playBtnClip.setAttribute('aria-label', 'Play clip');
+    const scrub = document.createElement('button');
+    scrub.type = 'button';
+    scrub.className = 'clip-scrub';
+    scrub.setAttribute('aria-label', 'Seek');
+    const fill = document.createElement('div');
+    fill.className = 'clip-scrub-fill';
+    scrub.appendChild(fill);
+    const pos = document.createElement('span');
+    pos.className = 'clip-pos';
+    pos.textContent = formatDuration(clip.durationSec);
+    transport.append(playBtnClip, scrub, pos);
+
+    playBtnClip.addEventListener('click', () => toggleLibraryClip(clip, card, playBtnClip));
+    scrub.addEventListener('click', (ev) => {
+      if (!libraryPlayer || libraryPlayingId !== clip.id || !libraryPlayer.duration) return;
+      const r = scrub.getBoundingClientRect();
+      libraryPlayer.currentTime = ((ev.clientX - r.left) / r.width) * libraryPlayer.duration;
+    });
 
     const actions = document.createElement('div');
     actions.className = 'clip-actions';
+    const useBtn = document.createElement('button');
+    useBtn.className = 'btn';
+    useBtn.textContent = 'Use in Speak';
+    useBtn.disabled = !clip.text;
+    useBtn.addEventListener('click', () => {
+      if (!clip.text) return;
+      textInput.value = clipToWords(clip.text);
+      updateTextStats();
+      switchSection('speak');
+      showToast('Loaded into Speak');
+    });
     const dlBtn = document.createElement('button');
     dlBtn.className = 'btn';
     dlBtn.textContent = 'Download';
@@ -1304,19 +1386,52 @@ function applyLibraryFilters() {
     delBtn.className = 'btn';
     delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', async () => {
+      if (libraryPlayingId === clip.id) stopLibraryPlay();
       await clipLibrary.deleteClip(clip.id);
       showToast('Clip deleted');
       renderLibrary();
     });
-    actions.append(dlBtn, delBtn);
+    actions.append(useBtn, dlBtn, delBtn);
 
-    card.append(meta, textEl, audioEl, actions);
+    card.append(meta, title, textEl, transport, actions);
     clipListEl.appendChild(card);
   }
 }
 
+function toggleLibraryClip(clip, card, btn) {
+  if (!libraryPlayer) return;
+  if (libraryPlayingId === clip.id && !libraryPlayer.paused) {
+    libraryPlayer.pause();
+    btn.textContent = '▶';
+    card.classList.remove('is-playing');
+    return;
+  }
+  stopPlayback();
+  const url = URL.createObjectURL(clip.blob);
+  libraryObjectUrls.push(url);
+  libraryPlayingId = clip.id;
+  libraryPlayer.src = url;
+  libraryPlayer.play().catch(() => {});
+  document.querySelectorAll('.clip-card').forEach((c) => c.classList.toggle('is-playing', c.dataset.id === clip.id));
+  document.querySelectorAll('.clip-play').forEach((b) => { b.textContent = '▶'; });
+  btn.textContent = '■';
+}
+
+if (libraryPlayer) {
+  libraryPlayer.addEventListener('timeupdate', () => {
+    const card = clipListEl.querySelector(`.clip-card[data-id="${libraryPlayingId}"]`);
+    if (!card || !libraryPlayer.duration) return;
+    const fill = card.querySelector('.clip-scrub-fill');
+    const pos = card.querySelector('.clip-pos');
+    if (fill) fill.style.width = `${(libraryPlayer.currentTime / libraryPlayer.duration) * 100}%`;
+    if (pos) pos.textContent = `${formatDuration(libraryPlayer.currentTime)} / ${formatDuration(libraryPlayer.duration)}`;
+  });
+  libraryPlayer.addEventListener('ended', () => stopLibraryPlay());
+}
+
 clearLibraryBtn.addEventListener('click', async () => {
   if (!confirm('Delete every saved clip? This cannot be undone.')) return;
+  stopLibraryPlay();
   await clipLibrary.clearAll();
   showToast('Library cleared');
   renderLibrary();
@@ -1324,6 +1439,7 @@ clearLibraryBtn.addEventListener('click', async () => {
 
 librarySearchInput.addEventListener('input', applyLibraryFilters);
 libraryEngineFilter.addEventListener('change', applyLibraryFilters);
+if (librarySort) librarySort.addEventListener('change', applyLibraryFilters);
 
 /* ---------- Studio: long-form / audiobooks ---------- */
 const longformView = document.getElementById('longform-view');

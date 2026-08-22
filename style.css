@@ -2916,3 +2916,60 @@ input:focus-visible,
 }
 .settings-block:last-child { border-bottom: 0; }
 #key-fingerprint { margin: 6px 0 10px; }
+
+/* ---- Library clip deck ---- */
+.clip-voice { color: var(--ink-dim); font-size: 0.78rem; }
+.clip-title {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink);
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 2px 4px;
+}
+.clip-title:focus {
+  outline: none;
+  border-color: var(--phosphor);
+  background: var(--surface-alt);
+}
+.clip-transport {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.clip-play {
+  width: 36px; height: 36px;
+  border: 1px solid var(--border);
+  background: #121613;
+  color: var(--phosphor);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.clip-card.is-playing {
+  border-color: var(--phosphor);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--phosphor) 35%, transparent);
+}
+.clip-scrub {
+  position: relative;
+  height: 10px;
+  background: #0c100e;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.clip-scrub-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: var(--phosphor);
+}
+.clip-pos {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  min-width: 72px;
+  text-align: right;
+}

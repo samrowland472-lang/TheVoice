@@ -813,18 +813,26 @@
     </div>
 
     <div class="library-filters">
-      <input type="search" id="library-search" placeholder="Search clip text…">
-      <select id="library-engine-filter">
+      <input type="search" id="library-search" placeholder="Search text, voice, engine…" aria-label="Search clips">
+      <select id="library-engine-filter" aria-label="Filter by engine">
         <option value="all">All engines</option>
         <option value="neural">Neural</option>
+        <option value="browser">Browser</option>
         <option value="elevenlabs">ElevenLabs</option>
         <option value="recording">Recordings</option>
+      </select>
+      <select id="library-sort" aria-label="Sort clips">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="longest">Longest</option>
+        <option value="az">A–Z</option>
       </select>
     </div>
 
     <div id="clip-list" class="clip-list"></div>
     <p class="hint hint-info" id="library-empty">No clips yet — generate one from Speak, or record in Voice Studio.</p>
     <p class="hint hint-info" id="library-no-match" hidden>No clips match your search/filter.</p>
+    <audio id="library-player" hidden></audio>
   </div>
 
   <footer class="footer">THE VOICE</footer>

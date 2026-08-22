@@ -70,6 +70,24 @@ export function createClipLibrary() {
       });
     },
 
+    async updateClip(id, patch) {
+      const db = await dbPromise;
+      if (!db) return null;
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE, 'readwrite');
+        const store = tx.objectStore(STORE);
+        const req = store.get(id);
+        req.onsuccess = () => {
+          const clip = req.result;
+          if (!clip) { resolve(null); return; }
+          Object.assign(clip, patch);
+          store.put(clip);
+        };
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => reject(tx.error);
+      });
+    },
+
     async clearAll() {
       const db = await dbPromise;
       if (!db) return;
