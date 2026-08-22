@@ -140,6 +140,7 @@
     metro: false,
     recording: false,
     countIn: 0,
+    swing: 0,
     masterVol: 0.72,
     returnAVol: 0.85,
     returnBVol: 0.7,
@@ -1432,6 +1433,13 @@
   }
 
 
+  function swingTime(step, time) {
+    var amt = state.swing || 0;
+    if (amt <= 0) return time;
+    if (step % 2 === 1) return time + secondsPerStep() * amt;
+    return time;
+  }
+
   function playStepAt(track, clipObj, step, time) {
     if (!clipObj || !trackAudible(track)) return;
     var dest = trackNodes[track.id];
@@ -1577,14 +1585,14 @@
             if (c && lastPadClip[tr.id] !== c) startPad(tr, c);
             if (!c) stopPad(tr.id);
           } else if (c) {
-            playStepAt(tr, c, state.step - c.start, nextTime);
+            playStepAt(tr, c, state.step - c.start, swingTime(state.step, nextTime));
           }
         });
       } else {
         if (state.step % quantizeSteps() === 0) applyQueue();
         state.tracks.forEach(function (tr) {
           var c = state.launched[tr.id];
-          if (c) playStepAt(tr, c, state.step, nextTime);
+          if (c) playStepAt(tr, c, state.step, swingTime(state.step, nextTime));
         });
       }
       nextTime += stepDur;
@@ -3294,6 +3302,29 @@
     qLab.appendChild(q);
     top.appendChild(qLab);
 
+    var swingLab = el("label", "daw-ctl");
+    swingLab.appendChild(document.createTextNode("Swing"));
+    var swing = document.createElement("input");
+    swing.type = "range";
+    swing.min = "0";
+    swing.max = "75";
+    swing.step = "1";
+    swing.value = String(Math.round((state.swing || 0) * 100));
+    swing.setAttribute("aria-label", "Swing amount");
+    swing.className = "daw-knob";
+    var swingVal = el("span", "daw-pos", Math.round((state.swing || 0) * 100) + "%");
+    swing.addEventListener("input", function () {
+      state.swing = Number(swing.value) / 100;
+      swingVal.textContent = swing.value + "%";
+    });
+    swingLab.appendChild(swing);
+    swingLab.appendChild(swingVal);
+    top.appendChild(swingLab);
+    window._dawSwingUi = function () {
+      swing.value = String(Math.round((state.swing || 0) * 100));
+      swingVal.textContent = swing.value + "%";
+    };
+
     function tog(key, label, attr) {
       var b = el("button", "daw-btn" + (state[key] ? " on" : ""), label);
       b.type = "button";
@@ -3942,6 +3973,7 @@
       kind: "the-voice-set",
       bpm: state.bpm,
       quantize: state.quantize,
+      swing: state.swing,
       timeNum: state.timeNum,
       timeDen: state.timeDen,
       loopOn: state.loopOn,
@@ -4043,6 +4075,8 @@
     clearGraph();
     state.bpm = data.bpm || 112;
     state.quantize = data.quantize == null ? 16 : data.quantize;
+    state.swing = data.swing || 0;
+    if (window._dawSwingUi) window._dawSwingUi();
     state.timeNum = data.timeNum || 4;
     state.timeDen = data.timeDen || 4;
     state.loopOn = data.loopOn !== false;
