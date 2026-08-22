@@ -138,6 +138,26 @@
     text-shadow: 0 0 40px color-mix(in srgb, var(--phosphor) 40%, transparent);
   }
 
+  .gate-tag {
+    margin: 12px 0 0;
+    color: var(--ink-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .gate-enter {
+    width: 100%;
+    max-width: 320px;
+    margin-top: 28px;
+  }
+
+  .gate-enter .btn {
+    width: 100%;
+    min-height: 48px;
+  }
+
   .gate-forms {
     width: 100%;
     max-width: 320px;

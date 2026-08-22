@@ -16,6 +16,7 @@ import { modulate, PRESETS } from './modulation.js';
 import { createPattern, renderPattern, applyPreset, mixTracks, patternDuration,
          TRACKS, STEPS, PRESET_PATTERNS } from './music.js';
 import { initDaw, setDawMode, showDaw } from './daw.js';
+import { emitVoice } from './bus.js';
 import { wordCount, clipToWords, chunkScript, formatEta, MAX_SPEAK_WORDS } from './speak-script.js';
 import { analyseLyrics, scaleChords, progressionInKey, KEYS, PROGRESSIONS } from './songcraft.js';
 import { composeAudio, fadeOut, describeProject } from './project.js';
@@ -1252,8 +1253,16 @@ function formatDuration(totalSeconds) {
 async function saveClipToLibrary({ engine, voiceLabel, text, blob, ext, durationSec }) {
   if (!clipLibrary.isSupported) return;
   try {
-    await clipLibrary.addClip({ engine, voiceLabel, text, blob, ext, durationSec });
+    const clip = await clipLibrary.addClip({ engine, voiceLabel, text, blob, ext, durationSec });
     if (!libraryView.hidden) renderLibrary();
+    emitVoice('clip', clip);
+    const daw = window.TheVoiceDAW;
+    if (daw && typeof daw.addVoiceClip === 'function' && blob) {
+      daw.addVoiceClip({
+        name: (voiceLabel || engine || 'Voice').toString().slice(0, 28),
+        blob,
+      }).catch(() => {});
+    }
   } catch {
     /* non-critical: library storage failing shouldn't block playback */
   }
@@ -4371,6 +4380,7 @@ const gateSetupPanel = document.getElementById('gate-setup-panel');
 const gateSupabaseUrl = document.getElementById('gate-supabase-url');
 const gateSupabaseKey = document.getElementById('gate-supabase-key');
 const gateConnectBtn = document.getElementById('gate-connect-btn');
+const gateGuestBtn = document.getElementById('gate-guest-btn');
 
 function setGateStatus(message, kind = 'error') {
   gateStatus.textContent = message || '';
@@ -4385,18 +4395,15 @@ function showGate() {
   appShell.hidden = true;
   gatePassword.value = '';
 
-  // Without a backend there is nobody to authenticate against, so lead with
-  // setup rather than letting someone submit into a void. Once a project is
-  // connected the same control steps back to a quiet way to change it.
   const configured = isBackendConfigured();
-  gateForms.hidden = !configured;
+  gateForms.hidden = false;
   gateSetupToggle.hidden = false;
   gateSetupToggle.classList.toggle('needed', !configured);
   gateSetupToggle.textContent = configured ? 'Change Supabase project' : 'Connect Supabase';
 
   if (!configured) {
-    gateSetupPanel.hidden = false;
-    setGateStatus('Connect a Supabase project to enable accounts.', 'info');
+    gateSetupPanel.hidden = true;
+    setGateStatus('Accounts are optional. Enter the studio, or connect Supabase to save across devices.', 'info');
   } else {
     gateSetupPanel.hidden = true;
     setTimeout(() => { try { gateEmail.focus(); } catch (_) {} }, 0);
@@ -4408,6 +4415,11 @@ function enterApp() {
   gateSetupToggle.hidden = true;
   appShell.hidden = false;
   switchSection('speak');
+}
+
+function enterGuest() {
+  try { sessionStorage.setItem('voice-guest', '1'); } catch (_) {}
+  enterApp();
 }
 
 async function attemptAuth(mode) {
@@ -4442,6 +4454,7 @@ async function attemptAuth(mode) {
 
 gateLoginBtn.addEventListener('click', () => attemptAuth('login'));
 gateSignupBtn.addEventListener('click', () => attemptAuth('signup'));
+if (gateGuestBtn) gateGuestBtn.addEventListener('click', enterGuest);
 gatePassword.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') attemptAuth('login');
 });
@@ -4546,6 +4559,13 @@ onAuthChange((event) => {
 }).catch(() => {});
 
 async function bootstrapAuth() {
+  const params = new URLSearchParams(location.search);
+  let storedGuest = false;
+  try { storedGuest = sessionStorage.getItem('voice-guest') === '1'; } catch (_) {}
+  if (params.get('guest') === '1' || storedGuest || window.self !== window.top) {
+    enterGuest();
+    return;
+  }
   if (!isBackendConfigured()) {
     showGate();
     return;
@@ -5311,5 +5331,11 @@ updateEngineChrome();
 renderClonedVoiceList();
 updateTextStats();
 restoreWorkspace();
+window.TheVoice = Object.assign(window.TheVoice || {}, {
+  go: switchSection,
+  speak: () => playBtn && playBtn.click(),
+  stop: stopPlayback,
+  enter: enterGuest,
+});
 bootstrapAuth().catch(() => showGate());
 startUpgradeWatch().catch(() => {});

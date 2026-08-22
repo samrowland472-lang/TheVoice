@@ -36,7 +36,8 @@ let keysRel = 0.35;
 
 const mix = {};
 const notes = []; // { pitch, start, length, vel } in 16th-notes
-const clips = []; // { track, scene, name, color, grid, notes, bassNotes }
+const clips = []; // { track, scene, name, color, grid, notes, bassNotes, buffer }
+const voiceSamples = []; // { id, name, buffer, duration }
 let pendingScene = -1;
 let currentScene = 0;
 let selectedScene = 0;
@@ -345,6 +346,18 @@ function trigMetro(t, accent) {
   o.start(t); o.stop(t + 0.05);
 }
 
+function trigBuffer(t, buffer, dest, gain) {
+  const a = audio();
+  if (!a || !buffer) return;
+  const src = a.ctx.createBufferSource();
+  src.buffer = buffer;
+  const g = a.ctx.createGain();
+  g.gain.value = gain == null ? 0.9 : gain;
+  src.connect(g);
+  g.connect(dest || (mix.master && mix.master.input) || a.master);
+  src.start(t);
+}
+
 function scheduleStep(st, t) {
   const p = pattern();
   if (!p || !p.grid) return;
@@ -358,6 +371,10 @@ function scheduleStep(st, t) {
     if ((n.start % ROLL_STEPS) === (st % ROLL_STEPS)) trigKey(t, n.pitch, (n.vel || 100) / 100, n.length);
   });
   if (metroOn && st % 4 === 0) trigMetro(t, st % 16 === 0);
+  const scene = clips[currentScene];
+  if (scene && scene.buffer && (st % 16) === 0) {
+    trigBuffer(t, scene.buffer, mix.master && mix.master.input, 0.85);
+  }
 }
 
 function applyPending() {
@@ -387,8 +404,49 @@ function applyPending() {
     });
     paintRoll();
   }
+  if (pendingScene >= 0) sceneToArrange(pendingScene);
   pendingScene = -1;
   paintSession();
+}
+
+function sceneToArrange(sceneIdx) {
+  const src = clips[sceneIdx];
+  if (!src || (!src.grid && !src.buffer)) return;
+  const start = Math.floor(step / 16) * 16;
+  const length = 32;
+  if (src.buffer) {
+    arr.clips = arr.clips.filter((c) => !(c.track === 'keys' && c.start < start + length && c.start + c.length > start));
+    arr.clips.push(makeArrClip({
+      track: 'keys',
+      start,
+      length,
+      name: src.name || 'Voice',
+      color: src.color || '#3fc6ff',
+      buffer: src.buffer,
+    }));
+  }
+  if (!src.grid) {
+    paintArrangeClips();
+    return;
+  }
+  ARR_TRACKS.forEach((track) => {
+    const has = track === 'keys'
+      ? (src.notes && src.notes.length)
+      : src.grid[track] && src.grid[track].some(Boolean);
+    if (!has) return;
+    arr.clips = arr.clips.filter((c) => !(c.track === track && c.start < start + length && c.start + c.length > start));
+    arr.clips.push(makeArrClip({
+      track,
+      start,
+      length,
+      name: src.name || track,
+      color: (STRIPS.find((s) => s.id === track) || {}).color || src.color,
+      grid: src.grid,
+      notes: src.notes,
+      bassNotes: src.bassNotes,
+    }));
+  });
+  paintArrangeClips();
 }
 
 function filledScenes() {
@@ -551,6 +609,10 @@ function scheduleArrange(st, t) {
     const vel = vel0 * vol;
     const dest = voiceDest(track, t, cut);
     const local = (st - c.start) % 16;
+    if (c.buffer && local === 0) {
+      trigBuffer(t, c.buffer, dest, vel);
+      continue;
+    }
     if (track === 'keys') {
       (c.notes || []).forEach((n) => {
         if ((n.start % 16) === local) {
@@ -1501,6 +1563,10 @@ function paintBrowser() {
       <button type="button" class="abl-preview" data-cue="preset:${n}" title="Preview without loading">▶</button>
       <button type="button" class="abl-lib" data-preset="${n}">${n}</button>
     </div>`).join('')}
+    <div class="abl-browser-sec">Voice</div>
+    ${voiceSamples.length
+      ? voiceSamples.map((s) => `<button type="button" class="abl-lib" data-voice="${s.id}">${s.name}</button>`).join('')
+      : '<p class="abl-muted">Speak or record a take — it lands here.</p>'}
     <div class="abl-browser-sec">Devices</div>
     <div class="abl-knobs">
       <label>Cut <input id="abl-cut" type="range" min="200" max="8000" value="${keysCutoff}"></label>
@@ -1531,6 +1597,18 @@ function paintBrowser() {
   root.querySelectorAll('[data-lib]').forEach((btn) => {
     btn.addEventListener('click', () => {
       setDetail(btn.dataset.lib === 'keys' ? 'keys' : 'drums');
+    });
+  });
+  root.querySelectorAll('[data-voice]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const sample = voiceSamples.find((s) => s.id === btn.dataset.voice);
+      if (!sample) return;
+      const slot = clips[selectedScene] || clips[0];
+      if (!slot) return;
+      slot.buffer = sample.buffer;
+      slot.name = sample.name;
+      if (!playing) studioPlay();
+      paintSession();
     });
   });
   const cut = root.querySelector('#abl-cut');
@@ -1672,4 +1750,39 @@ export function showStudio() {
 
 export function studioPlaying() {
   return playing;
+}
+
+export async function addVoiceClip({ name, blob, buffer }) {
+  const a = audio();
+  let buf = buffer;
+  if (!buf && blob && a && a.ctx) {
+    try {
+      const raw = await blob.arrayBuffer();
+      buf = await a.ctx.decodeAudioData(raw.slice(0));
+    } catch (err) {
+      console.warn('voice clip decode failed', err);
+      return null;
+    }
+  }
+  if (!buf) return null;
+  const sample = {
+    id: `v${Date.now().toString(36)}`,
+    name: name || 'Voice',
+    buffer: buf,
+    duration: buf.duration,
+  };
+  voiceSamples.unshift(sample);
+  if (voiceSamples.length > 24) voiceSamples.length = 24;
+  const slot = clips[selectedScene] || clips[0];
+  if (slot && !slot.buffer) {
+    slot.buffer = buf;
+    slot.name = slot.name || sample.name;
+  }
+  paintBrowser();
+  paintSession();
+  return sample;
+}
+
+export function listVoiceSamples() {
+  return voiceSamples.slice();
 }

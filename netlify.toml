@@ -1,12 +1,26 @@
 # Netlify deployment. The app is fully static — every heavy operation
-# (neural TTS, modulation, analysis) runs in the visitor's own browser,
-# so there is no server to scale and hosting stays flat-cost regardless
-# of user count.
+# (neural TTS, modulation, analysis) runs in the visitor's own browser.
+# Flick chat is the only server function (optional; needs XAI_API_KEY).
 [build]
   publish = "."
 
-# Existing files (js, css, wav) are served as-is. The catch-all is last
-# and is NOT forced, so it only covers unknown paths / OAuth redirects.
+[functions]
+  directory = "netlify/functions"
+
+[[edge_functions]]
+  function = "flick-inject"
+  path = "/*"
+
+[[edge_functions]]
+  function = "shield"
+  path = "/api/*"
+
+[[redirects]]
+  from = "/api/flick-chat"
+  to = "/.netlify/functions/flick-chat"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/js/*"
   to = "/js/:splat"
@@ -22,17 +36,11 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "microphone=(self), camera=(), geolocation=(), midi=(self)"
 
 [[headers]]
   for = "/js/*"
-  [headers.values]
-    Cache-Control = "public, max-age=60"
-
-[[headers]]
-  for = "/*.js"
   [headers.values]
     Cache-Control = "public, max-age=60"
