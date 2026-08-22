@@ -270,6 +270,10 @@ function makeDeck(id) {
     src: null,
     nodes: null,
     wave: null,
+    scratching: false,
+    scratchWasPlaying: false,
+    scratchAng: 0,
+    scratchAt: 0,
   };
 }
 
@@ -458,7 +462,7 @@ function detectBpm(buf) {
 function drawWave(canvas, buf, playhead, cues, loopStart, loopEnd) {
   if (!canvas || !buf) return;
   const w = canvas.width = canvas.clientWidth || 320;
-  const h = canvas.height = 64;
+  const h = canvas.height = canvas.clientHeight || 64;
   const g = canvas.getContext('2d');
   const ch = buf.getChannelData(0);
   const step = Math.max(1, Math.floor(ch.length / w));
@@ -583,7 +587,16 @@ function deckHtml(d) {
       <span class="dj-file">${d.fileName || 'No track loaded'}</span>
       <span class="dj-bpm">${d.bpm ? d.bpm + ' BPM' : '— BPM'}</span>
     </header>
-    <canvas class="dj-wave" data-wave="${d.id}"></canvas>
+    <div class="dj-platter-row">
+      <div class="dj-platter" data-platter="${d.id}" role="slider" aria-label="${d.name} jog wheel. Drag to scratch." tabindex="0">
+        <div class="dj-vinyl" data-vinyl="${d.id}">
+          <span class="dj-vinyl-grooves"></span>
+          <span class="dj-vinyl-label">${d.id.toUpperCase()}</span>
+          <span class="dj-vinyl-spindle"></span>
+        </div>
+      </div>
+      <canvas class="dj-wave" data-wave="${d.id}"></canvas>
+    </div>
     <div class="dj-times">
       <span class="dj-now" data-now="${d.id}">${fmtTime(deckNow(d))}</span>
       <span class="dj-bpm-lg">${d.bpm ? d.bpm.toFixed(1) : '—.—'}</span>
@@ -643,6 +656,7 @@ function paintDecks() {
     <input type="file" id="dj-file" accept="audio/*" hidden>
   `;
   bindDeckUi(root);
+  bindPlatters(root);
   requestAnimationFrame(() => {
     ['a', 'b'].forEach((id) => {
       const canvas = root.querySelector(`[data-wave="${id}"]`);
@@ -829,6 +843,71 @@ async function hookMidi() {
   }
 }
 
+function platterDeg(d) {
+  return deckNow(d) * 33.333 * 6 * (d.rate || 1);
+}
+
+function bindPlatters(root) {
+  root.querySelectorAll('[data-platter]').forEach((el) => {
+    const id = el.dataset.platter;
+    const d = decks[id];
+    const ang = (ev) => {
+      const r = el.getBoundingClientRect();
+      return Math.atan2(ev.clientY - (r.top + r.height / 2), ev.clientX - (r.left + r.width / 2));
+    };
+    const onMove = (ev) => {
+      if (!d.scratching || !d.buf) return;
+      ev.preventDefault();
+      const now = performance.now();
+      const a = ang(ev);
+      let da = a - d.scratchAng;
+      if (da > Math.PI) da -= Math.PI * 2;
+      if (da < -Math.PI) da += Math.PI * 2;
+      d.scratchAng = a;
+      d.spinAcc = (d.spinAcc || 0) + da * (180 / Math.PI);
+      const dt = Math.max(0.008, (now - d.scratchAt) / 1000);
+      d.scratchAt = now;
+      const natural = 2 * Math.PI * (33.333 / 60);
+      const rate = da / dt / natural;
+      if (d.src) d.src.playbackRate.value = Math.max(-8, Math.min(8, rate));
+    };
+    const onUp = () => {
+      if (!d.scratching) return;
+      d.scratching = false;
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      if (!d.buf) return;
+      const pos = Math.max(0, (d.scratchOrigin || 0) + ((d.spinAcc || 0) / 360) * (60 / 33.333));
+      if (d.src) {
+        stopDeckAudio(d);
+      }
+      d.off = pos;
+      d.cueAt = pos;
+      if (d.scratchWasPlaying) startDeckAt(d, pos);
+      else {
+        d.playing = false;
+        d.cueAt = pos;
+      }
+    };
+    el.addEventListener('pointerdown', (ev) => {
+      if (!d.buf) return;
+      ev.preventDefault();
+      d.scratching = true;
+      d.scratchWasPlaying = d.playing;
+      d.scratchAng = ang(ev);
+      d.scratchAt = performance.now();
+      d.spinAcc = 0;
+      d.spin0 = platterDeg(d);
+      d.scratchOrigin = deckNow(d);
+      ensureCtx();
+      if (!d.playing) startDeckAt(d, d.cueAt);
+      if (d.src) d.src.playbackRate.value = 0;
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+  });
+}
+
 function tickWaves() {
   if (mode === 'dj') {
     const root = document.getElementById('daw-live');
@@ -841,6 +920,11 @@ function tickWaves() {
         const rem = root.querySelector(`[data-remain="${id}"]`);
         if (now) now.textContent = fmtTime(deckNow(d));
         if (rem && d.buf) rem.textContent = fmtTime(Math.max(0, d.duration - deckNow(d)));
+        const vinyl = root.querySelector(`[data-vinyl="${id}"]`);
+        if (vinyl) {
+          const deg = d.scratching ? (d.spin0 || 0) + (d.spinAcc || 0) : platterDeg(d);
+          vinyl.style.transform = `rotate(${deg}deg)`;
+        }
       });
     }
   }

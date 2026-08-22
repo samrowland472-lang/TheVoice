@@ -3334,3 +3334,92 @@ html[data-avenue="music"] .abl-slot { border-radius: 0 !important; }
 }
 .dj-xf { padding: 8px 12px 4px; }
 .dj-xf input { height: 18px; accent-color: var(--phosphor); }
+
+/* Viewport lock — Music must fit the screen */
+html[data-avenue="music"] .shell,
+.shell.is-daw {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+html[data-avenue="music"] .shell.is-daw .main-area,
+.shell.is-daw .main-area {
+  height: 100% !important;
+  max-height: 100%;
+  overflow: hidden !important;
+}
+#music-view:not([hidden]),
+#daw-produce.daw-studio,
+#daw-live.daw-pane {
+  min-height: 0;
+  overflow: hidden;
+}
+#daw-live.daw-pane { display: flex; flex-direction: column; flex: 1; }
+.abl-slot { height: 32px; }
+.abl-strip input[type="range"]:first-of-type { height: 88px; }
+.abl-detail { max-height: 30vh; }
+.abl-mixer { max-height: 28vh; }
+
+.dj-platter-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 18vh) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 0;
+}
+.dj-platter {
+  width: min(18vh, 150px);
+  aspect-ratio: 1;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.dj-platter:active { cursor: grabbing; }
+.dj-vinyl {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle at 50% 42%, #3a342c 0 14%, #12100e 15%, #070707 48%, #1c1a18 72%, #0a0a0a 100%);
+  box-shadow: inset 0 0 0 2px #2a2622, 0 6px 18px rgba(0,0,0,0.55);
+  overflow: hidden;
+  will-change: transform;
+}
+.dj-vinyl-grooves {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+.dj-vinyl-label {
+  position: absolute;
+  inset: 34%;
+  border-radius: 50%;
+  background: var(--phosphor);
+  color: #041018;
+  display: grid;
+  place-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+.dj-vinyl-spindle {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 10px; height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: #050505;
+  box-shadow: 0 0 0 2px #888;
+  pointer-events: none;
+}
+.dj-wave { height: min(14vh, 96px); min-height: 56px; }
+.dj-eq-col input[type="range"] { height: 64px; }
+.dj-bpm-lg { font-size: clamp(1rem, 3vh, 1.6rem); }
+@media (max-width: 860px) {
+  .dj-platter-row { grid-template-columns: 88px 1fr; }
+  .dj-platter { width: 88px; }
+}
