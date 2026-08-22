@@ -20,10 +20,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Contrast checker on text vs fill / artboard.
-2. Multi-page / artboard set for a campaign (story + square + banner).
-9. Multi-page / artboard set for a campaign (story + square + banner).
-10. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
+1. Multi-page / artboard set for a campaign (story + square + banner).
+2. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
 11. Components / linked duplicates (edit one, update copies).
 12. Color-from-image palette into the brand kit.
 13. Present mode speaker notes / click-through frames.
@@ -43,8 +41,13 @@ Auth OFF, DB OFF.
 - Magic layout: Append/Replace, schema-validated nodes, preview then Apply/Discard.
 - Paint stroke undo: ⌘Z pops the last brush/eraser stroke without cloning the whole document.
 - Mobile studio: tool overflow, always-on Export, inspector as a bottom sheet.
+- Contrast checker: WCAG ratio on text vs overlapping fill or artboard, with Fix.
 
 ## Iterations
+
+### 2026-08-22T22:23Z — loop 17
+
+Contrast checker in the inspector. Typecheck + build + smoke clean.
 
 ### 2026-08-22T22:18Z — loop 16
 
@@ -88,4 +91,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Contrast checker on text vs fill / artboard.
+Multi-page / artboard set for a campaign (story + square + banner).

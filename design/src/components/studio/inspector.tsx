@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
+import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
 import { useDesign } from "@/lib/design/store";
 import type { Align, BlendMode, DesignNode, GradientFill, ImageNode, TextNode } from "@/lib/design/types";
 import { isGradient, isImage } from "@/lib/design/types";
@@ -428,6 +429,7 @@ function TextFields({ node }: { node: TextNode }) {
           Body
         </button>
       </div>
+      <ContrastMeter node={node} />
       <Field label="Font">
         <select
           className="field"
@@ -508,6 +510,65 @@ function TextFields({ node }: { node: TextNode }) {
         Uppercase
       </label>
     </>
+  );
+}
+
+function ContrastMeter({ node }: { node: TextNode }) {
+  const doc = useDesign((s) => s.doc);
+  const brand = useDesign((s) => s.brand);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  if (!doc) return null;
+  const fg = solidHex(node.fill, "#d9f5e3");
+  const idx = doc.nodes.findIndex((n) => n.id === node.id);
+  let bg = solidHex(doc.artboard.background, "#0a0d0c");
+  let vs = "artboard";
+  for (let i = idx - 1; i >= 0; i--) {
+    const n = doc.nodes[i]!;
+    if (!n.visible || n.kind === "text" || n.kind === "paint" || n.kind === "image") continue;
+    const overlap =
+      node.x < n.x + n.w && node.x + node.w > n.x && node.y < n.y + n.h && node.y + node.h > n.y;
+    if (!overlap) continue;
+    const hex = solidHex(n.fill, "");
+    if (!hex) continue;
+    bg = hex;
+    vs = n.name || n.kind;
+    break;
+  }
+  const ratio = contrastRatio(fg, bg);
+  if (ratio == null) return null;
+  const large = node.fontSize >= 24 || node.fontWeight >= 700;
+  const level = wcagLevel(ratio, large);
+  const pass = level !== "fail";
+  return (
+    <div className="rounded-[12px] border border-border bg-surface-alt px-2 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-[10px] tracking-[0.16em] text-ink-faint uppercase">Contrast</span>
+        <span className={cn("font-mono text-[11px]", pass ? "text-phosphor" : "text-alert")}>
+          {ratio.toFixed(1)}:1 · {level === "fail" ? "fail" : level}
+        </span>
+      </div>
+      <div className="mt-1 flex items-center gap-2 text-[10px] text-ink-dim">
+        <span className="size-3 rounded-sm border border-border" style={{ background: fg }} />
+        <span>on</span>
+        <span className="size-3 rounded-sm border border-border" style={{ background: bg }} />
+        <span className="truncate">{vs}</span>
+        {!pass && (
+          <button
+            type="button"
+            className="ml-auto text-phosphor"
+            onClick={() => {
+              const ink = bestInk(
+                bg,
+                brand.colors.map((c) => c.hex),
+              );
+              updateNodes([node.id], { fill: ink } as Partial<DesignNode>, true);
+            }}
+          >
+            Fix
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
