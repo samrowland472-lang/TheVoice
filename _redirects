@@ -1,2 +1,6 @@
-# Deep links and OAuth returns resolve to the app instead of 404ing.
+# Existing files in /js win. This rule stops missing JS from
+# being rewritten to index.html (which made the DAW never load).
+/js/*  /js/:splat  200
+
+# SPA fallback
 /*  /index.html  200
