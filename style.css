@@ -3004,3 +3004,13 @@ input:focus-visible,
   min-height: 36px;
 }
 .project-vu { height: 36px; }
+
+.mod-ab-flag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--phosphor);
+  min-width: 1.4em;
+  text-align: center;
+}
+#mod-source { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#mod-clip { min-width: 180px; flex: 1; }

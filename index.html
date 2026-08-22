@@ -412,6 +412,7 @@
 
     <div class="mod-source" id="mod-source">
       <span class="hint hint-info" id="mod-source-label">No clip loaded.</span>
+      <select id="mod-clip" aria-label="Library clip"><option value="">Library clip…</option></select>
       <button id="mod-load-btn" class="btn">Use latest recording</button>
       <button id="mod-import-btn" class="btn">Import audio…</button>
     </div>
@@ -435,12 +436,19 @@
 
     <div class="control-row buttons-row">
       <button id="mod-apply-btn" class="btn btn-primary" disabled>Apply</button>
+      <button id="mod-ab-btn" class="btn" disabled>A/B</button>
       <button id="mod-reset-btn" class="btn">Reset</button>
       <button id="mod-download-btn" class="btn" disabled>Download</button>
     </div>
 
     <p class="hint" id="mod-hint" role="status" aria-live="polite"></p>
-    <audio id="mod-audio" controls hidden></audio>
+    <div class="project-transport" id="mod-transport" hidden>
+      <button type="button" id="mod-play" class="clip-play" aria-label="Play">▶</button>
+      <button type="button" class="clip-scrub" id="mod-scrub" aria-label="Seek"><div class="clip-scrub-fill" id="mod-scrub-fill"></div></button>
+      <span class="clip-pos" id="mod-pos">0:00</span>
+      <span class="mod-ab-flag" id="mod-ab-flag">A</span>
+    </div>
+    <audio id="mod-audio" hidden></audio>
   </div>
 
   <div id="animate-view" hidden data-drop-zone>

@@ -427,6 +427,7 @@ function stopPlayback() {
   releasePlaybackWait();
   if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
   if (typeof stopProjectPlay === 'function') stopProjectPlay();
+  if (typeof stopModPlay === 'function') stopModPlay();
 }
 
 playBtn.addEventListener('click', async () => {
@@ -1632,9 +1633,24 @@ const modResetBtn = document.getElementById('mod-reset-btn');
 const modDownloadBtn = document.getElementById('mod-download-btn');
 const modHint = document.getElementById('mod-hint');
 const modAudio = document.getElementById('mod-audio');
+const modClipSel = document.getElementById('mod-clip');
+const modAbBtn = document.getElementById('mod-ab-btn');
+const modTransport = document.getElementById('mod-transport');
+const modPlay = document.getElementById('mod-play');
+const modScrub = document.getElementById('mod-scrub');
+const modScrubFill = document.getElementById('mod-scrub-fill');
+const modPos = document.getElementById('mod-pos');
+const modAbFlag = document.getElementById('mod-ab-flag');
 
 let modSourceBuffer = null;
 let modResultBlob = null;
+let modDryBlob = null;
+let modHearing = 'b';
+
+function stopModPlay() {
+  if (modAudio && !modAudio.paused) modAudio.pause();
+  if (modPlay) modPlay.textContent = '▶';
+}
 
 function syncModLabels() {
   const st = parseInt(modPitch.value, 10);
@@ -1667,26 +1683,73 @@ function renderModPresets() {
   }
 }
 
-function refreshModSource() {
+async function refreshModSource() {
+  if (modClipSel) {
+    const keep = modClipSel.value;
+    modClipSel.innerHTML = '<option value="">Library clip…</option>';
+    try {
+      const clips = await clipLibrary.listClips();
+      for (const clip of clips.slice(0, 50)) {
+        const o = document.createElement('option');
+        o.value = clip.id;
+        o.textContent = `${clip.title || clip.voiceLabel || clip.engine} · ${formatDuration(clip.durationSec)}`;
+        modClipSel.appendChild(o);
+      }
+      if (keep && [...modClipSel.options].some((o) => o.value === keep)) modClipSel.value = keep;
+    } catch (_) {}
+  }
   if (modSourceBuffer) return;
   modSourceLabel.textContent = originalRecordingBlob
     ? 'A recording is available to load.'
-    : 'No clip loaded — record one in Voice Studio first.';
+    : 'No clip loaded — pick a Library clip, import, or record in Voice Studio.';
   modLoadBtn.disabled = !originalRecordingBlob;
+}
+
+async function loadModFromBlob(blob, label) {
+  const buf = await decodeToAudioBuffer(blob);
+  modSourceBuffer = { data: buf.getChannelData(0), sampleRate: buf.sampleRate };
+  modDryBlob = blob;
+  modResultBlob = null;
+  modHearing = 'a';
+  modSourceLabel.textContent = `${label} · ${buf.duration.toFixed(1)}s`;
+  modApplyBtn.disabled = false;
+  if (modAbBtn) modAbBtn.disabled = true;
+  if (modAbFlag) modAbFlag.textContent = 'A';
+  armModPlayer(modDryBlob);
+}
+
+function armModPlayer(blob) {
+  if (!modAudio || !blob) return;
+  if (modAudio.src) URL.revokeObjectURL(modAudio.src);
+  modAudio.src = URL.createObjectURL(blob);
+  if (modTransport) modTransport.hidden = false;
+  if (modPlay) modPlay.textContent = '▶';
+  if (modScrubFill) modScrubFill.style.width = '0%';
 }
 
 modLoadBtn.addEventListener('click', async () => {
   if (!originalRecordingBlob) return;
   modHint.textContent = '';
   try {
-    const buf = await decodeToAudioBuffer(originalRecordingBlob);
-    modSourceBuffer = { data: buf.getChannelData(0), sampleRate: buf.sampleRate };
-    modSourceLabel.textContent = `Loaded ${(buf.duration).toFixed(1)}s clip.`;
-    modApplyBtn.disabled = false;
+    await loadModFromBlob(originalRecordingBlob, 'Session take');
   } catch (err) {
     modHint.textContent = err.message || 'Could not load that clip.';
   }
 });
+if (modClipSel) {
+  modClipSel.addEventListener('change', async () => {
+    const id = modClipSel.value;
+    if (!id) return;
+    try {
+      const clips = await clipLibrary.listClips();
+      const clip = clips.find((c) => c.id === id);
+      if (!clip) return;
+      await loadModFromBlob(clip.blob, clip.title || clip.voiceLabel || 'Library clip');
+    } catch (err) {
+      modHint.textContent = err.message || 'Could not load that clip.';
+    }
+  });
+}
 
 modApplyBtn.addEventListener('click', async () => {
   if (!modSourceBuffer) return;
@@ -1703,10 +1766,12 @@ modApplyBtn.addEventListener('click', async () => {
       speed: parseFloat(modSpeed.value),
     });
     modResultBlob = encodeWav16(out, modSourceBuffer.sampleRate);
-    modAudio.src = URL.createObjectURL(modResultBlob);
-    modAudio.hidden = false;
+    modHearing = 'b';
+    if (modAbFlag) modAbFlag.textContent = 'B';
+    if (modAbBtn) modAbBtn.disabled = false;
+    armModPlayer(modResultBlob);
     modDownloadBtn.disabled = false;
-    showToast('Modulated');
+    showToast('Modulated — A/B compares dry vs wet');
     saveClipToLibrary({
       engine: 'recording',
       voiceLabel: 'Modulated',
@@ -1737,6 +1802,48 @@ modDownloadBtn.addEventListener('click', async () => {
   if (result.ok) showToast('Downloaded');
   else if (result.message) modHint.textContent = result.message;
 });
+
+if (modAbBtn) {
+  modAbBtn.addEventListener('click', () => {
+    if (!modDryBlob || !modResultBlob) return;
+    const t = modAudio && Number.isFinite(modAudio.currentTime) ? modAudio.currentTime : 0;
+    const playing = modAudio && !modAudio.paused;
+    modHearing = modHearing === 'a' ? 'b' : 'a';
+    if (modAbFlag) modAbFlag.textContent = modHearing === 'a' ? 'A' : 'B';
+    armModPlayer(modHearing === 'a' ? modDryBlob : modResultBlob);
+    modAudio.currentTime = t;
+    if (playing) modAudio.play().catch(() => {});
+    if (modPlay) modPlay.textContent = playing ? '■' : '▶';
+  });
+}
+if (modPlay) {
+  modPlay.addEventListener('click', () => {
+    if (!modAudio.src) return;
+    if (modAudio.paused) {
+      if (typeof stopPlayback === 'function') stopPlayback();
+      modAudio.play().catch(() => {});
+      modPlay.textContent = '■';
+    } else {
+      modAudio.pause();
+      modPlay.textContent = '▶';
+    }
+  });
+}
+if (modScrub) {
+  modScrub.addEventListener('click', (ev) => {
+    if (!modAudio.duration) return;
+    const r = modScrub.getBoundingClientRect();
+    modAudio.currentTime = ((ev.clientX - r.left) / r.width) * modAudio.duration;
+  });
+}
+if (modAudio) {
+  modAudio.addEventListener('timeupdate', () => {
+    if (!modAudio.duration) return;
+    if (modScrubFill) modScrubFill.style.width = `${(modAudio.currentTime / modAudio.duration) * 100}%`;
+    if (modPos) modPos.textContent = `${formatDuration(modAudio.currentTime)} / ${formatDuration(modAudio.duration)}`;
+  });
+  modAudio.addEventListener('ended', () => { if (modPlay) modPlay.textContent = '▶'; });
+}
 
 /* ---------- Animate ---------- */
 const animCanvas = document.getElementById('anim-canvas');
@@ -5139,8 +5246,14 @@ async function modAdopt(result) {
   // unambiguous request to modulate that file; making the user then press
   // "Use latest recording" would be a step that communicates nothing.
   modSourceBuffer = { data: buf.getChannelData(0), sampleRate: buf.sampleRate };
+  modDryBlob = result.file;
+  modResultBlob = null;
+  modHearing = 'a';
   modSourceLabel.textContent = `Loaded ${result.file.name} · ${buf.duration.toFixed(1)}s`;
   modApplyBtn.disabled = false;
+  if (modAbBtn) modAbBtn.disabled = true;
+  if (modAbFlag) modAbFlag.textContent = 'A';
+  armModPlayer(modDryBlob);
   showToast(`Loaded ${result.file.name} for modulation`);
 }
 
