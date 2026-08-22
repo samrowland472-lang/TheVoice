@@ -266,6 +266,10 @@ function makeDeck(id) {
     cue: false,
     sync: false,
     slip: false,
+    slipActive: false,
+    slipPos: 0,
+    slipT0: 0,
+    slipRate: 1,
     keylock: true,
     src: null,
     nodes: null,
@@ -360,6 +364,27 @@ function stopDeckAudio(d) {
   }
 }
 
+function beginSlip(d) {
+  if (!d.slip || d.slipActive || !d.playing || !ctx) return;
+  d.slipActive = true;
+  d.slipPos = deckNow(d);
+  d.slipT0 = ctx.currentTime;
+  d.slipRate = d.rate || 1;
+}
+
+function slipNow(d) {
+  if (!d.slipActive || !ctx || !d.buf) return deckNow(d);
+  return Math.max(0, Math.min(d.buf.duration - 0.001, d.slipPos + (ctx.currentTime - d.slipT0) * d.slipRate));
+}
+
+function endSlip(d) {
+  if (!d.slipActive) return;
+  const t = slipNow(d);
+  d.slipActive = false;
+  if (d.playing || d.scratchWasPlaying) startDeckAt(d, t);
+  else d.cueAt = t;
+}
+
 function startDeckAt(d, time) {
   ensureCtx();
   if (!d.buf) return;
@@ -418,6 +443,7 @@ function jumpCue(d, i) {
     paintDecks();
     return;
   }
+  beginSlip(d);
   if (d.playing) startDeckAt(d, t);
   else d.cueAt = t;
 }
@@ -459,7 +485,7 @@ function detectBpm(buf) {
   return Math.round(bpm);
 }
 
-function drawWave(canvas, buf, playhead, cues, loopStart, loopEnd) {
+function drawWave(canvas, buf, playhead, cues, loopStart, loopEnd, slipAt) {
   if (!canvas || !buf) return;
   const w = canvas.width = canvas.clientWidth || 320;
   const h = canvas.height = canvas.clientHeight || 64;
@@ -498,6 +524,10 @@ function drawWave(canvas, buf, playhead, cues, loopStart, loopEnd) {
     g.fillStyle = CLIP_COLORS[i % CLIP_COLORS.length];
     g.fillRect(x, 0, 2, h);
   });
+  if (slipAt != null && Number.isFinite(slipAt)) {
+    g.fillStyle = '#ffb238';
+    g.fillRect((slipAt / buf.duration) * w, 0, 2, h);
+  }
   if (playhead != null) {
     g.fillStyle = '#fff';
     g.fillRect((playhead / buf.duration) * w, 0, 2, h);
@@ -509,6 +539,7 @@ function setLoop(d, beats) {
   const bpm = d.bpm || currentBpm();
   const dur = (60 / bpm) * beats;
   const at = deckNow(d);
+  beginSlip(d);
   d.loopStart = at;
   d.loopEnd = Math.min(d.buf.duration, at + dur);
   d.loopBeats = beats;
@@ -606,6 +637,7 @@ function deckHtml(d) {
       <button type="button" class="dj-play" data-act="play" data-deck="${d.id}">${d.playing ? '❚❚' : '▶'}</button>
       <button type="button" class="btn" data-act="cue" data-deck="${d.id}">CUE</button>
       <button type="button" class="btn${d.sync ? ' on' : ''}" data-act="sync" data-deck="${d.id}">SYNC</button>
+      <button type="button" class="btn${d.slip ? ' on' : ''}" data-act="slip" data-deck="${d.id}">SLIP</button>
       <button type="button" class="btn${d.cue ? ' on' : ''}" data-act="pfl" data-deck="${d.id}">PFL</button>
       <button type="button" class="btn" data-act="load" data-deck="${d.id}">Load</button>
       <button type="button" class="btn" data-act="beat" data-deck="${d.id}">Beat</button>
@@ -697,6 +729,10 @@ function bindDeckUi(root) {
       if (act === 'play') togglePlay(d);
       if (act === 'cue') cueDeck(d);
       if (act === 'sync') syncToOther(d);
+      if (act === 'slip') {
+        d.slip = !d.slip;
+        if (!d.slip && d.slipActive) endSlip(d);
+      }
       if (act === 'pfl') {
         d.cue = !d.cue;
         if (d.nodes) d.nodes.cue.gain.value = d.cue ? 0.8 : 0;
@@ -708,7 +744,8 @@ function bindDeckUi(root) {
       if (act === 'beat') loadBeatIntoDeck(d);
       if (act === 'loop-off') {
         d.loopOn = false;
-        if (d.playing) startDeckAt(d, deckNow(d));
+        if (d.slipActive) endSlip(d);
+        else if (d.playing) startDeckAt(d, deckNow(d));
       }
       if (act === 'kill') {
         d.kill[btn.dataset.band] = !d.kill[btn.dataset.band];
@@ -718,10 +755,31 @@ function bindDeckUi(root) {
     });
   });
   root.querySelectorAll('[data-cue]').forEach((btn) => {
-    btn.addEventListener('click', () => jumpCue(decks[btn.dataset.deck], Number(btn.dataset.cue)));
+    const d = decks[btn.dataset.deck];
+    const i = Number(btn.dataset.cue);
+    btn.addEventListener('pointerdown', (ev) => {
+      if (ev.button !== 0) return;
+      const t = d.cues[i];
+      if (t == null) return;
+      if (d.slip && d.playing) {
+        ev.preventDefault();
+        beginSlip(d);
+        startDeckAt(d, t);
+      }
+    });
+    btn.addEventListener('pointerup', () => {
+      if (d.slip && d.slipActive) endSlip(d);
+    });
+    btn.addEventListener('click', (ev) => {
+      if (d.slip && d.playing && d.cues[i] != null) {
+        ev.preventDefault();
+        return;
+      }
+      jumpCue(d, i);
+    });
     btn.addEventListener('contextmenu', (ev) => {
       ev.preventDefault();
-      clearCue(decks[btn.dataset.deck], Number(btn.dataset.cue));
+      clearCue(d, i);
     });
   });
   root.querySelectorAll('[data-loop]').forEach((btn) => {
@@ -877,6 +935,10 @@ function bindPlatters(root) {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       if (!d.buf) return;
+      if (d.slipActive) {
+        endSlip(d);
+        return;
+      }
       const pos = Math.max(0, (d.scratchOrigin || 0) + ((d.spinAcc || 0) / 360) * (60 / 33.333));
       if (d.src) {
         stopDeckAudio(d);
@@ -899,6 +961,7 @@ function bindPlatters(root) {
       d.spinAcc = 0;
       d.spin0 = platterDeg(d);
       d.scratchOrigin = deckNow(d);
+      beginSlip(d);
       ensureCtx();
       if (!d.playing) startDeckAt(d, d.cueAt);
       if (d.src) d.src.playbackRate.value = 0;
@@ -915,7 +978,7 @@ function tickWaves() {
       ['a', 'b'].forEach((id) => {
         const d = decks[id];
         const canvas = root.querySelector(`[data-wave="${id}"]`);
-        if (canvas && d.buf) drawWave(canvas, d.buf, deckNow(d), d.cues, d.loopStart, d.loopEnd);
+        if (canvas && d.buf) drawWave(canvas, d.buf, deckNow(d), d.cues, d.loopStart, d.loopEnd, d.slipActive ? slipNow(d) : null);
         const now = root.querySelector(`[data-now="${id}"]`);
         const rem = root.querySelector(`[data-remain="${id}"]`);
         if (now) now.textContent = fmtTime(deckNow(d));
