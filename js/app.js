@@ -233,14 +233,44 @@ if (sidebarNav) {
   });
 }
 
+let keysPrevFocus = null;
+function setKeysOverlay(open) {
+  const overlay = document.getElementById('keys-overlay');
+  if (!overlay) return;
+  overlay.hidden = !open;
+  if (open) {
+    keysPrevFocus = document.activeElement;
+    const close = document.getElementById('keys-overlay-close');
+    if (close) close.focus();
+  } else if (keysPrevFocus && typeof keysPrevFocus.focus === 'function') {
+    try { keysPrevFocus.focus(); } catch (_) {}
+    keysPrevFocus = null;
+  }
+}
+
 document.addEventListener('keydown', (ev) => {
   const tag = ev.target && ev.target.tagName;
   const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
   const overlay = document.getElementById('keys-overlay');
+  const overlayOpen = overlay && !overlay.hidden;
+
+  if (overlayOpen && ev.key === 'Tab') {
+    const focusable = [...overlay.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter((el) => !el.disabled && el.offsetParent);
+    if (focusable.length) {
+      const i = focusable.indexOf(document.activeElement);
+      ev.preventDefault();
+      const next = ev.shiftKey
+        ? focusable[(i <= 0 ? focusable.length : i) - 1]
+        : focusable[(i + 1) % focusable.length];
+      next.focus();
+    }
+    return;
+  }
 
   if (ev.key === 'Escape') {
-    if (overlay && !overlay.hidden) {
-      overlay.hidden = true;
+    if (overlayOpen) {
+      setKeysOverlay(false);
       ev.preventDefault();
       return;
     }
@@ -280,10 +310,8 @@ document.addEventListener('keydown', (ev) => {
   if (inField) return;
 
   if (ev.key === '?' || (ev.shiftKey && ev.key === '/')) {
-    if (overlay) {
-      overlay.hidden = !overlay.hidden;
-      ev.preventDefault();
-    }
+    setKeysOverlay(!(overlay && !overlay.hidden));
+    ev.preventDefault();
     return;
   }
   if (ev.key === '/' && libraryView && !libraryView.hidden) {
@@ -294,10 +322,7 @@ document.addEventListener('keydown', (ev) => {
 
 const keysOverlayClose = document.getElementById('keys-overlay-close');
 if (keysOverlayClose) {
-  keysOverlayClose.addEventListener('click', () => {
-    const overlay = document.getElementById('keys-overlay');
-    if (overlay) overlay.hidden = true;
-  });
+  keysOverlayClose.addEventListener('click', () => setKeysOverlay(false));
 }
 
 /* ---------- Status ---------- */

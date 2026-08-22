@@ -1366,12 +1366,12 @@ function paintMixer() {
   root.innerHTML = STRIPS.map((s) => {
     const m = mix[s.id];
     return `<div class="abl-strip" data-strip="${s.id}" style="--strip:${s.color}">
-      <canvas class="abl-meter" data-meter="${s.id}" width="10" height="92"></canvas>
-      <input type="range" min="0" max="1.4" step="0.01" value="${m.level}" data-vol="${s.id}" title="Volume">
-      <input type="range" min="-1" max="1" step="0.01" value="${m.panVal}" data-pan="${s.id}" title="Pan">
+      <canvas class="abl-meter" data-meter="${s.id}" width="10" height="92" aria-hidden="true"></canvas>
+      <input type="range" min="0" max="1.4" step="0.01" value="${m.level}" data-vol="${s.id}" aria-label="${s.name} volume" aria-valuetext="${Math.round(m.level * 100)}%">
+      <input type="range" min="-1" max="1" step="0.01" value="${m.panVal}" data-pan="${s.id}" aria-label="${s.name} pan" aria-valuetext="${m.panVal === 0 ? 'center' : (m.panVal < 0 ? 'left' : 'right')}">
       <div class="abl-strip-btns">
-        <button type="button" class="abl-m${m.muted ? ' on' : ''}" data-mute="${s.id}">M</button>
-        <button type="button" class="abl-s${m.soloed ? ' on' : ''}" data-solo="${s.id}">S</button>
+        <button type="button" class="abl-m${m.muted ? ' on' : ''}" data-mute="${s.id}" aria-pressed="${m.muted ? 'true' : 'false'}" aria-label="Mute ${s.name}">M</button>
+        <button type="button" class="abl-s${m.soloed ? ' on' : ''}" data-solo="${s.id}" aria-pressed="${m.soloed ? 'true' : 'false'}" aria-label="Solo ${s.name}">S</button>
       </div>
       <span>${s.name}</span>
     </div>`;
@@ -1387,6 +1387,7 @@ function paintMixer() {
       const m = mix[el.dataset.vol];
       m.level = parseFloat(el.value);
       m.vol.gain.setTargetAtTime(m.level, audio().ctx.currentTime, 0.02);
+      el.setAttribute('aria-valuetext', `${Math.round(m.level * 100)}%`);
     });
   });
   root.querySelectorAll('[data-pan]').forEach((el) => {

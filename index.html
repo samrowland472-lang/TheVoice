@@ -59,9 +59,10 @@
   <div class="gate-status" id="gate-status" role="status" aria-live="polite"></div>
 
   <div class="gate-setup-panel" id="gate-setup-panel" hidden>
-    <label class="field-label">Backend configuration</label>
-    <input type="text" id="gate-supabase-url" placeholder="Supabase project URL">
-    <input type="text" id="gate-supabase-key" placeholder="Supabase anon/public key">
+    <label class="field-label" for="gate-supabase-url">Supabase project URL</label>
+    <input type="text" id="gate-supabase-url" placeholder="https://xxxx.supabase.co" autocomplete="off">
+    <label class="field-label" for="gate-supabase-key">Supabase anon key</label>
+    <input type="text" id="gate-supabase-key" placeholder="anon/public key" autocomplete="off">
     <div class="gate-actions">
       <button class="btn btn-primary" id="gate-connect-btn">Connect</button>
     </div>
@@ -171,7 +172,7 @@
 
         <label class="field-label" for="text-input">Your text</label>
         <textarea id="text-input" placeholder="Type or paste up to 20,000 words…" spellcheck="true">Type or paste anything here, choose a voice, and press Speak.</textarea>
-        <div class="text-stats" id="text-stats">0 / 20,000 words · 20,000 left · ~0s</div>
+        <div class="text-stats" id="text-stats" aria-live="polite">0 / 20,000 words · 20,000 left · ~0s</div>
         <p class="hint hint-info">20,000 words, queued in sentences so it actually finishes. Ctrl/⌘+Enter speaks. Esc stops.</p>
 
         <div class="highlight-preview" id="highlight-preview" aria-live="polite"></div>
