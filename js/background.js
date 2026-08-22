@@ -8,8 +8,12 @@ export function initBackground() {
   let sweepAngle = 0;
 
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = Math.min(1.25, window.devicePixelRatio || 1);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   function initBlips() {
@@ -48,24 +52,27 @@ export function initBackground() {
     ctx.stroke();
     ctx.restore();
 
-    sweepAngle += 0.0032;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(sweepAngle);
-    const grad = ctx.createLinearGradient(0, 0, maxR, 0);
-    grad.addColorStop(0, 'rgba(63, 198, 255, 0.16)');
-    grad.addColorStop(1, 'rgba(63, 198, 255, 0)');
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.arc(0, 0, maxR, -0.16, 0.16);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.restore();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce) {
+      sweepAngle += 0.0032;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(sweepAngle);
+      const grad = ctx.createLinearGradient(0, 0, maxR, 0);
+      grad.addColorStop(0, 'rgba(63, 198, 255, 0.16)');
+      grad.addColorStop(1, 'rgba(63, 198, 255, 0)');
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, maxR, -0.16, 0.16);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.restore();
+    }
 
     for (const b of blips) {
-      b.phase += b.speed;
-      const pulse = (Math.sin(b.phase) + 1) / 2;
+      if (!reduce) b.phase += b.speed;
+      const pulse = reduce ? 0.4 : (Math.sin(b.phase) + 1) / 2;
       const alpha = 0.15 + pulse * 0.4;
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r + pulse * 0.8, 0, Math.PI * 2);
@@ -75,8 +82,14 @@ export function initBackground() {
       ctx.fill();
     }
 
-    requestAnimationFrame(draw);
+    if (!document.hidden && !reduce) requestAnimationFrame(draw);
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) requestAnimationFrame(draw);
+  });
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (motion.addEventListener) motion.addEventListener('change', () => requestAnimationFrame(draw));
 
   window.addEventListener('resize', () => {
     resize();

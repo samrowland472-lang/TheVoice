@@ -13,7 +13,7 @@ export function initVisualizer() {
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -231,11 +231,19 @@ export function initVisualizer() {
   }
 
   function loop() {
+    const hidden = document.hidden || !canvas.offsetParent;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (hidden) return;
     const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
 
-    amplitude += (targetAmplitude - amplitude) * 0.15;
-    targetAmplitude *= 0.9;
+    if (reduce) {
+      amplitude = 0;
+      targetAmplitude = 0;
+    } else {
+      amplitude += (targetAmplitude - amplitude) * 0.15;
+      targetAmplitude *= 0.9;
+    }
 
     if (mode === 'face') drawFace(rect);
     else if (mode === 'bars') drawBars(rect);
@@ -243,7 +251,15 @@ export function initVisualizer() {
     else if (mode === 'particles') drawParticles(rect);
     else if (mode === 'wave') drawWave(rect);
 
-    requestAnimationFrame(loop);
+    if (!reduce) requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) requestAnimationFrame(loop);
+  });
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (motion.addEventListener) {
+    motion.addEventListener('change', () => requestAnimationFrame(loop));
   }
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
