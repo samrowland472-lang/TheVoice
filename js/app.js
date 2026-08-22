@@ -233,19 +233,70 @@ if (sidebarNav) {
 
 document.addEventListener('keydown', (ev) => {
   const tag = ev.target && ev.target.tagName;
-  const inField = tag === 'INPUT' || tag === 'SELECT';
-  if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
-    const speakOpen = consoleView && !consoleView.hidden && document.querySelector('[data-panel="speak"].active');
-    if (speakOpen) {
+  const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  const overlay = document.getElementById('keys-overlay');
+
+  if (ev.key === 'Escape') {
+    if (overlay && !overlay.hidden) {
+      overlay.hidden = true;
       ev.preventDefault();
+      return;
+    }
+    if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') stopPlayback();
+    return;
+  }
+
+  if (ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey) {
+    const map = {
+      Digit1: 'speak', Digit2: 'studio', Digit3: 'longform', Digit4: 'modulate',
+      Digit5: 'music', Digit6: 'dj', Digit7: 'project', Digit8: 'library',
+      Digit9: 'settings', Digit0: 'plans',
+    };
+    const section = map[ev.code];
+    if (section) {
+      ev.preventDefault();
+      switchSection(section);
+      return;
+    }
+  }
+
+  if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
+    ev.preventDefault();
+    if (consoleView && !consoleView.hidden && document.querySelector('[data-panel="speak"].active')) {
       playBtn.click();
+    } else if (longformView && !longformView.hidden && longformGenerateBtn && !longformGenerateBtn.disabled) {
+      longformGenerateBtn.click();
+    } else if (modulateView && !modulateView.hidden && modApplyBtn && !modApplyBtn.disabled) {
+      modApplyBtn.click();
+    } else if (projectView && !projectView.hidden) {
+      const b = document.getElementById('project-build-btn');
+      if (b) b.click();
     }
     return;
   }
-  if (ev.key === 'Escape' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
-    stopPlayback();
+
+  if (inField) return;
+
+  if (ev.key === '?' || (ev.shiftKey && ev.key === '/')) {
+    if (overlay) {
+      overlay.hidden = !overlay.hidden;
+      ev.preventDefault();
+    }
+    return;
+  }
+  if (ev.key === '/' && libraryView && !libraryView.hidden) {
+    const q = document.getElementById('library-search');
+    if (q) { ev.preventDefault(); q.focus(); }
   }
 });
+
+const keysOverlayClose = document.getElementById('keys-overlay-close');
+if (keysOverlayClose) {
+  keysOverlayClose.addEventListener('click', () => {
+    const overlay = document.getElementById('keys-overlay');
+    if (overlay) overlay.hidden = true;
+  });
+}
 
 /* ---------- Status ---------- */
 function setStatus(state) {

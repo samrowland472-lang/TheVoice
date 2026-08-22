@@ -3062,3 +3062,38 @@ input:focus-visible,
   min-width: 8em;
 }
 #abl-midi-map.on { color: var(--ground); background: var(--phosphor); }
+
+.keys-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--ground) 72%, transparent);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.keys-overlay[hidden] { display: none !important; }
+.keys-card {
+  background: var(--surface);
+  border: 1px solid var(--phosphor);
+  padding: 22px 24px;
+  max-width: 420px;
+  width: min(420px, 100%);
+}
+.keys-card h2 {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--phosphor);
+  margin: 0 0 12px;
+}
+.keys-card ul { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.keys-card li { font-size: 0.88rem; color: var(--ink-dim); }
+.keys-card kbd {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  color: var(--phosphor);
+}
