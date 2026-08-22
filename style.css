@@ -3603,3 +3603,68 @@ html[data-avenue="music"] .shell.is-daw .main-area,
 }
 .abl-dev-k input[type="range"] { width: 100%; accent-color: var(--phosphor); height: 18px; }
 .abl-chain .abl-eq-kills { grid-column: 1 / -1; }
+
+/* Produce: never overflow the laptop viewport */
+#music-view:not([hidden]) {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+#daw-produce.daw-studio {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#daw-produce .abl-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+#daw-produce .abl-stage {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#daw-produce .daw-session,
+#daw-produce .daw-arrange {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+#daw-produce .abl-chain {
+  flex: 0 0 auto;
+  max-height: 72px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+#daw-produce .abl-detail {
+  flex: 0 0 auto;
+  max-height: min(20vh, 168px);
+  overflow: hidden;
+  margin-top: 0;
+}
+#daw-produce #abl-drums,
+#daw-produce #abl-keys,
+#daw-produce #abl-writer {
+  padding: 4px 8px;
+  overflow: auto;
+}
+#daw-produce .abl-mixer {
+  max-height: min(16vh, 118px);
+  overflow: hidden;
+  padding: 4px 8px 4px 28px;
+}
+#daw-produce .abl-strip input[type="range"]:first-of-type {
+  height: min(10vh, 56px);
+}
+#daw-produce .abl-meter { height: min(10vh, 56px); width: 8px; }
+#daw-produce .abl-roll-wrap { height: min(14vh, 120px); }
+#daw-produce .abl-legacy-inline { margin-bottom: 4px; gap: 8px; }
+#music-view .seq-cell { width: 22px; height: 18px; }
+#daw-produce .abl-pad { max-height: min(7vh, 48px); }
+#daw-produce .abl-session { padding: 6px 8px 0; }
+
