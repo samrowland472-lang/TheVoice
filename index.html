@@ -12900,5 +12900,34 @@ restoreWorkspace();
 bootstrapAuth().catch(() => showGate());
 startUpgradeWatch().catch(() => {});
 </script>
+<script>
+(function () {
+  if (window.__voiceOverlayBoot) return;
+  window.__voiceOverlayBoot = true;
+  var files = [
+    "/js/daw-session.js?v=live2",
+    "/js/daw-live.js?v=live2",
+    "/js/daw-follow.js?v=live2",
+    "/js/daw-cue.js?v=live2",
+    "/js/flick.js?v=live2",
+    "/js/site-chrome.js?v=live2",
+    "/js/site-ops.js?v=live2",
+    "/js/site-studio.js?v=live2",
+    "/js/daw-ai.js?v=live2"
+  ];
+  var cdn = "https://cdn.jsdelivr.net/gh/samrowland472-lang/TheVoice@main";
+  files.forEach(function (src) {
+    var s = document.createElement("script");
+    s.defer = true;
+    s.src = src;
+    s.onerror = function () {
+      var f = document.createElement("script");
+      f.src = cdn + src.replace(/\?.*$/, "");
+      document.head.appendChild(f);
+    };
+    document.head.appendChild(s);
+  });
+})();
+</script>
 </body>
 </html>

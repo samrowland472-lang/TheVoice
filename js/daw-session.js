@@ -7291,8 +7291,19 @@
 
 
   function boot() {
-    build();
-    tryAutoload();
+    try {
+      if (!document.getElementById("music-view")) {
+        boot._n = (boot._n || 0) + 1;
+        if (boot._n < 40) {
+          window.setTimeout(boot, 250);
+          return;
+        }
+      }
+      build();
+      tryAutoload();
+    } catch (err) {
+      try { console.error("The Voice DAW boot", err); } catch (e2) {}
+    }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
