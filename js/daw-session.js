@@ -380,6 +380,9 @@
       { type: "eq", on: true, low: 0, mid: 0, high: 0 },
       { type: "comp", on: kind === "drums" || kind === "bass" || kind === "perc", thresh: -18, ratio: 3.2, attack: 0.01, release: 0.14 },
       { type: "delay", on: kind === "pad" || kind === "lead", time: 0.3, fb: 0.28, mix: 0.2 },
+      { type: "auto", on: false, mode: "lowpass", freq: 1400, res: 2.2, rate: 0.35, amt: 900 },
+      { type: "chorus", on: kind === "pad", rate: 0.75, depth: 0.0035, mix: 0.32, fb: 0.12 },
+      { type: "util", on: true, gain: 0, width: 1, dc: false, invert: false },
     ];
   }
 
@@ -413,6 +416,25 @@
     add({ type: "scale", on: false, mode: "minor", root: 0 }, "analog");
     add({ type: "chord", on: false, intervals: "maj" }, "scale");
     add({ type: "arp", on: false, rate: 1, style: "up", oct: 1, gate: 0.7 }, "chord");
+  }
+
+  function ensureAudioFx(tr) {
+    if (!tr) return;
+    if (!tr.devices) tr.devices = defaultDevices(tr.kind);
+    var types = {};
+    tr.devices.forEach(function (d) { types[d.type] = true; });
+    function add(dev, after) {
+      if (types[dev.type]) return;
+      var idx = -1;
+      for (var i = 0; i < tr.devices.length; i++) {
+        if (tr.devices[i].type === after) idx = i;
+      }
+      tr.devices.splice(idx + 1, 0, dev);
+      types[dev.type] = true;
+    }
+    add({ type: "auto", on: false, mode: "lowpass", freq: 1400, res: 2.2, rate: 0.35, amt: 900 }, "delay");
+    add({ type: "chorus", on: false, rate: 0.75, depth: 0.0035, mix: 0.32, fb: 0.12 }, "auto");
+    add({ type: "util", on: true, gain: 0, width: 1, dc: false, invert: false }, "chorus");
   }
 
   function snapScalePitch(pitch, mode, root) {
@@ -535,8 +557,82 @@
     sendA.gain.value = tr.sendA || 0;
     var sendB = ctx.createGain();
     sendB.gain.value = tr.sendB || 0;
+    var autoFilt = ctx.createBiquadFilter();
+    autoFilt.type = "lowpass";
+    autoFilt.frequency.value = 18000;
+    autoFilt.Q.value = 0.7;
+    var autoLfo = ctx.createOscillator();
+    autoLfo.type = "sine";
+    autoLfo.frequency.value = 0.35;
+    var autoLfoG = ctx.createGain();
+    autoLfoG.gain.value = 0;
+    autoLfo.connect(autoLfoG);
+    autoLfoG.connect(autoFilt.frequency);
+    try { autoLfo.start(); } catch (eAf) {}
+
+    var chorDry = ctx.createGain();
+    chorDry.gain.value = 1;
+    var chorSend = ctx.createGain();
+    chorSend.gain.value = 0;
+    var chorDelayL = ctx.createDelay(0.08);
+    chorDelayL.delayTime.value = 0.018;
+    var chorDelayR = ctx.createDelay(0.08);
+    chorDelayR.delayTime.value = 0.022;
+    var chorFb = ctx.createGain();
+    chorFb.gain.value = 0;
+    var chorWetL = ctx.createGain();
+    chorWetL.gain.value = 0;
+    var chorWetR = ctx.createGain();
+    chorWetR.gain.value = 0;
+    var chorMerge = ctx.createChannelMerger(2);
+    var chorLfo = ctx.createOscillator();
+    chorLfo.type = "sine";
+    chorLfo.frequency.value = 0.75;
+    var chorLfoGL = ctx.createGain();
+    chorLfoGL.gain.value = 0;
+    var chorInv = ctx.createGain();
+    chorInv.gain.value = -1;
+    var chorLfoGR = ctx.createGain();
+    chorLfoGR.gain.value = 0;
+    chorLfo.connect(chorLfoGL);
+    chorLfo.connect(chorInv);
+    chorInv.connect(chorLfoGR);
+    chorLfoGL.connect(chorDelayL.delayTime);
+    chorLfoGR.connect(chorDelayR.delayTime);
+    try { chorLfo.start(); } catch (eCh) {}
+
+    var utilGain = ctx.createGain();
+    utilGain.gain.value = 1;
+    var utilDc = ctx.createBiquadFilter();
+    utilDc.type = "highpass";
+    utilDc.frequency.value = 8;
+    var utilSplit = ctx.createChannelSplitter(2);
+    var LtoL = ctx.createGain();
+    var RtoL = ctx.createGain();
+    var LtoR = ctx.createGain();
+    var RtoR = ctx.createGain();
+    LtoL.gain.value = 1;
+    RtoR.gain.value = 1;
+    LtoR.gain.value = 0;
+    RtoL.gain.value = 0;
+    var utilMerge = ctx.createChannelMerger(2);
+
     input.connect(analogFilt);
-    analogFilt.connect(eqLow);
+    analogFilt.connect(autoFilt);
+    autoFilt.connect(chorDry);
+    autoFilt.connect(chorSend);
+    chorSend.connect(chorDelayL);
+    chorSend.connect(chorDelayR);
+    chorDelayL.connect(chorFb);
+    chorDelayR.connect(chorFb);
+    chorFb.connect(chorDelayL);
+    chorFb.connect(chorDelayR);
+    chorDelayL.connect(chorWetL);
+    chorDelayR.connect(chorWetR);
+    chorWetL.connect(chorMerge, 0, 0);
+    chorWetR.connect(chorMerge, 0, 1);
+    chorDry.connect(eqLow);
+    chorMerge.connect(eqLow);
     eqLow.connect(eqMid);
     eqMid.connect(eqHigh);
     eqHigh.connect(comp);
@@ -546,8 +642,19 @@
     insDelay.connect(delayFb);
     delayFb.connect(insDelay);
     insDelay.connect(wet);
-    dry.connect(vol);
-    wet.connect(vol);
+    dry.connect(utilGain);
+    wet.connect(utilGain);
+    utilGain.connect(utilDc);
+    utilDc.connect(utilSplit);
+    utilSplit.connect(LtoL, 0);
+    utilSplit.connect(LtoR, 0);
+    utilSplit.connect(RtoL, 1);
+    utilSplit.connect(RtoR, 1);
+    LtoL.connect(utilMerge, 0, 0);
+    RtoL.connect(utilMerge, 0, 0);
+    LtoR.connect(utilMerge, 0, 1);
+    RtoR.connect(utilMerge, 0, 1);
+    utilMerge.connect(vol);
     var xf = ctx.createGain();
     xf.gain.value = 1;
     vol.connect(xf);
@@ -578,6 +685,25 @@
       delaySend: delaySend,
       dry: dry,
       wet: wet,
+      autoFilt: autoFilt,
+      autoLfo: autoLfo,
+      autoLfoG: autoLfoG,
+      chorDry: chorDry,
+      chorSend: chorSend,
+      chorDelayL: chorDelayL,
+      chorDelayR: chorDelayR,
+      chorFb: chorFb,
+      chorWetL: chorWetL,
+      chorWetR: chorWetR,
+      chorLfo: chorLfo,
+      chorLfoGL: chorLfoGL,
+      chorLfoGR: chorLfoGR,
+      utilGain: utilGain,
+      utilDc: utilDc,
+      LtoL: LtoL,
+      RtoL: RtoL,
+      LtoR: LtoR,
+      RtoR: RtoR,
       meter: (mixerEl && mixerEl._pendingMeters && mixerEl._pendingMeters[tr.id]) || null,
     };
     applyDevices(tr);
@@ -589,10 +715,14 @@
     if (!g) return;
     if (!tr.devices) tr.devices = defaultDevices(tr.kind);
     var now = ctx.currentTime;
+    ensureAudioFx(tr);
     var analog = getDevice(tr, "analog") || {};
     var eq = getDevice(tr, "eq") || {};
     var compD = getDevice(tr, "comp") || {};
     var del = getDevice(tr, "delay") || {};
+    var af = getDevice(tr, "auto") || {};
+    var ch = getDevice(tr, "chorus") || {};
+    var util = getDevice(tr, "util") || {};
     if (g.analogFilt) {
       g.analogFilt.Q.setTargetAtTime(analog.on ? Math.max(0.2, analog.res || 0.7) : 0.7, now, 0.02);
     }
@@ -613,6 +743,39 @@
     if (g.wet) g.wet.gain.setTargetAtTime(mix, now, 0.02);
     if (g.dry) g.dry.gain.setTargetAtTime(1 - mix * 0.45, now, 0.02);
     if (g.delaySend) g.delaySend.gain.setTargetAtTime(del.on ? 1 : 0, now, 0.02);
+
+    if (g.autoFilt) {
+      try { g.autoFilt.type = af.on ? (af.mode || "lowpass") : "lowpass"; } catch (eType) {}
+      g.autoFilt.frequency.setTargetAtTime(af.on ? Math.max(80, af.freq || 1400) : 18000, now, 0.03);
+      g.autoFilt.Q.setTargetAtTime(af.on ? Math.max(0.2, af.res || 1) : 0.7, now, 0.03);
+    }
+    if (g.autoLfo) g.autoLfo.frequency.setTargetAtTime(af.on ? Math.max(0.05, af.rate || 0.35) : 0.05, now, 0.03);
+    if (g.autoLfoG) g.autoLfoG.gain.setTargetAtTime(af.on ? Math.max(0, af.amt || 0) : 0, now, 0.05);
+
+    var cmix = ch.on ? Math.max(0, Math.min(0.9, ch.mix || 0)) : 0;
+    if (g.chorSend) g.chorSend.gain.setTargetAtTime(ch.on ? 1 : 0, now, 0.02);
+    if (g.chorDry) g.chorDry.gain.setTargetAtTime(ch.on ? Math.max(0.35, 1 - cmix * 0.4) : 1, now, 0.02);
+    if (g.chorWetL) g.chorWetL.gain.setTargetAtTime(cmix, now, 0.02);
+    if (g.chorWetR) g.chorWetR.gain.setTargetAtTime(cmix, now, 0.02);
+    if (g.chorFb) g.chorFb.gain.setTargetAtTime(ch.on ? Math.max(0, Math.min(0.65, ch.fb || 0)) : 0, now, 0.02);
+    if (g.chorLfo) g.chorLfo.frequency.setTargetAtTime(ch.on ? Math.max(0.05, ch.rate || 0.75) : 0.05, now, 0.03);
+    var depth = ch.on ? Math.max(0.0002, Math.min(0.012, ch.depth || 0.003)) : 0;
+    if (g.chorLfoGL) g.chorLfoGL.gain.setTargetAtTime(depth, now, 0.03);
+    if (g.chorLfoGR) g.chorLfoGR.gain.setTargetAtTime(depth, now, 0.03);
+
+    var db = util.on ? (util.gain || 0) : 0;
+    var lin = Math.pow(10, Math.max(-24, Math.min(12, db)) / 20);
+    if (util.on && util.invert) lin = -lin;
+    if (g.utilGain) g.utilGain.gain.setTargetAtTime(lin, now, 0.02);
+    if (g.utilDc) g.utilDc.frequency.setTargetAtTime(util.on && util.dc ? 30 : 8, now, 0.03);
+    var w = util.on ? (util.width == null ? 1 : util.width) : 1;
+    w = Math.max(0, Math.min(2, w));
+    var a = (1 + w) / 2;
+    var b = (1 - w) / 2;
+    if (g.LtoL) g.LtoL.gain.setTargetAtTime(a, now, 0.02);
+    if (g.RtoR) g.RtoR.gain.setTargetAtTime(a, now, 0.02);
+    if (g.LtoR) g.LtoR.gain.setTargetAtTime(b, now, 0.02);
+    if (g.RtoL) g.RtoL.gain.setTargetAtTime(b, now, 0.02);
   }
 
   function anySolo() {
@@ -4003,6 +4166,48 @@
       card.appendChild(knob(dev, "time", "Time", 0.05, 0.9, 0.01));
       card.appendChild(knob(dev, "fb", "Feedback", 0, 0.85, 0.01));
       card.appendChild(knob(dev, "mix", "Mix", 0, 0.9, 0.01));
+    });
+
+    ensureAudioFx(tr);
+    var afx = getDevice(tr, "auto");
+    if (afx) box(afx, "Auto Filter", function (card, dev) {
+      card.appendChild(sel(dev, "mode", "Type", [["lowpass", "LP"], ["highpass", "HP"], ["bandpass", "BP"]]));
+      card.appendChild(knob(dev, "freq", "Freq", 80, 8000, 10));
+      card.appendChild(knob(dev, "res", "Res", 0.2, 14, 0.1));
+      card.appendChild(knob(dev, "rate", "LFO", 0.05, 8, 0.05));
+      card.appendChild(knob(dev, "amt", "Amt", 0, 4000, 10));
+    });
+
+    var cho = getDevice(tr, "chorus");
+    if (cho) box(cho, "Chorus", function (card, dev) {
+      card.appendChild(knob(dev, "rate", "Rate", 0.05, 8, 0.05));
+      card.appendChild(knob(dev, "depth", "Depth", 0.0004, 0.012, 0.0001));
+      card.appendChild(knob(dev, "mix", "Mix", 0, 0.9, 0.01));
+      card.appendChild(knob(dev, "fb", "Feedback", 0, 0.6, 0.01));
+    });
+
+    var ut = getDevice(tr, "util");
+    if (ut) box(ut, "Utility", function (card, dev) {
+      card.appendChild(knob(dev, "gain", "Gain dB", -18, 12, 0.1));
+      card.appendChild(knob(dev, "width", "Width", 0, 2, 0.01));
+      var dcBtn = el("button", "daw-btn" + (dev.dc ? " on" : ""), "DC");
+      dcBtn.type = "button";
+      dcBtn.setAttribute("aria-label", "DC filter");
+      dcBtn.addEventListener("click", function () {
+        dev.dc = !dev.dc;
+        applyDevices(tr);
+        paintDevices();
+      });
+      card.appendChild(dcBtn);
+      var invBtn = el("button", "daw-btn" + (dev.invert ? " on" : ""), "Ø");
+      invBtn.type = "button";
+      invBtn.setAttribute("aria-label", "Phase invert");
+      invBtn.addEventListener("click", function () {
+        dev.invert = !dev.invert;
+        applyDevices(tr);
+        paintDevices();
+      });
+      card.appendChild(invBtn);
     });
   }
 
