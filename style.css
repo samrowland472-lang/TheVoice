@@ -3256,10 +3256,14 @@ input:focus-visible,
 .abl-slot.playing::after {
   content: '';
   position: absolute;
-  left: 0; bottom: 0; height: 3px;
-  width: var(--ph, 0%);
-  background: #fff;
+  left: 0; bottom: 0; top: 0;
+  width: 100%;
+  transform: scaleX(var(--ph, 0));
+  transform-origin: left center;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 70%, rgba(255,255,255,0.28) 100%);
+  box-shadow: inset -2px 0 0 #fff;
   pointer-events: none;
+  will-change: transform;
 }
 html[data-avenue="music"] .abl-slot { border-radius: 0 !important; }
 

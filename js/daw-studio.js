@@ -856,8 +856,6 @@ function highlightStep(st) {
     pos.textContent = `${bar}.${beat}.${(st % 4) + 1}`;
   }
   tickArrangePlayhead(st);
-  const ph = `${((st % 16) / 16) * 100}%`;
-  document.querySelectorAll('.abl-slot.playing').forEach((el) => { el.style.setProperty('--ph', ph); });
 }
 
 export function studioPlay() {
@@ -1455,7 +1453,6 @@ function paintSession() {
   const sel = clips[selectedScene] || clips[0];
   const f = ensureFollow(sel);
   const actionOpts = FOLLOW_ACTIONS.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
-  const ph = playing ? ((step % 16) / 16) * 100 : 0;
   let html = '<div class="abl-session">';
   html += '<div class="abl-matrix">';
   html += '<div class="abl-matrix-corner"></div>';
@@ -1472,7 +1469,7 @@ function paintSession() {
       const on = liveClip[tr.id] === s && playing && filled;
       const wait = pendingClip[tr.id] === s;
       const picked = selectedScene === s;
-      html += `<button type="button" class="abl-slot${filled ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}${picked ? ' selected' : ''}" data-scene="${s}" data-track="${tr.id}" style="--clip:${c.color};--ph:${on ? ph : 0}%">
+      html += `<button type="button" class="abl-slot${filled ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}${picked ? ' selected' : ''}" data-scene="${s}" data-track="${tr.id}" style="--clip:${c.color};--ph:0">
         <span>${filled ? (tr.id === 'keys' && c.buffer ? (c.name || 'Audio') : (c.name || tr.name)) : ''}</span>
       </button>`;
     });
@@ -2265,13 +2262,37 @@ async function bounce() {
   a.click();
 }
 
+function playPhase01() {
+  if (!playing) return 0;
+  const a = audio();
+  if (!a) return 0;
+  const sd = stepDur() || 0.001;
+  const until = Math.max(0, nextTime - a.ctx.currentTime);
+  const into = 1 - Math.min(1, until / sd);
+  const st = (step + ROLL_STEPS - 1) % ROLL_STEPS;
+  return Math.max(0, Math.min(1, ((st % 16) + into) / 16));
+}
+
+function playhead01() {
+  if (!playing) return (step % ROLL_STEPS) / ROLL_STEPS;
+  const a = audio();
+  if (!a) return 0;
+  const sd = stepDur() || 0.001;
+  const until = Math.max(0, nextTime - a.ctx.currentTime);
+  const into = 1 - Math.min(1, until / sd);
+  const st = (step + ROLL_STEPS - 1) % ROLL_STEPS;
+  return Math.max(0, Math.min(1, (st + into) / ROLL_STEPS));
+}
+
 let metersOn = false;
 function tickMeters() {
   meterLoop();
-  if (detail === 'keys') {
-    const ph = document.getElementById('abl-playhead');
-    if (ph && playing) ph.style.left = `${((step % ROLL_STEPS) / ROLL_STEPS) * 100}%`;
-  }
+  const clipP = playPhase01();
+  document.querySelectorAll('.abl-slot.playing').forEach((el) => {
+    el.style.setProperty('--ph', String(clipP));
+  });
+  const ph = document.getElementById('abl-playhead');
+  if (ph) ph.style.left = `${playhead01() * 100}%`;
   metersOn = requestAnimationFrame(tickMeters);
 }
 
