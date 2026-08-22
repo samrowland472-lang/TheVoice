@@ -20,21 +20,28 @@ Rules:
 Personality: Terse product copilot. Ships answers, not essays.`;
 
 const WINDOW_MS = 60_000;
-const MAX_HITS = 20;
+const MAX_HITS = 16;
+const MAX_BODY = 24000;
 const hits = globalThis.__flickHits || (globalThis.__flickHits = new Map());
 
 function clientIp(event) {
   const h = event.headers || {};
-  return (
+  const raw =
     h["x-nf-client-connection-ip"] ||
     (h["x-forwarded-for"] || "").split(",")[0].trim() ||
     event.ip ||
-    "unknown"
-  );
+    "unknown";
+  return String(raw).slice(0, 80);
 }
 
 function limited(ip) {
   const now = Date.now();
+  if (hits.size > 4000) {
+    for (const [k, v] of hits) {
+      if (!v.length || now - v[0] >= WINDOW_MS) hits.delete(k);
+      if (hits.size <= 2000) break;
+    }
+  }
   const prev = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
   if (prev.length >= MAX_HITS) {
     hits.set(ip, prev);
@@ -45,97 +52,92 @@ function limited(ip) {
   return false;
 }
 
+function allowedOrigin(origin) {
+  if (!origin || origin.length > 180) return "";
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== "https:") return "";
+    const host = u.hostname.toLowerCase();
+    if (host === "thevoice.app" || host.endsWith(".thevoice.app")) return origin;
+    if (host.endsWith(".netlify.app")) return origin;
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 function corsHeaders(event) {
-  const origin = (event.headers && (event.headers.origin || event.headers.Origin)) || "";
+  const origin = allowedOrigin(
+    (event.headers && (event.headers.origin || event.headers.Origin)) || "",
+  );
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",
+    "X-Frame-Options": "DENY",
   };
-  if (
-    origin &&
-    /^https:\/\//i.test(origin) &&
-    !/localhost|127\.0\.0\.1/i.test(origin)
-  ) {
-    try {
-      const host = new URL(origin).hostname;
-      if (
-        host.endsWith(".netlify.app") ||
-        host === "thevoice.app" ||
-        host.endsWith(".thevoice.app")
-      ) {
-        headers["Access-Control-Allow-Origin"] = origin;
-        headers["Access-Control-Allow-Headers"] = "Content-Type";
-        headers.Vary = "Origin";
-      }
-    } catch {
-      /* ignore */
-    }
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Headers"] = "Content-Type";
+    headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
+    headers.Vary = "Origin";
   }
-  return headers;
+  return { headers, origin };
+}
+
+function fail(status, error, headers) {
+  if (status === 429) headers["Retry-After"] = "60";
+  return {
+    statusCode: status,
+    headers,
+    body: JSON.stringify({ error }),
+  };
 }
 
 exports.handler = async (event) => {
-  const headers = corsHeaders(event);
+  const { headers, origin } = corsHeaders(event);
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers };
+    return { statusCode: origin ? 204 : 403, headers };
   }
   if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: "POST only." }),
-    };
+    return fail(405, "POST only.", headers);
+  }
+  if (!origin) {
+    return fail(403, "Origin not allowed.", headers);
   }
 
-  if ((event.body || "").length > 32000) {
-    return {
-      statusCode: 413,
-      headers,
-      body: JSON.stringify({ error: "Payload too large." }),
-    };
+  if ((event.body || "").length > MAX_BODY) {
+    return fail(413, "Payload too large.", headers);
   }
 
   if (limited(clientIp(event))) {
-    return {
-      statusCode: 429,
-      headers,
-      body: JSON.stringify({ error: "Slow down." }),
-    };
+    return fail(429, "Slow down.", headers);
   }
 
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) {
-    return {
-      statusCode: 503,
+    return fail(
+      503,
+      "Flick is installed, but this deploy has no API key yet. Add XAI_API_KEY in the host's environment.",
       headers,
-      body: JSON.stringify({
-        error:
-          "Flick is installed, but this deploy has no API key yet. Add XAI_API_KEY in the host's environment.",
-      }),
-    };
+    );
   }
 
   let json;
   try {
     json = JSON.parse(event.body || "{}");
   } catch {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: "Invalid JSON." }),
-    };
+    return fail(400, "Invalid JSON.", headers);
   }
   if (!json || typeof json !== "object" || Array.isArray(json)) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: "Invalid JSON." }),
-    };
+    return fail(400, "Invalid JSON.", headers);
   }
 
   const raw = Array.isArray(json.messages) ? json.messages : [];
+  if (raw.length > 16) {
+    return fail(400, "Too many messages.", headers);
+  }
   const messages = raw
     .filter(
       (m) =>
@@ -151,11 +153,7 @@ exports.handler = async (event) => {
     .filter((m) => m.content.length > 0);
 
   if (!messages.length) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: "Nothing to say." }),
-    };
+    return fail(400, "Nothing to say.", headers);
   }
 
   let lastError = "Flick could not reply.";
@@ -176,17 +174,12 @@ exports.handler = async (event) => {
       });
       const body = await res.json();
       if (!res.ok) {
-        lastError = (body && body.error && body.error.message) || lastError;
         if (res.status === 404 || res.status === 400) continue;
-        return {
-          statusCode: res.status === 429 ? 429 : 502,
-          headers,
-          body: JSON.stringify({ error: lastError }),
-        };
+        return fail(res.status === 429 ? 429 : 502, "Flick could not reply.", headers);
       }
       const text =
         body && body.choices && body.choices[0] && body.choices[0].message
-          ? String(body.choices[0].message.content || "").trim()
+          ? String(body.choices[0].message.content || "").trim().slice(0, 8000)
           : "";
       if (!text) {
         lastError = "Empty reply.";
@@ -197,14 +190,10 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({ text }),
       };
-    } catch (err) {
-      lastError = err && err.message ? err.message : lastError;
+    } catch {
+      lastError = "Flick could not reply.";
     }
   }
 
-  return {
-    statusCode: 502,
-    headers,
-    body: JSON.stringify({ error: lastError }),
-  };
+  return fail(502, lastError, headers);
 };
