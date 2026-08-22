@@ -19,13 +19,65 @@ Rules:
 
 Personality: Terse product copilot. Ships answers, not essays.`;
 
-const headers = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+const WINDOW_MS = 60_000;
+const MAX_HITS = 20;
+const hits = globalThis.__flickHits || (globalThis.__flickHits = new Map());
+
+function clientIp(event) {
+  const h = event.headers || {};
+  return (
+    h["x-nf-client-connection-ip"] ||
+    (h["x-forwarded-for"] || "").split(",")[0].trim() ||
+    event.ip ||
+    "unknown"
+  );
+}
+
+function limited(ip) {
+  const now = Date.now();
+  const prev = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
+  if (prev.length >= MAX_HITS) {
+    hits.set(ip, prev);
+    return true;
+  }
+  prev.push(now);
+  hits.set(ip, prev);
+  return false;
+}
+
+function corsHeaders(event) {
+  const origin = (event.headers && (event.headers.origin || event.headers.Origin)) || "";
+  const headers = {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+  };
+  if (
+    origin &&
+    /^https:\/\//i.test(origin) &&
+    !/localhost|127\.0\.0\.1/i.test(origin)
+  ) {
+    try {
+      const host = new URL(origin).hostname;
+      if (
+        host.endsWith(".netlify.app") ||
+        host === "thevoice.app" ||
+        host.endsWith(".thevoice.app")
+      ) {
+        headers["Access-Control-Allow-Origin"] = origin;
+        headers["Access-Control-Allow-Headers"] = "Content-Type";
+        headers.Vary = "Origin";
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return headers;
+}
 
 exports.handler = async (event) => {
+  const headers = corsHeaders(event);
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers };
   }
@@ -34,6 +86,22 @@ exports.handler = async (event) => {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: "POST only." }),
+    };
+  }
+
+  if ((event.body || "").length > 32000) {
+    return {
+      statusCode: 413,
+      headers,
+      body: JSON.stringify({ error: "Payload too large." }),
+    };
+  }
+
+  if (limited(clientIp(event))) {
+    return {
+      statusCode: 429,
+      headers,
+      body: JSON.stringify({ error: "Slow down." }),
     };
   }
 
@@ -53,6 +121,13 @@ exports.handler = async (event) => {
   try {
     json = JSON.parse(event.body || "{}");
   } catch {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: "Invalid JSON." }),
+    };
+  }
+  if (!json || typeof json !== "object" || Array.isArray(json)) {
     return {
       statusCode: 400,
       headers,
@@ -109,9 +184,10 @@ exports.handler = async (event) => {
           body: JSON.stringify({ error: lastError }),
         };
       }
-      const text = body && body.choices && body.choices[0] && body.choices[0].message
-        ? String(body.choices[0].message.content || "").trim()
-        : "";
+      const text =
+        body && body.choices && body.choices[0] && body.choices[0].message
+          ? String(body.choices[0].message.content || "").trim()
+          : "";
       if (!text) {
         lastError = "Empty reply.";
         continue;
@@ -119,7 +195,7 @@ exports.handler = async (event) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ text, model }),
+        body: JSON.stringify({ text }),
       };
     } catch (err) {
       lastError = err && err.message ? err.message : lastError;
