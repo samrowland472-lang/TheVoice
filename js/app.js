@@ -11,7 +11,7 @@ import { decodeToAudioBuffer, applyVoiceEffect } from './voice-effects.js';
 import { splitIntoChapters, concatAudio } from './chapters.js';
 import { PLANS, planFromSession, planLabel, checkoutUrl, getPaymentLinks, setPaymentLink,
          resolvePlan, markAwaitingUpgrade, clearAwaitingUpgrade, awaitingUpgrade,
-         nextPollDelay, MAX_UPGRADE_POLLS } from './billing.js';
+         nextPollDelay, MAX_UPGRADE_POLLS, PLAN_RANK, planIncludes } from './billing.js';
 import { modulate, PRESETS } from './modulation.js';
 import { createPattern, renderPattern, applyPreset, mixTracks, patternDuration,
          TRACKS, STEPS, PRESET_PATTERNS } from './music.js';
@@ -4407,24 +4407,39 @@ saveLinksBtn.addEventListener('click', () => {
 
 /* ---------- Plans ---------- */
 const planGrid = document.getElementById('plan-grid');
+const planCompare = document.getElementById('plan-compare');
 const plansCurrent = document.getElementById('plans-current');
+const plansEmail = document.getElementById('plans-email');
 const plansHint = document.getElementById('plans-hint');
+const sidebarPlanBadge = document.getElementById('sidebar-plan-badge');
+
+function paintSidebarPlan(planId) {
+  if (!sidebarPlanBadge) return;
+  sidebarPlanBadge.hidden = false;
+  sidebarPlanBadge.textContent = planLabel(planId);
+}
 
 async function renderPlans() {
   const session = await getCurrentSession().catch(() => null);
-  // The subscriptions row is what the webhook writes, so it reflects a
-  // payment straight away; the JWT's copy lags until the token refreshes.
   const tablePlan = await fetchSubscriptionPlan().catch(() => null);
   const currentPlan = resolvePlan(session, tablePlan);
   const links = getPaymentLinks();
+  const signedIn = !!(session && session.user);
 
+  paintSidebarPlan(currentPlan);
   plansCurrent.textContent = `Current plan: ${planLabel(currentPlan)}`;
+  if (plansEmail) {
+    plansEmail.textContent = signedIn
+      ? `Billed to ${session.user.email}`
+      : 'You are in as a guest. Sign in before paying — Stripe has to attach the charge to an account.';
+  }
   plansHint.textContent = '';
   planGrid.innerHTML = '';
 
   for (const plan of PLANS) {
     const card = document.createElement('div');
     card.className = `plan-card${plan.id === currentPlan ? ' current' : ''}`;
+    if (plan.id === currentPlan) card.setAttribute('aria-current', 'true');
 
     const name = document.createElement('div');
     name.className = 'plan-name';
@@ -4456,12 +4471,22 @@ async function renderPlans() {
     } else if (plan.id !== 'free') {
       const btn = document.createElement('button');
       btn.className = 'btn btn-primary';
-      btn.textContent = `Upgrade to ${plan.name}`;
       const url = checkoutUrl(plan.id, session);
-      if (!url) {
-        btn.disabled = true;
-        btn.title = 'No payment link configured for this plan yet.';
+      if (!signedIn) {
+        btn.textContent = `Sign in to get ${plan.name}`;
+        btn.addEventListener('click', () => {
+          showGate();
+          setGateStatus('Sign in so Stripe can attach this upgrade to your account.', 'info');
+        });
+      } else if (!url) {
+        btn.textContent = `Upgrade to ${plan.name}`;
+        btn.addEventListener('click', () => {
+          switchSection('settings');
+          plansHint.className = 'hint';
+          showToast('Add a Stripe payment link in Settings first.');
+        });
       } else {
+        btn.textContent = `Upgrade to ${plan.name}`;
         btn.addEventListener('click', () => {
           markAwaitingUpgrade(plan.id);
           window.open(url, '_blank', 'noopener');
@@ -4474,9 +4499,33 @@ async function renderPlans() {
     planGrid.appendChild(card);
   }
 
+  if (planCompare) {
+    const rows = [];
+    const seen = new Set();
+    for (const plan of PLANS) {
+      for (const feature of plan.features) {
+        if (seen.has(feature)) continue;
+        seen.add(feature);
+        rows.push({ feature, from: plan.id });
+      }
+    }
+    planCompare.innerHTML = `
+      <div class="plan-compare-h" role="row">
+        <span>Included</span>${PLANS.map((p) => `<span>${p.name}</span>`).join('')}
+      </div>
+      ${rows.map((r) => `<div class="plan-compare-r" role="row">
+        <span>${r.feature}</span>
+        ${PLANS.map((p) => `<span>${planIncludes(p.id, r.from) ? '●' : '–'}</span>`).join('')}
+      </div>`).join('')}
+    `;
+  }
+
   if (upgradeWatchMessage) {
     plansHint.className = 'hint hint-info';
     plansHint.textContent = upgradeWatchMessage;
+  } else if (!signedIn) {
+    plansHint.className = 'hint hint-info';
+    plansHint.textContent = 'Guest mode can use the studio. Paid plans need a signed-in account.';
   } else if (!Object.keys(links).length) {
     plansHint.className = 'hint hint-info';
     plansHint.textContent = 'Add Stripe payment links in Settings to enable upgrades.';
@@ -4641,6 +4690,7 @@ function enterApp() {
   gateSetupToggle.hidden = true;
   appShell.hidden = false;
   switchSection('speak');
+  renderPlans().catch(() => paintSidebarPlan('free'));
 }
 
 function enterGuest() {

@@ -76,9 +76,10 @@ export function planFromSession(session) {
   return PLANS.some((p) => p.id === plan) ? plan : 'free';
 }
 
-export function planLabel(planId) {
-  const plan = PLANS.find((p) => p.id === planId);
-  return plan ? plan.name : 'Free';
+export const PLAN_RANK = { free: 0, studio: 1, pro: 2 };
+
+export function planIncludes(currentId, neededId) {
+  return (PLAN_RANK[currentId] || 0) >= (PLAN_RANK[neededId] || 0);
 }
 
 // Stripe needs to know which account to credit when the payment succeeds,

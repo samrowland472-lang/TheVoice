@@ -3016,3 +3016,26 @@ input:focus-visible,
 }
 #mod-source { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #mod-clip { min-width: 180px; flex: 1; }
+
+.plan-compare {
+  margin: 8px 0 18px;
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.plan-compare-h, .plan-compare-r {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 12px;
+}
+.plan-compare-h {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--border);
+}
+.plan-compare-r:nth-child(even) { background: color-mix(in srgb, var(--phosphor) 4%, transparent); }
+.plan-compare-r span:not(:first-child) { text-align: center; color: var(--phosphor); }
+#sidebar-plan-badge { margin-left: auto; }
