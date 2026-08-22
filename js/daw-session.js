@@ -495,7 +495,6 @@
       var silent = tr.mute || (soloed && !tr.solo);
       g.mute.gain.setTargetAtTime(silent ? 0 : 1, ctx.currentTime, 0.01);
       applyAutoAt(tr, state.step);
-      if (g.pan.pan) g.pan.pan.setTargetAtTime(Math.max(-1, Math.min(1, tr.pan || 0)), ctx.currentTime, 0.01);
       g.sendA.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendA || 0)), ctx.currentTime, 0.01);
       g.sendB.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendB || 0)), ctx.currentTime, 0.01);
       applyDevices(tr);
@@ -510,22 +509,24 @@
     return BARS * STEPS_PER_BAR;
   }
 
-  function ensureAuto(tr) {
-    if (!tr.autoVol || tr.autoVol.length < 2) {
-      tr.autoVol = [{ step: 0, v: 1 }, { step: autoMaxStep(), v: 1 }];
+  function ensureAuto(tr, key, defV) {
+    key = key || "autoVol";
+    if (defV == null) defV = key === "autoPan" ? 0.5 : 1;
+    if (!tr[key] || tr[key].length < 2) {
+      tr[key] = [{ step: 0, v: defV }, { step: autoMaxStep(), v: defV }];
     }
-    tr.autoVol.sort(function (a, b) { return a.step - b.step; });
-    return tr.autoVol;
+    tr[key].sort(function (a, b) { return a.step - b.step; });
+    return tr[key];
   }
 
-  function autoVolAt(tr, step) {
-    var pts = ensureAuto(tr);
+  function autoAt(tr, key, step, defV) {
+    var pts = ensureAuto(tr, key, defV);
     if (step <= pts[0].step) return pts[0].v;
     for (var i = 0; i < pts.length - 1; i++) {
       var a = pts[i], b = pts[i + 1];
       if (step >= a.step && step <= b.step) {
-        var t = (step - a.step) / (b.step - a.step || 1);
-        return a.v + (b.v - a.v) * t;
+        var u = (step - a.step) / (b.step - a.step || 1);
+        return a.v + (b.v - a.v) * u;
       }
     }
     return pts[pts.length - 1].v;
@@ -534,9 +535,15 @@
   function applyAutoAt(tr, step, time) {
     var g = trackGraph[tr.id];
     if (!g || !ctx) return;
-    var val = Math.max(0, Math.min(1.2, tr.volume * autoVolAt(tr, step)));
-    if (time != null) g.vol.gain.setValueAtTime(val, time);
-    else g.vol.gain.setTargetAtTime(val, ctx.currentTime, 0.01);
+    var val = Math.max(0, Math.min(1.2, tr.volume * autoAt(tr, "autoVol", step, 1)));
+    var pan = Math.max(-1, Math.min(1, (tr.pan || 0) + (autoAt(tr, "autoPan", step, 0.5) - 0.5) * 2));
+    if (time != null) {
+      g.vol.gain.setValueAtTime(val, time);
+      if (g.pan && g.pan.pan) g.pan.pan.setValueAtTime(pan, time);
+    } else {
+      g.vol.gain.setTargetAtTime(val, ctx.currentTime, 0.01);
+      if (g.pan && g.pan.pan) g.pan.pan.setTargetAtTime(pan, ctx.currentTime, 0.01);
+    }
   }
 
   function meterLevel(analyser) {
@@ -882,6 +889,7 @@
           devices: JSON.parse(JSON.stringify(tr.devices || [])),
           clips: tr.clips.map(lightClip),
           autoVol: (tr.autoVol || []).map(function (p) { return { step: p.step, v: p.v }; }),
+          autoPan: (tr.autoPan || []).map(function (p) { return { step: p.step, v: p.v }; }),
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -937,6 +945,7 @@
         return c ? clip(c.name, c.color, cloneNotes(c.notes)) : null;
       });
       tr.autoVol = (s.autoVol || []).map(function (p) { return { step: p.step, v: p.v }; });
+      tr.autoPan = (s.autoPan || []).map(function (p) { return { step: p.step, v: p.v }; });
       next.push(tr);
     });
     state.tracks = next;
@@ -1987,32 +1996,43 @@
 
   function paintAutoLane(tr) {
     if (!arrangeLanes) return;
-    var cv = arrangeLanes.querySelector('canvas.daw-auto[data-track="' + tr.id + '"]');
-    if (!cv) return;
-    var w = cv.width, h = cv.height;
-    var ctx2 = cv.getContext("2d");
-    ctx2.fillStyle = "#070908";
-    ctx2.fillRect(0, 0, w, h);
-    var pts = ensureAuto(tr);
-    ctx2.strokeStyle = tr.color || "#3fc6ff";
-    ctx2.lineWidth = 1.5;
-    ctx2.beginPath();
-    pts.forEach(function (p, i) {
-      var x = (p.step / autoMaxStep()) * w;
-      var y = (1 - p.v) * (h - 6) + 3;
-      if (i === 0) ctx2.moveTo(x, y);
-      else ctx2.lineTo(x, y);
-    });
-    ctx2.stroke();
-    ctx2.fillStyle = "#ffb238";
-    pts.forEach(function (p) {
-      var x = (p.step / autoMaxStep()) * w;
-      var y = (1 - p.v) * (h - 6) + 3;
-      ctx2.fillRect(x - 3, y - 3, 6, 6);
+    arrangeLanes.querySelectorAll('canvas.daw-auto[data-track="' + tr.id + '"]').forEach(function (cv) {
+      var key = cv.dataset.auto || "autoVol";
+      var defV = key === "autoPan" ? 0.5 : 1;
+      var w = cv.width, h = cv.height;
+      var ctx2 = cv.getContext("2d");
+      ctx2.fillStyle = "#070908";
+      ctx2.fillRect(0, 0, w, h);
+      if (key === "autoPan") {
+        ctx2.strokeStyle = "#1c2a24";
+        ctx2.beginPath();
+        ctx2.moveTo(0, h / 2);
+        ctx2.lineTo(w, h / 2);
+        ctx2.stroke();
+      }
+      var pts = ensureAuto(tr, key, defV);
+      ctx2.strokeStyle = key === "autoPan" ? "#c9a6ff" : (tr.color || "#3fc6ff");
+      ctx2.lineWidth = 1.5;
+      ctx2.beginPath();
+      pts.forEach(function (p, i) {
+        var x = (p.step / autoMaxStep()) * w;
+        var y = (1 - p.v) * (h - 6) + 3;
+        if (i === 0) ctx2.moveTo(x, y);
+        else ctx2.lineTo(x, y);
+      });
+      ctx2.stroke();
+      ctx2.fillStyle = "#ffb238";
+      pts.forEach(function (p) {
+        var x = (p.step / autoMaxStep()) * w;
+        var y = (1 - p.v) * (h - 6) + 3;
+        ctx2.fillRect(x - 3, y - 3, 6, 6);
+      });
     });
   }
 
-  function bindAutoCanvas(cv, tr) {
+  function bindAutoCanvas(cv, tr, key, defV) {
+    key = key || "autoVol";
+    if (defV == null) defV = key === "autoPan" ? 0.5 : 1;
     cv.addEventListener("pointerdown", function (ev) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -2022,7 +2042,7 @@
         var y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
         return { step: Math.round(x * autoMaxStep()), v: 1 - y };
       }
-      var pts = ensureAuto(tr);
+      var pts = ensureAuto(tr, key, defV);
       var p = pos(ev);
       var hit = -1;
       var thresh = autoMaxStep() / (cv.width / 10);
@@ -3190,18 +3210,23 @@
       row.appendChild(lab);
       row.appendChild(lane);
       arrangeLanes.appendChild(row);
-      var autoRow = el("div", "daw-lane-row");
-      autoRow.style.height = "32px";
-      autoRow.appendChild(el("div", "daw-auto-lab", "Vol"));
-      var cv = document.createElement("canvas");
-      cv.className = "daw-auto";
-      cv.dataset.track = tr.id;
-      cv.height = 32;
-      cv.width = BARS * BAR_W;
-      cv.setAttribute("aria-label", tr.name + " volume automation");
-      bindAutoCanvas(cv, tr);
-      autoRow.appendChild(cv);
-      arrangeLanes.appendChild(autoRow);
+      function autoLane(key, label, defV, aria) {
+        var arow = el("div", "daw-lane-row");
+        arow.style.height = "32px";
+        arow.appendChild(el("div", "daw-auto-lab", label));
+        var c = document.createElement("canvas");
+        c.className = "daw-auto";
+        c.dataset.track = tr.id;
+        c.dataset.auto = key;
+        c.height = 32;
+        c.width = BARS * BAR_W;
+        c.setAttribute("aria-label", tr.name + " " + aria);
+        bindAutoCanvas(c, tr, key, defV);
+        arow.appendChild(c);
+        arrangeLanes.appendChild(arow);
+      }
+      autoLane("autoVol", "Vol", 1, "volume automation");
+      autoLane("autoPan", "Pan", 0.5, "pan automation");
     });
     paintArrange();
   }
@@ -4261,6 +4286,7 @@
             return { name: c.name, color: c.color, length: c.length, notes: encodeNotes(c.notes) };
           }),
           autoVol: tr.autoVol || [],
+          autoPan: tr.autoPan || [],
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -4315,6 +4341,7 @@
     while (tr.clips.length < SCENES) tr.clips.push(null);
     if (raw.rack) tr.rack = { pads: (raw.rack.pads || []).map(decodePad) };
     tr.autoVol = raw.autoVol || null;
+    tr.autoPan = raw.autoPan || null;
     return tr;
   }
 
