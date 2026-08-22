@@ -78,6 +78,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "text", label: "Text", group: "Tools", hint: "T", run: () => s().setTool("text") },
       { id: "brush", label: "Brush", group: "Tools", hint: "B", run: () => s().setTool("brush") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
+      { id: "pen-close", label: "Close path", group: "Tools", hint: "Enter", run: () => s().closeSelectedPath() },
+      { id: "pen-pop", label: "Undo last pen point", group: "Tools", hint: "⌫", run: () => s().popLastPathPoint() },
       { id: "image", label: "Place image", group: "Tools", run: () => s().setTool("image") },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
     ];

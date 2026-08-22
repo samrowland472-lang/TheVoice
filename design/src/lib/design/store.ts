@@ -66,6 +66,9 @@ interface DesignState {
   redo: () => void;
   commit: () => void;
   restoreHistory: (slot: "past" | "future", index: number) => void;
+  popLastPathPoint: () => void;
+  closeSelectedPath: () => void;
+  finishPen: () => void;
   setBrush: (p: Partial<BrushSettings>) => void;
   setColor: (c: string) => void;
   setBrand: (b: BrandKit) => void;
@@ -414,6 +417,34 @@ export const useDesign = create<DesignState>((set, get) => ({
       selection: [],
       dirty: true,
     });
+  },
+
+  popLastPathPoint: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    const n = doc.nodes.find((x) => x.id === selection[0]);
+    if (!n || n.kind !== "path") return;
+    get().commit();
+    const pts = n.points.slice(0, -1);
+    if (pts.length === 0) {
+      get().removeSelected();
+      return;
+    }
+    get().replaceNode(n.id, { ...n, points: pts, closed: false });
+  },
+
+  closeSelectedPath: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    const n = doc.nodes.find((x) => x.id === selection[0]);
+    if (!n || n.kind !== "path" || n.points.length < 3) return;
+    get().commit();
+    get().replaceNode(n.id, { ...n, closed: true });
+    set({ selection: [] });
+  },
+
+  finishPen: () => {
+    set({ selection: [] });
   },
 
   setBrush: (p) => {

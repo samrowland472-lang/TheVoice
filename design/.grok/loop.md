@@ -20,9 +20,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tool: undo last point, close path, Escape to finish.
-2. Print / story safe-area overlay + optional bleed on export.
-3. Hub folders / tags for recents; pin a project.
+1. Print / story safe-area overlay + optional bleed on export.
+2. Hub folders / tags for recents; pin a project.
 4. Brand kit: named colours + font pairing applied to new text.
 5. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
 6. Paint stroke undo (not the whole bitmap commit).
@@ -41,8 +40,13 @@ Auth OFF, DB OFF.
 - Layer drag, selection-relative align, faithful SVG, image crop + mask.
 - Rulers + manual guides (labels, cursor, double-click delete).
 - History panel: clickable undo stack under Layers (Now / Step N / Redo).
+- Pen: ⌫ last point, Enter or click first point to close, Esc / double-click to finish. Rubber-band preview.
 
 ## Iterations
+
+### 2026-08-22T20:18Z — loop 9
+
+Pen tool finish: undo last point, close path, Escape. Typecheck + build + smoke clean.
 
 ### 2026-08-22T20:13Z — loop 8
 
@@ -58,4 +62,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Pen tool: undo last point, close path, Escape to finish.
+Print / story safe-area overlay + optional bleed on export.

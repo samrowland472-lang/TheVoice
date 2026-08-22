@@ -48,6 +48,11 @@ export function useShortcuts() {
           s.setPresent(false);
           return;
         }
+        if (s.tool === "pen") {
+          e.preventDefault();
+          s.finishPen();
+          return;
+        }
         s.select([]);
         s.setTool("select");
         return;
@@ -91,7 +96,20 @@ export function useShortcuts() {
       }
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
+        if (s.tool === "pen") {
+          const n = s.doc?.nodes.find((x) => x.id === s.selection[0]);
+          if (n?.kind === "path") {
+            s.popLastPathPoint();
+            return;
+          }
+        }
         s.removeSelected();
+        return;
+      }
+
+      if (e.key === "Enter" && s.tool === "pen") {
+        e.preventDefault();
+        s.closeSelectedPath();
         return;
       }
 

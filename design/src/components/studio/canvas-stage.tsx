@@ -38,6 +38,7 @@ export function CanvasStage() {
   const paintRef = useRef<HTMLCanvasElement | null>(null);
   const guidesRef = useRef<{ x: number[]; y: number[] }>({ x: [], y: [] });
   const marqueeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const penHoverRef = useRef<{ x: number; y: number } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const drag = useRef<{
     mode: "pan" | "move" | "handle" | "create" | "paint" | "pen" | "marquee" | "guide";
@@ -58,7 +59,7 @@ export function CanvasStage() {
     const main = mainRef.current;
     const overlay = overlayRef.current;
     const wrap = wrapRef.current;
-    const { doc, viewport, selection, grid, rulers } = useDesign.getState();
+    const { doc, viewport, selection, grid, rulers, tool } = useDesign.getState();
     if (!main || !overlay || !wrap || !doc) return;
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
@@ -135,6 +136,33 @@ export function CanvasStage() {
       octx.stroke();
     }
     octx.restore();
+
+    if (tool === "pen") {
+      const live = selection[0] ? doc.nodes.find((n) => n.id === selection[0] && n.kind === "path") : null;
+      if (live && live.kind === "path" && live.points.length) {
+        const last = live.points[live.points.length - 1]!;
+        const hover = penHoverRef.current;
+        octx.save();
+        octx.strokeStyle = "rgba(63,198,255,0.7)";
+        octx.lineWidth = 1.5 / viewport.zoom;
+        octx.setLineDash([4 / viewport.zoom, 4 / viewport.zoom]);
+        if (hover) {
+          octx.beginPath();
+          octx.moveTo(live.x + last.x, live.y + last.y);
+          octx.lineTo(hover.x, hover.y);
+          octx.stroke();
+        }
+        octx.setLineDash([]);
+        const first = live.points[0]!;
+        if (live.points.length >= 3) {
+          octx.beginPath();
+          octx.arc(live.x + first.x, live.y + first.y, 6 / viewport.zoom, 0, Math.PI * 2);
+          octx.strokeStyle = "#3fc6ff";
+          octx.stroke();
+        }
+        octx.restore();
+      }
+    }
 
     const mq = marqueeRef.current;
     if (mq) {
@@ -395,6 +423,16 @@ export function CanvasStage() {
     if (tool === "pen") {
       const existing = selection[0] ? doc.nodes.find((n) => n.id === selection[0] && n.kind === "path") : null;
       if (existing && existing.kind === "path") {
+        const first = existing.points[0];
+        if (first && existing.points.length >= 3) {
+          const fx = existing.x + first.x;
+          const fy = existing.y + first.y;
+          const closePx = 10 / viewport.zoom;
+          if (Math.hypot(d.x - fx, d.y - fy) <= closePx) {
+            useDesign.getState().closeSelectedPath();
+            return;
+          }
+        }
         const pts = [...existing.points, { x: d.x - existing.x, y: d.y - existing.y }];
         useDesign.getState().replaceNode(existing.id, { ...existing, points: pts, w: Math.max(existing.w, d.x - existing.x + 8), h: Math.max(existing.h, d.y - existing.y + 8) }, true);
       } else {
@@ -511,7 +549,14 @@ export function CanvasStage() {
     const p = pos(e);
     const st = drag.current;
     if (!st) {
-      const { doc, viewport, rulers } = useDesign.getState();
+      const { doc, viewport, rulers, tool } = useDesign.getState();
+      if (tool === "pen") {
+        const d = screenToDoc(p.x, p.y, viewport);
+        penHoverRef.current = { x: d.x, y: d.y };
+        redraw();
+      } else {
+        penHoverRef.current = null;
+      }
       if (wrap && doc && rulers) {
         const hit = hitManualGuide(p, doc.guides ?? [], viewport);
         if (p.y < RULER && p.x > RULER) wrap.style.cursor = "col-resize";
@@ -661,9 +706,13 @@ export function CanvasStage() {
   }
 
   function onDoubleClick(e: React.MouseEvent) {
-    const { doc, viewport, rulers } = useDesign.getState();
+    const { doc, viewport, rulers, tool } = useDesign.getState();
     if (!doc) return;
     const p = pos(e);
+    if (tool === "pen") {
+      useDesign.getState().finishPen();
+      return;
+    }
     if (rulers) {
       const g = hitManualGuide(p, doc.guides ?? [], viewport);
       if (g) {
@@ -706,6 +755,7 @@ export function CanvasStage() {
   const editingText = useDesign((s) => s.editingText);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
+  const tool = useDesign((s) => s.tool);
   const zoom = viewport.zoom;
   const editNode = editingText && doc ? doc.nodes.find((n) => n.id === editingText) : null;
   const screen = editNode ? docToScreen(editNode.x, editNode.y, viewport) : null;
@@ -750,6 +800,11 @@ export function CanvasStage() {
     >
       <canvas ref={mainRef} className="absolute inset-0" />
       <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
+      {tool === "pen" && (
+        <div className="pointer-events-none absolute bottom-14 left-1/2 z-10 -translate-x-1/2 rounded-[8px] border border-border bg-surface/90 px-3 py-1.5 font-mono text-[10px] tracking-wide text-ink-dim uppercase">
+          Click add · ⌫ last point · Enter close · Esc finish
+        </div>
+      )}
       {editNode && editNode.kind === "text" && screen && (
         <textarea
           autoFocus
