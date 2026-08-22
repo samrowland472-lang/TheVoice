@@ -374,6 +374,9 @@
     var midi = kind !== "drums" && kind !== "perc" && kind !== "audio";
     return [
       { type: "analog", on: midi, wave: kind === "lead" ? "square" : kind === "keys" || kind === "pad" ? "triangle" : "sawtooth", cutoff: kind === "bass" ? 520 : 2400, res: 0.85, attack: 0.01, decay: 0.22 },
+      { type: "scale", on: false, mode: "minor", root: 0 },
+      { type: "chord", on: false, intervals: "maj" },
+      { type: "arp", on: false, rate: 1, style: "up", oct: 1, gate: 0.7 },
       { type: "eq", on: true, low: 0, mid: 0, high: 0 },
       { type: "comp", on: kind === "drums" || kind === "bass" || kind === "perc", thresh: -18, ratio: 3.2, attack: 0.01, release: 0.14 },
       { type: "delay", on: kind === "pad" || kind === "lead", time: 0.3, fb: 0.28, mix: 0.2 },
@@ -391,6 +394,104 @@
   function analogOf(tr) {
     var d = getDevice(tr, "analog");
     return d && d.on ? d : null;
+  }
+
+  function ensureMidiFx(tr) {
+    if (!tr || tr.kind === "drums" || tr.kind === "perc" || tr.kind === "audio") return;
+    if (!tr.devices) tr.devices = defaultDevices(tr.kind);
+    var types = {};
+    tr.devices.forEach(function (d) { types[d.type] = true; });
+    function add(dev, after) {
+      if (types[dev.type]) return;
+      var idx = -1;
+      for (var i = 0; i < tr.devices.length; i++) {
+        if (tr.devices[i].type === after) idx = i;
+      }
+      tr.devices.splice(idx + 1, 0, dev);
+      types[dev.type] = true;
+    }
+    add({ type: "scale", on: false, mode: "minor", root: 0 }, "analog");
+    add({ type: "chord", on: false, intervals: "maj" }, "scale");
+    add({ type: "arp", on: false, rate: 1, style: "up", oct: 1, gate: 0.7 }, "chord");
+  }
+
+  function snapScalePitch(pitch, mode, root) {
+    var tones = SCALE_TONES[mode] || SCALE_TONES.minor;
+    root = ((root || 0) % 12 + 12) % 12;
+    var pc = ((pitch - root) % 12 + 12) % 12;
+    if (tones.indexOf(pc) >= 0) return pitch;
+    for (var d = 1; d <= 6; d++) {
+      if (tones.indexOf((pc + d) % 12) >= 0) return pitch + d;
+      if (tones.indexOf((pc - d + 12) % 12) >= 0) return pitch - d;
+    }
+    return pitch;
+  }
+
+  function chordIntervals(kind) {
+    var map = {
+      "5": [0, 7],
+      maj: [0, 4, 7],
+      min: [0, 3, 7],
+      sus4: [0, 5, 7],
+      maj7: [0, 4, 7, 11],
+      min7: [0, 3, 7, 10],
+    };
+    return map[kind] || [0, 4, 7];
+  }
+
+  function arpPick(pitches, step, style, octaves) {
+    var pool = [];
+    var o;
+    for (o = 0; o < Math.max(1, octaves || 1); o++) {
+      pitches.forEach(function (p) { pool.push(p + o * 12); });
+    }
+    if (!pool.length) return pitches;
+    var n = pool.length;
+    var i = ((step % n) + n) % n;
+    if (style === "down") i = n - 1 - i;
+    else if (style === "updown") {
+      var cycle = Math.max(1, n * 2 - 2);
+      var m = ((step % cycle) + cycle) % cycle;
+      i = m < n ? m : cycle - m;
+    } else if (style === "rand") i = Math.floor(Math.random() * n);
+    return [pool[i]];
+  }
+
+  function midiOut(track, pitches, step) {
+    ensureMidiFx(track);
+    var out = (pitches || []).slice();
+    var sc = getDevice(track, "scale");
+    var ch = getDevice(track, "chord");
+    var ar = getDevice(track, "arp");
+    if (sc && sc.on) {
+      out = out.map(function (p) { return snapScalePitch(p, sc.mode || "minor", sc.root || 0); });
+    }
+    if (ch && ch.on) {
+      var next = [];
+      out.forEach(function (p) {
+        chordIntervals(ch.intervals || "maj").forEach(function (s) { next.push(p + s); });
+      });
+      out = next;
+    }
+    if (ar && ar.on) {
+      var rate = Math.max(1, ar.rate || 1);
+      if (step % rate !== 0) return [];
+      out = arpPick(out, Math.floor(step / rate), ar.style || "up", ar.oct || 1);
+    }
+    return out;
+  }
+
+  function fireMidi(track, dest, time, pitches, step, asChord) {
+    var out = midiOut(track, pitches, step);
+    if (!out.length) return;
+    if (asChord && out.length > 1 && !(getDevice(track, "arp") && getDevice(track, "arp").on)) {
+      trigChord(dest, time, out, 0.28, 0.16, track);
+      return;
+    }
+    out.forEach(function (p) {
+      if (track.kind === "bass") trigBass(dest, time, p, track);
+      else trigLead(dest, time, p, track);
+    });
   }
 
   function wireTrack(tr, delayNode, convNode) {
@@ -1927,16 +2028,16 @@
       if (n.s && n.s[gi(n.s)]) trigSnare(dest, time);
       if (n.h && n.h[gi(n.h)]) trigHat(dest, time, i % 8 === 7);
     } else if (track.kind === "bass") {
-      if (n.seq && typeof n.seq[gi(n.seq)] === "number" && n.seq[gi(n.seq)] >= 0) trigBass(dest, time, n.seq[gi(n.seq)] + xp, track);
+      if (n.seq && typeof n.seq[gi(n.seq)] === "number" && n.seq[gi(n.seq)] >= 0) fireMidi(track, dest, time, [n.seq[gi(n.seq)] + xp], i, false);
     } else if (track.kind === "keys") {
-      if (n.hits && n.hits[gi(n.hits)]) trigChord(dest, time, (n.chord || [0, 3, 7]).map(function (s) { return s + xp; }), 0.28, 0.16, track);
+      if (n.hits && n.hits[gi(n.hits)]) fireMidi(track, dest, time, (n.chord || [0, 3, 7]).map(function (s) { return s + xp; }), i, true);
     } else if (track.kind === "lead") {
-      if (n.seq && typeof n.seq[gi(n.seq)] === "number" && n.seq[gi(n.seq)] >= 0) trigLead(dest, time, n.seq[gi(n.seq)] + xp, track);
+      if (n.seq && typeof n.seq[gi(n.seq)] === "number" && n.seq[gi(n.seq)] >= 0) fireMidi(track, dest, time, [n.seq[gi(n.seq)] + xp], i, false);
     } else if (track.kind === "perc") {
       if (n.seq && n.seq[gi(n.seq)]) trigPerc(dest, time, i % 4 === 2);
     } else if (track.kind === "midi" || track.kind === "keys") {
-      if (n.hits && n.hits[i]) trigChord(dest, time, (n.chord || [0, 3, 7]).map(function (s) { return s + xp; }), 0.28, 0.16, track);
-      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) trigLead(dest, time, n.seq[i] + xp, track);
+      if (n.hits && n.hits[i]) fireMidi(track, dest, time, (n.chord || [0, 3, 7]).map(function (s) { return s + xp; }), i, true);
+      if (n.seq && typeof n.seq[i] === "number" && n.seq[i] >= 0) fireMidi(track, dest, time, [n.seq[i] + xp], i, false);
     }
   }
 
@@ -3561,10 +3662,23 @@
 
   function playRollStep(track, dest, roll, i, time, xp) {
     xp = xp || 0;
+    ensureMidiFx(track);
+    var ar = getDevice(track, "arp");
     roll.forEach(function (note) {
-      if (Math.floor(note.start + 1e-6) !== i) return;
-      var dur = Math.max(0.05, (note.length || 1) * secondsPerStep());
-      trigRollNote(track, dest, time, note.pitch + xp, dur, note.vel);
+      var start = Math.floor(note.start + 1e-6);
+      var len = Math.max(1, note.length || 1);
+      var held = i >= start && i < start + len;
+      if (!held) return;
+      if (!(ar && ar.on) && start !== i) return;
+      var dur = Math.max(0.05, len * secondsPerStep());
+      if (ar && ar.on) {
+        var rate = Math.max(1, ar.rate || 1);
+        if ((i - start) % rate !== 0) return;
+        dur = secondsPerStep() * rate * (ar.gate == null ? 0.7 : ar.gate);
+      }
+      midiOut(track, [note.pitch + xp], i - start).forEach(function (p) {
+        trigRollNote(track, dest, time, p, dur, note.vel);
+      });
     });
   }
 
@@ -3574,7 +3688,9 @@
     ctx.resume();
     var dest = trackNodes[track.id];
     if (!dest) return;
-    trigRollNote(track, dest, ctx.currentTime, pitch, 0.18, 0.8);
+    var p = midiOut(track, [pitch], 0)[0];
+    if (p == null) p = pitch;
+    trigRollNote(track, dest, ctx.currentTime, p, 0.18, 0.8);
   }
 
   function paintRoll() {
@@ -3804,6 +3920,27 @@
       devicesEl.appendChild(card);
     }
 
+    ensureMidiFx(tr);
+
+    function sel(dev, key, label, options) {
+      var wrap = el("label", "daw-ctl");
+      wrap.style.flexDirection = "column";
+      wrap.appendChild(el("span", "daw-knob-lab", label));
+      var s = document.createElement("select");
+      options.forEach(function (row) {
+        var o = document.createElement("option");
+        o.value = row[0];
+        o.textContent = row[1];
+        if (String(dev[key]) === String(row[0])) o.selected = true;
+        s.appendChild(o);
+      });
+      s.addEventListener("change", function () {
+        dev[key] = isNaN(Number(s.value)) || s.value === "" ? s.value : (String(Number(s.value)) === s.value ? Number(s.value) : s.value);
+      });
+      wrap.appendChild(s);
+      return wrap;
+    }
+
     var analog = getDevice(tr, "analog");
     box(analog, "Analog", function (card, dev) {
       var waveLab = el("label", "daw-ctl");
@@ -3825,6 +3962,25 @@
       card.appendChild(knob(dev, "res", "Res", 0.2, 12, 0.1));
       card.appendChild(knob(dev, "attack", "Attack", 0.001, 0.4, 0.001));
       card.appendChild(knob(dev, "decay", "Decay", 0.05, 1.2, 0.01));
+    });
+
+    var sc = getDevice(tr, "scale");
+    if (sc) box(sc, "Scale", function (card, dev) {
+      card.appendChild(sel(dev, "mode", "Mode", [["minor", "Minor"], ["major", "Major"], ["penta", "Penta"], ["chrom", "Chromatic"]]));
+      card.appendChild(sel(dev, "root", "Root", [["0","C"],["1","C#"],["2","D"],["3","D#"],["4","E"],["5","F"],["6","F#"],["7","G"],["8","G#"],["9","A"],["10","A#"],["11","B"]]));
+    });
+
+    var chd = getDevice(tr, "chord");
+    if (chd) box(chd, "Chord", function (card, dev) {
+      card.appendChild(sel(dev, "intervals", "Shape", [["5", "5th"], ["maj", "Maj"], ["min", "Min"], ["sus4", "Sus4"], ["maj7", "Maj7"], ["min7", "Min7"]]));
+    });
+
+    var arp = getDevice(tr, "arp");
+    if (arp) box(arp, "Arpeggiator", function (card, dev) {
+      card.appendChild(sel(dev, "style", "Style", [["up", "Up"], ["down", "Down"], ["updown", "Up/Down"], ["rand", "Random"]]));
+      card.appendChild(knob(dev, "rate", "Rate", 1, 4, 1));
+      card.appendChild(knob(dev, "oct", "Octaves", 1, 3, 1));
+      card.appendChild(knob(dev, "gate", "Gate", 0.15, 1, 0.05));
     });
 
     var eq = getDevice(tr, "eq");
