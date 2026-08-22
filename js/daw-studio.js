@@ -39,7 +39,28 @@ const notes = []; // { pitch, start, length, vel } in 16th-notes
 const clips = []; // { track, scene, name, color, grid, notes, bassNotes }
 let pendingScene = -1;
 let currentScene = 0;
+let selectedScene = 0;
+let followSteps = 0;
 let prodView = 'session';
+
+const FOLLOW_ACTIONS = [
+  { id: 'none', label: 'No Action' },
+  { id: 'stop', label: 'Stop' },
+  { id: 'again', label: 'Play Again' },
+  { id: 'next', label: 'Next' },
+  { id: 'prev', label: 'Previous' },
+  { id: 'first', label: 'First' },
+  { id: 'last', label: 'Last' },
+  { id: 'other', label: 'Other' },
+  { id: 'any', label: 'Any' },
+];
+function defaultFollow() {
+  return { on: false, bars: 2, a: 'next', b: 'again', chance: 100 };
+}
+function ensureFollow(c) {
+  if (!c.follow) c.follow = defaultFollow();
+  return c.follow;
+}
 
 const ARR_TRACKS = ['kick', 'snare', 'hihat', 'clap', 'bass', 'keys'];
 const PX = 14;
@@ -355,6 +376,8 @@ function applyPending() {
       src.notes.forEach((n) => notes.push({ ...n }));
     }
     currentScene = pendingScene;
+    selectedScene = currentScene;
+    followSteps = 0;
     const seq = document.getElementById('sequencer');
     if (seq) seq.querySelectorAll('.seq-cell').forEach((cell) => {
       const on = p.grid[cell.dataset.track] && p.grid[cell.dataset.track][Number(cell.dataset.step)];
@@ -365,6 +388,54 @@ function applyPending() {
   }
   pendingScene = -1;
   paintSession();
+}
+
+function filledScenes() {
+  return clips.map((c, i) => i).filter((i) => clips[i] && clips[i].grid);
+}
+
+function runFollow(pick) {
+  if (pick === 'none' || !pick) return;
+  if (pick === 'stop') {
+    studioStop();
+    return;
+  }
+  if (pick === 'again') {
+    followSteps = 0;
+    return;
+  }
+  const filled = filledScenes();
+  if (!filled.length) return;
+  let next = currentScene;
+  const i = filled.indexOf(currentScene);
+  if (pick === 'next') next = filled[(Math.max(0, i) + 1) % filled.length];
+  else if (pick === 'prev') next = filled[(i < 0 ? 0 : i - 1 + filled.length) % filled.length];
+  else if (pick === 'first') next = filled[0];
+  else if (pick === 'last') next = filled[filled.length - 1];
+  else if (pick === 'any') next = filled[Math.floor(Math.random() * filled.length)];
+  else if (pick === 'other') {
+    const others = filled.filter((n) => n !== currentScene);
+    if (!others.length) return;
+    next = others[Math.floor(Math.random() * others.length)];
+  }
+  if (next == null || next === currentScene && pick !== 'any') {
+    if (pick !== 'any') followSteps = 0;
+  }
+  pendingScene = next;
+}
+
+function maybeFollow() {
+  if (prodView !== 'session' || !playing) return;
+  const c = clips[currentScene];
+  if (!c) return;
+  const f = ensureFollow(c);
+  if (!f.on) return;
+  const need = Math.max(1, Number(f.bars) || 2) * 16;
+  if (followSteps < need) return;
+  followSteps = 0;
+  const chance = Math.max(0, Math.min(100, Number(f.chance) || 0));
+  const pick = (Math.random() * 100) < chance ? f.a : f.b;
+  runFollow(pick);
 }
 
 function clock() {
@@ -382,6 +453,8 @@ function clock() {
     } else {
       if (step % 16 === 0) applyPending();
       scheduleStep(step, nextTime);
+      followSteps += 1;
+      if (step % 16 === 15) maybeFollow();
     }
     const swingAdd = (step % 2 === 1) ? stepDur() * swing * 0.5 : 0;
     highlightStep(step);
@@ -431,6 +504,7 @@ export function studioPlay() {
 export function studioStop() {
   playing = false;
   recOn = false;
+  followSteps = 0;
   if (timer) { clearTimeout(timer); timer = null; }
   step = prodView === 'arrange' ? arr.loopStart : 0;
   highlightStep(step);
@@ -983,6 +1057,7 @@ function paintSession() {
         grid: null,
         notes: null,
         bassNotes: null,
+        follow: defaultFollow(),
       });
     }
     const snap = snapshotPattern();
@@ -993,24 +1068,76 @@ function paintSession() {
       clips[0].name = 'Loop';
     }
   }
+  clips.forEach(ensureFollow);
+  const sel = clips[selectedScene] || clips[0];
+  const f = ensureFollow(sel);
+  const actionOpts = FOLLOW_ACTIONS.map((a) => `<option value="${a.id}">${a.label}</option>`).join('');
   let html = '<div class="abl-session">';
-  html += '<div class="abl-session-h"><span>Session</span><span class="abl-muted">click launches on the next bar · right-click captures</span></div>';
+  html += '<div class="abl-session-h"><span>Session</span><span class="abl-muted">click launches · alt-click selects · right-click captures · follow fires on the next bar</span></div>';
   html += '<div class="abl-scenes">';
   for (let s = 0; s < 8; s++) {
     const c = clips[s];
     const on = currentScene === s && playing;
     const wait = pendingScene === s;
-    html += `<button type="button" class="abl-clip${c.grid ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}" data-scene="${s}" style="--clip:${c.color}">
-      <i></i><span>${c.name || (c.grid ? 'Clip' : 'Empty')}</span>
+    const picked = selectedScene === s;
+    const fol = c.follow && c.follow.on;
+    html += `<button type="button" class="abl-clip${c.grid ? ' filled' : ''}${on ? ' playing' : ''}${wait ? ' queued' : ''}${picked ? ' selected' : ''}" data-scene="${s}" style="--clip:${c.color}">
+      <i></i><span>${c.name || (c.grid ? 'Clip' : 'Empty')}</span>${fol ? '<em class="abl-follow-badge">↪</em>' : ''}
     </button>`;
   }
   html += '<button type="button" class="abl-scene-fire" id="abl-stop-clips">■</button>';
-  html += '</div></div>';
+  html += '</div>';
+  html += `<div class="abl-follow">
+    <label class="abl-follow-on"><input type="checkbox" id="fol-on"${f.on ? ' checked' : ''}> Follow</label>
+    <label>After <select id="fol-bars">
+      ${[1, 2, 4, 8].map((n) => `<option value="${n}"${Number(f.bars) === n ? ' selected' : ''}>${n} bar${n > 1 ? 's' : ''}</option>`).join('')}
+    </select></label>
+    <label>A <select id="fol-a">${actionOpts}</select></label>
+    <label>B <select id="fol-b">${actionOpts}</select></label>
+    <label>A chance <input id="fol-chance" type="range" min="0" max="100" value="${f.chance}"><span id="fol-chance-val">${f.chance}%</span></label>
+    <span class="abl-muted" id="fol-target">${sel.name || 'Scene ' + (selectedScene + 1)}</span>
+  </div></div>`;
   root.innerHTML = html;
+  root.querySelector('#fol-a').value = f.a;
+  root.querySelector('#fol-b').value = f.b;
+  const writeFollow = () => {
+    const c = clips[selectedScene];
+    if (!c) return;
+    const ff = ensureFollow(c);
+    ff.on = document.getElementById('fol-on').checked;
+    ff.bars = Number(document.getElementById('fol-bars').value) || 2;
+    ff.a = document.getElementById('fol-a').value;
+    ff.b = document.getElementById('fol-b').value;
+    ff.chance = Number(document.getElementById('fol-chance').value) || 0;
+    const val = document.getElementById('fol-chance-val');
+    if (val) val.textContent = `${ff.chance}%`;
+    root.querySelectorAll('.abl-clip').forEach((btn) => {
+      const scene = clips[Number(btn.dataset.scene)];
+      let badge = btn.querySelector('.abl-follow-badge');
+      const on = scene && scene.follow && scene.follow.on;
+      if (on && !badge) {
+        badge = document.createElement('em');
+        badge.className = 'abl-follow-badge';
+        badge.textContent = '↪';
+        btn.appendChild(badge);
+      }
+      if (!on && badge) badge.remove();
+    });
+  };
+  ['fol-on', 'fol-bars', 'fol-a', 'fol-b', 'fol-chance'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', writeFollow);
+    if (el) el.addEventListener('change', writeFollow);
+  });
   root.querySelectorAll('.abl-clip').forEach((btn) => {
     const s = Number(btn.dataset.scene);
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (ev) => {
       const c = clips[s];
+      selectedScene = s;
+      if (ev.altKey) {
+        paintSession();
+        return;
+      }
       if (!c.grid) {
         const snap = snapshotPattern();
         if (!snap) return;
@@ -1022,6 +1149,7 @@ function paintSession() {
         return;
       }
       pendingScene = s;
+      followSteps = 0;
       if (!playing) {
         applyPending();
         studioPlay();
@@ -1038,6 +1166,7 @@ function paintSession() {
       c.notes = snap.notes;
       c.bassNotes = snap.bassNotes;
       c.name = c.name || `Scene ${s + 1}`;
+      selectedScene = s;
       paintSession();
     });
   });
