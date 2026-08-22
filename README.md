@@ -48,6 +48,8 @@ cd tests
 for f in *-test.mjs; do node "$f" || exit 1; done
 ```
 
+`harmony-test.mjs` is the foundations gate: named imports, HTML assets, Flick inject, CSP, and the clip bus.
+
 `js/` is the source of truth for engines. `theme.css` + `ui-shell.js` restyle the chrome.
 
 ## Deploy

@@ -177,9 +177,11 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
 }
 
-function switchSection(section) {
+function switchSection(section, fromBtn) {
+  const target = fromBtn
+    || document.querySelector(`.sidebar-item[data-section="${section}"]`);
   document.querySelectorAll('.sidebar-item').forEach((b) => {
-    const isCurrent = b.dataset.section === section;
+    const isCurrent = target ? b === target : b.dataset.section === section;
     b.classList.toggle('active', isCurrent);
     // A highlight says "you are here" to someone who can see it. aria-current
     // is the same sentence for someone who cannot.
@@ -216,7 +218,7 @@ function switchSection(section) {
 }
 
 document.querySelectorAll('.sidebar-item').forEach((btn) => {
-  btn.addEventListener('click', () => switchSection(btn.dataset.section));
+  btn.addEventListener('click', () => switchSection(btn.dataset.section, btn));
 });
 
 const sidebarNav = document.getElementById('sidebar-nav');
@@ -1394,13 +1396,6 @@ async function saveClipToLibrary({ engine, voiceLabel, text, blob, ext, duration
     const clip = await clipLibrary.addClip({ engine, voiceLabel, text, blob, ext, durationSec });
     if (!libraryView.hidden) renderLibrary();
     emitVoice('clip', clip);
-    const daw = window.TheVoiceDAW;
-    if (daw && typeof daw.addVoiceClip === 'function' && blob) {
-      daw.addVoiceClip({
-        name: (voiceLabel || engine || 'Voice').toString().slice(0, 28),
-        blob,
-      }).catch(() => {});
-    }
   } catch {
     /* non-critical: library storage failing shouldn't block playback */
   }

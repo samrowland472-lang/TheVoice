@@ -21,8 +21,12 @@ function allowedOrigin(origin) {
     if (u.protocol !== "https:" && !local) return "";
     if (local) return origin;
     if (host === "thevoice.app" || host.endsWith(".thevoice.app")) return origin;
+    if (host === "thecreative.app" || host.endsWith(".thecreative.app")) return origin;
     if (host.endsWith(".netlify.app")) return origin;
     if (host.endsWith(".grok.me") || host.endsWith(".vercel.app")) return origin;
+    if (host === "grok.com" || host.endsWith(".grok.com")) return origin;
+    if (host === "grok-sandbox.com" || host.endsWith(".grok-sandbox.com")) return origin;
+    if (host === "x.com" || host.endsWith(".x.com")) return origin;
     return "";
   } catch {
     return "";

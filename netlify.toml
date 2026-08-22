@@ -1,8 +1,9 @@
-# Netlify deployment. The app is fully static — every heavy operation
-# (neural TTS, modulation, analysis) runs in the visitor's own browser.
+# Netlify deployment. Only the vanilla studio is published.
+# aether/, animate/, and design/ are nested Grok workspaces — never ship them.
 # Flick chat is the only server function (optional; needs XAI_API_KEY).
 [build]
-  publish = "."
+  command = "bash scripts/publish-spa.sh"
+  publish = "dist"
 
 [functions]
   directory = "netlify/functions"
@@ -25,6 +26,21 @@
 # execute HTML as a script and the studio dies).
 [[redirects]]
   from = "/js/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/aether/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/animate/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/design/*"
   to = "/404.html"
   status = 404
 

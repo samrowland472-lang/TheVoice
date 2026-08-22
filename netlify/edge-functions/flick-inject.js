@@ -19,7 +19,7 @@ export default async (request, context) => {
     ["js/flick-studio.js", '<script type="module" src="/js/flick-studio.js"></script>'],
     [
       "js/flick.js",
-      '<script src="/js/flick.js" data-name="Flick" data-site="The Voice" data-endpoint="/api/flick-chat" defer></script>',
+      '<script src="/js/flick.js" data-name="Flick" data-site="The Creative" data-endpoint="/api/flick-chat" defer></script>',
     ],
     ["js/daw-ai.js", '<script src="/js/daw-ai.js" defer></script>'],
   ];

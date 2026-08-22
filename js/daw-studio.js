@@ -2,6 +2,8 @@
 // Real-time Web Audio clock, mixer meters, piano roll, session clips.
 // Export is a bounce, not the workflow. Does not touch Animate.
 
+import { onVoice } from './bus.js';
+
 const STRIPS = [
   { id: 'kick', name: 'Kick', color: '#ff6b4a' },
   { id: 'snare', name: 'Snare', color: '#ffb238' },
@@ -2090,6 +2092,7 @@ export function initStudio(options, audioGetter) {
     swingEl.addEventListener('input', () => { swing = parseFloat(swingEl.value) || 0; });
   }
   if (!metersOn) tickMeters();
+  bindVoiceBus();
 }
 
 export function showStudio() {
@@ -2141,4 +2144,17 @@ export async function addVoiceClip({ name, blob, buffer }) {
 
 export function listVoiceSamples() {
   return voiceSamples.slice();
+}
+
+let voiceBusBound = false;
+function bindVoiceBus() {
+  if (voiceBusBound) return;
+  voiceBusBound = true;
+  onVoice('clip', (clip) => {
+    if (!clip || !clip.blob) return;
+    addVoiceClip({
+      name: (clip.voiceLabel || clip.engine || 'Voice').toString().slice(0, 28),
+      blob: clip.blob,
+    }).catch(() => {});
+  });
 }
