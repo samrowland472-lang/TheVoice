@@ -428,6 +428,7 @@ function stopPlayback() {
   if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
   if (typeof stopProjectPlay === 'function') stopProjectPlay();
   if (typeof stopModPlay === 'function') stopModPlay();
+  if (typeof stopLongformPlay === 'function') stopLongformPlay();
 }
 
 playBtn.addEventListener('click', async () => {
@@ -1468,6 +1469,13 @@ const longformProgressFill = document.getElementById('longform-progress-fill');
 const longformProgressText = document.getElementById('longform-progress-text');
 const longformHint = document.getElementById('longform-hint');
 const longformAudio = document.getElementById('longform-audio');
+const longformTransport = document.getElementById('longform-transport');
+const longformPlay = document.getElementById('longform-play');
+const longformScrub = document.getElementById('longform-scrub');
+const longformScrubFill = document.getElementById('longform-scrub-fill');
+const longformPos = document.getElementById('longform-pos');
+const longformCancelBtn = document.getElementById('longform-cancel-btn');
+const longformWordStats = document.getElementById('longform-word-stats');
 const longformStats = document.getElementById('longform-stats');
 const longformStatParts = document.getElementById('longform-stat-parts');
 const longformStatChars = document.getElementById('longform-stat-chars');
@@ -1476,6 +1484,32 @@ const chapterList = document.getElementById('chapter-list');
 
 let currentChapters = [];
 let longformBlob = null;
+let longformOffsets = [];
+let longformGen = 0;
+
+function stopLongformPlay() {
+  if (longformAudio && !longformAudio.paused) longformAudio.pause();
+  if (longformPlay) longformPlay.textContent = '▶';
+}
+
+function paintLongformWords() {
+  if (!longformWordStats || !longformInput) return;
+  const n = wordCount(longformInput.value);
+  const over = n > MAX_SPEAK_WORDS;
+  longformWordStats.textContent = over
+    ? `${n.toLocaleString()} / ${MAX_SPEAK_WORDS.toLocaleString()} words — extra will be cut`
+    : `${n.toLocaleString()} / ${MAX_SPEAK_WORDS.toLocaleString()} words`;
+  longformWordStats.classList.toggle('is-over', over);
+}
+if (longformInput) {
+  longformInput.addEventListener('input', () => {
+    if (wordCount(longformInput.value) > MAX_SPEAK_WORDS) {
+      longformInput.value = clipToWords(longformInput.value);
+    }
+    paintLongformWords();
+  });
+  paintLongformWords();
+}
 
 longformChunk.addEventListener('input', () => (longformChunkValue.textContent = longformChunk.value));
 longformGap.addEventListener('input', () => (longformGapValue.textContent = `${longformGap.value}s`));
@@ -1509,20 +1543,35 @@ function renderChapterList() {
 
     const meta = document.createElement('div');
     meta.className = 'chapter-meta';
-    meta.textContent = `${chapter.chars} ch`;
+    const words = wordCount(chapter.text);
+    meta.textContent = `${words.toLocaleString()} w`;
 
     li.append(body, meta);
+    li.addEventListener('click', () => {
+      if (!longformAudio || !longformAudio.src || longformOffsets[chapter.index] == null) return;
+      longformAudio.currentTime = longformOffsets[chapter.index];
+      document.querySelectorAll('.chapter-item').forEach((el) => el.classList.toggle('listening', el === li));
+    });
     chapterList.appendChild(li);
   });
 }
 
 function analyzeLongform() {
-  const text = longformInput.value;
+  let text = longformInput.value;
+  if (wordCount(text) > MAX_SPEAK_WORDS) {
+    text = clipToWords(text);
+    longformInput.value = text;
+    paintLongformWords();
+    showToast(`Trimmed to ${MAX_SPEAK_WORDS.toLocaleString()} words.`);
+  }
   currentChapters = splitIntoChapters(text, parseInt(longformChunk.value, 10));
   longformHint.textContent = '';
   longformBlob = null;
+  longformOffsets = [];
   longformDownloadBtn.disabled = true;
-  longformAudio.hidden = true;
+  if (longformTransport) longformTransport.hidden = true;
+  stopLongformPlay();
+  if (longformAudio) longformAudio.removeAttribute('src');
 
   if (!currentChapters.length) {
     chapterList.innerHTML = '';
@@ -1532,10 +1581,9 @@ function analyzeLongform() {
     return;
   }
 
-  const totalChars = currentChapters.reduce((sum, c) => sum + c.chars, 0);
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const words = wordCount(text);
   longformStatParts.textContent = String(currentChapters.length);
-  longformStatChars.textContent = totalChars.toLocaleString();
+  longformStatChars.textContent = words.toLocaleString();
   longformStatDuration.textContent = formatDuration((words / 150) * 60);
   longformStats.hidden = false;
   longformGenerateBtn.disabled = false;
@@ -1546,18 +1594,22 @@ longformAnalyzeBtn.addEventListener('click', analyzeLongform);
 
 longformGenerateBtn.addEventListener('click', async () => {
   if (!currentChapters.length) return;
+  const gen = ++longformGen;
   longformGenerateBtn.disabled = true;
   longformAnalyzeBtn.disabled = true;
   longformDownloadBtn.disabled = true;
+  if (longformCancelBtn) longformCancelBtn.disabled = false;
   longformHint.textContent = '';
   longformProgress.hidden = false;
-  longformAudio.hidden = true;
+  if (longformTransport) longformTransport.hidden = true;
+  stopLongformPlay();
 
   const rendered = [];
   let sampleRate = 24000;
 
   try {
     for (const chapter of currentChapters) {
+      if (gen !== longformGen) return;
       const li = chapterList.querySelector(`[data-index="${chapter.index}"]`);
       if (li) li.className = 'chapter-item active';
 
@@ -1574,6 +1626,7 @@ longformGenerateBtn.addEventListener('click', async () => {
           }
         }
       );
+      if (gen !== longformGen) return;
       rendered.push(rawAudio.audio);
       sampleRate = rawAudio.sampling_rate;
       if (li) li.className = 'chapter-item done';
@@ -1582,10 +1635,24 @@ longformGenerateBtn.addEventListener('click', async () => {
     longformProgressFill.style.width = '100%';
     longformProgressText.textContent = 'Stitching…';
 
-    const combined = concatAudio(rendered, sampleRate, parseFloat(longformGap.value));
+    const gapSec = parseFloat(longformGap.value);
+    const gapSamples = Math.round(sampleRate * gapSec);
+    longformOffsets = [];
+    let off = 0;
+    rendered.forEach((part, i) => {
+      longformOffsets.push(off / sampleRate);
+      off += part.length + (i < rendered.length - 1 ? gapSamples : 0);
+    });
+
+    const combined = concatAudio(rendered, sampleRate, gapSec);
+    if (gen !== longformGen) return;
     longformBlob = encodeWav16(combined, sampleRate);
+    if (longformAudio.src) URL.revokeObjectURL(longformAudio.src);
     longformAudio.src = URL.createObjectURL(longformBlob);
-    longformAudio.hidden = false;
+    if (longformTransport) longformTransport.hidden = false;
+    if (longformPlay) longformPlay.textContent = '▶';
+    if (longformPos) longformPos.textContent = formatDuration(combined.length / sampleRate);
+    if (longformScrubFill) longformScrubFill.style.width = '0%';
     longformDownloadBtn.disabled = false;
     longformProgress.hidden = true;
 
@@ -1595,21 +1662,72 @@ longformGenerateBtn.addEventListener('click', async () => {
     saveClipToLibrary({
       engine: 'neural',
       voiceLabel: longformVoice.options[longformVoice.selectedIndex]?.textContent || longformVoice.value,
-      text: longformInput.value.slice(0, 300),
+      text: clipToWords(longformInput.value).slice(0, 300),
       blob: longformBlob,
       ext: 'wav',
       durationSec: combined.length / sampleRate,
     });
   } catch (err) {
+    if (gen !== longformGen) return;
     longformProgress.hidden = true;
     const active = chapterList.querySelector('.chapter-item.active');
     if (active) active.className = 'chapter-item failed';
     longformHint.textContent = err.message || 'Rendering failed.';
   } finally {
-    longformGenerateBtn.disabled = false;
-    longformAnalyzeBtn.disabled = false;
+    if (gen === longformGen) {
+      longformGenerateBtn.disabled = false;
+      longformAnalyzeBtn.disabled = false;
+      if (longformCancelBtn) longformCancelBtn.disabled = true;
+    }
   }
 });
+
+if (longformCancelBtn) {
+  longformCancelBtn.addEventListener('click', () => {
+    longformGen += 1;
+    longformProgress.hidden = true;
+    longformHint.textContent = 'Cancelled.';
+    longformGenerateBtn.disabled = false;
+    longformAnalyzeBtn.disabled = false;
+    longformCancelBtn.disabled = true;
+  });
+}
+
+if (longformPlay) {
+  longformPlay.addEventListener('click', () => {
+    if (!longformAudio.src) return;
+    if (longformAudio.paused) {
+      if (typeof stopPlayback === 'function') stopPlayback();
+      longformAudio.play().catch(() => {});
+      longformPlay.textContent = '■';
+    } else {
+      longformAudio.pause();
+      longformPlay.textContent = '▶';
+    }
+  });
+}
+if (longformScrub) {
+  longformScrub.addEventListener('click', (ev) => {
+    if (!longformAudio.duration) return;
+    const r = longformScrub.getBoundingClientRect();
+    longformAudio.currentTime = ((ev.clientX - r.left) / r.width) * longformAudio.duration;
+  });
+}
+if (longformAudio) {
+  longformAudio.addEventListener('timeupdate', () => {
+    if (!longformAudio.duration) return;
+    if (longformScrubFill) longformScrubFill.style.width = `${(longformAudio.currentTime / longformAudio.duration) * 100}%`;
+    if (longformPos) longformPos.textContent = `${formatDuration(longformAudio.currentTime)} / ${formatDuration(longformAudio.duration)}`;
+    let idx = 0;
+    for (let i = 0; i < longformOffsets.length; i++) {
+      if (longformAudio.currentTime >= longformOffsets[i] - 0.05) idx = i;
+    }
+    chapterList.querySelectorAll('.chapter-item').forEach((el) => {
+      el.classList.toggle('listening', Number(el.dataset.index) === idx);
+    });
+  });
+  longformAudio.addEventListener('ended', () => { if (longformPlay) longformPlay.textContent = '▶'; });
+}
 
 longformDownloadBtn.addEventListener('click', async () => {
   if (!longformBlob) return;

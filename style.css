@@ -955,6 +955,8 @@
   .chapter-item.done { border-left-color: var(--phosphor); }
   .chapter-item.active { border-left-color: var(--amber); }
   .chapter-item.failed { border-left-color: var(--alert); }
+  .chapter-item.listening { border-left-color: var(--phosphor); background: color-mix(in srgb, var(--phosphor) 8%, transparent); cursor: pointer; }
+  .chapter-item { cursor: pointer; }
 
   .chapter-item::before {
     content: counter(chapter);

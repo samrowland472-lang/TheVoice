@@ -352,11 +352,12 @@
     <div class="longform-head">
       <div>
         <label class="field-label">Studio — long-form &amp; audiobooks</label>
-        <p class="hint hint-info" style="margin-top:4px;">Paste a long script or book. Split into parts, render, and download as one continuous track.</p>
+        <p class="hint hint-info" style="margin-top:4px;">Paste up to 20,000 words. Split on chapters, render part-by-part, then play the stitched book. Click a part to skip.</p>
       </div>
     </div>
 
-    <textarea id="longform-input" placeholder="Paste your long text here. Lines like &quot;Chapter 1&quot; become part boundaries…"></textarea>
+    <textarea id="longform-input" placeholder="Paste a script or book. Lines like Chapter 1 become part boundaries…"></textarea>
+    <div class="text-stats" id="longform-word-stats">0 / 20,000 words</div>
 
     <div class="longform-controls">
       <div class="control-item">
@@ -376,6 +377,7 @@
     <div class="control-row buttons-row">
       <button id="longform-analyze-btn" class="btn">Split into parts</button>
       <button id="longform-generate-btn" class="btn btn-primary" disabled>Generate audiobook</button>
+      <button id="longform-cancel-btn" class="btn" disabled>Cancel</button>
       <button id="longform-download-btn" class="btn" disabled>Download</button>
     </div>
 
@@ -386,7 +388,12 @@
 
     <p class="hint" id="longform-hint" role="status" aria-live="polite"></p>
 
-    <audio id="longform-audio" controls hidden></audio>
+    <div class="project-transport" id="longform-transport" hidden>
+      <button type="button" id="longform-play" class="clip-play" aria-label="Play audiobook">▶</button>
+      <button type="button" class="clip-scrub" id="longform-scrub" aria-label="Seek"><div class="clip-scrub-fill" id="longform-scrub-fill"></div></button>
+      <span class="clip-pos" id="longform-pos">0:00</span>
+    </div>
+    <audio id="longform-audio" hidden></audio>
 
     <div class="longform-stats" id="longform-stats" hidden>
       <div class="readout-item">
@@ -394,7 +401,7 @@
         <div class="readout-value" id="longform-stat-parts">0</div>
       </div>
       <div class="readout-item">
-        <div class="readout-label">Characters</div>
+        <div class="readout-label">Words</div>
         <div class="readout-value" id="longform-stat-chars">0</div>
       </div>
       <div class="readout-item">
