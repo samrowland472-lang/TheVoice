@@ -829,10 +829,19 @@
     applyDeckMix();
   }
 
-  var decks = {
-    A: { playing: false, rate: 1, vol: 0.85, sync: false, pfl: false, cueAt: 0, pos: 0, next: 0, timer: 0, name: "Empty", kind: null, trackId: null, clip: null, buf: null, t0: 0, off: 0 },
-    B: { playing: false, rate: 1, vol: 0.85, sync: false, pfl: false, cueAt: 0, pos: 0, next: 0, timer: 0, name: "Empty", kind: null, trackId: null, clip: null, buf: null, t0: 0, off: 0 },
-  };
+  var HOT_COLORS = ["#3fc6ff", "#ff6b8a", "#7dffb3", "#ffb238", "#c9a6ff", "#ffe08a", "#ff4d4d", "#9ad0ff"];
+  function blankDeck() {
+    return {
+      playing: false, rate: 1, vol: 0.85, sync: false, pfl: false, cueAt: 0, pos: 0, next: 0, timer: 0,
+      name: "Empty", kind: null, trackId: null, clip: null, buf: null, t0: 0, off: 0,
+      bpm: 0, beat0: 0, eqHi: 0, eqMid: 0, eqLow: 0, filter: 0.5,
+      killHi: false, killMid: false, killLow: false,
+      hot: [null, null, null, null, null, null, null, null],
+      loopOn: false, loopStart: 0, loopEnd: 0, loopBeats: 0,
+      wave: null, quantize: true,
+    };
+  }
+  var decks = { A: blankDeck(), B: blankDeck() };
   var deckGraph = { A: null, B: null };
   var djEl = null;
   var recMix = null;
@@ -846,11 +855,120 @@
     return { id: "deck-" + id, name: "Deck " + id, kind: kind || "midi", devices: defaultDevices(kind || "midi"), color: id === "A" ? "#3fc6ff" : "#ffb238" };
   }
 
+  function fmtDjTime(sec) {
+    sec = Math.max(0, sec || 0);
+    var m = Math.floor(sec / 60);
+    var s = Math.floor(sec % 60);
+    var t = Math.floor((sec % 1) * 10);
+    return m + ":" + (s < 10 ? "0" : "") + s + "." + t;
+  }
+
+  function detectBpm(buf) {
+    if (!buf || !buf.getChannelData) return { bpm: state.bpm || 120, beat0: 0 };
+    var sr = buf.sampleRate;
+    var ch = buf.getChannelData(0);
+    var hop = Math.max(64, Math.floor(sr / 100));
+    var n = Math.min(ch.length, sr * 40);
+    var env = [];
+    var prev = 0;
+    for (var i = 0; i < n; i += hop) {
+      var sum = 0, end = Math.min(n, i + hop), j;
+      for (j = i; j < end; j++) sum += ch[j] * ch[j];
+      var e = Math.sqrt(sum / (end - i || 1));
+      env.push(Math.max(0, e - prev));
+      prev = e * 0.7 + prev * 0.3;
+    }
+    var hopsPerSec = sr / hop;
+    var minLag = Math.max(2, Math.round(60 / 180 * hopsPerSec));
+    var maxLag = Math.min(env.length - 2, Math.round(60 / 70 * hopsPerSec));
+    var best = 0, bestLag = minLag;
+    for (var lag = minLag; lag <= maxLag; lag++) {
+      var c = 0, k, lim = env.length - lag;
+      for (k = 0; k < lim; k++) c += env[k] * env[k + lag];
+      c /= lim || 1;
+      if (c > best) { best = c; bestLag = lag; }
+    }
+    var bpm = 60 * hopsPerSec / bestLag;
+    while (bpm > 180) bpm /= 2;
+    while (bpm < 70) bpm *= 2;
+    bpm = Math.round(bpm * 10) / 10;
+    var mean = 0;
+    for (i = 0; i < Math.min(env.length, 500); i++) mean += env[i];
+    mean = (mean / Math.min(env.length, 500)) * 1.8;
+    var beat0 = 0;
+    for (i = 0; i < env.length; i++) {
+      if (env[i] > mean) { beat0 = i / hopsPerSec; break; }
+    }
+    return { bpm: bpm, beat0: beat0 };
+  }
+
+  function analyzeWave(buf, bins) {
+    bins = bins || 900;
+    var ch = buf.getChannelData(0);
+    var sr = buf.sampleRate;
+    var low = new Float32Array(bins);
+    var mid = new Float32Array(bins);
+    var high = new Float32Array(bins);
+    var spb = Math.max(1, Math.floor(ch.length / bins));
+    var lp = 0, hp = 0, prev = 0;
+    var aL = Math.exp(-2 * Math.PI * 180 / sr);
+    var aH = Math.exp(-2 * Math.PI * 2200 / sr);
+    var max = 0.0001;
+    for (var b = 0; b < bins; b++) {
+      var s0 = b * spb, end = Math.min(ch.length, s0 + spb), sl = 0, sm = 0, sh = 0, i, x, band;
+      for (i = s0; i < end; i++) {
+        x = ch[i];
+        lp = aL * lp + (1 - aL) * x;
+        hp = aH * (hp + x - prev);
+        prev = x;
+        band = x - lp - hp;
+        sl += lp * lp;
+        sm += band * band;
+        sh += hp * hp;
+      }
+      var nrm = (end - s0) || 1;
+      low[b] = Math.sqrt(sl / nrm);
+      mid[b] = Math.sqrt(sm / nrm);
+      high[b] = Math.sqrt(sh / nrm);
+      if (low[b] > max) max = low[b];
+      if (mid[b] > max) max = mid[b];
+      if (high[b] > max) max = high[b];
+    }
+    for (b = 0; b < bins; b++) {
+      low[b] /= max;
+      mid[b] /= max;
+      high[b] /= max;
+    }
+    return { low: low, mid: mid, high: high, n: bins };
+  }
+
+  function qTime(id, sec) {
+    var d = decks[id];
+    if (!d || !d.quantize) return sec;
+    var bpm = d.bpm || state.bpm || 120;
+    var spb = 60 / bpm;
+    var g = d.beat0 || 0;
+    return Math.max(0, g + Math.round((sec - g) / spb) * spb);
+  }
+
   function ensureDeckGraph() {
     if (!ctx || !master) return;
     ["A", "B"].forEach(function (id) {
       if (deckGraph[id]) return;
       var input = ctx.createGain();
+      var eqLow = ctx.createBiquadFilter();
+      eqLow.type = "lowshelf";
+      eqLow.frequency.value = 250;
+      var eqMid = ctx.createBiquadFilter();
+      eqMid.type = "peaking";
+      eqMid.frequency.value = 1000;
+      eqMid.Q.value = 0.9;
+      var eqHigh = ctx.createBiquadFilter();
+      eqHigh.type = "highshelf";
+      eqHigh.frequency.value = 4200;
+      var filt = ctx.createBiquadFilter();
+      filt.type = "lowpass";
+      filt.frequency.value = 18000;
       var vol = ctx.createGain();
       vol.gain.value = decks[id].vol;
       var xf = ctx.createGain();
@@ -859,14 +977,46 @@
       pfl.gain.value = 0;
       var an = ctx.createAnalyser();
       an.fftSize = 256;
-      input.connect(vol);
+      input.connect(eqLow);
+      eqLow.connect(eqMid);
+      eqMid.connect(eqHigh);
+      eqHigh.connect(filt);
+      filt.connect(vol);
       vol.connect(xf);
       xf.connect(master);
       vol.connect(pfl);
       if (cueGain) pfl.connect(cueGain);
       vol.connect(an);
-      deckGraph[id] = { in: input, vol: vol, xf: xf, pfl: pfl, analyser: an, src: null };
+      deckGraph[id] = { in: input, eqLow: eqLow, eqMid: eqMid, eqHigh: eqHigh, filt: filt, vol: vol, xf: xf, pfl: pfl, analyser: an, src: null };
     });
+  }
+
+  function applyDeckEq(id) {
+    if (!ctx) return;
+    var g = deckGraph[id];
+    var d = decks[id];
+    if (!g || !d) return;
+    var now = ctx.currentTime;
+    if (g.eqHigh) g.eqHigh.gain.setTargetAtTime(d.killHi ? -48 : (d.eqHi || 0), now, 0.02);
+    if (g.eqMid) g.eqMid.gain.setTargetAtTime(d.killMid ? -48 : (d.eqMid || 0), now, 0.02);
+    if (g.eqLow) g.eqLow.gain.setTargetAtTime(d.killLow ? -48 : (d.eqLow || 0), now, 0.02);
+    if (!g.filt) return;
+    var f = d.filter == null ? 0.5 : d.filter;
+    if (f < 0.48) {
+      g.filt.type = "lowpass";
+      var u = f / 0.48;
+      g.filt.frequency.setTargetAtTime(180 + Math.pow(u, 1.6) * 17000, now, 0.03);
+      g.filt.Q.setTargetAtTime(0.7 + (0.48 - f) * 6, now, 0.03);
+    } else if (f > 0.52) {
+      g.filt.type = "highpass";
+      var v = (f - 0.52) / 0.48;
+      g.filt.frequency.setTargetAtTime(40 + Math.pow(v, 1.7) * 6500, now, 0.03);
+      g.filt.Q.setTargetAtTime(0.7 + v * 4, now, 0.03);
+    } else {
+      g.filt.type = "lowpass";
+      g.filt.frequency.setTargetAtTime(18000, now, 0.03);
+      g.filt.Q.setTargetAtTime(0.7, now, 0.03);
+    }
   }
 
   function applyDeckMix() {
@@ -878,6 +1028,7 @@
       g.vol.gain.setTargetAtTime(Math.max(0, d.vol || 0), ctx.currentTime, 0.02);
       g.pfl.gain.setTargetAtTime(d.pfl ? 1 : 0, ctx.currentTime, 0.02);
       if (g.xf) g.xf.gain.setTargetAtTime(xfMul({ xf: id }), ctx.currentTime, 0.015);
+      applyDeckEq(id);
     });
   }
 
@@ -932,17 +1083,28 @@
     stopDeckAudio(id);
     disconnectLineIn(id);
     var d = decks[id];
+    var keepVol = d.vol;
+    var keepEq = { eqHi: d.eqHi, eqMid: d.eqMid, eqLow: d.eqLow, filter: d.filter };
+    decks[id] = blankDeck();
+    d = decks[id];
+    d.vol = keepVol;
+    d.eqHi = keepEq.eqHi; d.eqMid = keepEq.eqMid; d.eqLow = keepEq.eqLow; d.filter = keepEq.filter;
     d.clip = clip || null;
     d.trackId = track ? track.id : null;
     d.buf = clip && clip.notes && clip.notes.buffer ? clip.notes.buffer : null;
     d.kind = d.buf ? "audio" : (clip ? ((track && track.kind) || "midi") : null);
     d.name = clip ? ((track ? track.name + " · " : "") + (clip.name || "Clip")) : "Empty";
-    d.cueAt = 0;
-    d.pos = 0;
-    d.playing = false;
-    d.off = 0;
+    if (d.buf) {
+      var info = detectBpm(d.buf);
+      d.bpm = info.bpm;
+      d.beat0 = info.beat0;
+      d.wave = analyzeWave(d.buf, 900);
+    } else {
+      d.bpm = state.bpm || 120;
+    }
+    applyDeckMix();
     paintDj();
-    setMidiLabel("Deck " + id + " · " + d.name);
+    setMidiLabel("Deck " + id + " · " + d.bpm + " BPM");
   }
 
   function loadSelectedToDeck(id) {
@@ -1002,6 +1164,114 @@
     d.timer = window.setTimeout(function () { deckSched(id); }, 25);
   }
 
+  function startAudioAt(id, time) {
+    var d = decks[id];
+    var g = deckGraph[id];
+    if (!d || !g || !d.buf) return;
+    if (g.src) {
+      try { g.src.onended = null; g.src.stop(); } catch (e) {}
+      try { g.src.disconnect(); } catch (e2) {}
+      g.src = null;
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = d.buf;
+    src.playbackRate.value = Math.max(0.01, d.rate || 1);
+    var off = Math.max(0, Math.min(d.buf.duration - 0.005, time || 0));
+    if (d.loopOn && d.loopEnd > d.loopStart + 0.04) {
+      src.loop = true;
+      src.loopStart = d.loopStart;
+      src.loopEnd = d.loopEnd;
+      if (off < d.loopStart || off >= d.loopEnd) off = d.loopStart;
+    } else {
+      src.loop = false;
+    }
+    src.connect(g.in);
+    src.start(0, off);
+    src.onended = function () {
+      if (!g || g.src !== src) return;
+      d.playing = false;
+      d.cueAt = d.buf.duration;
+      g.src = null;
+      paintDj();
+    };
+    g.src = src;
+    d.t0 = ctx.currentTime;
+    d.off = off;
+    d.cueAt = off;
+    d.playing = true;
+  }
+
+  function seekDeck(id, time) {
+    var d = decks[id];
+    if (!d) return;
+    time = Math.max(0, time);
+    if (d.quantize) time = qTime(id, time);
+    if (d.kind === "audio" && d.playing) startAudioAt(id, time);
+    else d.cueAt = time;
+    paintDj();
+  }
+
+  function jumpHot(id, i) {
+    var d = decks[id];
+    if (!d) return;
+    if (d.hot[i] == null) {
+      d.hot[i] = qTime(id, d.kind === "audio" && d.playing ? deckPosSec(id) : (d.cueAt || 0));
+      paintDj();
+      setMidiLabel("Hot " + (i + 1) + " set");
+      return;
+    }
+    if (d.kind === "audio") {
+      ensureAudio();
+      ctx.resume();
+      ensureDeckGraph();
+      startAudioAt(id, d.hot[i]);
+      applyDeckMix();
+    } else {
+      d.pos = Math.floor(d.hot[i]);
+      d.cueAt = d.hot[i];
+      if (!d.playing) playDeck(id);
+    }
+    paintDj();
+  }
+
+  function clearHot(id, i) {
+    var d = decks[id];
+    if (!d) return;
+    d.hot[i] = null;
+    paintDj();
+  }
+
+  function setLoop(id, beats) {
+    var d = decks[id];
+    if (!d) return;
+    if (d.loopOn && d.loopBeats === beats) {
+      d.loopOn = false;
+      d.loopBeats = 0;
+      if (d.playing && d.kind === "audio") startAudioAt(id, deckPosSec(id));
+      paintDj();
+      return;
+    }
+    var bpm = d.bpm || state.bpm || 120;
+    var dur = (beats * 60) / bpm;
+    var start = qTime(id, d.kind === "audio" && d.playing ? deckPosSec(id) : (d.cueAt || 0));
+    d.loopOn = true;
+    d.loopBeats = beats;
+    d.loopStart = start;
+    d.loopEnd = start + dur;
+    if (d.buf) d.loopEnd = Math.min(d.buf.duration, d.loopEnd);
+    if (d.playing && d.kind === "audio") startAudioAt(id, start);
+    paintDj();
+    setMidiLabel("Loop " + beats + " beats");
+  }
+
+  function beatJump(id, beats) {
+    var d = decks[id];
+    if (!d) return;
+    var bpm = d.bpm || state.bpm || 120;
+    var now = d.kind === "audio" && d.playing ? deckPosSec(id) : (d.cueAt || 0);
+    seekDeck(id, now + beats * (60 / bpm));
+  }
+
   function playDeck(id) {
     var d = decks[id];
     if (!d) return;
@@ -1023,16 +1293,7 @@
     stopDeckAudio(id);
     d.playing = true;
     if (d.kind === "audio" && d.buf) {
-      var src = ctx.createBufferSource();
-      src.buffer = d.buf;
-      src.loop = true;
-      src.playbackRate.value = d.rate || 1;
-      src.connect(g.in);
-      var off = Math.max(0, Math.min(d.buf.duration - 0.01, d.cueAt || 0));
-      src.start(0, off);
-      g.src = src;
-      d.t0 = ctx.currentTime;
-      d.off = off;
+      startAudioAt(id, d.cueAt || 0);
     } else if (d.kind === "pad" || (d.clip && d.clip.notes && d.clip.notes.hold && !(d.clip.notes.roll && d.clip.notes.roll.length))) {
       var tr = (d.trackId && state.tracks.find(function (x) { return x.id === d.trackId; })) || dummyDeckTrack(id, "pad");
       startPadTo(g.in, tr, d.clip, "deck-" + id);
@@ -1092,12 +1353,24 @@
   function syncDeck(id) {
     var d = decks[id];
     if (!d) return;
+    var otherId = id === "A" ? "B" : "A";
+    var o = decks[otherId];
     d.sync = !d.sync;
-    if (d.sync) {
-      d.rate = 1;
-      applyDeckRate(id);
+    if (!d.sync) { paintDj(); return; }
+    var targetBpm = (o.bpm && (o.playing || o.buf)) ? (o.bpm * (o.rate || 1)) : (state.bpm || 120);
+    if (d.bpm) d.rate = Math.max(0.84, Math.min(1.16, targetBpm / d.bpm));
+    else d.rate = 1;
+    applyDeckRate(id);
+    if (d.playing && o.playing && d.buf && o.buf && d.bpm && o.bpm) {
+      var posO = deckPosSec(otherId);
+      var beatO = ((posO - (o.beat0 || 0)) / (60 / o.bpm));
+      var frac = beatO - Math.floor(beatO);
+      var posD = deckPosSec(id);
+      var beatD = Math.floor((posD - (d.beat0 || 0)) / (60 / d.bpm));
+      seekDeck(id, (d.beat0 || 0) + (beatD + frac) * (60 / d.bpm));
     }
     paintDj();
+    setMidiLabel("Sync " + id + " → " + Math.round(targetBpm * 10) / 10);
   }
 
   function handleDjMap(name, down) {
@@ -1111,73 +1384,116 @@
     else if (name === "syncB") syncDeck("B");
   }
 
+  function drawColoredWave(ctx2, d, w, h, viewStart, viewDur) {
+    ctx2.fillStyle = "#070908";
+    ctx2.fillRect(0, 0, w, h);
+    if (!d.wave) return;
+    var dur = d.buf ? d.buf.duration : 1;
+    var a = Math.max(0, viewStart || 0);
+    var b = Math.min(dur, a + (viewDur || dur));
+    var n = d.wave.n;
+    for (var x = 0; x < w; x++) {
+      var t0 = a + (x / w) * (b - a);
+      var idx = Math.max(0, Math.min(n - 1, Math.floor((t0 / dur) * n)));
+      var lo = d.wave.low[idx], md = d.wave.mid[idx], hi = d.wave.high[idx];
+      var mag = Math.max(lo, md, hi);
+      var hh = mag * (h * 0.48);
+      ctx2.fillStyle = "rgba(63,198,255,0.95)";
+      ctx2.fillRect(x, h / 2 - hh * lo, 1, hh * lo);
+      ctx2.fillRect(x, h / 2, 1, hh * lo);
+      ctx2.fillStyle = "rgba(125,255,179,0.9)";
+      var hm = hh * md * 0.75;
+      ctx2.fillRect(x, h / 2 - hm, 1, hm * 2);
+      ctx2.fillStyle = "rgba(255,255,255,0.85)";
+      var hh2 = hh * hi * 0.45;
+      ctx2.fillRect(x, h / 2 - hh2, 1, hh2 * 2);
+    }
+    if (d.bpm) {
+      var spb = 60 / d.bpm;
+      ctx2.fillStyle = "rgba(255,255,255,0.08)";
+      var bt = d.beat0 || 0;
+      while (bt < a) bt += spb * 4;
+      for (; bt < b; bt += spb * 4) {
+        var px = ((bt - a) / (b - a)) * w;
+        ctx2.fillRect(px, 0, 1, h);
+      }
+    }
+    if (d.loopOn) {
+      var x0 = ((d.loopStart - a) / (b - a)) * w;
+      var x1 = ((d.loopEnd - a) / (b - a)) * w;
+      ctx2.fillStyle = "rgba(63,198,255,0.18)";
+      ctx2.fillRect(x0, 0, Math.max(2, x1 - x0), h);
+      ctx2.strokeStyle = "#3fc6ff";
+      ctx2.strokeRect(x0, 0.5, Math.max(2, x1 - x0), h - 1);
+    }
+    (d.hot || []).forEach(function (ht, i) {
+      if (ht == null) return;
+      var hx = ((ht - a) / (b - a)) * w;
+      ctx2.fillStyle = HOT_COLORS[i];
+      ctx2.fillRect(hx - 1, 0, 2, h);
+      ctx2.fillRect(hx - 3, 0, 6, 6);
+    });
+    var pos = d.kind === "audio" && d.playing ? deckPosSec(d === decks.A ? "A" : "B") : (d.cueAt || 0);
+  }
+
   function drawDeckWave(id) {
     if (!djEl) return;
+    var d = decks[id];
+    var ov = djEl.querySelector('[data-dj-ov="' + id + '"]');
     var cv = djEl.querySelector('[data-dj-wave="' + id + '"]');
+    var pos = (d.kind === "audio" && d.playing && d.buf) ? deckPosSec(id) : (d.cueAt || 0);
+    var dur = d.buf ? d.buf.duration : 1;
+    if (ov) {
+      var octx = ov.getContext("2d");
+      var ow = ov.width, oh = ov.height;
+      if (d.wave) drawColoredWave(octx, d, ow, oh, 0, dur);
+      else { octx.fillStyle = "#070908"; octx.fillRect(0, 0, ow, oh); }
+      var px = (pos / dur) * ow;
+      octx.fillStyle = "#ff4d4d";
+      octx.fillRect(px, 0, 2, oh);
+    }
     if (!cv) return;
     var ctx2 = cv.getContext("2d");
     var w = cv.width, h = cv.height;
-    ctx2.fillStyle = "#070908";
-    ctx2.fillRect(0, 0, w, h);
-    var d = decks[id];
-    ctx2.strokeStyle = id === "A" ? "#3fc6ff" : "#ffb238";
-    ctx2.beginPath();
-    if (d.buf && d.buf.getChannelData) {
-      var data = d.buf.getChannelData(0);
-      var step = Math.max(1, Math.floor(data.length / w));
-      for (var x = 0; x < w; x++) {
-        var amp = Math.abs(data[Math.min(data.length - 1, x * step)]);
-        var y = h / 2 - amp * (h * 0.42);
-        if (x === 0) ctx2.moveTo(x, y);
-        else ctx2.lineTo(x, y);
-      }
-      ctx2.stroke();
-      var pos = deckPosSec(id);
-      var px = (pos / (d.buf.duration || 1)) * w;
+    if (d.wave && d.buf) {
+      var window = Math.min(dur, 8);
+      var start = Math.max(0, Math.min(dur - window, pos - window * 0.35));
+      drawColoredWave(ctx2, d, w, h, start, window);
+      var px2 = ((pos - start) / window) * w;
       ctx2.fillStyle = "#ff4d4d";
-      ctx2.fillRect(px, 0, 2, h);
-      var cx = (d.cueAt / (d.buf.duration || 1)) * w;
-      ctx2.fillStyle = "#ffb238";
-      ctx2.fillRect(cx - 1, 0, 2, h);
-    } else if (d.clip) {
-      ctx2.strokeStyle = "#1c2a24";
-      for (var i = 0; i < 16; i++) {
-        ctx2.beginPath();
-        ctx2.moveTo((i / 16) * w, 0);
-        ctx2.lineTo((i / 16) * w, h);
-        ctx2.stroke();
-      }
-      ctx2.fillStyle = id === "A" ? "#3fc6ff" : "#ffb238";
-      ctx2.font = "11px Share Tech Mono, monospace";
-      ctx2.fillText(d.name || "MIDI", 10, h / 2);
-      if (d.playing) {
-        var len = d.clip.length || STEPS;
-        var px2 = ((d.pos % len) / len) * w;
-        ctx2.fillStyle = "#ff4d4d";
-        ctx2.fillRect(px2, 0, 2, h);
-      }
-    } else if (d.kind === "in") {
-      var g = deckGraph[id];
-      ctx2.fillStyle = id === "A" ? "#3fc6ff" : "#ffb238";
-      ctx2.font = "11px Share Tech Mono, monospace";
-      ctx2.fillText("LINE IN", 10, 20);
-      if (g && g.analyser) {
-        var buf = new Uint8Array(g.analyser.fftSize);
-        g.analyser.getByteTimeDomainData(buf);
-        ctx2.strokeStyle = id === "A" ? "#3fc6ff" : "#ffb238";
-        ctx2.beginPath();
-        for (var x2 = 0; x2 < w; x2++) {
-          var v = (buf[Math.floor((x2 / w) * buf.length)] - 128) / 128;
-          var y2 = h / 2 + v * (h * 0.4);
-          if (x2 === 0) ctx2.moveTo(x2, y2);
-          else ctx2.lineTo(x2, y2);
-        }
-        ctx2.stroke();
-      }
+      ctx2.fillRect(px2, 0, 2, h);
+      ctx2.fillStyle = "rgba(255,77,77,0.12)";
+      ctx2.fillRect(px2, 0, Math.max(0, w - px2), h);
     } else {
-      ctx2.fillStyle = "#4c5f56";
-      ctx2.font = "11px Share Tech Mono, monospace";
-      ctx2.fillText("Load a clip or line-in", 10, h / 2);
+      ctx2.fillStyle = "#070908";
+      ctx2.fillRect(0, 0, w, h);
+      if (d.kind === "in") {
+        var g = deckGraph[id];
+        ctx2.fillStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+        ctx2.font = "11px Share Tech Mono, monospace";
+        ctx2.fillText("LINE IN", 10, 18);
+        if (g && g.analyser) {
+          var buf = new Uint8Array(g.analyser.fftSize);
+          g.analyser.getByteTimeDomainData(buf);
+          ctx2.strokeStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+          ctx2.beginPath();
+          for (var x2 = 0; x2 < w; x2++) {
+            var v = (buf[Math.floor((x2 / w) * buf.length)] - 128) / 128;
+            var y2 = h / 2 + v * (h * 0.4);
+            if (x2 === 0) ctx2.moveTo(x2, y2);
+            else ctx2.lineTo(x2, y2);
+          }
+          ctx2.stroke();
+        }
+      } else if (d.clip) {
+        ctx2.fillStyle = id === "A" ? "#3fc6ff" : "#ffb238";
+        ctx2.font = "11px Share Tech Mono, monospace";
+        ctx2.fillText((d.name || "MIDI") + " · " + (d.bpm || state.bpm) + " BPM", 10, h / 2);
+      } else {
+        ctx2.fillStyle = "#4c5f56";
+        ctx2.font = "11px Share Tech Mono, monospace";
+        ctx2.fillText("Load a clip or line-in", 10, h / 2);
+      }
     }
   }
 
@@ -1192,6 +1508,14 @@
     djRaf = window.requestAnimationFrame(tickDjWaves);
     drawDeckWave("A");
     drawDeckWave("B");
+    ["A", "B"].forEach(function (id) {
+      var d = decks[id];
+      var tEl = djEl.querySelector('[data-dj-time="' + id + '"]');
+      if (!tEl) return;
+      var pos = (d.kind === "audio" && d.playing && d.buf) ? deckPosSec(id) : (d.cueAt || 0);
+      var remain = d.buf ? Math.max(0, d.buf.duration - pos) : 0;
+      tEl.textContent = fmtDjTime(pos) + "  −" + fmtDjTime(remain);
+    });
   }
 
   function paintDj() {
@@ -1214,9 +1538,61 @@
       var vol = djEl.querySelector('[data-dj-vol="' + id + '"]');
       if (vol && document.activeElement !== vol) vol.value = String(d.vol);
       var rateLab = djEl.querySelector('[data-dj-rate-lab="' + id + '"]');
-      if (rateLab) rateLab.textContent = Math.round((d.rate || 1) * 100) + "%";
+      if (rateLab) rateLab.textContent = ((d.rate || 1) >= 1 ? "+" : "") + (Math.round(((d.rate || 1) - 1) * 1000) / 10) + "%";
+      var bpmEl = djEl.querySelector('[data-dj-bpm="' + id + '"]');
+      if (bpmEl) bpmEl.textContent = (d.bpm ? d.bpm.toFixed(1) : "—") + " BPM";
+      var tEl = djEl.querySelector('[data-dj-time="' + id + '"]');
+      if (tEl) {
+        var pos = (d.kind === "audio" && d.playing && d.buf) ? deckPosSec(id) : (d.cueAt || 0);
+        var remain = d.buf ? Math.max(0, d.buf.duration - pos) : 0;
+        tEl.textContent = fmtDjTime(pos) + "  −" + fmtDjTime(remain);
+      }
+      var qBtn = djEl.querySelector('[data-dj-q="' + id + '"]');
+      if (qBtn) qBtn.classList.toggle("on", d.quantize !== false);
+      var loopOff = djEl.querySelector('[data-dj-loopoff="' + id + '"]');
+      djEl.querySelectorAll('[data-dj-loop="' + id + '"]').forEach(function (b) {
+        b.classList.toggle("on", !!d.loopOn && String(d.loopBeats) === b.getAttribute("data-beats"));
+      });
+      (d.hot || []).forEach(function (ht, i) {
+        var pad = djEl.querySelector('[data-hot="' + id + i + '"]');
+        if (!pad) return;
+        pad.classList.toggle("on", ht != null);
+        pad.style.borderColor = ht != null ? HOT_COLORS[i] : "";
+        pad.style.background = ht != null ? HOT_COLORS[i] : "";
+        pad.style.color = ht != null ? "#06170f" : "";
+      });
+      [["hi", "eqHi", "killHi"], ["mid", "eqMid", "killMid"], ["low", "eqLow", "killLow"]].forEach(function (row) {
+        var k = djEl.querySelector('[data-eq="' + id + row[0] + '"]');
+        if (k && document.activeElement !== k) k.value = String(d[row[1]] || 0);
+        var kill = djEl.querySelector('[data-kill="' + id + row[0] + '"]');
+        if (kill) kill.classList.toggle("on", !!d[row[2]]);
+      });
+      var fl = djEl.querySelector('[data-filt="' + id + '"]');
+      if (fl && document.activeElement !== fl) fl.value = String(d.filter == null ? 0.5 : d.filter);
       drawDeckWave(id);
     });
+    var phase = djEl.querySelector("[data-dj-phase]");
+    if (phase) {
+      var pctx = phase.getContext("2d");
+      var pw = phase.width, ph = phase.height;
+      pctx.fillStyle = "#070908";
+      pctx.fillRect(0, 0, pw, ph);
+      function beatFrac(id) {
+        var d = decks[id];
+        if (!d.bpm) return 0;
+        var pos = (d.playing && d.buf) ? deckPosSec(id) : (d.cueAt || 0);
+        var b = ((pos - (d.beat0 || 0)) * d.bpm) / 60;
+        return ((b % 1) + 1) % 1;
+      }
+      var fa = beatFrac("A"), fb = beatFrac("B");
+      pctx.fillStyle = "#3fc6ff";
+      pctx.fillRect(fa * (pw - 4), 4, 4, 10);
+      pctx.fillStyle = "#ffb238";
+      pctx.fillRect(fb * (pw - 4), 16, 4, 10);
+      pctx.fillStyle = "#4c5f56";
+      pctx.font = "9px Share Tech Mono, monospace";
+      pctx.fillText("PHASE", 4, ph - 4);
+    }
     var recBtn = djEl.querySelector("[data-dj-rec]");
     if (recBtn) recBtn.classList.toggle("on", !!(recMix && recMix.state === "recording"));
     if (root && root.classList.contains("is-dj") && !djRaf) tickDjWaves();
@@ -1377,6 +1753,12 @@
     if (e.code === "KeyJ") { toggleDeck("B"); return true; }
     if (e.code === "KeyT") { syncDeck("A"); return true; }
     if (e.code === "KeyY") { syncDeck("B"); return true; }
+    if (e.code.indexOf("Digit") === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+      var n = Number(e.code.slice(5));
+      if (n >= 1 && n <= 8) { jumpHot(e.altKey ? "B" : "A", n - 1); return true; }
+    }
+    if (e.code === "KeyZ" && !e.ctrlKey) { setLoop("A", 4); return true; }
+    if (e.code === "KeyX" && !e.ctrlKey) { setLoop("B", 4); return true; }
     return false;
   }
 
@@ -1422,7 +1804,7 @@
     var learnSel = document.createElement("select");
     learnSel.setAttribute("data-dj-learn", "1");
     learnSel.setAttribute("aria-label", "MIDI learn target");
-    [["xfade", "XF"], ["volA", "Vol A"], ["volB", "Vol B"], ["pitchA", "Pitch A"], ["pitchB", "Pitch B"], ["jogA", "Jog A"], ["jogB", "Jog B"], ["playA", "Play A"], ["cueA", "Cue A"], ["playB", "Play B"], ["cueB", "Cue B"], ["syncA", "Sync A"], ["syncB", "Sync B"]].forEach(function (row) {
+    [["xfade", "XF"], ["volA", "Vol A"], ["volB", "Vol B"], ["pitchA", "Pitch A"], ["pitchB", "Pitch B"], ["jogA", "Jog A"], ["jogB", "Jog B"], ["eqLowA", "EQ Low A"], ["eqMidA", "EQ Mid A"], ["eqHiA", "EQ Hi A"], ["filterA", "Filter A"], ["eqLowB", "EQ Low B"], ["eqMidB", "EQ Mid B"], ["eqHiB", "EQ Hi B"], ["filterB", "Filter B"], ["playA", "Play A"], ["cueA", "Cue A"], ["playB", "Play B"], ["cueB", "Cue B"], ["syncA", "Sync A"], ["syncB", "Sync B"]].forEach(function (row) {
       var o = document.createElement("option");
       o.value = row[0];
       o.textContent = "Learn " + row[1];
@@ -1488,6 +1870,38 @@
       });
       tools.appendChild(pfl);
       col.appendChild(tools);
+      var meta = el("div", "daw-dj-meta");
+      var bpmEl = el("div", "daw-brand");
+      bpmEl.setAttribute("data-dj-bpm", id);
+      bpmEl.textContent = "— BPM";
+      var tEl = el("div", "daw-pos");
+      tEl.setAttribute("data-dj-time", id);
+      tEl.textContent = "0:00.0";
+      var qBtn = el("button", "daw-btn on", "Q");
+      qBtn.type = "button";
+      qBtn.setAttribute("data-dj-q", id);
+      qBtn.setAttribute("aria-label", "Quantize");
+      qBtn.addEventListener("click", function () {
+        decks[id].quantize = !decks[id].quantize;
+        paintDj();
+      });
+      meta.appendChild(bpmEl);
+      meta.appendChild(tEl);
+      meta.appendChild(qBtn);
+      col.appendChild(meta);
+      var ov = document.createElement("canvas");
+      ov.className = "daw-dj-ov";
+      ov.width = 420;
+      ov.height = 28;
+      ov.setAttribute("data-dj-ov", id);
+      ov.setAttribute("aria-label", "Deck " + id + " overview");
+      ov.addEventListener("pointerdown", function (ev) {
+        var d = decks[id];
+        if (!d.buf) return;
+        var rect = ov.getBoundingClientRect();
+        seekDeck(id, ((ev.clientX - rect.left) / rect.width) * d.buf.duration);
+      });
+      col.appendChild(ov);
       var wave = document.createElement("canvas");
       wave.className = "daw-dj-wave";
       wave.width = 420;
@@ -1498,14 +1912,96 @@
         var d = decks[id];
         if (!d.buf) return;
         var rect = wave.getBoundingClientRect();
+        var pos = (d.playing && d.buf) ? deckPosSec(id) : (d.cueAt || 0);
+        var window = Math.min(d.buf.duration, 8);
+        var start = Math.max(0, Math.min(d.buf.duration - window, pos - window * 0.35));
         var x = (ev.clientX - rect.left) / rect.width;
-        d.cueAt = x * d.buf.duration;
-        if (d.playing && d.kind === "audio") {
-          pauseDeck(id);
-          playDeck(id);
-        } else paintDjWave(id);
+        seekDeck(id, start + x * window);
       });
       col.appendChild(wave);
+      var pads = el("div", "daw-dj-hots");
+      for (var hi = 0; hi < 8; hi++) {
+        (function (i) {
+          var pad = el("button", "daw-btn daw-hot", String(i + 1));
+          pad.type = "button";
+          pad.setAttribute("data-hot", id + i);
+          pad.setAttribute("aria-label", "Hot cue " + (i + 1));
+          pad.addEventListener("click", function (ev) {
+            if (ev.altKey || ev.shiftKey) clearHot(id, i);
+            else jumpHot(id, i);
+          });
+          pads.appendChild(pad);
+        })(hi);
+      }
+      col.appendChild(pads);
+      var loops = el("div", "daw-dj-tools");
+      [1, 2, 4, 8].forEach(function (beats) {
+        var b = el("button", "daw-btn", beats + "B");
+        b.type = "button";
+        b.setAttribute("data-dj-loop", id);
+        b.setAttribute("data-beats", String(beats));
+        b.setAttribute("aria-label", beats + " beat loop");
+        b.addEventListener("click", function () { setLoop(id, beats); });
+        loops.appendChild(b);
+      });
+      var jn = el("button", "daw-btn", "−1");
+      jn.type = "button";
+      jn.setAttribute("aria-label", "Jump back one beat");
+      jn.addEventListener("click", function () { beatJump(id, -1); });
+      var jp = el("button", "daw-btn", "+1");
+      jp.type = "button";
+      jp.setAttribute("aria-label", "Jump forward one beat");
+      jp.addEventListener("click", function () { beatJump(id, 1); });
+      loops.appendChild(jn);
+      loops.appendChild(jp);
+      col.appendChild(loops);
+      var eqRow = el("div", "daw-dj-eq");
+      [["hi", "HI", "eqHi", "killHi"], ["mid", "MID", "eqMid", "killMid"], ["low", "LOW", "eqLow", "killLow"]].forEach(function (row) {
+        var wrap = el("div", "daw-dj-eqcol");
+        var kill = el("button", "daw-btn", row[1]);
+        kill.type = "button";
+        kill.setAttribute("data-kill", id + row[0]);
+        kill.setAttribute("aria-label", row[1] + " kill");
+        kill.addEventListener("click", function () {
+          decks[id][row[3]] = !decks[id][row[3]];
+          applyDeckEq(id);
+          paintDj();
+        });
+        wrap.appendChild(kill);
+        var kn = document.createElement("input");
+        kn.type = "range";
+        kn.min = "-18";
+        kn.max = "6";
+        kn.step = "0.1";
+        kn.value = "0";
+        kn.className = "daw-fader";
+        kn.setAttribute("data-eq", id + row[0]);
+        kn.setAttribute("aria-label", row[1] + " EQ");
+        kn.addEventListener("input", function () {
+          decks[id][row[2]] = Number(kn.value);
+          applyDeckEq(id);
+        });
+        wrap.appendChild(kn);
+        eqRow.appendChild(wrap);
+      });
+      var fwrap = el("div", "daw-dj-eqcol");
+      fwrap.appendChild(el("span", "daw-knob-lab", "Filter"));
+      var filt = document.createElement("input");
+      filt.type = "range";
+      filt.min = "0";
+      filt.max = "1";
+      filt.step = "0.01";
+      filt.value = "0.5";
+      filt.className = "daw-fader";
+      filt.setAttribute("data-filt", id);
+      filt.setAttribute("aria-label", "Channel filter");
+      filt.addEventListener("input", function () {
+        decks[id].filter = Number(filt.value);
+        applyDeckEq(id);
+      });
+      fwrap.appendChild(filt);
+      eqRow.appendChild(fwrap);
+      col.appendChild(eqRow);
       var jog = el("div", "daw-dj-jog", id);
       jog.setAttribute("aria-label", "Deck " + id + " jog");
       bindJog(jog, id);
@@ -1553,6 +2049,13 @@
     }
     board.appendChild(deckCol("A"));
     var mid = el("div", "daw-dj-mid");
+    var phase = document.createElement("canvas");
+    phase.width = 100;
+    phase.height = 36;
+    phase.className = "daw-dj-phase";
+    phase.setAttribute("data-dj-phase", "1");
+    phase.setAttribute("aria-label", "Beat phase");
+    mid.appendChild(phase);
     mid.appendChild(el("div", "daw-knob-lab", "Crossfader"));
     var xf = document.createElement("input");
     xf.type = "range";
@@ -1571,7 +2074,7 @@
     board.appendChild(mid);
     board.appendChild(deckCol("B"));
     djEl.appendChild(board);
-    djEl.appendChild(el("div", "daw-roll-hint", "Production stays on Session/Arrange. DJ Live is two independent decks. Load a clip or route any audio interface (Line in). MIDI controllers: Arm MIDI, then move a knob or pad. Pitch-bend jogs platters. F/G and J/H are play/cue. Rec mix records the master bus."));
+    djEl.appendChild(el("div", "daw-roll-hint", "Production stays on Session/Arrange. DJ Live is two independent decks. Load a clip or route any audio interface (Line in). MIDI controllers: Arm MIDI, then move a knob or pad. Pitch-bend jogs platters. F/G and J/H are play/cue. Rekordbox-style: colored waveforms, 8 hot cues, 1–8 beat loops, 3-band EQ + kill, channel filter, BPM detect, beat-sync + phase. Alt-click a pad to clear. Rec mix records the master bus."));
     return djEl;
   }
 
@@ -3371,7 +3874,7 @@
       "#daw-session.is-roll .daw-session-panel,#daw-session.is-roll .daw-arrange{display:none}" +
       "#daw-session.is-rack .daw-session-panel,#daw-session.is-rack .daw-arrange,#daw-session.is-rack .daw-roll{display:none}" +
       "#daw-session .daw-rack{display:none;flex-direction:column;border-top:1px solid var(--border,#263029)}" +
-      "#daw-session.is-rack .daw-rack{display:flex}" +"#daw-session.is-warp .daw-session-panel,#daw-session.is-warp .daw-arrange,#daw-session.is-warp .daw-roll,#daw-session.is-warp .daw-rack{display:none}" +"#daw-session .daw-warp{display:none;flex-direction:column;border-top:1px solid var(--border,#263029);grid-column:2}" +"#daw-session.is-warp .daw-warp{display:flex}" +"#daw-session .daw-warp-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +"#daw-session .daw-wave{width:100%;height:140px;background:#0a0d0c;display:block;cursor:crosshair}" +"#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session.is-dj .daw-session-panel,#daw-session.is-dj .daw-arrange,#daw-session.is-dj .daw-roll,#daw-session.is-dj .daw-rack,#daw-session.is-dj .daw-warp,#daw-session.is-dj .daw-env,#daw-session.is-dj .daw-prod-views{display:none!important}#daw-session .daw-dj{display:none;grid-column:2;flex-direction:column;border-top:1px solid #1c2a24;background:#0a0d0c}#daw-session.is-dj .daw-dj{display:flex}#daw-session .daw-dj-io{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #1c2a24}#daw-session .daw-dj-board{display:grid;grid-template-columns:1fr 120px 1fr;gap:10px;padding:10px}#daw-session .daw-dj-deck{border:1px solid #24332c;background:#101714;padding:8px;display:flex;flex-direction:column;gap:8px}#daw-session .daw-dj-tools{display:flex;flex-wrap:wrap;gap:4px}#daw-session .daw-dj-wave{width:100%;height:88px;background:#070908;display:block;cursor:crosshair}#daw-session .daw-dj-jog{width:88px;height:88px;border-radius:50%;margin:4px auto;border:3px solid #3fc6ff;background:radial-gradient(circle at 40% 40%,#1a2420,#070908);color:#3fc6ff;font-family:Chakra Petch,sans-serif;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:ew-resize;user-select:none}#daw-session .daw-dj-deck:last-child .daw-dj-jog{border-color:#ffb238;color:#ffb238}#daw-session .daw-dj-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}#daw-session.is-dj .daw-mixer{grid-column:2}@media (max-width:900px){#daw-session .daw-dj-board{grid-template-columns:1fr}}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
+      "#daw-session.is-rack .daw-rack{display:flex}" +"#daw-session.is-warp .daw-session-panel,#daw-session.is-warp .daw-arrange,#daw-session.is-warp .daw-roll,#daw-session.is-warp .daw-rack{display:none}" +"#daw-session .daw-warp{display:none;flex-direction:column;border-top:1px solid var(--border,#263029);grid-column:2}" +"#daw-session.is-warp .daw-warp{display:flex}" +"#daw-session .daw-warp-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +"#daw-session .daw-wave{width:100%;height:140px;background:#0a0d0c;display:block;cursor:crosshair}" +"#daw-session.is-dev .daw-session-panel,#daw-session.is-dev .daw-arrange,#daw-session.is-dev .daw-roll,#daw-session.is-dev .daw-rack{display:none}#daw-session.is-dj .daw-session-panel,#daw-session.is-dj .daw-arrange,#daw-session.is-dj .daw-roll,#daw-session.is-dj .daw-rack,#daw-session.is-dj .daw-warp,#daw-session.is-dj .daw-env,#daw-session.is-dj .daw-prod-views{display:none!important}#daw-session .daw-dj{display:none;grid-column:2;flex-direction:column;border-top:1px solid #1c2a24;background:#0a0d0c}#daw-session.is-dj .daw-dj{display:flex}#daw-session .daw-dj-io{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid #1c2a24}#daw-session .daw-dj-board{display:grid;grid-template-columns:1fr 120px 1fr;gap:10px;padding:10px}#daw-session .daw-dj-deck{border:1px solid #24332c;background:#101714;padding:8px;display:flex;flex-direction:column;gap:8px}#daw-session .daw-dj-tools{display:flex;flex-wrap:wrap;gap:4px}#daw-session .daw-dj-wave{width:100%;height:88px;background:#070908;display:block;cursor:crosshair}#daw-session .daw-dj-ov{width:100%;height:28px;background:#070908;display:block;cursor:pointer;border:1px solid #1c2a24}#daw-session .daw-dj-meta{display:flex;justify-content:space-between;align-items:center;gap:8px}#daw-session .daw-dj-hots{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}#daw-session .daw-hot{min-width:0;min-height:36px;padding:0;font-size:11px}#daw-session .daw-dj-eq{display:flex;gap:8px;align-items:flex-end;justify-content:space-around}#daw-session .daw-dj-eqcol{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}#daw-session .daw-dj-eqcol .daw-fader{height:90px;width:28px}#daw-session .daw-dj-phase{width:100%;height:36px;background:#070908;border:1px solid #1c2a24}#daw-session .daw-dj-jog{width:88px;height:88px;border-radius:50%;margin:4px auto;border:3px solid #3fc6ff;background:radial-gradient(circle at 40% 40%,#1a2420,#070908);color:#3fc6ff;font-family:Chakra Petch,sans-serif;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:ew-resize;user-select:none}#daw-session .daw-dj-deck:last-child .daw-dj-jog{border-color:#ffb238;color:#ffb238}#daw-session .daw-dj-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}#daw-session.is-dj .daw-mixer{grid-column:2}@media (max-width:900px){#daw-session .daw-dj-board{grid-template-columns:1fr}}#daw-session .daw-devices{display:flex;gap:10px;overflow:auto;padding:10px 12px;border-top:1px solid var(--border,#263029);align-items:stretch}#daw-session .daw-dev{flex:0 0 168px;min-width:168px;border:1px solid var(--border,#263029);border-radius:10px;padding:8px;background:var(--surface-alt,#1a201c);display:flex;flex-direction:column;gap:6px}#daw-session .daw-dev.off{opacity:.45}#daw-session .daw-dev-h{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--phosphor,#3fc6ff)}#daw-session .daw-dev .daw-btn{min-height:28px;padding:2px 8px}#daw-session .daw-strip.sel{border-color:var(--phosphor,#3fc6ff);box-shadow:inset 0 0 0 1px var(--phosphor,#3fc6ff)}" +
       "#daw-session .daw-rack-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px}" +
       "#daw-session .daw-pads{display:grid;grid-template-columns:repeat(4,minmax(72px,1fr));gap:8px;padding:12px;max-width:640px}" +
       "#daw-session .daw-pad{min-height:72px;border-radius:10px;border:1px solid var(--border,#263029);background:var(--surface-alt,#1a201c);color:var(--phosphor,#3fc6ff);font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}" +
@@ -4588,7 +5091,7 @@
   }
 
   function midiCC(cc, val) {
-    var djCc = { xfade: 1, volA: 1, volB: 1, pitchA: 1, pitchB: 1, jogA: 1, jogB: 1 };
+    var djCc = { xfade: 1, volA: 1, volB: 1, pitchA: 1, pitchB: 1, jogA: 1, jogB: 1, eqLowA: 1, eqMidA: 1, eqHiA: 1, eqLowB: 1, eqMidB: 1, eqHiB: 1, filterA: 1, filterB: 1 };
     if (midiLearn && (djCc[midiLearn] || midiLearn === "volume" || midiLearn === "pan" || midiLearn === "cutoff")) {
       state.ccMap[cc] = midiLearn;
       setMidiLabel("CC" + cc + " → " + midiLearn);
@@ -4608,6 +5111,20 @@
     if (dest === "pitchB") { decks.B.rate = 0.84 + val * 0.32; applyDeckRate("B"); paintDj(); return; }
     if (dest === "jogA") { jogDeck("A", (val - 0.5) * 2); return; }
     if (dest === "jogB") { jogDeck("B", (val - 0.5) * 2); return; }
+    if (dest === "eqLowA" || dest === "eqMidA" || dest === "eqHiA") {
+      var kA = dest === "eqLowA" ? "eqLow" : dest === "eqMidA" ? "eqMid" : "eqHi";
+      decks.A[kA] = -18 + val * 24;
+      applyDeckEq("A");
+      return;
+    }
+    if (dest === "eqLowB" || dest === "eqMidB" || dest === "eqHiB") {
+      var kB = dest === "eqLowB" ? "eqLow" : dest === "eqMidB" ? "eqMid" : "eqHi";
+      decks.B[kB] = -18 + val * 24;
+      applyDeckEq("B");
+      return;
+    }
+    if (dest === "filterA") { decks.A.filter = val; applyDeckEq("A"); return; }
+    if (dest === "filterB") { decks.B.filter = val; applyDeckEq("B"); return; }
     var tr = selectedTrack();
     if (!tr) return;
     if (dest === "volume") {
