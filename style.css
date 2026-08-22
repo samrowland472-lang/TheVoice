@@ -3039,3 +3039,18 @@ input:focus-visible,
 .plan-compare-r:nth-child(even) { background: color-mix(in srgb, var(--phosphor) 4%, transparent); }
 .plan-compare-r span:not(:first-child) { text-align: center; color: var(--phosphor); }
 #sidebar-plan-badge { margin-left: auto; }
+
+.abl-warp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 8px 10px 10px;
+  border-top: 1px solid var(--border);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+}
+.abl-warp label { display: flex; align-items: center; gap: 6px; }
+.abl-warp input[type="number"] { width: 64px; }
+.abl-warp input[type="range"] { width: 90px; }

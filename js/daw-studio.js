@@ -137,6 +137,7 @@ function makeArrClip(partial) {
     ...partial,
   };
   ensureEnv(c);
+  if (c.buffer) ensureWarp(c);
   return c;
 }
 
@@ -346,16 +347,59 @@ function trigMetro(t, accent) {
   o.start(t); o.stop(t + 0.05);
 }
 
-function trigBuffer(t, buffer, dest, gain) {
+function trigBuffer(t, buffer, dest, gain, rate) {
   const a = audio();
   if (!a || !buffer) return;
   const src = a.ctx.createBufferSource();
   src.buffer = buffer;
+  src.playbackRate.value = Math.max(0.25, Math.min(4, rate || 1));
   const g = a.ctx.createGain();
   g.gain.value = gain == null ? 0.9 : gain;
   src.connect(g);
   g.connect(dest || (mix.master && mix.master.input) || a.master);
   src.start(t);
+}
+
+function detectBpm(buf) {
+  if (!buf) return 120;
+  const ch = buf.getChannelData(0);
+  const sr = buf.sampleRate;
+  const hop = Math.floor(sr / 200);
+  const env = [];
+  for (let i = 0; i < ch.length; i += hop) {
+    let sum = 0;
+    const end = Math.min(ch.length, i + hop);
+    for (let j = i; j < end; j++) sum += ch[j] * ch[j];
+    env.push(Math.sqrt(sum / Math.max(1, end - i)));
+  }
+  for (let i = env.length - 1; i > 0; i--) env[i] = Math.max(0, env[i] - env[i - 1]);
+  const minLag = Math.round((60 / 180) * 200);
+  const maxLag = Math.round((60 / 70) * 200);
+  let best = 0;
+  let bestLag = minLag;
+  for (let lag = minLag; lag <= maxLag; lag++) {
+    let corr = 0;
+    for (let i = 0; i < env.length - lag; i++) corr += env[i] * env[i + lag];
+    if (corr > best) { best = corr; bestLag = lag; }
+  }
+  let bpmEst = 60 / (bestLag / 200);
+  if (bpmEst < 80) bpmEst *= 2;
+  if (bpmEst > 160) bpmEst /= 2;
+  return Math.round(bpmEst);
+}
+
+function ensureWarp(c) {
+  if (!c) return { mode: 'free', origBpm: 120, gain: 1 };
+  if (!c.warpMode) c.warpMode = c.buffer ? 'beats' : 'free';
+  if (!c.origBpm && c.buffer) c.origBpm = detectBpm(c.buffer);
+  if (c.gain == null) c.gain = 1;
+  return c;
+}
+
+function clipPlayRate(c) {
+  ensureWarp(c);
+  if (c && c.warpMode === 'beats' && c.origBpm) return bpm() / c.origBpm;
+  return 1;
 }
 
 function scheduleStep(st, t) {
@@ -373,7 +417,8 @@ function scheduleStep(st, t) {
   if (metroOn && st % 4 === 0) trigMetro(t, st % 16 === 0);
   const scene = clips[currentScene];
   if (scene && scene.buffer && (st % 16) === 0) {
-    trigBuffer(t, scene.buffer, mix.master && mix.master.input, 0.85);
+    ensureWarp(scene);
+    trigBuffer(t, scene.buffer, mix.master && mix.master.input, 0.85 * (scene.gain || 1), clipPlayRate(scene));
   }
 }
 
@@ -610,7 +655,8 @@ function scheduleArrange(st, t) {
     const dest = voiceDest(track, t, cut);
     const local = (st - c.start) % 16;
     if (c.buffer && local === 0) {
-      trigBuffer(t, c.buffer, dest, vel);
+      ensureWarp(c);
+      trigBuffer(t, c.buffer, dest, vel * (c.gain || 1), clipPlayRate(c));
       continue;
     }
     if (track === 'keys') {
@@ -1159,7 +1205,22 @@ function paintSession() {
     <label>B <select id="fol-b">${actionOpts}</select></label>
     <label>A chance <input id="fol-chance" type="range" min="0" max="100" value="${f.chance}"><span id="fol-chance-val">${f.chance}%</span></label>
     <span class="abl-muted" id="fol-target">${sel.name || 'Scene ' + (selectedScene + 1)}</span>
-  </div></div>`;
+  </div>`;
+  if (sel.buffer) {
+    ensureWarp(sel);
+    const rate = clipPlayRate(sel);
+    html += `<div class="abl-warp" id="abl-warp">
+      <span class="daw-kicker">Warp</span>
+      <label>Mode <select id="warp-mode">
+        <option value="beats"${sel.warpMode === 'beats' ? ' selected' : ''}>Beats (lock to tempo)</option>
+        <option value="free"${sel.warpMode === 'free' ? ' selected' : ''}>Free (1:1)</option>
+      </select></label>
+      <label>Orig BPM <input id="warp-bpm" type="number" min="40" max="240" value="${sel.origBpm || 120}"></label>
+      <label>Gain <input id="warp-gain" type="range" min="0" max="1.5" step="0.01" value="${sel.gain}"><span id="warp-gain-val">${Number(sel.gain).toFixed(2)}</span></label>
+      <span class="abl-muted">rate ${rate.toFixed(2)}× · ${sel.buffer.duration.toFixed(1)}s</span>
+    </div>`;
+  }
+  html += '</div>';
   root.innerHTML = html;
   root.querySelector('#fol-a').value = f.a;
   root.querySelector('#fol-b').value = f.b;
@@ -1191,6 +1252,24 @@ function paintSession() {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', writeFollow);
     if (el) el.addEventListener('change', writeFollow);
+  });
+  const warpMode = document.getElementById('warp-mode');
+  const warpBpm = document.getElementById('warp-bpm');
+  const warpGain = document.getElementById('warp-gain');
+  const writeWarp = () => {
+    const c = clips[selectedScene];
+    if (!c || !c.buffer) return;
+    ensureWarp(c);
+    if (warpMode) c.warpMode = warpMode.value === 'free' ? 'free' : 'beats';
+    if (warpBpm) c.origBpm = Math.max(40, Math.min(240, Number(warpBpm.value) || 120));
+    if (warpGain) c.gain = Math.max(0, Math.min(1.5, Number(warpGain.value) || 1));
+    const gv = document.getElementById('warp-gain-val');
+    if (gv) gv.textContent = Number(c.gain).toFixed(2);
+  };
+  [warpMode, warpBpm, warpGain].forEach((el) => {
+    if (!el) return;
+    el.addEventListener('input', writeWarp);
+    el.addEventListener('change', writeWarp);
   });
   root.querySelectorAll('.abl-clip').forEach((btn) => {
     const s = Number(btn.dataset.scene);
@@ -1777,6 +1856,9 @@ export async function addVoiceClip({ name, blob, buffer }) {
   if (slot && !slot.buffer) {
     slot.buffer = buf;
     slot.name = slot.name || sample.name;
+    slot.origBpm = detectBpm(buf);
+    slot.warpMode = 'free';
+    slot.gain = 1;
   }
   paintBrowser();
   paintSession();
