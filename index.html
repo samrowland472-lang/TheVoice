@@ -461,7 +461,7 @@
 
   <div id="animate-view" hidden data-drop-zone>
     <label class="field-label">Animate</label>
-    <p class="hint hint-info" style="margin-top:4px;">Build a scene from shapes and keyframes. Mark a shape "reactive" and load a voice clip to make it move with the audio.</p>
+    <p class="hint hint-info" style="margin-top:4px;">Build a scene from shapes, keyframes, and driven expressions. JKL shuttle, comma/period to step frames, N for onion skin. Load the nested-cycle figure to see a walk that never quite repeats.</p>
 
     <div class="agent-bar">
       <label class="field-label" for="agent-prompt">Describe it</label>
@@ -496,9 +496,16 @@
     </div>
 
     <div class="anim-transport">
-      <button id="anim-play-btn" class="btn btn-primary">Play</button>
+      <div class="anim-shuttle" role="group" aria-label="Playback">
+        <button type="button" id="anim-step-back" class="btn" title="Previous frame (,)">‹</button>
+        <button id="anim-play-btn" class="btn btn-primary" title="Play / pause (K)">Play</button>
+        <button type="button" id="anim-step-fwd" class="btn" title="Next frame (.)">›</button>
+      </div>
       <input type="range" id="anim-time" min="0" max="5" step="0.01" value="0" aria-label="Scrub through the scene">
       <span class="anim-time-label" id="anim-time-label">0.00s</span>
+      <span class="anim-speed-label" id="anim-speed-label" hidden></span>
+      <label class="anim-check" for="anim-loop"><input type="checkbox" id="anim-loop"> Loop</label>
+      <label class="anim-check" for="anim-onion"><input type="checkbox" id="anim-onion"> Onion <kbd>N</kbd></label>
     </div>
 
     <div class="camera-bar" id="camera-bar">
@@ -561,6 +568,7 @@
       <button id="anim-import-image-btn" class="btn">Import image…</button>
       <button id="anim-import-model-btn" class="btn">Import 3D model…</button>
       <button id="anim-new-btn" class="btn">New scene</button>
+      <button id="anim-aether-btn" class="btn" title="Walking figure with nested 7s / 17s / 23s cycles">Load nested cycles</button>
       <button id="anim-open-btn" class="btn">Open scene…</button>
       <button id="anim-save-btn" class="btn">Save scene</button>
       <button id="anim-video-btn" class="btn btn-primary" disabled>Export video</button>
@@ -618,8 +626,46 @@
           <input type="color" id="anim-color" value="#3fc6ff">
           <label class="anim-check"><input type="checkbox" id="anim-reactive"> React to voice</label>
           <label class="anim-check" for="anim-smooth"><input type="checkbox" id="anim-smooth"> Curved path</label>
+          <label class="anim-check" for="anim-cycle"><input type="checkbox" id="anim-cycle"> Cycle keys</label>
           <label class="camera-field path-tension" for="anim-tension" hidden>Bend <span id="anim-tension-value">1.00</span>
             <input type="range" id="anim-tension" min="0" max="1" step="0.05" value="1"></label>
+        </div>
+        <div class="anim-expr" id="anim-expr">
+          <label class="field-label">Driven key (expression)</label>
+          <div class="anim-prop-row">
+            <label for="anim-expr-channel">Channel</label>
+            <select id="anim-expr-channel">
+              <option value="x">X</option>
+              <option value="y">Y</option>
+              <option value="z">Depth</option>
+              <option value="rotation">Spin</option>
+              <option value="rotX">Tilt X</option>
+              <option value="rotY">Turn Y</option>
+              <option value="scale">Scale</option>
+              <option value="opacity">Opacity</option>
+            </select>
+          </div>
+          <div class="anim-prop-row">
+            <label for="anim-expr-kind">Drive</label>
+            <select id="anim-expr-kind">
+              <option value="">Keys only</option>
+              <option value="sin">Sine</option>
+              <option value="cos">Cosine</option>
+              <option value="ramp">Ramp / spin</option>
+            </select>
+          </div>
+          <div class="anim-expr-params" id="anim-expr-params" hidden>
+            <div class="control-item"><label for="anim-expr-amp">Amp <span id="anim-expr-amp-value">10</span></label>
+              <input type="range" id="anim-expr-amp" min="0" max="80" step="1" value="10"></div>
+            <div class="control-item"><label for="anim-expr-period">Period s <span id="anim-expr-period-value">7</span></label>
+              <input type="range" id="anim-expr-period" min="0.5" max="30" step="0.5" value="7"></div>
+            <div class="control-item"><label for="anim-expr-rate">Rate <span id="anim-expr-rate-value">15</span></label>
+              <input type="range" id="anim-expr-rate" min="-90" max="90" step="1" value="15"></div>
+          </div>
+        </div>
+        <div class="anim-prop-row">
+          <button type="button" id="anim-copy-pose" class="btn">Copy pose</button>
+          <button type="button" id="anim-paste-pose" class="btn">Paste pose</button>
         </div>
         <div class="anim-keyframes" id="anim-keyframes"></div>
 

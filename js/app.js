@@ -26,7 +26,9 @@ import { createScene, createShape, setKeyframe, removeKeyframe, sampleShape,
          setCameraKey, removeCameraKey, cameraKeys,
          setLightKey, removeLightKey, lightKeys, shapePathScreen,
          cameraAt, worldTransforms, attachSceneModel,
-         hydrateSceneModels, resolveFrame, localDelta } from './animation.js';
+         hydrateSceneModels, resolveFrame, localDelta,
+         wrapPlayhead, setExpression, copyPose, pastePose,
+         stepTime, nextShuttleSpeed, createAetherLoop, ONION_OFFSETS } from './animation.js';
 import { readModel, flattenModel, GltfError } from './gltf.js';
 import { pickAt, dragToWorld, selectionOutline } from './picking.js';
 import { actOnScene } from './casting.js';
@@ -2062,6 +2064,10 @@ let animPlaying = false;
 let animRaf = null;
 let animStartedAt = 0;
 let animLevels = null;
+let animSpeed = 1;
+let animLastTick = 0;
+let animOnion = false;
+let animPoseClipboard = null;
 
 // Named after what they do to a movement, not after the maths — someone
 // choosing how a title should arrive is thinking "settle", not
@@ -2279,6 +2285,8 @@ function animSyncProps() {
   animSyncPath();
   animRenderKeyframes();
   animSyncCurve();
+  animSyncExpr();
+  if (animLoopToggle) animLoopToggle.checked = !!animScene.loop;
 }
 
 function animSyncSliderLabels() {
@@ -2368,6 +2376,113 @@ animReactive.addEventListener('change', () => {
   if (shape) { shape.reactive = animReactive.checked; animRenderShapeList(); animDraw(); }
   animRecord();
 });
+
+const animCycleToggle = document.getElementById('anim-cycle');
+const animExprChannel = document.getElementById('anim-expr-channel');
+const animExprKind = document.getElementById('anim-expr-kind');
+const animExprParams = document.getElementById('anim-expr-params');
+const animExprAmp = document.getElementById('anim-expr-amp');
+const animExprPeriod = document.getElementById('anim-expr-period');
+const animExprRate = document.getElementById('anim-expr-rate');
+const animExprAmpValue = document.getElementById('anim-expr-amp-value');
+const animExprPeriodValue = document.getElementById('anim-expr-period-value');
+const animExprRateValue = document.getElementById('anim-expr-rate-value');
+
+function animCurrentExpr() {
+  const shape = animSelected();
+  const channel = animExprChannel && animExprChannel.value;
+  if (!shape || !channel || !shape.expr) return null;
+  return shape.expr[channel] || null;
+}
+
+function animSyncExpr() {
+  const shape = animSelected();
+  if (animCycleToggle) animCycleToggle.checked = !!(shape && shape.cycle);
+  const spec = animCurrentExpr();
+  if (animExprKind) animExprKind.value = spec ? spec.kind : '';
+  if (animExprParams) animExprParams.hidden = !spec;
+  if (!spec) return;
+  if (animExprAmp) {
+    animExprAmp.value = String(spec.amp != null ? spec.amp : 10);
+    if (animExprAmpValue) animExprAmpValue.textContent = animExprAmp.value;
+  }
+  if (animExprPeriod) {
+    animExprPeriod.value = String(spec.period != null ? spec.period : 7);
+    if (animExprPeriodValue) animExprPeriodValue.textContent = animExprPeriod.value;
+  }
+  if (animExprRate) {
+    animExprRate.value = String(spec.rate != null ? spec.rate : 15);
+    if (animExprRateValue) animExprRateValue.textContent = animExprRate.value;
+  }
+}
+
+function animCommitExpr() {
+  const shape = animSelected();
+  if (!shape || !animExprChannel || !animExprKind) return;
+  const channel = animExprChannel.value;
+  const kind = animExprKind.value;
+  if (!kind) {
+    setExpression(shape, channel, null);
+  } else {
+    const existing = animCurrentExpr();
+    const sampled = sampleShape(shape, parseFloat(animTime.value) || 0);
+    const rest = existing && existing.offset != null
+      ? existing.offset
+      : (typeof sampled[channel] === 'number' ? sampled[channel] : 0);
+    const spec = {
+      kind,
+      offset: rest,
+      amp: parseFloat(animExprAmp.value) || 10,
+      period: parseFloat(animExprPeriod.value) || 7,
+      phase: existing && existing.phase != null ? existing.phase : 0,
+      rate: parseFloat(animExprRate.value) || 15,
+    };
+    if (kind === 'ramp') { spec.amp = 0; spec.period = 1; }
+    else spec.rate = 0;
+    setExpression(shape, channel, spec);
+  }
+  animSyncExpr();
+  animDraw();
+}
+
+if (animCycleToggle) {
+  animCycleToggle.addEventListener('change', () => {
+    const shape = animSelected();
+    if (!shape) return;
+    shape.cycle = animCycleToggle.checked;
+    animDraw();
+    animRecord();
+  });
+}
+if (animExprChannel) animExprChannel.addEventListener('change', animSyncExpr);
+if (animExprKind) animExprKind.addEventListener('change', () => { animCommitExpr(); animRecord(); });
+if (animExprAmp) animExprAmp.addEventListener('input', () => { animCommitExpr(); });
+if (animExprPeriod) animExprPeriod.addEventListener('input', () => { animCommitExpr(); });
+if (animExprRate) animExprRate.addEventListener('input', () => { animCommitExpr(); });
+if (animExprAmp) animExprAmp.addEventListener('change', animRecord);
+if (animExprPeriod) animExprPeriod.addEventListener('change', animRecord);
+if (animExprRate) animExprRate.addEventListener('change', animRecord);
+
+const animCopyPoseBtn = document.getElementById('anim-copy-pose');
+const animPastePoseBtn = document.getElementById('anim-paste-pose');
+if (animCopyPoseBtn) {
+  animCopyPoseBtn.addEventListener('click', () => {
+    const shape = animSelected();
+    if (!shape) return;
+    animPoseClipboard = copyPose(shape, parseFloat(animTime.value) || 0);
+    showToast('Pose copied');
+  });
+}
+if (animPastePoseBtn) {
+  animPastePoseBtn.addEventListener('click', () => {
+    const shape = animSelected();
+    if (!shape || !animPoseClipboard) return;
+    pastePose(shape, parseFloat(animTime.value) || 0, animPoseClipboard);
+    animSyncProps();
+    animDraw();
+    animRecord();
+  });
+}
 animEasing.addEventListener('change', () => {
   if (animEasing.value === 'custom') {
     // "Custom" is a state you arrive at by dragging, not one you pick;
@@ -2503,6 +2618,25 @@ animNewBtn.addEventListener('click', () => {
   showToast('New scene — Ctrl+Z to bring the old one back');
 });
 
+const animAetherBtn = document.getElementById('anim-aether-btn');
+if (animAetherBtn) {
+  animAetherBtn.addEventListener('click', () => {
+    animScene = createAetherLoop();
+    animSetSelection(animScene.shapes.length ? [animScene.shapes[0].id] : [],
+                     animScene.shapes.length ? animScene.shapes[0].id : null);
+    animLevels = null;
+    animTime.max = String(animScene.duration);
+    animTime.value = '0';
+    if (animLoopToggle) animLoopToggle.checked = true;
+    anim3dSync();
+    animRenderShapeList();
+    animSyncProps();
+    animDraw();
+    animRecord();
+    showToast('Nested cycles — walk 7s · sway 17s · spin 23s. JKL to shuttle.');
+  });
+}
+
 animDeleteBtn.addEventListener('click', () => {
   if (!animSelectedIds.size) return;
   const at = parseFloat(animTime.value) || 0;
@@ -2523,23 +2657,49 @@ animDeleteBtn.addEventListener('click', () => {
 
 function animStop() {
   animPlaying = false;
+  animSpeed = 0;
   animPlayBtn.textContent = 'Play';
+  const speedLabel = document.getElementById('anim-speed-label');
+  if (speedLabel) { speedLabel.hidden = true; speedLabel.textContent = ''; }
   if (animRaf) cancelAnimationFrame(animRaf);
   animRaf = null;
-  // Guides are suppressed while playing; pausing has to redraw them.
   animRenderAt(parseFloat(animTime.value));
 }
 
-animPlayBtn.addEventListener('click', () => {
-  if (animPlaying) { animStop(); return; }
+function animSyncSpeedLabel() {
+  const speedLabel = document.getElementById('anim-speed-label');
+  if (!speedLabel) return;
+  if (!animPlaying || animSpeed === 1 || animSpeed === 0) {
+    speedLabel.hidden = true;
+    return;
+  }
+  speedLabel.hidden = false;
+  speedLabel.textContent = animSpeed < 0 ? `${animSpeed}×` : `${animSpeed}×`;
+}
+
+function animStartPlayback(speed) {
+  animSpeed = speed === undefined ? (animSpeed || 1) : speed;
+  if (animSpeed === 0) { animStop(); return; }
   animPlaying = true;
   animPlayBtn.textContent = 'Pause';
-  animStartedAt = performance.now() - parseFloat(animTime.value) * 1000;
+  animLastTick = performance.now();
+  animSyncSpeedLabel();
   const tick = () => {
     if (!animPlaying) return;
-    const t = (performance.now() - animStartedAt) / 1000;
-    if (t >= animScene.duration) {
+    const now = performance.now();
+    const dt = (now - animLastTick) / 1000;
+    animLastTick = now;
+    const looping = !!(animScene.loop || document.getElementById('anim-loop')?.checked);
+    let t = parseFloat(animTime.value) + dt * animSpeed;
+    if (looping || animSpeed < 0) {
+      t = wrapPlayhead(t, animScene.duration, true);
+    } else if (t >= animScene.duration) {
       animTime.value = String(animScene.duration);
+      animDraw();
+      animStop();
+      return;
+    } else if (t < 0) {
+      animTime.value = '0';
       animDraw();
       animStop();
       return;
@@ -2548,8 +2708,32 @@ animPlayBtn.addEventListener('click', () => {
     animDraw();
     animRaf = requestAnimationFrame(tick);
   };
-  tick();
+  if (animRaf) cancelAnimationFrame(animRaf);
+  animRaf = requestAnimationFrame(tick);
+}
+
+animPlayBtn.addEventListener('click', () => {
+  if (animPlaying) { animStop(); return; }
+  animStartPlayback(1);
 });
+
+const animStepBack = document.getElementById('anim-step-back');
+const animStepFwd = document.getElementById('anim-step-fwd');
+const animLoopToggle = document.getElementById('anim-loop');
+const animOnionToggle = document.getElementById('anim-onion');
+if (animStepBack) animStepBack.addEventListener('click', () => animStep(-1));
+if (animStepFwd) animStepFwd.addEventListener('click', () => animStep(1));
+if (animLoopToggle) {
+  animLoopToggle.addEventListener('change', () => {
+    animScene.loop = animLoopToggle.checked;
+  });
+}
+if (animOnionToggle) {
+  animOnionToggle.addEventListener('change', () => {
+    animOnion = animOnionToggle.checked;
+    animDraw();
+  });
+}
 
 animVoiceBtn.addEventListener('click', async () => {
   const source = modResultBlob || originalRecordingBlob || lastClipBlob;
@@ -2709,6 +2893,7 @@ function animDrawOverlay() {
   const w = animOverlay.width;
   const h = animOverlay.height;
   ctx.clearRect(0, 0, w, h);
+  if (animOnion) animDrawOnion(ctx, w, h);
   if (animPlaying || animExporting) return;
 
   const shape = animSelected();
@@ -2810,6 +2995,39 @@ function animDrawOverlay() {
     ctx.fill();
   }
   ctx.restore();
+}
+
+function animDrawOnion(ctx, w, h) {
+  const time = parseFloat(animTime.value) || 0;
+  const fps = animScene.fps || 30;
+  const looping = !!(animScene.loop || document.getElementById('anim-loop')?.checked);
+  const camera = cameraAt(animScene, time);
+  for (const off of ONION_OFFSETS) {
+    const t = wrapPlayhead(time + off / fps, animScene.duration, looping);
+    const worlds = worldTransforms(animScene, t);
+    ctx.save();
+    ctx.globalAlpha = off < 0 ? 0.22 : 0.14;
+    ctx.fillStyle = off < 0 ? '#7ec8ff' : '#ff9a6a';
+    for (const shape of animScene.shapes) {
+      const p = worlds.get(shape.id);
+      if (!p || p.opacity < 0.01) continue;
+      let x;
+      let y;
+      if (camera) {
+        const proj = projectPoint({ x: p.x, y: p.y, z: p.z || 0 }, camera, w, h);
+        if (!proj.visible) continue;
+        x = proj.x;
+        y = proj.y;
+      } else {
+        x = (p.x / 100) * w;
+        y = (p.y / 100) * h;
+      }
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 function animOnShow() {
@@ -2928,6 +3146,39 @@ document.addEventListener('keydown', (ev) => {
   if (!mode) return;
   ev.preventDefault();
   animSetGizmoMode(mode);
+});
+
+function animStep(dir) {
+  const looping = !!(animScene.loop || document.getElementById('anim-loop')?.checked);
+  animTime.value = String(stepTime(parseFloat(animTime.value) || 0, animScene.fps, dir, animScene.duration, looping));
+  animSyncProps();
+  animDraw();
+}
+
+function animShuttle(dir) {
+  const next = nextShuttleSpeed(animPlaying ? animSpeed : 0, dir);
+  if (next === 0) { animStop(); return; }
+  animStartPlayback(next);
+}
+
+document.addEventListener('keydown', (ev) => {
+  if (animateView.hidden) return;
+  if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (isTextEntry(ev.target)) return;
+  const key = ev.key;
+  const lower = String(key).toLowerCase();
+  if (key === ',' || key === '<') { ev.preventDefault(); animStep(-1); return; }
+  if (key === '.' || key === '>') { ev.preventDefault(); animStep(1); return; }
+  if (lower === 'j') { ev.preventDefault(); animShuttle(-1); return; }
+  if (lower === 'k') { ev.preventDefault(); animPlaying ? animStop() : animStartPlayback(1); return; }
+  if (lower === 'l') { ev.preventDefault(); animShuttle(1); return; }
+  if (lower === 'n') {
+    ev.preventDefault();
+    animOnion = !animOnion;
+    const onion = document.getElementById('anim-onion');
+    if (onion) onion.checked = animOnion;
+    animDraw();
+  }
 });
 
 /** The gizmo's handles for the current selection, in canvas pixels. */

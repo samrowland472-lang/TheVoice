@@ -217,5 +217,49 @@ console.log('--- createShape carries extrusion for text only ---');
   ok('a circle carries none', createShape('circle').extrude === 0);
 }
 
+console.log('--- AETHER expressions, cycles, shuttle ---');
+{
+  const { evalExpr, setExpression, wrapPlayhead, stepTime, nextShuttleSpeed,
+          createAetherLoop, copyPose, pastePose } = await import('../js/animation.js');
+  ok('sin at rest is offset', Math.abs(evalExpr({ kind: 'sin', amp: 10, period: 4, phase: 0, offset: 50 }, 0) - 50) < 1e-9);
+  ok('sin quarter-period is offset+amp', Math.abs(evalExpr({ kind: 'sin', amp: 10, period: 4, phase: 0, offset: 50 }, 1) - 60) < 1e-9);
+  ok('ramp is offset + rate*t', Math.abs(evalExpr({ kind: 'ramp', rate: 10, offset: 5 }, 2) - 25) < 1e-9);
+
+  const driven = createShape('circle', 0);
+  driven.keyframes[0].x = 50;
+  setExpression(driven, 'x', { kind: 'sin', amp: 10, period: 4, phase: 0, offset: 50 });
+  ok('expr replaces the keyed channel', Math.abs(sampleShape(driven, 1).x - 60) < 1e-6);
+  ok('other channels still come from keys', Math.abs(sampleShape(driven, 1).y - 50) < 1e-6);
+
+  const looped = createShape('rect', 0);
+  looped.easing = 'linear';
+  looped.cycle = true;
+  looped.keyframes[0].x = 0;
+  setKeyframe(looped, 2, { x: 100 });
+  ok('cycle wraps past the last key', Math.abs(sampleShape(looped, 3).x - 50) < 0.5, String(sampleShape(looped, 3).x));
+
+  ok('wrap loops', Math.abs(wrapPlayhead(25, 23, true) - 2) < 1e-9);
+  ok('wrap clamps without loop', wrapPlayhead(25, 23, false) === 23);
+  ok('step forward one frame', Math.abs(stepTime(0, 24, 1, 10, false) - 1 / 24) < 1e-9);
+  ok('J from still is reverse', nextShuttleSpeed(0, -1) === -1);
+  ok('L twice is 2x', nextShuttleSpeed(1, 1) === 2);
+  ok('K pauses', nextShuttleSpeed(4, 0) === 0);
+
+  const pose = copyPose(driven, 0);
+  const other = createShape('circle', 0);
+  pastePose(other, 0, pose);
+  ok('paste pose writes a key', Math.abs(other.keyframes[0].x - pose.x) < 1e-6);
+
+  const loop = createAetherLoop();
+  ok('nested-cycle scene loops', loop.loop === true && loop.duration === 23);
+  ok('figure has a hip and limbs', loop.shapes.length >= 8);
+  ok('someone is driven', loop.shapes.some((s) => s.expr && s.expr.rotation));
+  ok('parenting survived', loop.shapes.some((s) => s.parent));
+  const hip = loop.shapes.find((s) => s.label === 'Hip');
+  const x0 = sampleShape(hip, 0).x;
+  const x1 = sampleShape(hip, 17 / 4).x;
+  ok('hip sways on the 17s cycle', Math.abs(x1 - x0) > 5, `${x0} -> ${x1}`);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

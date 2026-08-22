@@ -14,6 +14,7 @@ Serve the folder (any static host) so `index.html` and the `js/` directory sit t
 - Music → Arrange — timeline, loop brace, clip volume/cutoff envelopes.
 - Music → DJ Live — two decks.
 - Command bar in the transport (Ctrl/⌘+K): `play`, `128 bpm`, `mute kick`, `scene 1`.
+- Animate — keyframes, 3D, parenting, JKL shuttle, onion skin, driven sine/cosine/ramp keys, nested coprime cycles.
 
 Flick (the spark) talks to `/api/flick-chat` when an `XAI_API_KEY` is set on the host. Without it, local DAW commands still run.
 

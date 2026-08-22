@@ -16,7 +16,7 @@ import { createLight, lightDirection, lightTint, sampleLight,
 import { rotatePoint } from './camera3d.js';
 import { createCamera, projectPoint, depthSort, framingDistance,
          sampleCamera, setCameraKeyframe, removeCameraKeyframe } from './camera3d.js';
-import { composeTransform, unrotatePoint, MAX_DEPTH } from './scenegraph.js';
+import { composeTransform, unrotatePoint, MAX_DEPTH, setParent } from './scenegraph.js';
 
 export const SHAPE_TYPES = ['circle', 'rect', 'triangle', 'text', 'wave', 'image',
                             'cube', 'sphere', 'pyramid'];
@@ -96,7 +96,7 @@ export function createShape(type, atTime = 0) {
 }
 
 export function createScene() {
-  return { duration: 5, fps: 30, background: '#0a0d0c', shapes: [] };
+  return { duration: 5, fps: 30, background: '#0a0d0c', shapes: [], loop: false };
 }
 
 /** Insert or replace a keyframe at `time`, keeping the list time-ordered. */
@@ -136,19 +136,120 @@ function lerpColor(a, b, t) {
   return `#${((1 << 24) | (r << 16) | (g << 8) | bl).toString(16).slice(1)}`;
 }
 
+/** Sin / cos / ramp, the Maya-style driven keys AETHER evaluates per channel. */
+export function evalExpr(expr, t) {
+  if (!expr || !expr.kind) return 0;
+  const period = Math.max(expr.period || 1, 1e-6);
+  const amp = expr.amp || 0;
+  const phase = expr.phase || 0;
+  const offset = expr.offset || 0;
+  if (expr.kind === 'sin') return offset + amp * Math.sin((t / period) * Math.PI * 2 + phase);
+  if (expr.kind === 'cos') return offset + amp * Math.cos((t / period) * Math.PI * 2 + phase);
+  return offset + (expr.rate || 0) * t;
+}
+
+const EXPR_CHANNELS = ['x', 'y', 'z', 'scale', 'rotation', 'rotX', 'rotY', 'opacity'];
+
+function cycleTime(shape, time) {
+  const kfs = shape && shape.keyframes;
+  if (!shape || !shape.cycle || !kfs || kfs.length < 2) return time;
+  const t0 = kfs[0].time;
+  const t1 = kfs[kfs.length - 1].time;
+  const span = t1 - t0;
+  if (span <= 0) return time;
+  return t0 + ((((time - t0) % span) + span) % span);
+}
+
+function applyExpressions(out, expr, time) {
+  if (!expr) return out;
+  for (const channel of EXPR_CHANNELS) {
+    const spec = expr[channel];
+    if (!spec) continue;
+    out[channel] = evalExpr(spec, time);
+  }
+  return out;
+}
+
+function finishSample(shape, raw, time) {
+  const out = { ...raw, time };
+  applyExpressions(out, shape && shape.expr, time);
+  return out;
+}
+
+export function setExpression(shape, channel, spec) {
+  if (!EXPR_CHANNELS.includes(channel)) return false;
+  if (!shape.expr) shape.expr = {};
+  if (!spec) {
+    delete shape.expr[channel];
+    if (!Object.keys(shape.expr).length) delete shape.expr;
+    return true;
+  }
+  shape.expr[channel] = spec;
+  return true;
+}
+
+export function clearExpression(shape, channel) {
+  return setExpression(shape, channel, null);
+}
+
+export function copyPose(shape, time) {
+  const p = sampleShape(shape, time);
+  return {
+    x: p.x, y: p.y, z: p.z || 0,
+    scale: p.scale, rotation: p.rotation,
+    rotX: p.rotX || 0, rotY: p.rotY || 0,
+    opacity: p.opacity, color: p.color,
+  };
+}
+
+export function pastePose(shape, time, pose) {
+  if (!pose) return null;
+  return setKeyframe(shape, time, {
+    x: pose.x, y: pose.y, z: pose.z,
+    scale: pose.scale, rotation: pose.rotation,
+    rotX: pose.rotX, rotY: pose.rotY,
+    opacity: pose.opacity, color: pose.color,
+  });
+}
+
+export function wrapPlayhead(t, duration, loop) {
+  if (!(duration > 0)) return 0;
+  if (loop) return ((t % duration) + duration) % duration;
+  return Math.min(duration, Math.max(0, t));
+}
+
+export function stepTime(time, fps, dir, duration, loop) {
+  const step = 1 / Math.max(1, fps || 30);
+  return wrapPlayhead(time + dir * step, duration, !!loop);
+}
+
+/**
+ * Maya JKL shuttle. J reverse, K pause, L forward. Repeat J/L to 2×, 4×, 8×.
+ */
+export function nextShuttleSpeed(speed, dir) {
+  if (dir === 0) return 0;
+  if (!speed || Math.sign(speed) !== dir) return dir;
+  const mag = Math.abs(speed);
+  const next = mag >= 4 ? 8 : mag >= 2 ? 4 : 2;
+  return dir * next;
+}
+
+export const ONION_OFFSETS = [-3, -1, 1, 3];
+
 /** Shape properties at an arbitrary time, interpolated between keyframes. */
 export function sampleShape(shape, time) {
   const kfs = shape.keyframes;
-  if (!kfs.length) return { x: 50, y: 50, scale: 1, rotation: 0, opacity: 1, color: '#3fc6ff' };
-  if (time <= kfs[0].time) return { ...kfs[0] };
-  if (time >= kfs[kfs.length - 1].time) return { ...kfs[kfs.length - 1] };
+  const evalTime = cycleTime(shape, time);
+  if (!kfs.length) return finishSample(shape, { x: 50, y: 50, scale: 1, rotation: 0, opacity: 1, color: '#3fc6ff' }, time);
+  if (evalTime <= kfs[0].time) return finishSample(shape, { ...kfs[0] }, time);
+  if (evalTime >= kfs[kfs.length - 1].time) return finishSample(shape, { ...kfs[kfs.length - 1] }, time);
 
   let i = 0;
-  while (i < kfs.length - 1 && kfs[i + 1].time <= time) i++;
+  while (i < kfs.length - 1 && kfs[i + 1].time <= evalTime) i++;
   const a = kfs[i];
   const b = kfs[i + 1];
   const span = b.time - a.time;
-  const raw = span > 0 ? (time - a.time) / span : 0;
+  const raw = span > 0 ? (evalTime - a.time) / span : 0;
   // Easing belongs to the segment, and a segment is identified by the
   // keyframe it leaves from — so `a.ease` governs a→b. A shape-wide
   // `easing` is the fallback, which is what old scenes carry.
@@ -166,7 +267,7 @@ export function sampleShape(shape, time) {
     );
   }
 
-  return {
+  return finishSample(shape, {
     time,
     x: pos ? pos.x : lerp(a.x, b.x, t),
     y: pos ? pos.y : lerp(a.y, b.y, t),
@@ -177,7 +278,7 @@ export function sampleShape(shape, time) {
     rotY: lerp(a.rotY || 0, b.rotY || 0, t),
     opacity: lerp(a.opacity, b.opacity, t),
     color: lerpColor(a.color, b.color, t),
-  };
+  }, time);
 }
 
 /** Give a scene a camera, turning on the 3D path. */
@@ -722,3 +823,91 @@ export function shapePathScreen(shape, camera, width, height) {
   }
   return out;
 }
+
+function aetherShape(type, label, x, y, color, extra = {}) {
+  const shape = createShape(type, 0);
+  shape.label = label;
+  shape.keyframes[0].x = x;
+  shape.keyframes[0].y = y;
+  shape.keyframes[0].color = color;
+  if (extra.scale != null) shape.keyframes[0].scale = extra.scale;
+  if (extra.z != null) shape.keyframes[0].z = extra.z;
+  if (extra.expr) shape.expr = extra.expr;
+  if (extra.cycle) shape.cycle = true;
+  return shape;
+}
+
+/**
+ * Nested coprime cycles — a walking figure whose walk (7s), sway (17s)
+ * and spin (23s) only line up again after 2737s. This is the AETHER demo
+ * ported onto The Voice's shape/keyframe scene so Animate, not a second
+ * app, is where the loop lives.
+ */
+export function createAetherLoop() {
+  const scene = createScene();
+  scene.duration = 23;
+  scene.fps = 24;
+  scene.loop = true;
+  scene.background = '#07090c';
+  enable3D(scene, 48);
+
+  const hip = aetherShape('rect', 'Hip', 50, 58, '#3fc6ff', {
+    scale: 0.55,
+    cycle: true,
+    expr: { x: { kind: 'sin', amp: 10, period: 17, phase: 0, offset: 50 } },
+  });
+  const torso = aetherShape('cube', 'Torso', 50, 46, '#7ec8ff', {
+    scale: 0.7,
+    expr: { rotation: { kind: 'sin', amp: 6, period: 17, phase: 0.4, offset: 0 } },
+  });
+  const head = aetherShape('sphere', 'Head', 50, 34, '#f2d7b6', { scale: 0.45 });
+  const thighL = aetherShape('rect', 'Thigh L', 46, 70, '#3fc6ff', {
+    scale: 0.55,
+    expr: { rotation: { kind: 'sin', amp: 28, period: 7, phase: 0, offset: 8 } },
+  });
+  const thighR = aetherShape('rect', 'Thigh R', 54, 70, '#2aa8e0', {
+    scale: 0.55,
+    expr: { rotation: { kind: 'sin', amp: 28, period: 7, phase: Math.PI, offset: -8 } },
+  });
+  const shinL = aetherShape('rect', 'Shin L', 46, 82, '#7ec8ff', {
+    scale: 0.5,
+    expr: { rotation: { kind: 'sin', amp: 18, period: 7, phase: 0.6, offset: 4 } },
+  });
+  const shinR = aetherShape('rect', 'Shin R', 54, 82, '#5bb8e8', {
+    scale: 0.5,
+    expr: { rotation: { kind: 'sin', amp: 18, period: 7, phase: Math.PI + 0.6, offset: -4 } },
+  });
+  const armL = aetherShape('rect', 'Arm L', 40, 48, '#ff9a6a', {
+    scale: 0.45,
+    expr: { rotation: { kind: 'sin', amp: 32, period: 7, phase: Math.PI, offset: -12 } },
+  });
+  const armR = aetherShape('rect', 'Arm R', 60, 48, '#ffb08a', {
+    scale: 0.45,
+    expr: { rotation: { kind: 'sin', amp: 32, period: 7, phase: 0, offset: 12 } },
+  });
+  const sculpture = aetherShape('pyramid', 'Orbit', 78, 28, '#c9a227', {
+    scale: 0.6,
+    expr: {
+      rotation: { kind: 'ramp', rate: 360 / 23, offset: 0 },
+      y: { kind: 'sin', amp: 6, period: 23, phase: 0, offset: 28 },
+    },
+  });
+
+  scene.shapes.push(hip, torso, head, thighL, thighR, shinL, shinR, armL, armR, sculpture);
+
+  const sampler = {
+    world: (shape, time) => worldTransforms(scene, time).get(shape.id) || sampleShape(shape, time),
+    local: (shape, time) => sampleShape(shape, time),
+  };
+  setParent(scene, torso.id, hip.id, sampler, 0);
+  setParent(scene, head.id, torso.id, sampler, 0);
+  setParent(scene, thighL.id, hip.id, sampler, 0);
+  setParent(scene, thighR.id, hip.id, sampler, 0);
+  setParent(scene, shinL.id, thighL.id, sampler, 0);
+  setParent(scene, shinR.id, thighR.id, sampler, 0);
+  setParent(scene, armL.id, torso.id, sampler, 0);
+  setParent(scene, armR.id, torso.id, sampler, 0);
+
+  return scene;
+}
+

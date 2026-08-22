@@ -1082,6 +1082,25 @@
 
   .anim-transport .btn { flex: none; min-width: 90px; }
   .anim-transport input[type="range"] { flex: 1; }
+  .anim-shuttle { display: flex; gap: 4px; }
+  .anim-shuttle .btn { min-width: 36px; padding: 6px 10px; }
+  .anim-speed-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--phosphor);
+    min-width: 28px;
+  }
+  .anim-expr { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line, #1e2a28); }
+  .anim-expr-params { display: grid; gap: 6px; margin-top: 8px; }
+  kbd {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72em;
+    border: 1px solid currentColor;
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    padding: 0 4px;
+    opacity: 0.7;
+  }
 
   .anim-time-label {
     font-family: 'Share Tech Mono', monospace;
