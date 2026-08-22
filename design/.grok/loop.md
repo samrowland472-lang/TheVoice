@@ -31,9 +31,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Faithful SVG export: gradients, images, wrapped text, paths, opacity, blend.
-2. Image crop + rectangular mask.
-3. Manual guides + rulers (drag from edge, snap while moving).
+1. Image crop + rectangular mask.
+2. Manual guides + rulers (drag from edge, snap while moving).
 4. History panel (clickable undo stack).
 5. Pen tool: undo last point, close path, Escape to finish.
 6. Print / story safe-area overlay + optional bleed on export.
@@ -63,8 +62,13 @@ Auth OFF, DB OFF.
 - Studio chrome is full-bleed (no marketing sidebar on the board).
 - Layers: drag-to-reorder via grip; Shift-click multi-select; block move.
 - Align: **Selection** (2+ objects, relative to their bounds) or **Artboard**. Distribute still uses selection span.
+- SVG export: linear gradients, images, paint bitmaps, wrapped tspans, paths, polygon/star/arrow/line, opacity, blend, shadows. XML escaped.
 
 ## Iterations
+
+### 2026-08-22T18:18Z — loop 4
+
+Faithful SVG export. Signal Album SVG includes text tspans, ellipses, rects, letter-spacing. Typecheck + build + smoke clean.
 
 ### 2026-08-22T18:05Z — loop 3
 
@@ -84,4 +88,4 @@ Command palette, marquee, smart guides, clipboard, present, inspector depth, tem
 
 ## Next recommended
 
-Faithful SVG export.
+Image crop + rectangular mask.
