@@ -12,7 +12,9 @@ import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { evalNode } from "@/lib/studio/eval";
 import { bufferFromMeshGeometry } from "@/lib/studio/gltf";
+import { isIkDriven, chainForNode } from "@/lib/studio/ik";
 import { registerCapture } from "@/lib/studio/playblast";
+import { applyEvaluatedPose, applyShotCamera } from "@/lib/studio/pose";
 import { objectRegistry, registerObject } from "@/lib/studio/registry";
 import { childIds, useStudio } from "@/lib/studio/store";
 import type { MeshShape, SceneNode, Shading } from "@/lib/studio/types";
@@ -230,6 +232,13 @@ function NodeView({ id }: { id: string }) {
   const selected = useStudio((s) => s.selectedIds.includes(id) || s.selectedId === id);
   const shading = useStudio((s) => s.shading);
   const onionSkin = useStudio((s) => s.onionSkin);
+  const ikRole = useStudio((s) => {
+    const c = chainForNode(s.ikChains, id);
+    if (!c) return null;
+    if (c.targetId === id) return c.enabled ? "target" : "target-off";
+    if (c.poleId === id) return c.enabled ? "pole" : "pole-off";
+    return null;
+  });
   const children = useStudio(useShallow((s) => childIds(s.nodes, id)));
   const groupRef = useRef<THREE.Group>(null);
 
@@ -259,9 +268,15 @@ function NodeView({ id }: { id: string }) {
         {node.kind === "light" ? <LightBody node={node} selected={selected} /> : null}
         {node.kind === "camera" ? <CameraBody selected={selected} /> : null}
         {node.kind === "group" ? (
-          <mesh visible={selected}>
-            <sphereGeometry args={[0.06, 8, 8]} />
-            <meshBasicMaterial color="#8aa4b8" wireframe />
+          <mesh visible={selected || Boolean(ikRole)}>
+            <octahedronGeometry args={[ikRole ? 0.055 : 0.06, 0]} />
+            <meshBasicMaterial
+              color={
+                ikRole === "target" ? "#8aa4b8" : ikRole === "pole" ? "#d98a74" : "#8aa4b8"
+              }
+              wireframe={!ikRole || ikRole.endsWith("-off")}
+              depthTest={!ikRole}
+            />
           </mesh>
         ) : null}
         {children.map((cid) => (
@@ -291,8 +306,6 @@ function SceneGraph() {
 
 function Driver() {
   const { camera, gl } = useThree();
-  const lookDir = useRef(new THREE.Vector3());
-  const up = useRef(new THREE.Vector3(0, 1, 0));
 
   useFrame((_, delta) => {
     const d = Math.min(delta, 0.1);
@@ -322,59 +335,14 @@ function Driver() {
       if (t !== s.currentTime) useStudio.setState({ currentTime: t });
     }
 
-    for (const [id, obj] of objectRegistry) {
-      if (s.transforming && id === s.selectedId) continue;
-      const node = s.nodes[id];
-      if (!node) continue;
-      const ev = evalNode(node, s.tracks, t);
-      obj.position.set(ev.position.x, ev.position.y, ev.position.z);
-      obj.rotation.set(ev.rotation.x, ev.rotation.y, ev.rotation.z);
-      obj.scale.set(ev.scale.x, ev.scale.y, ev.scale.z);
-      if (node.kind === "light") {
-        const intensity = ev.intensity ?? node.light?.intensity ?? 1;
-        obj.traverse((child) => {
-          const l = child as THREE.Light;
-          if (l.isLight) l.intensity = intensity;
-        });
-      }
-      if (node.material && ev.emissiveIntensity !== undefined) {
-        obj.traverse((child) => {
-          const mesh = child as THREE.Mesh;
-          const mat = mesh.material as THREE.MeshStandardMaterial | undefined;
-          if (mat && mat.isMeshStandardMaterial) {
-            mat.emissiveIntensity = ev.emissiveIntensity ?? mat.emissiveIntensity;
-            if (ev.opacity !== undefined) {
-              mat.opacity = ev.opacity;
-              mat.transparent = ev.opacity < 1;
-            }
-          }
-        });
-      }
-    }
+    applyEvaluatedPose(t, s.transforming ? s.selectedId : null);
 
     if (s.lookThrough) {
       const camNode =
         (s.selectedId && s.nodes[s.selectedId]?.kind === "camera"
           ? s.nodes[s.selectedId]
           : Object.values(s.nodes).find((n) => n.kind === "camera")) ?? null;
-      if (camNode) {
-        const ev = evalNode(camNode, s.tracks, t);
-        camera.position.set(ev.position.x, ev.position.y, ev.position.z);
-        const aim = camNode.camera?.aim ?? "free";
-        if (aim === "origin") {
-          lookDir.current.set(0, 1.05, 0);
-          camera.up.copy(up.current);
-          camera.lookAt(lookDir.current);
-        } else {
-          camera.rotation.order = "YXZ";
-          camera.rotation.set(ev.rotation.x, ev.rotation.y, ev.rotation.z);
-        }
-        const persp = camera as THREE.PerspectiveCamera;
-        if (persp.isPerspectiveCamera) {
-          persp.fov = ev.fov ?? camNode.camera?.fov ?? 35;
-          persp.updateProjectionMatrix();
-        }
-      }
+      if (camNode) applyShotCamera(camera, t, camNode);
     }
 
     (gl.domElement as HTMLCanvasElement).dataset.ready = "1";
@@ -389,6 +357,7 @@ function Gizmo() {
   const playing = useStudio((s) => s.playing);
   const welcomeOpen = useStudio((s) => s.welcomeOpen);
   const playblasting = useStudio((s) => s.playblasting);
+  const ikChains = useStudio((s) => s.ikChains);
   const snap = useStudio((s) => s.snap);
   const space = useStudio((s) => s.transformSpace);
   const [object, setObject] = useState<THREE.Object3D | null>(null);
@@ -399,6 +368,7 @@ function Gizmo() {
   });
 
   if (!object || tool === "select" || playing || welcomeOpen || playblasting) return null;
+  if (isIkDriven(ikChains, selectedId)) return null;
   const node = selectedId ? useStudio.getState().nodes[selectedId] : null;
   if (!node || node.locked) return null;
 

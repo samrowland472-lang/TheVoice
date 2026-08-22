@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { evalNode, ensureBezierTangents, getChannelValue } from "./eval";
 import { captureAsChildOf, wouldCycle } from "./hierarchy";
+import { chainForNode, snapHandlesToFk } from "./ik";
 import { nid, uniqueName } from "./ids";
 import { twoHundredHourLoop } from "./presets";
 import {
@@ -12,6 +13,7 @@ import {
   type CameraAim,
   type Channel,
   type Interp,
+  type IkChain,
   type MeshShape,
   type KeyRef,
   type PoseClipboard,
@@ -75,6 +77,7 @@ export type StudioState = {
   playblasting: boolean;
   playblastFrame: number;
   playblastTotal: number;
+  ikChains: IkChain[];
 };
 
 type StudioActions = {
@@ -111,6 +114,9 @@ type StudioActions = {
   setTransformSpace: (v: TransformSpace) => void;
   setOnionSkin: (v: boolean) => void;
   setPlayblastOpen: (v: boolean) => void;
+  toggleIk: (id: string, enabled?: boolean) => void;
+  snapIkToFk: (id: string) => void;
+  addIkChain: (upperId: string, lowerId: string) => void;
   stepFrame: (dir: 1 | -1) => void;
   shuttle: (dir: 1 | -1) => void;
   setInPoint: () => void;
@@ -291,6 +297,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   playblasting: false,
   playblastFrame: 0,
   playblastTotal: 0,
+  ikChains: initial.ikChains ?? [],
 
   hydrate: () => {
     if (typeof window === "undefined") return;
@@ -328,9 +335,19 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
 
   loadSnapshot: (snap, welcome = false) => {
     const end = snap.playbackEnd || Math.min(8, snap.duration);
+    let nodes = snap.nodes;
+    let ikChains = snap.ikChains ?? [];
+    if (!ikChains.length && nodes.figure && nodes.armL && nodes.forearmL && !nodes.ik_handL) {
+      const fresh = twoHundredHourLoop();
+      nodes = { ...nodes };
+      for (const id of Object.keys(fresh.nodes)) {
+        if (id.startsWith("ik_") && fresh.nodes[id]) nodes[id] = fresh.nodes[id]!;
+      }
+      ikChains = fresh.ikChains ?? [];
+    }
     set({
       name: snap.name,
-      nodes: snap.nodes,
+      nodes,
       tracks: snap.tracks,
       duration: snap.duration,
       playbackStart: snap.playbackStart,
@@ -344,6 +361,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       selectedTrackId: null,
       selectedKeyIndex: null,
       selectedKeys: [],
+      ikChains,
       history: [],
       future: [],
       welcomeOpen: welcome,
@@ -362,6 +380,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       playbackStart: s.playbackStart,
       playbackEnd: s.playbackEnd,
       fps: s.fps,
+      ikChains: s.ikChains,
     };
   },
 
@@ -463,6 +482,83 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   setTransformSpace: (v) => set({ transformSpace: v }),
   setOnionSkin: (v) => set({ onionSkin: v }),
   setPlayblastOpen: (v) => set({ playblastOpen: v }),
+
+  toggleIk: (id, enabled) => {
+    const { ikChains } = get();
+    const chain = ikChains.find((c) => c.id === id) ?? chainForNode(ikChains, id);
+    if (!chain) return;
+    const next = enabled ?? !chain.enabled;
+    if (next) get().snapIkToFk(chain.id);
+    set({
+      ikChains: ikChains.map((c) => (c.id === chain.id ? { ...c, enabled: next } : c)),
+    });
+  },
+
+  snapIkToFk: (id) => {
+    const { ikChains, nodes } = get();
+    const chain = ikChains.find((c) => c.id === id) ?? chainForNode(ikChains, id);
+    if (!chain) return;
+    const patch = snapHandlesToFk(chain, nodes);
+    const next = { ...nodes };
+    if (patch.target && next[chain.targetId]) {
+      next[chain.targetId] = { ...next[chain.targetId]!, position: patch.target };
+    }
+    if (patch.pole && next[chain.poleId]) {
+      next[chain.poleId] = { ...next[chain.poleId]!, position: patch.pole };
+    }
+    set({ nodes: next });
+  },
+
+  addIkChain: (upperId, lowerId) => {
+    const { nodes, ikChains } = get();
+    const upper = nodes[upperId];
+    const lower = nodes[lowerId];
+    if (!upper || !lower) return;
+    get().pushHistory();
+    const targetId = nid("ik");
+    const poleId = nid("ikp");
+    const parentId = upper.parentId;
+    const target: SceneNode = {
+      id: targetId,
+      name: uniqueName(nodes, `${upper.name} IK`),
+      kind: "group",
+      parentId,
+      visible: true,
+      locked: false,
+      castShadow: false,
+      receiveShadow: false,
+      position: { ...lower.position },
+      rotation: vec3(),
+      scale: vec3(1, 1, 1),
+    };
+    const pole: SceneNode = {
+      id: poleId,
+      name: uniqueName({ ...nodes, [targetId]: target }, `${upper.name} Pole`),
+      kind: "group",
+      parentId,
+      visible: true,
+      locked: false,
+      castShadow: false,
+      receiveShadow: false,
+      position: { x: lower.position.x, y: lower.position.y * 0.5, z: (lower.position.z || 0) + 0.35 },
+      rotation: vec3(),
+      scale: vec3(1, 1, 1),
+    };
+    const chain: IkChain = {
+      id: nid("ikc"),
+      name: upper.name,
+      upperId,
+      lowerId,
+      targetId,
+      poleId,
+      enabled: true,
+    };
+    set({
+      nodes: { ...nodes, [targetId]: target, [poleId]: pole },
+      ikChains: [...ikChains, chain],
+      ...selectOnly(targetId),
+    });
+  },
 
   stepFrame: (dir) => {
     const { currentTime, fps, playbackStart, playbackEnd, loop, duration } = get();

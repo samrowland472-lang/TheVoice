@@ -150,6 +150,16 @@ export type TransformSpace = "world" | "local";
 
 export type KeyRef = { trackId: string; index: number };
 
+export type IkChain = {
+  id: string;
+  name: string;
+  upperId: string;
+  lowerId: string;
+  targetId: string;
+  poleId: string;
+  enabled: boolean;
+};
+
 export type PoseClipboard = {
   position: Vec3;
   rotation: Vec3;
@@ -165,6 +175,7 @@ export type ProjectSnapshot = {
   playbackStart: number;
   playbackEnd: number;
   fps: number;
+  ikChains?: IkChain[];
 };
 
 export const CHANNELS: Channel[] = [

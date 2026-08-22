@@ -195,6 +195,13 @@ export function Menubar() {
           { label: "Point Light", action: () => useStudio.getState().addLight("point") },
           { label: "Camera", action: () => useStudio.getState().addCamera() },
           { label: "Null", action: () => useStudio.getState().addGroup() },
+          {
+            label: "IK Handle (2 selected)",
+            action: () => {
+              const ids = useStudio.getState().selectedIds;
+              if (ids.length >= 2) useStudio.getState().addIkChain(ids[0]!, ids[1]!);
+            },
+          },
         ]}
       />
       <button

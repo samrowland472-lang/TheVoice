@@ -42,5 +42,6 @@ React 19, TanStack Start, React Three Fiber, drei, Zustand, Tailwind v4.
 | F | Frame selection |
 | ⌘A | Select all |
 | File → Import glTF | .glb / .gltf meshes + hierarchy, fitted to the stage |
+| Create → IK Handle | Two-bone IK on two selected joints; figure has Hand/Foot handles |
 | File → Playblast | WebM or PNG sequence of the in–out range |
 | ⌘Z / ⌘⇧Z | Undo / redo |

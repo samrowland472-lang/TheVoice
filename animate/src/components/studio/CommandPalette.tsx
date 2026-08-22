@@ -64,6 +64,18 @@ export function CommandPalette() {
             <Item onSelect={() => run(() => useStudio.getState().setOnionSkin(!useStudio.getState().onionSkin))}>
               Toggle onion skin
             </Item>
+            <Item
+              onSelect={() =>
+                run(() => {
+                  const s = useStudio.getState();
+                  const ids = s.selectedIds;
+                  if (ids.length >= 2) s.addIkChain(ids[0]!, ids[1]!);
+                  else if (s.selectedId) s.toggleIk(s.selectedId);
+                })
+              }
+            >
+              IK handle / toggle IK
+            </Item>
           </Command.Group>
           <Command.Group heading="Create" className="px-1 py-1 text-2xs uppercase tracking-wider text-subtle">
             <Item onSelect={() => run(() => useStudio.getState().addMesh({ type: "box", w: 1, h: 1, d: 1 }, "Cube"))}>

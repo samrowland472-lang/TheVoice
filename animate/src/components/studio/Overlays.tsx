@@ -60,6 +60,7 @@ export function HelpOverlay() {
     ["⌘A", "Select all"],
     ["⌘K", "Command palette"],
     ["File → Import glTF", "Bring a .glb into the stage (fits to view)"],
+    ["Create → IK Handle", "Two-bone IK on two selected joints (or toggle on a limb)"],
     ["File → Playblast", "WebM movie or PNG sequence of the I/O range"],
     ["1–4", "Wire / Solid / Material / Rendered"],
     ["Scroll timeline", "Zoom time. Over labels: scroll tracks"],

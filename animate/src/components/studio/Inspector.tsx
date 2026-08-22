@@ -2,6 +2,7 @@ import { KeyRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { evalNode, getChannelValue } from "@/lib/studio/eval";
 import { channelShort, formatCompact, interpLabel } from "@/lib/studio/format";
+import { chainForNode } from "@/lib/studio/ik";
 import { wouldCycle, useStudio } from "@/lib/studio/store";
 import { INTERPS, type Channel, type Interp, type Track } from "@/lib/studio/types";
 import { cn } from "@/lib/utils";
@@ -224,6 +225,42 @@ function ExprEditor({ track }: { track: Track }) {
   );
 }
 
+function IkPanel({ nodeId }: { nodeId: string }) {
+  const chain = useStudio((s) => chainForNode(s.ikChains, nodeId));
+  if (!chain) return null;
+  const role =
+    chain.targetId === nodeId ? "handle" : chain.poleId === nodeId ? "pole" : "driven";
+  return (
+    <div className="space-y-1.5 rounded-md border border-border bg-bg px-2 py-2">
+      <div className="text-2xs font-medium uppercase tracking-wider text-subtle">IK · {chain.name}</div>
+      <p className="text-2xs text-muted">
+        {role === "handle"
+          ? "Move this handle. The limb follows."
+          : role === "pole"
+            ? "Pole vector — aim the elbow / knee."
+            : "This joint is driven. Move the IK handle instead."}
+      </p>
+      <label className="flex h-7 items-center gap-2 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={chain.enabled}
+          onChange={() => useStudio.getState().toggleIk(chain.id)}
+        />
+        Enable IK
+      </label>
+      {chain.enabled ? (
+        <button
+          type="button"
+          className="h-7 rounded-sm px-2 text-2xs text-muted hover:text-fg"
+          onClick={() => useStudio.getState().snapIkToFk(chain.id)}
+        >
+          Snap handle to FK
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function Inspector() {
   const selectedId = useStudio((s) => s.selectedId);
   const node = useStudio((s) => (selectedId ? s.nodes[selectedId] : undefined));
@@ -277,6 +314,8 @@ export function Inspector() {
             Imported mesh · {Math.round(node.geometry.position.length / 3).toLocaleString()} verts
           </p>
         ) : null}
+
+        <IkPanel nodeId={node.id} />
 
         <label className="block space-y-1">
           <span className="text-2xs font-medium uppercase tracking-wider text-subtle">Parent</span>

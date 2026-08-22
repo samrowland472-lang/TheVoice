@@ -4,6 +4,7 @@ import {
   TWO_HUNDRED_HOURS,
   type Channel,
   type Interp,
+  type IkChain,
   type Key,
   type MaterialProps,
   type MeshShape,
@@ -352,6 +353,30 @@ export function twoHundredHourLoop(): ProjectSnapshot {
   const thighR = limb("thighR", "Thigh R", "hips", vec3(0.09, -0.06, 0), 0.06, 0.34);
   const shinR = limb("shinR", "Shin R", "thighR", vec3(0, -0.46, 0), 0.05, 0.34);
 
+  const ikLoc = (id: string, name: string, pos: ReturnType<typeof vec3>) =>
+    node({
+      id,
+      name,
+      kind: "group",
+      parentId: "figure",
+      position: pos,
+    });
+  const ikHandL = ikLoc("ik_handL", "IK Hand L", vec3(-0.42, 0.82, 0.02));
+  const ikHandR = ikLoc("ik_handR", "IK Hand R", vec3(0.42, 0.82, 0.02));
+  const ikFootL = ikLoc("ik_footL", "IK Foot L", vec3(-0.12, 0.06, 0.02));
+  const ikFootR = ikLoc("ik_footR", "IK Foot R", vec3(0.12, 0.06, 0.02));
+  const ikPoleArmL = ikLoc("ik_poleArmL", "Pole Elbow L", vec3(-0.55, 1.15, -0.38));
+  const ikPoleArmR = ikLoc("ik_poleArmR", "Pole Elbow R", vec3(0.55, 1.15, -0.38));
+  const ikPoleLegL = ikLoc("ik_poleLegL", "Pole Knee L", vec3(-0.22, 0.52, 0.42));
+  const ikPoleLegR = ikLoc("ik_poleLegR", "Pole Knee R", vec3(0.22, 0.52, 0.42));
+
+  const ikChains: IkChain[] = [
+    { id: "ik_armL", name: "Arm L", upperId: "armL", lowerId: "forearmL", targetId: "ik_handL", poleId: "ik_poleArmL", enabled: false },
+    { id: "ik_armR", name: "Arm R", upperId: "armR", lowerId: "forearmR", targetId: "ik_handR", poleId: "ik_poleArmR", enabled: false },
+    { id: "ik_legL", name: "Leg L", upperId: "thighL", lowerId: "shinL", targetId: "ik_footL", poleId: "ik_poleLegL", enabled: false },
+    { id: "ik_legR", name: "Leg R", upperId: "thighR", lowerId: "shinR", targetId: "ik_footR", poleId: "ik_poleLegR", enabled: false },
+  ];
+
   const key = node({
     id: "key_light",
     name: "Key Light",
@@ -457,6 +482,14 @@ export function twoHundredHourLoop(): ProjectSnapshot {
     [shinL.id]: shinL,
     [thighR.id]: thighR,
     [shinR.id]: shinR,
+    [ikHandL.id]: ikHandL,
+    [ikHandR.id]: ikHandR,
+    [ikFootL.id]: ikFootL,
+    [ikFootR.id]: ikFootR,
+    [ikPoleArmL.id]: ikPoleArmL,
+    [ikPoleArmR.id]: ikPoleArmR,
+    [ikPoleLegL.id]: ikPoleLegL,
+    [ikPoleLegR.id]: ikPoleLegR,
     [key.id]: key,
     [fill.id]: fill,
     [rim.id]: rim,
@@ -604,6 +637,7 @@ export function twoHundredHourLoop(): ProjectSnapshot {
     playbackStart: 0,
     playbackEnd: 8,
     fps: 24,
+    ikChains,
   };
 }
 
