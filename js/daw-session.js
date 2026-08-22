@@ -1054,7 +1054,94 @@
     setMidiLabel("Redo");
   }
 
+  function splitRollAt(notes, cut) {
+    var roll = (notes && notes.roll) || [];
+    if (!roll.length) return { left: notes, right: cloneNotes(notes) };
+    var L = [], R = [];
+    roll.forEach(function (n) {
+      var s = n.start || 0;
+      var e = s + (n.length || 1);
+      if (e <= cut) L.push({ id: n.id, start: s, length: n.length, pitch: n.pitch, vel: n.vel });
+      else if (s >= cut) R.push({ id: n.id + "-r", start: s - cut, length: n.length, pitch: n.pitch, vel: n.vel });
+      else {
+        L.push({ id: n.id, start: s, length: cut - s, pitch: n.pitch, vel: n.vel });
+        R.push({ id: n.id + "-r", start: 0, length: e - cut, pitch: n.pitch, vel: n.vel });
+      }
+    });
+    var left = cloneNotes(notes);
+    var right = cloneNotes(notes);
+    left.roll = L;
+    right.roll = R;
+    return { left: left, right: right };
+  }
+
+  function splitGrid(arr, cut) {
+    if (!arr) return { left: arr, right: arr };
+    return { left: arr.slice(0, cut), right: arr.slice(cut) };
+  }
+
+  function splitSelectedArrange() {
+    if (state.view !== "arrange" || !state.selectedArrange) return false;
+    var c = null;
+    state.arrangeClips.forEach(function (x) { if (x.id === state.selectedArrange) c = x; });
+    if (!c) return false;
+    var cut = state.step;
+    if (cut <= c.start + 1 || cut >= c.start + c.length - 1) {
+      setMidiLabel("Move playhead over clip");
+      return true;
+    }
+    pushUndo();
+    var leftLen = cut - c.start;
+    var rightLen = c.length - leftLen;
+    var notes = c.notes || {};
+    var parts = splitRollAt(notes, leftLen);
+    var rightNotes = parts.right;
+    c.notes = parts.left;
+    if (notes.k) {
+      var gk = splitGrid(notes.k, leftLen % (notes.k.length || STEPS));
+      c.notes.k = gk.left; rightNotes.k = gk.right;
+    }
+    rightNotes.offset = (notes.offset || 0) + leftLen;
+    c.length = leftLen;
+    var right = {
+      id: c.trackId + "-split-" + Date.now(),
+      trackId: c.trackId,
+      start: cut,
+      length: rightLen,
+      name: c.name,
+      color: c.color,
+      notes: rightNotes,
+    };
+    state.arrangeClips.push(right);
+    state.selectedArrange = right.id;
+    paintArrange();
+    setMidiLabel("Split");
+    return true;
+  }
+
+  function duplicateArrangeClip() {
+    var c = null;
+    state.arrangeClips.forEach(function (x) { if (x.id === state.selectedArrange) c = x; });
+    if (!c) return false;
+    pushUndo();
+    var copy = {
+      id: c.trackId + "-dup-" + Date.now(),
+      trackId: c.trackId,
+      start: c.start + c.length,
+      length: c.length,
+      name: c.name,
+      color: c.color,
+      notes: cloneNotes(c.notes),
+    };
+    state.arrangeClips.push(copy);
+    state.selectedArrange = copy.id;
+    paintArrange();
+    setMidiLabel("Dup clip");
+    return true;
+  }
+
   function duplicateSelectedClip() {
+    if (state.view === "arrange" && state.selectedArrange && duplicateArrangeClip()) return;
     var sel = state.selectedSession;
     if (!sel || !sel.track || !sel.clip) return;
     var clips = sel.track.clips;
@@ -1547,6 +1634,7 @@
     var gain = n.gain == null ? 1 : n.gain;
     var buf = n.reverse ? reversedBuffer(n.buffer) : n.buffer;
     var rate = Math.pow(2, clipXpose(n) / 12);
+    var skipSec = Math.max(0, (n.offset || 0) * secondsPerStep());
     var destDurAll = clipBeats(clipObj) * (60 / state.bpm);
     var fiSec = Math.max(0, (n.fadeIn || 0) * secondsPerStep());
     var foSec = Math.max(0, (n.fadeOut || 0) * secondsPerStep());
@@ -1571,18 +1659,21 @@
       g.gain.setValueAtTime(gain, time);
       src.connect(g);
       g.connect(dest);
-      src.start(time);
+      src.start(time, Math.min(Math.max(0, buf.duration - 0.02), skipSec));
       holdVoice(holdId, src);
       holdVoice(holdId, g);
       return;
     }
     var markers = ensureMarkers(clipObj);
     var beatSec = 60 / state.bpm;
+    var offBeats = (n.offset || 0) / 4;
     for (var i = 0; i < markers.length - 1; i++) {
       var a = markers[i], b = markers[i + 1];
       var destDur = Math.max(0.02, (b.beat - a.beat) * beatSec);
       var srcDur = Math.max(0.01, b.time - a.time);
-      playWarpSeg(dest, buf, a.time, srcDur, destDur, time + a.beat * beatSec, gain, n.warpMode, track.id, rate);
+      var when = time + (a.beat - offBeats) * beatSec;
+      if (when + destDur <= time) continue;
+      playWarpSeg(dest, buf, a.time, srcDur, destDur, Math.max(time, when), gain, n.warpMode, holdId, rate);
     }
   }
 
@@ -4233,7 +4324,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
@@ -4253,6 +4344,11 @@
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyD") {
         e.preventDefault();
         duplicateSelectedClip();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.code === "KeyE") {
+        e.preventDefault();
+        splitSelectedArrange();
         return;
       }
       if (e.shiftKey && e.code.indexOf("Digit") === 0) {
