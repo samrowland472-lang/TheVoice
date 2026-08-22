@@ -33,7 +33,7 @@ let swing = 0;
 let keysCutoff = 1800;
 let keysRes = 0.8;
 let keysRel = 0.35;
-const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2 };
+const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false };
 
 function applyFx() {
   ensureMix();
@@ -46,6 +46,11 @@ function applyFx() {
   mix._delayWet.gain.setTargetAtTime(fx.delayWet, t, 0.02);
   mix._comp.threshold.setTargetAtTime(fx.compTh, t, 0.02);
   mix._comp.ratio.setTargetAtTime(fx.compRatio, t, 0.02);
+  if (mix._eq) {
+    mix._eq.low.gain.setTargetAtTime(fx.killL ? -72 : fx.eqL, t, 0.02);
+    mix._eq.mid.gain.setTargetAtTime(fx.killM ? -72 : fx.eqM, t, 0.02);
+    mix._eq.high.gain.setTargetAtTime(fx.killH ? -72 : fx.eqH, t, 0.02);
+  }
 }
 
 const mix = {};
@@ -254,13 +259,27 @@ function ensureMix() {
   comp.attack.value = 0.01;
   comp.release.value = 0.18;
   bus.connect(comp);
-  comp.connect(mix.master.input);
+  const eqL = ctx.createBiquadFilter();
+  eqL.type = 'lowshelf';
+  eqL.frequency.value = 110;
+  const eqM = ctx.createBiquadFilter();
+  eqM.type = 'peaking';
+  eqM.frequency.value = 1000;
+  eqM.Q.value = 0.7;
+  const eqH = ctx.createBiquadFilter();
+  eqH.type = 'highshelf';
+  eqH.frequency.value = 8000;
+  comp.connect(eqL);
+  eqL.connect(eqM);
+  eqM.connect(eqH);
+  eqH.connect(mix.master.input);
   mix.master.analyser.connect(master);
   mix._delay = delay;
   mix._delayFb = fb;
   mix._delayWet = wet;
   mix._send = send;
   mix._comp = comp;
+  mix._eq = { low: eqL, mid: eqM, high: eqH };
   mix._bus = bus;
   applyFx();
 }
@@ -1720,6 +1739,14 @@ function paintBrowser() {
       <label>Wet <input id="abl-wet" type="range" min="0" max="1" step="0.01" value="${fx.delayWet}"></label>
       <label>Comp <input id="abl-comp" type="range" min="-40" max="-4" step="1" value="${fx.compTh}"></label>
       <label>Ratio <input id="abl-ratio" type="range" min="1" max="12" step="0.1" value="${fx.compRatio}"></label>
+      <label>Lo <input id="abl-eq-l" type="range" min="-12" max="12" step="0.5" value="${fx.eqL}"></label>
+      <label>Mid <input id="abl-eq-m" type="range" min="-12" max="12" step="0.5" value="${fx.eqM}"></label>
+      <label>Hi <input id="abl-eq-h" type="range" min="-12" max="12" step="0.5" value="${fx.eqH}"></label>
+      <div class="abl-eq-kills">
+        <button type="button" id="abl-kill-l" class="${fx.killL ? 'on' : ''}" aria-pressed="${fx.killL}">Kill Lo</button>
+        <button type="button" id="abl-kill-m" class="${fx.killM ? 'on' : ''}" aria-pressed="${fx.killM}">Kill Mid</button>
+        <button type="button" id="abl-kill-h" class="${fx.killH ? 'on' : ''}" aria-pressed="${fx.killH}">Kill Hi</button>
+      </div>
     </div>
   `;
   root.querySelectorAll('[data-preset]').forEach((btn) => {
@@ -1779,6 +1806,19 @@ function paintBrowser() {
   bindFx('#abl-wet', 'delayWet', parseFloat);
   bindFx('#abl-comp', 'compTh', parseFloat);
   bindFx('#abl-ratio', 'compRatio', parseFloat);
+  bindFx('#abl-eq-l', 'eqL', parseFloat);
+  bindFx('#abl-eq-m', 'eqM', parseFloat);
+  bindFx('#abl-eq-h', 'eqH', parseFloat);
+  [['#abl-kill-l', 'killL'], ['#abl-kill-m', 'killM'], ['#abl-kill-h', 'killH']].forEach(([id, key]) => {
+    const el = root.querySelector(id);
+    if (!el) return;
+    el.addEventListener('click', () => {
+      fx[key] = !fx[key];
+      el.classList.toggle('on', fx[key]);
+      el.setAttribute('aria-pressed', fx[key] ? 'true' : 'false');
+      applyFx();
+    });
+  });
 }
 
 function setDetail(name) {
