@@ -11,17 +11,24 @@
       ".skip-link:focus{top:12px;outline:2px solid #fff;outline-offset:2px}" +
       ".sidebar-item:focus-visible,.btn:focus-visible,.mode-btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--phosphor,#3fc6ff);outline-offset:2px}" +
       ".sidebar-nav .sidebar-item{min-height:44px}" +
-      "body.voice-chrome .sidebar{border-right:1px solid #1c2a24}" +
-      "body.voice-chrome .sidebar-item[aria-current=page]{box-shadow:inset 3px 0 0 var(--phosphor,#3fc6ff)}" +
+      "body.voice-chrome .sidebar{border-right:1px solid #1c2a24;position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto}" +
+      "body.voice-chrome .sidebar-item[aria-current=page]{box-shadow:inset 3px 0 0 var(--phosphor,#3fc6ff);background:color-mix(in srgb,var(--phosphor,#3fc6ff) 10%, transparent)}" +
       "body.voice-chrome .main-area{padding-inline:clamp(12px,2vw,28px)}" +
       "body.voice-chrome #main-content:focus{outline:none}" +
       "body.voice-chrome #main-content:focus-visible{outline:2px solid var(--phosphor,#3fc6ff);outline-offset:4px}" +
+      /* Section spacing — never #animate-view */
+      "body.voice-chrome #speak-view,body.voice-chrome #studio-view,body.voice-chrome #longform-view,body.voice-chrome #modulate-view,body.voice-chrome #project-view,body.voice-chrome #library-view,body.voice-chrome #settings-view{padding-block:clamp(12px,2vh,24px);gap:clamp(12px,2vh,20px)}" +
+      "body.voice-chrome #speak-view h1,body.voice-chrome #studio-view h1,body.voice-chrome #longform-view h1,body.voice-chrome #modulate-view h1,body.voice-chrome #project-view h1,body.voice-chrome #library-view h1,body.voice-chrome #settings-view h1{letter-spacing:.06em;margin-bottom:.35em}" +
+      "body.voice-chrome #speak-view .btn,body.voice-chrome #studio-view .btn,body.voice-chrome #settings-view .btn,body.voice-chrome #library-view .btn,body.voice-chrome #project-view .btn,body.voice-chrome #modulate-view .btn,body.voice-chrome #longform-view .btn{min-height:44px}" +
+      "body.voice-chrome #speak-view textarea,body.voice-chrome #studio-view textarea,body.voice-chrome #longform-view textarea,body.voice-chrome #modulate-view textarea{line-height:1.45}" +
+      /* Gate / auth chrome */
+      "body.voice-chrome .auth-gate,body.voice-chrome #auth-gate,body.voice-chrome .gate-panel,body.voice-chrome [data-gate]{border:1px solid #263029;border-radius:2px}" +
+      "body.voice-chrome .auth-gate input,body.voice-chrome #auth-gate input,body.voice-chrome .gate-panel input{min-height:44px}" +
       "body.voice-chrome .kbd-hint{position:fixed;right:12px;bottom:12px;z-index:9000;max-width:min(320px,92vw);padding:10px 12px;background:#0a0d0c;border:1px solid #263029;color:#7d9689;font-family:Share Tech Mono,ui-monospace,monospace;font-size:11px;line-height:1.45;border-radius:2px;box-shadow:0 8px 24px rgba(0,0,0,.45)}" +
       "body.voice-chrome .kbd-hint[hidden]{display:none!important}" +
       "body.voice-chrome .kbd-hint kbd{display:inline-block;padding:1px 5px;border:1px solid #263029;border-radius:2px;color:var(--phosphor,#3fc6ff);background:#121816;font:inherit}" +
       "@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}* {animation-duration:.01ms!important;transition-duration:.01ms!important}}" +
-      /* Never restyle Animate — Claude owns #animate-view */
-      "#animate-view .voice-chrome-ignore{display:none}";
+      "@media (max-width:780px){body.voice-chrome .sidebar{position:static;max-height:none}}";
     document.head.appendChild(s);
   }
 
@@ -60,7 +67,7 @@
   }
 
   function activate(id) {
-    if (id === "animate") return; // Claude owns Animate
+    if (id === "animate") return;
     var btn = document.querySelector('.sidebar-item[data-section="' + id + '"]');
     if (btn) btn.click();
   }
@@ -71,6 +78,32 @@
     var nav = document.querySelector(".sidebar-nav");
     if (nav && !nav.getAttribute("role")) nav.setAttribute("role", "navigation");
     if (nav && !nav.getAttribute("aria-label")) nav.setAttribute("aria-label", "Primary");
+
+    [
+      ["speak-view", "Speak"],
+      ["studio-view", "Voice Studio"],
+      ["longform-view", "Long-form Studio"],
+      ["modulate-view", "Modulate"],
+      ["music-view", "Music"],
+      ["project-view", "Project"],
+      ["library-view", "Library"],
+      ["settings-view", "Settings"],
+    ].forEach(function (row) {
+      var el = document.getElementById(row[0]);
+      if (!el) return;
+      if (!el.getAttribute("role")) el.setAttribute("role", "region");
+      if (!el.getAttribute("aria-label")) el.setAttribute("aria-label", row[1]);
+    });
+    // Do not touch #animate-view
+  }
+
+  function polishGate() {
+    var gates = document.querySelectorAll(".auth-gate, #auth-gate, .gate-panel, [data-gate]");
+    gates.forEach(function (g) {
+      if (!g.getAttribute("role")) g.setAttribute("role", "dialog");
+      if (!g.getAttribute("aria-label") && !g.getAttribute("aria-labelledby"))
+        g.setAttribute("aria-label", "Account");
+    });
   }
 
   function ensureKbdHint() {
@@ -83,7 +116,7 @@
     box.setAttribute("aria-label", "Keyboard shortcuts");
     box.innerHTML =
       "<strong style=\"color:var(--phosphor,#3fc6ff)\">Shortcuts</strong><br>" +
-      "<kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>8</kbd> sections (skips Animate)<br>" +
+      "<kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>8</kbd> sections<br>" +
       "<kbd>?</kbd> toggle this help<br>" +
       "<kbd>Esc</kbd> close panels / stop transport in Music";
     document.body.appendChild(box);
@@ -100,12 +133,14 @@
     injectCss();
     ensureSkipLink();
     ensureLandmarks();
+    polishGate();
     ensureKbdHint();
     markCurrent();
 
     if (!document.body._chromeObs) {
       document.body._chromeObs = new MutationObserver(function () {
         markCurrent();
+        polishGate();
       });
       document.body._chromeObs.observe(document.body, {
         attributes: true,
