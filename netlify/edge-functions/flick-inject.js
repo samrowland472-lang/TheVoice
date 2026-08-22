@@ -13,21 +13,19 @@ export default async (request, context) => {
   if (!type.includes("text/html")) return res;
 
   let html = await res.text();
+  // Only files that actually ship in /js. Phantom loop leftovers
+  // (daw-session, site-chrome, …) 404 as index.html and crash the page.
   const scripts = [
-    ["/js/flick.js", '<script src="/js/flick.js" data-name="Flick" data-site="The Voice" defer></script>'],
-    ["/js/daw-session.js", '<script src="/js/daw-session.js" defer></script>'],
-    ["/js/daw-live.js", '<script src="/js/daw-live.js" defer></script>'],
-    ["/js/daw-follow.js", '<script src="/js/daw-follow.js" defer></script>'],
-    ["/js/daw-cue.js", '<script src="/js/daw-cue.js" defer></script>'],
-    ["/js/site-chrome.js", '<script src="/js/site-chrome.js" defer></script>'],
-    ["/js/site-ops.js", '<script src="/js/site-ops.js" defer></script>'],
-    ["/js/site-studio.js", '<script src="/js/site-studio.js" defer></script>'],
-    ["/js/daw-ai.js", '<script src="/js/daw-ai.js" defer></script>'],
+    [
+      "js/flick.js",
+      '<script src="/js/flick.js" data-name="Flick" data-site="The Voice" data-endpoint="/api/flick-chat" defer></script>',
+    ],
+    ["js/daw-ai.js", '<script src="/js/daw-ai.js" defer></script>'],
   ];
   scripts.forEach(function (pair) {
-    if (!html.includes(pair[0])) {
-      html = html.replace("</body>", pair[1] + "\n</body>");
-    }
+    const bare = pair[0];
+    if (html.includes(bare) || html.includes("/" + bare)) return;
+    html = html.replace("</body>", pair[1] + "\n</body>");
   });
 
   return new Response(html, {
