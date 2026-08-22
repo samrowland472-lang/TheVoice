@@ -2311,7 +2311,17 @@ function playhead01() {
 }
 
 let metersOn = false;
+function produceOnScreen() {
+  if (document.hidden) return false;
+  const m = document.getElementById('music-view');
+  const live = document.getElementById('daw-live');
+  return !!(m && !m.hidden && (!live || live.hidden));
+}
 function tickMeters() {
+  if (!produceOnScreen()) {
+    metersOn = false;
+    return;
+  }
   meterLoop();
   const clipP = playPhase01();
   document.querySelectorAll('.abl-slot.playing').forEach((el) => {
@@ -2320,6 +2330,9 @@ function tickMeters() {
   const ph = document.getElementById('abl-playhead');
   if (ph) ph.style.left = `${playhead01() * 100}%`;
   metersOn = requestAnimationFrame(tickMeters);
+}
+function kickMeters() {
+  if (!metersOn) tickMeters();
 }
 
 export function studioMidi(cmd, d1, d2) {
@@ -2441,6 +2454,7 @@ export function initStudio(options, audioGetter) {
   }
   if (!metersOn) tickMeters();
   bindVoiceBus();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kickMeters(); });
 }
 
 export function showStudio() {
@@ -2452,6 +2466,7 @@ export function showStudio() {
   paintRoll();
   if (prodView === 'arrange') paintArrange();
   syncTransport();
+  kickMeters();
 }
 
 export function studioPlaying() {

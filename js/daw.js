@@ -119,6 +119,7 @@ export function setDawMode(next) {
   if (music) music.classList.toggle('is-dj', mode === 'dj');
   if (mode === 'dj') paintDecks();
   else showStudio();
+  kickWaveLoop();
 }
 
 function floatToBuffer(samples, sr) {
@@ -1169,29 +1170,41 @@ function bindPlatters(root) {
   });
 }
 
+function musicOnScreen() {
+  if (document.hidden) return false;
+  const m = document.getElementById('music-view');
+  return !!(m && !m.hidden);
+}
+
 function tickWaves() {
-  if (mode === 'dj') {
-    const root = document.getElementById('daw-live');
-    if (root && !root.hidden) {
-      ['a', 'b'].forEach((id) => {
-        const d = decks[id];
-        const canvas = root.querySelector(`[data-wave="${id}"]`);
-        if (canvas && d.buf) drawWave(canvas, d, deckNow(d), d.slipActive ? slipNow(d) : null);
-        const now = root.querySelector(`[data-now="${id}"]`);
-        const rem = root.querySelector(`[data-remain="${id}"]`);
-        if (now) now.textContent = fmtTime(deckNow(d));
-        if (rem && d.buf) rem.textContent = fmtTime(Math.max(0, d.duration - deckNow(d)));
-        const vinyl = root.querySelector(`[data-vinyl="${id}"]`);
-        if (vinyl) {
-          const deg = d.scratching ? (d.spin0 || 0) + (d.spinAcc || 0) : platterDeg(d);
-          vinyl.style.transform = `rotate(${deg}deg)`;
-        }
-        const meter = root.querySelector(`[data-meter="${id}"]`);
-        if (meter) paintMeter(meter, d);
-      });
-    }
+  if (!musicOnScreen() || mode !== 'dj') {
+    deckPaint = 0;
+    return;
+  }
+  const root = document.getElementById('daw-live');
+  if (root && !root.hidden) {
+    ['a', 'b'].forEach((id) => {
+      const d = decks[id];
+      const canvas = root.querySelector(`[data-wave="${id}"]`);
+      if (canvas && d.buf) drawWave(canvas, d, deckNow(d), d.slipActive ? slipNow(d) : null);
+      const now = root.querySelector(`[data-now="${id}"]`);
+      const rem = root.querySelector(`[data-remain="${id}"]`);
+      if (now) now.textContent = fmtTime(deckNow(d));
+      if (rem && d.buf) rem.textContent = fmtTime(Math.max(0, d.duration - deckNow(d)));
+      const vinyl = root.querySelector(`[data-vinyl="${id}"]`);
+      if (vinyl) {
+        const deg = d.scratching ? (d.spin0 || 0) + (d.spinAcc || 0) : platterDeg(d);
+        vinyl.style.transform = `rotate(${deg}deg)`;
+      }
+      const meter = root.querySelector(`[data-meter="${id}"]`);
+      if (meter) paintMeter(meter, d);
+    });
   }
   deckPaint = requestAnimationFrame(tickWaves);
+}
+
+function kickWaveLoop() {
+  if (!deckPaint) tickWaves();
 }
 
 export function initDaw(options) {
@@ -1214,6 +1227,7 @@ export function initDaw(options) {
   });
   hookMidi();
   bindDjKeys();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kickWaveLoop(); });
   if (!deckPaint) tickWaves();
   window.TheVoiceDAW = Object.assign(window.TheVoiceDAW || {}, {
     play: () => { if (mode === 'dj') togglePlay(decks.a); else studioPlay(); },
@@ -1233,4 +1247,5 @@ export function initDaw(options) {
 export function showDaw() {
   if (mode === 'produce') showStudio();
   else paintDecks();
+  kickWaveLoop();
 }
