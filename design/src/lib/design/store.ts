@@ -86,7 +86,7 @@ interface DesignState {
   moveGuide: (id: string, pos: number) => void;
   removeGuide: (id: string) => void;
   clearGuides: () => void;
-  applyNodes: (nodes: DesignNode[]) => void;
+  applyNodes: (nodes: DesignNode[], mode?: "append" | "replace") => void;
   translateSelected: (dx: number, dy: number) => void;
   alignSelected: (edge: "left" | "center" | "right" | "top" | "middle" | "bottom", relative?: "selection" | "artboard") => void;
   copySelected: () => void;
@@ -527,11 +527,15 @@ export const useDesign = create<DesignState>((set, get) => ({
     set({ doc: { ...doc, guides: [] }, dirty: true });
   },
 
-  applyNodes: (nodes) => {
+  applyNodes: (nodes, mode = "append") => {
     const { doc } = get();
     if (!doc) return;
     get().commit();
-    set({ doc: { ...doc, nodes: [...doc.nodes, ...nodes] }, dirty: true });
+    set({
+      doc: { ...doc, nodes: mode === "replace" ? nodes : [...doc.nodes, ...nodes] },
+      selection: [],
+      dirty: true,
+    });
   },
 
   translateSelected: (dx, dy) => {
