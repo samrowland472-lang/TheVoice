@@ -263,6 +263,7 @@
     countIn: 0,
     swing: 0,
     masterVol: 0.72,
+    cueVol: 0.8,
     xfade: 0.5,
     returnAVol: 0.85,
     returnBVol: 0.7,
@@ -279,6 +280,12 @@
 
   var ctx = null;
   var master = null;
+  var cueGain = null;
+  var cueTimer = 0;
+  var cueNext = 0;
+  var cueStep = 0;
+  var cueTrack = null;
+  var cueClip = null;
   var trackNodes = {};
   var trackGraph = {};
   var masterAnalyser = null;
@@ -329,6 +336,9 @@
     master.connect(masterAnalyser);
     masterAnalyser.connect(ctx.destination);
     master.gain.value = state.masterVol;
+    cueGain = ctx.createGain();
+    cueGain.gain.value = state.cueVol == null ? 0.8 : state.cueVol;
+    cueGain.connect(ctx.destination);
 
     var delay = ctx.createDelay(1.0);
     delay.delayTime.value = 0.38;
@@ -659,6 +669,10 @@
     xf.gain.value = 1;
     vol.connect(xf);
     xf.connect(pan);
+    var pflSend = ctx.createGain();
+    pflSend.gain.value = 0;
+    pan.connect(pflSend);
+    if (cueGain) pflSend.connect(cueGain);
     pan.connect(mute);
     mute.connect(analyser);
     analyser.connect(master);
@@ -698,6 +712,7 @@
       chorLfo: chorLfo,
       chorLfoGL: chorLfoGL,
       chorLfoGR: chorLfoGR,
+      pflSend: pflSend,
       utilGain: utilGain,
       utilDc: utilDc,
       LtoL: LtoL,
@@ -818,11 +833,13 @@
       if (!g) return;
       var silent = tr.mute || (soloed && !tr.solo);
       g.mute.gain.setTargetAtTime(silent ? 0 : 1, ctx.currentTime, 0.01);
+      if (g.pflSend) g.pflSend.gain.setTargetAtTime(tr.pfl ? 1 : 0, ctx.currentTime, 0.01);
       applyAutoAt(tr, state.step);
       applyDevices(tr);
     });
     applyXfade();
     if (master) master.gain.setTargetAtTime(state.masterVol, ctx.currentTime, 0.01);
+    if (cueGain) cueGain.gain.setTargetAtTime(state.cueVol == null ? 0.8 : state.cueVol, ctx.currentTime, 0.01);
     if (returnAGain) returnAGain.gain.setTargetAtTime(state.returnAVol, ctx.currentTime, 0.01);
     if (returnBGain) returnBGain.gain.setTargetAtTime(state.returnBVol, ctx.currentTime, 0.01);
     paintMixer();
@@ -1309,6 +1326,7 @@
           mute: tr.mute,
           solo: tr.solo,
           arm: tr.arm,
+          pfl: !!tr.pfl,
           sendA: tr.sendA,
           sendB: tr.sendB,
           devices: JSON.parse(JSON.stringify(tr.devices || [])),
@@ -1368,6 +1386,7 @@
       tr.mute = s.mute;
       tr.solo = s.solo;
       tr.arm = s.arm;
+      tr.pfl = !!s.pfl;
       tr.sendA = s.sendA;
       tr.sendB = s.sendB;
       tr.devices = s.devices;
@@ -1735,7 +1754,7 @@
     ensureAudio();
     ctx.resume();
     if (item.kind === "instrument") {
-      var dest = master || ctx.destination;
+      var dest = cueGain || master || ctx.destination;
       var a = item.analog;
       var f = ctx.createBiquadFilter();
       f.type = "lowpass";
@@ -1748,7 +1767,7 @@
     }
     var buf = sampleBuffer(item);
     if (!buf) return;
-    playBufferShot(master || ctx.destination, buf, ctx.currentTime, 0.9);
+    playBufferShot(cueGain || master || ctx.destination, buf, ctx.currentTime, 0.9);
   }
 
   function applyInstrument(track, analog) {
@@ -2000,11 +2019,11 @@
     }
   }
 
-  function playWarpedClip(track, clipObj, time, destOverride) {
+  function playWarpedClip(track, clipObj, time, destOverride, holdOverride) {
     if (!clipObj || !clipObj.notes || !clipObj.notes.buffer) return;
     var dest = destOverride || trackNodes[track.id];
     if (!dest) return;
-    var holdId = clipObj.id || track.id;
+    var holdId = holdOverride || clipObj.id || track.id;
     stopWarpVoices(holdId);
     var n = clipObj.notes;
     var gain = n.gain == null ? 1 : n.gain;
@@ -2146,9 +2165,10 @@
     return time;
   }
 
-  function playStepAt(track, clipObj, step, time, xfade) {
-    if (!clipObj || !trackAudible(track)) return;
-    var dest = trackNodes[track.id];
+  function playStepAt(track, clipObj, step, time, xfade, destOverride) {
+    if (!clipObj) return;
+    if (!destOverride && !trackAudible(track)) return;
+    var dest = destOverride || trackNodes[track.id];
     var n = clipObj.notes || {};
     var len = clipObj.length || STEPS;
     var loopOn = n.loop !== false;
@@ -2167,14 +2187,14 @@
     var gmul = n.gain == null ? 1 : n.gain;
     var fadeMul = clipFadeMul(clipObj, posInClip) * clipEnvMul(clipObj, posInClip) * (xfade == null ? 1 : xfade) * (n.buffer ? 1 : gmul);
     if (fadeMul < 0.02 && !n.buffer) return;
-    if (n.buffer && clipObj.id) dest = xfDest(track, clipObj, time, Math.max(0.0001, fadeMul));
+    if (!destOverride && n.buffer && clipObj.id) dest = xfDest(track, clipObj, time, Math.max(0.0001, fadeMul));
     else dest = fadedDest(dest, time, fadeMul);
     if (n.buffer) {
-      if ((n.reverse ? loopLen - 1 - phase : phase) === 0) playWarpedClip(track, clipObj, time, dest);
+      if ((n.reverse ? loopLen - 1 - phase : phase) === 0) playWarpedClip(track, clipObj, time, dest, destOverride ? "cue" : null);
       return;
     }
     if ((track.kind === "drums" || track.kind === "perc") && track.rack && !(n.buffer)) {
-      playDrumRack(track, clipObj, i, time, fadeMul);
+      playDrumRack(track, clipObj, i, time, fadeMul, destOverride);
       return;
     }
 
@@ -2386,6 +2406,98 @@
     updatePlayheadPx();
   }
 
+  function stopCue() {
+    state.cueing = false;
+    window.clearTimeout(cueTimer);
+    cueTimer = 0;
+    try { stopPad("cue-pad"); } catch (e) {}
+    try { stopWarpVoices("cue"); } catch (e2) {}
+    cueTrack = null;
+    cueClip = null;
+    var prevBtn = root && root.querySelector("[data-cue]");
+    if (prevBtn) prevBtn.classList.remove("on");
+    paint();
+  }
+
+  function startPadCue(tr, clipObj) {
+    stopPad("cue-pad");
+    if (!ctx || !clipObj || !cueGain) return;
+    var analog = analogOf(tr);
+    var g = ctx.createGain();
+    g.gain.value = 0.08;
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass";
+    f.frequency.value = analog ? analog.cutoff : 4200;
+    f.Q.value = analog ? analog.res : 0.7;
+    f.connect(cueGain);
+    g.connect(f);
+    var wave = analog ? analog.wave : "sine";
+    var oscs = (clipObj.notes.chord || [0, 7, 12]).map(function (s, i) {
+      var o = ctx.createOscillator();
+      o.type = wave;
+      o.frequency.value = midiHz(s + 12) * (i === 1 ? 1.003 : 1);
+      o.connect(g);
+      o.start();
+      return o;
+    });
+    padHold["cue-pad"] = { g: g, oscs: oscs };
+  }
+
+  function cueScheduler() {
+    if (!state.cueing || !ctx || !cueClip) return;
+    var horizon = ctx.currentTime + 0.12;
+    var stepDur = secondsPerStep();
+    var len = cueClip.length || STEPS;
+    while (cueNext < horizon) {
+      if (cueTrack && cueTrack.kind !== "pad") {
+        playStepAt(cueTrack, cueClip, cueStep, swingTime(cueStep, cueNext), 1, cueGain);
+      }
+      cueNext += stepDur;
+      cueStep += 1;
+      if (cueStep >= len) {
+        stopCue();
+        setMidiLabel("Cue end");
+        return;
+      }
+    }
+    cueTimer = window.setTimeout(cueScheduler, 25);
+  }
+
+  function previewClip(track, clipObj) {
+    if (!track || !clipObj) {
+      if (state.selectedSession) {
+        track = state.selectedSession.track;
+        clipObj = state.selectedSession.clip;
+      }
+    }
+    if (!clipObj || !track) {
+      setMidiLabel("Select a clip");
+      return;
+    }
+    ensureAudio();
+    ctx.resume();
+    if (state.cueing && cueClip === clipObj) {
+      stopCue();
+      setMidiLabel("Cue off");
+      return;
+    }
+    stopCue();
+    state.cueing = true;
+    cueTrack = track;
+    cueClip = clipObj;
+    state.selectedSession = { track: track, clip: clipObj };
+    cueStep = 0;
+    cueNext = ctx.currentTime + 0.03;
+    if (track.kind === "pad" && !(clipObj.notes && clipObj.notes.roll && clipObj.notes.roll.length)) {
+      startPadCue(track, clipObj);
+    }
+    var prevBtn = root && root.querySelector("[data-cue]");
+    if (prevBtn) prevBtn.classList.add("on");
+    cueScheduler();
+    paint();
+    setMidiLabel("Cue " + (clipObj.name || "clip"));
+  }
+
   function queueClip(track, sceneIndex) {
     var clipObj = track.clips[sceneIndex];
     state.selectedSession = clipObj ? { track: track, clip: clipObj } : null;
@@ -2459,6 +2571,8 @@
       "#daw-session .daw-cell.filled{box-shadow:inset 3px 0 0 var(--clip,var(--phosphor,#3fc6ff))}" +
       "#daw-session .daw-cell.queued::after{content:'';position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:99px;background:var(--amber,#ffb238);box-shadow:0 0 8px var(--amber,#ffb238)}" +
       "#daw-session .daw-cell.playing{outline:2px solid var(--clip,var(--phosphor,#3fc6ff));outline-offset:0;background:color-mix(in srgb,var(--clip,#3fc6ff) 18%, var(--surface-alt,#1a201c))}" +
+      "#daw-session .daw-cell.previewing{outline:2px dashed #ffb238;outline-offset:0}" +
+      "#daw-session .daw-btn[data-cue].on,#daw-session .daw-mini .daw-btn.on[data-act=pfl]{background:#ffb238;color:#06170f;border-color:#ffb238}" +
       "#daw-session .daw-track{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 8px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim,#7d9689)}" +
       "#daw-session .daw-scene{min-height:52px;border:1px solid var(--border,#263029);border-radius:8px;background:transparent;color:var(--phosphor,#3fc6ff);font:inherit;cursor:pointer}" +
       "#daw-session .daw-scene:hover{background:color-mix(in srgb,var(--phosphor,#3fc6ff) 12%, transparent)}" +
@@ -3365,10 +3479,10 @@
     else trigPerc(dest, time, false);
   }
 
-  function trigRackPad(track, pad, time, vel) {
-    if (!trackAudible(track)) return;
+  function trigRackPad(track, pad, time, vel, destOverride) {
+    if (!destOverride && !trackAudible(track)) return;
     ensureAudio();
-    var dest = trackNodes[track.id];
+    var dest = destOverride || trackNodes[track.id];
     if (!dest) return;
     var t0 = time == null ? ctx.currentTime : time;
     var prefix = track.id + ":";
@@ -3405,14 +3519,14 @@
     window.setTimeout(function () { b.classList.remove("hit"); }, 80);
   }
 
-  function playDrumRack(track, clipObj, i, time, velMul) {
+  function playDrumRack(track, clipObj, i, time, velMul, destOverride) {
     ensureRack(track);
     var steps = ensureDrumSteps(clipObj, track);
     velMul = velMul == null ? 1 : velMul;
     if (velMul < 0.02) return;
     track.rack.pads.forEach(function (pad) {
       var row = steps[pad.id];
-      if (row && row[i % (clipObj.length || STEPS)]) trigRackPad(track, pad, time, 0.95 * velMul);
+      if (row && row[i % (clipObj.length || STEPS)]) trigRackPad(track, pad, time, 0.95 * velMul, destOverride);
     });
   }
 
@@ -4243,6 +4357,7 @@
       btn.classList.toggle("filled", !!c);
       btn.classList.toggle("playing", !!(c && launched === c));
       btn.classList.toggle("queued", !!(c && queued === c) || (queued === "stop" && launched === c));
+      btn.classList.toggle("previewing", !!(state.cueing && cueClip && c === cueClip));
       btn.style.setProperty("--clip", c ? c.color : tr.color);
       btn.replaceChildren();
       if (c) {
@@ -4325,7 +4440,7 @@
           btn.dataset.sc = String(scene);
           btn.setAttribute("role", "gridcell");
           btn.setAttribute("aria-label", track.name + " scene " + (scene + 1) + (track.clips[scene] ? " " + track.clips[scene].name : " empty"));
-          btn.addEventListener("click", function (ev) { if (ev.shiftKey && track.clips[scene]) { cycleClipColor(track.clips[scene]); return; } if (ev.altKey && track.clips[scene]) { renameClip(track.clips[scene]); return; } queueClip(track, scene); });
+          btn.addEventListener("click", function (ev) { if (ev.shiftKey && track.clips[scene]) { cycleClipColor(track.clips[scene]); return; } if (ev.altKey && track.clips[scene]) { renameClip(track.clips[scene]); return; } if ((ev.ctrlKey || ev.metaKey) && track.clips[scene]) { previewClip(track, track.clips[scene]); return; } queueClip(track, scene); });
           btn.addEventListener("dblclick", function (ev) {
             ev.preventDefault();
             if (track.clips[scene] && track.clips[scene].notes && track.clips[scene].notes.buffer) openWarp(track, track.clips[scene]);
@@ -4491,7 +4606,7 @@
       strip.appendChild(knob("Delay", 0, 1, 0.01, tr.sendA, function (v) { tr.sendA = v; }));
       strip.appendChild(knob("Hall", 0, 1, 0.01, tr.sendB, function (v) { tr.sendB = v; }));
       var mini = el("div", "daw-mini");
-      [["mute", "M"], ["solo", "S"], ["arm", "A"]].forEach(function (pair) {
+      [["mute", "M"], ["solo", "S"], ["arm", "A"], ["pfl", "C"]].forEach(function (pair) {
         var b = el("button", "daw-btn", pair[1]);
         b.type = "button";
         b.setAttribute("data-act", pair[0]);
@@ -4575,6 +4690,7 @@
     });
     xfWrap.appendChild(xfIn);
     masterStrip.appendChild(xfWrap);
+    masterStrip.appendChild(knob("Cue", 0, 1.2, 0.01, state.cueVol == null ? 0.8 : state.cueVol, function (v) { state.cueVol = v; }));
     mixerEl.appendChild(masterStrip);
   }
 
@@ -4644,6 +4760,12 @@
     stop.addEventListener("click", stopTransport);
     top.appendChild(play);
     top.appendChild(stop);
+    var cueBtn = el("button", "daw-btn", "Cue");
+    cueBtn.type = "button";
+    cueBtn.setAttribute("data-cue", "1");
+    cueBtn.setAttribute("aria-label", "Preview selected clip on cue");
+    cueBtn.addEventListener("click", function () { previewClip(); });
+    top.appendChild(cueBtn);
     top.appendChild(el("span", "daw-knob-lab", "A|B"));
     var xfTop = document.createElement("input");
     xfTop.type = "range";
@@ -5004,6 +5126,7 @@
           btn.addEventListener("click", function (ev) {
             if (ev.shiftKey && track.clips[scene]) { cycleClipColor(track.clips[scene]); return; }
             if (ev.altKey && track.clips[scene]) { renameClip(track.clips[scene]); return; }
+            if ((ev.ctrlKey || ev.metaKey) && track.clips[scene]) { previewClip(track, track.clips[scene]); return; }
             queueClip(track, scene);
           });
           btn.addEventListener("dblclick", function (ev) {
@@ -5320,7 +5443,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. Arrows nudge. Comma/period jump. Alt-drag clip for gain. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Ctrl+click a clip to cue it (hear without launching). C on a mixer strip is PFL — muted tracks still reach Cue. Cue fader is independent of Master. Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. Drag locators to move them. Arrows nudge. Comma/period jump. Alt-drag clip for gain. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
@@ -5386,6 +5509,11 @@
         return;
       }
       if (e.code === "Escape") {
+        if (state.cueing) {
+          e.preventDefault();
+          stopCue();
+          return;
+        }
         if (state.playing) {
           e.preventDefault();
           stopTransport();
@@ -5561,6 +5689,7 @@
       follow: state.follow,
       locators: (state.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; }),
       masterVol: state.masterVol,
+      cueVol: state.cueVol,
       xfade: state.xfade,
       returnAVol: state.returnAVol,
       returnBVol: state.returnBVol,
@@ -5679,6 +5808,7 @@
     state.locators = (data.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; });
     state.selectedLocator = null;
     state.masterVol = data.masterVol == null ? 0.72 : data.masterVol;
+    state.cueVol = data.cueVol == null ? 0.8 : data.cueVol;
     state.xfade = data.xfade == null ? 0.5 : data.xfade;
     state.returnAVol = data.returnAVol == null ? 0.85 : data.returnAVol;
     state.returnBVol = data.returnBVol == null ? 0.7 : data.returnBVol;
