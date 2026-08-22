@@ -90,6 +90,7 @@ export interface TextNode extends BaseNode {
 export interface ImageNode extends BaseNode {
   kind: "image";
   src: string;
+  /** Normalized source rect (0–1). Null = full image. */
   crop: { x: number; y: number; w: number; h: number } | null;
   filters: {
     brightness: number;

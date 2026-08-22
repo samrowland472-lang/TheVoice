@@ -196,9 +196,17 @@ export function exportSvg(doc: DesignDocument): string {
         n.filters.brightness !== 1 || n.filters.contrast !== 1 || n.filters.saturate !== 1 || n.filters.blur
           ? ` style="filter:brightness(${n.filters.brightness}) contrast(${n.filters.contrast}) saturate(${n.filters.saturate}) blur(${n.filters.blur}px)"`
           : "";
+      const clipId = `c${gid++}`;
+      const rx = Math.max(0, Math.min(n.radius, Math.min(n.w, n.h) / 2));
+      defs.push(`<clipPath id="${clipId}"><rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="${rx}"/></clipPath>`);
+      const c = n.crop && n.crop.w > 0 && n.crop.h > 0 ? n.crop : { x: 0, y: 0, w: 1, h: 1 };
+      const iw = n.w / c.w;
+      const ih = n.h / c.h;
+      const ix = n.x - c.x * iw;
+      const iy = n.y - c.y * ih;
       body.push(
         wrap(
-          `<image href="${escapeXml(n.src)}" x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" preserveAspectRatio="none"${filt}/>`,
+          `<g clip-path="url(#${clipId})"><image href="${escapeXml(n.src)}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"${filt}/></g>`,
         ),
       );
     } else if (isPaint(n) && n.bitmap) {

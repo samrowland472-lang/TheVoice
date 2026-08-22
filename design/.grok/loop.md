@@ -62,9 +62,13 @@ Auth OFF, DB OFF.
 - Layers: drag-to-reorder via grip; Shift-click multi-select; block move.
 - Align: **Selection** (2+ objects, relative to their bounds) or **Artboard**. Distribute still uses selection span.
 - SVG export: linear gradients, images, paint bitmaps, wrapped tspans, paths, polygon/star/arrow/line, opacity, blend, shadows. XML escaped.
-- Image crop (normalized source rect) + rectangular mask (clip to node bounds / rounded radius); inspector crop sliders + reset / center 70%; canvas + PNG + SVG honor crop and clip.
+- Image crop (normalized source rect, L/T/R/B insets) + rectangular mask (clip + radius). Canvas, PNG, and SVG honor crop.
 
 ## Iterations
+
+### 2026-08-22T19:57Z — loop 6
+
+Restored truncated `render.ts` (594 bytes → full renderer) and shipped working image crop + rounded mask. Inspector: Left/Right/Top/Bottom crop + mask radius + reset. Typecheck + build + smoke clean.
 
 ### 2026-08-22T19:15Z — loop 5
 

@@ -477,11 +477,98 @@ function TextFields({ node }: { node: TextNode }) {
 function ImageFields({ node }: { node: ImageNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const f = node.filters;
+  const crop = node.crop ?? { x: 0, y: 0, w: 1, h: 1 };
+  const left = crop.x;
+  const top = crop.y;
+  const right = Math.max(0, 1 - crop.x - crop.w);
+  const bottom = Math.max(0, 1 - crop.y - crop.h);
+
   function set(partial: Partial<ImageNode["filters"]>) {
     updateNodes([node.id], { filters: { ...f, ...partial } } as Partial<DesignNode>);
   }
+
+  function setInsets(next: { left?: number; top?: number; right?: number; bottom?: number }) {
+    const L = next.left ?? left;
+    const T = next.top ?? top;
+    const R = next.right ?? right;
+    const B = next.bottom ?? bottom;
+    const w = Math.max(0.08, 1 - L - R);
+    const h = Math.max(0.08, 1 - T - B);
+    const full = L === 0 && T === 0 && R === 0 && B === 0;
+    updateNodes([node.id], { crop: full ? null : { x: L, y: T, w, h } } as Partial<DesignNode>);
+  }
+
   return (
     <>
+      <Field label="Crop">
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-[10px] text-ink-faint">
+            Left {Math.round(left * 100)}%
+            <input
+              type="range"
+              className="range-phosphor w-full"
+              min={0}
+              max={0.4}
+              step={0.01}
+              value={left}
+              onChange={(e) => setInsets({ left: Number(e.target.value) })}
+            />
+          </label>
+          <label className="text-[10px] text-ink-faint">
+            Right {Math.round(right * 100)}%
+            <input
+              type="range"
+              className="range-phosphor w-full"
+              min={0}
+              max={0.4}
+              step={0.01}
+              value={right}
+              onChange={(e) => setInsets({ right: Number(e.target.value) })}
+            />
+          </label>
+          <label className="text-[10px] text-ink-faint">
+            Top {Math.round(top * 100)}%
+            <input
+              type="range"
+              className="range-phosphor w-full"
+              min={0}
+              max={0.4}
+              step={0.01}
+              value={top}
+              onChange={(e) => setInsets({ top: Number(e.target.value) })}
+            />
+          </label>
+          <label className="text-[10px] text-ink-faint">
+            Bottom {Math.round(bottom * 100)}%
+            <input
+              type="range"
+              className="range-phosphor w-full"
+              min={0}
+              max={0.4}
+              step={0.01}
+              value={bottom}
+              onChange={(e) => setInsets({ bottom: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <button
+          type="button"
+          className="mt-1 h-7 w-full rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+          onClick={() => updateNodes([node.id], { crop: null } as Partial<DesignNode>, true)}
+        >
+          Reset crop
+        </button>
+      </Field>
+      <Field label={`Mask radius ${Math.round(node.radius)}`}>
+        <input
+          type="range"
+          className="range-phosphor w-full"
+          min={0}
+          max={Math.round(Math.min(node.w, node.h) / 2)}
+          value={node.radius}
+          onChange={(e) => updateNodes([node.id], { radius: Number(e.target.value) })}
+        />
+      </Field>
       <Field label={`Brightness ${f.brightness.toFixed(2)}`}>
         <input type="range" className="range-phosphor w-full" min={0.2} max={2} step={0.02} value={f.brightness} onChange={(e) => set({ brightness: Number(e.target.value) })} />
       </Field>
