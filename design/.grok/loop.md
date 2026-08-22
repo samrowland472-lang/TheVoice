@@ -29,26 +29,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Layer drag-to-reorder in the layers list (not just ↑↓ buttons).
-2. Align / distribute relative to the **selection**, not only the artboard.
-3. Faithful SVG export: gradients, images, wrapped text, paths, opacity, blend.
-4. Image crop + rectangular mask.
-5. Manual guides + rulers (drag from edge, snap while moving).
-6. History panel (clickable undo stack).
-7. Pen tool: undo last point, close path, Escape to finish.
-8. Print / story safe-area overlay + optional bleed on export.
-9. Hub folders / tags for recents; pin a project.
-10. Brand kit: named colours + font pairing applied to new text.
-11. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
-12. Paint stroke undo (not the whole bitmap commit).
-13. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
-14. Contrast checker on text vs fill / artboard.
-15. Multi-page / artboard set for a campaign (story + square + banner).
-16. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
-17. Components / linked duplicates (edit one, update copies).
-18. Color-from-image palette into the brand kit.
-19. Present mode speaker notes / click-through frames.
-20. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
+1. Align / distribute relative to the **selection**, not only the artboard.
+2. Faithful SVG export: gradients, images, wrapped text, paths, opacity, blend.
+3. Image crop + rectangular mask.
+4. Manual guides + rulers (drag from edge, snap while moving).
+5. History panel (clickable undo stack).
+6. Pen tool: undo last point, close path, Escape to finish.
+7. Print / story safe-area overlay + optional bleed on export.
+8. Hub folders / tags for recents; pin a project.
+9. Brand kit: named colours + font pairing applied to new text.
+10. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
+11. Paint stroke undo (not the whole bitmap commit).
+12. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
+13. Contrast checker on text vs fill / artboard.
+14. Multi-page / artboard set for a campaign (story + square + banner).
+15. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
+16. Components / linked duplicates (edit one, update copies).
+17. Color-from-image palette into the brand kit.
+18. Present mode speaker notes / click-through frames.
+19. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
 
 ## Done
 
@@ -61,6 +60,7 @@ Auth OFF, DB OFF.
 - Export PNG/JPG/SVG with 1×/2×/3×.
 - Templates including **100 Hour Loop**, Field Banner, Studio Manifesto, Reel Hook.
 - Studio chrome is full-bleed (no marketing sidebar on the board).
+- Layers panel: drag-to-reorder via grip handle (native DnD); ↑↓ still available.
 
 ## Iterations
 
@@ -68,6 +68,10 @@ Auth OFF, DB OFF.
 
 Command palette, marquee, smart guides, clipboard, present, context menu, zoom HUD, inspector depth, hub search/duplicate, four new templates. Typecheck + production build + smoke clean.
 
+### 2026-08-22 — loop 1
+
+Layer drag-to-reorder in the layers list. Grip handle + drop highlight; `reorderToIndex` in store; z-order maps correctly (top of list = top of stack). Typecheck, production build, and browser smoke clean. Leftover: no multi-select drag reorder; insert position is “take target’s slot” not mid-gap.
+
 ## Next recommended
 
-Layer drag-to-reorder, then selection-relative align/distribute.
+Selection-relative align / distribute.
