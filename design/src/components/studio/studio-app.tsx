@@ -64,6 +64,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "z2", label: "Zoom 200%", group: "View", hint: "2", run: () => s().requestZoom(2) },
       { id: "present", label: "Present artboard", group: "View", hint: "⇧P", run: () => s().togglePresent() },
       { id: "grid", label: "Toggle grid", group: "View", run: () => s().toggleGrid() },
+      { id: "rulers", label: "Toggle rulers", group: "View", run: () => s().toggleRulers() },
+      { id: "clearguides", label: "Clear guides", group: "View", run: () => s().clearGuides() },
       { id: "snap", label: "Toggle snap", group: "View", run: () => s().toggleSnap() },
       { id: "fliph", label: "Flip horizontal", group: "Arrange", run: () => s().flipSelected("h") },
       { id: "flipv", label: "Flip vertical", group: "Arrange", run: () => s().flipSelected("v") },

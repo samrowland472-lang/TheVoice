@@ -31,9 +31,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Manual guides + rulers (drag from edge, snap while moving).
-2. History panel (clickable undo stack).
-3. Pen tool: undo last point, close path, Escape to finish.
+1. History panel (clickable undo stack).
+2. Pen tool: undo last point, close path, Escape to finish.
 4. Print / story safe-area overlay + optional bleed on export.
 5. Hub folders / tags for recents; pin a project.
 6. Brand kit: named colours + font pairing applied to new text.
@@ -63,8 +62,13 @@ Auth OFF, DB OFF.
 - Align: **Selection** (2+ objects, relative to their bounds) or **Artboard**. Distribute still uses selection span.
 - SVG export: linear gradients, images, paint bitmaps, wrapped tspans, paths, polygon/star/arrow/line, opacity, blend, shadows. XML escaped.
 - Image crop (normalized source rect, L/T/R/B insets) + rectangular mask (clip + radius). Canvas, PNG, and SVG honor crop.
+- Rulers on the pasteboard; drag from an edge to place a guide; drag a guide back onto the ruler to remove. Objects snap to guides. Toggle in the top bar / command palette.
 
 ## Iterations
+
+### 2026-08-22T20:04Z — loop 7
+
+Rulers + manual guides. Drag from top/left ruler, snap while moving, drop on ruler to delete. Typecheck + build + smoke clean.
 
 ### 2026-08-22T19:57Z — loop 6
 
@@ -96,4 +100,4 @@ Command palette, marquee, smart guides, clipboard, present, inspector depth, tem
 
 ## Next recommended
 
-Manual guides + rulers (drag from edge, snap while moving).
+History panel (clickable undo stack).

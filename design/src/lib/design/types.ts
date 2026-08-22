@@ -134,6 +134,8 @@ export interface DesignDocument {
   updatedAt: number;
   createdAt: number;
   thumbnail?: string;
+  /** Manual ruler guides in artboard space. */
+  guides?: { id: string; axis: "x" | "y"; pos: number }[];
 }
 
 export interface ProjectMeta {

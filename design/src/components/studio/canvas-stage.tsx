@@ -10,6 +10,15 @@ import type { DesignNode, Tool } from "@/lib/design/types";
 import { CanvasMenu, type MenuItem } from "./canvas-menu";
 
 const SHAPE_TOOLS: Tool[] = ["rect", "ellipse", "line", "polygon", "star", "arrow", "frame"];
+const RULER = 22;
+
+function niceStep(raw: number) {
+  const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+  const n = raw / p;
+  if (n < 2) return p;
+  if (n < 5) return 2 * p;
+  return 5 * p;
+}
 
 export function CanvasStage() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -20,7 +29,7 @@ export function CanvasStage() {
   const marqueeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const drag = useRef<{
-    mode: "pan" | "move" | "handle" | "create" | "paint" | "pen" | "marquee";
+    mode: "pan" | "move" | "handle" | "create" | "paint" | "pen" | "marquee" | "guide";
     handle?: Handle;
     sx: number;
     sy: number;
@@ -30,13 +39,15 @@ export function CanvasStage() {
     created?: string;
     space?: boolean;
     orig?: { id: string; x: number; y: number }[];
+    guideId?: string;
+    guideAxis?: "x" | "y";
   } | null>(null);
 
   const redraw = useCallback(() => {
     const main = mainRef.current;
     const overlay = overlayRef.current;
     const wrap = wrapRef.current;
-    const { doc, viewport, selection, grid } = useDesign.getState();
+    const { doc, viewport, selection, grid, rulers } = useDesign.getState();
     if (!main || !overlay || !wrap || !doc) return;
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
@@ -77,6 +88,23 @@ export function CanvasStage() {
         octx.stroke();
       }
     }
+
+    const manuals = doc.guides ?? [];
+    octx.save();
+    octx.strokeStyle = "rgba(63,198,255,0.55)";
+    octx.lineWidth = 1 / viewport.zoom;
+    for (const g of manuals) {
+      octx.beginPath();
+      if (g.axis === "x") {
+        octx.moveTo(g.pos, -80);
+        octx.lineTo(g.pos, doc.artboard.height + 80);
+      } else {
+        octx.moveTo(-80, g.pos);
+        octx.lineTo(doc.artboard.width + 80, g.pos);
+      }
+      octx.stroke();
+    }
+    octx.restore();
 
     const guides = guidesRef.current;
     octx.save();
@@ -146,6 +174,57 @@ export function CanvasStage() {
       octx.restore();
     }
     octx.restore();
+
+    if (rulers) {
+      octx.fillStyle = "#0c0f0d";
+      octx.fillRect(0, 0, w, RULER);
+      octx.fillRect(0, 0, RULER, h);
+      octx.fillStyle = "#121613";
+      octx.fillRect(0, 0, RULER, RULER);
+      octx.strokeStyle = "rgba(63,198,255,0.22)";
+      octx.lineWidth = 1;
+      octx.beginPath();
+      octx.moveTo(RULER, 0);
+      octx.lineTo(RULER, h);
+      octx.moveTo(0, RULER);
+      octx.lineTo(w, RULER);
+      octx.stroke();
+      const step = niceStep(48 / viewport.zoom);
+      octx.fillStyle = "#7d9689";
+      octx.strokeStyle = "rgba(125,150,137,0.55)";
+      octx.font = "9px ui-monospace, SFMono-Regular, monospace";
+      octx.textBaseline = "middle";
+      const xStart = Math.floor(-viewport.x / viewport.zoom / step) * step;
+      const xEnd = (w - viewport.x) / viewport.zoom;
+      octx.textAlign = "center";
+      for (let x = xStart; x <= xEnd; x += step) {
+        const sx = viewport.x + x * viewport.zoom;
+        if (sx < RULER) continue;
+        octx.beginPath();
+        octx.moveTo(sx, RULER);
+        octx.lineTo(sx, Math.round(x / step) % 5 === 0 ? 4 : 10);
+        octx.stroke();
+        if (Math.round(x / step) % 2 === 0) octx.fillText(String(Math.round(x)), sx, 8);
+      }
+      const yStart = Math.floor(-viewport.y / viewport.zoom / step) * step;
+      const yEnd = (h - viewport.y) / viewport.zoom;
+      octx.textAlign = "center";
+      for (let y = yStart; y <= yEnd; y += step) {
+        const sy = viewport.y + y * viewport.zoom;
+        if (sy < RULER) continue;
+        octx.beginPath();
+        octx.moveTo(RULER, sy);
+        octx.lineTo(Math.round(y / step) % 5 === 0 ? 4 : 10, sy);
+        octx.stroke();
+        if (Math.round(y / step) % 2 === 0) {
+          octx.save();
+          octx.translate(8, sy);
+          octx.rotate(-Math.PI / 2);
+          octx.fillText(String(Math.round(y)), 0, 0);
+          octx.restore();
+        }
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -224,7 +303,7 @@ export function CanvasStage() {
     if (!wrap) return;
     if (e.button === 2) return;
     wrap.setPointerCapture(e.pointerId);
-    const { doc, tool, viewport, selection, snap: doSnap } = useDesign.getState();
+    const { doc, tool, viewport, selection, snap: doSnap, rulers } = useDesign.getState();
     if (!doc) return;
     const p = pos(e);
     const d = screenToDoc(p.x, p.y, viewport);
@@ -234,6 +313,28 @@ export function CanvasStage() {
     if (space) {
       drag.current = { mode: "pan", sx: p.x, sy: p.y, lx: viewport.x, ly: viewport.y };
       return;
+    }
+
+    if (rulers) {
+      const manuals = doc.guides ?? [];
+      const hit = manuals.find((g) => {
+        if (g.axis === "x") return Math.abs(p.x - (viewport.x + g.pos * viewport.zoom)) < 6 && p.y > RULER;
+        return Math.abs(p.y - (viewport.y + g.pos * viewport.zoom)) < 6 && p.x > RULER;
+      });
+      if (hit) {
+        drag.current = { mode: "guide", sx: p.x, sy: p.y, lx: hit.pos, ly: hit.pos, guideId: hit.id, guideAxis: hit.axis };
+        return;
+      }
+      if (p.y < RULER && p.x > RULER) {
+        const id = useDesign.getState().addGuide("x", d.x);
+        drag.current = { mode: "guide", sx: p.x, sy: p.y, lx: d.x, ly: d.y, guideId: id, guideAxis: "x" };
+        return;
+      }
+      if (p.x < RULER && p.y > RULER) {
+        const id = useDesign.getState().addGuide("y", d.y);
+        drag.current = { mode: "guide", sx: p.x, sy: p.y, lx: d.x, ly: d.y, guideId: id, guideAxis: "y" };
+        return;
+      }
     }
 
     if (tool === "eyedropper") {
@@ -386,6 +487,10 @@ export function CanvasStage() {
     const p = pos(e);
     const d = screenToDoc(p.x, p.y, viewport);
 
+    if (st.mode === "guide" && st.guideId && st.guideAxis) {
+      useDesign.getState().moveGuide(st.guideId, st.guideAxis === "x" ? d.x : d.y);
+      return;
+    }
     if (st.mode === "pan") {
       useDesign.getState().setViewport({ x: st.lx + (p.x - st.sx), y: st.ly + (p.y - st.sy) });
       return;
@@ -429,7 +534,11 @@ export function CanvasStage() {
         return n ? { ...n, x: p.x, y: p.y } : null;
       }).filter((n): n is DesignNode => Boolean(n));
       const others = doc.nodes.filter((n) => !st.orig!.some((o) => o.id === n.id) && n.visible);
-      const snapped = smartSnap(moving, others, doc.artboard, 6);
+      const extra = {
+        x: (doc.guides ?? []).filter((g) => g.axis === "x").map((g) => g.pos),
+        y: (doc.guides ?? []).filter((g) => g.axis === "y").map((g) => g.pos),
+      };
+      const snapped = smartSnap(moving, others, doc.artboard, 6, extra);
       const places = proposed.map((p) => ({ id: p.id, x: p.x + snapped.dx, y: p.y + snapped.dy }));
       useDesign.getState().placeNodes(places);
       guidesRef.current = snapped.guides;
@@ -471,6 +580,15 @@ export function CanvasStage() {
       }
       marqueeRef.current = null;
       redraw();
+    }
+    if (st?.mode === "guide") {
+      const p = pos(e);
+      if (st.guideId && st.guideAxis) {
+        if ((st.guideAxis === "x" && p.y < RULER) || (st.guideAxis === "y" && p.x < RULER)) {
+          useDesign.getState().removeGuide(st.guideId);
+        }
+      }
+      useDesign.getState().commit();
     }
     if (st?.mode === "move") {
       guidesRef.current = { x: [], y: [] };

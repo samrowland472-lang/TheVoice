@@ -27,6 +27,7 @@ function docFrom(t: Template): DesignDocument {
       formatId: t.formatId,
     },
     nodes: t.build(),
+    guides: [],
     createdAt: now,
     updatedAt: now,
   };
@@ -350,6 +351,7 @@ export function blankDocument(formatId: string, name = "Untitled"): DesignDocume
       formatId: fmt.id,
     },
     nodes: [],
+    guides: [],
     createdAt: now,
     updatedAt: now,
   };

@@ -31,6 +31,7 @@ interface DesignState {
   future: DesignDocument[];
   grid: boolean;
   snap: boolean;
+  rulers: boolean;
   brand: BrandKit;
   brush: BrushSettings;
   color: string;
@@ -70,6 +71,11 @@ interface DesignState {
   setEditingText: (id: string | null) => void;
   toggleGrid: () => void;
   toggleSnap: () => void;
+  toggleRulers: () => void;
+  addGuide: (axis: "x" | "y", pos: number) => string;
+  moveGuide: (id: string, pos: number) => void;
+  removeGuide: (id: string) => void;
+  clearGuides: () => void;
   applyNodes: (nodes: DesignNode[]) => void;
   translateSelected: (dx: number, dy: number) => void;
   alignSelected: (edge: "left" | "center" | "right" | "top" | "middle" | "bottom", relative?: "selection" | "artboard") => void;
@@ -115,6 +121,7 @@ export const useDesign = create<DesignState>((set, get) => ({
   future: [],
   grid: true,
   snap: true,
+  rulers: true,
   brand: loadBrand(),
   brush: {
     id: "ink",
@@ -401,6 +408,32 @@ export const useDesign = create<DesignState>((set, get) => ({
   setEditingText: (editingText) => set({ editingText }),
   toggleGrid: () => set({ grid: !get().grid }),
   toggleSnap: () => set({ snap: !get().snap }),
+  toggleRulers: () => set({ rulers: !get().rulers }),
+  addGuide: (axis, pos) => {
+    const { doc } = get();
+    if (!doc) return "";
+    const g = { id: uid("gd"), axis, pos };
+    set({ doc: { ...doc, guides: [...(doc.guides ?? []), g] }, dirty: true });
+    return g.id;
+  },
+  moveGuide: (id, pos) => {
+    const { doc } = get();
+    if (!doc) return;
+    set({
+      doc: { ...doc, guides: (doc.guides ?? []).map((g) => (g.id === id ? { ...g, pos } : g)) },
+      dirty: true,
+    });
+  },
+  removeGuide: (id) => {
+    const { doc } = get();
+    if (!doc) return;
+    set({ doc: { ...doc, guides: (doc.guides ?? []).filter((g) => g.id !== id) }, dirty: true });
+  },
+  clearGuides: () => {
+    const { doc } = get();
+    if (!doc) return;
+    set({ doc: { ...doc, guides: [] }, dirty: true });
+  },
 
   applyNodes: (nodes) => {
     const { doc } = get();

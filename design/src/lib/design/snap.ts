@@ -22,12 +22,13 @@ export function smartSnap(
   others: DesignNode[],
   artboard: { width: number; height: number },
   threshold = 8,
+  extra?: GuideSet,
 ): { dx: number; dy: number; guides: GuideSet } {
   if (!moving.length) return { dx: 0, dy: 0, guides: { x: [], y: [] } };
   const box = aabb(moving);
   const m = edges(box);
-  const xs: number[] = [0, artboard.width / 2, artboard.width];
-  const ys: number[] = [0, artboard.height / 2, artboard.height];
+  const xs: number[] = [0, artboard.width / 2, artboard.width, ...(extra?.x ?? [])];
+  const ys: number[] = [0, artboard.height / 2, artboard.height, ...(extra?.y ?? [])];
   for (const n of others) {
     const e = edges(n);
     xs.push(e.l, e.c, e.r);
