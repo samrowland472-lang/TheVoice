@@ -1905,6 +1905,8 @@ function bindKeys() {
     if (!music || music.hidden) return;
     if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) return;
     if (ev.code === 'Space') {
+      const live = document.getElementById('daw-live');
+      if (live && !live.hidden) return;
       ev.preventDefault();
       togglePlay();
       return;
@@ -1918,6 +1920,8 @@ function bindKeys() {
       }
     }
     if (ev.code === 'Tab') {
+      const live = document.getElementById('daw-live');
+      if (live && !live.hidden) return;
       ev.preventDefault();
       setProdView(prodView === 'session' ? 'arrange' : 'session');
       return;

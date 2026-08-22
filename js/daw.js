@@ -495,6 +495,32 @@ function togglePlay(d) {
   else startDeckAt(d, d.cueAt);
 }
 
+function toggleLiveDecks() {
+  const a = decks.a;
+  const b = decks.b;
+  if (a.playing || b.playing) {
+    if (a.playing) pauseDeck(a);
+    if (b.playing) pauseDeck(b);
+    return;
+  }
+  if (a.buf) togglePlay(a);
+  else if (b.buf) togglePlay(b);
+}
+
+function bindDjKeys() {
+  if (window.__djKeys) return;
+  window.__djKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    const live = document.getElementById('daw-live');
+    if (!live || live.hidden) return;
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) return;
+    if (ev.code === 'Space') {
+      ev.preventDefault();
+      toggleLiveDecks();
+    }
+  });
+}
+
 function cueDeck(d) {
   if (d.playing) {
     pauseDeck(d);
@@ -1187,6 +1213,7 @@ export function initDaw(options) {
     });
   });
   hookMidi();
+  bindDjKeys();
   if (!deckPaint) tickWaves();
   window.TheVoiceDAW = Object.assign(window.TheVoiceDAW || {}, {
     play: () => { if (mode === 'dj') togglePlay(decks.a); else studioPlay(); },
