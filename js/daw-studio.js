@@ -55,6 +55,67 @@ const arr = {
 };
 let arrUid = 1;
 function nextArrId() { return 'a' + (arrUid++); }
+let envParam = 'vol';
+
+function defaultEnv() {
+  return {
+    vol: [{ t: 0, v: 1 }, { t: 1, v: 1 }],
+    cut: [{ t: 0, v: 1 }, { t: 1, v: 1 }],
+  };
+}
+function ensureEnv(c) {
+  if (!c.env) c.env = defaultEnv();
+  if (!c.env.vol || !c.env.vol.length) c.env.vol = defaultEnv().vol;
+  if (!c.env.cut || !c.env.cut.length) c.env.cut = defaultEnv().cut;
+  c.env.vol.sort((a, b) => a.t - b.t);
+  c.env.cut.sort((a, b) => a.t - b.t);
+  return c.env;
+}
+function envAt(points, t) {
+  if (!points || !points.length) return 1;
+  t = Math.max(0, Math.min(1, t));
+  if (t <= points[0].t) return points[0].v;
+  if (t >= points[points.length - 1].t) return points[points.length - 1].v;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (t >= a.t && t <= b.t) {
+      const u = (t - a.t) / Math.max(1e-6, b.t - a.t);
+      return a.v + (b.v - a.v) * u;
+    }
+  }
+  return 1;
+}
+function voiceDest(track, t, cut) {
+  const dest = mix[track] && mix[track].input;
+  if (!dest) return dest;
+  if (cut == null || cut >= 0.97) return dest;
+  const a = audio();
+  if (!a) return dest;
+  const f = a.ctx.createBiquadFilter();
+  f.type = 'lowpass';
+  f.frequency.setValueAtTime(220 + Math.pow(Math.max(0.02, cut), 1.8) * 16000, t);
+  f.Q.value = 0.9;
+  f.connect(dest);
+  return f;
+}
+function makeArrClip(partial) {
+  const c = {
+    id: nextArrId(),
+    track: 'kick',
+    start: 0,
+    length: 16,
+    name: '',
+    color: '#3fc6ff',
+    grid: null,
+    notes: null,
+    bassNotes: null,
+    env: defaultEnv(),
+    ...partial,
+  };
+  ensureEnv(c);
+  return c;
+}
 
 function audio() {
   const a = getAudio && getAudio();
@@ -155,9 +216,9 @@ function envGain(dest, t, vel, a, d, sus, r, dur) {
   return g;
 }
 
-function trigKick(t, vel) {
+function trigKick(t, vel, dest) {
   const { ctx } = audio();
-  const dest = mix.kick.input;
+  dest = dest || mix.kick.input;
   const osc = ctx.createOscillator();
   const click = ctx.createOscillator();
   const g = envGain(dest, t, vel, 0.001, 0.08, 0.2, 0.22, 0.12);
@@ -188,11 +249,12 @@ function trigNoise(dest, t, vel, hp, decay, dur) {
   n.start(t); n.stop(t + dur);
 }
 
-function trigSnare(t, vel) {
+function trigSnare(t, vel, dest) {
+  dest = dest || mix.snare.input;
   const { ctx } = audio();
-  trigNoise(mix.snare.input, t, vel * 0.9, 900, 0.12, 0.28);
+  trigNoise(dest, t, vel * 0.9, 900, 0.12, 0.28);
   const osc = ctx.createOscillator();
-  const g = envGain(mix.snare.input, t, vel * 0.35, 0.001, 0.04, 0.1, 0.08, 0.04);
+  const g = envGain(dest, t, vel * 0.35, 0.001, 0.04, 0.1, 0.08, 0.04);
   osc.type = 'triangle';
   osc.frequency.setValueAtTime(210, t);
   osc.frequency.exponentialRampToValueAtTime(150, t + 0.08);
@@ -200,23 +262,24 @@ function trigSnare(t, vel) {
   osc.start(t); osc.stop(t + 0.2);
 }
 
-function trigHat(t, vel) {
-  trigNoise(mix.hihat.input, t, vel * 0.55, 7000, 0.04, 0.1);
+function trigHat(t, vel, dest) {
+  trigNoise(dest || mix.hihat.input, t, vel * 0.55, 7000, 0.04, 0.1);
 }
 
-function trigClap(t, vel) {
-  trigNoise(mix.clap.input, t, vel * 0.7, 1000, 0.14, 0.28);
+function trigClap(t, vel, dest) {
+  trigNoise(dest || mix.clap.input, t, vel * 0.7, 1000, 0.14, 0.28);
 }
 
-function trigBass(t, vel, semi) {
+function trigBass(t, vel, semi, cutMul) {
   const { ctx } = audio();
   const dest = mix.bass.input;
   const freq = 110 * Math.pow(2, (semi || 0) / 12);
   const osc = ctx.createOscillator();
   const f = ctx.createBiquadFilter();
+  const mul = cutMul == null ? 1 : Math.max(0.05, cutMul);
   f.type = 'lowpass';
-  f.frequency.setValueAtTime(freq * 5, t);
-  f.frequency.exponentialRampToValueAtTime(freq * 2.2, t + 0.16);
+  f.frequency.setValueAtTime(freq * 5 * (0.35 + 1.4 * mul), t);
+  f.frequency.exponentialRampToValueAtTime(freq * 2.2 * mul, t + 0.16);
   f.Q.value = 6;
   osc.type = 'sawtooth';
   osc.frequency.value = freq;
@@ -225,7 +288,7 @@ function trigBass(t, vel, semi) {
   osc.start(t); osc.stop(t + 0.42);
 }
 
-function trigKey(t, pitch, vel, lengthBeats) {
+function trigKey(t, pitch, vel, lengthBeats, cutHz) {
   const { ctx } = audio();
   const dest = mix.keys.input;
   const freq = 440 * Math.pow(2, (pitch - 69) / 12);
@@ -237,9 +300,10 @@ function trigKey(t, pitch, vel, lengthBeats) {
   o1.frequency.value = freq;
   o2.frequency.value = freq * 1.005;
   const f = ctx.createBiquadFilter();
+  const cut = Math.max(80, cutHz || keysCutoff);
   f.type = 'lowpass';
-  f.frequency.setValueAtTime(keysCutoff, t);
-  f.frequency.exponentialRampToValueAtTime(Math.max(120, keysCutoff * 0.35), t + dur * 0.7);
+  f.frequency.setValueAtTime(cut, t);
+  f.frequency.exponentialRampToValueAtTime(Math.max(120, cut * 0.35), t + dur * 0.7);
   f.Q.value = keysRes;
   const g = envGain(dest, t, vel * 0.28, 0.01, 0.08, 0.55, keysRel, dur);
   o1.connect(f); o2.connect(f); f.connect(g);
@@ -400,24 +464,32 @@ function clipAt(track, st) {
 }
 
 function scheduleArrange(st, t) {
-  const vel = 0.9;
+  const vel0 = 0.9;
   for (let i = 0; i < ARR_TRACKS.length; i++) {
     const track = ARR_TRACKS[i];
     const c = clipAt(track, st);
     if (!c) continue;
+    ensureEnv(c);
+    const pos = (st - c.start) / Math.max(1, c.length);
+    const vol = envAt(c.env.vol, pos);
+    const cut = envAt(c.env.cut, pos);
+    const vel = vel0 * vol;
+    const dest = voiceDest(track, t, cut);
     const local = (st - c.start) % 16;
     if (track === 'keys') {
       (c.notes || []).forEach((n) => {
-        if ((n.start % 16) === local) trigKey(t, n.pitch, (n.vel || 100) / 100, n.length);
+        if ((n.start % 16) === local) {
+          trigKey(t, n.pitch, ((n.vel || 100) / 100) * vol, n.length, 80 + cut * 8000);
+        }
       });
       continue;
     }
     if (!c.grid || !c.grid[track] || !c.grid[track][local]) continue;
-    if (track === 'kick') trigKick(t, vel);
-    else if (track === 'snare') trigSnare(t, vel);
-    else if (track === 'hihat') trigHat(t, vel);
-    else if (track === 'clap') trigClap(t, vel);
-    else if (track === 'bass') trigBass(t, vel, (c.bassNotes && c.bassNotes[local]) || 0);
+    if (track === 'kick') trigKick(t, vel, dest);
+    else if (track === 'snare') trigSnare(t, vel, dest);
+    else if (track === 'hihat') trigHat(t, vel, dest);
+    else if (track === 'clap') trigClap(t, vel, dest);
+    else if (track === 'bass') trigBass(t, vel, (c.bassNotes && c.bassNotes[local]) || 0, cut);
   }
   if (metroOn && st % 4 === 0) trigMetro(t, st % 16 === 0);
 }
@@ -434,8 +506,7 @@ function punchBar(st) {
       : snap.grid[track] && snap.grid[track].some(Boolean);
     if (!has) return;
     arr.clips = arr.clips.filter((c) => !(c.track === track && c.start === st && c.length === 16));
-    arr.clips.push({
-      id: nextArrId(),
+    arr.clips.push(makeArrClip({
       track,
       start: st,
       length: 16,
@@ -444,7 +515,7 @@ function punchBar(st) {
       grid: snap.grid,
       notes: snap.notes,
       bassNotes: snap.bassNotes,
-    });
+    }));
   });
   paintArrangeClips();
 }
@@ -458,8 +529,7 @@ function seedArrange() {
       ? (snap.notes && snap.notes.length)
       : snap.grid[track] && snap.grid[track].some(Boolean);
     if (!has) return;
-    arr.clips.push({
-      id: nextArrId(),
+    arr.clips.push(makeArrClip({
       track,
       start: 0,
       length: 32,
@@ -468,7 +538,11 @@ function seedArrange() {
       grid: snap.grid,
       notes: snap.notes,
       bassNotes: snap.bassNotes,
-    });
+      env: {
+        vol: [{ t: 0, v: 0.12 }, { t: 0.1, v: 1 }, { t: 0.82, v: 1 }, { t: 1, v: 0.18 }],
+        cut: [{ t: 0, v: 0.35 }, { t: 0.35, v: 1 }, { t: 1, v: 0.5 }],
+      },
+    }));
   });
 }
 
@@ -483,8 +557,7 @@ function dropAtPlayhead() {
       : snap.grid[track] && snap.grid[track].some(Boolean);
     if (!has) return;
     arr.clips = arr.clips.filter((c) => !(c.track === track && c.start < start + length && c.start + c.length > start));
-    arr.clips.push({
-      id: nextArrId(),
+    arr.clips.push(makeArrClip({
       track,
       start,
       length,
@@ -493,7 +566,7 @@ function dropAtPlayhead() {
       grid: snap.grid,
       notes: snap.notes,
       bassNotes: snap.bassNotes,
-    });
+    }));
   });
   paintArrangeClips();
 }
@@ -530,7 +603,7 @@ function paintArrange() {
         <button type="button" id="arr-follow-btn" title="Follow playhead">Follow</button>
         <button type="button" id="arr-punch-btn" title="Punch-in: Rec only writes inside the loop">Punch</button>
         <button type="button" id="arr-drop-btn" title="Drop the current clip at the playhead">Drop clip</button>
-        <span class="abl-muted">Tab flips Session · drag clips · drag the brace · click the ruler to locate</span>
+        <span class="abl-muted">Tab flips Session · select a clip to draw its envelope</span>
       </div>
       <div class="arr-scroll" id="arr-scroll">
         <div class="arr-inner" id="arr-inner" style="width:${width}px">
@@ -539,6 +612,17 @@ function paintArrange() {
           <div class="arr-lanes" id="arr-lanes"></div>
           <div class="arr-playhead" id="arr-playhead"></div>
         </div>
+      </div>
+      <div class="arr-env" id="arr-env">
+        <div class="arr-env-bar">
+          <span>Clip envelope</span>
+          <button type="button" data-env="vol" class="on">Vol</button>
+          <button type="button" data-env="cut">Cut</button>
+          <button type="button" id="arr-env-fadein">Fade in</button>
+          <button type="button" id="arr-env-fadeout">Fade out</button>
+          <span class="abl-muted" id="arr-env-clip">select a clip</span>
+        </div>
+        <canvas id="arr-env-canvas" width="640" height="88" aria-label="Clip envelope. Click to add a breakpoint, drag to move, right-click to delete."></canvas>
       </div>
     `;
     bindArrange();
@@ -551,6 +635,7 @@ function paintArrange() {
   paintLoopBrace();
   syncArrangeBtns();
   tickArrangePlayhead(step);
+  paintEnvEditor();
 }
 
 function paintArrangeRuler() {
@@ -577,6 +662,7 @@ function paintArrangeClips() {
   if (!lanes) return;
   lanes.querySelectorAll('.arr-clip').forEach((n) => n.remove());
   arr.clips.forEach((c) => {
+    ensureEnv(c);
     const lane = lanes.querySelector(`[data-lane="${c.track}"] .arr-lane-g`);
     if (!lane) return;
     const el = document.createElement('button');
@@ -586,9 +672,140 @@ function paintArrangeClips() {
     el.style.left = `${c.start * PX}px`;
     el.style.width = `${Math.max(8, c.length * PX)}px`;
     el.style.setProperty('--clip', c.color);
-    el.innerHTML = `<span>${c.name || c.track}</span><b class="arr-resize"></b>`;
+    el.innerHTML = `<span>${c.name || c.track}</span><canvas class="arr-clip-env"></canvas><b class="arr-resize"></b>`;
     lane.appendChild(el);
+    drawMiniEnv(el.querySelector('canvas'), c);
   });
+  paintEnvEditor();
+}
+
+function drawMiniEnv(canvas, c) {
+  if (!canvas) return;
+  const w = Math.max(8, c.length * PX);
+  canvas.width = w;
+  canvas.height = 22;
+  const g = canvas.getContext('2d');
+  const pts = (c.env && c.env[envParam]) || [];
+  if (pts.length < 2) return;
+  g.strokeStyle = 'rgba(255,255,255,0.85)';
+  g.lineWidth = 1.2;
+  g.beginPath();
+  pts.forEach((p, i) => {
+    const x = p.t * w;
+    const y = (1 - p.v) * 20 + 1;
+    if (i === 0) g.moveTo(x, y);
+    else g.lineTo(x, y);
+  });
+  g.stroke();
+}
+
+function selectedClip() {
+  return arr.clips.find((c) => c.id === arr.selected) || null;
+}
+
+function paintEnvEditor() {
+  const canvas = document.getElementById('arr-env-canvas');
+  const lab = document.getElementById('arr-env-clip');
+  const c = selectedClip();
+  document.querySelectorAll('[data-env]').forEach((b) => b.classList.toggle('on', b.dataset.env === envParam));
+  if (lab) lab.textContent = c ? `${c.track} · ${envParam === 'vol' ? 'volume' : 'cutoff'}` : 'select a clip';
+  if (!canvas) return;
+  const wrap = canvas.parentElement;
+  const cssW = Math.max(120, (wrap && wrap.clientWidth) || 640);
+  const cssH = 88;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.fillStyle = '#070a09';
+  g.fillRect(0, 0, cssW, cssH);
+  g.strokeStyle = 'rgba(63,198,255,0.12)';
+  for (let i = 0; i <= 4; i++) {
+    g.beginPath();
+    g.moveTo(0, (cssH * i) / 4);
+    g.lineTo(cssW, (cssH * i) / 4);
+    g.stroke();
+  }
+  if (!c) return;
+  ensureEnv(c);
+  const pts = c.env[envParam];
+  g.strokeStyle = envParam === 'vol' ? '#3fc6ff' : '#ffb238';
+  g.fillStyle = g.strokeStyle;
+  g.lineWidth = 1.6;
+  g.beginPath();
+  pts.forEach((p, i) => {
+    const x = p.t * cssW;
+    const y = (1 - p.v) * (cssH - 8) + 4;
+    if (i === 0) g.moveTo(x, y);
+    else g.lineTo(x, y);
+  });
+  g.stroke();
+  pts.forEach((p) => {
+    const x = p.t * cssW;
+    const y = (1 - p.v) * (cssH - 8) + 4;
+    g.beginPath();
+    g.arc(x, y, 4, 0, Math.PI * 2);
+    g.fill();
+  });
+}
+
+function bindEnv() {
+  const canvas = document.getElementById('arr-env-canvas');
+  if (!canvas || canvas._bound) return;
+  canvas._bound = true;
+  const hit = (ev) => {
+    const r = canvas.getBoundingClientRect();
+    const t = Math.max(0, Math.min(1, (ev.clientX - r.left) / Math.max(1, r.width)));
+    const v = Math.max(0, Math.min(1, 1 - (ev.clientY - r.top) / Math.max(1, r.height)));
+    const c = selectedClip();
+    if (!c) return { t, v, pt: null, c: null, pts: null };
+    ensureEnv(c);
+    const pts = c.env[envParam];
+    let pt = null;
+    let best = 0.045;
+    pts.forEach((p) => {
+      const d = Math.hypot(p.t - t, p.v - v);
+      if (d < best) { best = d; pt = p; }
+    });
+    return { t, v, pt, c, pts };
+  };
+  canvas.addEventListener('pointerdown', (ev) => {
+    const h = hit(ev);
+    if (!h.c) return;
+    if (ev.button === 2) {
+      if (h.pt && h.pts.length > 1) {
+        h.c.env[envParam] = h.pts.filter((p) => p !== h.pt);
+        paintEnvEditor();
+        paintArrangeClips();
+      }
+      return;
+    }
+    let pt = h.pt;
+    if (!pt) {
+      pt = { t: h.t, v: h.v };
+      h.pts.push(pt);
+      h.pts.sort((a, b) => a.t - b.t);
+    }
+    const move = (e) => {
+      const n = hit(e);
+      pt.t = n.t;
+      pt.v = n.v;
+      h.c.env[envParam].sort((a, b) => a.t - b.t);
+      paintEnvEditor();
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      paintArrangeClips();
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    paintEnvEditor();
+  });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function paintLoopBrace() {
@@ -629,6 +846,34 @@ function bindArrange() {
   root.querySelector('#arr-follow-btn').addEventListener('click', () => { arr.follow = !arr.follow; syncArrangeBtns(); });
   root.querySelector('#arr-punch-btn').addEventListener('click', () => { arr.punch = !arr.punch; syncArrangeBtns(); });
   root.querySelector('#arr-drop-btn').addEventListener('click', dropAtPlayhead);
+  root.querySelectorAll('[data-env]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      envParam = btn.dataset.env === 'cut' ? 'cut' : 'vol';
+      paintEnvEditor();
+      paintArrangeClips();
+    });
+  });
+  const fadeIn = root.querySelector('#arr-env-fadein');
+  const fadeOut = root.querySelector('#arr-env-fadeout');
+  if (fadeIn) fadeIn.addEventListener('click', () => {
+    const c = selectedClip();
+    if (!c) return;
+    ensureEnv(c);
+    c.env.vol = [{ t: 0, v: 0 }, { t: 0.2, v: 1 }, { t: 1, v: 1 }];
+    envParam = 'vol';
+    paintEnvEditor();
+    paintArrangeClips();
+  });
+  if (fadeOut) fadeOut.addEventListener('click', () => {
+    const c = selectedClip();
+    if (!c) return;
+    ensureEnv(c);
+    c.env.vol = [{ t: 0, v: 1 }, { t: 0.75, v: 1 }, { t: 1, v: 0 }];
+    envParam = 'vol';
+    paintEnvEditor();
+    paintArrangeClips();
+  });
+  bindEnv();
   const ruler = document.getElementById('arr-ruler');
   const inner = document.getElementById('arr-inner');
   const xToStep = (clientX) => {
