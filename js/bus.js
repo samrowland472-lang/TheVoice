@@ -1,4 +1,4 @@
-// Tiny studio bus so Speak, Voice Studio, Library and the DAW share clips
+// Tiny studio bus so Speak, Clone, Library and the DAW share clips
 // without importing each other. One event name, one payload shape.
 
 const listeners = new Map();

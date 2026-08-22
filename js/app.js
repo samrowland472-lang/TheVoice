@@ -54,6 +54,7 @@ import { parseLocalCommand, requestScene, getAgentEndpoint, setAgentEndpoint,
 import { pickFile, pickValidated, validateFile, readText, readJson, readDataUrl,
          loadImage, makeDropTarget, guardStrayDrops, fileExtension, ACCEPT,
          readArrayBuffer } from './files.js';
+import { initVoiceDesk } from './voice-desk.js';
 import {
   getSupabaseConfig,
   setSupabaseConfig,
@@ -186,24 +187,26 @@ function switchSection(section) {
     else b.removeAttribute('aria-current');
   });
 
-  const isConsole = section === 'speak' || section === 'studio';
+  const isConsole = section === 'speak' || section === 'clone' || section === 'dub' || section === 'talk';
   consoleView.hidden = !isConsole;
   libraryView.hidden = section !== 'library';
   settingsView.hidden = section !== 'settings';
   accountView.hidden = section !== 'account';
   longformView.hidden = section !== 'longform';
   plansView.hidden = section !== 'plans';
-  modulateView.hidden = section !== 'modulate';
+  modulateView.hidden = section !== 'shape';
   animateView.hidden = section !== 'animate';
   musicView.hidden = section !== 'music' && section !== 'dj';
   projectView.hidden = section !== 'project';
+  const signalView = document.getElementById('signal-view');
+  if (signalView) signalView.hidden = section !== 'signal';
 
   if (isConsole) switchTab(section);
   if (section === 'library') renderLibrary();
   if (section === 'account') renderAccountView();
   if (section === 'settings') renderSettings();
   if (section === 'plans') renderPlans();
-  if (section === 'modulate') refreshModSource();
+  if (section === 'shape') refreshModSource();
   if (section === 'animate') animOnShow();
   const shell = document.getElementById('app-shell');
   if (shell) shell.classList.toggle('is-daw', section === 'music' || section === 'dj');
@@ -280,9 +283,9 @@ document.addEventListener('keydown', (ev) => {
 
   if (ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey) {
     const map = {
-      Digit1: 'speak', Digit2: 'studio', Digit3: 'longform', Digit4: 'modulate',
-      Digit5: 'music', Digit6: 'dj', Digit7: 'project', Digit8: 'library',
-      Digit9: 'settings', Digit0: 'plans',
+      Digit1: 'clone', Digit2: 'dub', Digit3: 'shape', Digit4: 'speak',
+      Digit5: 'talk', Digit6: 'signal', Digit7: 'music', Digit8: 'dj',
+      Digit9: 'project', Digit0: 'library',
     };
     const section = map[ev.code];
     if (section) {
@@ -296,6 +299,17 @@ document.addEventListener('keydown', (ev) => {
     ev.preventDefault();
     if (consoleView && !consoleView.hidden && document.querySelector('[data-panel="speak"].active')) {
       playBtn.click();
+    } else if (consoleView && !consoleView.hidden && document.querySelector('[data-panel="clone"].active')) {
+      if (cloneVoiceBtn && !cloneVoiceBtn.disabled) cloneVoiceBtn.click();
+    } else if (consoleView && !consoleView.hidden && document.querySelector('[data-panel="dub"].active')) {
+      const b = document.getElementById('dub-render-btn');
+      if (b) b.click();
+    } else if (consoleView && !consoleView.hidden && document.querySelector('[data-panel="talk"].active')) {
+      const b = document.getElementById('talk-send-btn');
+      if (b) b.click();
+    } else if (document.getElementById('signal-view') && !document.getElementById('signal-view').hidden) {
+      const b = document.getElementById('signal-open-btn');
+      if (b) b.click();
     } else if (longformView && !longformView.hidden && longformGenerateBtn && !longformGenerateBtn.disabled) {
       longformGenerateBtn.click();
     } else if (modulateView && !modulateView.hidden && modApplyBtn && !modApplyBtn.disabled) {
@@ -393,7 +407,7 @@ function refreshVoiceOptions() {
     const cloned = getClonedVoices();
     if (cloned.length === 0) {
       const opt = document.createElement('option');
-      opt.textContent = 'No cloned voices yet — see Voice Studio';
+      opt.textContent = 'No cloned voices yet — see Clone';
       opt.disabled = true;
       voiceSelect.appendChild(opt);
     } else {
@@ -643,8 +657,8 @@ async function speakElevenLabs(text) {
   }
   const voiceId = voiceSelect.value;
   if (!voiceId) {
-    engineHint.textContent = 'Record and clone a voice in Voice Studio first.';
-    switchSection('studio');
+    engineHint.textContent = 'Print a voice in Clone first.';
+    switchSection('clone');
     return;
   }
 
@@ -776,7 +790,7 @@ downloadBtn.addEventListener('click', async () => {
   else if (result.message) engineHint.textContent = result.message;
 });
 
-/* ---------- Voice Studio: recording ---------- */
+/* ---------- Clone: recording ---------- */
 function formatTime(s) {
   const m = Math.floor(s / 60).toString().padStart(2, '0');
   const sec = Math.floor(s % 60).toString().padStart(2, '0');
@@ -1130,27 +1144,62 @@ resetEffectBtn.addEventListener('click', () => {
 
 function updateCloneAvailability() {
   const hasKey = !!getApiKey();
-  cloneVoiceBtn.disabled = !hasKey || !recordingBlob;
-  cloneHint.textContent = hasKey
-    ? 'Ready to clone — this sends your recording to ElevenLabs using your API key.'
-    : 'Add an ElevenLabs API key in Settings to enable cloning.';
+  const consent = document.getElementById('clone-consent');
+  const agreed = !!(consent && consent.checked);
+  cloneVoiceBtn.disabled = !recordingBlob || !agreed;
+  cloneHint.textContent = !agreed
+    ? 'Confirm you have the right to clone this voice.'
+    : hasKey
+      ? 'Ready to print — this also sends your recording to ElevenLabs using your API key.'
+      : 'Ready to print locally. Add an ElevenLabs key in Settings to speak in any language.';
 }
 
 cloneVoiceBtn.addEventListener('click', async () => {
-  const apiKey = getApiKey();
-  if (!apiKey || !recordingBlob) return;
+  const consent = document.getElementById('clone-consent');
+  if (!consent || !consent.checked) {
+    cloneStatus.hidden = false;
+    cloneStatus.className = 'hint';
+    cloneStatus.textContent = 'Confirm you have the right to clone this voice.';
+    return;
+  }
+  if (!recordingBlob) return;
 
+  const name = (studioCloneName && studioCloneName.value.trim()) || `My Voice ${new Date().toLocaleString()}`;
   cloneStatus.hidden = false;
   cloneStatus.className = 'hint hint-info';
-  cloneStatus.textContent = 'Uploading your voice to ElevenLabs…';
   cloneVoiceBtn.disabled = true;
 
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    cloneStatus.textContent = 'Locking a local print…';
+    try {
+      await saveClipToLibrary({
+        engine: 'recording',
+        voiceLabel: name,
+        text: 'Voice print',
+        blob: recordingBlob,
+        ext: recordingExt,
+        durationSec: 0,
+      });
+      cloneStatus.textContent = `Local print locked as "${name}". Add an ElevenLabs key in Settings to speak as this voice in any language.`;
+      showToast(`Print saved: ${name}`);
+      renderClonedVoiceList();
+    } catch (err) {
+      cloneStatus.className = 'hint';
+      cloneStatus.textContent = err.message || 'Could not save the print.';
+    } finally {
+      updateCloneAvailability();
+    }
+    return;
+  }
+
+  cloneStatus.textContent = 'Uploading your voice to ElevenLabs…';
+
   try {
-    const name = (studioCloneName && studioCloneName.value.trim()) || `My Voice ${new Date().toLocaleString()}`;
     const voice = await cloneVoice(apiKey, recordingBlob, name, `sample.${recordingExt}`);
     saveClonedVoice(voice);
     cloneStatus.className = 'hint hint-info';
-    cloneStatus.textContent = `Cloned! "${voice.name}" is now available under the My Voices engine.`;
+    cloneStatus.textContent = `Printed. "${voice.name}" is now available under the My Voices engine.`;
     showToast(`Voice cloned: ${voice.name}`);
     renderClonedVoiceList();
     if (engine === 'elevenlabs') refreshVoiceOptions();
@@ -1187,6 +1236,8 @@ async function renderSettings() {
 }
 
 updateCloneAvailability();
+const cloneConsent = document.getElementById('clone-consent');
+if (cloneConsent) cloneConsent.addEventListener('change', updateCloneAvailability);
 paintKeyFingerprint();
 
 saveKeyBtn.addEventListener('click', async () => {
@@ -1250,14 +1301,14 @@ clearKeyBtn.addEventListener('click', () => {
   updateCloneAvailability();
 });
 
-function renderClonedVoiceList() {
-  const voices = getClonedVoices();
-  clonedVoiceList.innerHTML = '';
+function paintVoiceList(el, voices) {
+  if (!el) return;
+  el.innerHTML = '';
   if (voices.length === 0) {
     const li = document.createElement('li');
     li.className = 'voice-list-empty';
-    li.textContent = 'No cloned voices yet — record one in Voice Studio.';
-    clonedVoiceList.appendChild(li);
+    li.textContent = 'No cloned voices yet — print one in Clone.';
+    el.appendChild(li);
     return;
   }
   voices.forEach((v) => {
@@ -1272,8 +1323,14 @@ function renderClonedVoiceList() {
       if (engine === 'elevenlabs') refreshVoiceOptions();
     });
     li.append(span, btn);
-    clonedVoiceList.appendChild(li);
+    el.appendChild(li);
   });
+}
+
+function renderClonedVoiceList() {
+  const voices = getClonedVoices();
+  paintVoiceList(clonedVoiceList, voices);
+  paintVoiceList(document.getElementById('clone-roster'), voices);
 }
 
 /* ---------- Clip Library / Dashboard ---------- */
@@ -1897,7 +1954,7 @@ async function refreshModSource() {
   if (modSourceBuffer) return;
   modSourceLabel.textContent = originalRecordingBlob
     ? 'A recording is available to load.'
-    : 'No clip loaded — pick a Library clip, import, or record in Voice Studio.';
+    : 'No clip loaded — pick a Library clip, import, or print a voice in Clone.';
   modLoadBtn.disabled = !originalRecordingBlob;
 }
 
@@ -2763,7 +2820,7 @@ if (animOnionToggle) {
 animVoiceBtn.addEventListener('click', async () => {
   const source = modResultBlob || originalRecordingBlob || lastClipBlob;
   if (!source) {
-    animHint.textContent = 'No clip yet — record one in Voice Studio, or generate speech first.';
+    animHint.textContent = 'No clip yet — print a voice in Clone, or generate speech first.';
     return;
   }
   animHint.textContent = '';
@@ -4587,7 +4644,7 @@ musicPlayBtn.addEventListener('click', async () => {
 musicVoiceBtn.addEventListener('click', async () => {
   const source = modResultBlob || originalRecordingBlob || lastClipBlob;
   if (!source) {
-    musicHint.textContent = 'No voice clip yet — record one in Voice Studio, or generate speech first.';
+    musicHint.textContent = 'No voice clip yet — print a voice in Clone, or generate speech first.';
     return;
   }
   musicHint.textContent = '';
@@ -5016,7 +5073,7 @@ function enterApp() {
   gate.hidden = true;
   gateSetupToggle.hidden = true;
   appShell.hidden = false;
-  switchSection('speak');
+  switchSection('clone');
   renderPlans().catch(() => paintSidebarPlan('free'));
 }
 
@@ -5712,7 +5769,17 @@ async function studioAdopt(result) {
 studioImportBtn.addEventListener('click', async () => {
   studioAdopt(await pickValidated('audio'));
 });
-makeDropTarget(document.querySelector('[data-panel="studio"]'), 'audio', studioAdopt);
+makeDropTarget(document.querySelector('[data-panel="clone"]'), 'audio', studioAdopt);
+makeDropTarget(document.querySelector('[data-panel="dub"]'), 'audio', async (result) => {
+  if (result.cancelled || !result.file) return;
+  const audioEl = document.getElementById('dub-source-audio');
+  const label = document.getElementById('dub-source-label');
+  if (audioEl) {
+    audioEl.hidden = false;
+    audioEl.src = URL.createObjectURL(result.file);
+  }
+  if (label) label.textContent = result.file.name;
+});
 
 // --- Speak: a script is a file too ---------------------------------------
 makeDropTarget(document.querySelector('[data-panel="speak"]'), 'json', async (result) => {
@@ -6092,6 +6159,16 @@ window.TheVoice = Object.assign(window.TheVoice || {}, {
   speak: () => playBtn && playBtn.click(),
   stop: stopPlayback,
   enter: enterGuest,
+});
+initVoiceDesk({
+  switchSection,
+  speak: () => playBtn && playBtn.click(),
+  stop: stopPlayback,
+  pickFile: async (kind) => {
+    const result = await pickValidated(kind || 'audio');
+    if (!result.ok || !result.file) return null;
+    return result.file;
+  },
 });
 bootstrapAuth().catch(() => showGate());
 startUpgradeWatch().catch(() => {});

@@ -5,7 +5,7 @@
 <title>The Voice</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0a0d0c">
-<meta name="description" content="Speak, record, and produce in one browser studio.">
+<meta name="description" content="Clone, dub, shape, and speak in one browser studio.">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
 <div class="gate" id="gate">
   <div class="gate-mark"></div>
   <h1 class="gate-title">The Voice</h1>
-  <p class="gate-tag">Speak, record, produce — one studio.</p>
+  <p class="gate-tag">Clone, dub, shape, speak — one studio.</p>
 
   <div class="gate-actions gate-enter">
     <button class="btn btn-primary" id="gate-guest-btn">Enter studio</button>
@@ -78,47 +78,55 @@
     </div>
 
     <nav class="sidebar-nav" id="sidebar-nav" aria-label="Sections">
-      <button class="sidebar-item active" data-section="speak" title="Speak · Alt+1">
+      <button class="sidebar-item active" data-section="clone" title="Clone · Alt+1">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 2a5 5 0 015 5v1h1a3 3 0 010 6h-1v1a5 5 0 01-10 0v-1H6a3 3 0 010-6h1V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v8a3 3 0 006 0V7a3 3 0 00-3-3z"/></svg>
+        Clone
+      </button>
+      <button class="sidebar-item" data-section="dub" title="Dub · Alt+2">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 10h2v4H4zm4-4h2v12H8zm4-3h2v18h-2zm4 5h2v8h-2zm4 2h2v4h-2z"/></svg>
+        Dub
+      </button>
+      <button class="sidebar-item" data-section="shape" title="Shape · Alt+3">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 10h2v4H3zm4-4h2v12H7zm4-3h2v18h-2zm4 5h2v8h-2zm4 3h2v2h-2z"/></svg>
+        Shape
+      </button>
+      <button class="sidebar-item" data-section="speak" title="Speak · Alt+4">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
         Speak
       </button>
-      <button class="sidebar-item" data-section="studio" title="Voice Studio · Alt+2">
-        <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg>
-        Voice Studio
+      <button class="sidebar-item" data-section="talk" title="Talk · Alt+5">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3zm5-3a5 5 0 01-10 0H5a7 7 0 006 6.9V21h2v-3.1A7 7 0 0019 11z"/></svg>
+        Talk
       </button>
-      <button class="sidebar-item" data-section="longform" title="Studio · Alt+3">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 3h7a3 3 0 013 3v14a2.5 2.5 0 00-2.5-2H4zm16 0h-4.5A2.5 2.5 0 0013 5.5V20a2.5 2.5 0 012.5-2H20z"/></svg>
-        Studio
-      </button>
-      <button class="sidebar-item" data-section="modulate" title="Modulate · Alt+4">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 10h2v4H3zm4-4h2v12H7zm4-3h2v18h-2zm4 5h2v8h-2zm4 3h2v2h-2z"/></svg>
-        Modulate
+      <button class="sidebar-item" data-section="signal" title="Signal · Alt+6">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 4a5 5 0 110 10 5 5 0 010-10zm0 3a2 2 0 100 4 2 2 0 000-4z"/></svg>
+        Signal
       </button>
       <button class="sidebar-item" data-section="animate">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 4h16v12H4zm2 14h12v2H6zM9 7.5v5l4-2.5z"/></svg>
         Animate
       </button>
-      <button class="sidebar-item" data-section="music" title="Music · Alt+5">
+      <button class="sidebar-item" data-section="music" title="Music · Alt+7">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3v10.6a4 4 0 10 2 3.4V7h4V3z"/></svg>
         Music
       </button>
-      <button class="sidebar-item" data-section="dj" title="DJ Live · Alt+6">
+      <button class="sidebar-item" data-section="dj" title="DJ Live · Alt+8">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 10a2 2 0 114 0 2 2 0 01-4 0zm12 0a2 2 0 114 0 2 2 0 01-4 0zM3 7h18v2H3zm0 8h18v2H3z"/></svg>
         DJ Live
       </button>
-      <button class="sidebar-item" data-section="project" title="Project · Alt+7">
+      <button class="sidebar-item" data-section="project" title="Project · Alt+9">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 4h8v7H3zm10 0h8v4h-8zM3 13h8v7H3zm10-3h8v10h-8z"/></svg>
         Project
       </button>
-      <button class="sidebar-item" data-section="library" title="Library · Alt+8">
+      <button class="sidebar-item" data-section="library" title="Library · Alt+0">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
         Library
       </button>
-      <button class="sidebar-item" data-section="settings" title="Settings · Alt+9">
+      <button class="sidebar-item" data-section="settings">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.4 13a7.4 7.4 0 000-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 00-1.7-1L15 3h-4l-.3 2.9a7.4 7.4 0 00-1.7 1l-2.5-1-2 3.5L6.6 11a7.4 7.4 0 000 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.75 1.7 1L11 21h4l.3-2.9c.6-.25 1.2-.6 1.7-1l2.5 1 2-3.5z"/></svg>
         Settings
       </button>
-      <button class="sidebar-item" data-section="plans" title="Plans · Alt+0">
+      <button class="sidebar-item" data-section="plans">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M2 7h20v3H2zm0 5h20v6a2 2 0 01-2 2H4a2 2 0 01-2-2zm2-8h16a2 2 0 012 2H2a2 2 0 012-2z"/></svg>
         Plans
         <span class="sidebar-badge" id="sidebar-plan-badge">Free</span>
@@ -154,7 +162,7 @@
     </section>
 
     <section class="panel controls-panel">
-      <div class="tab-panel active" data-panel="speak" data-drop-zone>
+      <div class="tab-panel" data-panel="speak" data-drop-zone>
         <div class="engine-select" id="engine-select">
           <button class="engine-btn active" data-engine="neural" aria-pressed="true">
             <span class="engine-name">Neural</span>
@@ -199,6 +207,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-18v12.17l4.59-4.58L18 11l-6 6-6-6 1.41-1.41L12 14.17V2z"/></svg>
             Download
           </button>
+          <button type="button" id="speak-longform-btn" class="btn" title="Open the audiobook studio">Long-form…</button>
         </div>
 
         <div class="control-grid">
@@ -226,9 +235,19 @@
         <p class="hint hint-info" id="engine-hint" role="status" aria-live="polite"></p>
       </div>
 
-      <div class="tab-panel" data-panel="studio" data-drop-zone>
-        <p class="field-label">Voice Studio</p>
-        <p class="hint hint-info">The take is recorded after input gain — not the raw mic. Monitor is for headphones so you can hear yourself without a loop.</p>
+      <div class="tab-panel active" data-panel="clone" data-drop-zone>
+        <p class="field-label">Clone</p>
+        <p class="hint hint-info">Your voice. Instantly usable. Record or drop twenty to ninety seconds of natural speech. The print is used across Speak, Dub, Talk, and Shape.</p>
+
+        <label class="field-label" for="studio-clone-name">Voice name</label>
+        <input type="text" id="studio-clone-name" placeholder="My voice" value="My voice" maxlength="48" aria-label="Clone voice name">
+
+        <label class="consent-row" for="clone-consent">
+          <input type="checkbox" id="clone-consent">
+          <span>I have the right to clone this voice.</span>
+        </label>
+
+        <p class="clone-script" id="clone-script">The signal is open. I am recording a voice print in a quiet room. Numbers: one, two, three, forty-seven, nine hundred. A question? Yes. Names: Orion, Celeste. This is my natural speaking voice, not a performance.</p>
 
         <div class="studio-chain">
           <label class="control-item">Mic
@@ -298,14 +317,77 @@
           <textarea id="transcript-box" placeholder="Your words will appear here as you speak…"></textarea>
 
           <div class="control-row buttons-row">
-            <input type="text" id="studio-clone-name" placeholder="Voice name" aria-label="Clone voice name">
             <button id="use-transcript-btn" class="btn">Use as Speak text</button>
             <button id="download-recording-btn" class="btn">Download recording</button>
-            <button id="clone-voice-btn" class="btn btn-primary" disabled>Clone this voice</button>
+            <button id="clone-voice-btn" class="btn btn-primary" disabled>Print this voice</button>
           </div>
-          <p class="hint hint-info" id="clone-hint" role="status" aria-live="polite">Add an ElevenLabs API key in Settings to enable cloning.</p>
+          <p class="hint hint-info" id="clone-hint" role="status" aria-live="polite">Record a take, confirm consent, then print. An ElevenLabs key in Settings lets the clone speak in any language.</p>
           <div id="clone-status" role="status" aria-live="polite" class="hint" hidden></div>
         </div>
+
+        <label class="field-label" style="margin-top:18px;">Printed voices</label>
+        <ul class="voice-list" id="clone-roster">
+          <li class="voice-list-empty">No prints yet.</li>
+        </ul>
+      </div>
+
+      <div class="tab-panel" data-panel="dub" data-drop-zone>
+        <p class="field-label">Dub</p>
+        <p class="hint hint-info">Drop a track or record a take. Transcribe, restyle or translate, then render a new performance over the same length.</p>
+        <div class="control-row buttons-row">
+          <button type="button" id="dub-import-btn" class="btn">Import audio…</button>
+          <button type="button" id="dub-record-btn" class="btn">Record take</button>
+          <span class="record-timer" id="dub-timer">00:00</span>
+        </div>
+        <audio id="dub-source-audio" controls hidden></audio>
+        <p class="hint" id="dub-source-label">No source yet.</p>
+        <label class="field-label" for="dub-transcript">Transcript</label>
+        <textarea id="dub-transcript" rows="4" placeholder="Paste or transcribe the source here…"></textarea>
+        <div class="control-row buttons-row">
+          <button type="button" id="dub-transcribe-btn" class="btn">Transcribe</button>
+        </div>
+        <div class="longform-controls">
+          <label class="control-item">Keep language
+            <input type="checkbox" id="dub-keep-lang">
+          </label>
+          <label class="control-item" for="dub-lang">Target
+            <select id="dub-lang">
+              <option value="es-ES">Spanish (Spain)</option>
+              <option value="es-MX">Spanish (Mexico)</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="ja">Japanese</option>
+              <option value="zh">Chinese</option>
+              <option value="pt-BR">Portuguese (Brazil)</option>
+              <option value="hi">Hindi</option>
+              <option value="it">Italian</option>
+              <option value="ko">Korean</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+        </div>
+        <label class="field-label" for="dub-script">Dub script</label>
+        <textarea id="dub-script" rows="4" placeholder="Translated or restyled lines…"></textarea>
+        <div class="control-row buttons-row">
+          <button type="button" id="dub-translate-btn" class="btn">Translate</button>
+          <button type="button" id="dub-render-btn" class="btn btn-primary">Render dub</button>
+        </div>
+        <p class="hint" id="dub-hint" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="tab-panel" data-panel="talk">
+        <p class="field-label">Talk</p>
+        <p class="hint hint-info" id="talk-window">Memory holds seventy-two hours. It will not restart you from zero.</p>
+        <div class="talk-thread" id="talk-thread" role="log" aria-live="polite"></div>
+        <div class="control-row buttons-row">
+          <button type="button" id="talk-mic-btn" class="btn">Mic</button>
+          <button type="button" id="talk-reset-btn" class="btn">New session</button>
+        </div>
+        <textarea id="talk-draft" rows="2" maxlength="2000" placeholder="Say something, or type…"></textarea>
+        <div class="control-row buttons-row">
+          <button type="button" id="talk-send-btn" class="btn btn-primary">Send</button>
+        </div>
+        <p class="hint" id="talk-hint" role="status" aria-live="polite"></p>
       </div>
 
     </section>
@@ -346,7 +428,7 @@
 
     <label class="field-label" style="margin-top:26px;">My cloned voices</label>
     <ul class="voice-list" id="cloned-voice-list">
-      <li class="voice-list-empty">No cloned voices yet — record one in Voice Studio.</li>
+      <li class="voice-list-empty">No cloned voices yet — print one in Clone.</li>
     </ul>
   </div>
 
@@ -416,8 +498,8 @@
   </div>
 
   <div id="modulate-view" hidden data-drop-zone>
-    <label class="field-label">Modulate</label>
-    <p class="hint hint-info" style="margin-top:4px;">Change pitch and vocal character independently. Record in Voice Studio first, or load a clip from your Library.</p>
+    <label class="field-label">Shape</label>
+    <p class="hint hint-info" style="margin-top:4px;">Pitch, character, and speed on a take. Print a voice in Clone first, or load a clip from the Library.</p>
 
     <div class="mod-source" id="mod-source">
       <span class="hint hint-info" id="mod-source-label">No clip loaded.</span>
@@ -458,6 +540,28 @@
       <span class="mod-ab-flag" id="mod-ab-flag">A</span>
     </div>
     <audio id="mod-audio" hidden></audio>
+  </div>
+
+  <div id="signal-view" hidden>
+    <label class="field-label">Signal</label>
+    <p class="hint hint-info" style="margin-top:4px;">A 72-hour radio cycle. Each hour has a form. Open the current hour, or preview the next.</p>
+    <div class="signal-board">
+      <div class="signal-dial" id="signal-dial" aria-hidden="true">
+        <div class="signal-dial-hand" id="signal-dial-hand"></div>
+      </div>
+      <div>
+        <p class="readout-label" id="signal-cycle-label">Cycle 1 · Day 1</p>
+        <p class="readout-value" id="signal-clock">00:00</p>
+        <p class="hint hint-info" id="signal-slot">Hour 1 / 72</p>
+        <p class="hint" id="signal-remain">— left in this hour</p>
+      </div>
+    </div>
+    <div class="control-row buttons-row">
+      <button type="button" id="signal-open-btn" class="btn btn-primary">Open this hour</button>
+      <button type="button" id="signal-next-btn" class="btn">Preview next</button>
+    </div>
+    <textarea id="signal-script" rows="6" placeholder="The hour’s script lands here…"></textarea>
+    <p class="hint" id="signal-hint" role="status" aria-live="polite"></p>
   </div>
 
   <div id="animate-view" hidden data-drop-zone>
@@ -913,7 +1017,7 @@
     </div>
 
     <div id="clip-list" class="clip-list"></div>
-    <p class="hint hint-info" id="library-empty">No clips yet — generate one from Speak, or record in Voice Studio.</p>
+    <p class="hint hint-info" id="library-empty">No clips yet — generate one from Speak, or print a voice in Clone.</p>
     <p class="hint hint-info" id="library-no-match" hidden>No clips match your search/filter.</p>
     <audio id="library-player" hidden></audio>
   </div>
@@ -922,8 +1026,8 @@
     <div class="keys-card">
       <h2 id="keys-overlay-title">Keys</h2>
       <ul>
-        <li><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>0</kbd> Jump section (not Animate)</li>
-        <li><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Speak / Generate / Apply / Build mix</li>
+        <li><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>0</kbd> Clone → Library (not Animate)</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Enter</kbd> Print / Render / Speak / Send / Open hour / Apply / Build mix</li>
         <li><kbd>Esc</kbd> Stop playback</li>
         <li><kbd>/</kbd> Library search</li>
         <li><kbd>?</kbd> This list</li>

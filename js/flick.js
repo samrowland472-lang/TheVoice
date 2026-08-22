@@ -8,11 +8,11 @@
   var name = (script && script.getAttribute("data-name")) || "Flick";
   var welcome =
     (script && script.getAttribute("data-welcome")) ||
-    "I'm Flick — built into The Voice, not a separate app. Ask me to speak a line, record a take, build a scene, drive Music, open Library, or mix a Project.";
+    "I'm Flick — built into The Voice, not a separate app. Ask me to clone a voice, speak a line, build a scene, drive Music, open Library, or mix a Project.";
   var starters = [
     "Speak this: The night is a river",
     "Animate a blue sphere orbiting a cube",
-    "Open Voice Studio and record",
+    "Open Clone and record",
     "Play the set at 128 BPM",
   ];
 

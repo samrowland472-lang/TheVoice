@@ -5,15 +5,18 @@
 // test can cover "speak this" / "open Animate" without a browser.
 
 export const SECTIONS = [
-  'speak', 'studio', 'longform', 'modulate', 'animate',
+  'clone', 'dub', 'shape', 'speak', 'talk', 'signal', 'longform', 'animate',
   'music', 'dj', 'project', 'library', 'settings', 'plans', 'account',
 ];
 
 const ALIAS = {
   speak: 'speak', tts: 'speak', talking: 'speak', speech: 'speak',
-  studio: 'studio', recording: 'studio', mic: 'studio',
+  clone: 'clone', studio: 'clone', recording: 'clone', mic: 'clone',
+  dub: 'dub', restyle: 'dub',
+  shape: 'shape', modulate: 'shape', formant: 'shape',
+  talk: 'talk', chat: 'talk',
+  signal: 'signal', loop: 'signal', radio: 'signal',
   longform: 'longform', audiobook: 'longform', book: 'longform',
-  modulate: 'modulate', formant: 'modulate',
   animate: 'animate', animation: 'animate', motion: 'animate',
   music: 'music', daw: 'music', session: 'music', arrange: 'music',
   dj: 'dj', decks: 'dj',
@@ -32,13 +35,8 @@ export function sectionFor(raw) {
   s = s.replace(/[.?!:]+$/g, '').replace(/\s+/g, ' ');
   s = s.replace(/^(the|a|an)\s+/, '');
   s = s.replace(/\s+(view|app|page|panel|section)$/, '');
-  if (s === 'voice studio' || s === 'voice-studio' || s === 'record') return 'studio';
-  if (s === 'long form' || s === 'long-form' || s === 'studio') {
-    // Bare "studio" is Voice Studio elsewhere; "Studio" in the sidebar is
-    // long-form. Callers that mean Voice Studio should pass "voice studio".
-    if (s === 'studio') return 'studio';
-    return 'longform';
-  }
+  if (s === 'voice studio' || s === 'voice-studio' || s === 'record' || s === 'studio') return 'clone';
+  if (s === 'long form' || s === 'long-form') return 'longform';
   if (s === 'dj live' || s === 'dj-live' || s === 'live') return 'dj';
   if (s === 'my voices' || s === 'cloned') return 'speak';
   if (ALIAS[s]) return ALIAS[s];
@@ -58,9 +56,9 @@ function normalize(kind, obj) {
   if (k === 'SPEAK') return { app: 'speak', ...o };
   if (k === 'ANIM') return { app: 'animate', ...o };
   if (k === 'APP') return { app: 'nav', op: o.op || 'go', section: o.section || o.id };
-  if (k === 'STUDIO') return { app: 'studio', ...o };
+  if (k === 'STUDIO') return { app: 'clone', ...o };
   if (k === 'LONG') return { app: 'longform', ...o };
-  if (k === 'MOD') return { app: 'modulate', ...o };
+  if (k === 'MOD') return { app: 'shape', ...o };
   if (k === 'LIB') return { app: 'library', ...o };
   if (k === 'PROJ') return { app: 'project', ...o };
   return o;
@@ -111,10 +109,10 @@ export function parseNL(text) {
     const sec = sectionFor(parts[0]);
     if (sec) cmds.push({ app: 'nav', op: 'go', section: sec });
     if (parts[1] && /^\s*record\b/.test(parts[1].toLowerCase())) {
-      if (!cmds.some((c) => c.section === 'studio')) {
-        cmds.push({ app: 'nav', op: 'go', section: 'studio' });
+      if (!cmds.some((c) => c.section === 'clone')) {
+        cmds.push({ app: 'nav', op: 'go', section: 'clone' });
       }
-      cmds.push({ app: 'studio', op: 'record' });
+      cmds.push({ app: 'clone', op: 'record' });
       return cmds;
     }
   }
@@ -150,8 +148,8 @@ export function parseNL(text) {
 
   if (/\b(start recording|record (this|me|my voice)|record a (take|clip))\b/.test(low)
       || /^record(?:\s+now)?[.!?]?$/.test(low)) {
-    cmds.push({ app: 'nav', op: 'go', section: 'studio' });
-    cmds.push({ app: 'studio', op: 'record' });
+    cmds.push({ app: 'nav', op: 'go', section: 'clone' });
+    cmds.push({ app: 'clone', op: 'record' });
     return cmds;
   }
 

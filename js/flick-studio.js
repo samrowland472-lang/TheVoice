@@ -1,7 +1,7 @@
 // Flick's hands on The Voice.
 //
 // flick.js is the mouth. This module is the rest of the body: it opens
-// Speak, Voice Studio, Animate, Music, Library, Project — anything the
+// Speak, Clone, Animate, Music, Library, Project — anything the
 // sidebar can reach — and presses the same buttons a person would.
 
 import { parseVoiceLines, parseNL, stripVoice, sectionFor, SECTIONS } from './flick-cmd.js';
@@ -39,17 +39,23 @@ function enterStudio() {
 
 function go(section) {
   const id = sectionFor(section) || String(section || '').toLowerCase();
-  if (!ALLOWED.has(id)) return { ok: false, error: 'unknown section ' + section };
   enterStudio();
   const btn = document.querySelector('.sidebar-item[data-section="' + id + '"]');
-  if (!btn) return { ok: false, error: 'no section ' + id };
-  btn.click();
-  return { ok: true, op: 'go', section: id };
+  if (btn) {
+    btn.click();
+    return { ok: true, op: 'go', section: id };
+  }
+  if (window.TheVoice && typeof window.TheVoice.go === 'function') {
+    window.TheVoice.go(id);
+    return { ok: true, op: 'go', section: id };
+  }
+  if (!ALLOWED.has(id)) return { ok: false, error: 'unknown section ' + section };
+  return { ok: false, error: 'no section ' + id };
 }
 
 function currentSection() {
   const b = document.querySelector('.sidebar-item.active');
-  return (b && b.dataset.section) || 'speak';
+  return (b && b.dataset.section) || 'clone';
 }
 
 function speak(cmd) {
@@ -79,8 +85,8 @@ function exec(cmd) {
     return speak(cmd);
   }
 
-  if (app === 'studio') {
-    go('studio');
+  if (app === 'studio' || app === 'clone') {
+    go('clone');
     if (op === 'record' || op === 'start') click('#record-btn');
     if (op === 'pause') click('#studio-pause-btn');
     return { ok: true, op: op || 'record' };
@@ -94,8 +100,8 @@ function exec(cmd) {
     return { ok: true, op: op || 'setText' };
   }
 
-  if (app === 'modulate') {
-    go('modulate');
+  if (app === 'modulate' || app === 'shape') {
+    go('shape');
     if (op === 'apply') click('#mod-apply-btn');
     return { ok: true, op: op || 'go' };
   }

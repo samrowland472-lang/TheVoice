@@ -3129,3 +3129,75 @@ input:focus-visible,
   padding: 3px 7px;
 }
 .abl-eq-kills button.on { background: #ff4d4d; color: #140808; border-color: #ff4d4d; }
+.consent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 0.92rem;
+  color: var(--ink-dim);
+}
+.consent-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--phosphor);
+}
+.clone-script {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--ink-dim);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.talk-thread {
+  min-height: 220px;
+  max-height: 42vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: var(--ground);
+}
+.talk-msg { max-width: 92%; font-size: 0.92rem; line-height: 1.5; }
+.talk-msg.user { align-self: flex-end; color: var(--phosphor); }
+.talk-who {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 4px;
+}
+.signal-board {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  margin: 12px 0 18px;
+}
+.signal-dial {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: conic-gradient(from -90deg, var(--phosphor) 0 2deg, transparent 2deg 15deg, var(--amber) 15deg 17deg, transparent 17deg);
+  box-shadow: inset 0 0 24px var(--glass);
+}
+.signal-dial-hand {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  width: 2px;
+  height: 48px;
+  background: var(--phosphor);
+  transform-origin: 50% 48px;
+  transform: rotate(0deg);
+}
+#signal-script, #talk-draft, #dub-transcript, #dub-script {
+  width: 100%;
+  margin-top: 8px;
+}

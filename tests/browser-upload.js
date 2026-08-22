@@ -37,7 +37,7 @@ const F = (n) => path.resolve(__dirname, 'fixtures', n);
   ok('animate can open a saved scene', await page.$('#anim-open-btn') !== null);
 
   console.log('--- voice: import audio into the studio ---');
-  await page.click('[data-section="studio"]'); await page.waitForTimeout(400);
+  await page.click('[data-section="clone"]'); await page.waitForTimeout(400);
   await upload('#studio-import-btn', 'tone.wav');
   ok('the playback panel appears', await page.$eval('#recording-result', e => !e.hidden));
   ok('audio is loaded', (await page.$eval('#playback-audio', e => e.src)).startsWith('blob:'));
@@ -50,7 +50,7 @@ const F = (n) => path.resolve(__dirname, 'fixtures', n);
   ok('the imported clip is stored', clips >= 1, String(clips));
 
   console.log('--- modulate: import becomes the source ---');
-  await page.click('[data-section="modulate"]'); await page.waitForTimeout(400);
+  await page.click('[data-section="shape"]'); await page.waitForTimeout(400);
   await upload('#mod-import-btn', 'tone.wav');
   const modLabel = await page.$eval('#mod-source-label', e => e.textContent);
   ok('the source label updates', !/no clip/i.test(modLabel), modLabel);
