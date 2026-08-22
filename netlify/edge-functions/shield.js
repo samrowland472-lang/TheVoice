@@ -16,10 +16,13 @@ function allowedOrigin(origin) {
   if (!origin || origin.length > 180) return "";
   try {
     const u = new URL(origin);
-    if (u.protocol !== "https:") return "";
     const host = u.hostname.toLowerCase();
+    const local = host === "localhost" || host === "127.0.0.1";
+    if (u.protocol !== "https:" && !local) return "";
+    if (local) return origin;
     if (host === "thevoice.app" || host.endsWith(".thevoice.app")) return origin;
     if (host.endsWith(".netlify.app")) return origin;
+    if (host.endsWith(".grok.me") || host.endsWith(".vercel.app")) return origin;
     return "";
   } catch {
     return "";
