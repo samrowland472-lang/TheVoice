@@ -495,8 +495,6 @@
       var silent = tr.mute || (soloed && !tr.solo);
       g.mute.gain.setTargetAtTime(silent ? 0 : 1, ctx.currentTime, 0.01);
       applyAutoAt(tr, state.step);
-      g.sendA.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendA || 0)), ctx.currentTime, 0.01);
-      g.sendB.gain.setTargetAtTime(Math.max(0, Math.min(1, tr.sendB || 0)), ctx.currentTime, 0.01);
       applyDevices(tr);
     });
     if (master) master.gain.setTargetAtTime(state.masterVol, ctx.currentTime, 0.01);
@@ -537,12 +535,18 @@
     if (!g || !ctx) return;
     var val = Math.max(0, Math.min(1.2, tr.volume * autoAt(tr, "autoVol", step, 1)));
     var pan = Math.max(-1, Math.min(1, (tr.pan || 0) + (autoAt(tr, "autoPan", step, 0.5) - 0.5) * 2));
+    var sA = Math.max(0, Math.min(1, (tr.sendA || 0) + autoAt(tr, "autoSendA", step, 0)));
+    var sB = Math.max(0, Math.min(1, (tr.sendB || 0) + autoAt(tr, "autoSendB", step, 0)));
     if (time != null) {
       g.vol.gain.setValueAtTime(val, time);
       if (g.pan && g.pan.pan) g.pan.pan.setValueAtTime(pan, time);
+      if (g.sendA) g.sendA.gain.setValueAtTime(sA, time);
+      if (g.sendB) g.sendB.gain.setValueAtTime(sB, time);
     } else {
       g.vol.gain.setTargetAtTime(val, ctx.currentTime, 0.01);
       if (g.pan && g.pan.pan) g.pan.pan.setTargetAtTime(pan, ctx.currentTime, 0.01);
+      if (g.sendA) g.sendA.gain.setTargetAtTime(sA, ctx.currentTime, 0.01);
+      if (g.sendB) g.sendB.gain.setTargetAtTime(sB, ctx.currentTime, 0.01);
     }
   }
 
@@ -890,6 +894,8 @@
           clips: tr.clips.map(lightClip),
           autoVol: (tr.autoVol || []).map(function (p) { return { step: p.step, v: p.v }; }),
           autoPan: (tr.autoPan || []).map(function (p) { return { step: p.step, v: p.v }; }),
+          autoSendA: (tr.autoSendA || []).map(function (p) { return { step: p.step, v: p.v }; }),
+          autoSendB: (tr.autoSendB || []).map(function (p) { return { step: p.step, v: p.v }; }),
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -946,6 +952,8 @@
       });
       tr.autoVol = (s.autoVol || []).map(function (p) { return { step: p.step, v: p.v }; });
       tr.autoPan = (s.autoPan || []).map(function (p) { return { step: p.step, v: p.v }; });
+      tr.autoSendA = (s.autoSendA || []).map(function (p) { return { step: p.step, v: p.v }; });
+      tr.autoSendB = (s.autoSendB || []).map(function (p) { return { step: p.step, v: p.v }; });
       next.push(tr);
     });
     state.tracks = next;
@@ -2011,7 +2019,7 @@
         ctx2.stroke();
       }
       var pts = ensureAuto(tr, key, defV);
-      ctx2.strokeStyle = key === "autoPan" ? "#c9a6ff" : (tr.color || "#3fc6ff");
+      ctx2.strokeStyle = key === "autoPan" ? "#c9a6ff" : key === "autoSendA" ? "#3fc6ff" : key === "autoSendB" ? "#ffb238" : (tr.color || "#3fc6ff");
       ctx2.lineWidth = 1.5;
       ctx2.beginPath();
       pts.forEach(function (p, i) {
@@ -3227,6 +3235,8 @@
       }
       autoLane("autoVol", "Vol", 1, "volume automation");
       autoLane("autoPan", "Pan", 0.5, "pan automation");
+      autoLane("autoSendA", "Dly", 0, "delay send automation");
+      autoLane("autoSendB", "Hall", 0, "hall send automation");
     });
     paintArrange();
   }
@@ -4287,6 +4297,8 @@
           }),
           autoVol: tr.autoVol || [],
           autoPan: tr.autoPan || [],
+          autoSendA: tr.autoSendA || [],
+          autoSendB: tr.autoSendB || [],
         };
       }),
       arrangeClips: state.arrangeClips.map(function (c) {
@@ -4342,6 +4354,8 @@
     if (raw.rack) tr.rack = { pads: (raw.rack.pads || []).map(decodePad) };
     tr.autoVol = raw.autoVol || null;
     tr.autoPan = raw.autoPan || null;
+    tr.autoSendA = raw.autoSendA || null;
+    tr.autoSendB = raw.autoSendB || null;
     return tr;
   }
 
