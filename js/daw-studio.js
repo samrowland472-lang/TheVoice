@@ -361,7 +361,58 @@ function trigSnare(t, vel, dest) {
 }
 
 function trigHat(t, vel, dest) {
-  trigNoise(dest || mix.hihat.input, t, vel * 0.55, 7000, 0.04, 0.1);
+  trigHatKind(t, vel, dest, false);
+}
+
+function trigOpenHat(t, vel, dest) {
+  trigHatKind(t, vel, dest, true);
+}
+
+const hatVoices = [];
+
+function chokeHats(t) {
+  hatVoices.forEach((g) => {
+    try {
+      g.gain.cancelScheduledValues(t);
+      g.gain.setTargetAtTime(0.0008, t, 0.006);
+    } catch (_) {}
+  });
+  hatVoices.length = 0;
+}
+
+function trigHatKind(t, vel, dest, open) {
+  const a = audio();
+  if (!a) return;
+  dest = dest || mix.hihat.input;
+  chokeHats(t);
+  const { ctx } = a;
+  const n = ctx.createBufferSource();
+  const dur = open ? 0.5 : 0.12;
+  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  n.buffer = buf;
+  const f = ctx.createBiquadFilter();
+  f.type = 'highpass';
+  f.frequency.value = open ? 5500 : 7000;
+  const decay = open ? 0.32 : 0.04;
+  const g = envGain(dest, t, vel * (open ? 0.5 : 0.55), 0.001, decay * 0.3, 0.12, decay, 0.02);
+  n.connect(f); f.connect(g);
+  n.start(t); n.stop(t + dur);
+  hatVoices.push(g);
+}
+
+function trigPerc(t, vel, dest) {
+  dest = dest || mix.clap.input;
+  trigNoise(dest, t, vel * 0.45, 1800, 0.05, 0.12);
+  const { ctx } = audio();
+  const osc = ctx.createOscillator();
+  const g = envGain(dest, t, vel * 0.25, 0.001, 0.02, 0.05, 0.04, 0.02);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(880, t);
+  osc.frequency.exponentialRampToValueAtTime(220, t + 0.06);
+  osc.connect(g);
+  osc.start(t); osc.stop(t + 0.1);
 }
 
 function trigClap(t, vel, dest) {
@@ -1633,6 +1684,52 @@ function bindRoll() {
 const KEY_MAP = { a: 60, w: 61, s: 62, e: 63, d: 64, f: 65, t: 66, g: 67, y: 68, h: 69, u: 70, j: 71, k: 72 };
 const held = new Map();
 
+const PADS = [
+  { id: 'kick', name: 'Kick', key: '1', color: '#ff6b4a' },
+  { id: 'snare', name: 'Snare', key: '2', color: '#ffb238' },
+  { id: 'hihat', name: 'CH', key: '3', color: '#f0e27a' },
+  { id: 'ohat', name: 'OH', key: '4', color: '#e8d48a' },
+  { id: 'clap', name: 'Clap', key: '5', color: '#f0abfc' },
+  { id: 'perc', name: 'Perc', key: '6', color: '#7dff9a' },
+];
+
+function hitPad(id) {
+  ensureMix();
+  const a = audio();
+  if (!a || !mix.kick) return;
+  if (a.ctx.state === 'suspended') a.ctx.resume();
+  const t = a.ctx.currentTime;
+  if (id === 'kick') trigKick(t, 0.95);
+  else if (id === 'snare') trigSnare(t, 0.95);
+  else if (id === 'hihat') trigHat(t, 0.95);
+  else if (id === 'ohat') trigOpenHat(t, 0.95);
+  else if (id === 'clap') trigClap(t, 0.95);
+  else if (id === 'perc') trigPerc(t, 0.95);
+  const el = document.querySelector(`[data-pad="${id}"]`);
+  if (el) {
+    el.classList.remove('hit');
+    void el.offsetWidth;
+    el.classList.add('hit');
+  }
+}
+
+function paintPads() {
+  const root = document.getElementById('abl-pads');
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = '1';
+  root.innerHTML = PADS.map((p) =>
+    `<button type="button" class="abl-pad" data-pad="${p.id}" style="--pad:${p.color}" aria-label="${p.name} pad">
+      <b>${p.name}</b><span>${p.key}</span>
+    </button>`
+  ).join('');
+  root.querySelectorAll('[data-pad]').forEach((btn) => {
+    btn.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      hitPad(btn.dataset.pad);
+    });
+  });
+}
+
 function bindKeys() {
   if (window.__ablKeys) return;
   window.__ablKeys = true;
@@ -1643,6 +1740,12 @@ function bindKeys() {
     if (ev.code === 'Space') {
       ev.preventDefault();
       togglePlay();
+      return;
+    }
+    if (detail === 'drums' && /^[1-6]$/.test(ev.key)) {
+      ev.preventDefault();
+      const pad = PADS.find((p) => p.key === ev.key);
+      if (pad) hitPad(pad.id);
       return;
     }
     if (ev.code === 'Tab') {
@@ -2080,6 +2183,7 @@ export function initStudio(options, audioGetter) {
   paintBrowser();
   paintSession();
   paintMixer();
+  paintPads();
   bindRoll();
   bindKeys();
   paintRoll();
@@ -2099,6 +2203,7 @@ export function showStudio() {
   paintSession();
   paintMixer();
   paintBrowser();
+  paintPads();
   paintRoll();
   if (prodView === 'arrange') paintArrange();
   syncTransport();
