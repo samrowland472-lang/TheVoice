@@ -21,6 +21,7 @@ export default async (request, context) => {
     ["/js/daw-cue.js", '<script src="/js/daw-cue.js" defer></script>'],
     ["/js/site-chrome.js", '<script src="/js/site-chrome.js" defer></script>'],
     ["/js/site-ops.js", '<script src="/js/site-ops.js" defer></script>'],
+    ["/js/site-studio.js", '<script src="/js/site-studio.js" defer></script>'],
   ];
   scripts.forEach(function (pair) {
     if (!html.includes(pair[0])) {
