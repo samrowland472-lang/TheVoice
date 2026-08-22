@@ -1874,26 +1874,6 @@ function paintBrowser() {
     ${voiceSamples.length
       ? voiceSamples.map((s) => `<button type="button" class="abl-lib" data-voice="${s.id}">${s.name}</button>`).join('')
       : '<p class="abl-muted">Speak or record a take — it lands here.</p>'}
-    <div class="abl-browser-sec">Devices</div>
-    <div class="abl-knobs">
-      <label>Cut <input id="abl-cut" type="range" min="200" max="8000" value="${keysCutoff}"></label>
-      <label>Res <input id="abl-res" type="range" min="0.2" max="18" step="0.1" value="${keysRes}"></label>
-      <label>Rel <input id="abl-rel" type="range" min="0.05" max="1.2" step="0.01" value="${keysRel}"></label>
-      <label>Send <input id="abl-send" type="range" min="0" max="1" step="0.01" value="${fx.send}"></label>
-      <label>Delay <input id="abl-delay" type="range" min="50" max="900" step="5" value="${fx.delayMs}"></label>
-      <label>Fdbk <input id="abl-fdbk" type="range" min="0" max="0.85" step="0.01" value="${fx.delayFb}"></label>
-      <label>Wet <input id="abl-wet" type="range" min="0" max="1" step="0.01" value="${fx.delayWet}"></label>
-      <label>Comp <input id="abl-comp" type="range" min="-40" max="-4" step="1" value="${fx.compTh}"></label>
-      <label>Ratio <input id="abl-ratio" type="range" min="1" max="12" step="0.1" value="${fx.compRatio}"></label>
-      <label>Lo <input id="abl-eq-l" type="range" min="-12" max="12" step="0.5" value="${fx.eqL}"></label>
-      <label>Mid <input id="abl-eq-m" type="range" min="-12" max="12" step="0.5" value="${fx.eqM}"></label>
-      <label>Hi <input id="abl-eq-h" type="range" min="-12" max="12" step="0.5" value="${fx.eqH}"></label>
-      <div class="abl-eq-kills">
-        <button type="button" id="abl-kill-l" class="${fx.killL ? 'on' : ''}" aria-pressed="${fx.killL}">Kill Lo</button>
-        <button type="button" id="abl-kill-m" class="${fx.killM ? 'on' : ''}" aria-pressed="${fx.killM}">Kill Mid</button>
-        <button type="button" id="abl-kill-h" class="${fx.killH ? 'on' : ''}" aria-pressed="${fx.killH}">Kill Hi</button>
-      </div>
-    </div>
   `;
   root.querySelectorAll('[data-preset]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1932,6 +1912,53 @@ function paintBrowser() {
       paintSession();
     });
   });
+}
+
+function paintDevices() {
+  const root = document.getElementById('abl-chain');
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = '1';
+  const knob = (id, label, min, max, step, val) =>
+    `<label class="abl-dev-k">${label}<input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}"></label>`;
+  root.innerHTML = `
+    <article class="abl-dev" data-dev="analog">
+      <header class="abl-dev-h">Analog</header>
+      <div class="abl-dev-body">
+        ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
+        ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
+        ${knob('abl-rel', 'Rel', 0.05, 1.2, 0.01, keysRel)}
+      </div>
+    </article>
+    <article class="abl-dev" data-dev="delay">
+      <header class="abl-dev-h">Delay</header>
+      <div class="abl-dev-body">
+        ${knob('abl-send', 'Send', 0, 1, 0.01, fx.send)}
+        ${knob('abl-delay', 'Time', 50, 900, 5, fx.delayMs)}
+        ${knob('abl-fdbk', 'Fdbk', 0, 0.85, 0.01, fx.delayFb)}
+        ${knob('abl-wet', 'Wet', 0, 1, 0.01, fx.delayWet)}
+      </div>
+    </article>
+    <article class="abl-dev" data-dev="comp">
+      <header class="abl-dev-h">Compressor</header>
+      <div class="abl-dev-body">
+        ${knob('abl-comp', 'Th', -40, -4, 1, fx.compTh)}
+        ${knob('abl-ratio', 'Ratio', 1, 12, 0.1, fx.compRatio)}
+      </div>
+    </article>
+    <article class="abl-dev" data-dev="eq3">
+      <header class="abl-dev-h">EQ Three</header>
+      <div class="abl-dev-body">
+        ${knob('abl-eq-l', 'Lo', -12, 12, 0.5, fx.eqL)}
+        ${knob('abl-eq-m', 'Mid', -12, 12, 0.5, fx.eqM)}
+        ${knob('abl-eq-h', 'Hi', -12, 12, 0.5, fx.eqH)}
+        <div class="abl-eq-kills">
+          <button type="button" id="abl-kill-l" class="${fx.killL ? 'on' : ''}" aria-pressed="${fx.killL}">K Lo</button>
+          <button type="button" id="abl-kill-m" class="${fx.killM ? 'on' : ''}" aria-pressed="${fx.killM}">K Mid</button>
+          <button type="button" id="abl-kill-h" class="${fx.killH ? 'on' : ''}" aria-pressed="${fx.killH}">K Hi</button>
+        </div>
+      </div>
+    </article>
+  `;
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const rel = root.querySelector('#abl-rel');
@@ -1947,7 +1974,7 @@ function paintBrowser() {
     });
   };
   bindFx('#abl-send', 'send', parseFloat);
-  bindFx('#abl-delay', 'delayMs', (v) => parseFloat(v));
+  bindFx('#abl-delay', 'delayMs', parseFloat);
   bindFx('#abl-fdbk', 'delayFb', parseFloat);
   bindFx('#abl-wet', 'delayWet', parseFloat);
   bindFx('#abl-comp', 'compTh', parseFloat);
@@ -2184,6 +2211,7 @@ export function initStudio(options, audioGetter) {
   paintSession();
   paintMixer();
   paintPads();
+  paintDevices();
   bindRoll();
   bindKeys();
   paintRoll();
@@ -2204,6 +2232,7 @@ export function showStudio() {
   paintMixer();
   paintBrowser();
   paintPads();
+  paintDevices();
   paintRoll();
   if (prodView === 'arrange') paintArrange();
   syncTransport();
