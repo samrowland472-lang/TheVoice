@@ -1030,11 +1030,22 @@
   .anim-transport {
     display: flex;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-bottom: 12px;
+    padding: 8px 10px;
+    background: #070908;
+    border: 1px solid var(--border);
   }
 
-  .anim-transport .btn { flex: none; min-width: 90px; }
+  .anim-transport .btn { flex: none; min-width: 72px; }
+  .anim-transport .btn[aria-pressed="true"] {
+    background: var(--phosphor);
+    color: var(--phosphor-ink, #06170f);
+    border-color: var(--phosphor);
+  }
+  .anim-layer-tools { display: inline-flex; gap: 2px; margin-left: 6px; }
+  .anim-layer-tools .btn { min-width: 32px; min-height: 32px; padding: 0 6px; }
   .anim-transport input[type="range"] { flex: 1; }
 
   .anim-time-label {
@@ -2409,8 +2420,12 @@ input:focus-visible,
 
     <div class="anim-transport">
       <button id="anim-play-btn" class="btn btn-primary">Play</button>
+      <button id="anim-loop-btn" class="btn" type="button" aria-pressed="false" aria-label="Loop playback">Loop</button>
       <input type="range" id="anim-time" min="0" max="5" step="0.01" value="0" aria-label="Scrub through the scene">
       <span class="anim-time-label" id="anim-time-label">0.00s</span>
+      <label class="anim-check" for="anim-onion"><input type="checkbox" id="anim-onion"> Onion</label>
+      <label class="camera-field" for="anim-duration">Length <span id="anim-duration-value">5.0s</span>
+        <input type="range" id="anim-duration" min="1" max="30" step="0.5" value="5" aria-label="Scene length in seconds"></label>
     </div>
 
     <div class="camera-bar" id="camera-bar">
@@ -9769,6 +9784,9 @@ let animPlaying = false;
 let animRaf = null;
 let animStartedAt = 0;
 let animLevels = null;
+let animLoop = false;
+let animOnion = false;
+let onionCanvas = null;
 
 // Named after what they do to a movement, not after the maths — someone
 // choosing how a title should arrive is thinking "settle", not
@@ -9835,7 +9853,22 @@ function animRenderShapeList() {
       animRenderShapeList();
       animSyncProps();
     });
-    li.appendChild(btn);
+    const tools = document.createElement('span');
+    tools.className = 'anim-layer-tools';
+    const up = document.createElement('button');
+    up.type = 'button';
+    up.className = 'btn';
+    up.textContent = '↑';
+    up.setAttribute('aria-label', 'Bring ' + shape.label + ' forward');
+    up.addEventListener('click', (ev) => { ev.stopPropagation(); animMoveShape(shape.id, 1); });
+    const down = document.createElement('button');
+    down.type = 'button';
+    down.className = 'btn';
+    down.textContent = '↓';
+    down.setAttribute('aria-label', 'Send ' + shape.label + ' back');
+    down.addEventListener('click', (ev) => { ev.stopPropagation(); animMoveShape(shape.id, -1); });
+    tools.append(up, down);
+    li.append(btn, tools);
     animShapeList.appendChild(li);
   }
   const has = !!animSelected();
@@ -9999,6 +10032,13 @@ animPlayBtn.addEventListener('click', () => {
     if (!animPlaying) return;
     const t = (performance.now() - animStartedAt) / 1000;
     if (t >= animScene.duration) {
+      if (animLoop) {
+        animStartedAt = performance.now();
+        animTime.value = '0';
+        animDraw();
+        animRaf = requestAnimationFrame(tick);
+        return;
+      }
       animTime.value = String(animScene.duration);
       animDraw();
       animStop();
@@ -10010,6 +10050,35 @@ animPlayBtn.addEventListener('click', () => {
   };
   tick();
 });
+
+(function wireAnimTransportExtras() {
+  const loopBtn = document.getElementById('anim-loop-btn');
+  const onion = document.getElementById('anim-onion');
+  const dur = document.getElementById('anim-duration');
+  const durLab = document.getElementById('anim-duration-value');
+  if (loopBtn) {
+    loopBtn.addEventListener('click', () => {
+      animLoop = !animLoop;
+      loopBtn.setAttribute('aria-pressed', animLoop ? 'true' : 'false');
+      loopBtn.classList.toggle('on', animLoop);
+    });
+  }
+  if (onion) {
+    onion.addEventListener('change', () => {
+      animOnion = !!onion.checked;
+      animDraw();
+    });
+  }
+  if (dur) {
+    dur.addEventListener('input', () => {
+      animScene.duration = Number(dur.value) || 5;
+      animTime.max = String(animScene.duration);
+      if (parseFloat(animTime.value) > animScene.duration) animTime.value = String(animScene.duration);
+      if (durLab) durLab.textContent = animScene.duration.toFixed(1) + 's';
+      animDraw();
+    });
+  }
+})();
 
 animVoiceBtn.addEventListener('click', async () => {
   const source = modResultBlob || originalRecordingBlob || lastClipBlob;
@@ -10139,6 +10208,36 @@ function animActiveCanvas() {
  * consume the same resolved frame, so this switch changes fidelity, never
  * position.
  */
+function animMoveShape(id, dir) {
+  const i = animScene.shapes.findIndex((s) => s.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= animScene.shapes.length) return;
+  const tmp = animScene.shapes[i];
+  animScene.shapes[i] = animScene.shapes[j];
+  animScene.shapes[j] = tmp;
+  animRenderShapeList();
+  animDraw();
+}
+
+function animPaintOnion(t) {
+  if (!animOnion || animPlaying) return;
+  if (is3D(animScene)) return;
+  if (!onionCanvas) onionCanvas = document.createElement('canvas');
+  onionCanvas.width = animCanvas.width;
+  onionCanvas.height = animCanvas.height;
+  const octx = onionCanvas.getContext('2d');
+  const dt = 1 / Math.max(8, animScene.fps || 30);
+  const w = animCanvas.width, h = animCanvas.height;
+  renderFrame(octx, animScene, Math.max(0, t - dt * 2), w, h, 0);
+  animCtx.save();
+  animCtx.globalAlpha = 0.18;
+  animCtx.drawImage(onionCanvas, 0, 0);
+  renderFrame(octx, animScene, Math.max(0, t - dt), w, h, 0);
+  animCtx.globalAlpha = 0.32;
+  animCtx.drawImage(onionCanvas, 0, 0);
+  animCtx.restore();
+}
+
 function animRenderAt(t) {
   const gl = is3D(animScene) ? animGLRenderer() : null;
   const useGL = !!gl && glRenderFrame(gl, animScene, t, animCurrentLevel(t));
@@ -10146,12 +10245,17 @@ function animRenderAt(t) {
   animCanvas.hidden = useGL;
   if (!useGL) {
     renderFrame(animCtx, animScene, t, animCanvas.width, animCanvas.height, animCurrentLevel(t));
+    animPaintOnion(t);
   }
 }
 
 function animOnShow() {
   anim3dSync();
   animTime.max = String(animScene.duration);
+  const dur = document.getElementById('anim-duration');
+  const durLab = document.getElementById('anim-duration-value');
+  if (dur) dur.value = String(animScene.duration);
+  if (durLab) durLab.textContent = Number(animScene.duration).toFixed(1) + 's';
   animRenderShapeList();
   animSyncProps();
   animDraw();
