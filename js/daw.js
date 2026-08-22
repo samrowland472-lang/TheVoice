@@ -263,6 +263,7 @@ function makeDeck(id) {
     kill: { low: false, mid: false, high: false },
     filter: 0.5,
     gain: 0.85,
+    trim: 1,
     cue: false,
     sync: false,
     slip: false,
@@ -288,6 +289,8 @@ let deckPaint = 0;
 
 function buildDeckGraph(deck) {
   ensureCtx();
+  const trim = ctx.createGain();
+  trim.gain.value = deck.trim == null ? 1 : deck.trim;
   const low = ctx.createBiquadFilter();
   low.type = 'lowshelf';
   low.frequency.value = 220;
@@ -307,7 +310,8 @@ function buildDeckGraph(deck) {
   const cue = ctx.createGain();
   cue.gain.value = 0;
   const analyser = ctx.createAnalyser();
-  analyser.fftSize = 2048;
+  analyser.fftSize = 1024;
+  trim.connect(low);
   low.connect(mid);
   mid.connect(high);
   high.connect(filter);
@@ -316,13 +320,14 @@ function buildDeckGraph(deck) {
   gain.connect(analyser);
   filter.connect(cue);
   cue.connect(cueGain);
-  deck.nodes = { in: low, low, mid, high, filter, gain, cue, analyser };
+  deck.nodes = { in: trim, trim, low, mid, high, filter, gain, cue, analyser };
   applyDeckEq(deck);
   applyXfade();
 }
 
 function applyDeckEq(d) {
   if (!d.nodes) return;
+  if (d.nodes.trim) d.nodes.trim.gain.value = d.trim == null ? 1 : d.trim;
   d.nodes.low.gain.value = d.kill.low ? -72 : d.eq.low;
   d.nodes.mid.gain.value = d.kill.mid ? -72 : d.eq.mid;
   d.nodes.high.gain.value = d.kill.high ? -72 : d.eq.high;
@@ -615,6 +620,31 @@ function drawWave(canvas, d, playhead, slipAt) {
   }
 }
 
+function paintMeter(canvas, d) {
+  if (!canvas) return;
+  const w = canvas.width = Math.max(8, canvas.clientWidth || 10);
+  const h = canvas.height = Math.max(40, canvas.clientHeight || 80);
+  const g = canvas.getContext('2d');
+  g.fillStyle = '#070a09';
+  g.fillRect(0, 0, w, h);
+  let peak = 0;
+  if (d.nodes && d.nodes.analyser) {
+    const n = d.nodes.analyser.fftSize;
+    const buf = d.meterBuf && d.meterBuf.length === n ? d.meterBuf : (d.meterBuf = new Float32Array(n));
+    d.nodes.analyser.getFloatTimeDomainData(buf);
+    for (let i = 0; i < buf.length; i++) {
+      const v = Math.abs(buf[i]);
+      if (v > peak) peak = v;
+    }
+  }
+  d.meterHold = Math.max(peak, (d.meterHold || 0) * 0.88);
+  const fill = Math.min(1, d.meterHold * 1.4);
+  if (fill < 0.01) return;
+  const y = h * (1 - fill);
+  g.fillStyle = fill > 0.92 ? '#ff4d4d' : fill > 0.7 ? '#ffb238' : '#7dff9a';
+  g.fillRect(1, y, w - 2, h - y);
+}
+
 function setLoop(d, beats) {
   if (!d.buf) return;
   const bpm = d.bpm || currentBpm();
@@ -736,29 +766,37 @@ function deckHtml(d) {
 }
 
 function mixerHtml() {
-  const eq = (d) => `
-    <div class="dj-eq" data-eq-deck="${d.id}">
-      ${['high', 'mid', 'low'].map((band) => `
-        <div class="dj-eq-col">
-          <button type="button" class="dj-kill${d.kill[band] ? ' on' : ''}" data-act="kill" data-deck="${d.id}" data-band="${band}">${band[0].toUpperCase()}</button>
-          <input type="range" min="-24" max="12" step="0.5" value="${d.eq[band]}" data-eq="${band}" data-deck="${d.id}" orient="vertical" aria-label="${d.name} ${band}">
-        </div>`).join('')}
-    </div>
-    <label class="dj-filter">FLT
-      <input type="range" min="0" max="1" step="0.01" value="${d.filter}" data-act="filter" data-deck="${d.id}" aria-label="${d.name} filter">
-    </label>
-    <label class="dj-ch-fader">${d.id.toUpperCase()}
-      <input type="range" min="0" max="1" step="0.01" value="${d.gain}" data-act="gain" data-deck="${d.id}" orient="vertical" aria-label="${d.name} channel fader">
-    </label>`;
+  const ch = (d) => `
+    <div class="dj-mix-ch" data-ch="${d.id}">
+      <label class="dj-trim">TRIM
+        <input type="range" min="0" max="2" step="0.01" value="${d.trim == null ? 1 : d.trim}" data-act="trim" data-deck="${d.id}" aria-label="${d.name} trim">
+      </label>
+      <div class="dj-eq" data-eq-deck="${d.id}">
+        ${['high', 'mid', 'low'].map((band) => `
+          <div class="dj-eq-col">
+            <button type="button" class="dj-kill${d.kill[band] ? ' on' : ''}" data-act="kill" data-deck="${d.id}" data-band="${band}">${band[0].toUpperCase()}</button>
+            <input type="range" min="-24" max="12" step="0.5" value="${d.eq[band]}" data-eq="${band}" data-deck="${d.id}" orient="vertical" aria-label="${d.name} ${band}">
+          </div>`).join('')}
+      </div>
+      <label class="dj-filter">FLT
+        <input type="range" min="0" max="1" step="0.01" value="${d.filter}" data-act="filter" data-deck="${d.id}" aria-label="${d.name} filter">
+      </label>
+      <div class="dj-fader-row">
+        <canvas class="dj-meter" data-meter="${d.id}" width="10" height="80" aria-hidden="true"></canvas>
+        <label class="dj-ch-fader">${d.id.toUpperCase()}
+          <input type="range" min="0" max="1" step="0.01" value="${d.gain}" data-act="gain" data-deck="${d.id}" orient="vertical" aria-label="${d.name} channel fader">
+        </label>
+      </div>
+    </div>`;
   return `
     <aside class="dj-mixer" aria-label="Mixer">
-      <div class="dj-mix-side">${eq(decks.a)}</div>
+      ${ch(decks.a)}
       <div class="dj-xf">
         <span>A</span>
         <input type="range" id="dj-xfader" min="0" max="1" step="0.001" value="${xfader}" aria-label="Crossfader">
         <span>B</span>
       </div>
-      <div class="dj-mix-side">${eq(decks.b)}</div>
+      ${ch(decks.b)}
     </aside>`;
 }
 
@@ -908,6 +946,13 @@ function bindDeckUi(root) {
     el.addEventListener('input', () => {
       const d = decks[el.dataset.deck];
       d.eq[el.dataset.eq] = parseFloat(el.value);
+      applyDeckEq(d);
+    });
+  });
+  root.querySelectorAll('[data-act="trim"]').forEach((el) => {
+    el.addEventListener('input', () => {
+      const d = decks[el.dataset.deck];
+      d.trim = parseFloat(el.value);
       applyDeckEq(d);
     });
   });
@@ -1115,6 +1160,8 @@ function tickWaves() {
           const deg = d.scratching ? (d.spin0 || 0) + (d.spinAcc || 0) : platterDeg(d);
           vinyl.style.transform = `rotate(${deg}deg)`;
         }
+        const meter = root.querySelector(`[data-meter="${id}"]`);
+        if (meter) paintMeter(meter, d);
       });
     }
   }

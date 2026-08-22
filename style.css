@@ -3283,7 +3283,7 @@ html[data-avenue="music"] .abl-slot { border-radius: 0 !important; }
 }
 .abl-meter { width: 10px; height: 92px; }
 
-.dj-shell { gap: 8px; padding: 8px 10px 12px; height: 100%; }
+.dj-shell { gap: 4px; padding: 6px 8px; height: 100%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .dj-decks { gap: 8px; flex: 1; min-height: 0; }
 .dj-deck {
   padding: 8px;
@@ -3292,7 +3292,7 @@ html[data-avenue="music"] .abl-slot { border-radius: 0 !important; }
   flex-direction: column;
   min-height: 0;
 }
-.dj-wave { height: 112px; background: #050807; width: 100%; display: block; }
+.dj-wave { height: min(10vh, 72px); min-height: 40px; background: #050807; width: 100%; display: block; }
 .dj-times {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -3416,7 +3416,7 @@ html[data-avenue="music"] .shell.is-daw .main-area,
   box-shadow: 0 0 0 2px #888;
   pointer-events: none;
 }
-.dj-wave { height: min(14vh, 96px); min-height: 56px; }
+.dj-wave { height: min(10vh, 72px); min-height: 40px; }
 .dj-eq-col input[type="range"] { height: 64px; }
 .dj-bpm-lg { font-size: clamp(1rem, 3vh, 1.6rem); }
 @media (max-width: 860px) {
@@ -3461,14 +3461,14 @@ html[data-avenue="music"] .shell.is-daw .main-area,
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 200px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 168px minmax(0, 1fr);
   gap: 6px;
   overflow: hidden;
 }
 .dj-desk .dj-deck {
   min-height: 0;
-  overflow: auto;
-  padding: 6px;
+  overflow: hidden;
+  padding: 4px 6px;
   display: flex;
   flex-direction: column;
 }
@@ -3476,54 +3476,74 @@ html[data-avenue="music"] .shell.is-daw .main-area,
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   background: #0c1210;
   border: 1px solid var(--border);
-  padding: 6px 4px;
+  padding: 4px 3px;
 }
-.dj-mix-side {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px;
-  align-items: flex-end;
-}
-.dj-mixer .dj-eq {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  margin: 0;
-  flex: 1;
-}
-.dj-mixer .dj-eq-col input[type="range"] { height: min(12vh, 72px); }
-.dj-kill { padding: 2px 5px; min-width: 22px; }
-.dj-filter, .dj-ch-fader {
+.dj-mix-ch {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
+  min-height: 0;
+  flex: 1;
+}
+.dj-trim, .dj-filter, .dj-ch-fader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
   font-family: 'Share Tech Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 0.52rem;
   color: var(--ink-dim);
   letter-spacing: 0.06em;
+  width: 100%;
+}
+.dj-trim input, .dj-filter input { width: 92%; height: 12px; accent-color: var(--phosphor); }
+.dj-mixer .dj-eq {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+}
+.dj-mixer .dj-eq-col input[type="range"] { height: min(8vh, 52px); }
+.dj-kill { padding: 1px 4px; min-width: 20px; }
+.dj-fader-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+.dj-meter {
+  width: 10px;
+  height: min(11vh, 72px);
+  background: #070a09;
+  display: block;
+  border: 1px solid #1a2420;
 }
 .dj-ch-fader input[type="range"] {
   writing-mode: vertical-lr;
   direction: rtl;
-  height: min(14vh, 88px);
-  width: 18px;
+  height: min(11vh, 72px);
+  width: 16px;
   accent-color: var(--phosphor);
 }
-.dj-filter input { width: 72px; }
-.dj-mixer .dj-xf { padding: 4px 2px; width: 100%; }
+.dj-mixer .dj-xf { padding: 2px; width: 100%; gap: 4px; }
+.dj-mixer .dj-xf input { height: 16px; }
 .dj-top { flex: none; gap: 8px; }
-.dj-transport { flex-wrap: wrap; gap: 4px; }
-.dj-transport .btn { padding: 4px 7px; font-size: 0.62rem; }
+.dj-transport { flex-wrap: wrap; gap: 3px; margin: 4px 0; }
+.dj-transport .btn { padding: 3px 6px; font-size: 0.58rem; }
+.dj-pads { margin: 2px 0; }
+.dj-loops { margin: 2px 0; }
 @media (max-width: 960px) {
-  .dj-desk { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
-  .dj-mixer { flex-direction: row; flex-wrap: wrap; }
+  .dj-desk { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .dj-mixer { flex-direction: row; flex-wrap: nowrap; }
+  .dj-mix-ch { flex: 1; }
 }
 
 .abl-chain {
