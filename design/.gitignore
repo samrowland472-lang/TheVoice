@@ -1,0 +1,17 @@
+node_modules/
+.vercel/
+.tanstack/
+dist/
+.output/
+artifacts/
+screenshots/
+*.log
+.env
+.env.*
+.node_modules.lock
+.DS_Store
+coverage/
+.grok/skills/
+.grok/references/
+.grok/status
+.grok/app-env.json

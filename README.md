@@ -8,9 +8,20 @@ Everything heavy runs in the visitor's browser. Accounts are optional — use **
 
 - **Music** — Session, Arrange, DJ Live, piano roll, mixer, command bar (Ctrl/⌘+K)
 - **Animation** — Stage, graph, keyframes, 3D, JKL shuttle, onion skin
-- **Design** — Same canvas as animation, opened as an artboard (timeline hidden, 3D on)
+- **Design** — Press-ready artboard in [`design/`](./design): type, paint, layers, templates, command palette
 - **Voice** — Clone, Dub, Shape, Speak (long-form lives here), Talk (72-hour thread), Signal (radio cycle)
 - **Flick AI** — Assemble a voice take, a beat, and a scene into one cut. Flick talks to `/api/flick-chat` when `XAI_API_KEY` is set; local commands still run without it.
+
+
+## Design (artboard studio)
+
+The press-ready Design room lives in [`design/`](./design) — templates, paint, type, layers, present mode. Auto-saves in the browser.
+
+```bash
+cd design
+npm install
+npm run dev
+```
 
 ## AETHER (React animation studio)
 
