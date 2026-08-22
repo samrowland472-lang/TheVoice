@@ -588,6 +588,7 @@
     text-align: right;
     margin-top: -6px;
   }
+  .text-stats.is-over { color: var(--alert); }
 
   .highlight-preview {
     min-height: 24px;

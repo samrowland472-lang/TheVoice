@@ -16,6 +16,7 @@ import { modulate, PRESETS } from './modulation.js';
 import { createPattern, renderPattern, applyPreset, mixTracks, patternDuration,
          TRACKS, STEPS, PRESET_PATTERNS } from './music.js';
 import { initDaw, setDawMode, showDaw } from './daw.js';
+import { wordCount, clipToWords, chunkScript, formatEta, MAX_SPEAK_WORDS } from './speak-script.js';
 import { analyseLyrics, scaleChords, progressionInKey, KEYS, PROGRESSIONS } from './songcraft.js';
 import { composeAudio, fadeOut, describeProject } from './project.js';
 import { createScene, createShape, setKeyframe, removeKeyframe, sampleShape,
@@ -200,6 +201,39 @@ document.querySelectorAll('.sidebar-item').forEach((btn) => {
   btn.addEventListener('click', () => switchSection(btn.dataset.section));
 });
 
+const sidebarNav = document.getElementById('sidebar-nav');
+if (sidebarNav) {
+  sidebarNav.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'ArrowDown' && ev.key !== 'ArrowUp' && ev.key !== 'Home' && ev.key !== 'End') return;
+    const items = [...sidebarNav.querySelectorAll('.sidebar-item')];
+    if (!items.length) return;
+    ev.preventDefault();
+    let i = items.indexOf(document.activeElement);
+    if (i < 0) i = items.findIndex((b) => b.classList.contains('active'));
+    if (ev.key === 'Home') i = 0;
+    else if (ev.key === 'End') i = items.length - 1;
+    else i = (i + (ev.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[i].focus();
+    items[i].click();
+  });
+}
+
+document.addEventListener('keydown', (ev) => {
+  const tag = ev.target && ev.target.tagName;
+  const inField = tag === 'INPUT' || tag === 'SELECT';
+  if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {
+    const speakOpen = consoleView && !consoleView.hidden && document.querySelector('[data-panel="speak"].active');
+    if (speakOpen) {
+      ev.preventDefault();
+      playBtn.click();
+    }
+    return;
+  }
+  if (ev.key === 'Escape' && tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+    stopPlayback();
+  }
+});
+
 /* ---------- Status ---------- */
 function setStatus(state) {
   statusDot.className = 'status-dot';
@@ -311,14 +345,25 @@ const AVG_WORDS_PER_MINUTE = 150;
 
 function updateTextStats() {
   const text = textInput.value;
-  const chars = text.length;
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const words = wordCount(text);
   const rate = parseFloat(rateRange.value) || 1;
-  const estSeconds = Math.round((words / AVG_WORDS_PER_MINUTE) * 60 / rate);
-  textStats.textContent = `${chars} character${chars === 1 ? '' : 's'} · ~${estSeconds}s at this speed`;
+  const estSeconds = (words / AVG_WORDS_PER_MINUTE) * 60 / rate;
+  const over = words > MAX_SPEAK_WORDS;
+  const left = Math.max(0, MAX_SPEAK_WORDS - words);
+  textStats.textContent = over
+    ? `${words.toLocaleString()} / ${MAX_SPEAK_WORDS.toLocaleString()} words — extra will be cut · ${formatEta(estSeconds)}`
+    : `${words.toLocaleString()} / ${MAX_SPEAK_WORDS.toLocaleString()} words · ${left.toLocaleString()} left · ${formatEta(estSeconds)}`;
+  textStats.classList.toggle('is-over', over);
 }
 
-textInput.addEventListener('input', updateTextStats);
+textInput.addEventListener('input', () => {
+  const words = wordCount(textInput.value);
+  if (words > MAX_SPEAK_WORDS) {
+    textInput.value = clipToWords(textInput.value);
+    showToast(`Speak is capped at ${MAX_SPEAK_WORDS.toLocaleString()} words.`, 'error');
+  }
+  updateTextStats();
+});
 
 /* ---------- Sliders ---------- */
 rateRange.addEventListener('input', () => {
@@ -347,19 +392,37 @@ function renderHighlight(text, start, end) {
   highlightPreview.innerHTML = `${escapeHtml(before)}<span class="current-word">${escapeHtml(word)}</span>${escapeHtml(after)}`;
 }
 
+let speakGen = 0;
+let playbackWait = null;
+function releasePlaybackWait() {
+  if (playbackWait) {
+    const done = playbackWait;
+    playbackWait = null;
+    done();
+  }
+}
+
 /* ---------- Playback control ---------- */
 function stopPlayback() {
+  speakGen += 1;
   browserTTS.stop();
   audioEngine.stop();
   activeSource = null;
   setStatus('idle');
   setPlayingUI(false);
   renderHighlight('', null, null);
+  releasePlaybackWait();
 }
 
 playBtn.addEventListener('click', async () => {
-  const text = textInput.value.trim();
+  let text = textInput.value.trim();
   if (!text) return;
+  if (wordCount(text) > MAX_SPEAK_WORDS) {
+    text = clipToWords(text).trim();
+    textInput.value = text;
+    updateTextStats();
+    showToast(`Trimmed to ${MAX_SPEAK_WORDS.toLocaleString()} words.`);
+  }
   stopPlayback();
 
   if (engine === 'browser') {
@@ -374,7 +437,8 @@ playBtn.addEventListener('click', async () => {
 function speakBrowser(text) {
   if (!browserTTS.isSupported) return;
   activeSource = 'synth';
-  browserTTS.speak(text, {
+  const chunks = chunkScript(text, 480);
+  browserTTS.speakQueue(chunks, {
     voiceIndex: voiceSelect.value,
     rate: parseFloat(rateRange.value),
     pitch: parseFloat(pitchRange.value),
@@ -406,6 +470,8 @@ function speakBrowser(text) {
 }
 
 async function speakNeural(text) {
+  const gen = speakGen;
+  const chunks = chunkScript(text, 720);
   activeSource = 'element';
   setStatus('loading');
   playBtn.disabled = true;
@@ -413,41 +479,58 @@ async function speakNeural(text) {
   if (!alreadyLoaded) modelProgress.hidden = false;
 
   try {
-    const rawAudio = await neuralTTS.generate(
-      text,
-      { voice: voiceSelect.value, speed: parseFloat(rateRange.value) },
-      (data) => {
-        if (data && typeof data.progress === 'number') {
-          const pct = Math.max(0, Math.min(100, data.progress));
-          modelProgressFill.style.width = `${pct}%`;
-          modelProgressText.textContent = `Loading neural voice model… ${pct.toFixed(0)}%`;
-        } else if (data && data.status === 'ready') {
-          modelProgressText.textContent = 'Model ready.';
+    for (let i = 0; i < chunks.length; i++) {
+      if (gen !== speakGen) return;
+      if (chunks.length > 1) {
+        engineHint.textContent = `Neural ${i + 1} / ${chunks.length}`;
+      }
+      const rawAudio = await neuralTTS.generate(
+        chunks[i].text,
+        { voice: voiceSelect.value, speed: parseFloat(rateRange.value) },
+        (data) => {
+          if (data && typeof data.progress === 'number') {
+            const pct = Math.max(0, Math.min(100, data.progress));
+            modelProgressFill.style.width = `${pct}%`;
+            modelProgressText.textContent = `Loading neural voice model… ${pct.toFixed(0)}%`;
+          } else if (data && data.status === 'ready') {
+            modelProgressText.textContent = 'Model ready.';
+          }
+        }
+      );
+      if (gen !== speakGen) return;
+      modelProgress.hidden = true;
+      if (i === 0) {
+        const neuralBlob = encodeWav16(rawAudio.audio, rawAudio.sampling_rate);
+        setLastClip(neuralBlob, 'wav');
+        if (chunks.length === 1) {
+          saveClipToLibrary({
+            engine: 'neural',
+            voiceLabel: voiceSelect.options[voiceSelect.selectedIndex]?.textContent || voiceSelect.value,
+            text,
+            blob: neuralBlob,
+            ext: 'wav',
+            durationSec: rawAudio.audio.length / rawAudio.sampling_rate,
+          });
         }
       }
-    );
-    modelProgress.hidden = true;
-    const neuralBlob = encodeWav16(rawAudio.audio, rawAudio.sampling_rate);
-    setLastClip(neuralBlob, 'wav');
-    saveClipToLibrary({
-      engine: 'neural',
-      voiceLabel: voiceSelect.options[voiceSelect.selectedIndex]?.textContent || voiceSelect.value,
-      text,
-      blob: neuralBlob,
-      ext: 'wav',
-      durationSec: rawAudio.audio.length / rawAudio.sampling_rate,
-    });
-    audioEngine.setVolume(parseFloat(volumeRange.value));
-    setStatus('speaking');
-    setPlayingUI(true);
-    await audioEngine.playPCM(rawAudio.audio, rawAudio.sampling_rate, {
-      onEnd: () => {
-        activeSource = null;
-        setStatus('idle');
-        setPlayingUI(false);
-      },
-    });
+      audioEngine.setVolume(parseFloat(volumeRange.value));
+      setStatus('speaking');
+      setPlayingUI(true);
+      await new Promise((resolve) => {
+        playbackWait = resolve;
+        audioEngine.playPCM(rawAudio.audio, rawAudio.sampling_rate, {
+          onEnd: () => { releasePlaybackWait(); },
+        });
+      });
+    }
+    if (gen === speakGen) {
+      activeSource = null;
+      setStatus('idle');
+      setPlayingUI(false);
+      engineHint.textContent = '';
+    }
   } catch (err) {
+    if (gen !== speakGen) return;
     modelProgress.hidden = true;
     activeSource = null;
     setStatus('idle');
@@ -470,34 +553,49 @@ async function speakElevenLabs(text) {
     return;
   }
 
+  const gen = speakGen;
+  const chunks = chunkScript(text, 2400);
   activeSource = 'element';
   setStatus('loading');
   playBtn.disabled = true;
 
   try {
-    const blob = await synthesize(apiKey, voiceId, text);
-    setLastClip(blob, 'mp3');
-    probeDuration(blob).then((durationSec) =>
-      saveClipToLibrary({
-        engine: 'elevenlabs',
-        voiceLabel: voiceSelect.options[voiceSelect.selectedIndex]?.textContent || voiceSelect.value,
-        text,
-        blob,
-        ext: 'mp3',
-        durationSec,
-      })
-    );
-    audioEngine.setVolume(parseFloat(volumeRange.value));
-    setStatus('speaking');
-    setPlayingUI(true);
-    await audioEngine.play(blob, {
-      onEnd: () => {
-        activeSource = null;
-        setStatus('idle');
-        setPlayingUI(false);
-      },
-    });
+    for (let i = 0; i < chunks.length; i++) {
+      if (gen !== speakGen) return;
+      if (chunks.length > 1) engineHint.textContent = `My Voices ${i + 1} / ${chunks.length}`;
+      const blob = await synthesize(apiKey, voiceId, chunks[i].text);
+      if (gen !== speakGen) return;
+      if (i === 0) {
+        setLastClip(blob, 'mp3');
+        if (chunks.length === 1) {
+          probeDuration(blob).then((durationSec) =>
+            saveClipToLibrary({
+              engine: 'elevenlabs',
+              voiceLabel: voiceSelect.options[voiceSelect.selectedIndex]?.textContent || voiceSelect.value,
+              text,
+              blob,
+              ext: 'mp3',
+              durationSec,
+            })
+          );
+        }
+      }
+      audioEngine.setVolume(parseFloat(volumeRange.value));
+      setStatus('speaking');
+      setPlayingUI(true);
+      await new Promise((resolve) => {
+        playbackWait = resolve;
+        audioEngine.play(blob, { onEnd: () => { releasePlaybackWait(); } });
+      });
+    }
+    if (gen === speakGen) {
+      activeSource = null;
+      setStatus('idle');
+      setPlayingUI(false);
+      engineHint.textContent = '';
+    }
   } catch (err) {
+    if (gen !== speakGen) return;
     activeSource = null;
     setStatus('idle');
     setPlayingUI(false);
@@ -4534,7 +4632,7 @@ makeDropTarget(document.querySelector('[data-panel="speak"]'), 'json', async (re
   if (!result.ok) { showToast(result.message, 'error'); return; }
   try {
     const text = await readText(result.file);
-    textInput.value = text.slice(0, 50000);
+    textInput.value = clipToWords(text);
     updateTextStats();
     showToast(`Loaded ${result.file.name}`);
   } catch (err) {

@@ -11,7 +11,7 @@ SCRATCH = os.path.join(ROOT, "build")
 
 FILES = [
     "background.js", "visualizer.js", "audio-engine.js", "pitch.js", "wav-encode.js",
-    "clip-library.js", "autosave.js", "files.js", "voice-effects.js", "chapters.js", "modulation.js", "easing.js", "camera3d.js", "scenegraph.js", "selection.js", "path3d.js", "gltf.js", "light3d.js", "verbs.js", "physics.js", "mesh3d.js", "picking.js", "gizmo.js", "animation.js", "webgl3d.js", "videoexport.js", "timeline.js", "history.js", "music.js", "songcraft.js", "director.js", "casting.js", "agent.js", "project.js", "billing.js", "account.js", "tts-browser.js", "tts-neural.js",
+    "clip-library.js", "autosave.js", "files.js", "voice-effects.js", "chapters.js", "modulation.js", "easing.js", "camera3d.js", "scenegraph.js", "selection.js", "path3d.js", "gltf.js", "light3d.js", "verbs.js", "physics.js", "mesh3d.js", "picking.js", "gizmo.js", "animation.js", "webgl3d.js", "videoexport.js", "timeline.js", "history.js", "music.js", "songcraft.js", "director.js", "casting.js", "agent.js", "project.js", "billing.js", "account.js", "tts-browser.js", "tts-neural.js", "speak-script.js",
     "tts-elevenlabs.js", "recorder.js", "daw-studio.js", "daw.js", "app.js",
 ]
 
