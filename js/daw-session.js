@@ -627,6 +627,46 @@
     return g;
   }
 
+  function clipsAt(trackId, step) {
+    var out = [];
+    for (var i = 0; i < state.arrangeClips.length; i++) {
+      var c = state.arrangeClips[i];
+      if (c.trackId === trackId && step >= c.start && step < c.start + c.length) out.push(c);
+    }
+    out.sort(function (a, b) { return a.start - b.start; });
+    return out;
+  }
+
+  var clipXfGain = {};
+
+  function xfDest(track, clip, time, mul) {
+    var id = (clip && clip.id) || track.id;
+    var g = clipXfGain[id];
+    if (!g) {
+      g = ctx.createGain();
+      g.connect(trackNodes[track.id]);
+      clipXfGain[id] = g;
+    }
+    g.gain.setValueAtTime(Math.max(0.0001, mul), time);
+    return g;
+  }
+
+  function xfadeMul(clip, step, hits) {
+    if (!hits || hits.length < 2) return 1;
+    var mul = 1;
+    for (var i = 0; i < hits.length; i++) {
+      var o = hits[i];
+      if (o === clip) continue;
+      var ov0 = Math.max(clip.start, o.start);
+      var ov1 = Math.min(clip.start + clip.length, o.start + o.length);
+      if (step < ov0 || step >= ov1 || ov1 <= ov0) continue;
+      var t = (step - ov0) / (ov1 - ov0);
+      if (clip.start <= o.start) mul *= 1 - t;
+      else mul *= t;
+    }
+    return Math.max(0, Math.min(1, mul));
+  }
+
   function stepsPerBeat() {
     return Math.max(1, Math.round(16 / state.timeDen));
   }
@@ -1497,11 +1537,12 @@
     }
   }
 
-  function playWarpedClip(track, clipObj, time) {
+  function playWarpedClip(track, clipObj, time, destOverride) {
     if (!clipObj || !clipObj.notes || !clipObj.notes.buffer) return;
-    var dest = trackNodes[track.id];
+    var dest = destOverride || trackNodes[track.id];
     if (!dest) return;
-    stopWarpVoices(track.id);
+    var holdId = clipObj.id || track.id;
+    stopWarpVoices(holdId);
     var n = clipObj.notes;
     var gain = n.gain == null ? 1 : n.gain;
     var buf = n.reverse ? reversedBuffer(n.buffer) : n.buffer;
@@ -1520,7 +1561,7 @@
         wrap.gain.linearRampToValueAtTime(0.0001, time + destDurAll);
       }
       dest = wrap;
-      holdVoice(track.id, wrap);
+      holdVoice(holdId, wrap);
     }
     if (!n.warpOn) {
       var src = ctx.createBufferSource();
@@ -1531,8 +1572,8 @@
       src.connect(g);
       g.connect(dest);
       src.start(time);
-      holdVoice(track.id, src);
-      holdVoice(track.id, g);
+      holdVoice(holdId, src);
+      holdVoice(holdId, g);
       return;
     }
     var markers = ensureMarkers(clipObj);
@@ -1637,7 +1678,7 @@
     return time;
   }
 
-  function playStepAt(track, clipObj, step, time) {
+  function playStepAt(track, clipObj, step, time, xfade) {
     if (!clipObj || !trackAudible(track)) return;
     var dest = trackNodes[track.id];
     var n = clipObj.notes || {};
@@ -1646,19 +1687,19 @@
     var i = local;
     if (n.reverse) i = len - 1 - i;
     var xp = clipXpose(n);
-    if (!n.buffer) {
-      var fadeMul = clipFadeMul(clipObj, local);
-      if (fadeMul < 0.02) return;
-      dest = fadedDest(dest, time, fadeMul);
+    var fadeMul = clipFadeMul(clipObj, local) * (xfade == null ? 1 : xfade);
+    if (fadeMul < 0.02 && !n.buffer) return;
+    if (n.buffer && clipObj.id) dest = xfDest(track, clipObj, time, Math.max(0.0001, fadeMul));
+    else dest = fadedDest(dest, time, fadeMul);
+    if (n.buffer) {
+      if ((n.reverse ? len - 1 - i : i) === 0) playWarpedClip(track, clipObj, time, dest);
+      return;
     }
     if ((track.kind === "drums" || track.kind === "perc") && track.rack && !(n.buffer)) {
       playDrumRack(track, clipObj, i, time, n.buffer ? 1 : clipFadeMul(clipObj, local));
       return;
     }
-    if (n.buffer) {
-      if ((n.reverse ? len - 1 - i : i) === 0) playWarpedClip(track, clipObj, time);
-      return;
-    }
+
     if (n.roll && n.roll.length) {
       playRollStep(track, dest, n.roll, i, time, xp);
       return;
@@ -1786,12 +1827,23 @@
         }
         capturePunch();
         state.tracks.forEach(function (tr) {
-          var c = clipAt(tr.id, state.step);
+          var hits = clipsAt(tr.id, state.step);
           if (tr.kind === "pad") {
-            if (c && lastPadClip[tr.id] !== c) startPad(tr, c);
-            if (!c) stopPad(tr.id);
-          } else if (c) {
-            playStepAt(tr, c, state.step - c.start, swingTime(state.step, nextTime));
+            var c0 = hits[0] || null;
+            if (c0 && lastPadClip[tr.id] !== c0) startPad(tr, c0);
+            if (!c0) stopPad(tr.id);
+          } else {
+            hits.forEach(function (c) {
+              var xf = xfadeMul(c, state.step, hits);
+              playStepAt(tr, c, state.step - c.start, swingTime(state.step, nextTime), xf);
+            });
+            state.arrangeClips.forEach(function (c) {
+              if (c.trackId !== tr.id) return;
+              var on = state.step >= c.start && state.step < c.start + c.length;
+              if (on) return;
+              if (clipXfGain[c.id]) clipXfGain[c.id].gain.setValueAtTime(0.0001, nextTime);
+              if (c.id) stopWarpVoices(c.id);
+            });
           }
           applyAutoAt(tr, state.step, nextTime);
         });
