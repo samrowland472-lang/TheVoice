@@ -271,6 +271,7 @@ function makeDeck(id) {
     slipT0: 0,
     slipRate: 1,
     keylock: true,
+    gridOffset: 0,
     src: null,
     nodes: null,
     wave: null,
@@ -485,8 +486,12 @@ function detectBpm(buf) {
   return Math.round(bpm);
 }
 
-function drawWave(canvas, buf, playhead, cues, loopStart, loopEnd, slipAt) {
-  if (!canvas || !buf) return;
+function drawWave(canvas, d, playhead, slipAt) {
+  if (!canvas || !d || !d.buf) return;
+  const buf = d.buf;
+  const cues = d.cues;
+  const loopStart = d.loopStart;
+  const loopEnd = d.loopEnd;
   const w = canvas.width = canvas.clientWidth || 320;
   const h = canvas.height = canvas.clientHeight || 64;
   const g = canvas.getContext('2d');
@@ -513,6 +518,20 @@ function drawWave(canvas, buf, playhead, cues, loopStart, loopEnd, slipAt) {
     const top = mid - hi * mid;
     const bot = mid - lo * mid;
     g.fillRect(x, top, 1, Math.max(1, bot - top));
+  }
+  const bpm = d.origBpm || d.bpm;
+  if (bpm) {
+    const iv = 60 / bpm;
+    const off = d.gridOffset || 0;
+    let t = off % iv;
+    if (t < 0) t += iv;
+    let beat = Math.round((t - off) / iv);
+    for (; t < buf.duration; t += iv, beat++) {
+      const x = (t / buf.duration) * w;
+      const down = ((beat % 4) + 4) % 4 === 0;
+      g.fillStyle = down ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.14)';
+      g.fillRect(Math.round(x), down ? 0 : h * 0.2, 1, down ? h : h * 0.6);
+    }
   }
   if (loopEnd > loopStart) {
     g.fillStyle = 'rgba(63,198,255,0.12)';
@@ -638,6 +657,8 @@ function deckHtml(d) {
       <button type="button" class="btn" data-act="cue" data-deck="${d.id}">CUE</button>
       <button type="button" class="btn${d.sync ? ' on' : ''}" data-act="sync" data-deck="${d.id}">SYNC</button>
       <button type="button" class="btn${d.slip ? ' on' : ''}" data-act="slip" data-deck="${d.id}">SLIP</button>
+      <button type="button" class="btn" data-act="grid-nudge" data-dir="-1" data-deck="${d.id}" title="Nudge beatgrid earlier">GRID ‹</button>
+      <button type="button" class="btn" data-act="grid-nudge" data-dir="1" data-deck="${d.id}" title="Nudge beatgrid later">›</button>
       <button type="button" class="btn${d.cue ? ' on' : ''}" data-act="pfl" data-deck="${d.id}">PFL</button>
       <button type="button" class="btn" data-act="load" data-deck="${d.id}">Load</button>
       <button type="button" class="btn" data-act="beat" data-deck="${d.id}">Beat</button>
@@ -693,7 +714,7 @@ function paintDecks() {
     ['a', 'b'].forEach((id) => {
       const canvas = root.querySelector(`[data-wave="${id}"]`);
       const d = decks[id];
-      if (canvas && d.buf) drawWave(canvas, d.buf, deckNow(d), d.cues, d.loopStart, d.loopEnd);
+      if (canvas && d.buf) drawWave(canvas, d, deckNow(d));
     });
   });
 }
@@ -732,6 +753,11 @@ function bindDeckUi(root) {
       if (act === 'slip') {
         d.slip = !d.slip;
         if (!d.slip && d.slipActive) endSlip(d);
+      }
+      if (act === 'grid-nudge') {
+        const bpm = d.origBpm || d.bpm || 120;
+        const step = (60 / bpm) / 16;
+        d.gridOffset = (d.gridOffset || 0) + Number(btn.dataset.dir) * step;
       }
       if (act === 'pfl') {
         d.cue = !d.cue;
@@ -780,6 +806,18 @@ function bindDeckUi(root) {
     btn.addEventListener('contextmenu', (ev) => {
       ev.preventDefault();
       clearCue(d, i);
+    });
+  });
+  root.querySelectorAll('[data-wave]').forEach((canvas) => {
+    canvas.style.cursor = 'text';
+    canvas.addEventListener('pointerdown', (ev) => {
+      const id = canvas.dataset.wave;
+      const d = decks[id];
+      if (!d || !d.buf) return;
+      const r = canvas.getBoundingClientRect();
+      const t = Math.max(0, Math.min(d.buf.duration - 0.01, ((ev.clientX - r.left) / r.width) * d.buf.duration));
+      if (d.playing) startDeckAt(d, t);
+      else d.cueAt = t;
     });
   });
   root.querySelectorAll('[data-loop]').forEach((btn) => {
@@ -978,7 +1016,7 @@ function tickWaves() {
       ['a', 'b'].forEach((id) => {
         const d = decks[id];
         const canvas = root.querySelector(`[data-wave="${id}"]`);
-        if (canvas && d.buf) drawWave(canvas, d.buf, deckNow(d), d.cues, d.loopStart, d.loopEnd, d.slipActive ? slipNow(d) : null);
+        if (canvas && d.buf) drawWave(canvas, d, deckNow(d), d.slipActive ? slipNow(d) : null);
         const now = root.querySelector(`[data-now="${id}"]`);
         const rem = root.querySelector(`[data-remain="${id}"]`);
         if (now) now.textContent = fmtTime(deckNow(d));
