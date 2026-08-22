@@ -75,4 +75,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Hub folders / tags for recents; brand kit font pairing on new text.
+Brand kit: named colours + font pairing applied to new text.
