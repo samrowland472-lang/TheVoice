@@ -2834,3 +2834,61 @@ input:focus-visible,
   z-index: 2;
 }
 .abl-clip span { padding-left: 2px; }
+
+/* ---- Voice Studio input chain ---- */
+.studio-chain {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.studio-chain .control-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.studio-chain select, .studio-chain input[type="range"] { width: 100%; }
+.studio-mon { flex-direction: row !important; align-items: center; gap: 8px !important; flex-wrap: wrap; }
+.studio-mon input[type="range"] { flex: 1; min-width: 80px; }
+.studio-meters {
+  display: grid;
+  grid-template-columns: 1fr 16px;
+  gap: 8px;
+  align-items: stretch;
+}
+.studio-vu {
+  position: relative;
+  background: #050807;
+  border: 1px solid var(--border);
+}
+.studio-vu-fill {
+  position: absolute;
+  left: 2px; right: 2px; bottom: 2px;
+  height: 0%;
+  background: linear-gradient(to top, var(--phosphor), var(--amber) 70%, var(--alert));
+}
+.studio-vu-fill.clip, .studio-vu-peak.clip { background: var(--alert); }
+.studio-vu-peak {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: #fff;
+  bottom: 0;
+}
+#studio-clone-name {
+  flex: 1;
+  min-width: 140px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-family: 'Chakra Petch', sans-serif;
+}
+@media (max-width: 780px) {
+  .studio-chain { grid-template-columns: 1fr; }
+}

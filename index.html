@@ -211,9 +211,29 @@
       </div>
 
       <div class="tab-panel" data-panel="studio" data-drop-zone>
-        <p class="field-label">Record — live transcript, spectrum &amp; pitch, optional clone</p>
+        <p class="field-label">Voice Studio</p>
+        <p class="hint hint-info">The take is recorded after input gain — not the raw mic. Monitor is for headphones so you can hear yourself without a loop.</p>
 
-        <canvas id="record-canvas" height="90" role="img" aria-label="Recording level meter"></canvas>
+        <div class="studio-chain">
+          <label class="control-item">Mic
+            <select id="studio-mic" aria-label="Input device"></select>
+          </label>
+          <label class="control-item">Gain <span id="studio-gain-val">1.00</span>
+            <input type="range" id="studio-gain" min="0" max="2.5" step="0.05" value="1">
+          </label>
+          <label class="control-item studio-mon">
+            <input type="checkbox" id="studio-monitor"> Monitor
+            <input type="range" id="studio-mon-vol" min="0" max="1" step="0.05" value="0.55" aria-label="Monitor level" disabled>
+          </label>
+        </div>
+
+        <div class="studio-meters">
+          <canvas id="record-canvas" height="90" role="img" aria-label="Recording spectrum"></canvas>
+          <div class="studio-vu" aria-label="Peak meter">
+            <div class="studio-vu-fill" id="studio-vu-fill"></div>
+            <div class="studio-vu-peak" id="studio-vu-peak"></div>
+          </div>
+        </div>
 
         <div class="record-readout">
           <div class="readout-item">
@@ -235,6 +255,7 @@
             <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="7" fill="currentColor"/></svg>
             Record
           </button>
+          <button id="studio-pause-btn" class="btn" disabled>Pause</button>
           <button id="studio-import-btn" class="btn">Import audio…</button>
           <span class="record-timer" id="record-timer">00:00</span>
         </div>
@@ -261,6 +282,7 @@
           <textarea id="transcript-box" placeholder="Your words will appear here as you speak…"></textarea>
 
           <div class="control-row buttons-row">
+            <input type="text" id="studio-clone-name" placeholder="Voice name" aria-label="Clone voice name">
             <button id="use-transcript-btn" class="btn">Use as Speak text</button>
             <button id="download-recording-btn" class="btn">Download recording</button>
             <button id="clone-voice-btn" class="btn btn-primary" disabled>Clone this voice</button>

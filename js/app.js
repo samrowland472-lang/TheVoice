@@ -128,6 +128,15 @@ const effectHint = document.getElementById('effect-hint');
 const cloneVoiceBtn = document.getElementById('clone-voice-btn');
 const cloneHint = document.getElementById('clone-hint');
 const cloneStatus = document.getElementById('clone-status');
+const studioMic = document.getElementById('studio-mic');
+const studioGain = document.getElementById('studio-gain');
+const studioGainVal = document.getElementById('studio-gain-val');
+const studioMonitor = document.getElementById('studio-monitor');
+const studioMonVol = document.getElementById('studio-mon-vol');
+const studioPauseBtn = document.getElementById('studio-pause-btn');
+const studioCloneName = document.getElementById('studio-clone-name');
+const studioVuFill = document.getElementById('studio-vu-fill');
+const studioVuPeak = document.getElementById('studio-vu-peak');
 
 const apiKeyInput = document.getElementById('api-key-input');
 const saveKeyBtn = document.getElementById('save-key-btn');
@@ -739,12 +748,39 @@ function drawSpectrum(freqBytes, sampleRate) {
   }
 }
 
+let peakHoldDb = -60;
+let peakHoldUntil = 0;
+
 function updateReadouts(floatBuf, sampleRate) {
   let sumSq = 0;
-  for (let i = 0; i < floatBuf.length; i++) sumSq += floatBuf[i] * floatBuf[i];
+  let peak = 0;
+  for (let i = 0; i < floatBuf.length; i++) {
+    const v = floatBuf[i];
+    sumSq += v * v;
+    const a = Math.abs(v);
+    if (a > peak) peak = a;
+  }
   const rms = Math.sqrt(sumSq / floatBuf.length);
-  const db = rms > 0.00001 ? 20 * Math.log10(rms) : -Infinity;
-  levelReadout.textContent = db === -Infinity ? '−∞ dB' : `${db.toFixed(1)} dB`;
+  const db = rms > 0.00001 ? 20 * Math.log10(rms) : -60;
+  const peakDb = peak > 0.00001 ? 20 * Math.log10(peak) : -60;
+  const now = performance.now();
+  if (peakDb >= peakHoldDb) {
+    peakHoldDb = peakDb;
+    peakHoldUntil = now + 1200;
+  } else if (now > peakHoldUntil) {
+    peakHoldDb = Math.max(-60, peakHoldDb - 0.6);
+  }
+  levelReadout.textContent = db <= -59 ? '−∞ dB' : `${db.toFixed(1)} dB`;
+  if (studioVuFill) {
+    const pct = Math.max(0, Math.min(100, (db + 60) / 60 * 100));
+    studioVuFill.style.height = `${pct}%`;
+    studioVuFill.classList.toggle('clip', peakDb > -1);
+  }
+  if (studioVuPeak) {
+    const pct = Math.max(0, Math.min(100, (peakHoldDb + 60) / 60 * 100));
+    studioVuPeak.style.bottom = `${pct}%`;
+    studioVuPeak.classList.toggle('clip', peakHoldDb > -1);
+  }
 
   const freq = detectPitch(floatBuf, sampleRate);
   if (freq) {
@@ -762,6 +798,9 @@ function resetReadouts() {
   levelReadout.textContent = '−∞ dB';
   noteReadout.textContent = '—';
   recordCtx.clearRect(0, 0, recordCanvas.width, recordCanvas.height);
+  peakHoldDb = -60;
+  if (studioVuFill) studioVuFill.style.height = '0%';
+  if (studioVuPeak) studioVuPeak.style.bottom = '0%';
 }
 
 function analysisLoop() {
@@ -801,6 +840,72 @@ function describeMicError(err) {
 }
 
 let isRecording = false;
+let studioPaused = false;
+
+async function populateMics() {
+  if (!studioMic || !recorder.listMics) return;
+  try {
+    const mics = await recorder.listMics();
+    const saved = localStorage.getItem('voice_studio_mic') || '';
+    const prev = studioMic.value || saved;
+    studioMic.innerHTML = '';
+    if (!mics.length) {
+      const o = document.createElement('option');
+      o.value = '';
+      o.textContent = 'Default input';
+      studioMic.appendChild(o);
+      return;
+    }
+    mics.forEach((d, i) => {
+      const o = document.createElement('option');
+      o.value = d.deviceId;
+      o.textContent = d.label || `Microphone ${i + 1}`;
+      studioMic.appendChild(o);
+    });
+    if (prev && [...studioMic.options].some((o) => o.value === prev)) studioMic.value = prev;
+  } catch (_) {}
+}
+
+if (studioMic) {
+  studioMic.addEventListener('change', () => {
+    localStorage.setItem('voice_studio_mic', studioMic.value);
+  });
+  populateMics();
+  if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+    navigator.mediaDevices.addEventListener('devicechange', populateMics);
+  }
+}
+if (studioGain) {
+  studioGain.addEventListener('input', () => {
+    const v = parseFloat(studioGain.value);
+    if (studioGainVal) studioGainVal.textContent = v.toFixed(2);
+    if (isRecording) recorder.setGain(v);
+  });
+}
+if (studioMonitor && studioMonVol) {
+  const syncMon = () => {
+    studioMonVol.disabled = !studioMonitor.checked;
+    if (isRecording) recorder.setMonitor(studioMonitor.checked, parseFloat(studioMonVol.value));
+  };
+  studioMonitor.addEventListener('change', syncMon);
+  studioMonVol.addEventListener('input', syncMon);
+}
+if (studioPauseBtn) {
+  studioPauseBtn.addEventListener('click', () => {
+    if (!isRecording) return;
+    if (!studioPaused) {
+      if (recorder.pause()) {
+        studioPaused = true;
+        studioPauseBtn.textContent = 'Resume';
+        recordBtn.classList.remove('recording');
+      }
+    } else if (recorder.resume()) {
+      studioPaused = false;
+      studioPauseBtn.textContent = 'Pause';
+      recordBtn.classList.add('recording');
+    }
+  });
+}
 
 recordBtn.addEventListener('click', async () => {
   if (!isRecording) {
@@ -816,6 +921,10 @@ recordBtn.addEventListener('click', async () => {
           floatTimeBuf = new Float32Array(analyser.fftSize);
           if (!analysisRafId) analysisLoop();
         },
+        deviceId: studioMic && studioMic.value ? studioMic.value : undefined,
+        gain: studioGain ? parseFloat(studioGain.value) : 1,
+        monitor: !!(studioMonitor && studioMonitor.checked),
+        monitorVol: studioMonVol ? parseFloat(studioMonVol.value) : 0.55,
       });
     } catch (err) {
       micHint.textContent = describeMicError(err);
@@ -823,8 +932,11 @@ recordBtn.addEventListener('click', async () => {
     }
     micHint.textContent = '';
     isRecording = true;
+    studioPaused = false;
     recordBtn.classList.add('recording');
     recordBtn.lastChild.textContent = ' Stop';
+    if (studioPauseBtn) { studioPauseBtn.disabled = false; studioPauseBtn.textContent = 'Pause'; }
+    populateMics();
     recordSeconds = 0;
     recordTimer.textContent = '00:00';
     recordTimerInterval = setInterval(() => {
@@ -834,8 +946,10 @@ recordBtn.addEventListener('click', async () => {
     recordingResult.hidden = true;
   } else {
     isRecording = false;
+    studioPaused = false;
     recordBtn.classList.remove('recording');
     recordBtn.lastChild.textContent = ' Record';
+    if (studioPauseBtn) { studioPauseBtn.disabled = true; studioPauseBtn.textContent = 'Pause'; }
     clearInterval(recordTimerInterval);
     currentAnalyser = null;
     if (analysisRafId) {
@@ -946,7 +1060,7 @@ cloneVoiceBtn.addEventListener('click', async () => {
   cloneVoiceBtn.disabled = true;
 
   try {
-    const name = `My Voice ${new Date().toLocaleString()}`;
+    const name = (studioCloneName && studioCloneName.value.trim()) || `My Voice ${new Date().toLocaleString()}`;
     const voice = await cloneVoice(apiKey, recordingBlob, name, `sample.${recordingExt}`);
     saveClonedVoice(voice);
     cloneStatus.className = 'hint hint-info';
