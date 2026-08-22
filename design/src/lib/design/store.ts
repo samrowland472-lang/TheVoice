@@ -58,6 +58,8 @@ interface DesignState {
   removeSelected: () => void;
   duplicateSelected: () => void;
   reorder: (id: string, dir: "up" | "down" | "top" | "bottom") => void;
+  /** Move node so it ends up at `toIndex` in the nodes array (0 = bottom of stack). */
+  reorderToIndex: (id: string, toIndex: number) => void;
   setArtboardBg: (bg: DesignDocument["artboard"]["background"]) => void;
   resizeArtboard: (formatId: string, magic: boolean) => void;
   undo: () => void;
@@ -288,6 +290,21 @@ export const useDesign = create<DesignState>((set, get) => ({
     else if (dir === "bottom") nodes.unshift(item);
     else if (dir === "up") nodes.splice(Math.min(i + 1, nodes.length), 0, item);
     else nodes.splice(Math.max(i - 1, 0), 0, item);
+    set({ doc: { ...doc, nodes }, dirty: true });
+  },
+
+  reorderToIndex: (id, toIndex) => {
+    const { doc } = get();
+    if (!doc) return;
+    const nodes = [...doc.nodes];
+    const from = nodes.findIndex((n) => n.id === id);
+    if (from < 0) return;
+    const clamped = Math.max(0, Math.min(toIndex, nodes.length - 1));
+    if (from === clamped) return;
+    get().commit();
+    const [item] = nodes.splice(from, 1);
+    if (!item) return;
+    nodes.splice(clamped, 0, item);
     set({ doc: { ...doc, nodes }, dirty: true });
   },
 
