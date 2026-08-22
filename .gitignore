@@ -26,7 +26,7 @@ node_modules/
 package-lock.json
 
 # AETHER React studio keeps its own lockfile
-!aether/package-lock.json
+!animate/package-lock.json
 
 # Design React studio keeps its own lockfile
 !design/package-lock.json

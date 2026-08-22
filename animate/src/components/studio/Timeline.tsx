@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { collectCycles, evalTrack, resolveHandles } from "@/lib/studio/eval";
 import { channelShort, formatDuration, formatTimecode } from "@/lib/studio/format";
 import { useStudio } from "@/lib/studio/store";
-import type { Track } from "@/lib/studio/types";
+import type { KeyRef, Track } from "@/lib/studio/types";
 
 const ROW = 22;
 const LABEL_W = 148;
@@ -49,11 +49,20 @@ export function Timeline() {
     | { kind: "playhead" }
     | { kind: "pan"; x: number; start: number; end: number }
     | { kind: "key"; trackId: string; index: number }
+    | {
+        kind: "keys";
+        origins: { trackId: string; index: number; t: number; v: number }[];
+        x0: number;
+        y0: number;
+        curve: boolean;
+      }
     | { kind: "curve-key"; trackId: string; index: number }
     | { kind: "tangent"; trackId: string; index: number; side: "in" | "out" }
     | { kind: "range"; edge: "in" | "out" }
+    | { kind: "box"; x0: number; y0: number; x1: number; y1: number; additive: boolean }
     | null
   >(null);
+  const boxPaint = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -81,7 +90,7 @@ export function Timeline() {
       ctx.clearRect(0, 0, w, h);
 
       const s = useStudio.getState();
-      const { viewStart, viewEnd, currentTime, tracks, nodes, selectedId, selectedTrackId, selectedKeyIndex, playbackStart, playbackEnd, duration, bottomTab } = s;
+      const { viewStart, viewEnd, currentTime, tracks, nodes, selectedId, selectedIds, selectedTrackId, selectedKeyIndex, selectedKeys, playbackStart, playbackEnd, duration, bottomTab } = s;
 
       ctx.fillStyle = "#12141a";
       ctx.fillRect(0, 0, w, h);
@@ -147,11 +156,13 @@ export function Timeline() {
           sheetY + RULER,
           tracks,
           selectedId,
+          selectedIds,
           viewStart,
           viewEnd,
           currentTime,
           selectedTrackId,
           selectedKeyIndex,
+          selectedKeys,
         );
       } else {
         drawDope(
@@ -162,12 +173,26 @@ export function Timeline() {
           tracks,
           nodes,
           selectedId,
+          selectedIds,
           selectedTrackId,
           selectedKeyIndex,
+          selectedKeys,
           viewStart,
           viewEnd,
           vScroll.current,
         );
+      }
+
+      const box = boxPaint.current;
+      if (box) {
+        const left = Math.min(box.x0, box.x1);
+        const top = Math.min(box.y0, box.y1);
+        const bw = Math.abs(box.x1 - box.x0);
+        const bh = Math.abs(box.y1 - box.y0);
+        ctx.fillStyle = "rgba(138,164,184,0.12)";
+        ctx.fillRect(left, top, bw, bh);
+        ctx.strokeStyle = "rgba(138,164,184,0.85)";
+        ctx.strokeRect(left + 0.5, top + 0.5, bw, bh);
       }
 
       const px = timeToX(currentTime, viewStart, viewEnd, w);
@@ -269,10 +294,20 @@ export function Timeline() {
         });
         if (best >= 0) {
           const hit = curveCache.keys[best]!;
-          s.selectKey(hit.trackId, hit.index);
+          const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+          s.selectKey(hit.trackId, hit.index, { additive });
           const tr = s.tracks.find((t) => t.id === hit.trackId);
-          if (tr) s.setSelected(tr.objectId);
-          drag.current = { kind: "curve-key", trackId: hit.trackId, index: hit.index };
+          if (tr) s.setSelected(tr.objectId, { additive });
+          const state = useStudio.getState();
+          const refs = state.selectedKeys.length
+            ? state.selectedKeys
+            : [{ trackId: hit.trackId, index: hit.index }];
+          const origins = refs.map((ref) => {
+            const track = state.tracks.find((t) => t.id === ref.trackId);
+            const key = track?.keys[ref.index];
+            return { trackId: ref.trackId, index: ref.index, t: key?.t ?? 0, v: key?.v ?? 0 };
+          });
+          drag.current = { kind: "keys", origins, x0: x, y0: y, curve: true };
           return;
         }
         const t = tSafe(x, s, w);
@@ -287,8 +322,15 @@ export function Timeline() {
           s.selectKey(target.id, null);
           return;
         }
-        s.setTime(t);
-        drag.current = { kind: "playhead" };
+        drag.current = {
+          kind: "box",
+          x0: x,
+          y0: y,
+          x1: x,
+          y1: y,
+          additive: e.shiftKey || e.metaKey || e.ctrlKey,
+        };
+        boxPaint.current = { x0: x, y0: y, x1: x, y1: y };
         return;
       }
       if (x < LABEL_W) {
@@ -320,18 +362,36 @@ export function Timeline() {
               }
             });
             if (best >= 0 && bestD < 8) {
-              s.selectKey(tr.id, best);
-              s.setSelected(tr.objectId);
-              drag.current = { kind: "key", trackId: tr.id, index: best };
+              const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+              s.selectKey(tr.id, best, { additive });
+              s.setSelected(tr.objectId, { additive });
+              const state = useStudio.getState();
+              const refs = state.selectedKeys.length
+                ? state.selectedKeys
+                : [{ trackId: tr.id, index: best }];
+              const origins = refs.map((ref) => {
+                const track = state.tracks.find((t) => t.id === ref.trackId);
+                const key = track?.keys[ref.index];
+                return { trackId: ref.trackId, index: ref.index, t: key?.t ?? 0, v: key?.v ?? 0 };
+              });
+              drag.current = { kind: "keys", origins, x0: x, y0: y, curve: false };
               return;
             }
             if (e.detail === 2 && !tr.expr) {
               s.insertKey(tr.objectId, tr.channel, t);
+              return;
             }
           }
         }
-        s.setTime(tSafe(x, s, w));
-        drag.current = { kind: "playhead" };
+        drag.current = {
+          kind: "box",
+          x0: x,
+          y0: y,
+          x1: x,
+          y1: y,
+          additive: e.shiftKey || e.metaKey || e.ctrlKey,
+        };
+        boxPaint.current = { x0: x, y0: y, x1: x, y1: y };
       } else {
         s.setTime(tSafe(x, s, w));
         drag.current = { kind: "playhead" };
@@ -353,6 +413,18 @@ export function Timeline() {
         s.setViewRange(d.start + dt, d.end + dt);
       } else if (d.kind === "key") {
         s.moveKey(d.trackId, d.index, tSafe(x, s, w));
+      } else if (d.kind === "keys") {
+        const dt = tSafe(x, s, w) - tSafe(d.x0, s, w);
+        if (d.curve && curveCache) {
+          const dv = vFromCache(y, curveCache) - vFromCache(d.y0, curveCache);
+          s.dragKeys(d.origins, dt, dv);
+        } else {
+          s.dragKeys(d.origins, dt);
+        }
+      } else if (d.kind === "box") {
+        d.x1 = x;
+        d.y1 = y;
+        boxPaint.current = { x0: d.x0, y0: d.y0, x1: x, y1: y };
       } else if (d.kind === "curve-key" && curveCache) {
         s.moveKey(d.trackId, d.index, tSafe(x, s, w));
         const v = vFromCache(y, curveCache);
@@ -382,7 +454,39 @@ export function Timeline() {
     };
 
     const onUp = () => {
+      const d = drag.current;
+      const s = useStudio.getState();
+      if (d?.kind === "keys") {
+        s.sortTrackKeys([...new Set(d.origins.map((o) => o.trackId))]);
+      }
+      if (d?.kind === "box") {
+        const left = Math.min(d.x0, d.x1);
+        const right = Math.max(d.x0, d.x1);
+        const top = Math.min(d.y0, d.y1);
+        const bottom = Math.max(d.y0, d.y1);
+        const tiny = right - left < 5 && bottom - top < 5;
+        if (tiny) {
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const w = canvas.getBoundingClientRect().width;
+            s.setTime(tSafe(d.x1, s, w));
+          }
+          if (!d.additive) s.selectKey(null, null);
+        } else {
+          const hits = collectKeysInBox(
+            s,
+            left,
+            top,
+            right,
+            bottom,
+            vScroll.current,
+            canvasRef.current?.getBoundingClientRect().width ?? 800,
+          );
+          s.selectKeys(hits, { additive: d.additive });
+        }
+      }
       drag.current = null;
+      boxPaint.current = null;
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -513,6 +617,50 @@ function visibleRows(
   }));
 }
 
+function isKeySel(keys: KeyRef[], trackId: string, index: number, selectedTrackId: string | null, selectedKeyIndex: number | null) {
+  if (keys.some((k) => k.trackId === trackId && k.index === index)) return true;
+  return selectedTrackId === trackId && selectedKeyIndex === index;
+}
+
+function collectKeysInBox(
+  s: {
+    tracks: Track[];
+    nodes: Record<string, { name: string }>;
+    selectedId: string | null;
+    bottomTab: string;
+    viewStart: number;
+    viewEnd: number;
+  },
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  scroll: number,
+  w: number,
+): KeyRef[] {
+  const hits: KeyRef[] = [];
+  if (s.bottomTab === "curves" && curveCache) {
+    for (const k of curveCache.keys) {
+      if (k.x >= left && k.x <= right && k.y >= top && k.y <= bottom) {
+        hits.push({ trackId: k.trackId, index: k.index });
+      }
+    }
+    return hits;
+  }
+  const rows = visibleRows(s.tracks, s.nodes, s.selectedId, s.bottomTab);
+  rows.forEach((row, i) => {
+    const y = OVERVIEW + RULER + i * ROW - scroll + ROW / 2;
+    if (y < top || y > bottom) return;
+    const tr = s.tracks.find((t) => t.id === row.trackId);
+    if (!tr) return;
+    tr.keys.forEach((key, index) => {
+      const x = timeToX(key.t, s.viewStart, s.viewEnd, w);
+      if (x >= left && x <= right) hits.push({ trackId: tr.id, index });
+    });
+  });
+  return hits;
+}
+
 function drawDope(
   ctx: CanvasRenderingContext2D,
   w: number,
@@ -521,8 +669,10 @@ function drawDope(
   tracks: Track[],
   nodes: Record<string, { name: string }>,
   selectedId: string | null,
+  selectedIds: string[],
   selectedTrackId: string | null,
   selectedKeyIndex: number | null,
+  selectedKeys: KeyRef[],
   viewStart: number,
   viewEnd: number,
   scroll: number,
@@ -536,11 +686,12 @@ function drawDope(
   rows.forEach((row, i) => {
     const y = y0 + i * ROW - scroll;
     if (y + ROW < y0 || y > h) return;
-    if (row.objectId === selectedId) {
+    const objOn = selectedIds.includes(row.objectId) || row.objectId === selectedId;
+    if (objOn) {
       ctx.fillStyle = "rgba(138,164,184,0.08)";
       ctx.fillRect(0, y, w, ROW);
     }
-    ctx.fillStyle = row.objectId === selectedId ? "#ecece8" : "#8b909a";
+    ctx.fillStyle = objOn ? "#ecece8" : "#8b909a";
     ctx.fillText(row.label, 8, y + 15);
     if (row.expr) {
       ctx.fillStyle = "#8aa4b8";
@@ -555,7 +706,7 @@ function drawDope(
       const key = tr.keys[k]!;
       const x = timeToX(key.t, viewStart, viewEnd, w);
       if (x < LABEL_W - 6 || x > w + 6) continue;
-      const sel = selectedTrackId === tr.id && selectedKeyIndex === k;
+      const sel = isKeySel(selectedKeys, tr.id, k, selectedTrackId, selectedKeyIndex);
       ctx.save();
       ctx.translate(x, y + ROW / 2);
       ctx.rotate(Math.PI / 4);
@@ -575,13 +726,16 @@ function drawCurves(
   y0: number,
   tracks: Track[],
   selectedId: string | null,
+  selectedIds: string[],
   viewStart: number,
   viewEnd: number,
   currentTime: number,
   selectedTrackId: string | null,
   selectedKeyIndex: number | null,
+  selectedKeys: KeyRef[],
 ) {
-  const list = tracks.filter((t) => (selectedId ? t.objectId === selectedId : true));
+  const focus = selectedIds[selectedIds.length - 1] ?? selectedId;
+  const list = tracks.filter((t) => (focus ? t.objectId === focus : true));
   const areaH = h - y0 - 8;
   const colors = ["#8aa4b8", "#d98a74", "#7a9e7e", "#c5cdd6", "#b9a48a"];
   if (list.length === 0) {
@@ -646,7 +800,7 @@ function drawCurves(
     tr.keys.forEach((k, ki) => {
       const x = timeToX(k.t, viewStart, viewEnd, w);
       const y = yAt(k.v);
-      const sel = selectedTrackId === tr.id && selectedKeyIndex === ki;
+      const sel = isKeySel(selectedKeys, tr.id, ki, selectedTrackId, selectedKeyIndex);
       ctx.fillStyle = sel ? "#ecece8" : colors[idx % colors.length]!;
       ctx.beginPath();
       ctx.arc(x, y, sel ? 4.5 : 3, 0, Math.PI * 2);

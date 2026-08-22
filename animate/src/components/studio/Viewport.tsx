@@ -223,7 +223,7 @@ function CameraBody({ selected }: { selected: boolean }) {
 
 function NodeView({ id }: { id: string }) {
   const node = useStudio((s) => s.nodes[id]);
-  const selectedId = useStudio((s) => s.selectedId);
+  const selected = useStudio((s) => s.selectedIds.includes(id) || s.selectedId === id);
   const shading = useStudio((s) => s.shading);
   const onionSkin = useStudio((s) => s.onionSkin);
   const children = useStudio(useShallow((s) => childIds(s.nodes, id)));
@@ -235,7 +235,6 @@ function NodeView({ id }: { id: string }) {
   }, [id]);
 
   if (!node || !node.visible) return null;
-  const selected = selectedId === id;
 
   return (
     <>
@@ -245,7 +244,9 @@ function NodeView({ id }: { id: string }) {
         name={id}
         onPointerDown={(e) => {
           e.stopPropagation();
-          useStudio.getState().setSelected(id);
+          useStudio.getState().setSelected(id, {
+            additive: e.shiftKey || e.metaKey || e.ctrlKey,
+          });
         }}
       >
         {node.kind === "mesh" ? (
@@ -418,11 +419,122 @@ function Gizmo() {
   );
 }
 
-function ViewportScene() {
+function Marquee({
+  onBox,
+}: {
+  onBox: (box: { left: number; top: number; width: number; height: number } | null) => void;
+}) {
+  const { camera, gl } = useThree();
+  const start = useRef<{ x: number; y: number; additive: boolean } | null>(null);
+  const last = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const el = gl.domElement;
+    const local = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
+    };
+
+    const onDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      const s = useStudio.getState();
+      if (s.tool !== "select") return;
+      const p = local(e);
+      const ndc = new THREE.Vector2((p.x / p.w) * 2 - 1, -(p.y / p.h) * 2 + 1);
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(ndc, camera);
+      const meshes: THREE.Object3D[] = [];
+      for (const obj of objectRegistry.values()) {
+        obj?.traverse((c) => {
+          if ((c as THREE.Mesh).isMesh) meshes.push(c);
+        });
+      }
+      if (ray.intersectObjects(meshes, false).length) return;
+      start.current = { x: p.x, y: p.y, additive: e.shiftKey || e.metaKey || e.ctrlKey };
+      last.current = { x: p.x, y: p.y };
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const onMove = (e: PointerEvent) => {
+      const st = start.current;
+      if (!st) return;
+      const p = local(e);
+      last.current = { x: p.x, y: p.y };
+      const left = Math.min(st.x, p.x);
+      const top = Math.min(st.y, p.y);
+      const width = Math.abs(p.x - st.x);
+      const height = Math.abs(p.y - st.y);
+      if (width > 3 || height > 3) onBox({ left, top, width, height });
+    };
+
+    const onUp = () => {
+      const st = start.current;
+      const end = last.current;
+      start.current = null;
+      last.current = null;
+      onBox(null);
+      if (!st || !end) return;
+      const left = Math.min(st.x, end.x);
+      const right = Math.max(st.x, end.x);
+      const top = Math.min(st.y, end.y);
+      const bottom = Math.max(st.y, end.y);
+      if (right - left < 4 && bottom - top < 4) {
+        if (!st.additive) useStudio.getState().setSelected(null);
+        return;
+      }
+      const v = new THREE.Vector3();
+      const r = el.getBoundingClientRect();
+      const hits: string[] = [];
+      for (const [id, obj] of objectRegistry) {
+        if (!obj) continue;
+        const node = useStudio.getState().nodes[id];
+        if (!node?.visible) continue;
+        obj.updateWorldMatrix(true, false);
+        v.setFromMatrixPosition(obj.matrixWorld);
+        v.project(camera);
+        if (v.z < -1 || v.z > 1) continue;
+        const sx = (v.x * 0.5 + 0.5) * r.width;
+        const sy = (-v.y * 0.5 + 0.5) * r.height;
+        if (sx >= left && sx <= right && sy >= top && sy <= bottom) hits.push(id);
+      }
+      const s = useStudio.getState();
+      if (st.additive) {
+        const next = [...new Set([...s.selectedIds, ...hits])];
+        s.setSelectedIds(next);
+      } else {
+        s.setSelectedIds(hits);
+      }
+    };
+
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+    return () => {
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", onUp);
+    };
+  }, [camera, gl, onBox]);
+
+  return null;
+}
+
+function ViewportScene({
+  onBox,
+}: {
+  onBox: (box: { left: number; top: number; width: number; height: number } | null) => void;
+}) {
   const grid = useStudio((s) => s.grid);
   const lookThrough = useStudio((s) => s.lookThrough);
   const shading = useStudio((s) => s.shading);
   const transforming = useStudio((s) => s.transforming);
+  const tool = useStudio((s) => s.tool);
 
   return (
     <>
@@ -437,6 +549,7 @@ function ViewportScene() {
       <SceneGraph />
       <Driver />
       <Gizmo />
+      <Marquee onBox={onBox} />
       {grid ? (
         <Grid
           infiniteGrid
@@ -463,6 +576,7 @@ function ViewportScene() {
         enableDamping
         dampingFactor={0.08}
         enabled={!transforming && !lookThrough}
+        enableRotate={tool !== "select"}
         minDistance={1.2}
         maxDistance={40}
       />
@@ -472,6 +586,9 @@ function ViewportScene() {
 
 export function Viewport() {
   const [mounted, setMounted] = useState(false);
+  const [box, setBox] = useState<{ left: number; top: number; width: number; height: number } | null>(
+    null,
+  );
   useEffect(() => setMounted(true), []);
   if (!mounted) {
     return <div className="relative isolate z-0 h-full min-h-0 w-full bg-bg" />;
@@ -489,10 +606,21 @@ export function Viewport() {
           preserveDrawingBuffer: true,
         }}
         camera={{ position: [5.6, 3.2, 6.8], fov: 35, near: 0.05, far: 200 }}
-        onPointerMissed={() => useStudio.getState().setSelected(null)}
+        onPointerMissed={(e) => {
+          if (e.button !== 0) return;
+          if (useStudio.getState().tool === "select") return;
+          if (e.shiftKey || e.metaKey || e.ctrlKey) return;
+          useStudio.getState().setSelected(null);
+        }}
       >
-        <ViewportScene />
+        <ViewportScene onBox={setBox} />
       </Canvas>
+      {box && box.width > 3 && box.height > 3 ? (
+        <div
+          className="pointer-events-none absolute z-10 border border-accent bg-accent/10"
+          style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+        />
+      ) : null}
     </div>
   );
 }

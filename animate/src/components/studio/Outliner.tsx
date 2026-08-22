@@ -26,7 +26,7 @@ function KindIcon({ node }: { node: SceneNode }) {
 
 function Row({ id, depth }: { id: string; depth: number }) {
   const node = useStudio((s) => s.nodes[id]);
-  const selected = useStudio((s) => s.selectedId === id);
+  const selected = useStudio((s) => s.selectedIds.includes(id) || s.selectedId === id);
   const kids = useStudio(useShallow((s) => childIds(s.nodes, id)));
   const [open, setOpen] = useState(true);
   if (!node) return null;
@@ -39,10 +39,12 @@ function Row({ id, depth }: { id: string; depth: number }) {
           selected ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2/60 hover:text-fg",
         )}
         style={{ paddingLeft: 6 + depth * 12 }}
-        onClick={() => useStudio.getState().setSelected(id)}
+        onClick={(e) =>
+          useStudio.getState().setSelected(id, { additive: e.shiftKey || e.metaKey || e.ctrlKey })
+        }
         draggable
         onDragStart={(e) => {
-          e.dataTransfer.setData("text/aether-id", id);
+          e.dataTransfer.setData("text/voice-id", id);
           e.dataTransfer.effectAllowed = "move";
         }}
         onDragOver={(e) => {
@@ -52,7 +54,7 @@ function Row({ id, depth }: { id: string; depth: number }) {
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          const src = e.dataTransfer.getData("text/aether-id");
+          const src = e.dataTransfer.getData("text/voice-id") || e.dataTransfer.getData("text/aether-id");
           if (src && src !== id) useStudio.getState().setParent(src, id);
         }}
         onKeyDown={(e) => {
@@ -122,7 +124,7 @@ export function Outliner() {
         aria-label="Scene"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
-          const src = e.dataTransfer.getData("text/aether-id");
+          const src = e.dataTransfer.getData("text/voice-id") || e.dataTransfer.getData("text/aether-id");
           if (src) useStudio.getState().setParent(src, null);
         }}
       >

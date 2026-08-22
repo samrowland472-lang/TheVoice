@@ -23,12 +23,12 @@ npm install
 npm run dev
 ```
 
-## AETHER (React animation studio)
+## The Voice (React animation studio)
 
-The next-gen 3D animation room lives in [`aether/`](./aether) — pose, key, graph editor, nested cycle expressions. Auto-saves in the browser.
+The next-gen 3D animation room lives in [`animate/`](./animate) — pose, key, graph editor, nested cycle expressions, multi-select. Auto-saves in the browser.
 
 ```bash
-cd aether
+cd animate
 npm install
 npm run dev
 ```

@@ -67,7 +67,7 @@ function exportProject() {
   const blob = new Blob([JSON.stringify(snap, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${snap.name.replace(/[^\w]+/g, "-").toLowerCase() || "aether"}.json`;
+  a.download = `${snap.name.replace(/[^\w]+/g, "-").toLowerCase() || "the-voice"}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -91,7 +91,7 @@ export function Menubar() {
   return (
     <div className="flex h-9 items-center gap-1 border-b border-border bg-bg px-2">
       <div className="mr-2 flex items-center gap-2 px-1">
-        <span className="font-display text-sm font-semibold tracking-tight text-fg">AETHER</span>
+        <span className="font-display text-sm font-semibold tracking-tight text-fg">The Voice</span>
         <span className="hidden text-2xs text-subtle sm:inline">{name}</span>
       </div>
       <input
@@ -429,6 +429,7 @@ function PlayheadReadout() {
 
 export function StatusBar() {
   const selected = useStudio((s) => {
+    if (s.selectedIds.length > 1) return `${s.selectedIds.length} selected`;
     const n = s.selectedId ? s.nodes[s.selectedId] : null;
     return n?.name ?? "Nothing selected";
   });

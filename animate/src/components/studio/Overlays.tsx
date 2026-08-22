@@ -6,11 +6,11 @@ export function Welcome() {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 flex items-end justify-start p-3 sm:items-start sm:p-5">
       <div className="pointer-events-auto w-[min(100%,380px)] rounded-lg border border-border bg-surface-2 p-4 shadow-panel">
-        <p className="font-display text-lg font-semibold tracking-tight text-fg">AETHER</p>
+        <p className="font-display text-lg font-semibold tracking-tight text-fg">The Voice</p>
         <p className="mt-2 text-pretty text-sm leading-relaxed text-muted">
-          Pose with W E R, key with S, play with Space. J K L shuttle. Graph: double-click to
-          insert a key, drag bezier handles. This scene is Nested Cycles — a walking figure whose
-          periods never quite line up.
+          Pose with W E R, key with S, play with Space. J K L shuttle. Shift-click or Q-drag to
+          multi-select. Graph: double-click to insert a key, drag bezier handles. Nested Cycles is
+          walking — periods that never quite line up.
         </p>
         <div className="mt-4 flex gap-2">
           <button
@@ -45,6 +45,8 @@ export function HelpOverlay() {
     [", .  or arrows", "Step one frame"],
     ["I / O", "Set in / out. Shift jumps there"],
     ["Q W E R", "Select / Move / Rotate / Scale"],
+    ["Shift-click", "Add objects or keys to the selection"],
+    ["Q-drag / dope-drag", "Box-select objects (viewport) or keys (timeline)"],
     ["X", "World / local gizmo"],
     ["N", "Onion skin"],
     ["S", "Keyframe selected transform"],
@@ -53,6 +55,7 @@ export function HelpOverlay() {
     ["Delete", "Delete object or key"],
     ["⌘Z / ⌘⇧Z", "Undo / Redo"],
     ["⌘D", "Duplicate"],
+    ["⌘A", "Select all"],
     ["⌘K", "Command palette"],
     ["1–4", "Wire / Solid / Material / Rendered"],
     ["Scroll timeline", "Zoom time. Over labels: scroll tracks"],

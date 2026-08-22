@@ -140,6 +140,8 @@ export type Shading = "wire" | "solid" | "material" | "rendered";
 export type BottomTab = "dope" | "curves" | "cycles";
 export type TransformSpace = "world" | "local";
 
+export type KeyRef = { trackId: string; index: number };
+
 export type PoseClipboard = {
   position: Vec3;
   rotation: Vec3;

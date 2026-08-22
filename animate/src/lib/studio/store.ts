@@ -13,6 +13,7 @@ import {
   type Channel,
   type Interp,
   type MeshShape,
+  type KeyRef,
   type PoseClipboard,
   type ProjectSnapshot,
   type SceneNode,
@@ -24,7 +25,8 @@ import {
   vec3,
 } from "./types";
 
-const STORAGE_KEY = "aether-project-v1";
+const STORAGE_KEY = "the-voice-animate-v1";
+const LEGACY_STORAGE_KEY = "aether-project-v1";
 
 type HistoryEntry = {
   nodes: Record<string, SceneNode>;
@@ -36,8 +38,10 @@ export type StudioState = {
   nodes: Record<string, SceneNode>;
   tracks: Track[];
   selectedId: string | null;
+  selectedIds: string[];
   selectedTrackId: string | null;
   selectedKeyIndex: number | null;
+  selectedKeys: KeyRef[];
   tool: Tool;
   shading: Shading;
   currentTime: number;
@@ -85,7 +89,8 @@ type StudioActions = {
   setSpeed: (v: number) => void;
   setTool: (t: Tool) => void;
   setShading: (s: Shading) => void;
-  setSelected: (id: string | null) => void;
+  setSelected: (id: string | null, opts?: { additive?: boolean }) => void;
+  setSelectedIds: (ids: string[]) => void;
   setBottomTab: (t: BottomTab) => void;
   setViewRange: (start: number, end: number) => void;
   setPlaybackRange: (start: number, end: number) => void;
@@ -125,7 +130,10 @@ type StudioActions = {
   moveKey: (trackId: string, index: number, t: number) => void;
   setKeyValue: (trackId: string, index: number, v: number) => void;
   deleteSelectedKey: () => void;
-  selectKey: (trackId: string | null, index: number | null) => void;
+  selectKey: (trackId: string | null, index: number | null, opts?: { additive?: boolean }) => void;
+  selectKeys: (keys: KeyRef[], opts?: { additive?: boolean }) => void;
+  dragKeys: (origins: { trackId: string; index: number; t: number; v?: number }[], dt: number, dv?: number) => void;
+  sortTrackKeys: (trackIds: string[]) => void;
   toggleTrackCycle: (trackId: string) => void;
   setKeyInterp: (trackId: string, index: number, interp: Interp) => void;
   setKeyTangent: (
@@ -171,6 +179,20 @@ function descendants(nodes: Record<string, SceneNode>, id: string): string[] {
   };
   walk(id);
   return out;
+}
+
+function keyEq(a: KeyRef, b: KeyRef) {
+  return a.trackId === b.trackId && a.index === b.index;
+}
+
+function selectOnly(id: string | null) {
+  return {
+    selectedId: id,
+    selectedIds: id ? [id] : ([] as string[]),
+    selectedTrackId: null as string | null,
+    selectedKeyIndex: null as number | null,
+    selectedKeys: [] as KeyRef[],
+  };
 }
 
 function applyChannel(node: SceneNode, channel: Channel, value: number): SceneNode {
@@ -226,8 +248,10 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   nodes: initial.nodes,
   tracks: initial.tracks,
   selectedId: "figure",
+  selectedIds: ["figure"],
   selectedTrackId: null,
   selectedKeyIndex: null,
+  selectedKeys: [],
   tool: "translate",
   shading: "rendered",
   currentTime: 0,
@@ -261,7 +285,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   hydrate: () => {
     if (typeof window === "undefined") return;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
       if (raw) {
         const data = JSON.parse(raw) as ProjectSnapshot & { currentTime?: number };
         if (data?.v === 1 && data.nodes) {
@@ -306,8 +330,10 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       viewStart: snap.playbackStart,
       viewEnd: end,
       selectedId: Object.keys(snap.nodes)[0] ?? null,
+      selectedIds: Object.keys(snap.nodes).slice(0, 1),
       selectedTrackId: null,
       selectedKeyIndex: null,
+      selectedKeys: [],
       history: [],
       future: [],
       welcomeOpen: welcome,
@@ -377,7 +403,32 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   setSpeed: (v) => set({ speed: v }),
   setTool: (t) => set({ tool: t }),
   setShading: (s) => set({ shading: s }),
-  setSelected: (id) => set({ selectedId: id, selectedTrackId: null, selectedKeyIndex: null }),
+  setSelected: (id, opts) => {
+    if (opts?.additive && id) {
+      const cur = get().selectedIds;
+      const has = cur.includes(id);
+      const selectedIds = has ? cur.filter((x) => x !== id) : [...cur, id];
+      set({
+        selectedIds,
+        selectedId: selectedIds[selectedIds.length - 1] ?? null,
+        selectedTrackId: null,
+        selectedKeyIndex: null,
+        selectedKeys: [],
+      });
+      return;
+    }
+    set(selectOnly(id));
+  },
+  setSelectedIds: (ids) => {
+    const unique = [...new Set(ids.filter((id) => get().nodes[id]))];
+    set({
+      selectedIds: unique,
+      selectedId: unique[unique.length - 1] ?? null,
+      selectedTrackId: null,
+      selectedKeyIndex: null,
+      selectedKeys: [],
+    });
+  },
   setBottomTab: (t) => set({ bottomTab: t }),
   setViewRange: (start, end) => {
     const a = Math.max(0, Math.min(start, end));
@@ -453,7 +504,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       shape,
       material: { ...DEFAULT_MATERIAL },
     };
-    set({ nodes: { ...nodes, [id]: n }, selectedId: id });
+    set({ nodes: { ...nodes, [id]: n }, ...selectOnly(id) });
     return id;
   },
 
@@ -482,7 +533,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
         penumbra: 0.3,
       },
     };
-    set({ nodes: { ...nodes, [id]: n }, selectedId: id });
+    set({ nodes: { ...nodes, [id]: n }, ...selectOnly(id) });
     return id;
   },
 
@@ -504,7 +555,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       scale: vec3(1, 1, 1),
       camera: { fov: 35, near: 0.05, far: 200, aim: "free" },
     };
-    set({ nodes: { ...nodes, [id]: n }, selectedId: id });
+    set({ nodes: { ...nodes, [id]: n }, ...selectOnly(id) });
     return id;
   },
 
@@ -525,55 +576,67 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       rotation: vec3(),
       scale: vec3(1, 1, 1),
     };
-    set({ nodes: { ...nodes, [id]: n }, selectedId: id });
+    set({ nodes: { ...nodes, [id]: n }, ...selectOnly(id) });
     return id;
   },
 
   duplicateSelected: () => {
-    const { selectedId, nodes } = get();
-    if (!selectedId) return;
-    const src = nodes[selectedId];
-    if (!src) return;
-    get().pushHistory();
-    const ids = [selectedId, ...descendants(nodes, selectedId)];
-    const map = new Map<string, string>();
-    for (const oldId of ids) map.set(oldId, nid("dup"));
-    const next = { ...nodes };
-    for (const oldId of ids) {
-      const orig = nodes[oldId]!;
-      const newId = map.get(oldId)!;
-      next[newId] = {
-        ...JSON.parse(JSON.stringify(orig)) as SceneNode,
-        id: newId,
-        name: uniqueName(next, orig.name),
-        parentId: orig.parentId && map.has(orig.parentId) ? map.get(orig.parentId)! : orig.parentId,
-        position:
-          oldId === selectedId
-            ? { x: orig.position.x + 0.6, y: orig.position.y, z: orig.position.z }
-            : { ...orig.position },
-      };
+    const { selectedIds, selectedId, nodes } = get();
+    const roots = (selectedIds.length ? selectedIds : selectedId ? [selectedId] : []).filter((id) => nodes[id]);
+    if (roots.length === 0) return;
+    const skip = new Set<string>();
+    for (const id of roots) {
+      for (const d of descendants(nodes, id)) skip.add(d);
     }
-    const tracks = get().tracks.map((tr) => {
-      const mapped = map.get(tr.objectId);
-      if (!mapped) return tr;
-      return { ...tr, id: nid("tr"), objectId: mapped, keys: tr.keys.map((k) => ({ ...k })) };
-    });
-    set({ nodes: next, tracks, selectedId: map.get(selectedId)! });
+    const tops = roots.filter((id) => !skip.has(id));
+    get().pushHistory();
+    let next = { ...nodes };
+    let tracks = get().tracks.slice();
+    const newIds: string[] = [];
+    for (const selected of tops) {
+      const ids = [selected, ...descendants(next, selected)];
+      const map = new Map<string, string>();
+      for (const oldId of ids) map.set(oldId, nid("dup"));
+      for (const oldId of ids) {
+        const orig = next[oldId] ?? nodes[oldId]!;
+        const newId = map.get(oldId)!;
+        next[newId] = {
+          ...(JSON.parse(JSON.stringify(orig)) as SceneNode),
+          id: newId,
+          name: uniqueName(next, orig.name),
+          parentId: orig.parentId && map.has(orig.parentId) ? map.get(orig.parentId)! : orig.parentId,
+          position:
+            oldId === selected
+              ? { x: orig.position.x + 0.6, y: orig.position.y, z: orig.position.z }
+              : { ...orig.position },
+        };
+      }
+      tracks = tracks.flatMap((tr) => {
+        const mapped = map.get(tr.objectId);
+        if (!mapped) return [tr];
+        return [tr, { ...tr, id: nid("tr"), objectId: mapped, keys: tr.keys.map((k) => ({ ...k })) }];
+      });
+      newIds.push(map.get(selected)!);
+    }
+    set({ nodes: next, tracks, ...selectOnly(newIds[newIds.length - 1] ?? null), selectedIds: newIds, selectedId: newIds[newIds.length - 1] ?? null });
   },
 
   deleteSelected: () => {
-    const { selectedId, nodes, tracks } = get();
-    if (!selectedId) return;
-    const src = nodes[selectedId];
-    if (!src || src.locked) return;
+    const { selectedIds, selectedId, nodes, tracks } = get();
+    const roots = (selectedIds.length ? selectedIds : selectedId ? [selectedId] : []).filter((id) => nodes[id] && !nodes[id]!.locked);
+    if (roots.length === 0) return;
     get().pushHistory();
-    const kill = new Set([selectedId, ...descendants(nodes, selectedId)]);
+    const kill = new Set<string>();
+    for (const id of roots) {
+      kill.add(id);
+      for (const d of descendants(nodes, id)) kill.add(d);
+    }
     const next = { ...nodes };
     for (const id of kill) delete next[id];
     set({
       nodes: next,
       tracks: tracks.filter((t) => !kill.has(t.objectId)),
-      selectedId: null,
+      ...selectOnly(null),
     });
   },
 
@@ -731,24 +794,27 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   },
 
   insertKeysForSelection: () => {
-    const { selectedId, nodes, currentTime, tracks } = get();
-    if (!selectedId) return;
-    const node = nodes[selectedId];
-    if (!node) return;
+    const { selectedIds, selectedId, nodes, currentTime, tracks } = get();
+    const ids = selectedIds.length ? selectedIds : selectedId ? [selectedId] : [];
+    if (ids.length === 0) return;
     get().pushHistory();
     let next = tracks;
-    const evaluated = evalNode(node, tracks, currentTime);
-    for (const ch of TRANSFORM_CHANNELS) {
-      const v = getChannelValue(
-        {
-          ...node,
-          position: evaluated.position,
-          rotation: evaluated.rotation,
-          scale: evaluated.scale,
-        },
-        ch,
-      );
-      next = upsertKey(next, selectedId, ch, currentTime, v);
+    for (const id of ids) {
+      const node = nodes[id];
+      if (!node) continue;
+      const evaluated = evalNode(node, tracks, currentTime);
+      for (const ch of TRANSFORM_CHANNELS) {
+        const v = getChannelValue(
+          {
+            ...node,
+            position: evaluated.position,
+            rotation: evaluated.rotation,
+            scale: evaluated.scale,
+          },
+          ch,
+        );
+        next = upsertKey(next, id, ch, currentTime, v);
+      }
     }
     set({ tracks: next });
   },
@@ -774,20 +840,136 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   },
 
   deleteSelectedKey: () => {
-    const { selectedTrackId, selectedKeyIndex, tracks } = get();
-    if (!selectedTrackId || selectedKeyIndex === null) return;
+    const { selectedKeys, selectedTrackId, selectedKeyIndex, tracks } = get();
+    const refs =
+      selectedKeys.length > 0
+        ? selectedKeys
+        : selectedTrackId && selectedKeyIndex !== null
+          ? [{ trackId: selectedTrackId, index: selectedKeyIndex }]
+          : [];
+    if (refs.length === 0) return;
     get().pushHistory();
+    const byTrack = new Map<string, number[]>();
+    for (const r of refs) {
+      const list = byTrack.get(r.trackId) ?? [];
+      list.push(r.index);
+      byTrack.set(r.trackId, list);
+    }
     set({
-      tracks: tracks.map((tr) =>
-        tr.id === selectedTrackId
-          ? { ...tr, keys: tr.keys.filter((_, i) => i !== selectedKeyIndex) }
-          : tr,
-      ),
+      tracks: tracks.map((tr) => {
+        const idxs = byTrack.get(tr.id);
+        if (!idxs) return tr;
+        const drop = new Set(idxs);
+        return { ...tr, keys: tr.keys.filter((_, i) => !drop.has(i)) };
+      }),
       selectedKeyIndex: null,
+      selectedTrackId: null,
+      selectedKeys: [],
     });
   },
 
-  selectKey: (trackId, index) => set({ selectedTrackId: trackId, selectedKeyIndex: index }),
+  selectKey: (trackId, index, opts) => {
+    if (!trackId || index === null) {
+      set({
+        selectedTrackId: trackId,
+        selectedKeyIndex: null,
+        selectedKeys: opts?.additive ? get().selectedKeys : [],
+      });
+      return;
+    }
+    const ref: KeyRef = { trackId, index };
+    if (opts?.additive) {
+      const cur = get().selectedKeys;
+      const has = cur.some((k) => keyEq(k, ref));
+      const selectedKeys = has ? cur.filter((k) => !keyEq(k, ref)) : [...cur, ref];
+      const last = selectedKeys[selectedKeys.length - 1];
+      set({
+        selectedKeys,
+        selectedTrackId: last?.trackId ?? null,
+        selectedKeyIndex: last?.index ?? null,
+      });
+      return;
+    }
+    set({ selectedKeys: [ref], selectedTrackId: trackId, selectedKeyIndex: index });
+  },
+
+  selectKeys: (keys, opts) => {
+    const next = opts?.additive
+      ? [
+          ...get().selectedKeys,
+          ...keys.filter((k) => !get().selectedKeys.some((c) => keyEq(c, k))),
+        ]
+      : keys;
+    const last = next[next.length - 1];
+    set({
+      selectedKeys: next,
+      selectedTrackId: last?.trackId ?? null,
+      selectedKeyIndex: last?.index ?? null,
+    });
+  },
+
+  dragKeys: (origins, dt, dv) => {
+    const byTrack = new Map<string, { index: number; t: number; v?: number }[]>();
+    for (const o of origins) {
+      const list = byTrack.get(o.trackId) ?? [];
+      list.push(o);
+      byTrack.set(o.trackId, list);
+    }
+    set({
+      tracks: get().tracks.map((tr) => {
+        const group = byTrack.get(tr.id);
+        if (!group) return tr;
+        return {
+          ...tr,
+          keys: tr.keys.map((k, i) => {
+            const o = group.find((g) => g.index === i);
+            if (!o) return k;
+            return {
+              ...k,
+              t: Math.max(0, o.t + dt),
+              v: dv !== undefined && o.v !== undefined ? o.v + dv : k.v,
+            };
+          }),
+        };
+      }),
+    });
+  },
+
+  sortTrackKeys: (trackIds) => {
+    const want = new Set(trackIds);
+    const prev = get().selectedKeys;
+    const times = prev.map((k) => {
+      const tr = get().tracks.find((t) => t.id === k.trackId);
+      return { trackId: k.trackId, t: tr?.keys[k.index]?.t ?? 0 };
+    });
+    const tracks = get().tracks.map((tr) => {
+      if (!want.has(tr.id)) return tr;
+      const keys = tr.keys.slice().sort((a, b) => a.t - b.t);
+      return { ...tr, keys };
+    });
+    const selectedKeys: KeyRef[] = [];
+    for (const item of times) {
+      const tr = tracks.find((t) => t.id === item.trackId);
+      if (!tr) continue;
+      let best = 0;
+      let bestD = Infinity;
+      tr.keys.forEach((k, i) => {
+        const d = Math.abs(k.t - item.t);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      selectedKeys.push({ trackId: item.trackId, index: best });
+    }
+    const last = selectedKeys[selectedKeys.length - 1];
+    set({
+      tracks,
+      selectedKeys,
+      selectedTrackId: last?.trackId ?? get().selectedTrackId,
+      selectedKeyIndex: last?.index ?? get().selectedKeyIndex,
+    });
+  },
 
   toggleTrackCycle: (trackId) => {
     set({
@@ -886,7 +1068,9 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
       tracks: patched,
       selectedTrackId: track.id,
       selectedKeyIndex: ki >= 0 ? ki : null,
+      selectedKeys: ki >= 0 ? [{ trackId: track.id, index: ki }] : [],
       selectedId: tr.objectId,
+      selectedIds: [tr.objectId],
     });
   },
 
@@ -945,14 +1129,18 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   },
 
   pastePose: () => {
-    const { selectedId, poseClipboard } = get();
-    if (!selectedId || !poseClipboard) return;
+    const { selectedIds, selectedId, poseClipboard } = get();
+    if (!poseClipboard) return;
+    const ids = selectedIds.length ? selectedIds : selectedId ? [selectedId] : [];
+    if (ids.length === 0) return;
     get().pushHistory();
-    get().updateTransform(selectedId, {
-      position: { ...poseClipboard.position },
-      rotation: { ...poseClipboard.rotation },
-      scale: { ...poseClipboard.scale },
-    });
+    for (const id of ids) {
+      get().updateTransform(id, {
+        position: { ...poseClipboard.position },
+        rotation: { ...poseClipboard.rotation },
+        scale: { ...poseClipboard.scale },
+      });
+    }
   },
 
   frameSelection: () => {

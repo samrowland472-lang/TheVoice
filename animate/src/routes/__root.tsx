@@ -3,7 +3,7 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "AETHER";
+const APP_NAME = "The Voice";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -14,7 +14,7 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#0b0c0e" },
       {
         name: "description",
-        content: "AETHER — cinematic 3D animation studio in the browser. Pose, key, graph, nested cycles.",
+        content: "The Voice — cinematic 3D animation studio in the browser. Pose, key, graph, nested cycles.",
       },
     ],
     links: [

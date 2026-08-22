@@ -67,6 +67,12 @@ export function StudioApp() {
         s.pastePose();
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+        if (typing) return;
+        e.preventDefault();
+        s.setSelectedIds(Object.keys(s.nodes));
+        return;
+      }
       if (typing) return;
       if (e.key === " ") {
         e.preventDefault();
@@ -112,7 +118,7 @@ export function StudioApp() {
         s.setWelcomeOpen(false);
         s.setMobilePanel("none");
       } else if (e.key === "Delete" || e.key === "Backspace") {
-        if (s.selectedKeyIndex !== null) s.deleteSelectedKey();
+        if (s.selectedKeys.length || s.selectedKeyIndex !== null) s.deleteSelectedKey();
         else s.deleteSelected();
       }
     };
