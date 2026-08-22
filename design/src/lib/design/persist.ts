@@ -86,11 +86,26 @@ export function deleteDoc(id: string) {
 export const DEFAULT_BRAND: BrandKit = {
   name: "The Voice",
   colors: ["#0a0d0c", "#d9f5e3", "#3fc6ff", "#7d9689", "#ffb238", "#121613"],
-  fonts: ["Chakra Petch", "Share Tech Mono", "Syne"],
+  fonts: ["Chakra Petch", "Outfit", "Share Tech Mono"],
+  colorNames: {
+    "#0a0d0c": "Ground",
+    "#d9f5e3": "Ink",
+    "#3fc6ff": "Phosphor",
+    "#7d9689": "Moss",
+    "#ffb238": "Amber",
+    "#121613": "Surface",
+  },
 };
 
 export function loadBrand(): BrandKit {
-  return readJson<BrandKit>(BRAND_KEY, DEFAULT_BRAND);
+  const kit = readJson<BrandKit>(BRAND_KEY, DEFAULT_BRAND);
+  return {
+    ...DEFAULT_BRAND,
+    ...kit,
+    fonts: kit.fonts?.length ? kit.fonts : DEFAULT_BRAND.fonts,
+    colors: kit.colors?.length ? kit.colors : DEFAULT_BRAND.colors,
+    colorNames: { ...DEFAULT_BRAND.colorNames, ...kit.colorNames },
+  };
 }
 
 export function saveBrand(kit: BrandKit) {

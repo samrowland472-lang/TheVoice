@@ -20,9 +20,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Brand kit: named colours + font pairing applied to new text.
-2. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
-6. Paint stroke undo (not the whole bitmap commit).
+1. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
+2. Paint stroke undo (not the whole bitmap commit).
 7. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
 8. Contrast checker on text vs fill / artboard.
 9. Multi-page / artboard set for a campaign (story + square + banner).
@@ -42,8 +41,13 @@ Auth OFF, DB OFF.
 - Safe area overlay (story/print-aware) + bleed on PNG/JPG with crop marks.
 - Pin projects in Recents (persisted, sort pinned first, phosphor accent).
 - Hub folders + Campaign/Draft/Press tags on recents.
+- Brand kit: named colours + display/body pairing; new text uses display face.
 
 ## Iterations
+
+### 2026-08-22T22:03Z — loop 13
+
+Named brand colours and display/body font pairing. New type uses the display face; inspector Display/Body buttons. Typecheck + build + smoke clean.
 
 ### 2026-08-22T21:58Z — loop 12
 
@@ -75,4 +79,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Brand kit: named colours + font pairing applied to new text.
+Magic layout: replace-board vs append; structured JSON schema; preview before apply.

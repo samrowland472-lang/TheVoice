@@ -400,6 +400,9 @@ function ShadowEditor({ node }: { node: DesignNode }) {
 
 function TextFields({ node }: { node: TextNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
+  const brand = useDesign((s) => s.brand);
+  const display = brand.fonts[0] || "Chakra Petch";
+  const body = brand.fonts[1] || "Outfit";
   return (
     <>
       <Field label="Copy">
@@ -409,6 +412,22 @@ function TextFields({ node }: { node: TextNode }) {
           onChange={(e) => updateNodes([node.id], { text: e.target.value } as Partial<DesignNode>)}
         />
       </Field>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+          onClick={() => updateNodes([node.id], { fontFamily: display, fontWeight: 600, fontSize: Math.max(node.fontSize, 40) } as Partial<DesignNode>, true)}
+        >
+          Display
+        </button>
+        <button
+          type="button"
+          className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+          onClick={() => updateNodes([node.id], { fontFamily: body, fontWeight: 400, fontSize: Math.min(node.fontSize, 28) } as Partial<DesignNode>, true)}
+        >
+          Body
+        </button>
+      </div>
       <Field label="Font">
         <select
           className="field"
@@ -622,6 +641,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Swatches({ colors, onPick }: { colors: string[]; onPick: (c: string) => void }) {
+  const names = useDesign((s) => s.brand.colorNames);
   return (
     <div className="flex flex-wrap gap-1.5">
       {colors.map((c) => (
@@ -631,7 +651,8 @@ function Swatches({ colors, onPick }: { colors: string[]; onPick: (c: string) =>
           className="size-6 rounded-full border border-border"
           style={{ background: c }}
           onClick={() => onPick(c)}
-          aria-label={c}
+          aria-label={names?.[c.toLowerCase()] ?? names?.[c] ?? c}
+          title={names?.[c.toLowerCase()] ?? names?.[c] ?? c}
         />
       ))}
     </div>

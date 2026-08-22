@@ -759,6 +759,8 @@ export function makeShape(kind: "rect" | "ellipse" | "line" | "polygon" | "star"
 }
 
 export function makeText(x: number, y: number, color: string) {
+  const brand = useDesign.getState().brand;
+  const display = brand.fonts[0] || "Chakra Petch";
   return text({
     x,
     y,
@@ -766,7 +768,9 @@ export function makeText(x: number, y: number, color: string) {
     h: 80,
     text: "Type here",
     fill: color,
+    fontFamily: display,
     fontSize: 56,
+    fontWeight: 600,
   });
 }
 

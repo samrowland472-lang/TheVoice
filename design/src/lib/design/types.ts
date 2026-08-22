@@ -158,6 +158,8 @@ export interface BrandKit {
   colors: string[];
   fonts: string[];
   name: string;
+  /** Hex → display name for brand swatches. */
+  colorNames?: Record<string, string>;
 }
 
 export interface Viewport {

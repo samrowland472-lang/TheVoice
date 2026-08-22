@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Copy, FolderPlus, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { FORMATS } from "@/lib/design/formats";
+import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { imageNode } from "@/lib/design/node-factory";
 import { useDesign } from "@/lib/design/store";
 import { TEMPLATES, TEMPLATE_CATEGORIES } from "@/lib/design/templates";
@@ -307,19 +308,33 @@ export function HubView() {
       <section id="brand" className="border-b border-border px-5 py-8 md:px-10">
         <h2 className="text-sm font-medium tracking-[0.16em] text-ink-dim uppercase">Brand kit</h2>
         <p className="mt-2 max-w-xl text-sm text-ink-dim">
-          Colours ride with every new layout. Click a swatch in the inspector to paint with it.
+          Named colours and a display/body pairing. New type uses the display face; inspector can switch to body.
         </p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-end gap-3">
           {brand.colors.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className="size-10 rounded-full border border-border"
-              style={{ background: c }}
-              aria-label={c}
-              onClick={() => setBrand({ ...brand, colors: brand.colors.filter((x) => x !== c) })}
-              title="Remove"
-            />
+            <div key={c} className="flex w-16 flex-col items-center gap-1">
+              <button
+                type="button"
+                className="size-10 rounded-full border border-border"
+                style={{ background: c }}
+                aria-label={`Remove ${brand.colorNames?.[c] ?? c}`}
+                onClick={() => {
+                  const colorNames = { ...brand.colorNames };
+                  delete colorNames[c];
+                  setBrand({ ...brand, colors: brand.colors.filter((x) => x !== c), colorNames });
+                }}
+                title="Remove"
+              />
+              <input
+                className="w-full bg-transparent text-center font-mono text-[9px] text-ink-dim outline-none"
+                value={brand.colorNames?.[c] ?? ""}
+                placeholder="name"
+                aria-label={`Name for ${c}`}
+                onChange={(e) =>
+                  setBrand({ ...brand, colorNames: { ...brand.colorNames, [c]: e.target.value } })
+                }
+              />
+            </div>
           ))}
           <input
             type="color"
@@ -337,6 +352,44 @@ export function HubView() {
             Add colour
           </Button>
         </div>
+        <div className="mt-6 grid max-w-xl grid-cols-2 gap-3">
+          <label className="text-[11px] text-ink-dim">
+            Display
+            <select
+              className="mt-1 h-10 w-full rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
+              value={brand.fonts[0] ?? "Chakra Petch"}
+              onChange={(e) => setBrand({ ...brand, fonts: [e.target.value, brand.fonts[1] ?? "Outfit", ...brand.fonts.slice(2)] })}
+            >
+              {CANVAS_FONTS.map((f) => (
+                <option key={f.id} value={f.family}>
+                  {f.family}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[11px] text-ink-dim">
+            Body
+            <select
+              className="mt-1 h-10 w-full rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
+              value={brand.fonts[1] ?? "Outfit"}
+              onChange={(e) => setBrand({ ...brand, fonts: [brand.fonts[0] ?? "Chakra Petch", e.target.value, ...brand.fonts.slice(2)] })}
+            >
+              {CANVAS_FONTS.map((f) => (
+                <option key={f.id} value={f.family}>
+                  {f.family}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="mt-4 text-ink">
+          <span className="text-2xl font-semibold tracking-[-0.03em]" style={{ fontFamily: brand.fonts[0] }}>
+            The Voice
+          </span>
+          <span className="ml-3 text-sm text-ink-dim" style={{ fontFamily: brand.fonts[1] }}>
+            A mix that holds a room.
+          </span>
+        </p>
       </section>
 
       <section
