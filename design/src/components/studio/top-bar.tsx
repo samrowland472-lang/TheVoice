@@ -26,6 +26,7 @@ export function TopBar() {
   const togglePresent = useDesign((s) => s.togglePresent);
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
   const [scale, setScale] = useState(2);
+  const [exportOpen, setExportOpen] = useState(false);
 
   if (!doc) return null;
 
@@ -40,10 +41,11 @@ export function TopBar() {
       downloadDataUrl(exportPng(doc, scale), `${slug(doc.name)}.png`);
     }
     toast.success(`Exported ${kind.toUpperCase()}${kind === "svg" ? "" : ` @${scale}×`}`);
+    setExportOpen(false);
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-2 md:px-3">
+    <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2 md:gap-2 md:px-3">
       <Button variant="ghost" size="icon-sm" onClick={() => void navigate({ to: "/" })} aria-label="Back">
         <ArrowLeft className="size-4" />
       </Button>
@@ -69,48 +71,57 @@ export function TopBar() {
       <Button variant="ghost" size="icon-sm" onClick={() => setPaletteOpen(true)} aria-label="Command palette">
         <Search className="size-4" />
       </Button>
-      <Button variant="ghost" size="icon-sm" onClick={toggleGrid} aria-label="Toggle grid" aria-pressed={grid}>
-        <Grid3x3 className="size-4" />
-      </Button>
-      <Button variant="ghost" size="icon-sm" onClick={toggleRulers} aria-label="Toggle rulers" aria-pressed={rulers}>
-        <Ruler className="size-4" />
-      </Button>
-      <Button variant="ghost" size="icon-sm" onClick={toggleSafeArea} aria-label="Toggle safe area" aria-pressed={safeArea}>
-        <Scan className="size-4" />
-      </Button>
-      <Button variant="ghost" size="icon-sm" onClick={togglePresent} aria-label="Present">
-        <Maximize2 className="size-4" />
-      </Button>
-      <Button variant="ghost" size="icon-sm" onClick={undo} aria-label="Undo">
-        <Undo2 className="size-4" />
-      </Button>
-      <Button variant="ghost" size="icon-sm" onClick={redo} aria-label="Redo">
-        <Redo2 className="size-4" />
-      </Button>
-      <Button variant="ghost" size="icon-sm" onClick={() => save()} aria-label="Save">
-        <Save className="size-4" />
-      </Button>
-      <Button size="sm" onClick={() => exportFile("png")}>
-        <Download className="size-3.5" />
-        PNG
-      </Button>
-      <div className="hidden items-center gap-1 sm:flex">
-        <select
-          className="h-8 rounded-[8px] border border-border bg-surface-alt px-1 font-mono text-[11px] text-ink"
-          value={scale}
-          onChange={(e) => setScale(Number(e.target.value))}
-          aria-label="Export scale"
-        >
-          <option value={1}>1×</option>
-          <option value={2}>2×</option>
-          <option value={3}>3×</option>
-        </select>
-        <Button size="sm" onClick={() => exportFile("jpg")}>
-          JPG
+      <div className="hidden items-center gap-1 md:flex">
+        <Button variant="ghost" size="icon-sm" onClick={toggleGrid} aria-label="Toggle grid" aria-pressed={grid}>
+          <Grid3x3 className="size-4" />
         </Button>
-        <Button size="sm" onClick={() => exportFile("svg")}>
-          SVG
+        <Button variant="ghost" size="icon-sm" onClick={toggleRulers} aria-label="Toggle rulers" aria-pressed={rulers}>
+          <Ruler className="size-4" />
         </Button>
+        <Button variant="ghost" size="icon-sm" onClick={toggleSafeArea} aria-label="Toggle safe area" aria-pressed={safeArea}>
+          <Scan className="size-4" />
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={togglePresent} aria-label="Present">
+          <Maximize2 className="size-4" />
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={undo} aria-label="Undo">
+          <Undo2 className="size-4" />
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={redo} aria-label="Redo">
+          <Redo2 className="size-4" />
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={() => save()} aria-label="Save">
+          <Save className="size-4" />
+        </Button>
+      </div>
+      <div className="relative">
+        <Button size="sm" onClick={() => setExportOpen((v) => !v)} aria-expanded={exportOpen} aria-label="Export">
+          <Download className="size-3.5" />
+          <span className="hidden sm:inline">Export</span>
+        </Button>
+        {exportOpen && (
+          <div className="absolute top-11 right-0 z-40 w-40 rounded-[12px] border border-border bg-surface p-2 shadow-lg">
+            <select
+              className="mb-2 h-8 w-full rounded-[8px] border border-border bg-surface-alt px-1 font-mono text-[11px] text-ink"
+              value={scale}
+              onChange={(e) => setScale(Number(e.target.value))}
+              aria-label="Export scale"
+            >
+              <option value={1}>1×</option>
+              <option value={2}>2×</option>
+              <option value={3}>3×</option>
+            </select>
+            <Button size="sm" className="mb-1 w-full" onClick={() => exportFile("png")}>
+              PNG
+            </Button>
+            <Button size="sm" className="mb-1 w-full" onClick={() => exportFile("jpg")}>
+              JPG
+            </Button>
+            <Button size="sm" className="w-full" onClick={() => exportFile("svg")}>
+              SVG
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );

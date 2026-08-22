@@ -23,7 +23,7 @@ export function StudioApp({ id }: { id: string }) {
   const paletteOpen = useDesign((s) => s.paletteOpen);
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
   const setPresent = useDesign((s) => s.setPresent);
-  const [pane, setPane] = useState<"layers" | "inspect" | "ai">("inspect");
+  const [sheet, setSheet] = useState<"layers" | "inspect" | "ai" | null>(null);
   useShortcuts();
 
   useEffect(() => {
@@ -119,33 +119,51 @@ export function StudioApp({ id }: { id: string }) {
           <CanvasStage />
           <PaintDock />
         </div>
-        <aside className="flex max-h-[38vh] w-full shrink-0 flex-col border-t border-border bg-surface md:max-h-none md:w-[280px] md:border-t-0 md:border-l">
-          <div className="flex border-b border-border md:hidden">
-            {(["layers", "inspect", "ai"] as const).map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setPane(id)}
-                className={cn(
-                  "h-10 flex-1 text-xs font-medium capitalize",
-                  pane === id ? "text-phosphor" : "text-ink-dim",
-                )}
-              >
-                {id === "ai" ? "Director" : id}
-              </button>
-            ))}
-          </div>
-          <div className={cn("min-h-0 flex-1 overflow-auto md:contents", pane !== "layers" && "hidden md:flex md:flex-col")}>
+        <aside className="hidden w-[280px] shrink-0 flex-col border-l border-border bg-surface md:flex">
+          <div className="min-h-0 flex-1 overflow-auto">
             <LayersPanel />
           </div>
-          <div className={cn("min-h-0 flex-1 overflow-auto md:contents", pane !== "inspect" && "hidden md:block")}>
+          <div className="min-h-0 flex-1 overflow-auto">
             <Inspector />
           </div>
-          <div className={cn("min-h-0 flex-1 overflow-auto md:contents", pane !== "ai" && "hidden md:block")}>
-            <AiPanel />
-          </div>
+          <AiPanel />
         </aside>
       </div>
+      <div className="flex shrink-0 border-t border-border md:hidden">
+        {(["layers", "inspect", "ai"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setSheet(sheet === id ? null : id)}
+            className={cn(
+              "h-12 flex-1 text-xs font-medium capitalize",
+              sheet === id ? "text-phosphor" : "text-ink-dim",
+            )}
+          >
+            {id === "ai" ? "Director" : id === "inspect" ? "Inspect" : "Layers"}
+          </button>
+        ))}
+      </div>
+      {sheet && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <button type="button" className="absolute inset-0 bg-ground/70" aria-label="Close sheet" onClick={() => setSheet(null)} />
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[75vh] flex-col rounded-t-[20px] border-t border-border bg-surface">
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
+              <span className="font-mono text-[10px] tracking-[0.2em] text-phosphor uppercase">
+                {sheet === "ai" ? "Director" : sheet === "inspect" ? "Inspect" : "Layers"}
+              </span>
+              <button type="button" className="text-xs text-ink-dim" onClick={() => setSheet(null)}>
+                Close
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto">
+              {sheet === "layers" && <LayersPanel />}
+              {sheet === "inspect" && <Inspector />}
+              {sheet === "ai" && <AiPanel />}
+            </div>
+          </div>
+        </div>
+      )}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
       <Toaster
         theme="dark"
