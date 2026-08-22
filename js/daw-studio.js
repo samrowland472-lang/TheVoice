@@ -39,6 +39,22 @@ const notes = []; // { pitch, start, length, vel } in 16th-notes
 const clips = []; // { track, scene, name, color, grid, notes, bassNotes }
 let pendingScene = -1;
 let currentScene = 0;
+let prodView = 'session';
+
+const ARR_TRACKS = ['kick', 'snare', 'hihat', 'clap', 'bass', 'keys'];
+const PX = 14;
+const arr = {
+  bars: 8,
+  loopOn: true,
+  loopStart: 0,
+  loopEnd: 32,
+  follow: true,
+  punch: false,
+  clips: [],
+  selected: null,
+};
+let arrUid = 1;
+function nextArrId() { return 'a' + (arrUid++); }
 
 function audio() {
   const a = getAudio && getAudio();
@@ -294,11 +310,19 @@ function clock() {
   const { ctx } = a;
   const look = 0.12;
   while (nextTime < ctx.currentTime + look) {
-    if (step % 16 === 0) applyPending();
-    scheduleStep(step, nextTime);
+    if (prodView === 'arrange') {
+      if (arr.loopOn && step >= arr.loopEnd) step = arr.loopStart;
+      if (step >= arr.bars * 16) step = arr.loopOn ? arr.loopStart : 0;
+      punchBar(step);
+      scheduleArrange(step, nextTime);
+    } else {
+      if (step % 16 === 0) applyPending();
+      scheduleStep(step, nextTime);
+    }
     const swingAdd = (step % 2 === 1) ? stepDur() * swing * 0.5 : 0;
     highlightStep(step);
-    step = (step + 1) % ROLL_STEPS;
+    if (prodView === 'arrange') step += 1;
+    else step = (step + 1) % ROLL_STEPS;
     nextTime += stepDur() + swingAdd;
   }
   timer = setTimeout(clock, 20);
@@ -312,13 +336,14 @@ function highlightStep(st) {
     });
   }
   const playhead = document.getElementById('abl-playhead');
-  if (playhead) playhead.style.left = `${(st / ROLL_STEPS) * 100}%`;
+  if (playhead) playhead.style.left = `${((st % ROLL_STEPS) / ROLL_STEPS) * 100}%`;
   const pos = document.getElementById('abl-pos');
   if (pos) {
     const bar = Math.floor(st / 16) + 1;
     const beat = Math.floor((st % 16) / 4) + 1;
     pos.textContent = `${bar}.${beat}.${(st % 4) + 1}`;
   }
+  tickArrangePlayhead(st);
 }
 
 export function studioPlay() {
@@ -329,7 +354,11 @@ export function studioPlay() {
   if (ctx.state === 'suspended') ctx.resume();
   if (playing) return;
   playing = true;
-  step = 0;
+  if (prodView === 'arrange') {
+    if (arr.loopOn && (step < arr.loopStart || step >= arr.loopEnd)) step = arr.loopStart;
+  } else {
+    step = 0;
+  }
   nextTime = ctx.currentTime + 0.05;
   clock();
   syncTransport();
@@ -339,8 +368,8 @@ export function studioStop() {
   playing = false;
   recOn = false;
   if (timer) { clearTimeout(timer); timer = null; }
-  step = 0;
-  highlightStep(-1);
+  step = prodView === 'arrange' ? arr.loopStart : 0;
+  highlightStep(step);
   syncTransport();
 }
 
@@ -360,6 +389,339 @@ function snapshotPattern() {
     notes: notes.map((n) => ({ ...n })),
     bpm: p.bpm,
   };
+}
+
+function clipAt(track, st) {
+  for (let i = 0; i < arr.clips.length; i++) {
+    const c = arr.clips[i];
+    if (c.track === track && st >= c.start && st < c.start + c.length) return c;
+  }
+  return null;
+}
+
+function scheduleArrange(st, t) {
+  const vel = 0.9;
+  for (let i = 0; i < ARR_TRACKS.length; i++) {
+    const track = ARR_TRACKS[i];
+    const c = clipAt(track, st);
+    if (!c) continue;
+    const local = (st - c.start) % 16;
+    if (track === 'keys') {
+      (c.notes || []).forEach((n) => {
+        if ((n.start % 16) === local) trigKey(t, n.pitch, (n.vel || 100) / 100, n.length);
+      });
+      continue;
+    }
+    if (!c.grid || !c.grid[track] || !c.grid[track][local]) continue;
+    if (track === 'kick') trigKick(t, vel);
+    else if (track === 'snare') trigSnare(t, vel);
+    else if (track === 'hihat') trigHat(t, vel);
+    else if (track === 'clap') trigClap(t, vel);
+    else if (track === 'bass') trigBass(t, vel, (c.bassNotes && c.bassNotes[local]) || 0);
+  }
+  if (metroOn && st % 4 === 0) trigMetro(t, st % 16 === 0);
+}
+
+function punchBar(st) {
+  if (!recOn || prodView !== 'arrange') return;
+  if (st % 16 !== 0) return;
+  if (arr.punch && (st < arr.loopStart || st >= arr.loopEnd)) return;
+  const snap = snapshotPattern();
+  if (!snap) return;
+  ARR_TRACKS.forEach((track) => {
+    const has = track === 'keys'
+      ? (snap.notes && snap.notes.length)
+      : snap.grid[track] && snap.grid[track].some(Boolean);
+    if (!has) return;
+    arr.clips = arr.clips.filter((c) => !(c.track === track && c.start === st && c.length === 16));
+    arr.clips.push({
+      id: nextArrId(),
+      track,
+      start: st,
+      length: 16,
+      name: recOn ? 'Rec' : track,
+      color: (STRIPS.find((s) => s.id === track) || {}).color || '#3fc6ff',
+      grid: snap.grid,
+      notes: snap.notes,
+      bassNotes: snap.bassNotes,
+    });
+  });
+  paintArrangeClips();
+}
+
+function seedArrange() {
+  if (arr.clips.length) return;
+  const snap = snapshotPattern();
+  if (!snap) return;
+  ARR_TRACKS.forEach((track) => {
+    const has = track === 'keys'
+      ? (snap.notes && snap.notes.length)
+      : snap.grid[track] && snap.grid[track].some(Boolean);
+    if (!has) return;
+    arr.clips.push({
+      id: nextArrId(),
+      track,
+      start: 0,
+      length: 32,
+      name: track,
+      color: (STRIPS.find((s) => s.id === track) || {}).color || '#3fc6ff',
+      grid: snap.grid,
+      notes: snap.notes,
+      bassNotes: snap.bassNotes,
+    });
+  });
+}
+
+function dropAtPlayhead() {
+  const snap = snapshotPattern();
+  if (!snap) return;
+  const start = Math.floor(step / 16) * 16;
+  const length = 32;
+  ARR_TRACKS.forEach((track) => {
+    const has = track === 'keys'
+      ? (snap.notes && snap.notes.length)
+      : snap.grid[track] && snap.grid[track].some(Boolean);
+    if (!has) return;
+    arr.clips = arr.clips.filter((c) => !(c.track === track && c.start < start + length && c.start + c.length > start));
+    arr.clips.push({
+      id: nextArrId(),
+      track,
+      start,
+      length,
+      name: 'Clip',
+      color: (STRIPS.find((s) => s.id === track) || {}).color || '#3fc6ff',
+      grid: snap.grid,
+      notes: snap.notes,
+      bassNotes: snap.bassNotes,
+    });
+  });
+  paintArrangeClips();
+}
+
+function arrMax() { return arr.bars * 16; }
+
+export function setProdView(name) {
+  prodView = name === 'arrange' ? 'arrange' : 'session';
+  document.querySelectorAll('[data-prod-view]').forEach((btn) => {
+    const on = btn.dataset.prodView === prodView;
+    btn.classList.toggle('active', on);
+    if (btn.getAttribute('role') === 'tab') btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const sess = document.getElementById('daw-session');
+  const el = document.getElementById('daw-arrange');
+  if (sess) sess.hidden = prodView !== 'session';
+  if (el) el.hidden = prodView !== 'arrange';
+  if (prodView === 'arrange') {
+    seedArrange();
+    paintArrange();
+  }
+}
+
+function paintArrange() {
+  const root = document.getElementById('daw-arrange');
+  if (!root) return;
+  const width = arrMax() * PX;
+  if (!root._built) {
+    root._built = true;
+    root.innerHTML = `
+      <div class="arr-bar">
+        <span>Arrangement</span>
+        <button type="button" id="arr-loop-btn" title="Loop brace">Loop</button>
+        <button type="button" id="arr-follow-btn" title="Follow playhead">Follow</button>
+        <button type="button" id="arr-punch-btn" title="Punch-in: Rec only writes inside the loop">Punch</button>
+        <button type="button" id="arr-drop-btn" title="Drop the current clip at the playhead">Drop clip</button>
+        <span class="abl-muted">Tab flips Session · drag clips · drag the brace · click the ruler to locate</span>
+      </div>
+      <div class="arr-scroll" id="arr-scroll">
+        <div class="arr-inner" id="arr-inner" style="width:${width}px">
+          <div class="arr-ruler" id="arr-ruler"></div>
+          <div class="arr-loop" id="arr-loop"><i data-h="l"></i><i data-h="r"></i></div>
+          <div class="arr-lanes" id="arr-lanes"></div>
+          <div class="arr-playhead" id="arr-playhead"></div>
+        </div>
+      </div>
+    `;
+    bindArrange();
+  }
+  const inner = document.getElementById('arr-inner');
+  if (inner) inner.style.width = `${width}px`;
+  paintArrangeRuler();
+  paintArrangeLanes();
+  paintArrangeClips();
+  paintLoopBrace();
+  syncArrangeBtns();
+  tickArrangePlayhead(step);
+}
+
+function paintArrangeRuler() {
+  const ruler = document.getElementById('arr-ruler');
+  if (!ruler) return;
+  let html = '';
+  for (let b = 0; b < arr.bars; b++) {
+    html += `<span class="arr-barnum" style="left:${b * 16 * PX}px">${b + 1}</span>`;
+  }
+  ruler.innerHTML = html;
+}
+
+function paintArrangeLanes() {
+  const lanes = document.getElementById('arr-lanes');
+  if (!lanes) return;
+  lanes.innerHTML = ARR_TRACKS.map((id) => {
+    const s = STRIPS.find((x) => x.id === id);
+    return `<div class="arr-lane" data-lane="${id}"><span class="arr-lane-h">${s.name}</span><div class="arr-lane-g"></div></div>`;
+  }).join('');
+}
+
+function paintArrangeClips() {
+  const lanes = document.getElementById('arr-lanes');
+  if (!lanes) return;
+  lanes.querySelectorAll('.arr-clip').forEach((n) => n.remove());
+  arr.clips.forEach((c) => {
+    const lane = lanes.querySelector(`[data-lane="${c.track}"] .arr-lane-g`);
+    if (!lane) return;
+    const el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'arr-clip' + (arr.selected === c.id ? ' selected' : '');
+    el.dataset.id = c.id;
+    el.style.left = `${c.start * PX}px`;
+    el.style.width = `${Math.max(8, c.length * PX)}px`;
+    el.style.setProperty('--clip', c.color);
+    el.innerHTML = `<span>${c.name || c.track}</span><b class="arr-resize"></b>`;
+    lane.appendChild(el);
+  });
+}
+
+function paintLoopBrace() {
+  const brace = document.getElementById('arr-loop');
+  if (!brace) return;
+  brace.style.left = `${arr.loopStart * PX}px`;
+  brace.style.width = `${Math.max(PX, (arr.loopEnd - arr.loopStart) * PX)}px`;
+  brace.classList.toggle('off', !arr.loopOn);
+}
+
+function syncArrangeBtns() {
+  const loop = document.getElementById('arr-loop-btn');
+  const follow = document.getElementById('arr-follow-btn');
+  const punch = document.getElementById('arr-punch-btn');
+  if (loop) loop.classList.toggle('on', arr.loopOn);
+  if (follow) follow.classList.toggle('on', arr.follow);
+  if (punch) punch.classList.toggle('on', arr.punch);
+}
+
+function tickArrangePlayhead(st) {
+  const ph = document.getElementById('arr-playhead');
+  const scroll = document.getElementById('arr-scroll');
+  if (!ph) return;
+  const x = Math.max(0, st) * PX;
+  ph.style.left = `${x}px`;
+  if (arr.follow && playing && scroll && prodView === 'arrange') {
+    const mid = scroll.clientWidth * 0.4;
+    const target = x - mid;
+    if (Math.abs(scroll.scrollLeft - target) > 8) scroll.scrollLeft = Math.max(0, target);
+  }
+}
+
+function bindArrange() {
+  const root = document.getElementById('daw-arrange');
+  if (!root || root._bound) return;
+  root._bound = true;
+  root.querySelector('#arr-loop-btn').addEventListener('click', () => { arr.loopOn = !arr.loopOn; syncArrangeBtns(); paintLoopBrace(); });
+  root.querySelector('#arr-follow-btn').addEventListener('click', () => { arr.follow = !arr.follow; syncArrangeBtns(); });
+  root.querySelector('#arr-punch-btn').addEventListener('click', () => { arr.punch = !arr.punch; syncArrangeBtns(); });
+  root.querySelector('#arr-drop-btn').addEventListener('click', dropAtPlayhead);
+  const ruler = document.getElementById('arr-ruler');
+  const inner = document.getElementById('arr-inner');
+  const xToStep = (clientX) => {
+    const r = inner.getBoundingClientRect();
+    return Math.max(0, Math.min(arrMax() - 1, Math.round((clientX - r.left) / PX)));
+  };
+  ruler.addEventListener('pointerdown', (ev) => {
+    step = xToStep(ev.clientX);
+    highlightStep(step);
+  });
+  const brace = document.getElementById('arr-loop');
+  brace.addEventListener('pointerdown', (ev) => {
+    const h = ev.target.getAttribute('data-h');
+    if (!h) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const move = (e) => {
+      const st = xToStep(e.clientX);
+      if (h === 'l') arr.loopStart = Math.min(st, arr.loopEnd - 4);
+      else arr.loopEnd = Math.max(st, arr.loopStart + 4);
+      arr.loopStart = Math.max(0, arr.loopStart);
+      arr.loopEnd = Math.min(arrMax(), arr.loopEnd);
+      paintLoopBrace();
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  });
+  root.addEventListener('pointerdown', (ev) => {
+    const clipEl = ev.target.closest('.arr-clip');
+    if (!clipEl) return;
+    const c = arr.clips.find((x) => x.id === clipEl.dataset.id);
+    if (!c) return;
+    arr.selected = c.id;
+    paintArrangeClips();
+    if (ev.target.classList.contains('arr-resize')) {
+      const move = (e) => {
+        const end = xToStep(e.clientX);
+        c.length = Math.max(4, end - c.start);
+        paintArrangeClips();
+      };
+      const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+      return;
+    }
+    const origin = c.start;
+    const grab = xToStep(ev.clientX);
+    const move = (e) => {
+      const now = xToStep(e.clientX);
+      c.start = Math.max(0, Math.min(arrMax() - c.length, origin + (now - grab)));
+      paintArrangeClips();
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  });
+  root.addEventListener('dblclick', (ev) => {
+    const clipEl = ev.target.closest('.arr-clip');
+    if (!clipEl) return;
+    const c = arr.clips.find((x) => x.id === clipEl.dataset.id);
+    if (!c || !c.grid) return;
+    const p = pattern();
+    if (p && c.grid) {
+      Object.keys(c.grid).forEach((id) => { if (p.grid[id]) p.grid[id] = c.grid[id].slice(); });
+      if (c.bassNotes) p.bassNotes = c.bassNotes.slice();
+    }
+    if (c.notes) { notes.length = 0; c.notes.forEach((n) => notes.push({ ...n })); }
+    const seq = document.getElementById('sequencer');
+    if (seq && p) seq.querySelectorAll('.seq-cell').forEach((cell) => {
+      const on = p.grid[cell.dataset.track] && p.grid[cell.dataset.track][Number(cell.dataset.step)];
+      cell.classList.toggle('on', !!on);
+    });
+    paintRoll();
+    setDetail(c.track === 'keys' ? 'keys' : 'drums');
+  });
+  root.addEventListener('contextmenu', (ev) => {
+    const clipEl = ev.target.closest('.arr-clip');
+    if (!clipEl) return;
+    ev.preventDefault();
+    arr.clips = arr.clips.filter((c) => c.id !== clipEl.dataset.id);
+    arr.selected = null;
+    paintArrangeClips();
+  });
 }
 
 function paintSession() {
@@ -627,6 +989,18 @@ function bindKeys() {
       togglePlay();
       return;
     }
+    if (ev.code === 'Tab') {
+      ev.preventDefault();
+      setProdView(prodView === 'session' ? 'arrange' : 'session');
+      return;
+    }
+    if ((ev.key === 'Backspace' || ev.key === 'Delete') && prodView === 'arrange' && arr.selected) {
+      ev.preventDefault();
+      arr.clips = arr.clips.filter((c) => c.id !== arr.selected);
+      arr.selected = null;
+      paintArrangeClips();
+      return;
+    }
     const pitch = KEY_MAP[String(ev.key).toLowerCase()];
     if (pitch == null || held.has(ev.key)) return;
     ensureMix();
@@ -737,7 +1111,7 @@ function paintTransport() {
   root.querySelector('#abl-rec').addEventListener('click', () => {
     recOn = !recOn;
     if (recOn && !playing) studioPlay();
-    setDetail('keys');
+    if (prodView !== 'arrange') setDetail('keys');
     syncTransport();
   });
   root.querySelector('#abl-metro').addEventListener('click', () => { metroOn = !metroOn; syncTransport(); });
@@ -810,6 +1184,7 @@ export function showStudio() {
   paintMixer();
   paintBrowser();
   paintRoll();
+  if (prodView === 'arrange') paintArrange();
   syncTransport();
 }
 

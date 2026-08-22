@@ -576,7 +576,8 @@
   <div id="music-view" hidden data-drop-zone>
     <div class="daw-head abl-head">
       <div class="daw-modes" role="tablist" aria-label="Music mode">
-        <button type="button" class="daw-mode active" data-daw-mode="produce" role="tab" aria-selected="true">Session</button>
+        <button type="button" class="daw-mode active" data-prod-view="session" role="tab" aria-selected="true">Session</button>
+        <button type="button" class="daw-mode" data-prod-view="arrange" role="tab" aria-selected="false">Arrange</button>
         <button type="button" class="daw-mode" data-daw-mode="dj" role="tab" aria-selected="false">DJ Live</button>
       </div>
       <div id="abl-transport" class="abl-transport"></div>
@@ -586,6 +587,7 @@
       <aside class="abl-browser" id="abl-browser"></aside>
       <div class="abl-stage">
         <div id="daw-session" class="daw-session"></div>
+        <div id="daw-arrange" class="daw-arrange" hidden></div>
         <div class="abl-detail">
           <div class="abl-detail-tabs" role="tablist">
             <button type="button" class="active" data-detail="drums">Drum Rack</button>

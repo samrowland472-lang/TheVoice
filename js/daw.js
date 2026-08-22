@@ -1,4 +1,4 @@
-import { initStudio, showStudio, studioPlay, studioStop } from './daw-studio.js';
+import { initStudio, showStudio, studioPlay, studioStop, setProdView } from './daw-studio.js';
 // The Voice DAW — Produce (session clips) + DJ Live (rekordbox-class decks).
 // Web Audio actually sounds. MIDI / audio interfaces are detected live.
 // Does not touch Animate. Existing sequencer in Music stays intact.
@@ -109,6 +109,12 @@ export function setDawMode(next) {
     btn.classList.toggle('active', on);
     if (btn.getAttribute('role') === 'tab') btn.setAttribute('aria-selected', on ? 'true' : 'false');
   });
+  if (mode === 'dj') {
+    document.querySelectorAll('[data-prod-view]').forEach((btn) => {
+      btn.classList.remove('active');
+      if (btn.getAttribute('role') === 'tab') btn.setAttribute('aria-selected', 'false');
+    });
+  }
   const music = document.getElementById('music-view');
   if (music) music.classList.toggle('is-dj', mode === 'dj');
   if (mode === 'dj') paintDecks();
@@ -846,8 +852,14 @@ export function initDaw(options) {
     return { ctx, master, recDest };
   });
   setDawMode('produce');
-  document.querySelectorAll('.daw-mode').forEach((btn) => {
+  document.querySelectorAll('[data-daw-mode]').forEach((btn) => {
     btn.addEventListener('click', () => setDawMode(btn.dataset.dawMode));
+  });
+  document.querySelectorAll('[data-prod-view]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setDawMode('produce');
+      setProdView(btn.dataset.prodView);
+    });
   });
   hookMidi();
   if (!deckPaint) tickWaves();
