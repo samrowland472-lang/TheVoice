@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Search, Undo2 } from "lucide-react";
+import { ArrowLeft, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan, Search, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadDataUrl, downloadSvg, exportJpeg, exportPng, slug } from "@/lib/design/export";
 import { FORMATS } from "@/lib/design/formats";
@@ -20,6 +20,8 @@ export function TopBar() {
   const grid = useDesign((s) => s.grid);
   const toggleRulers = useDesign((s) => s.toggleRulers);
   const rulers = useDesign((s) => s.rulers);
+  const toggleSafeArea = useDesign((s) => s.toggleSafeArea);
+  const safeArea = useDesign((s) => s.safeArea);
   const zoom = useDesign((s) => s.viewport.zoom);
   const togglePresent = useDesign((s) => s.togglePresent);
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
@@ -72,6 +74,9 @@ export function TopBar() {
       </Button>
       <Button variant="ghost" size="icon-sm" onClick={toggleRulers} aria-label="Toggle rulers" aria-pressed={rulers}>
         <Ruler className="size-4" />
+      </Button>
+      <Button variant="ghost" size="icon-sm" onClick={toggleSafeArea} aria-label="Toggle safe area" aria-pressed={safeArea}>
+        <Scan className="size-4" />
       </Button>
       <Button variant="ghost" size="icon-sm" onClick={togglePresent} aria-label="Present">
         <Maximize2 className="size-4" />

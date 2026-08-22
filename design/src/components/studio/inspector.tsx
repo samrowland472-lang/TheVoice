@@ -20,6 +20,9 @@ export function Inspector() {
   const selection = useDesign((s) => s.selection);
   const updateNodes = useDesign((s) => s.updateNodes);
   const setArtboardBg = useDesign((s) => s.setArtboardBg);
+  const safeArea = useDesign((s) => s.safeArea);
+  const toggleSafeArea = useDesign((s) => s.toggleSafeArea);
+  const setBleed = useDesign((s) => s.setBleed);
   const brand = useDesign((s) => s.brand);
   const color = useDesign((s) => s.color);
   const setColor = useDesign((s) => s.setColor);
@@ -46,6 +49,21 @@ export function Inspector() {
           />
         </label>
         <Swatches colors={brand.colors} onPick={setArtboardBg} />
+        <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+          <input type="checkbox" checked={safeArea} onChange={toggleSafeArea} />
+          Safe area
+        </label>
+        <Field label={`Bleed ${doc.artboard.bleed ?? 0}px`}>
+          <input
+            type="range"
+            className="range-phosphor w-full"
+            min={0}
+            max={72}
+            step={6}
+            value={doc.artboard.bleed ?? 0}
+            onChange={(e) => setBleed(Number(e.target.value))}
+          />
+        </Field>
       </Section>
 
       <Section title="Ink">

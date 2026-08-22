@@ -124,6 +124,8 @@ export interface Artboard {
   background: Fill;
   name: string;
   formatId: string;
+  /** Extra pixels around PNG/JPG export (print bleed). */
+  bleed?: number;
 }
 
 export interface DesignDocument {

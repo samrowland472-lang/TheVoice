@@ -32,6 +32,7 @@ interface DesignState {
   grid: boolean;
   snap: boolean;
   rulers: boolean;
+  safeArea: boolean;
   brand: BrandKit;
   brush: BrushSettings;
   color: string;
@@ -76,6 +77,8 @@ interface DesignState {
   toggleGrid: () => void;
   toggleSnap: () => void;
   toggleRulers: () => void;
+  toggleSafeArea: () => void;
+  setBleed: (px: number) => void;
   addGuide: (axis: "x" | "y", pos: number) => string;
   moveGuide: (id: string, pos: number) => void;
   removeGuide: (id: string) => void;
@@ -126,6 +129,7 @@ export const useDesign = create<DesignState>((set, get) => ({
   grid: true,
   snap: true,
   rulers: true,
+  safeArea: false,
   brand: loadBrand(),
   brush: {
     id: "ink",
@@ -467,6 +471,15 @@ export const useDesign = create<DesignState>((set, get) => ({
   toggleGrid: () => set({ grid: !get().grid }),
   toggleSnap: () => set({ snap: !get().snap }),
   toggleRulers: () => set({ rulers: !get().rulers }),
+  toggleSafeArea: () => set({ safeArea: !get().safeArea }),
+  setBleed: (px) => {
+    const { doc } = get();
+    if (!doc) return;
+    set({
+      doc: { ...doc, artboard: { ...doc.artboard, bleed: Math.max(0, Math.round(px)) } },
+      dirty: true,
+    });
+  },
   addGuide: (axis, pos) => {
     const { doc } = get();
     if (!doc) return "";

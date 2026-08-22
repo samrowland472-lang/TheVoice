@@ -30,3 +30,20 @@ export function formatById(id: string): Format {
 }
 
 export const FORMAT_GROUPS = [...new Set(FORMATS.map((f) => f.group))];
+
+/** Story/print-aware safe insets in artboard pixels. */
+export function safeInsets(formatId: string, w: number, h: number) {
+  const story = formatId === "ig-story" || formatId === "tiktok";
+  if (story) {
+    return {
+      t: Math.round(h * 0.12),
+      b: Math.round(h * 0.18),
+      l: Math.round(w * 0.055),
+      r: Math.round(w * 0.055),
+    };
+  }
+  const print = formatId === "poster" || formatId === "flyer" || formatId === "card" || formatId === "a4";
+  if (print) return { t: 48, b: 48, l: 48, r: 48 };
+  const m = Math.max(32, Math.round(Math.min(w, h) * 0.05));
+  return { t: m, b: m, l: m, r: m };
+}

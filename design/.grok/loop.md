@@ -20,9 +20,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Print / story safe-area overlay + optional bleed on export.
-2. Hub folders / tags for recents; pin a project.
-4. Brand kit: named colours + font pairing applied to new text.
+1. Hub folders / tags for recents; pin a project.
+2. Brand kit: named colours + font pairing applied to new text.
 5. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
 6. Paint stroke undo (not the whole bitmap commit).
 7. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
@@ -41,8 +40,13 @@ Auth OFF, DB OFF.
 - Rulers + manual guides (labels, cursor, double-click delete).
 - History panel: clickable undo stack under Layers (Now / Step N / Redo).
 - Pen: ⌫ last point, Enter or click first point to close, Esc / double-click to finish. Rubber-band preview.
+- Safe area overlay (story/print-aware) + bleed on PNG/JPG with crop marks.
 
 ## Iterations
+
+### 2026-08-22T20:23Z — loop 10
+
+Safe-area overlay + export bleed. Typecheck + build + smoke clean.
 
 ### 2026-08-22T20:18Z — loop 9
 
@@ -62,4 +66,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Print / story safe-area overlay + optional bleed on export.
+Hub folders / tags for recents; pin a project.

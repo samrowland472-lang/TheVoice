@@ -6,6 +6,7 @@ import { docToScreen, drawDocument, fitViewport, getCachedImage, screenToDoc } f
 import { rectsIntersect, smartSnap } from "@/lib/design/snap";
 import { ensurePaintLayer, makeShape, makeText, useDesign } from "@/lib/design/store";
 import { snap } from "@/lib/design/geometry";
+import { safeInsets } from "@/lib/design/formats";
 import type { DesignNode, Tool } from "@/lib/design/types";
 import { CanvasMenu, type MenuItem } from "./canvas-menu";
 
@@ -59,7 +60,7 @@ export function CanvasStage() {
     const main = mainRef.current;
     const overlay = overlayRef.current;
     const wrap = wrapRef.current;
-    const { doc, viewport, selection, grid, rulers, tool } = useDesign.getState();
+    const { doc, viewport, selection, grid, rulers, tool, safeArea } = useDesign.getState();
     if (!main || !overlay || !wrap || !doc) return;
     const w = wrap.clientWidth;
     const h = wrap.clientHeight;
@@ -99,6 +100,33 @@ export function CanvasStage() {
         octx.lineTo(doc.artboard.width, y);
         octx.stroke();
       }
+    }
+
+    if (safeArea) {
+      const { width: aw, height: ah, formatId, bleed = 0 } = doc.artboard;
+      const inset = safeInsets(formatId, aw, ah);
+      octx.save();
+      octx.fillStyle = "rgba(7,9,8,0.38)";
+      octx.fillRect(0, 0, aw, inset.t);
+      octx.fillRect(0, ah - inset.b, aw, inset.b);
+      octx.fillRect(0, inset.t, inset.l, ah - inset.t - inset.b);
+      octx.fillRect(aw - inset.r, inset.t, inset.r, ah - inset.t - inset.b);
+      octx.strokeStyle = "rgba(63,198,255,0.85)";
+      octx.lineWidth = 1 / viewport.zoom;
+      octx.setLineDash([8 / viewport.zoom, 5 / viewport.zoom]);
+      octx.strokeRect(inset.l, inset.t, aw - inset.l - inset.r, ah - inset.t - inset.b);
+      octx.setLineDash([]);
+      octx.font = `${11 / viewport.zoom}px ui-monospace, monospace`;
+      octx.fillStyle = "rgba(63,198,255,0.9)";
+      octx.textBaseline = "top";
+      octx.fillText("SAFE", inset.l + 6 / viewport.zoom, inset.t + 6 / viewport.zoom);
+      if (bleed > 0) {
+        octx.strokeStyle = "rgba(255,178,56,0.7)";
+        octx.strokeRect(-bleed, -bleed, aw + bleed * 2, ah + bleed * 2);
+        octx.fillStyle = "rgba(255,178,56,0.85)";
+        octx.fillText(`BLEED ${bleed}`, 6 / viewport.zoom, -bleed - 14 / viewport.zoom);
+      }
+      octx.restore();
     }
 
     const manuals = doc.guides ?? [];

@@ -3,16 +3,44 @@ import { drawDocument } from "./render";
 import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type Fill, type GradientFill } from "./types";
 
 export function rasterize(doc: DesignDocument, scale = 1): HTMLCanvasElement {
+  const bleed = Math.max(0, doc.artboard.bleed ?? 0);
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(doc.artboard.width * scale);
-  canvas.height = Math.round(doc.artboard.height * scale);
+  canvas.width = Math.round((doc.artboard.width + bleed * 2) * scale);
+  canvas.height = Math.round((doc.artboard.height + bleed * 2) * scale);
   const ctx = canvas.getContext("2d")!;
+  const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   drawDocument(
     ctx,
     doc,
-    { x: 0, y: 0, zoom: scale },
+    { x: bleed * scale, y: bleed * scale, zoom: scale },
     { skipChrome: true, dpr: 1 },
   );
+  if (bleed > 0) {
+    const b = bleed * scale;
+    const w = doc.artboard.width * scale;
+    const h = doc.artboard.height * scale;
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = Math.max(1, scale);
+    const mark = Math.min(b * 0.7, 18 * scale);
+    const ticks: [number, number, number, number][] = [
+      [b, 0, b, mark],
+      [0, b, mark, b],
+      [b + w, 0, b + w, mark],
+      [b + w + b - mark, b, b + w + b, b],
+      [b, b + h + b - mark, b, b + h + b],
+      [0, b + h, mark, b + h],
+      [b + w, b + h + b - mark, b + w, b + h + b],
+      [b + w + b - mark, b + h, b + w + b, b + h],
+    ];
+    for (const [x1, y1, x2, y2] of ticks) {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+  }
   return canvas;
 }
 
