@@ -59,6 +59,7 @@ export function HelpOverlay() {
     ["⌘D", "Duplicate"],
     ["⌘A", "Select all"],
     ["⌘K", "Command palette"],
+    ["File → Import glTF", "Bring a .glb into the stage (fits to view)"],
     ["File → Playblast", "WebM movie or PNG sequence of the I/O range"],
     ["1–4", "Wire / Solid / Material / Rendered"],
     ["Scroll timeline", "Zoom time. Over labels: scroll tracks"],

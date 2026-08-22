@@ -41,5 +41,6 @@ React 19, TanStack Start, React Three Fiber, drei, Zustand, Tailwind v4.
 | W / E / R | Move / rotate / scale gizmo |
 | F | Frame selection |
 | ⌘A | Select all |
+| File → Import glTF | .glb / .gltf meshes + hierarchy, fitted to the stage |
 | File → Playblast | WebM or PNG sequence of the in–out range |
 | ⌘Z / ⌘⇧Z | Undo / redo |

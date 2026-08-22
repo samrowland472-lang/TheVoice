@@ -272,6 +272,11 @@ export function Inspector() {
           value={node.name}
           onChange={(e) => useStudio.getState().renameNode(node.id, e.target.value)}
         />
+        {node.geometry ? (
+          <p className="text-2xs text-subtle">
+            Imported mesh · {Math.round(node.geometry.position.length / 3).toLocaleString()} verts
+          </p>
+        ) : null}
 
         <label className="block space-y-1">
           <span className="text-2xs font-medium uppercase tracking-wider text-subtle">Parent</span>

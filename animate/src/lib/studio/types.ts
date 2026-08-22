@@ -1,5 +1,12 @@
 export type Vec3 = { x: number; y: number; z: number };
 
+export type MeshGeometry = {
+  position: number[];
+  normal?: number[];
+  uv?: number[];
+  index?: number[];
+};
+
 export type MeshShape =
   | { type: "box"; w: number; h: number; d: number }
   | { type: "sphere"; r: number }
@@ -54,6 +61,7 @@ export type SceneNode = {
   rotation: Vec3;
   scale: Vec3;
   shape?: MeshShape;
+  geometry?: MeshGeometry;
   material?: MaterialProps;
   light?: LightProps;
   camera?: CameraProps;

@@ -40,6 +40,27 @@ export function CommandPalette() {
             <Item onSelect={() => run(() => useStudio.getState().setPlayblastOpen(true))}>
               Playblast viewport
             </Item>
+            <Item
+              onSelect={() =>
+                run(() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = ".glb,.gltf,model/gltf-binary,model/gltf+json";
+                  input.onchange = () => {
+                    const f = input.files?.[0];
+                    if (!f) return;
+                    void import("@/lib/studio/gltf").then(({ parseGltfFile }) =>
+                      parseGltfFile(f).then(({ nodes, rootId }) =>
+                        useStudio.getState().addImported(nodes, rootId),
+                      ),
+                    );
+                  };
+                  input.click();
+                })
+              }
+            >
+              Import glTF
+            </Item>
             <Item onSelect={() => run(() => useStudio.getState().setOnionSkin(!useStudio.getState().onionSkin))}>
               Toggle onion skin
             </Item>

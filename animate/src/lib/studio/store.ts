@@ -119,6 +119,7 @@ type StudioActions = {
   addLight: (type: NonNullable<SceneNode["light"]>["type"]) => string;
   addCamera: () => string;
   addGroup: () => string;
+  addImported: (incoming: SceneNode[], rootId: string) => void;
   duplicateSelected: () => void;
   deleteSelected: () => void;
   renameNode: (id: string, name: string) => void;
@@ -588,6 +589,22 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
     };
     set({ nodes: { ...nodes, [id]: n }, ...selectOnly(id) });
     return id;
+  },
+
+  addImported: (incoming, rootId) => {
+    if (!incoming.length) return;
+    get().pushHistory();
+    const nodes = { ...get().nodes };
+    for (const n of incoming) {
+      nodes[n.id] = { ...n, name: uniqueName(nodes, n.name) };
+    }
+    set({
+      nodes,
+      welcomeOpen: false,
+      ...selectOnly(rootId),
+      selectedIds: [rootId],
+      selectedId: rootId,
+    });
   },
 
   duplicateSelected: () => {

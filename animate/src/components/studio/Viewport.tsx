@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { evalNode } from "@/lib/studio/eval";
+import { bufferFromMeshGeometry } from "@/lib/studio/gltf";
 import { registerCapture } from "@/lib/studio/playblast";
 import { objectRegistry, registerObject } from "@/lib/studio/registry";
 import { childIds, useStudio } from "@/lib/studio/store";
@@ -67,10 +68,11 @@ function MeshBody({
   shading: Shading;
   selected: boolean;
 }) {
-  const geometry = useMemo(
-    () => (node.shape ? shapeGeometry(node.shape, node.anchor) : null),
-    [node.shape, node.anchor],
-  );
+  const geometry = useMemo(() => {
+    if (node.geometry) return bufferFromMeshGeometry(node.geometry);
+    if (node.shape) return shapeGeometry(node.shape, node.anchor);
+    return null;
+  }, [node.shape, node.anchor, node.geometry]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
 
   const mat = node.material;
@@ -108,10 +110,11 @@ function MeshBody({
 
 function OnionGhosts({ node }: { node: SceneNode }) {
   const enabled = useStudio((s) => s.onionSkin);
-  const geometry = useMemo(
-    () => (node.shape ? shapeGeometry(node.shape, node.anchor) : null),
-    [node.shape, node.anchor],
-  );
+  const geometry = useMemo(() => {
+    if (node.geometry) return bufferFromMeshGeometry(node.geometry);
+    if (node.shape) return shapeGeometry(node.shape, node.anchor);
+    return null;
+  }, [node.shape, node.anchor, node.geometry]);
   const refs = useRef<(THREE.Group | null)[]>([null, null, null, null]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
 

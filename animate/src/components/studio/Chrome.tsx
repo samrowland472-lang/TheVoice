@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatDuration, formatFrame, formatTimecode } from "@/lib/studio/format";
+import { parseGltfFile } from "@/lib/studio/gltf";
 import { PRESETS } from "@/lib/studio/presets";
 import { useStudio } from "@/lib/studio/store";
 import type { MeshShape, ProjectSnapshot, Shading, Tool } from "@/lib/studio/types";
@@ -88,12 +89,15 @@ export function Menubar() {
   const name = useStudio((s) => s.name);
   const [open, setOpen] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const gltfRef = useRef<HTMLInputElement>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   return (
     <div className="flex h-9 items-center gap-1 border-b border-border bg-bg px-2">
       <div className="mr-2 flex items-center gap-2 px-1">
         <span className="font-display text-sm font-semibold tracking-tight text-fg">The Voice</span>
         <span className="hidden text-2xs text-subtle sm:inline">{name}</span>
+        {notice ? <span className="hidden text-2xs text-key sm:inline">{notice}</span> : null}
       </div>
       <input
         ref={fileRef}
@@ -104,6 +108,26 @@ export function Menubar() {
           const f = e.target.files?.[0];
           if (f) importProject(f);
           e.target.value = "";
+        }}
+      />
+      <input
+        ref={gltfRef}
+        type="file"
+        accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          void parseGltfFile(f)
+            .then(({ nodes, rootId }) => {
+              useStudio.getState().addImported(nodes, rootId);
+              setNotice(null);
+            })
+            .catch((err: unknown) => {
+              setNotice(err instanceof Error ? err.message : "glTF import failed");
+              window.setTimeout(() => setNotice(null), 5000);
+            });
         }}
       />
       <Menu
@@ -134,6 +158,10 @@ export function Menubar() {
           {
             label: "Import JSON",
             action: () => fileRef.current?.click(),
+          },
+          {
+            label: "Import glTF…",
+            action: () => gltfRef.current?.click(),
           },
           {
             label: "Playblast…",
