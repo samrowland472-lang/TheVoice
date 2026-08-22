@@ -254,6 +254,8 @@
     follow: true,
     punch: false,
     selectedArrange: null,
+    locators: [],
+    selectedLocator: null,
     timeNum: 4,
     timeDen: 4,
     metro: false,
@@ -1008,6 +1010,7 @@
           notes: cloneNotes(c.notes),
         };
       }),
+      locators: (state.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; }),
     };
   }
 
@@ -1068,6 +1071,7 @@
         notes: cloneNotes(c.notes),
       };
     });
+    state.locators = (snap.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; });
     applyMix();
     rebuildTrackUi();
     paintArrange();
@@ -2099,6 +2103,7 @@
   var arrangeLanes = null;
   var playheadEl = null;
   var loopEl = null;
+  var rulerEl = null;
 
   function injectStyles() {
     if (document.getElementById("daw-session-css")) return;
@@ -2180,7 +2185,7 @@
       "#daw-session .daw-roll-hint{padding:6px 12px;font-size:12px;color:var(--ink-dim,#7d9689)}" +
       "#daw-session .daw-arr-scroll{overflow:auto;max-height:min(520px,60vh)}" +
       "#daw-session .daw-arr-inner{position:relative;min-width:" + (88 + BARS * BAR_W) + "px}" +
-      "#daw-session .daw-ruler{display:flex;margin-left:88px;height:44px;position:relative;border-bottom:1px solid var(--border,#263029);user-select:none}" +
+      "#daw-session .daw-ruler{display:flex;margin-left:88px;height:44px;position:relative;border-bottom:1px solid var(--border,#263029);user-select:none}" +"#daw-session .daw-loc{position:absolute;top:0;transform:translateX(-50%);min-width:18px;height:16px;padding:0 4px;font-size:9px;line-height:16px;background:#3fc6ff;color:#06170f;border:0;border-radius:0 0 3px 3px;z-index:5;cursor:pointer;font-family:Share Tech Mono,ui-monospace,monospace}" +"#daw-session .daw-loc.sel{outline:1px solid #fff;background:#7dffb3}" +
       "#daw-session .daw-bar{width:" + BAR_W + "px;flex:0 0 " + BAR_W + "px;font-family:'Share Tech Mono',ui-monospace,monospace;font-size:10px;color:var(--ink-faint,#4c5f56);border-left:1px solid var(--border,#263029);padding:4px 6px}" +
       "#daw-session .daw-loop{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--phosphor,#3fc6ff) 16%, transparent);border:1px solid var(--phosphor,#3fc6ff);pointer-events:none;z-index:2}" +
       "#daw-session .daw-loop-h{position:absolute;top:0;width:12px;height:44px;background:var(--phosphor,#3fc6ff);cursor:ew-resize;pointer-events:auto;z-index:3}" +
@@ -2215,6 +2220,59 @@
     var playBtn = root && root.querySelector("[data-play]");
     if (playBtn) playBtn.setAttribute("aria-pressed", state.playing ? "true" : "false");
     paintRackCursor();
+  }
+
+  function jumpToStep(step) {
+    state.step = Math.max(0, Math.min(BARS * STEPS_PER_BAR - 1, step));
+    if (ctx) nextTime = ctx.currentTime;
+    try { Object.keys(warpHold || {}).forEach(stopWarpVoices); } catch (e) {}
+    try { Object.keys(padHold || {}).forEach(stopPad); } catch (e2) {}
+    try { Object.keys(audioHold || {}).forEach(stopAudioLoop); } catch (e3) {}
+    paintPlayhead();
+    updatePlayheadPx();
+  }
+
+  function addLocator(bar) {
+    bar = Math.max(0, Math.min(BARS - 1, bar == null ? Math.floor(state.step / STEPS_PER_BAR) : bar));
+    pushUndo();
+    var loc = { id: "loc-" + Date.now(), bar: bar, name: String(state.locators.length + 1) };
+    state.locators.push(loc);
+    state.locators.sort(function (a, b) { return a.bar - b.bar; });
+    state.selectedLocator = loc.id;
+    paintLocators();
+    setMidiLabel("Loc " + loc.name);
+  }
+
+  function paintLocators() {
+    if (!rulerEl) return;
+    rulerEl.querySelectorAll(".daw-loc").forEach(function (n) { n.remove(); });
+    state.locators.forEach(function (loc) {
+      var n = el("button", "daw-loc" + (state.selectedLocator === loc.id ? " sel" : ""), loc.name);
+      n.type = "button";
+      n.style.left = (loc.bar * BAR_W) + "px";
+      n.title = "Locator " + loc.name + " — click to jump, double-click to rename";
+      n.setAttribute("aria-label", "Locator " + loc.name + " bar " + (loc.bar + 1));
+      n.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        state.selectedLocator = loc.id;
+        state.selectedArrange = null;
+        jumpToStep(loc.bar * STEPS_PER_BAR);
+        paintLocators();
+      });
+      n.addEventListener("dblclick", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var next = window.prompt("Locator name", loc.name);
+        if (next == null) return;
+        next = String(next).trim();
+        if (!next) return;
+        pushUndo();
+        loc.name = next;
+        paintLocators();
+      });
+      rulerEl.appendChild(n);
+    });
   }
 
   function updatePlayheadPx() {
@@ -2304,6 +2362,7 @@
       loopEl.style.width = Math.max(BAR_W, (state.loopEnd - state.loopStart) * BAR_W) + "px";
     }
     updatePlayheadPx();
+    paintLocators();
     state.tracks.forEach(paintAutoLane);
   }
 
@@ -4078,6 +4137,11 @@
     tog("loopOn", "Loop", "data-loop");
     tog("punch", "Punch", "data-punch");
     tog("follow", "Follow", "data-follow");
+    var locBtn = el("button", "daw-btn", "Set loc");
+    locBtn.type = "button";
+    locBtn.setAttribute("aria-label", "Set locator at playhead");
+    locBtn.addEventListener("click", function () { addLocator(); });
+    top.appendChild(locBtn);
 
     var addMidi = el("button", "daw-btn", "+ MIDI");
     addMidi.type = "button";
@@ -4474,14 +4538,17 @@
     arrangeScroll = el("div", "daw-arr-scroll");
     var inner = el("div", "daw-arr-inner");
 
-    var ruler = el("div", "daw-ruler");
+    rulerEl = el("div", "daw-ruler");
+    var ruler = rulerEl;
     for (var b = 0; b < BARS; b++) {
       (function (bar) {
         var tick = el("div", "daw-bar", String(bar + 1));
         tick.addEventListener("click", function () {
-          if (!state.playing) state.step = bar * STEPS_PER_BAR;
-          updatePlayheadPx();
-          paintPlayhead();
+          jumpToStep(bar * STEPS_PER_BAR);
+        });
+        tick.addEventListener("dblclick", function (ev) {
+          ev.preventDefault();
+          addLocator(bar);
         });
         ruler.appendChild(tick);
       })(b);
@@ -4561,7 +4628,7 @@
     root.appendChild(devicesEl);
     paintDevices();
 
-    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
+    root.appendChild(el("div", "daw-help", "Arrows move the grid. Shift+1–8 launch scenes. Ctrl+D duplicates. Ctrl+E splits at playhead. Clip corners resize. Ctrl+L loop. Drag the cyan brace to set loop length. Green grip sets loop start. F2 rename. Shift+click color. Double-click ruler for a locator. R reverses. +/- transpose. Ctrl+Z undo. Escape stops."));
 
     document.addEventListener("keydown", function (e) {
       var tag = (e.target && e.target.tagName) || "";
@@ -4667,6 +4734,13 @@
       if (e.key !== "Backspace" && e.key !== "Delete") return;
       if (state.view === "roll") {
         deleteSelectedNote();
+        return;
+      }
+      if (state.selectedLocator) {
+        pushUndo();
+        state.locators = state.locators.filter(function (l) { return l.id !== state.selectedLocator; });
+        state.selectedLocator = null;
+        paintLocators();
         return;
       }
       if (!state.selectedArrange) return;
@@ -4783,6 +4857,7 @@
       loopStart: state.loopStart,
       loopEnd: state.loopEnd,
       follow: state.follow,
+      locators: (state.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; }),
       masterVol: state.masterVol,
       returnAVol: state.returnAVol,
       returnBVol: state.returnBVol,
@@ -4896,6 +4971,8 @@
     state.loopStart = data.loopStart || 0;
     state.loopEnd = data.loopEnd || 8;
     state.follow = data.follow !== false;
+    state.locators = (data.locators || []).map(function (l) { return { id: l.id, bar: l.bar, name: l.name }; });
+    state.selectedLocator = null;
     state.masterVol = data.masterVol == null ? 0.72 : data.masterVol;
     state.returnAVol = data.returnAVol == null ? 0.85 : data.returnAVol;
     state.returnBVol = data.returnBVol == null ? 0.7 : data.returnBVol;
