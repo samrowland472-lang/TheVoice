@@ -261,6 +261,11 @@ export function initVisualizer() {
   if (motion.addEventListener) {
     motion.addEventListener('change', () => requestAnimationFrame(loop));
   }
+  if (typeof IntersectionObserver === 'function') {
+    new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) requestAnimationFrame(loop);
+    }).observe(canvas);
+  }
 
   document.querySelectorAll('.mode-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
