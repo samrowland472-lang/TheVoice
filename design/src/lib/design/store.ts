@@ -4,7 +4,7 @@ import { formatById } from "./formats";
 import { aabb } from "./geometry";
 import { uid } from "./id";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
-import { deleteDoc, loadBrand, loadDoc, loadIndex, saveBrand, saveDoc } from "./persist";
+import { deleteDoc, loadBrand, loadDoc, loadIndex, patchIndex, saveBrand, saveDoc } from "./persist";
 import { exportPng } from "./export";
 import { blankDocument, instantiateTemplate } from "./templates";
 import type {
@@ -50,6 +50,9 @@ interface DesignState {
   fromBlank: (formatId: string) => string;
   save: () => void;
   remove: (id: string) => void;
+  togglePin: (id: string) => void;
+  setProjectFolder: (id: string, folder: string) => void;
+  toggleProjectTag: (id: string, tag: string) => void;
   rename: (name: string) => void;
   setTool: (t: Tool) => void;
   setViewport: (v: Partial<Viewport>) => void;
@@ -209,6 +212,24 @@ export const useDesign = create<DesignState>((set, get) => ({
       index: loadIndex(),
       doc: doc?.id === id ? null : doc,
     });
+  },
+
+  togglePin: (id) => {
+    const cur = get().index.find((p) => p.id === id);
+    if (!cur) return;
+    set({ index: patchIndex(id, { pinned: !cur.pinned }) });
+  },
+
+  setProjectFolder: (id, folder) => {
+    set({ index: patchIndex(id, { folder: folder.trim() || undefined }) });
+  },
+
+  toggleProjectTag: (id, tag) => {
+    const cur = get().index.find((p) => p.id === id);
+    if (!cur) return;
+    const tags = cur.tags ?? [];
+    const next = tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag];
+    set({ index: patchIndex(id, { tags: next }) });
   },
 
   rename: (name) => {

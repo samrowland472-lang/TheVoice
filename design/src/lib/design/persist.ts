@@ -64,8 +64,16 @@ export function saveDoc(doc: DesignDocument) {
     updatedAt: doc.updatedAt,
     thumbnail: doc.thumbnail,
     pinned: prev?.pinned,
+    folder: prev?.folder,
+    tags: prev?.tags,
   });
   saveIndex(index.slice(0, 40));
+}
+
+export function patchIndex(id: string, patch: Partial<ProjectMeta>) {
+  const index = loadIndex().map((p) => (p.id === id ? { ...p, ...patch } : p));
+  saveIndex(index);
+  return loadIndex();
 }
 
 export function deleteDoc(id: string) {

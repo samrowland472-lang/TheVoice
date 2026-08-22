@@ -20,9 +20,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Hub folders / tags for recents (pin done).
-2. Brand kit: named colours + font pairing applied to new text.
-5. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
+1. Brand kit: named colours + font pairing applied to new text.
+2. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
 6. Paint stroke undo (not the whole bitmap commit).
 7. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
 8. Contrast checker on text vs fill / artboard.
@@ -42,8 +41,13 @@ Auth OFF, DB OFF.
 - Pen: ⌫ last point, Enter or click first point to close, Esc / double-click to finish. Rubber-band preview.
 - Safe area overlay (story/print-aware) + bleed on PNG/JPG with crop marks.
 - Pin projects in Recents (persisted, sort pinned first, phosphor accent).
+- Hub folders + Campaign/Draft/Press tags on recents.
 
 ## Iterations
+
+### 2026-08-22T21:58Z — loop 12
+
+Hub folders and tags. Filter recents by folder/tag; pin, assign folder, toggle tags on hover. Typecheck + build + smoke clean.
 
 ### 2026-08-22T21:07Z — loop 11
 

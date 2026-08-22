@@ -150,6 +150,8 @@ export interface ProjectMeta {
   thumbnail?: string;
   /** Pinned projects sort to the front of Recents. */
   pinned?: boolean;
+  folder?: string;
+  tags?: string[];
 }
 
 export interface BrandKit {

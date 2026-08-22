@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Copy, Plus, Search, Trash2 } from "lucide-react";
+import { Copy, FolderPlus, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { FORMATS } from "@/lib/design/formats";
 import { imageNode } from "@/lib/design/node-factory";
 import { useDesign } from "@/lib/design/store";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { CommandPalette, type CommandItem } from "@/components/studio/command-palette";
 import { TemplateThumb } from "@/components/template-thumb";
 import { cn } from "@/lib/utils";
+
+const PRESET_TAGS = ["Campaign", "Draft", "Press"];
 
 export function HubView() {
   const navigate = useNavigate();
@@ -20,12 +22,17 @@ export function HubView() {
   const brand = useDesign((s) => s.brand);
   const setBrand = useDesign((s) => s.setBrand);
   const duplicateProject = useDesign((s) => s.duplicateProject);
+  const togglePin = useDesign((s) => s.togglePin);
+  const setProjectFolder = useDesign((s) => s.setProjectFolder);
+  const toggleProjectTag = useDesign((s) => s.toggleProjectTag);
   const paletteOpen = useDesign((s) => s.paletteOpen);
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
   const [cat, setCat] = useState("All");
   const [formatId, setFormatId] = useState("ig-post");
   const [newColor, setNewColor] = useState("#3fc6ff");
   const [q, setQ] = useState("");
+  const [folder, setFolder] = useState("all");
+  const [tag, setTag] = useState("all");
 
   useEffect(() => {
     hydrate();
@@ -126,14 +133,69 @@ export function HubView() {
 
       {index.length > 0 && (
         <section className="border-b border-border px-5 py-8 md:px-10">
-          <h2 className="text-sm font-medium tracking-[0.16em] text-ink-dim uppercase">Recent</h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-sm font-medium tracking-[0.16em] text-ink-dim uppercase">Recent</h2>
+            <div className="flex flex-wrap items-center gap-1">
+              {(["all", "unfiled", ...[...new Set(index.map((p) => p.folder).filter(Boolean) as string[])]] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFolder(id)}
+                  className={cn(
+                    "h-8 rounded-[999px] px-3 text-[11px] font-medium capitalize",
+                    folder === id ? "bg-phosphor text-phosphor-ink" : "text-ink-dim hover:bg-surface-alt hover:text-ink",
+                  )}
+                >
+                  {id === "all" ? "All" : id === "unfiled" ? "Unfiled" : id}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="flex h-8 items-center gap-1 rounded-[999px] px-3 text-[11px] text-ink-dim hover:bg-surface-alt hover:text-ink"
+                onClick={() => {
+                  const name = window.prompt("Folder name");
+                  if (name?.trim()) setFolder(name.trim());
+                }}
+                aria-label="New folder"
+              >
+                <FolderPlus className="size-3.5" />
+                Folder
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1">
+            {["all", ...PRESET_TAGS].map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTag(id)}
+                className={cn(
+                  "h-7 rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide",
+                  tag === id ? "border border-phosphor text-phosphor" : "text-ink-faint hover:text-ink",
+                )}
+              >
+                {id === "all" ? "Any tag" : id}
+              </button>
+            ))}
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-            {index.slice(0, 10).map((p) => (
+            {index
+              .filter((p) => {
+                if (folder === "unfiled") return !p.folder;
+                if (folder !== "all") return p.folder === folder;
+                return true;
+              })
+              .filter((p) => tag === "all" || (p.tags ?? []).includes(tag))
+              .slice(0, 12)
+              .map((p) => (
               <article key={p.id} className="group relative">
                 <button
                   type="button"
                   onClick={() => openProject(p.id)}
-                  className="block w-full overflow-hidden rounded-[16px] border border-border bg-surface text-left transition-colors hover:border-phosphor"
+                  className={cn(
+                    "block w-full overflow-hidden rounded-[16px] border bg-surface text-left transition-colors hover:border-phosphor",
+                    p.pinned ? "border-phosphor/50" : "border-border",
+                  )}
                 >
                   <div className="aspect-[4/5] bg-surface-alt">
                     {p.thumbnail ? (
@@ -145,11 +207,37 @@ export function HubView() {
                     )}
                   </div>
                   <div className="px-3 py-2">
-                    <div className="truncate text-sm text-ink">{p.name}</div>
-                    <div className="font-mono text-[10px] text-ink-faint uppercase">{p.formatId}</div>
+                    <div className="flex items-center gap-1">
+                      {p.pinned && <Pin className="size-3 shrink-0 fill-phosphor text-phosphor" />}
+                      <div className="truncate text-sm text-ink">{p.name}</div>
+                    </div>
+                    <div className="font-mono text-[10px] text-ink-faint uppercase">
+                      {p.folder ? `${p.folder} · ` : ""}
+                      {p.formatId}
+                    </div>
+                    {(p.tags ?? []).length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {p.tags!.map((t) => (
+                          <span key={t} className="font-mono text-[9px] tracking-wide text-phosphor uppercase">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </button>
                 <div className="absolute top-2 right-2 hidden gap-1 group-hover:flex">
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-[8px] border border-border bg-ground/80",
+                      p.pinned ? "text-phosphor" : "text-ink-dim hover:text-ink",
+                    )}
+                    onClick={() => togglePin(p.id)}
+                    aria-label={p.pinned ? `Unpin ${p.name}` : `Pin ${p.name}`}
+                  >
+                    <Pin className={cn("size-3.5", p.pinned && "fill-phosphor")} />
+                  </button>
                   <button
                     type="button"
                     className="flex size-8 items-center justify-center rounded-[8px] border border-border bg-ground/80 text-ink-dim hover:text-ink"
@@ -166,6 +254,49 @@ export function HubView() {
                   >
                     <Trash2 className="size-3.5" />
                   </button>
+                </div>
+                <div className="absolute bottom-12 left-2 right-2 hidden group-hover:block">
+                  <select
+                    className="h-7 w-full rounded-[8px] border border-border bg-ground/90 px-2 text-[10px] text-ink"
+                    value={p.folder ?? ""}
+                    aria-label={`Folder for ${p.name}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "__new") {
+                        const name = window.prompt("Folder name");
+                        if (name?.trim()) setProjectFolder(p.id, name.trim());
+                      } else {
+                        setProjectFolder(p.id, v);
+                      }
+                    }}
+                  >
+                    <option value="">Unfiled</option>
+                    {[...new Set(index.map((x) => x.folder).filter(Boolean) as string[])].map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                    {folder !== "all" && folder !== "unfiled" && !index.some((x) => x.folder === folder) && (
+                      <option value={folder}>{folder}</option>
+                    )}
+                    <option value="__new">New folder…</option>
+                  </select>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {PRESET_TAGS.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={cn(
+                          "h-6 rounded-[6px] px-1.5 font-mono text-[9px] uppercase",
+                          (p.tags ?? []).includes(t) ? "bg-phosphor/15 text-phosphor" : "bg-ground/80 text-ink-faint",
+                        )}
+                        onClick={() => toggleProjectTag(p.id, t)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </article>
             ))}
