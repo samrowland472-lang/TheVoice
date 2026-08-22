@@ -20,8 +20,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Paint stroke undo (not the whole bitmap commit).
-2. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
+2. Magic layout: replace-board vs append; structured JSON schema; preview before apply.
+6. Paint stroke undo (not the whole bitmap commit).
+7. Mobile studio: tool overflow menu, export always reachable, inspector sheets.
 8. Contrast checker on text vs fill / artboard.
 9. Multi-page / artboard set for a campaign (story + square + banner).
 10. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
@@ -36,22 +37,17 @@ Auth OFF, DB OFF.
 - Layer drag, selection-relative align, faithful SVG, image crop + mask.
 - Rulers + manual guides (labels, cursor, double-click delete).
 - History panel: clickable undo stack under Layers (Now / Step N / Redo).
-- Pen: ⌫ last point, Enter or click first point to close, Esc / double-click to finish. Rubber-band preview.
+- Pen: last point, Enter or click first point to close, Esc / double-click to finish. Rubber-band preview.
 - Safe area overlay (story/print-aware) + bleed on PNG/JPG with crop marks.
 - Pin projects in Recents (persisted, sort pinned first, phosphor accent).
 - Hub folders + Campaign/Draft/Press tags on recents.
-- Brand kit: named colours + display/body pairing; new text uses display face.
-- Magic layout: Append/Replace, schema-validated nodes, preview then Apply/Discard.
+- Brand kit: named colours + display/body font pairing applied to new text.
 
 ## Iterations
 
-### 2026-08-22T22:08Z — loop 14
+### 2026-08-22T22:08Z — loop 13
 
-Magic layout preview. Append or replace the board. Zod schema on nodes. Typecheck + build + smoke clean.
-
-### 2026-08-22T22:03Z — loop 13
-
-Named brand colours and display/body font pairing. New type uses the display face; inspector Display/Body buttons. Typecheck + build + smoke clean.
+Brand kit depth. Named colours (editable labels) on the hub; display + body font pairing with live preview; new text layers inherit the display face. Migrates legacy string[] colour kits. Typecheck + build + smoke clean.
 
 ### 2026-08-22T21:58Z — loop 12
 
@@ -83,4 +79,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Paint stroke undo (not the whole bitmap commit).
+Magic layout: replace-board vs append; structured JSON schema; preview before apply.

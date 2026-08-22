@@ -1,4 +1,4 @@
-import type { BrandKit, DesignDocument, ProjectMeta } from "./types";
+import type { BrandColor, BrandKit, DesignDocument, ProjectMeta } from "./types";
 
 const DOCS_KEY = "voice-design:docs:v1";
 const BRAND_KEY = "voice-design:brand:v1";
@@ -85,29 +85,65 @@ export function deleteDoc(id: string) {
 
 export const DEFAULT_BRAND: BrandKit = {
   name: "The Voice",
-  colors: ["#0a0d0c", "#d9f5e3", "#3fc6ff", "#7d9689", "#ffb238", "#121613"],
-  fonts: ["Chakra Petch", "Outfit", "Share Tech Mono"],
-  colorNames: {
-    "#0a0d0c": "Ground",
-    "#d9f5e3": "Ink",
-    "#3fc6ff": "Phosphor",
-    "#7d9689": "Moss",
-    "#ffb238": "Amber",
-    "#121613": "Surface",
-  },
+  colors: [
+    { name: "Ground", hex: "#0a0d0c" },
+    { name: "Ink", hex: "#d9f5e3" },
+    { name: "Phosphor", hex: "#3fc6ff" },
+    { name: "Moss", hex: "#7d9689" },
+    { name: "Amber", hex: "#ffb238" },
+    { name: "Surface", hex: "#121613" },
+  ],
+  displayFont: "Chakra Petch",
+  bodyFont: "Outfit",
+  fonts: ["Chakra Petch", "Syne", "Share Tech Mono", "Outfit"],
 };
 
+function normalizeBrand(raw: unknown): BrandKit {
+  if (!raw || typeof raw !== "object") return structuredClone(DEFAULT_BRAND);
+  const r = raw as Record<string, unknown>;
+  const name = typeof r.name === "string" ? r.name : DEFAULT_BRAND.name;
+  let colors: BrandKit["colors"] = DEFAULT_BRAND.colors;
+  if (Array.isArray(r.colors) && r.colors.length) {
+    colors = r.colors.map((c, i) => {
+      if (typeof c === "string") {
+        const known = DEFAULT_BRAND.colors.find((d) => d.hex.toLowerCase() === c.toLowerCase());
+        return { name: known?.name ?? `Colour ${i + 1}`, hex: c };
+      }
+      if (c && typeof c === "object" && typeof (c as BrandColor).hex === "string") {
+        const o = c as BrandColor;
+        return { name: typeof o.name === "string" && o.name ? o.name : `Colour ${i + 1}`, hex: o.hex };
+      }
+      return { name: `Colour ${i + 1}`, hex: "#d9f5e3" };
+    });
+  }
+  const fonts = Array.isArray(r.fonts)
+    ? (r.fonts.filter((f) => typeof f === "string") as string[])
+    : DEFAULT_BRAND.fonts;
+  const displayFont =
+    typeof r.displayFont === "string" && r.displayFont
+      ? r.displayFont
+      : fonts[0] ?? DEFAULT_BRAND.displayFont;
+  const bodyFont =
+    typeof r.bodyFont === "string" && r.bodyFont
+      ? r.bodyFont
+      : fonts.find((f) => f !== displayFont) ?? DEFAULT_BRAND.bodyFont;
+  return { name, colors, displayFont, bodyFont, fonts: fonts.length ? fonts : DEFAULT_BRAND.fonts };
+}
+
 export function loadBrand(): BrandKit {
-  const kit = readJson<BrandKit>(BRAND_KEY, DEFAULT_BRAND);
-  return {
-    ...DEFAULT_BRAND,
-    ...kit,
-    fonts: kit.fonts?.length ? kit.fonts : DEFAULT_BRAND.fonts,
-    colors: kit.colors?.length ? kit.colors : DEFAULT_BRAND.colors,
-    colorNames: { ...DEFAULT_BRAND.colorNames, ...kit.colorNames },
-  };
+  try {
+    const raw = localStorage.getItem(BRAND_KEY);
+    if (!raw) return structuredClone(DEFAULT_BRAND);
+    return normalizeBrand(JSON.parse(raw));
+  } catch {
+    return structuredClone(DEFAULT_BRAND);
+  }
 }
 
 export function saveBrand(kit: BrandKit) {
-  localStorage.setItem(BRAND_KEY, JSON.stringify(kit));
+  localStorage.setItem(BRAND_KEY, JSON.stringify(normalizeBrand(kit)));
+}
+
+export function brandHexes(kit: BrandKit): string[] {
+  return kit.colors.map((c) => c.hex);
 }
