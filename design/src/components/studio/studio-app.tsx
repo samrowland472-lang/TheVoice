@@ -178,6 +178,7 @@ function PresentView() {
   const index = useDesign((s) => s.index);
   const save = useDesign((s) => s.save);
   const setPresent = useDesign((s) => s.setPresent);
+  const [hint, setHint] = useState<string | null>(null);
   if (!doc) return null;
   const live = doc;
   const pages = live.campaignId ? index.filter((p) => p.campaignId === live.campaignId) : [{ id: live.id, name: live.name }];
@@ -203,19 +204,44 @@ function PresentView() {
     }
   }
 
-  function onStageClick(e: MouseEvent<HTMLButtonElement>) {
+  function hotspotAt(e: MouseEvent<HTMLButtonElement>) {
     const viewport = useDesign.getState().viewport;
     const rect = e.currentTarget.getBoundingClientRect();
     const d = screenToDoc(e.clientX - rect.left, e.clientY - rect.top, viewport);
     for (let n = live.nodes.length - 1; n >= 0; n--) {
       const node = live.nodes[n]!;
       if (!node.visible || !node.href) continue;
-      if (d.x >= node.x && d.x <= node.x + node.w && d.y >= node.y && d.y <= node.y + node.h) {
-        follow(node.href);
-        return;
-      }
+      if (d.x >= node.x && d.x <= node.x + node.w && d.y >= node.y && d.y <= node.y + node.h) return node;
+    }
+    return null;
+  }
+
+  function hotspotLabel(href: string) {
+    if (href.startsWith("doc:")) {
+      const id = href.slice(4);
+      return index.find((p) => p.id === id)?.name ?? "Frame";
+    }
+    try {
+      return new URL(href).hostname.replace(/^www\./, "");
+    } catch {
+      return href;
+    }
+  }
+
+  function onStageClick(e: MouseEvent<HTMLButtonElement>) {
+    const node = hotspotAt(e);
+    if (node?.href) {
+      follow(node.href);
+      return;
     }
     go(1);
+  }
+
+  function onStageMove(e: MouseEvent<HTMLButtonElement>) {
+    const node = hotspotAt(e);
+    const next = node?.href ? hotspotLabel(node.href) : null;
+    e.currentTarget.style.cursor = next ? "pointer" : "default";
+    setHint((cur) => (cur === next ? cur : next));
   }
 
   useEffect(() => {
@@ -246,15 +272,20 @@ function PresentView() {
             {i + 1} / {pages.length}
           </span>
         )}
-        <span className="ml-auto font-mono text-[10px] text-ink-faint uppercase">Present · click or →</span>
+        <span className={cn("ml-auto font-mono text-[10px] uppercase", hint ? "text-phosphor" : "text-ink-faint")}>
+          {hint ? hint : "Present · click or →"}
+        </span>
       </div>
       <div className="relative min-h-0 flex-1">
         <CanvasStage />
         <button
           type="button"
-          className="absolute inset-0 cursor-pointer bg-transparent"
-          aria-label="Next frame or hotspot"
+          className="absolute inset-0 bg-transparent"
+          style={{ cursor: hint ? "pointer" : "default" }}
+          aria-label={hint ? `Open ${hint}` : "Next frame"}
           onClick={onStageClick}
+          onMouseMove={onStageMove}
+          onMouseLeave={() => setHint(null)}
           onContextMenu={(e) => {
             e.preventDefault();
             go(-1);

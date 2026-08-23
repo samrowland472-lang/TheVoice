@@ -21,7 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present cursor hint when hovering a hotspot.
+1. Hub recents: campaign grouping chip on cards.
+2. Eyedropper samples from images and paint, not just the flattened canvas.
 
 ## Done
 
@@ -47,8 +48,13 @@ Auth OFF, DB OFF.
 - Paint live: stroke draws offscreen; PNG encode only on pointer-up. Canvas skips brand/index/brush redraws.
 - Hotspots: a layer can jump to another campaign page or a URL in present.
 - Thumbnail cache: content hash on artboard+nodes skips re-raster when hub thumbnail is still valid.
+- Present hotspot cursor: pointer + phosphor target name on hover.
 
 ## Iterations
+
+### 2026-08-23T01:58Z — loop 27
+
+Present hotspot cursor hint. Typecheck + build + smoke clean.
 
 ### 2026-08-23T01:07Z — loop 26
 
@@ -72,4 +78,4 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Present cursor hint when hovering a hotspot.
+Hub recents: campaign grouping chip on cards.
