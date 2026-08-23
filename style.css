@@ -3770,5 +3770,17 @@ body:has(#animate-view:not([hidden])) .main-area {
   overflow: auto;
 }
 
+/* Stop the page jumping when leaving Music */
+.shell .footer { display: none; }
+.dj-top {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  overflow: hidden;
+}
+.dj-top .hint { max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
 
 
