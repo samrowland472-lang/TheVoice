@@ -5292,6 +5292,7 @@ const projectFade = document.getElementById('project-fade');
 const projectBuildBtn = document.getElementById('project-build-btn');
 const projectRefreshBtn = document.getElementById('project-refresh-btn');
 const projectAudioBtn = document.getElementById('project-audio-btn');
+const projectDjBtn = document.getElementById('project-dj-btn');
 const projectFramesBtn = document.getElementById('project-frames-btn');
 const projectHint = document.getElementById('project-hint');
 const projectAudio = document.getElementById('project-audio');
@@ -5510,6 +5511,7 @@ projectBuildBtn.addEventListener('click', async () => {
     projectAudio.hidden = true;
     if (projectTransport) projectTransport.hidden = false;
     projectAudioBtn.disabled = false;
+    if (projectDjBtn) projectDjBtn.disabled = false;
     if (projectPlay) projectPlay.textContent = '▶';
     if (projectPos) projectPos.textContent = formatDuration(projectDuration);
     if (projectScrubFill) projectScrubFill.style.width = '0%';
@@ -5580,6 +5582,16 @@ projectAudioBtn.addEventListener('click', async () => {
   const r = await downloadBlob(projectBlob, `project-${Date.now()}.wav`);
   if (!r.ok) projectHint.textContent = r.message || 'Download cancelled.';
 });
+
+if (projectDjBtn) {
+  projectDjBtn.addEventListener('click', async () => {
+    if (!projectBlob || !window.TheVoiceDAW || !window.TheVoiceDAW.loadFile) return;
+    const file = new File([projectBlob], `project-mix.wav`, { type: 'audio/wav' });
+    await window.TheVoiceDAW.loadFile('a', file);
+    switchSection('dj');
+    showToast('Mix loaded to DJ deck A');
+  });
+}
 
 if (projectPlay) {
   projectPlay.addEventListener('click', () => {
