@@ -42,6 +42,7 @@ export function CanvasStage() {
   const marqueeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const penHoverRef = useRef<{ x: number; y: number } | null>(null);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [dropper, setDropper] = useState<{ x: number; y: number; hex: string } | null>(null);
   const drag = useRef<{
     mode: "pan" | "move" | "handle" | "create" | "paint" | "pen" | "marquee" | "guide";
     handle?: Handle;
@@ -582,6 +583,14 @@ export function CanvasStage() {
     const st = drag.current;
     if (!st) {
       const { doc, viewport, rulers, tool } = useDesign.getState();
+      if (tool === "eyedropper" && doc) {
+        const d = screenToDoc(p.x, p.y, viewport);
+        const hex = sampleDocColor(doc, d.x, d.y, livePaintRef.current) ?? "#000000";
+        setDropper((cur) => (cur && cur.x === p.x && cur.y === p.y && cur.hex === hex ? cur : { x: p.x, y: p.y, hex }));
+        if (wrap) wrap.style.cursor = "crosshair";
+        return;
+      }
+      if (dropper) setDropper(null);
       if (tool === "pen") {
         const d = screenToDoc(p.x, p.y, viewport);
         penHoverRef.current = { x: d.x, y: d.y };
@@ -819,6 +828,7 @@ export function CanvasStage() {
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerLeave={() => setDropper(null)}
       onWheel={onWheel}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
@@ -839,6 +849,20 @@ export function CanvasStage() {
     >
       <canvas ref={mainRef} className="absolute inset-0" />
       <canvas ref={overlayRef} className="pointer-events-none absolute inset-0" />
+      {tool === "eyedropper" && dropper && (
+        <div
+          className="pointer-events-none absolute z-20 flex items-center gap-1.5"
+          style={{ left: dropper.x + 14, top: dropper.y + 14 }}
+        >
+          <span
+            className="size-7 rounded-[8px] border border-phosphor"
+            style={{ background: dropper.hex, boxShadow: "0 0 12px rgba(63,198,255,0.35)" }}
+          />
+          <span className="rounded-[6px] border border-border bg-ground/90 px-1.5 py-0.5 font-mono text-[10px] text-phosphor uppercase">
+            {dropper.hex}
+          </span>
+        </div>
+      )}
       {tool === "pen" && (
         <div className="pointer-events-none absolute bottom-14 left-1/2 z-10 -translate-x-1/2 rounded-[8px] border border-border bg-surface/90 px-3 py-1.5 font-mono text-[10px] tracking-wide text-ink-dim uppercase">
           Click add · ⌫ last point · Enter close · Esc finish

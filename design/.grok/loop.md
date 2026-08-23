@@ -21,7 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Eyedropper live preview swatch next to the cursor.
+1. Add sampled eyedropper colour to the brand kit with one click.
 
 ## Done
 
@@ -51,8 +51,13 @@ Auth OFF, DB OFF.
 - Hub recents: Set · N chip on campaign cards; Sets filter.
 - Eyedropper samples images, paint bitmaps, and solid fills via document-space walk (not overlay chrome).
 - Present hotspot outline: phosphor box on hover.
+- Eyedropper live swatch + hex follows the cursor.
 
 ## Iterations
+
+### 2026-08-23T02:23Z — loop 31
+
+Eyedropper live swatch. Typecheck + build + smoke clean.
 
 ### 2026-08-23T02:13Z — loop 30
 
@@ -92,9 +97,6 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Eyedropper live preview swatch next to the cursor.
-
-
-## Next recommended
+Add sampled eyedropper colour to the brand kit with one click.
 
 Present hotspot outline on hover.
