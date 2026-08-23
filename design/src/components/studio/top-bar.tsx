@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan, Search, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { downloadDataUrl, downloadSvg, exportJpeg, exportPng, slug } from "@/lib/design/export";
+import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
 import { FORMATS } from "@/lib/design/formats";
 import { useDesign } from "@/lib/design/store";
 import { Button } from "@/components/ui/button";
@@ -30,17 +30,23 @@ export function TopBar() {
 
   if (!doc) return null;
 
-  function exportFile(kind: "png" | "jpg" | "svg") {
+  function exportFile(kind: "png" | "jpg" | "svg" | "print" | "pdf") {
     if (!doc) return;
     save();
     if (kind === "svg") {
       downloadSvg(doc);
     } else if (kind === "jpg") {
       downloadDataUrl(exportJpeg(doc, scale), `${slug(doc.name)}.jpg`);
+    } else if (kind === "print") {
+      downloadDataUrl(exportPrintPng(doc), `${slug(doc.name)}-print.png`);
+    } else if (kind === "pdf") {
+      downloadPrintPdf(doc);
     } else {
       downloadDataUrl(exportPng(doc, scale), `${slug(doc.name)}.png`);
     }
-    toast.success(`Exported ${kind.toUpperCase()}${kind === "svg" ? "" : ` @${scale}×`}`);
+    toast.success(
+      kind === "pdf" ? "Exported print PDF" : kind === "print" ? "Exported print PNG @4×" : `Exported ${kind.toUpperCase()}${kind === "svg" ? "" : ` @${scale}×`}`,
+    );
     setExportOpen(false);
   }
 
@@ -100,7 +106,7 @@ export function TopBar() {
           <span className="hidden sm:inline">Export</span>
         </Button>
         {exportOpen && (
-          <div className="absolute top-11 right-0 z-40 w-40 rounded-[12px] border border-border bg-surface p-2 shadow-lg">
+          <div className="absolute top-11 right-0 z-40 w-44 rounded-[12px] border border-border bg-surface p-2 shadow-lg">
             <select
               className="mb-2 h-8 w-full rounded-[8px] border border-border bg-surface-alt px-1 font-mono text-[11px] text-ink"
               value={scale}
@@ -117,8 +123,14 @@ export function TopBar() {
             <Button size="sm" className="mb-1 w-full" onClick={() => exportFile("jpg")}>
               JPG
             </Button>
-            <Button size="sm" className="w-full" onClick={() => exportFile("svg")}>
+            <Button size="sm" className="mb-1 w-full" onClick={() => exportFile("svg")}>
               SVG
+            </Button>
+            <Button size="sm" className="mb-1 w-full" variant="primary" onClick={() => exportFile("print")}>
+              Print PNG
+            </Button>
+            <Button size="sm" className="w-full" variant="primary" onClick={() => exportFile("pdf")}>
+              Print PDF
             </Button>
           </div>
         )}

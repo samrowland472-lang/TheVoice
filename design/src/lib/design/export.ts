@@ -2,46 +2,76 @@ import { fontStack } from "./fonts";
 import { drawDocument } from "./render";
 import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type Fill, type GradientFill } from "./types";
 
-export function rasterize(doc: DesignDocument, scale = 1): HTMLCanvasElement {
+export function rasterize(
+  doc: DesignDocument,
+  scale = 1,
+  opts?: { cropMarks?: boolean; paper?: number },
+): HTMLCanvasElement {
   const bleed = Math.max(0, doc.artboard.bleed ?? 0);
+  const paper = opts?.cropMarks ? Math.max(bleed, opts.paper ?? 36) : bleed;
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round((doc.artboard.width + bleed * 2) * scale);
-  canvas.height = Math.round((doc.artboard.height + bleed * 2) * scale);
+  canvas.width = Math.round((doc.artboard.width + paper * 2) * scale);
+  canvas.height = Math.round((doc.artboard.height + paper * 2) * scale);
   const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const pad = paper * scale;
+  const artW = doc.artboard.width * scale;
+  const artH = doc.artboard.height * scale;
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawDocument(
-    ctx,
-    doc,
-    { x: bleed * scale, y: bleed * scale, zoom: scale },
-    { skipChrome: true, dpr: 1 },
-  );
-  if (bleed > 0) {
-    const b = bleed * scale;
-    const w = doc.artboard.width * scale;
-    const h = doc.artboard.height * scale;
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = Math.max(1, scale);
-    const mark = Math.min(b * 0.7, 18 * scale);
-    const ticks: [number, number, number, number][] = [
-      [b, 0, b, mark],
-      [0, b, mark, b],
-      [b + w, 0, b + w, mark],
-      [b + w + b - mark, b, b + w + b, b],
-      [b, b + h + b - mark, b, b + h + b],
-      [0, b + h, mark, b + h],
-      [b + w, b + h + b - mark, b + w, b + h + b],
-      [b + w + b - mark, b + h, b + w + b, b + h],
-    ];
-    for (const [x1, y1, x2, y2] of ticks) {
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
+  ctx.fillRect(pad, pad, artW, artH);
+  drawDocument(ctx, doc, { x: pad, y: pad, zoom: scale }, { skipChrome: true, dpr: 1 });
+  if (opts?.cropMarks || paper > 0) {
+    drawCropMarks(ctx, pad, pad, artW, artH, paper * scale, scale);
   }
   return canvas;
+}
+
+function drawCropMarks(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  margin: number,
+  scale: number,
+) {
+  const mark = Math.min(margin * 0.72, 22 * scale);
+  const gap = Math.max(2 * scale, 1);
+  ctx.save();
+  ctx.strokeStyle = "#111111";
+  ctx.lineWidth = Math.max(1, scale * 0.75);
+  ctx.lineCap = "butt";
+  const ticks: [number, number, number, number][] = [
+    [x, y - gap, x, y - mark],
+    [x - gap, y, x - mark, y],
+    [x + w, y - gap, x + w, y - mark],
+    [x + w + gap, y, x + w + mark, y],
+    [x, y + h + gap, x, y + h + mark],
+    [x - gap, y + h, x - mark, y + h],
+    [x + w, y + h + gap, x + w, y + h + mark],
+    [x + w + gap, y + h, x + w + mark, y + h],
+  ];
+  for (const [x1, y1, x2, y2] of ticks) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  const midX = x + w / 2;
+  const midY = y + h / 2;
+  ctx.beginPath();
+  ctx.moveTo(midX, y - gap);
+  ctx.lineTo(midX, y - mark);
+  ctx.moveTo(midX, y + h + gap);
+  ctx.lineTo(midX, y + h + mark);
+  ctx.moveTo(x - gap, midY);
+  ctx.lineTo(x - mark, midY);
+  ctx.moveTo(x + w + gap, midY);
+  ctx.lineTo(x + w + mark, midY);
+  ctx.stroke();
+  ctx.restore();
 }
 
 export function exportPng(doc: DesignDocument, scale = 2): string {
@@ -50,6 +80,79 @@ export function exportPng(doc: DesignDocument, scale = 2): string {
 
 export function exportJpeg(doc: DesignDocument, scale = 2, quality = 0.92): string {
   return rasterize(doc, scale).toDataURL("image/jpeg", quality);
+}
+
+/** ~300 dpi print PNG with crop marks (4×, 36px paper if no bleed). */
+export function exportPrintPng(doc: DesignDocument): string {
+  return rasterize(doc, 4, { cropMarks: true, paper: 36 }).toDataURL("image/png");
+}
+
+export function downloadPrintPdf(doc: DesignDocument) {
+  const canvas = rasterize(doc, 4, { cropMarks: true, paper: 36 });
+  const jpeg = canvas.toDataURL("image/jpeg", 0.93);
+  const paper = Math.max(doc.artboard.bleed ?? 0, 36);
+  const wPt = doc.artboard.width + paper * 2;
+  const hPt = doc.artboard.height + paper * 2;
+  const bytes = jpegToPdf(jpeg, wPt, hPt, canvas.width, canvas.height);
+  const blob = new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${slug(doc.name)}-print.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function jpegToPdf(dataUrl: string, wPt: number, hPt: number, pxW: number, pxH: number): Uint8Array {
+  const b64 = dataUrl.split(",")[1] ?? "";
+  const raw = atob(b64);
+  const img = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) img[i] = raw.charCodeAt(i);
+  const enc = new TextEncoder();
+  const header = enc.encode("%PDF-1.4\n");
+  const objects: Uint8Array[] = [];
+  objects.push(enc.encode("1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n"));
+  objects.push(enc.encode("2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n"));
+  objects.push(
+    enc.encode(
+      `3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 ${wPt.toFixed(2)} ${hPt.toFixed(2)}] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> >> endobj\n`,
+    ),
+  );
+  const content = `q ${wPt.toFixed(2)} 0 0 ${hPt.toFixed(2)} 0 0 cm /Im0 Do Q\n`;
+  objects.push(enc.encode(`4 0 obj << /Length ${content.length} >> stream\n${content}endstream endobj\n`));
+  const imgHead = enc.encode(
+    `5 0 obj << /Type /XObject /Subtype /Image /Width ${pxW} /Height ${pxH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >> stream\n`,
+  );
+  const imgTail = enc.encode("\nendstream endobj\n");
+  const imgObj = new Uint8Array(imgHead.length + img.length + imgTail.length);
+  imgObj.set(imgHead, 0);
+  imgObj.set(img, imgHead.length);
+  imgObj.set(imgTail, imgHead.length + img.length);
+  objects.push(imgObj);
+
+  const parts: Uint8Array[] = [header];
+  const offsets = [0];
+  let pos = header.length;
+  for (const obj of objects) {
+    offsets.push(pos);
+    parts.push(obj);
+    pos += obj.length;
+  }
+  const xrefStart = pos;
+  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let i = 1; i <= objects.length; i++) {
+    xref += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+  }
+  xref += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
+  parts.push(enc.encode(xref));
+  const total = parts.reduce((n, p) => n + p.length, 0);
+  const out = new Uint8Array(total);
+  let o = 0;
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
+  return out;
 }
 
 export function downloadDataUrl(dataUrl: string, filename: string) {

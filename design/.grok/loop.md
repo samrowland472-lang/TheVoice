@@ -21,10 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
-2. Components / linked duplicates (edit one, update copies).
-11. Components / linked duplicates (edit one, update copies).
-12. Color-from-image palette into the brand kit.
+1. Components / linked duplicates (edit one, update copies).
+2. Color-from-image palette into the brand kit.
 13. Present mode speaker notes / click-through frames.
 14. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
 
@@ -45,8 +43,13 @@ Auth OFF, DB OFF.
 - Contrast checker: WCAG ratio on text vs overlapping fill or artboard, with Fix.
 - Campaign set: story + square + banner pages, magic-scaled from the current board.
 - Campaign clone uses uniform contain scale + center (no stretch) for cleaner format variants.
+- Print export: 4× PNG + one-page PDF with crop marks.
 
 ## Iterations
+
+### 2026-08-22T23:58Z — loop 20
+
+Print PNG @4× and Print PDF with crop marks. Restored truncated store.ts and studio-app. Typecheck + build + smoke clean.
 
 ### 2026-08-22T23:06Z — loop 19
 
@@ -102,4 +105,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-PDF-quality export (vector-ish or high-DPI print PNG with crop marks).
+Components / linked duplicates (edit one, update copies).
