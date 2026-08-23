@@ -476,6 +476,7 @@ textInput.addEventListener('input', () => {
 rateRange.addEventListener('input', () => {
   rateValue.textContent = rateRange.value;
   updateTextStats();
+  audioEngine.setRate(parseFloat(rateRange.value));
 });
 pitchRange.addEventListener('input', () => (pitchValue.textContent = pitchRange.value));
 volumeRange.addEventListener('input', () => {

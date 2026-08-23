@@ -20,6 +20,7 @@ export function createAudioEngine(visualizer) {
   let rafId = null;
   let currentUrl = null;
   let pendingVolume = 1;
+  let pendingRate = 1;
 
   let mode = null; // 'element' | 'pcm' | null
 
@@ -29,6 +30,7 @@ export function createAudioEngine(visualizer) {
   let pcmOffset = 0;
   let pcmPlaying = false;
   let pcmOnEnd = null;
+  let pcmRate = 1;
 
   function ensureGraph() {
     if (audioCtx) return;
@@ -77,6 +79,7 @@ export function createAudioEngine(visualizer) {
     pcmSource = audioCtx.createBufferSource();
     pcmSource.buffer = pcmBuffer;
     pcmSource.connect(gainNode);
+    pcmSource.playbackRate.value = pcmRate;
     pcmSource.onended = () => {
       if (pcmPlaying) {
         pcmPlaying = false;
@@ -84,7 +87,7 @@ export function createAudioEngine(visualizer) {
         if (pcmOnEnd) pcmOnEnd();
       }
     };
-    pcmStartCtxTime = audioCtx.currentTime - offsetSeconds;
+    pcmStartCtxTime = audioCtx.currentTime - offsetSeconds / Math.max(0.25, pcmRate);
     pcmSource.start(0, offsetSeconds);
     pcmPlaying = true;
   }
@@ -98,6 +101,7 @@ export function createAudioEngine(visualizer) {
       if (currentUrl) URL.revokeObjectURL(currentUrl);
       currentUrl = URL.createObjectURL(blob);
       audioEl.src = currentUrl;
+      audioEl.playbackRate = pendingRate;
       audioEl.onended = () => {
         visualizer.setAmplitude(0);
         if (onEnd) onEnd();
@@ -115,6 +119,7 @@ export function createAudioEngine(visualizer) {
       const buffer = audioCtx.createBuffer(1, float32Audio.length, sampleRate);
       buffer.copyToChannel(float32Audio, 0);
       pcmBuffer = buffer;
+      pcmRate = pendingRate;
       pcmOnEnd = () => {
         visualizer.setAmplitude(0);
         if (onEnd) onEnd();
@@ -127,7 +132,7 @@ export function createAudioEngine(visualizer) {
       if (mode === 'element') {
         audioEl.pause();
       } else if (mode === 'pcm' && pcmPlaying) {
-        pcmOffset = audioCtx.currentTime - pcmStartCtxTime;
+        pcmOffset = (audioCtx.currentTime - pcmStartCtxTime) * pcmRate;
         if (pcmSource) {
           pcmSource.onended = null;
           try {
@@ -167,6 +172,20 @@ export function createAudioEngine(visualizer) {
     setVolume(v) {
       pendingVolume = v;
       if (gainNode) gainNode.gain.value = v;
+    },
+
+    setRate(r) {
+      const rate = Math.max(0.5, Math.min(2, Number(r) || 1));
+      pendingRate = rate;
+      if (mode === 'element') audioEl.playbackRate = rate;
+      if (mode === 'pcm' && pcmSource && audioCtx) {
+        const now = (audioCtx.currentTime - pcmStartCtxTime) * pcmRate;
+        pcmRate = rate;
+        pcmSource.playbackRate.setTargetAtTime(rate, audioCtx.currentTime, 0.03);
+        pcmStartCtxTime = audioCtx.currentTime - now / Math.max(0.25, pcmRate);
+      } else {
+        pcmRate = rate;
+      }
     },
   };
 }
