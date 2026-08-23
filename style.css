@@ -3546,6 +3546,10 @@ html[data-avenue="music"] .shell.is-daw .main-area,
 }
 .dj-mixer .dj-xf { padding: 2px; width: 100%; gap: 4px; }
 .dj-mixer .dj-xf input { height: 16px; }
+.dj-mixer .dj-xf .dj-ch-fader input[type="range"] {
+  height: min(8vh, 48px);
+  width: 16px;
+}
 .dj-top { flex: none; gap: 8px; }
 .dj-transport { flex-wrap: wrap; gap: 3px; margin: 4px 0; }
 .dj-transport .btn { padding: 3px 6px; font-size: 0.58rem; }

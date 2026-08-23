@@ -52,7 +52,7 @@ function ensureCtx() {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.9;
+    master.gain.value = masterLevel;
     cueGain = ctx.createGain();
     cueGain.gain.value = 0;
     recDest = ctx.createMediaStreamDestination();
@@ -286,6 +286,7 @@ function makeDeck(id) {
 
 const decks = { a: makeDeck('a'), b: makeDeck('b') };
 let xfader = 0.5;
+let masterLevel = 0.9;
 let djQuantize = 1;
 let deckPaint = 0;
 
@@ -361,6 +362,10 @@ function applyXfade() {
   const { a, b } = equalPower(xfader);
   if (decks.a.nodes) decks.a.nodes.gain.gain.setTargetAtTime(decks.a.gain * a, ctx ? ctx.currentTime : 0, 0.02);
   if (decks.b.nodes) decks.b.nodes.gain.gain.setTargetAtTime(decks.b.gain * b, ctx ? ctx.currentTime : 0, 0.02);
+}
+
+function applyMaster() {
+  if (master) master.gain.setTargetAtTime(masterLevel, ctx ? ctx.currentTime : 0, 0.02);
 }
 
 function deckNow(d) {
@@ -867,6 +872,9 @@ function mixerHtml() {
     <aside class="dj-mixer" aria-label="Mixer">
       ${ch(decks.a)}
       <div class="dj-xf">
+        <label class="dj-ch-fader">MST
+          <input type="range" id="dj-master" min="0" max="1" step="0.01" value="${masterLevel}" orient="vertical" aria-label="Master fader">
+        </label>
         <span>A</span>
         <input type="range" id="dj-xfader" min="0" max="1" step="0.001" value="${xfader}" aria-label="Crossfader">
         <span>B</span>
@@ -927,6 +935,14 @@ function bindDeckUi(root) {
     ensureCtx();
     applyXfade();
   });
+  const mst = root.querySelector('#dj-master');
+  if (mst) {
+    mst.addEventListener('input', (e) => {
+      masterLevel = parseFloat(e.target.value);
+      ensureCtx();
+      applyMaster();
+    });
+  }
   root.querySelector('#dj-tap').addEventListener('click', () => {
     const now = performance.now();
     if (now - lastTap > 2000) tapTimes = [];
