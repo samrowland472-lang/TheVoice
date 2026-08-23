@@ -961,7 +961,7 @@ function bindDeckUi(root) {
       const d = decks[btn.dataset.deck];
       const act = btn.dataset.act;
       if (act === 'play') togglePlay(d);
-      if (act === 'cue') cueDeck(d);
+      if (act === 'cue') return;
       if (act === 'sync') syncToOther(d);
       if (act === 'keylock') {
         d.keylock = !d.keylock;
@@ -1084,6 +1084,43 @@ function bindDeckUi(root) {
       el.classList.remove('drop');
       const f = e.dataTransfer.files[0];
       if (f) await loadFileIntoDeck(decks[el.dataset.deck], f);
+    });
+  });
+  bindCueHold(root);
+}
+
+function bindCueHold(root) {
+  root.querySelectorAll('[data-act="cue"]').forEach((btn) => {
+    let held = false;
+    const end = () => {
+      if (!held) return;
+      held = false;
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      const d = decks[btn.dataset.deck];
+      if (!d) return;
+      pauseDeck(d);
+      const at = snapToGrid(d, d.cues[0] != null ? d.cues[0] : 0);
+      d.cueAt = at;
+      d.off = at;
+      paintDecks();
+    };
+    btn.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      const d = decks[btn.dataset.deck];
+      if (!d || !d.buf) return;
+      if (d.playing) {
+        pauseDeck(d);
+        const at = snapToGrid(d, d.cues[0] != null ? d.cues[0] : 0);
+        d.cueAt = at;
+        d.off = at;
+        paintDecks();
+        return;
+      }
+      held = true;
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
+      startDeckAt(d, snapToGrid(d, d.cues[0] != null ? d.cues[0] : d.cueAt));
     });
   });
 }
