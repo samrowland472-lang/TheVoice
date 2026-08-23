@@ -1286,6 +1286,10 @@ export function initDaw(options) {
     view: setDawMode,
     launchScene,
     addVoiceClip,
+    loadFile: (id, file) => {
+      const d = decks[id] || decks.a;
+      return loadFileIntoDeck(d, file);
+    },
   });
 }
 

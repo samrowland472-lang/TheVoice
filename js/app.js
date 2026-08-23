@@ -1515,6 +1515,18 @@ function applyLibraryFilters() {
       switchSection('speak');
       showToast('Loaded into Speak');
     });
+    const djBtn = document.createElement('button');
+    djBtn.className = 'btn';
+    djBtn.textContent = 'Load to DJ';
+    djBtn.disabled = !clip.blob;
+    djBtn.addEventListener('click', async () => {
+      if (!clip.blob || !window.TheVoiceDAW || !window.TheVoiceDAW.loadFile) return;
+      const name = `${(clip.title || 'clip').replace(/[^\w.-]+/g, '-')}.${clip.ext || 'wav'}`;
+      const file = new File([clip.blob], name, { type: clip.blob.type || 'audio/wav' });
+      await window.TheVoiceDAW.loadFile('a', file);
+      switchSection('dj');
+      showToast('Loaded to DJ deck A');
+    });
     const dlBtn = document.createElement('button');
     dlBtn.className = 'btn';
     dlBtn.textContent = 'Download';
@@ -1533,7 +1545,7 @@ function applyLibraryFilters() {
       showToast('Clip deleted');
       renderLibrary();
     });
-    actions.append(useBtn, dlBtn, delBtn);
+    actions.append(useBtn, djBtn, dlBtn, delBtn);
 
     card.append(meta, title, textEl, transport, actions);
     clipListEl.appendChild(card);
