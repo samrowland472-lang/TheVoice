@@ -21,16 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Zoom to selection (fit selected layers in view).
-2. Export selection as PNG.
+1. Export selection as PNG.
+2. Multi-select marquee polish / keyboard nudge feedback.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Canvas stage restored from placeholder wipe; eyedropper HUD re-applied under the board.
 - Full canvas-stage restored (35kb) after GitHub stub; eyedropper HUD: Click sample · kit chip · Shift+click.
+- Zoom to selection (fit selected layers in view): Shift+0, command palette, context menu, Shift-click zoom %.
 
 ## Iterations
+
+### 2026-08-23T17:05Z — loop 36
+
+Zoom to selection. `requestFitSelection` + `fitBoxViewport`; AABB of selected nodes (incl. rotation). Wire: ⇧0, command palette “Zoom to selection”, context menu, Shift-click zoom %. Empty selection falls back to fit artboard. Typecheck + build + smoke clean.
 
 ### 2026-08-23T14:20Z — loop 35
 
@@ -42,4 +47,4 @@ Restored `canvas-stage.tsx` after placeholder wipe (was 20 bytes). Re-applied ey
 
 ## Next recommended
 
-Zoom to selection (fit selected layers in view).
+Export selection as PNG.
