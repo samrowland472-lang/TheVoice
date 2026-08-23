@@ -542,10 +542,16 @@ function bindDjKeys() {
 function cueDeck(d) {
   if (d.playing) {
     pauseDeck(d);
-    d.cueAt = snapToGrid(d, d.cues[0] != null ? d.cues[0] : 0);
+    d.cueAt = memoryCue(d);
+    d.off = d.cueAt;
     return;
   }
-  startDeckAt(d, snapToGrid(d, d.cues[0] != null ? d.cues[0] : d.cueAt));
+  startDeckAt(d, memoryCue(d));
+}
+
+function memoryCue(d) {
+  if (d.cues[0] != null) return snapToGrid(d, d.cues[0]);
+  return snapToGrid(d, d.cueAt || 0);
 }
 
 function jumpCue(d, i) {
@@ -1122,6 +1128,7 @@ function bindDeckUi(root) {
 function bindCueHold(root) {
   root.querySelectorAll('[data-act="cue"]').forEach((btn) => {
     let held = false;
+    let back = 0;
     const end = () => {
       if (!held) return;
       held = false;
@@ -1130,9 +1137,8 @@ function bindCueHold(root) {
       const d = decks[btn.dataset.deck];
       if (!d) return;
       pauseDeck(d);
-      const at = snapToGrid(d, d.cues[0] != null ? d.cues[0] : 0);
-      d.cueAt = at;
-      d.off = at;
+      d.cueAt = back;
+      d.off = back;
       paintDecks();
     };
     btn.addEventListener('pointerdown', (ev) => {
@@ -1141,16 +1147,17 @@ function bindCueHold(root) {
       if (!d || !d.buf) return;
       if (d.playing) {
         pauseDeck(d);
-        const at = snapToGrid(d, d.cues[0] != null ? d.cues[0] : 0);
+        const at = memoryCue(d);
         d.cueAt = at;
         d.off = at;
         paintDecks();
         return;
       }
       held = true;
+      back = memoryCue(d);
       window.addEventListener('pointerup', end);
       window.addEventListener('pointercancel', end);
-      startDeckAt(d, snapToGrid(d, d.cues[0] != null ? d.cues[0] : d.cueAt));
+      startDeckAt(d, back);
     });
   });
 }
