@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Eyedropper samples from images and paint, not just the flattened canvas.
-2. Present hotspot outline on hover.
+1. Present hotspot outline on hover.
+2. Eyedropper live preview swatch next to the cursor.
 
 ## Done
 
@@ -50,8 +50,13 @@ Auth OFF, DB OFF.
 - Thumbnail cache: content hash on artboard+nodes skips re-raster when hub thumbnail is still valid.
 - Present hotspot cursor: pointer + phosphor target name on hover.
 - Hub recents: Set · N chip on campaign cards; Sets filter.
+- Eyedropper reads source pixels from photos, paint, and fills (not the flattened canvas).
 
 ## Iterations
+
+### 2026-08-23T02:08Z — loop 29
+
+Source-pixel eyedropper. Typecheck + build + smoke clean.
 
 ### 2026-08-23T02:03Z — loop 28
 
@@ -83,4 +88,4 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Eyedropper samples from images and paint, not just the flattened canvas.
+Present hotspot outline on hover.

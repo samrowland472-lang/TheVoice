@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BRUSHES, brushById, mirrorPoints, strokeSegment } from "@/lib/design/brushes";
 import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
 import { imageNode, pathNode } from "@/lib/design/node-factory";
-import { docToScreen, drawDocument, fitViewport, getCachedImage, screenToDoc } from "@/lib/design/render";
+import { docToScreen, drawDocument, fitViewport, getCachedImage, sampleDocColor, screenToDoc } from "@/lib/design/render";
 import { rectsIntersect, smartSnap } from "@/lib/design/snap";
 import { ensurePaintLayer, makeShape, makeText, useDesign } from "@/lib/design/store";
 import { snap } from "@/lib/design/geometry";
@@ -435,14 +435,8 @@ export function CanvasStage() {
     }
 
     if (tool === "eyedropper") {
-      const main = mainRef.current;
-      if (!main) return;
-      const ctx = main.getContext("2d");
-      if (!ctx) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const pix = ctx.getImageData(p.x * dpr, p.y * dpr, 1, 1).data;
-      const hex = `#${[pix[0], pix[1], pix[2]].map((c) => c!.toString(16).padStart(2, "0")).join("")}`;
-      useDesign.getState().setColor(hex);
+      const hex = sampleDocColor(doc, d.x, d.y, livePaintRef.current);
+      if (hex) useDesign.getState().setColor(hex);
       return;
     }
 

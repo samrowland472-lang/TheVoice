@@ -1,5 +1,6 @@
 import { fontStack } from "./fonts";
 import { degToRad, nodeCenter } from "./geometry";
+import { hitNode, nodeLocalPoint } from "./hit";
 import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Viewport } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
@@ -286,6 +287,65 @@ export function fitViewport(
 
 export function screenToDoc(sx: number, sy: number, vp: Viewport) {
   return { x: (sx - vp.x) / vp.zoom, y: (sy - vp.y) / vp.zoom };
+}
+
+let probe: HTMLCanvasElement | null = null;
+
+function hexPixel(img: CanvasImageSource, sx: number, sy: number): string | null {
+  probe ??= document.createElement("canvas");
+  probe.width = 1;
+  probe.height = 1;
+  const ctx = probe.getContext("2d");
+  if (!ctx) return null;
+  ctx.clearRect(0, 0, 1, 1);
+  ctx.drawImage(img, sx, sy, 1, 1, 0, 0, 1, 1);
+  const d = ctx.getImageData(0, 0, 1, 1).data;
+  if ((d[3] ?? 0) < 20) return null;
+  return `#${[d[0], d[1], d[2]].map((c) => (c ?? 0).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Sample the source image/paint/fill at a document point (not the flattened canvas). */
+export function sampleDocColor(
+  doc: DesignDocument,
+  x: number,
+  y: number,
+  livePaint?: { id: string; canvas: HTMLCanvasElement } | null,
+): string | null {
+  for (let i = doc.nodes.length - 1; i >= 0; i--) {
+    const n = doc.nodes[i]!;
+    if (!hitNode(n, x, y, { ignoreLock: true })) continue;
+    const lp = nodeLocalPoint(n, x, y);
+    const u = n.w ? (lp.x - n.x) / n.w : 0;
+    const v = n.h ? (lp.y - n.y) / n.h : 0;
+    if (isImage(n)) {
+      const img = getCachedImage(n.src);
+      if (img) {
+        const c = n.crop && n.crop.w > 0 && n.crop.h > 0 ? n.crop : { x: 0, y: 0, w: 1, h: 1 };
+        const nw = img.naturalWidth || img.width;
+        const nh = img.naturalHeight || img.height;
+        const sx = Math.max(0, Math.min(nw - 1, (c.x + u * c.w) * nw));
+        const sy = Math.max(0, Math.min(nh - 1, (c.y + v * c.h) * nh));
+        const hex = hexPixel(img, sx, sy);
+        if (hex) return hex;
+      }
+    } else if (isPaint(n)) {
+      const src = livePaint && livePaint.id === n.id ? livePaint.canvas : n.bitmap ? getCachedImage(n.bitmap) : null;
+      if (src) {
+        const hex = hexPixel(src, lp.x - n.x, lp.y - n.y);
+        if (hex) return hex;
+      }
+    } else if (typeof n.fill === "string" && n.fill !== "transparent") {
+      return n.fill;
+    } else if (isGradient(n.fill)) {
+      return n.fill.stops[0]?.color ?? null;
+    }
+  }
+  if (x >= 0 && y >= 0 && x <= doc.artboard.width && y <= doc.artboard.height) {
+    const bg = doc.artboard.background;
+    if (typeof bg === "string") return bg;
+    if (isGradient(bg)) return bg.stops[0]?.color ?? null;
+  }
+  return null;
 }
 
 export function docToScreen(x: number, y: number, vp: Viewport) {

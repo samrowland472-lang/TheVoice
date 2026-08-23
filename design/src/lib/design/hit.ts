@@ -13,7 +13,7 @@ export type Handle =
   | "sw"
   | "rotate";
 
-function localPoint(n: DesignNode, x: number, y: number) {
+export function nodeLocalPoint(n: DesignNode, x: number, y: number) {
   const c = nodeCenter(n);
   const r = -degToRad(n.rotation);
   const dx = x - c.x;
@@ -24,9 +24,9 @@ function localPoint(n: DesignNode, x: number, y: number) {
   };
 }
 
-export function hitNode(n: DesignNode, x: number, y: number): boolean {
-  if (!n.visible || n.locked) return false;
-  const p = localPoint(n, x, y);
+export function hitNode(n: DesignNode, x: number, y: number, opts?: { ignoreLock?: boolean }): boolean {
+  if (!n.visible || (n.locked && !opts?.ignoreLock)) return false;
+  const p = nodeLocalPoint(n, x, y);
   if (n.kind === "ellipse") {
     const cx = n.x + n.w / 2;
     const cy = n.y + n.h / 2;
@@ -63,7 +63,7 @@ export function hitHandle(n: DesignNode, sx: number, sy: number, zoom: number): 
     { id: "w", x: n.x, y: n.y + n.h / 2, r: size },
     { id: "rotate", x: n.x + n.w / 2, y: n.y - 28 / zoom, r: rot },
   ];
-  const p = localPoint(n, sx, sy);
+  const p = nodeLocalPoint(n, sx, sy);
   for (const h of handles) {
     if (Math.hypot(p.x - h.x, p.y - h.y) <= h.r + 4 / zoom) return h.id;
   }
