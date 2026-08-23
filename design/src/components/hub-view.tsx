@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Copy, FolderPlus, Pin, Plus, Search, Trash2 } from "lucide-react";
 import { FORMATS } from "@/lib/design/formats";
+import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { imageNode } from "@/lib/design/node-factory";
 import { useDesign } from "@/lib/design/store";
@@ -352,6 +353,30 @@ export function HubView() {
           >
             Add colour
           </Button>
+          <label className="inline-flex h-9 cursor-pointer items-center rounded-[10px] border border-border px-3 text-xs text-ink-dim hover:border-phosphor hover:text-ink">
+            From image
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  void paletteFromSrc(String(reader.result), 6).then((hexes) => {
+                    const cur = useDesign.getState().brand;
+                    const extra = hexes
+                      .filter((hex) => !cur.colors.some((c) => c.hex.toLowerCase() === hex))
+                      .map((hex, i) => ({ name: paletteName(hex, i), hex }));
+                    if (extra.length) setBrand({ ...cur, colors: [...cur.colors, ...extra].slice(0, 12) });
+                  });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
         </div>
         <div className="mt-6 grid max-w-xl grid-cols-2 gap-3">
           <label className="text-[11px] text-ink-dim">

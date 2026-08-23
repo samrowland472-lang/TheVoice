@@ -21,10 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Color-from-image palette into the brand kit.
-2. Present mode speaker notes / click-through frames.
-13. Present mode speaker notes / click-through frames.
-14. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
+1. Present mode speaker notes / click-through frames.
+2. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
 
 ## Done
 
@@ -45,8 +43,13 @@ Auth OFF, DB OFF.
 - Campaign clone uses uniform contain scale + center (no stretch) for cleaner format variants.
 - Print export: 4× PNG + one-page PDF with crop marks.
 - Linked duplicates: style/copy sync across instances; transform stays local.
+- Palette from image: hub “From image” and inspector “Palette to brand”.
 
 ## Iterations
+
+### 2026-08-23T00:08Z — loop 22
+
+Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ### 2026-08-23T00:03Z — loop 21
 
@@ -110,4 +113,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Color-from-image palette into the brand kit.
+Present mode speaker notes / click-through frames.

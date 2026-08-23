@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
+import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
 import { useDesign } from "@/lib/design/store";
 import type { Align, BlendMode, DesignNode, GradientFill, ImageNode, TextNode } from "@/lib/design/types";
@@ -575,6 +576,8 @@ function ContrastMeter({ node }: { node: TextNode }) {
 
 function ImageFields({ node }: { node: ImageNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
+  const brand = useDesign((s) => s.brand);
+  const setBrand = useDesign((s) => s.setBrand);
   const f = node.filters;
   const crop = node.crop ?? { x: 0, y: 0, w: 1, h: 1 };
   const left = crop.x;
@@ -599,6 +602,21 @@ function ImageFields({ node }: { node: ImageNode }) {
 
   return (
     <>
+      <button
+        type="button"
+        className="h-8 w-full rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+        onClick={() => {
+          void paletteFromSrc(node.src, 6).then((hexes) => {
+            const cur = useDesign.getState().brand;
+            const extra = hexes
+              .filter((hex) => !cur.colors.some((c) => c.hex.toLowerCase() === hex))
+              .map((hex, i) => ({ name: paletteName(hex, i), hex }));
+            if (extra.length) setBrand({ ...cur, colors: [...cur.colors, ...extra].slice(0, 12) });
+          });
+        }}
+      >
+        Palette to brand
+      </button>
       <Field label="Crop">
         <div className="grid grid-cols-2 gap-2">
           <label className="text-[10px] text-ink-faint">
