@@ -35,7 +35,7 @@ Auth OFF, DB OFF.
 
 ### 2026-08-23T17:05Z — loop 36
 
-Zoom to selection. `requestFitSelection` + `fitBoxViewport`; AABB of selected nodes (incl. rotation). Wire: ⇧0, command palette “Zoom to selection”, context menu, Shift-click zoom %. Empty selection falls back to fit artboard. Typecheck + build + smoke clean.
+Zoom to selection. `requestFitSelection` + `fitBoxViewport`; AABB of selected nodes (incl. rotation). Wire: ⇧0, command palette "Zoom to selection", context menu, Shift-click zoom %. Empty selection falls back to fit artboard. Typecheck + build + smoke clean.
 
 ### 2026-08-23T14:20Z — loop 35
 
