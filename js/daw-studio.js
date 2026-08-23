@@ -2293,13 +2293,46 @@ function paintTransport() {
 }
 
 async function bounce() {
+  const a = audio();
+  ensureMix();
+  if (a && a.ctx && mix.master && typeof MediaRecorder !== 'undefined') {
+    if (window.__ablBounce && window.__ablBounce.state === 'recording') {
+      window.__ablBounce.stop();
+      return;
+    }
+    const dest = a.ctx.createMediaStreamDestination();
+    mix.master.analyser.connect(dest);
+    const rec = new MediaRecorder(dest.stream);
+    window.__ablBounce = rec;
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      window.__ablBounce = null;
+      try { mix.master.analyser.disconnect(dest); } catch (_) {}
+      const blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+      if (!blob.size) return;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `the-voice-${bpm()}bpm.webm`;
+      link.click();
+      const btn = document.getElementById('abl-bounce');
+      if (btn) btn.textContent = 'Bounce';
+    };
+    if (!playing) studioPlay();
+    rec.start();
+    const btn = document.getElementById('abl-bounce');
+    if (btn) btn.textContent = 'Stop bounce';
+    const ms = (60 / bpm()) * 4 * 8 * 1000;
+    setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, Math.max(2000, Math.min(ms, 60000)));
+    return;
+  }
   if (!opts.renderPattern || !opts.encodeWav16 || !pattern()) return;
   const samples = opts.renderPattern(pattern(), 44100, 2);
   const blob = opts.encodeWav16(samples, 44100);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `the-voice-${bpm()}bpm.wav`;
-  a.click();
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `the-voice-${bpm()}bpm.wav`;
+  link.click();
 }
 
 function playPhase01() {
