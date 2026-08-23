@@ -2094,16 +2094,28 @@ if (modAbBtn) {
   });
 }
 if (modPlay) {
-  modPlay.addEventListener('click', () => {
-    if (!modAudio.src) return;
-    if (modAudio.paused) {
-      if (typeof stopPlayback === 'function') stopPlayback();
-      modAudio.play().catch(() => {});
-      modPlay.textContent = '■';
-    } else {
-      modAudio.pause();
-      modPlay.textContent = '▶';
-    }
+  modPlay.addEventListener('click', () => toggleModPlay());
+}
+function toggleModPlay() {
+  if (!modAudio || !modAudio.src) return;
+  if (modAudio.paused) {
+    if (typeof stopPlayback === 'function') stopPlayback();
+    if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
+    modAudio.play().catch(() => {});
+    if (modPlay) modPlay.textContent = '■';
+  } else {
+    modAudio.pause();
+    if (modPlay) modPlay.textContent = '▶';
+  }
+}
+if (!window.__modKeys) {
+  window.__modKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    if (!modulateView || modulateView.hidden) return;
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) return;
+    if (ev.code !== 'Space') return;
+    ev.preventDefault();
+    toggleModPlay();
   });
 }
 if (modScrub) {
