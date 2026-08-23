@@ -286,6 +286,7 @@ function makeDeck(id) {
 
 const decks = { a: makeDeck('a'), b: makeDeck('b') };
 let xfader = 0.5;
+let djQuantize = 1;
 let deckPaint = 0;
 
 function buildDeckGraph(deck) {
@@ -493,7 +494,7 @@ function togglePlay(d) {
   ensureCtx();
   if (!d.buf) return;
   if (d.playing) pauseDeck(d);
-  else startDeckAt(d, d.cueAt);
+  else startDeckAt(d, snapToGrid(d, d.cueAt));
 }
 
 function toggleLiveDecks() {
@@ -525,22 +526,23 @@ function bindDjKeys() {
 function cueDeck(d) {
   if (d.playing) {
     pauseDeck(d);
-    d.cueAt = d.cues[0] != null ? d.cues[0] : 0;
+    d.cueAt = snapToGrid(d, d.cues[0] != null ? d.cues[0] : 0);
     return;
   }
-  startDeckAt(d, d.cues[0] != null ? d.cues[0] : d.cueAt);
+  startDeckAt(d, snapToGrid(d, d.cues[0] != null ? d.cues[0] : d.cueAt));
 }
 
 function jumpCue(d, i) {
   const t = d.cues[i];
   if (t == null) {
-    d.cues[i] = deckNow(d);
+    d.cues[i] = snapToGrid(d, deckNow(d));
     paintDecks();
     return;
   }
+  const at = snapToGrid(d, t);
   beginSlip(d);
-  if (d.playing) startDeckAt(d, t);
-  else d.cueAt = t;
+  if (d.playing) startDeckAt(d, at);
+  else d.cueAt = at;
 }
 
 function clearCue(d, i) {
@@ -676,7 +678,7 @@ function setLoop(d, beats) {
   if (!d.buf) return;
   const bpm = d.bpm || currentBpm();
   const dur = (60 / bpm) * beats;
-  const at = deckNow(d);
+  const at = snapToGrid(d, deckNow(d));
   beginSlip(d);
   d.loopStart = at;
   d.loopEnd = Math.min(d.buf.duration, at + dur);
@@ -688,6 +690,15 @@ function setLoop(d, beats) {
 function beatLen(d) {
   const bpm = d.bpm || d.origBpm || currentBpm() || 120;
   return 60 / Math.max(40, bpm);
+}
+
+function snapToGrid(d, t) {
+  if (!djQuantize || !d || !d.buf) return t;
+  const beat = beatLen(d) * djQuantize;
+  if (!(beat > 0)) return t;
+  const off = d.gridOffset || 0;
+  const n = Math.round((t - off) / beat);
+  return Math.max(0, Math.min(d.buf.duration - 0.01, off + n * beat));
 }
 
 function phaseInBar(d, t) {
@@ -863,6 +874,7 @@ function paintDecks() {
         <span class="daw-kicker">DJ Live</span>
         <label>Master <input id="daw-bpm" type="number" min="40" max="240" value="${currentBpm()}"></label>
         <span id="daw-bpm-val">${currentBpm()} BPM</span>
+        <button type="button" class="btn${djQuantize ? ' on' : ''}" id="dj-quant" aria-pressed="${djQuantize ? 'true' : 'false'}">QUANTIZE</button>
         <button type="button" class="btn" id="dj-tap">Tap</button>
         <button type="button" class="btn" id="dj-rec">${recorder && recorder.state === 'recording' ? 'Stop rec' : 'Record mix'}</button>
         <span class="hint hint-info" id="dj-hw">${hw}</span>
@@ -892,6 +904,13 @@ let tapTimes = [];
 
 function bindDeckUi(root) {
   root.querySelector('#daw-bpm').addEventListener('change', (e) => setBpm(Number(e.target.value)));
+  const quantBtn = root.querySelector('#dj-quant');
+  if (quantBtn) {
+    quantBtn.addEventListener('click', () => {
+      djQuantize = djQuantize ? 0 : 1;
+      paintDecks();
+    });
+  }
   root.querySelector('#dj-xfader').addEventListener('input', (e) => {
     xfader = parseFloat(e.target.value);
     ensureCtx();
@@ -961,7 +980,7 @@ function bindDeckUi(root) {
       if (d.slip && d.playing) {
         ev.preventDefault();
         beginSlip(d);
-        startDeckAt(d, t);
+        startDeckAt(d, snapToGrid(d, t));
       }
     });
     btn.addEventListener('pointerup', () => {
@@ -986,7 +1005,7 @@ function bindDeckUi(root) {
       const d = decks[id];
       if (!d || !d.buf) return;
       const r = canvas.getBoundingClientRect();
-      const t = Math.max(0, Math.min(d.buf.duration - 0.01, ((ev.clientX - r.left) / r.width) * d.buf.duration));
+      const t = snapToGrid(d, Math.max(0, Math.min(d.buf.duration - 0.01, ((ev.clientX - r.left) / r.width) * d.buf.duration)));
       if (d.playing) startDeckAt(d, t);
       else d.cueAt = t;
     });
