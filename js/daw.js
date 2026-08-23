@@ -685,17 +685,43 @@ function setLoop(d, beats) {
   if (d.playing) startDeckAt(d, at);
 }
 
+function beatLen(d) {
+  const bpm = d.bpm || d.origBpm || currentBpm() || 120;
+  return 60 / Math.max(40, bpm);
+}
+
+function phaseInBar(d, t) {
+  const bar = beatLen(d) * 4;
+  const off = d.gridOffset || 0;
+  let p = (t - off) % bar;
+  if (p < 0) p += bar;
+  return p;
+}
+
 function syncToOther(d) {
   const other = d.id === 'a' ? decks.b : decks.a;
-  const target = other.bpm || currentBpm();
+  const target = other.bpm || other.origBpm || currentBpm();
   if (!d.origBpm) return;
-  const pos = deckNow(d);
   d.rate = target / d.origBpm;
   d.bpm = target;
   d.sync = true;
-  d.off = pos;
-  if (ctx) d.t0 = ctx.currentTime;
   if (d.src) d.src.playbackRate.value = d.rate;
+  const otherT = other.buf ? deckNow(other) : 0;
+  const otherPhase = phaseInBar(other, otherT);
+  const meT = deckNow(d);
+  const mePhase = phaseInBar(d, meT);
+  let aligned = meT + (otherPhase - mePhase);
+  if (d.buf) {
+    const bar = beatLen(d) * 4;
+    while (aligned < 0) aligned += bar;
+    if (aligned >= d.buf.duration) aligned = Math.max(0, aligned % bar);
+    aligned = Math.max(0, Math.min(d.buf.duration - 0.01, aligned));
+  }
+  if (d.playing) startDeckAt(d, aligned);
+  else {
+    d.cueAt = aligned;
+    d.off = aligned;
+  }
   if (d.keylock && d.playing) d.lockNext = ctx ? ctx.currentTime : d.lockNext;
   setBpm(target);
 }
