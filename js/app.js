@@ -1853,16 +1853,28 @@ if (longformCancelBtn) {
 }
 
 if (longformPlay) {
-  longformPlay.addEventListener('click', () => {
-    if (!longformAudio.src) return;
-    if (longformAudio.paused) {
-      if (typeof stopPlayback === 'function') stopPlayback();
-      longformAudio.play().catch(() => {});
-      longformPlay.textContent = '■';
-    } else {
-      longformAudio.pause();
-      longformPlay.textContent = '▶';
-    }
+  longformPlay.addEventListener('click', () => toggleLongformPlay());
+}
+function toggleLongformPlay() {
+  if (!longformAudio || !longformAudio.src) return;
+  if (longformAudio.paused) {
+    if (typeof stopPlayback === 'function') stopPlayback();
+    if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
+    longformAudio.play().catch(() => {});
+    if (longformPlay) longformPlay.textContent = '■';
+  } else {
+    longformAudio.pause();
+    if (longformPlay) longformPlay.textContent = '▶';
+  }
+}
+if (!window.__longformKeys) {
+  window.__longformKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    if (!longformView || longformView.hidden) return;
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) return;
+    if (ev.code !== 'Space') return;
+    ev.preventDefault();
+    toggleLongformPlay();
   });
 }
 if (longformScrub) {
