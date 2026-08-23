@@ -21,8 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Thumbnail cache for hub recents (skip re-raster when unchanged).
-2. Present cursor hint when hovering a hotspot.
+1. Present cursor hint when hovering a hotspot.
 
 ## Done
 
@@ -47,8 +46,13 @@ Auth OFF, DB OFF.
 - Present mode: speaker notes + campaign click-through (← → / space / frame chips).
 - Paint live: stroke draws offscreen; PNG encode only on pointer-up. Canvas skips brand/index/brush redraws.
 - Hotspots: a layer can jump to another campaign page or a URL in present.
+- Thumbnail cache: content hash on artboard+nodes skips re-raster when hub thumbnail is still valid.
 
 ## Iterations
+
+### 2026-08-23T01:07Z — loop 26
+
+Thumbnail cache for hub recents. `thumbHash` (FNV-1a of artboard+nodes) stored on the document; save reuses the existing PNG data URL when the hash matches. Typecheck + build + smoke clean.
 
 ### 2026-08-23T00:28Z — loop 25
 
@@ -68,5 +72,4 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Thumbnail cache for hub recents (skip re-raster when unchanged).
-
+Present cursor hint when hovering a hotspot.
