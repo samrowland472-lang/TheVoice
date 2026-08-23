@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Hub recents: campaign grouping chip on cards.
-2. Eyedropper samples from images and paint, not just the flattened canvas.
+1. Eyedropper samples from images and paint, not just the flattened canvas.
+2. Present hotspot outline on hover.
 
 ## Done
 
@@ -49,8 +49,13 @@ Auth OFF, DB OFF.
 - Hotspots: a layer can jump to another campaign page or a URL in present.
 - Thumbnail cache: content hash on artboard+nodes skips re-raster when hub thumbnail is still valid.
 - Present hotspot cursor: pointer + phosphor target name on hover.
+- Hub recents: Set · N chip on campaign cards; Sets filter.
 
 ## Iterations
+
+### 2026-08-23T02:03Z — loop 28
+
+Campaign set chips on Recents. Typecheck + build + smoke clean.
 
 ### 2026-08-23T01:58Z — loop 27
 
@@ -78,4 +83,4 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Hub recents: campaign grouping chip on cards.
+Eyedropper samples from images and paint, not just the flattened canvas.

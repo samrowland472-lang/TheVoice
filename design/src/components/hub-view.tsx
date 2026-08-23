@@ -35,6 +35,7 @@ export function HubView() {
   const [q, setQ] = useState("");
   const [folder, setFolder] = useState("all");
   const [tag, setTag] = useState("all");
+  const [campaignFilter, setCampaignFilter] = useState<string | null>(null);
 
   useEffect(() => {
     hydrate();
@@ -55,6 +56,15 @@ export function HubView() {
     const s = q.trim().toLowerCase();
     return TEMPLATES.filter((t) => (cat === "All" || t.category === cat) && (!s || `${t.name} ${t.description} ${t.category}`.toLowerCase().includes(s)));
   }, [cat, q]);
+
+  const campaignCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of index) {
+      if (!p.campaignId) continue;
+      m.set(p.campaignId, (m.get(p.campaignId) ?? 0) + 1);
+    }
+    return m;
+  }, [index]);
 
   function openTemplate(id: string) {
     const docId = fromTemplate(id);
@@ -179,6 +189,16 @@ export function HubView() {
                 {id === "all" ? "Any tag" : id}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setCampaignFilter((c) => (c ? null : "__any__"))}
+              className={cn(
+                "h-7 rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide",
+                campaignFilter ? "border border-phosphor text-phosphor" : "text-ink-faint hover:text-ink",
+              )}
+            >
+              Sets
+            </button>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
             {index
@@ -188,6 +208,11 @@ export function HubView() {
                 return true;
               })
               .filter((p) => tag === "all" || (p.tags ?? []).includes(tag))
+              .filter((p) => {
+                if (!campaignFilter) return true;
+                if (campaignFilter === "__any__") return Boolean(p.campaignId);
+                return p.campaignId === campaignFilter;
+              })
               .slice(0, 12)
               .map((p) => (
               <article key={p.id} className="group relative">
@@ -228,6 +253,16 @@ export function HubView() {
                     )}
                   </div>
                 </button>
+                {p.campaignId && (campaignCounts.get(p.campaignId) ?? 0) > 1 && (
+                  <button
+                    type="button"
+                    className="absolute top-2 left-2 rounded-[6px] border border-phosphor/40 bg-ground/85 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-phosphor uppercase"
+                    onClick={() => setCampaignFilter(p.campaignId ?? null)}
+                    aria-label={`Show ${campaignCounts.get(p.campaignId)}-board set`}
+                  >
+                    Set · {campaignCounts.get(p.campaignId)}
+                  </button>
+                )}
                 <div className="absolute top-2 right-2 hidden gap-1 group-hover:flex">
                   <button
                     type="button"
