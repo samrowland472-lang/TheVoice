@@ -96,7 +96,11 @@ function wrapLines(ctx: CanvasRenderingContext2D, content: string, maxW: number)
   return lines;
 }
 
-export function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode) {
+export function drawNode(
+  ctx: CanvasRenderingContext2D,
+  n: DesignNode,
+  livePaint?: { id: string; canvas: HTMLCanvasElement } | null,
+) {
   if (!n.visible) return;
   ctx.save();
   ctx.globalAlpha *= n.opacity;
@@ -156,7 +160,9 @@ export function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode) {
       ctx.fillRect(n.x, n.y, n.w, n.h);
     }
   } else if (isPaint(n)) {
-    if (n.bitmap) {
+    if (livePaint && livePaint.id === n.id) {
+      ctx.drawImage(livePaint.canvas, n.x, n.y, n.w, n.h);
+    } else if (n.bitmap) {
       const img = getCachedImage(n.bitmap);
       if (img) ctx.drawImage(img, n.x, n.y, n.w, n.h);
     }
@@ -230,7 +236,7 @@ export function drawDocument(
   ctx: CanvasRenderingContext2D,
   doc: DesignDocument,
   viewport: Viewport,
-  opts?: { skipChrome?: boolean; dpr?: number },
+  opts?: { skipChrome?: boolean; dpr?: number; livePaint?: { id: string; canvas: HTMLCanvasElement } | null },
 ) {
   const dpr = opts?.dpr ?? 1;
   const { width, height } = doc.artboard;
@@ -259,7 +265,7 @@ export function drawDocument(
   ctx.rect(0, 0, width, height);
   ctx.clip();
 
-  for (const n of doc.nodes) drawNode(ctx, n);
+  for (const n of doc.nodes) drawNode(ctx, n, opts?.livePaint);
   ctx.restore();
 }
 

@@ -37,6 +37,7 @@ export function CanvasStage() {
   const mainRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef<HTMLCanvasElement | null>(null);
+  const livePaintRef = useRef<{ id: string; canvas: HTMLCanvasElement } | null>(null);
   const guidesRef = useRef<{ x: number[]; y: number[] }>({ x: [], y: [] });
   const marqueeRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
   const penHoverRef = useRef<{ x: number; y: number } | null>(null);
@@ -76,7 +77,7 @@ export function CanvasStage() {
     const mctx = main.getContext("2d");
     const octx = overlay.getContext("2d");
     if (!mctx || !octx) return;
-    drawDocument(mctx, doc, viewport, { dpr });
+    drawDocument(mctx, doc, viewport, { dpr, livePaint: livePaintRef.current });
 
     octx.setTransform(dpr, 0, 0, dpr, 0, 0);
     octx.clearRect(0, 0, w, h);
@@ -314,7 +315,20 @@ export function CanvasStage() {
   }, []);
 
   useEffect(() => {
-    const unsub = useDesign.subscribe(redraw);
+    const unsub = useDesign.subscribe((s, p) => {
+      if (
+        s.doc !== p.doc ||
+        s.viewport !== p.viewport ||
+        s.selection !== p.selection ||
+        s.grid !== p.grid ||
+        s.rulers !== p.rulers ||
+        s.tool !== p.tool ||
+        s.safeArea !== p.safeArea ||
+        s.editingText !== p.editingText
+      ) {
+        redraw();
+      }
+    });
     redraw();
     const wrap = wrapRef.current;
     const ro = new ResizeObserver(() => {
@@ -443,6 +457,7 @@ export function CanvasStage() {
         if (img) pctx.drawImage(img, 0, 0);
       }
       paintRef.current = off;
+      livePaintRef.current = { id: layer.id, canvas: off };
       drag.current = { mode: "paint", sx: d.x, sy: d.y, lx: d.x, ly: d.y, created: layer.id };
       useDesign.getState().beginPaintStroke(layer.id);
       stamp(d.x, d.y, d.x, d.y);
@@ -563,13 +578,7 @@ export function CanvasStage() {
       const b = pts1[i] ?? a;
       strokeSegment(ctx, a.x, a.y, b.x, b.y, brush.size, color, def, brush.opacity);
     });
-    const layerId = drag.current?.created;
-    if (layerId) {
-      const node = doc.nodes.find((n) => n.id === layerId);
-      if (node && node.kind === "paint") {
-        useDesign.getState().replaceNode(layerId, { ...node, bitmap: off.toDataURL("image/png") }, false);
-      }
-    }
+    redraw();
     void BRUSHES;
   }
 
@@ -705,6 +714,15 @@ export function CanvasStage() {
     if (st?.mode === "move") {
       guidesRef.current = { x: [], y: [] };
       redraw();
+    }
+    if (st?.mode === "paint" && st.created) {
+      const off = paintRef.current;
+      const { doc } = useDesign.getState();
+      const node = doc?.nodes.find((n) => n.id === st.created);
+      if (off && node && node.kind === "paint") {
+        useDesign.getState().replaceNode(st.created, { ...node, bitmap: off.toDataURL("image/png") }, false);
+      }
+      livePaintRef.current = null;
     }
     drag.current = drag.current?.space ? { ...drag.current, mode: "pan" } : null;
     try {
