@@ -56,6 +56,24 @@ function applyFx() {
     mix._eq.mid.gain.setTargetAtTime(eqOn ? (fx.killM ? -72 : fx.eqM) : 0, t, 0.02);
     mix._eq.high.gain.setTargetAtTime(eqOn ? (fx.killH ? -72 : fx.eqH) : 0, t, 0.02);
   }
+  applyKeysFilter();
+}
+
+function applyKeysFilter() {
+  const a = audio();
+  if (!a || !mix.keys) return;
+  if (!mix._keysFilter) {
+    const f = a.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    try { mix.keys.input.disconnect(mix.keys.vol); } catch (_) {}
+    mix.keys.input.connect(f);
+    f.connect(mix.keys.vol);
+    mix._keysFilter = f;
+  }
+  const t = a.ctx.currentTime;
+  const on = fx.on.analog !== false;
+  mix._keysFilter.frequency.setTargetAtTime(on ? keysCutoff : 18000, t, 0.015);
+  mix._keysFilter.Q.setTargetAtTime(on ? Math.max(0.2, keysRes) : 0.3, t, 0.015);
 }
 
 const mix = {};
@@ -2156,8 +2174,8 @@ function paintDevices() {
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const rel = root.querySelector('#abl-rel');
-  if (cut) cut.addEventListener('input', () => { keysCutoff = parseFloat(cut.value); });
-  if (res) res.addEventListener('input', () => { keysRes = parseFloat(res.value); });
+  if (cut) cut.addEventListener('input', () => { keysCutoff = parseFloat(cut.value); applyKeysFilter(); });
+  if (res) res.addEventListener('input', () => { keysRes = parseFloat(res.value); applyKeysFilter(); });
   if (rel) rel.addEventListener('input', () => { keysRel = parseFloat(rel.value); });
   const bindFx = (id, key, parse) => {
     const el = root.querySelector(id);
