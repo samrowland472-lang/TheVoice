@@ -325,6 +325,17 @@ function buildDeckGraph(deck) {
   deck.nodes = { in: trim, trim, low, mid, high, filter, gain, cue, analyser };
   applyDeckEq(deck);
   applyXfade();
+  applyPfl();
+}
+
+function applyPfl() {
+  if (!cueGain) return;
+  const a = decks.a;
+  const b = decks.b;
+  if (a.nodes) a.nodes.cue.gain.value = a.cue ? 0.85 : 0;
+  if (b.nodes) b.nodes.cue.gain.value = b.cue ? 0.85 : 0;
+  const on = !!(a.cue || b.cue);
+  cueGain.gain.setTargetAtTime(on ? 0.9 : 0, ctx ? ctx.currentTime : 0, 0.015);
 }
 
 function applyDeckEq(d) {
@@ -951,7 +962,7 @@ function bindDeckUi(root) {
       }
       if (act === 'pfl') {
         d.cue = !d.cue;
-        if (d.nodes) d.nodes.cue.gain.value = d.cue ? 0.8 : 0;
+        applyPfl();
       }
       if (act === 'load') {
         loadTarget = d.id;
