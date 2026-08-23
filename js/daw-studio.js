@@ -1858,13 +1858,27 @@ function hitPad(id) {
   if (!a || !mix.kick) return;
   if (a.ctx.state === 'suspended') a.ctx.resume();
   const t = a.ctx.currentTime;
-  firePad(PADS.find((p) => p.id === id), t, 0.95);
+  const pad = PADS.find((p) => p.id === id);
+  firePad(pad, t, 0.95);
+  recordPadHit(pad);
   const el = document.querySelector(`[data-pad="${id}"]`);
   if (el) {
     el.classList.remove('hit');
     void el.offsetWidth;
     el.classList.add('hit');
   }
+}
+
+function recordPadHit(pad) {
+  if (!recOn || !playing || !pad) return;
+  const p = pattern();
+  if (!p || !p.grid) return;
+  const lane = p.grid[pad.dest];
+  if (!lane || !lane.length) return;
+  const st = step % lane.length;
+  lane[st] = true;
+  const cell = document.querySelector(`.seq-cell[data-track="${pad.dest}"][data-step="${st}"]`);
+  if (cell) cell.classList.add('on');
 }
 
 function paintPads() {
