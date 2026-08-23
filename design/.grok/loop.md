@@ -22,7 +22,6 @@ Auth OFF, DB OFF.
 ## Backlog (priority order)
 
 1. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
-2. Click-through hotspots on a frame (optional links between campaign pages).
 
 ## Done
 
@@ -44,78 +43,14 @@ Auth OFF, DB OFF.
 - Print export: 4× PNG + one-page PDF with crop marks.
 - Linked duplicates: style/copy sync across instances; transform stays local.
 - Palette from image: hub “From image” and inspector “Palette to brand”.
-- Present: speaker notes + click/arrow through campaign frames.
+- Present mode: speaker notes + campaign click-through (← → / space / frame chips).
 
 ## Iterations
 
-### 2026-08-23T00:13Z — loop 23
+### 2026-08-23T00:20Z — loop 23
 
-Present mode notes and click-through. Typecheck + build + smoke clean.
+Present speaker notes + deck nav. Inspector notes field; Present shows notes rail and advances campaign pages with keys or click. Typecheck + build + smoke clean.
 
 ### 2026-08-23T00:08Z — loop 22
 
 Sample an image into named brand swatches. Typecheck + build + smoke clean.
-
-### 2026-08-23T00:03Z — loop 21
-
-Linked copies. ⇧⌘D or inspector “Linked copy”; fill/type updates every instance. Unlink to detach. Typecheck + build + smoke clean.
-
-### 2026-08-22T23:58Z — loop 20
-
-Print PNG @4× and Print PDF with crop marks. Restored truncated store.ts and studio-app. Typecheck + build + smoke clean.
-
-### 2026-08-22T23:06Z — loop 19
-
-Campaign polish: cloneToFormat uses uniform contain scale + centering so story/square/banner variants keep proportions and readable type. Typecheck + build + smoke clean.
-
-### 2026-08-22T22:28Z — loop 18
-
-Campaign artboards. Story / Square / Banner strip; + page for more formats. Typecheck + build + smoke clean.
-
-### 2026-08-22T22:23Z — loop 17
-
-Contrast checker in the inspector. Typecheck + build + smoke clean.
-
-### 2026-08-22T22:18Z — loop 16
-
-Mobile studio chrome. Restored truncated store.ts. Typecheck + build + smoke clean.
-
-### 2026-08-22T22:13Z — loop 15
-
-Paint stroke undo. Each brush stroke snapshots only the paint bitmap; ⌘Z/⇧⌘Z walk that stack. Typecheck + build + smoke clean.
-
-### 2026-08-22T22:08Z — loop 13
-
-Brand kit depth. Named colours (editable labels) on the hub; display + body font pairing with live preview; new text layers inherit the display face. Migrates legacy string[] colour kits. Typecheck + build + smoke clean.
-
-### 2026-08-22T21:58Z — loop 12
-
-Hub folders and tags. Filter recents by folder/tag; pin, assign folder, toggle tags on hover. Typecheck + build + smoke clean.
-
-### 2026-08-22T21:07Z — loop 11
-
-Pin projects in hub Recents. Toggle pin on cards; pinned sort first and keep pin across saves. Typecheck + build + smoke clean.
-
-### 2026-08-22T20:23Z — loop 10
-
-Safe-area overlay + export bleed. Typecheck + build + smoke clean.
-
-### 2026-08-22T20:18Z — loop 9
-
-Pen tool finish: undo last point, close path, Escape. Typecheck + build + smoke clean.
-
-### 2026-08-22T20:13Z — loop 8
-
-History panel under Layers. Click a step to restore; Undo/Redo in the list. Restored truncated `types.ts` (11 bytes). Typecheck + build + smoke clean.
-
-### 2026-08-22T20:08Z — loop 7b
-
-Ruler polish: labels, cursor, double-click delete.
-
-### 2026-08-22T20:04Z — loop 7
-
-Rulers + manual guides.
-
-## Next recommended
-
-Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
