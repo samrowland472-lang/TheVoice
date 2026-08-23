@@ -178,7 +178,15 @@ function PresentView() {
   const index = useDesign((s) => s.index);
   const save = useDesign((s) => s.save);
   const setPresent = useDesign((s) => s.setPresent);
-  const [hint, setHint] = useState<string | null>(null);
+  const [hot, setHot] = useState<{
+    label: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    rotation: number;
+  } | null>(null);
+  const viewport = useDesign((s) => s.viewport);
   if (!doc) return null;
   const live = doc;
   const pages = live.campaignId ? index.filter((p) => p.campaignId === live.campaignId) : [{ id: live.id, name: live.name }];
@@ -239,9 +247,11 @@ function PresentView() {
 
   function onStageMove(e: MouseEvent<HTMLButtonElement>) {
     const node = hotspotAt(e);
-    const next = node?.href ? hotspotLabel(node.href) : null;
+    const next = node?.href
+      ? { label: hotspotLabel(node.href), x: node.x, y: node.y, w: node.w, h: node.h, rotation: node.rotation }
+      : null;
     e.currentTarget.style.cursor = next ? "pointer" : "default";
-    setHint((cur) => (cur === next ? cur : next));
+    setHot((cur) => (cur?.label === next?.label && cur?.x === next?.x && cur?.y === next?.y ? cur : next));
   }
 
   useEffect(() => {
@@ -272,20 +282,34 @@ function PresentView() {
             {i + 1} / {pages.length}
           </span>
         )}
-        <span className={cn("ml-auto font-mono text-[10px] uppercase", hint ? "text-phosphor" : "text-ink-faint")}>
-          {hint ? hint : "Present · click or →"}
+        <span className={cn("ml-auto font-mono text-[10px] uppercase", hot ? "text-phosphor" : "text-ink-faint")}>
+          {hot ? hot.label : "Present · click or →"}
         </span>
       </div>
       <div className="relative min-h-0 flex-1">
         <CanvasStage />
+        {hot && (
+          <div
+            className="pointer-events-none absolute border border-phosphor"
+            style={{
+              left: hot.x * viewport.zoom + viewport.x,
+              top: hot.y * viewport.zoom + viewport.y,
+              width: hot.w * viewport.zoom,
+              height: hot.h * viewport.zoom,
+              transform: hot.rotation ? `rotate(${hot.rotation}deg)` : undefined,
+              transformOrigin: "center center",
+              boxShadow: "0 0 0 1px rgba(63,198,255,0.35), 0 0 12px rgba(63,198,255,0.25)",
+            }}
+          />
+        )}
         <button
           type="button"
           className="absolute inset-0 bg-transparent"
-          style={{ cursor: hint ? "pointer" : "default" }}
-          aria-label={hint ? `Open ${hint}` : "Next frame"}
+          style={{ cursor: hot ? "pointer" : "default" }}
+          aria-label={hot ? `Open ${hot.label}` : "Next frame"}
           onClick={onStageClick}
           onMouseMove={onStageMove}
-          onMouseLeave={() => setHint(null)}
+          onMouseLeave={() => setHot(null)}
           onContextMenu={(e) => {
             e.preventDefault();
             go(-1);

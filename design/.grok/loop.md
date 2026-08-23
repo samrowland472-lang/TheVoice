@@ -21,7 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present hotspot outline on hover.
+1. Eyedropper live preview swatch next to the cursor.
 
 ## Done
 
@@ -50,8 +50,13 @@ Auth OFF, DB OFF.
 - Present hotspot cursor: pointer + phosphor target name on hover.
 - Hub recents: Set · N chip on campaign cards; Sets filter.
 - Eyedropper samples images, paint bitmaps, and solid fills via document-space walk (not overlay chrome).
+- Present hotspot outline: phosphor box on hover.
 
 ## Iterations
+
+### 2026-08-23T02:13Z — loop 30
+
+Present hotspot outline on hover. Restored render.ts/canvas-stage after placeholder wipe. Typecheck + build + smoke clean.
 
 ### 2026-08-23T02:10Z — loop 29
 
@@ -84,6 +89,11 @@ Present speaker notes + deck nav. Inspector notes field; Present shows notes rai
 ### 2026-08-23T00:08Z — loop 22
 
 Sample an image into named brand swatches. Typecheck + build + smoke clean.
+
+## Next recommended
+
+Eyedropper live preview swatch next to the cursor.
+
 
 ## Next recommended
 
