@@ -478,7 +478,10 @@ rateRange.addEventListener('input', () => {
   updateTextStats();
   audioEngine.setRate(parseFloat(rateRange.value));
 });
-pitchRange.addEventListener('input', () => (pitchValue.textContent = pitchRange.value));
+pitchRange.addEventListener('input', () => {
+  pitchValue.textContent = pitchRange.value;
+  audioEngine.setPitch(parseFloat(pitchRange.value));
+});
 volumeRange.addEventListener('input', () => {
   volumeValue.textContent = volumeRange.value;
   audioEngine.setVolume(parseFloat(volumeRange.value));

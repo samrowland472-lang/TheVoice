@@ -21,6 +21,7 @@ export function createAudioEngine(visualizer) {
   let currentUrl = null;
   let pendingVolume = 1;
   let pendingRate = 1;
+  let pendingPitch = 1;
 
   let mode = null; // 'element' | 'pcm' | null
 
@@ -80,6 +81,7 @@ export function createAudioEngine(visualizer) {
     pcmSource.buffer = pcmBuffer;
     pcmSource.connect(gainNode);
     pcmSource.playbackRate.value = pcmRate;
+    pcmSource.detune.value = pitchToCents(pendingPitch);
     pcmSource.onended = () => {
       if (pcmPlaying) {
         pcmPlaying = false;
@@ -101,7 +103,7 @@ export function createAudioEngine(visualizer) {
       if (currentUrl) URL.revokeObjectURL(currentUrl);
       currentUrl = URL.createObjectURL(blob);
       audioEl.src = currentUrl;
-      audioEl.playbackRate = pendingRate;
+      audioEl.playbackRate = pendingRate * pendingPitch;
       audioEl.onended = () => {
         visualizer.setAmplitude(0);
         if (onEnd) onEnd();
@@ -177,7 +179,7 @@ export function createAudioEngine(visualizer) {
     setRate(r) {
       const rate = Math.max(0.5, Math.min(2, Number(r) || 1));
       pendingRate = rate;
-      if (mode === 'element') audioEl.playbackRate = rate;
+      if (mode === 'element') audioEl.playbackRate = pendingRate * pendingPitch;
       if (mode === 'pcm' && pcmSource && audioCtx) {
         const now = (audioCtx.currentTime - pcmStartCtxTime) * pcmRate;
         pcmRate = rate;
@@ -187,5 +189,18 @@ export function createAudioEngine(visualizer) {
         pcmRate = rate;
       }
     },
+
+    setPitch(p) {
+      const pitch = Math.max(0.5, Math.min(2, Number(p) || 1));
+      pendingPitch = pitch;
+      if (mode === 'element') audioEl.playbackRate = pendingRate * pendingPitch;
+      if (mode === 'pcm' && pcmSource && audioCtx) {
+        pcmSource.detune.setTargetAtTime(pitchToCents(pitch), audioCtx.currentTime, 0.03);
+      }
+    },
   };
+}
+
+function pitchToCents(p) {
+  return 1200 * Math.log2(Math.max(0.5, Math.min(2, p || 1)));
 }
