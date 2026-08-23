@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { BRUSHES, brushById, mirrorPoints, strokeSegment } from "@/lib/design/brushes";
 import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
 import { imageNode, pathNode } from "@/lib/design/node-factory";
@@ -437,7 +438,13 @@ export function CanvasStage() {
 
     if (tool === "eyedropper") {
       const hex = sampleDocColor(doc, d.x, d.y, livePaintRef.current);
-      if (hex) useDesign.getState().setColor(hex);
+      if (hex) {
+        useDesign.getState().setColor(hex);
+        if (e.shiftKey) {
+          const added = useDesign.getState().addBrandColor(hex);
+          toast(added ? "Saved to brand kit" : "Already in brand kit");
+        }
+      }
       return;
     }
 
@@ -858,9 +865,19 @@ export function CanvasStage() {
             className="size-7 rounded-[8px] border border-phosphor"
             style={{ background: dropper.hex, boxShadow: "0 0 12px rgba(63,198,255,0.35)" }}
           />
-          <span className="rounded-[6px] border border-border bg-ground/90 px-1.5 py-0.5 font-mono text-[10px] text-phosphor uppercase">
-            {dropper.hex}
-          </span>
+          <button
+            type="button"
+            className="pointer-events-auto rounded-[6px] border border-phosphor/50 bg-ground/90 px-1.5 py-0.5 font-mono text-[10px] text-phosphor uppercase"
+            onPointerDown={(ev) => {
+              ev.stopPropagation();
+              ev.preventDefault();
+              const added = useDesign.getState().addBrandColor(dropper.hex);
+              useDesign.getState().setColor(dropper.hex);
+              toast(added ? "Saved to brand kit" : "Already in brand kit");
+            }}
+          >
+            {dropper.hex} · kit
+          </button>
         </div>
       )}
       {tool === "pen" && (

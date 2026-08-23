@@ -21,7 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Add sampled eyedropper colour to the brand kit with one click.
+1. Eyedropper HUD: click · kit / Shift+click hint under the board.
 
 ## Done
 
@@ -52,8 +52,13 @@ Auth OFF, DB OFF.
 - Eyedropper samples images, paint bitmaps, and solid fills via document-space walk (not overlay chrome).
 - Present hotspot outline: phosphor box on hover.
 - Eyedropper live swatch + hex follows the cursor.
+- Eyedropper · kit: click the hex chip (or Shift+click) to save a named colour to the brand kit.
 
 ## Iterations
+
+### 2026-08-23T02:28Z — loop 32
+
+Save eyedropper samples to the brand kit. Typecheck + build + smoke clean.
 
 ### 2026-08-23T02:23Z — loop 31
 
@@ -97,6 +102,6 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Add sampled eyedropper colour to the brand kit with one click.
+Eyedropper HUD: click · kit / Shift+click hint under the board.
 
 Present hotspot outline on hover.

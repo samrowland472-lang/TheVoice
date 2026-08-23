@@ -6,6 +6,7 @@ import { uid } from "./id";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
 import { deleteDoc, loadBrand, loadDoc, loadIndex, patchIndex, saveBrand, saveDoc } from "./persist";
 import { exportPng } from "./export";
+import { paletteName } from "./palette";
 import { blankDocument, instantiateTemplate } from "./templates";
 import type {
   BrandKit,
@@ -86,6 +87,7 @@ interface DesignState {
   setBrush: (p: Partial<BrushSettings>) => void;
   setColor: (c: string) => void;
   setBrand: (b: BrandKit) => void;
+  addBrandColor: (hex: string) => boolean;
   setEditingText: (id: string | null) => void;
   toggleGrid: () => void;
   toggleSnap: () => void;
@@ -631,6 +633,16 @@ export const useDesign = create<DesignState>((set, get) => ({
   setBrand: (brand) => {
     saveBrand(brand);
     set({ brand });
+  },
+  addBrandColor: (hex) => {
+    const n = hex.toLowerCase();
+    const { brand } = get();
+    if (brand.colors.some((c) => c.hex.toLowerCase() === n)) return false;
+    const name = paletteName(hex, brand.colors.length);
+    const next = { ...brand, colors: [...brand.colors, { name, hex }] };
+    saveBrand(next);
+    set({ brand: next });
+    return true;
   },
   setEditingText: (editingText) => set({ editingText }),
   toggleGrid: () => set({ grid: !get().grid }),
