@@ -543,8 +543,30 @@ export function Timeline() {
             {label}
           </button>
         ))}
-        <span className="ml-auto font-mono text-2xs text-muted">
-          Project {formatDuration(duration)}
+        <span className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            className="h-6 rounded-sm px-2 text-2xs text-muted hover:text-fg"
+            onClick={() => useStudio.getState().copyKeys()}
+          >
+            Copy
+          </button>
+          <button
+            type="button"
+            className="h-6 rounded-sm px-2 text-2xs text-muted hover:text-fg"
+            onClick={() => useStudio.getState().pasteKeys()}
+          >
+            Paste
+          </button>
+          <button
+            type="button"
+            className="h-6 rounded-sm px-2 text-2xs text-muted hover:text-fg"
+            title="Ripple delete selected keys"
+            onClick={() => useStudio.getState().rippleDeleteKeys()}
+          >
+            Ripple
+          </button>
+          <span className="font-mono text-2xs text-muted">Project {formatDuration(duration)}</span>
         </span>
       </div>
       <div ref={wrapRef} className="min-h-0 flex-1">

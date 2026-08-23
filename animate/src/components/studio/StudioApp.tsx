@@ -59,19 +59,22 @@ export function StudioApp() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c") {
         if (typing) return;
         e.preventDefault();
-        s.copyPose();
+        if (s.selectedKeys.length || s.selectedKeyIndex !== null) s.copyKeys();
+        else s.copyPose();
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
         if (typing) return;
         e.preventDefault();
-        s.pastePose();
+        if (s.keyClipboard?.items.length) s.pasteKeys();
+        else s.pastePose();
         return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
         if (typing) return;
         e.preventDefault();
-        s.setSelectedIds(Object.keys(s.nodes));
+        if (s.bottomTab === "dope" || s.bottomTab === "curves") s.selectAllKeys();
+        else s.setSelectedIds(Object.keys(s.nodes));
         return;
       }
       if (typing) return;
@@ -124,8 +127,10 @@ export function StudioApp() {
         s.setPlayblastOpen(false);
         s.setMobilePanel("none");
       } else if (e.key === "Delete" || e.key === "Backspace") {
-        if (s.selectedKeys.length || s.selectedKeyIndex !== null) s.deleteSelectedKey();
-        else s.deleteSelected();
+        if (s.selectedKeys.length || s.selectedKeyIndex !== null) {
+          if (e.shiftKey) s.rippleDeleteKeys();
+          else s.deleteSelectedKey();
+        } else s.deleteSelected();
       }
     };
     window.addEventListener("keydown", onKey);

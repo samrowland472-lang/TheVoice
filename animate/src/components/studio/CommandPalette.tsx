@@ -37,6 +37,12 @@ export function CommandPalette() {
             </Item>
             <Item onSelect={() => run(() => useStudio.getState().copyPose())}>Copy pose</Item>
             <Item onSelect={() => run(() => useStudio.getState().pastePose())}>Paste pose</Item>
+            <Item onSelect={() => run(() => useStudio.getState().copyKeys())}>Copy keys</Item>
+            <Item onSelect={() => run(() => useStudio.getState().pasteKeys())}>Paste keys</Item>
+            <Item onSelect={() => run(() => useStudio.getState().rippleDeleteKeys())}>
+              Ripple delete keys
+            </Item>
+            <Item onSelect={() => run(() => useStudio.getState().selectAllKeys())}>Select all keys</Item>
             <Item onSelect={() => run(() => useStudio.getState().setPlayblastOpen(true))}>
               Playblast viewport
             </Item>

@@ -166,6 +166,20 @@ export type PoseClipboard = {
   scale: Vec3;
 };
 
+export type KeyClipboard = {
+  t0: number;
+  items: {
+    objectId: string;
+    channel: Channel;
+    t: number;
+    v: number;
+    interp: Interp;
+    tanIn?: Tangent;
+    tanOut?: Tangent;
+    broken?: boolean;
+  }[];
+};
+
 export type ProjectSnapshot = {
   v: 1;
   name: string;

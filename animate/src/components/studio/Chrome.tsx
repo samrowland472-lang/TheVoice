@@ -179,6 +179,9 @@ export function Menubar() {
           { label: "Duplicate", action: () => useStudio.getState().duplicateSelected() },
           { label: "Copy pose", action: () => useStudio.getState().copyPose() },
           { label: "Paste pose", action: () => useStudio.getState().pastePose() },
+          { label: "Copy keys", action: () => useStudio.getState().copyKeys() },
+          { label: "Paste keys", action: () => useStudio.getState().pasteKeys() },
+          { label: "Ripple delete keys", action: () => useStudio.getState().rippleDeleteKeys() },
           { label: "Delete", action: () => useStudio.getState().deleteSelected() },
         ]}
       />

@@ -17,6 +17,7 @@ import {
   type MeshShape,
   type KeyRef,
   type PoseClipboard,
+  type KeyClipboard,
   type ProjectSnapshot,
   type SceneNode,
   type Shading,
@@ -73,6 +74,7 @@ export type StudioState = {
   transformSpace: TransformSpace;
   onionSkin: boolean;
   poseClipboard: PoseClipboard | null;
+  keyClipboard: KeyClipboard | null;
   playblastOpen: boolean;
   playblasting: boolean;
   playblastFrame: number;
@@ -163,6 +165,10 @@ type StudioActions = {
   clearExpression: (trackId: string) => void;
   copyPose: () => void;
   pastePose: () => void;
+  copyKeys: () => void;
+  pasteKeys: () => void;
+  rippleDeleteKeys: () => void;
+  selectAllKeys: () => void;
   frameSelection: () => void;
   frameAll: () => void;
 };
@@ -195,6 +201,14 @@ function descendants(nodes: Record<string, SceneNode>, id: string): string[] {
 
 function keyEq(a: KeyRef, b: KeyRef) {
   return a.trackId === b.trackId && a.index === b.index;
+}
+
+function selectedKeyRefs(s: { selectedKeys: KeyRef[]; selectedTrackId: string | null; selectedKeyIndex: number | null }): KeyRef[] {
+  if (s.selectedKeys.length) return s.selectedKeys;
+  if (s.selectedTrackId && s.selectedKeyIndex !== null) {
+    return [{ trackId: s.selectedTrackId, index: s.selectedKeyIndex }];
+  }
+  return [];
 }
 
 function selectOnly(id: string | null) {
@@ -293,6 +307,7 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
   transformSpace: "local",
   onionSkin: false,
   poseClipboard: null,
+  keyClipboard: null,
   playblastOpen: false,
   playblasting: false,
   playblastFrame: 0,
@@ -1264,6 +1279,128 @@ export const useStudio = create<StudioState & StudioActions>((set, get) => ({
         scale: { ...poseClipboard.scale },
       });
     }
+  },
+
+  copyKeys: () => {
+    const s = get();
+    const refs = selectedKeyRefs(s);
+    if (!refs.length) return;
+    const items: KeyClipboard["items"] = [];
+    for (const r of refs) {
+      const tr = s.tracks.find((t) => t.id === r.trackId);
+      const key = tr?.keys[r.index];
+      if (!tr || !key) continue;
+      items.push({
+        objectId: tr.objectId,
+        channel: tr.channel,
+        t: key.t,
+        v: key.v,
+        interp: key.interp,
+        tanIn: key.tanIn ? { ...key.tanIn } : undefined,
+        tanOut: key.tanOut ? { ...key.tanOut } : undefined,
+        broken: key.broken,
+      });
+    }
+    if (!items.length) return;
+    const t0 = Math.min(...items.map((i) => i.t));
+    set({ keyClipboard: { t0, items } });
+  },
+
+  pasteKeys: () => {
+    const { keyClipboard, tracks, currentTime, nodes } = get();
+    if (!keyClipboard?.items.length) return;
+    get().pushHistory();
+    const dt = currentTime - keyClipboard.t0;
+    let next = tracks.map((tr) => ({ ...tr, keys: tr.keys.map((k) => ({ ...k })) }));
+    const newRefs: KeyRef[] = [];
+    for (const item of keyClipboard.items) {
+      if (!nodes[item.objectId]) continue;
+      let tr = next.find((t) => t.objectId === item.objectId && t.channel === item.channel);
+      if (!tr) {
+        tr = {
+          id: nid("tr"),
+          objectId: item.objectId,
+          channel: item.channel,
+          keys: [],
+          cycle: false,
+        };
+        next = [...next, tr];
+      }
+      const t = item.t + dt;
+      const existing = tr.keys.findIndex((k) => Math.abs(k.t - t) < 1e-4);
+      const key = {
+        t,
+        v: item.v,
+        interp: item.interp,
+        tanIn: item.tanIn ? { ...item.tanIn } : undefined,
+        tanOut: item.tanOut ? { ...item.tanOut } : undefined,
+        broken: item.broken,
+      };
+      if (existing >= 0) tr.keys[existing] = key;
+      else tr.keys.push(key);
+      tr.keys.sort((a, b) => a.t - b.t);
+      const index = tr.keys.findIndex((k) => Math.abs(k.t - t) < 1e-4);
+      if (index >= 0) newRefs.push({ trackId: tr.id, index });
+    }
+    const last = newRefs[newRefs.length - 1];
+    set({
+      tracks: next,
+      selectedKeys: newRefs,
+      selectedTrackId: last?.trackId ?? null,
+      selectedKeyIndex: last?.index ?? null,
+    });
+  },
+
+  rippleDeleteKeys: () => {
+    const s = get();
+    const refs = selectedKeyRefs(s);
+    if (!refs.length) return;
+    const times: number[] = [];
+    const byTrack = new Map<string, Set<number>>();
+    for (const r of refs) {
+      const tr = s.tracks.find((t) => t.id === r.trackId);
+      const key = tr?.keys[r.index];
+      if (key) times.push(key.t);
+      const setIdx = byTrack.get(r.trackId) ?? new Set();
+      setIdx.add(r.index);
+      byTrack.set(r.trackId, setIdx);
+    }
+    if (!times.length) return;
+    get().pushHistory();
+    const tMin = Math.min(...times);
+    const tMax = Math.max(...times);
+    const gap = Math.max(tMax - tMin, 1 / Math.max(1, s.fps));
+    set({
+      tracks: s.tracks.map((tr) => {
+        const drop = byTrack.get(tr.id);
+        if (!drop) return tr;
+        return {
+          ...tr,
+          keys: tr.keys
+            .filter((_, i) => !drop.has(i))
+            .map((k) => (k.t > tMax + 1e-6 ? { ...k, t: k.t - gap } : k)),
+        };
+      }),
+      selectedKeys: [],
+      selectedTrackId: null,
+      selectedKeyIndex: null,
+    });
+  },
+
+  selectAllKeys: () => {
+    const { tracks, selectedIds, selectedId } = get();
+    const ids = selectedIds.length ? selectedIds : selectedId ? [selectedId] : [];
+    const pool = ids.length ? tracks.filter((tr) => ids.includes(tr.objectId)) : tracks;
+    const keys: KeyRef[] = [];
+    for (const tr of pool) {
+      tr.keys.forEach((_, index) => keys.push({ trackId: tr.id, index }));
+    }
+    const last = keys[keys.length - 1];
+    set({
+      selectedKeys: keys,
+      selectedTrackId: last?.trackId ?? null,
+      selectedKeyIndex: last?.index ?? null,
+    });
   },
 
   frameSelection: () => {
