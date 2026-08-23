@@ -73,6 +73,8 @@ export interface BaseNode {
   strokeWidth: number;
   radius: number;
   shadow: Shadow | null;
+  /** Shared id — style/copy edits update every instance. Transform stays local. */
+  linkId?: string;
 }
 
 export interface TextNode extends BaseNode {

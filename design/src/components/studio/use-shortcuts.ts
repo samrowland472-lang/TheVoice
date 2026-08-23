@@ -71,7 +71,8 @@ export function useShortcuts() {
       }
       if (meta && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        s.duplicateSelected();
+        if (e.shiftKey) s.duplicateLinked();
+        else s.duplicateSelected();
         return;
       }
       if (meta && e.key.toLowerCase() === "a") {

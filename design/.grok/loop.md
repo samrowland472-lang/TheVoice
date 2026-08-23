@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Components / linked duplicates (edit one, update copies).
-2. Color-from-image palette into the brand kit.
+1. Color-from-image palette into the brand kit.
+2. Present mode speaker notes / click-through frames.
 13. Present mode speaker notes / click-through frames.
 14. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
 
@@ -44,8 +44,13 @@ Auth OFF, DB OFF.
 - Campaign set: story + square + banner pages, magic-scaled from the current board.
 - Campaign clone uses uniform contain scale + center (no stretch) for cleaner format variants.
 - Print export: 4× PNG + one-page PDF with crop marks.
+- Linked duplicates: style/copy sync across instances; transform stays local.
 
 ## Iterations
+
+### 2026-08-23T00:03Z — loop 21
+
+Linked copies. ⇧⌘D or inspector “Linked copy”; fill/type updates every instance. Unlink to detach. Typecheck + build + smoke clean.
 
 ### 2026-08-22T23:58Z — loop 20
 
@@ -105,4 +110,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Components / linked duplicates (edit one, update copies).
+Color-from-image palette into the brand kit.

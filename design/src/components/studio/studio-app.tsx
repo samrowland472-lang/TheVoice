@@ -58,6 +58,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "copy", label: "Copy", group: "Edit", hint: "⌘C", run: () => s().copySelected() },
       { id: "paste", label: "Paste", group: "Edit", hint: "⌘V", run: () => s().pasteClipboard() },
       { id: "dup", label: "Duplicate", group: "Edit", hint: "⌘D", run: () => s().duplicateSelected() },
+      { id: "dup-link", label: "Linked duplicate", group: "Edit", hint: "⇧⌘D", run: () => s().duplicateLinked() },
+      { id: "unlink", label: "Unlink instance", group: "Edit", run: () => s().unlinkSelected() },
       { id: "all", label: "Select all", group: "Edit", hint: "⌘A", run: () => s().selectAll() },
       { id: "del", label: "Delete", group: "Edit", hint: "⌫", run: () => s().removeSelected() },
       { id: "fit", label: "Fit artboard", group: "View", hint: "0", run: () => s().requestFit() },

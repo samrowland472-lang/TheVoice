@@ -18,6 +18,7 @@ import type {
 } from "./types";
 
 const MAX_HISTORY = 60;
+const LOCAL_PATCH = new Set(["x", "y", "w", "h", "rotation", "name", "locked", "visible"]);
 const CAMPAIGN_FORMATS = ["ig-story", "ig-post", "x-post"] as const;
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | null;
@@ -67,6 +68,8 @@ interface DesignState {
   addNode: (node: DesignNode, commit?: boolean) => void;
   removeSelected: () => void;
   duplicateSelected: () => void;
+  duplicateLinked: () => void;
+  unlinkSelected: () => void;
   reorder: (id: string, dir: "up" | "down" | "top" | "bottom") => void;
   reorderInsert: (ids: string | string[], visualInsertIndex: number) => void;
   setArtboardBg: (bg: DesignDocument["artboard"]["background"]) => void;
@@ -305,6 +308,16 @@ export const useDesign = create<DesignState>((set, get) => ({
     if (!doc) return;
     if (commit) get().commit();
     const idset = new Set(ids);
+    const keys = Object.keys(patch);
+    const style = keys.some((k) => !LOCAL_PATCH.has(k));
+    if (style) {
+      for (const seed of doc.nodes) {
+        if (!idset.has(seed.id) || !seed.linkId || seed.kind === "paint") continue;
+        for (const n of doc.nodes) {
+          if (n.linkId === seed.linkId && n.kind === seed.kind) idset.add(n.id);
+        }
+      }
+    }
     set({
       doc: {
         ...doc,
@@ -355,6 +368,35 @@ export const useDesign = create<DesignState>((set, get) => ({
     set({
       doc: { ...doc, nodes: [...doc.nodes, ...copies] },
       selection: copies.map((c) => c.id),
+      dirty: true,
+    });
+  },
+
+  duplicateLinked: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    get().commit();
+    const nodes = doc.nodes.map((n) =>
+      selection.includes(n.id) && !n.linkId ? { ...n, linkId: uid("lk") } : n,
+    );
+    const copies = nodes.filter((n) => selection.includes(n.id)).map((n) => cloneNode(n, 28, 28));
+    set({
+      doc: { ...doc, nodes: [...nodes, ...copies] },
+      selection: copies.map((c) => c.id),
+      dirty: true,
+    });
+  },
+
+  unlinkSelected: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    get().commit();
+    const drop = new Set(selection);
+    set({
+      doc: {
+        ...doc,
+        nodes: doc.nodes.map((n) => (drop.has(n.id) ? { ...n, linkId: undefined } : n)),
+      },
       dirty: true,
     });
   },

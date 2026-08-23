@@ -86,6 +86,7 @@ export function Inspector() {
               onChange={(e) => updateNodes([node.id], { name: e.target.value }, true)}
             />
           </Field>
+          <LinkedRow nodeId={node.id} linkId={node.linkId} />
           <div className="grid grid-cols-2 gap-2">
             {(["x", "y", "w", "h"] as const).map((k) => (
               <Field key={k} label={k.toUpperCase()}>
@@ -689,6 +690,49 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">{title}</div>
       <div className="flex flex-col gap-2">{children}</div>
     </section>
+  );
+}
+
+function LinkedRow({ nodeId, linkId }: { nodeId: string; linkId?: string }) {
+  const doc = useDesign((s) => s.doc);
+  const duplicateLinked = useDesign((s) => s.duplicateLinked);
+  const unlinkSelected = useDesign((s) => s.unlinkSelected);
+  const select = useDesign((s) => s.select);
+  const count = linkId && doc ? doc.nodes.filter((n) => n.linkId === linkId).length : 0;
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+        onClick={() => duplicateLinked()}
+      >
+        Linked copy
+      </button>
+      {count > 1 && (
+        <>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-phosphor/40 px-2 font-mono text-[10px] text-phosphor"
+            onClick={() => {
+              if (!doc || !linkId) return;
+              select(doc.nodes.filter((n) => n.linkId === linkId).map((n) => n.id));
+            }}
+          >
+            {count}
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:text-ink"
+            onClick={() => {
+              select([nodeId]);
+              unlinkSelected();
+            }}
+          >
+            Unlink
+          </button>
+        </>
+      )}
+    </div>
   );
 }
 

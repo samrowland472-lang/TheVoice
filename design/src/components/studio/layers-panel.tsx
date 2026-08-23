@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Eye, EyeOff, GripVertical, Lock, Unlock } from "lucide-react";
+import { Eye, EyeOff, GripVertical, Link2, Lock, Unlock } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +103,7 @@ export function LayersPanel() {
                   className="min-w-0 flex-1 truncate px-1 text-left"
                   onClick={(e) => select([n.id], e.shiftKey)}
                 >
+                  {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
                   {n.name || n.kind}
                 </button>
                 <button

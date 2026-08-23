@@ -790,6 +790,7 @@ export function CanvasStage() {
     { id: "copy", label: "Copy", hint: "⌘C", run: () => useDesign.getState().copySelected() },
     { id: "paste", label: "Paste", hint: "⌘V", run: () => useDesign.getState().pasteClipboard() },
     { id: "dup", label: "Duplicate", hint: "⌘D", run: () => useDesign.getState().duplicateSelected() },
+    { id: "dup-link", label: "Linked duplicate", hint: "⇧⌘D", run: () => useDesign.getState().duplicateLinked() },
     { id: "front", label: "Bring to front", run: () => useDesign.getState().bringSelected("top") },
     { id: "back", label: "Send to back", run: () => useDesign.getState().bringSelected("bottom") },
     { id: "flip-h", label: "Flip horizontal", run: () => useDesign.getState().flipSelected("h") },
