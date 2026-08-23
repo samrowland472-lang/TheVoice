@@ -21,14 +21,20 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. (empty — pick next polish or canvas/type/export depth)
+1. Zoom to selection (fit selected layers in view).
+2. Export selection as PNG.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Canvas stage restored from placeholder wipe; eyedropper HUD re-applied under the board.
+- Full canvas-stage restored (35kb) after GitHub stub; eyedropper HUD: Click sample · kit chip · Shift+click.
 
 ## Iterations
+
+### 2026-08-23T14:20Z — loop 35
+
+Restored full canvas-stage (was 4kb stub on GitHub). Eyedropper HUD under the board. Typecheck + build + smoke clean.
 
 ### 2026-08-23T13:19Z — loop 34
 
@@ -36,4 +42,4 @@ Restored `canvas-stage.tsx` after placeholder wipe (was 20 bytes). Re-applied ey
 
 ## Next recommended
 
-Polish canvas depth or pick next backlog from product needs.
+Zoom to selection (fit selected layers in view).
