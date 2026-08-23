@@ -5611,17 +5611,28 @@ if (projectDjBtn) {
 }
 
 if (projectPlay) {
-  projectPlay.addEventListener('click', () => {
-    if (!projectAudio.src) return;
-    if (typeof stopPlayback === 'function') stopPlayback();
-    if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
-    if (projectAudio.paused) {
-      projectAudio.play().catch(() => {});
-      projectPlay.textContent = '■';
-    } else {
-      projectAudio.pause();
-      projectPlay.textContent = '▶';
-    }
+  projectPlay.addEventListener('click', () => toggleProjectPlay());
+}
+function toggleProjectPlay() {
+  if (!projectAudio || !projectAudio.src) return;
+  if (typeof stopPlayback === 'function') stopPlayback();
+  if (typeof stopLibraryPlay === 'function') stopLibraryPlay();
+  if (projectAudio.paused) {
+    projectAudio.play().catch(() => {});
+    if (projectPlay) projectPlay.textContent = '■';
+  } else {
+    projectAudio.pause();
+    if (projectPlay) projectPlay.textContent = '▶';
+  }
+}
+if (!window.__projectKeys) {
+  window.__projectKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    if (!projectView || projectView.hidden) return;
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) return;
+    if (ev.code !== 'Space') return;
+    ev.preventDefault();
+    toggleProjectPlay();
   });
 }
 if (projectScrub) {
