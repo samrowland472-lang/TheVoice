@@ -1571,6 +1571,23 @@ function toggleLibraryClip(clip, card, btn) {
   btn.textContent = '■';
 }
 
+function bindLibraryKeys() {
+  if (window.__libKeys) return;
+  window.__libKeys = true;
+  document.addEventListener('keydown', (ev) => {
+    if (!libraryView || libraryView.hidden) return;
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'SELECT')) return;
+    if (ev.code !== 'Space') return;
+    ev.preventDefault();
+    const card = (clipListEl && clipListEl.querySelector('.clip-card.is-playing')) || (clipListEl && clipListEl.querySelector('.clip-card'));
+    if (!card) return;
+    const btn = card.querySelector('.clip-play');
+    const clip = allClips.find((c) => String(c.id) === String(card.dataset.id));
+    if (clip && btn) toggleLibraryClip(clip, card, btn);
+  });
+}
+bindLibraryKeys();
+
 if (libraryPlayer) {
   libraryPlayer.addEventListener('timeupdate', () => {
     const card = clipListEl.querySelector(`.clip-card[data-id="${libraryPlayingId}"]`);
