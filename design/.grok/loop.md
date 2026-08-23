@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Click-through hotspots on a frame (optional links between campaign pages).
-2. Thumbnail cache for hub recents (skip re-raster when unchanged).
+1. Thumbnail cache for hub recents (skip re-raster when unchanged).
+2. Present cursor hint when hovering a hotspot.
 
 ## Done
 
@@ -46,8 +46,13 @@ Auth OFF, DB OFF.
 - Palette from image: hub “From image” and inspector “Palette to brand”.
 - Present mode: speaker notes + campaign click-through (← → / space / frame chips).
 - Paint live: stroke draws offscreen; PNG encode only on pointer-up. Canvas skips brand/index/brush redraws.
+- Hotspots: a layer can jump to another campaign page or a URL in present.
 
 ## Iterations
+
+### 2026-08-23T00:28Z — loop 25
+
+Present hotspots. Inspector Hotspot → campaign page or URL. Click hits the layer first, else next frame. Typecheck + build + smoke clean.
 
 ### 2026-08-23T00:18Z — loop 24
 
@@ -63,5 +68,5 @@ Sample an image into named brand swatches. Typecheck + build + smoke clean.
 
 ## Next recommended
 
-Click-through hotspots on a frame (optional links between campaign pages).
+Thumbnail cache for hub recents (skip re-raster when unchanged).
 

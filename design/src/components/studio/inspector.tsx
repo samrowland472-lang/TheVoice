@@ -96,6 +96,7 @@ export function Inspector() {
             />
           </Field>
           <LinkedRow nodeId={node.id} linkId={node.linkId} />
+          <HotspotField node={node} />
           <div className="grid grid-cols-2 gap-2">
             {(["x", "y", "w", "h"] as const).map((k) => (
               <Field key={k} label={k.toUpperCase()}>
@@ -716,6 +717,46 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">{title}</div>
       <div className="flex flex-col gap-2">{children}</div>
     </section>
+  );
+}
+
+function HotspotField({ node }: { node: DesignNode }) {
+  const doc = useDesign((s) => s.doc);
+  const index = useDesign((s) => s.index);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  if (!doc) return null;
+  const pages = doc.campaignId ? index.filter((p) => p.campaignId === doc.campaignId && p.id !== doc.id) : [];
+  const href = node.href ?? "";
+  const isUrl = href.startsWith("http://") || href.startsWith("https://");
+  const selectValue = !href ? "" : href.startsWith("doc:") ? href : "url";
+  return (
+    <Field label="Hotspot">
+      <select
+        className="field"
+        value={selectValue}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "url") updateNodes([node.id], { href: "https://" } as Partial<DesignNode>, true);
+          else updateNodes([node.id], { href: v || undefined } as Partial<DesignNode>, true);
+        }}
+      >
+        <option value="">None</option>
+        {pages.map((p) => (
+          <option key={p.id} value={`doc:${p.id}`}>
+            {p.name}
+          </option>
+        ))}
+        <option value="url">URL…</option>
+      </select>
+      {isUrl || selectValue === "url" ? (
+        <input
+          className="field mt-1"
+          placeholder="https://"
+          value={isUrl ? href : ""}
+          onChange={(e) => updateNodes([node.id], { href: e.target.value } as Partial<DesignNode>)}
+        />
+      ) : null}
+    </Field>
   );
 }
 

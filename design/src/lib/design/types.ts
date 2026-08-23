@@ -75,6 +75,8 @@ export interface BaseNode {
   shadow: Shadow | null;
   /** Shared id — style/copy edits update every instance. Transform stays local. */
   linkId?: string;
+  /** Present hotspot: `doc:<id>` or a URL. */
+  href?: string;
 }
 
 export interface TextNode extends BaseNode {

@@ -18,7 +18,7 @@ import type {
 } from "./types";
 
 const MAX_HISTORY = 60;
-const LOCAL_PATCH = new Set(["x", "y", "w", "h", "rotation", "name", "locked", "visible"]);
+const LOCAL_PATCH = new Set(["x", "y", "w", "h", "rotation", "name", "locked", "visible", "href"]);
 const CAMPAIGN_FORMATS = ["ig-story", "ig-post", "x-post"] as const;
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | null;

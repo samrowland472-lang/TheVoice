@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { FORMATS } from "@/lib/design/formats";
+import { screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -178,14 +179,43 @@ function PresentView() {
   const save = useDesign((s) => s.save);
   const setPresent = useDesign((s) => s.setPresent);
   if (!doc) return null;
-  const pages = doc.campaignId ? index.filter((p) => p.campaignId === doc.campaignId) : [{ id: doc.id, name: doc.name }];
-  const i = Math.max(0, pages.findIndex((p) => p.id === doc.id));
+  const live = doc;
+  const pages = live.campaignId ? index.filter((p) => p.campaignId === live.campaignId) : [{ id: live.id, name: live.name }];
+  const i = Math.max(0, pages.findIndex((p) => p.id === live.id));
 
   function go(delta: number) {
     const next = pages[i + delta];
     if (!next) return;
     save();
     void navigate({ to: "/studio/$id", params: { id: next.id } });
+  }
+
+  function follow(href: string) {
+    if (href.startsWith("doc:")) {
+      const id = href.slice(4);
+      if (!id || id === live.id) return;
+      save();
+      void navigate({ to: "/studio/$id", params: { id } });
+      return;
+    }
+    if (href.startsWith("https://") || href.startsWith("http://")) {
+      window.open(href, "_blank", "noopener");
+    }
+  }
+
+  function onStageClick(e: MouseEvent<HTMLButtonElement>) {
+    const viewport = useDesign.getState().viewport;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const d = screenToDoc(e.clientX - rect.left, e.clientY - rect.top, viewport);
+    for (let n = live.nodes.length - 1; n >= 0; n--) {
+      const node = live.nodes[n]!;
+      if (!node.visible || !node.href) continue;
+      if (d.x >= node.x && d.x <= node.x + node.w && d.y >= node.y && d.y <= node.y + node.h) {
+        follow(node.href);
+        return;
+      }
+    }
+    go(1);
   }
 
   useEffect(() => {
@@ -223,8 +253,8 @@ function PresentView() {
         <button
           type="button"
           className="absolute inset-0 cursor-pointer bg-transparent"
-          aria-label="Next frame"
-          onClick={() => go(1)}
+          aria-label="Next frame or hotspot"
+          onClick={onStageClick}
           onContextMenu={(e) => {
             e.preventDefault();
             go(-1);
