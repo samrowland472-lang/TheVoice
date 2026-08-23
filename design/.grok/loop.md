@@ -21,7 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
+1. Click-through hotspots on a frame (optional links between campaign pages).
+2. Thumbnail cache for hub recents (skip re-raster when unchanged).
 
 ## Done
 
@@ -44,8 +45,13 @@ Auth OFF, DB OFF.
 - Linked duplicates: style/copy sync across instances; transform stays local.
 - Palette from image: hub “From image” and inspector “Palette to brand”.
 - Present mode: speaker notes + campaign click-through (← → / space / frame chips).
+- Paint live: stroke draws offscreen; PNG encode only on pointer-up. Canvas skips brand/index/brush redraws.
 
 ## Iterations
+
+### 2026-08-23T00:18Z — loop 24
+
+Smoother brush: no per-dab store writes. Typecheck + build + smoke clean.
 
 ### 2026-08-23T00:20Z — loop 23
 
@@ -54,3 +60,8 @@ Present speaker notes + deck nav. Inspector notes field; Present shows notes rai
 ### 2026-08-23T00:08Z — loop 22
 
 Sample an image into named brand swatches. Typecheck + build + smoke clean.
+
+## Next recommended
+
+Click-through hotspots on a frame (optional links between campaign pages).
+
