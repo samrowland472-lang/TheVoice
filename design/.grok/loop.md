@@ -21,8 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Export selection as PNG.
-2. Multi-select marquee polish / keyboard nudge feedback.
+1. Multi-select marquee polish / keyboard nudge feedback.
 
 ## Done
 
@@ -30,8 +29,13 @@ Auth OFF, DB OFF.
 - Canvas stage restored from placeholder wipe; eyedropper HUD re-applied under the board.
 - Full canvas-stage restored (35kb) after GitHub stub; eyedropper HUD: Click sample · kit chip · Shift+click.
 - Zoom to selection (fit selected layers in view): Shift+0, command palette, context menu, Shift-click zoom %.
+- Export selection as PNG (cropped AABB, transparent bg): Export menu, command palette, context menu.
 
 ## Iterations
+
+### 2026-08-23T20:11Z — loop 37
+
+Restored full `store.ts` (was truncated stub). Completed zoom-to-selection wiring (`requestFitSelection`, `fitBoxViewport`, ⇧0, palette, context, Shift-click zoom %). **Export selection as PNG**: `exportSelectionPng` crops selected layers to AABB (rotation-aware), transparent background; Export menu "Selection PNG", command palette "Export selection as PNG", context menu. Typecheck + build + smoke clean.
 
 ### 2026-08-23T17:05Z — loop 36
 
@@ -47,4 +51,4 @@ Restored `canvas-stage.tsx` after placeholder wipe (was 20 bytes). Re-applied ey
 
 ## Next recommended
 
-Export selection as PNG.
+Multi-select marquee polish / keyboard nudge feedback.
