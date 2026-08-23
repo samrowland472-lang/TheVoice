@@ -2488,11 +2488,12 @@ function studioNoteOff(pitch) {
   if (!h) return;
   const a = audio();
   const t = a ? a.ctx.currentTime : 0;
+  const rel = Math.max(0.03, keysRel);
   try {
     h.g.gain.cancelScheduledValues(t);
-    h.g.gain.setTargetAtTime(0.0008, t, 0.04);
-    h.o1.stop(t + 0.16);
-    h.o2.stop(t + 0.16);
+    h.g.gain.setTargetAtTime(0.0008, t, rel / 3);
+    h.o1.stop(t + rel + 0.05);
+    h.o2.stop(t + rel + 0.05);
   } catch (_) {}
   midiHeld.delete(pitch);
 }
