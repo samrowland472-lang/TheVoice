@@ -58,6 +58,8 @@ export function useShortcuts() {
         return;
       }
 
+      if (s.present) return;
+
       if (meta && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) s.redo();

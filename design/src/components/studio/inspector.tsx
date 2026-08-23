@@ -66,6 +66,14 @@ export function Inspector() {
             onChange={(e) => setBleed(Number(e.target.value))}
           />
         </Field>
+        <Field label="Speaker notes">
+          <textarea
+            className="field min-h-16"
+            placeholder="Shown in present mode"
+            value={doc.notes ?? ""}
+            onChange={(e) => useDesign.getState().setNotes(e.target.value)}
+          />
+        </Field>
       </Section>
 
       <Section title="Ink">

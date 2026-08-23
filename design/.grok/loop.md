@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present mode speaker notes / click-through frames.
-2. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
+1. Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.
+2. Click-through hotspots on a frame (optional links between campaign pages).
 
 ## Done
 
@@ -44,8 +44,13 @@ Auth OFF, DB OFF.
 - Print export: 4× PNG + one-page PDF with crop marks.
 - Linked duplicates: style/copy sync across instances; transform stays local.
 - Palette from image: hub “From image” and inspector “Palette to brand”.
+- Present: speaker notes + click/arrow through campaign frames.
 
 ## Iterations
+
+### 2026-08-23T00:13Z — loop 23
+
+Present mode notes and click-through. Typecheck + build + smoke clean.
 
 ### 2026-08-23T00:08Z — loop 22
 
@@ -113,4 +118,4 @@ Rulers + manual guides.
 
 ## Next recommended
 
-Present mode speaker notes / click-through frames.
+Performance: thumbnail cache, paint layer dirty-rect, fewer store redraws.

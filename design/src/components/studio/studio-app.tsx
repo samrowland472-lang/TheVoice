@@ -98,19 +98,7 @@ export function StudioApp({ id }: { id: string }) {
   }
 
   if (present) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col bg-ground">
-        <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-3">
-          <Button size="sm" onClick={() => setPresent(false)}>
-            Exit
-          </Button>
-          <span className="truncate text-sm text-ink">{doc.name}</span>
-          <span className="ml-auto font-mono text-[10px] text-ink-faint uppercase">Present · Esc</span>
-        </div>
-        <CanvasStage />
-        <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
-      </div>
-    );
+    return <PresentView />;
   }
 
   return (
@@ -179,6 +167,85 @@ export function StudioApp({ id }: { id: string }) {
           },
         }}
       />
+    </div>
+  );
+}
+
+function PresentView() {
+  const navigate = useNavigate();
+  const doc = useDesign((s) => s.doc);
+  const index = useDesign((s) => s.index);
+  const save = useDesign((s) => s.save);
+  const setPresent = useDesign((s) => s.setPresent);
+  if (!doc) return null;
+  const pages = doc.campaignId ? index.filter((p) => p.campaignId === doc.campaignId) : [{ id: doc.id, name: doc.name }];
+  const i = Math.max(0, pages.findIndex((p) => p.id === doc.id));
+
+  function go(delta: number) {
+    const next = pages[i + delta];
+    if (!next) return;
+    save();
+    void navigate({ to: "/studio/$id", params: { id: next.id } });
+  }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        e.preventDefault();
+        go(1);
+      }
+      if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        go(-1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col bg-ground">
+      <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-3">
+        <Button size="sm" onClick={() => setPresent(false)}>
+          Exit
+        </Button>
+        <span className="truncate text-sm text-ink">{doc.name}</span>
+        {pages.length > 1 && (
+          <span className="font-mono text-[10px] text-ink-faint">
+            {i + 1} / {pages.length}
+          </span>
+        )}
+        <span className="ml-auto font-mono text-[10px] text-ink-faint uppercase">Present · click or →</span>
+      </div>
+      <div className="relative min-h-0 flex-1">
+        <CanvasStage />
+        <button
+          type="button"
+          className="absolute inset-0 cursor-pointer bg-transparent"
+          aria-label="Next frame"
+          onClick={() => go(1)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            go(-1);
+          }}
+        />
+      </div>
+      {(doc.notes || pages.length > 1) && (
+        <div className="flex shrink-0 items-start gap-3 border-t border-border bg-surface px-4 py-3">
+          <p className="min-w-0 flex-1 text-sm text-ink-dim whitespace-pre-wrap">{doc.notes || "No notes"}</p>
+          {pages.length > 1 && (
+            <div className="flex gap-1">
+              <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>
+                Prev
+              </Button>
+              <Button size="sm" variant="ghost" disabled={i >= pages.length - 1} onClick={() => go(1)}>
+                Next
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

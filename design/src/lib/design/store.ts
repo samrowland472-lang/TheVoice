@@ -60,6 +60,7 @@ interface DesignState {
   setProjectFolder: (id: string, folder: string) => void;
   toggleProjectTag: (id: string, tag: string) => void;
   rename: (name: string) => void;
+  setNotes: (notes: string) => void;
   setTool: (t: Tool) => void;
   setViewport: (v: Partial<Viewport>) => void;
   select: (ids: string[], additive?: boolean) => void;
@@ -287,6 +288,12 @@ export const useDesign = create<DesignState>((set, get) => ({
     if (!doc) return;
     get().commit();
     set({ doc: { ...doc, name }, dirty: true });
+  },
+
+  setNotes: (notes) => {
+    const { doc } = get();
+    if (!doc) return;
+    set({ doc: { ...doc, notes }, dirty: true });
   },
 
   setTool: (tool) => set({ tool, editingText: null }),
