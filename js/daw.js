@@ -776,20 +776,50 @@ async function loadFileIntoDeck(d, file) {
 async function loadBeatIntoDeck(d) {
   if (!opts.renderPattern || !opts.getPattern) return;
   ensureCtx();
-  const pattern = opts.getPattern();
-  const samples = opts.renderPattern(pattern, 44100, 4);
+  const pattern = opts.getPattern() || { bpm: 120 };
+  let samples = opts.renderPattern(pattern, 44100, 4);
+  const bpm = pattern.bpm || 120;
+  const silent = isSilentBuffer(samples);
+  if (silent) samples = clickTrack(44100, bpm);
   const buf = floatToBuffer(samples, 44100);
   d.buf = buf;
-  d.fileName = `pattern ${pattern.bpm}bpm`;
+  d.fileName = silent ? `click ${bpm}bpm` : `pattern ${bpm}bpm`;
   d.duration = buf.duration;
-  d.origBpm = pattern.bpm;
-  d.bpm = pattern.bpm;
+  d.origBpm = bpm;
+  d.bpm = bpm;
   d.rate = 1;
   d.cueAt = 0;
   d.playing = false;
   stopDeckAudio(d);
   if (!d.nodes) buildDeckGraph(d);
   paintDecks();
+}
+
+function isSilentBuffer(samples) {
+  if (!samples || !samples.length) return true;
+  const step = Math.max(1, Math.floor(samples.length / 4000));
+  for (let i = 0; i < samples.length; i += step) {
+    if (Math.abs(samples[i]) > 0.0008) return false;
+  }
+  return true;
+}
+
+function clickTrack(sr, bpm, bars = 8) {
+  const beat = 60 / Math.max(40, bpm || 120);
+  const n = Math.max(1, Math.floor(sr * beat * 4 * bars));
+  const out = new Float32Array(n);
+  const beats = 4 * bars;
+  for (let b = 0; b < beats; b++) {
+    const at = Math.floor(b * beat * sr);
+    const acc = b % 4 === 0;
+    const freq = acc ? 1320 : 880;
+    const dur = Math.floor(0.035 * sr);
+    const amp = acc ? 0.55 : 0.28;
+    for (let i = 0; i < dur && at + i < n; i++) {
+      out[at + i] = Math.sin(2 * Math.PI * freq * (i / sr)) * (1 - i / dur) * amp;
+    }
+  }
+  return out;
 }
 
 function fmtTime(s) {
