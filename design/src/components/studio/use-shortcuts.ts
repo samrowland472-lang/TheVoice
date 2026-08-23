@@ -124,7 +124,8 @@ export function useShortcuts() {
 
       if (e.key === "0") {
         e.preventDefault();
-        s.requestFit();
+        if (e.shiftKey) s.requestFitSelection();
+        else s.requestFit();
         return;
       }
       if (e.key === "1" && !meta) {
