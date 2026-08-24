@@ -41,6 +41,7 @@ let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
 let keysOct1 = 0;
+let keysSemi1 = 0;
 let keysDet = 9;
 let keysOct = 0;
 let keysSemi = 0;
@@ -678,8 +679,12 @@ function osc1Oct() {
   return Math.max(-2, Math.min(2, Math.round(Number(keysOct1) || 0)));
 }
 
+function osc1Semi() {
+  return Math.max(-12, Math.min(12, Math.round(Number(keysSemi1) || 0)));
+}
+
 function osc1Ratio() {
-  return Math.pow(2, osc1Oct());
+  return Math.pow(2, osc1Oct() + osc1Semi() / 12);
 }
 
 function osc1Hz(freq) {
@@ -2955,6 +2960,7 @@ function paintDevices() {
           <button type="button" data-osc1-wave="sine"${keysOsc1 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sine'}">Sin</button>
         </div>
         ${knob('abl-oct1', 'O1', -2, 2, 1, keysOct1)}
+        ${knob('abl-semi1', 'S1', -12, 12, 1, keysSemi1)}
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         <div class="abl-lfo-waves" id="abl-nse-cols">
@@ -3036,6 +3042,7 @@ function paintDevices() {
   `;
   const osc = root.querySelector('#abl-osc');
   const oct1 = root.querySelector('#abl-oct1');
+  const semi1 = root.querySelector('#abl-semi1');
   const sub = root.querySelector('#abl-sub');
   const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
@@ -3111,6 +3118,7 @@ function paintDevices() {
     });
   }
   bindAnalog(oct1, 'oct1', 'O1', (v) => { keysOct1 = Math.round(v); applyKeysOct1(); });
+  bindAnalog(semi1, 'semi1', 'S1', (v) => { keysSemi1 = Math.round(v); applyKeysOct1(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
@@ -3561,6 +3569,11 @@ function applyMidiTarget(target, vel) {
     applyKeysOct1();
     const el = document.getElementById('abl-oct1');
     if (el) el.value = String(keysOct1);
+  } else if (target.type === 'semi1') {
+    keysSemi1 = Math.round(-12 + vel * 24);
+    applyKeysOct1();
+    const el = document.getElementById('abl-semi1');
+    if (el) el.value = String(keysSemi1);
   } else if (target.type === 'det') {
     keysDet = -50 + vel * 100;
     applyKeysDet();
