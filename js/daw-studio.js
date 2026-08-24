@@ -56,6 +56,7 @@ let keysAft = 0.7;
 let keysFenv = 0.75;
 let keysFenvInv = false;
 let keysFAtk = 0.09;
+let keysFDec = 0;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -158,7 +159,7 @@ function applyKeysFilter() {
     h.cut = cut;
     try {
       h.f.frequency.cancelScheduledValues(t);
-      h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
+      h.f.frequency.setTargetAtTime(filterEnvSustain(cut), t, 0.05);
       if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
     } catch (_) {}
     applyHeldSlope(h, type, cut, t);
@@ -186,21 +187,18 @@ function syncFiltSlopeUi() {
   });
 }
 
-function makeSlopePair(ctx, cut, t, envDur) {
+function makeSlopePair(ctx, cut, t) {
   const type = filtType();
   const q = fx.on.analog === false ? 0.3 : keysRes;
-  const end = filterEnvEnd(cut);
   const f = ctx.createBiquadFilter();
   const f2 = ctx.createBiquadFilter();
   f.type = type;
-  f.frequency.setValueAtTime(cut, t);
-  if (envDur != null) f.frequency.exponentialRampToValueAtTime(end, t + envDur);
   f.Q.value = q;
+  scheduleFiltEnv(f.frequency, cut, t);
   if (filtSlope() === 24 && fx.on.analog !== false) {
     f2.type = type;
     f2.Q.value = q;
-    f2.frequency.setValueAtTime(cut, t);
-    if (envDur != null) f2.frequency.exponentialRampToValueAtTime(end, t + envDur);
+    scheduleFiltEnv(f2.frequency, cut, t);
   } else {
     f2.type = 'allpass';
     f2.frequency.value = 1000;
@@ -217,7 +215,7 @@ function applyHeldSlope(h, type, cut, t) {
       h.f2.type = type;
       h.f2.Q.setTargetAtTime(Math.max(0.2, keysRes), t, 0.015);
       h.f2.frequency.cancelScheduledValues(t);
-      h.f2.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
+      h.f2.frequency.setTargetAtTime(filterEnvSustain(cut), t, 0.05);
     } else {
       h.f2.type = 'allpass';
       h.f2.frequency.setTargetAtTime(1000, t, 0.015);
@@ -968,6 +966,27 @@ function fAtk() {
   return Math.max(0.01, Math.min(1.5, Number(keysFAtk) || 0.09));
 }
 
+function fDec() {
+  return Math.max(0, Math.min(1.5, Number(keysFDec) || 0));
+}
+
+function filterEnvSustain(cut) {
+  const c = Math.max(80, cut);
+  return fDec() > 0.008 ? c : filterEnvEnd(c);
+}
+
+function scheduleFiltEnv(param, cut, t) {
+  if (!param) return;
+  const start = Math.max(80, cut);
+  const peak = Math.max(80, filterEnvEnd(cut));
+  const atk = fAtk();
+  const dec = fDec();
+  param.cancelScheduledValues(t);
+  param.setValueAtTime(start, t);
+  param.exponentialRampToValueAtTime(peak, t + atk);
+  if (dec > 0.008) param.exponentialRampToValueAtTime(start, t + atk + dec);
+}
+
 function syncFenvInvUi() {
   const btn = document.getElementById('abl-fenvinv');
   if (!btn) return;
@@ -989,7 +1008,7 @@ function applyKeysFenv() {
     const cut = h.cut || keysCutoff;
     try {
       h.f.frequency.cancelScheduledValues(t);
-      h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
+      h.f.frequency.setTargetAtTime(filterEnvSustain(cut), t, 0.05);
     } catch (_) {}
     applyHeldSlope(h, filtType(), cut, t);
   });
@@ -1545,7 +1564,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
   const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
-  const { f, f2 } = makeSlopePair(ctx, cut, t, fAtk());
+  const { f, f2 } = makeSlopePair(ctx, cut, t);
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   const { saw, sqr } = oscMixGains();
   const gSaw = ctx.createGain();
@@ -3197,6 +3216,7 @@ function paintDevices() {
           <button type="button" id="abl-fenvinv" class="${keysFenvInv ? 'on' : ''}" aria-pressed="${keysFenvInv}">Inv</button>
         </div>
         ${knob('abl-fatk', 'FAtk', 0.01, 1.5, 0.01, keysFAtk)}
+        ${knob('abl-fdec', 'FDec', 0, 1.5, 0.01, keysFDec)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
@@ -3271,6 +3291,7 @@ function paintDevices() {
   const aft = root.querySelector('#abl-aft');
   const fenv = root.querySelector('#abl-fenv');
   const fatk = root.querySelector('#abl-fatk');
+  const fdec = root.querySelector('#abl-fdec');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const vib = root.querySelector('#abl-vib');
@@ -3434,6 +3455,7 @@ function paintDevices() {
     });
   }
   bindAnalog(fatk, 'fatk', 'FAtk', (v) => { keysFAtk = v; });
+  bindAnalog(fdec, 'fdec', 'FDec', (v) => { keysFDec = v; });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -3944,6 +3966,10 @@ function applyMidiTarget(target, vel) {
     keysFAtk = 0.01 + vel * 1.49;
     const el = document.getElementById('abl-fatk');
     if (el) el.value = String(keysFAtk);
+  } else if (target.type === 'fdec') {
+    keysFDec = vel * 1.5;
+    const el = document.getElementById('abl-fdec');
+    if (el) el.value = String(keysFDec);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
@@ -4126,19 +4152,9 @@ function retrigVoice(h, pitch, vel) {
   } catch (_) {}
   const cut = analogCut(keysCutoff, pitch, vel != null ? vel : h.vel);
   h.cut = cut;
-  const envDur = fAtk();
-  const end = filterEnvEnd(cut);
   try {
-    if (h.f) {
-      h.f.frequency.cancelScheduledValues(t);
-      h.f.frequency.setValueAtTime(Math.max(80, cut), t);
-      h.f.frequency.exponentialRampToValueAtTime(end, t + envDur);
-    }
-    if (h.f2 && filtSlope() === 24 && fx.on.analog !== false) {
-      h.f2.frequency.cancelScheduledValues(t);
-      h.f2.frequency.setValueAtTime(Math.max(80, cut), t);
-      h.f2.frequency.exponentialRampToValueAtTime(end, t + envDur);
-    }
+    if (h.f) scheduleFiltEnv(h.f.frequency, cut, t);
+    if (h.f2 && filtSlope() === 24 && fx.on.analog !== false) scheduleFiltEnv(h.f2.frequency, cut, t);
     if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
   } catch (_) {}
 }
@@ -4177,7 +4193,7 @@ function retuneVoice(h, pitch, vel) {
   try {
     if (h.f) {
       h.f.frequency.cancelScheduledValues(t);
-      h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
+      h.f.frequency.setTargetAtTime(filterEnvSustain(cut), t, 0.05);
     }
     if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
     if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(bentHz(freq)), t, 0.02);
@@ -4229,7 +4245,7 @@ function studioNoteOn(pitch, vel) {
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
   const cut = analogCut(keysCutoff, pitch, vel);
-  const { f, f2 } = makeSlopePair(a.ctx, cut, t, fAtk());
+  const { f, f2 } = makeSlopePair(a.ctx, cut, t);
   const g = a.ctx.createGain();
   const v = Math.max(0.001, vel * 0.28);
   g.gain.setValueAtTime(0.0008, t);
