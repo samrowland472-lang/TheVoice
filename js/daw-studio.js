@@ -65,6 +65,8 @@ let keysSlope = 12;
 let lastKeyFreq = 0;
 let keysMono = false;
 const monoStack = [];
+let keysBend = 2;
+let pitchWheel = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
@@ -370,15 +372,17 @@ function startUnison(ctx, dest, freq, t, stopAt, fromFreq) {
   oDn.type = 'square';
   const { up, dn } = uniRatios();
   const g = Math.max(0, keysGlide);
-  const from = fromFreq != null ? fromFreq : lastKeyFreq;
+  const b = bendRatio();
+  const from = (fromFreq != null ? fromFreq : lastKeyFreq) * b;
+  const dest = freq * b;
   if (g > 0.004 && from > 20) {
     oUp.frequency.setValueAtTime(Math.max(20, from * up), t);
     oDn.frequency.setValueAtTime(Math.max(20, from * dn), t);
-    oUp.frequency.exponentialRampToValueAtTime(freq * up, t + g);
-    oDn.frequency.exponentialRampToValueAtTime(freq * dn, t + g);
+    oUp.frequency.exponentialRampToValueAtTime(dest * up, t + g);
+    oDn.frequency.exponentialRampToValueAtTime(dest * dn, t + g);
   } else {
-    oUp.frequency.setValueAtTime(freq * up, t);
-    oDn.frequency.setValueAtTime(freq * dn, t);
+    oUp.frequency.setValueAtTime(dest * up, t);
+    oDn.frequency.setValueAtTime(dest * dn, t);
   }
   const mixV = uniMix();
   const gUni = ctx.createGain();
@@ -423,8 +427,8 @@ function applyKeysUni() {
     try {
       h.gUni.gain.setTargetAtTime(mixV, t, 0.02);
       if (h.gUniDn) h.gUniDn.gain.setTargetAtTime(mixV, t, 0.02);
-      if (h.oUp && h.freq) h.oUp.frequency.setTargetAtTime(h.freq * up, t, 0.02);
-      if (h.oDn && h.freq) h.oDn.frequency.setTargetAtTime(h.freq * dn, t, 0.02);
+      if (h.oUp && h.freq) h.oUp.frequency.setTargetAtTime(h.freq * up * bendRatio(), t, 0.02);
+      if (h.oDn && h.freq) h.oDn.frequency.setTargetAtTime(h.freq * dn * bendRatio(), t, 0.02);
     } catch (_) {}
   });
 }
@@ -684,6 +688,54 @@ function osc2Hz(freq) {
   return Math.max(20, (freq || 440) * osc2Ratio());
 }
 
+function bendAmt() {
+  return Math.max(0, Math.min(12, Number(keysBend) || 0));
+}
+
+function bendRatio() {
+  const w = Math.max(-1, Math.min(1, Number(pitchWheel) || 0));
+  return Math.pow(2, w * bendAmt() / 12);
+}
+
+function bentHz(freq) {
+  return Math.max(20, (freq || 440) * bendRatio());
+}
+
+function applyPitchBend() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const b = bendRatio();
+  const { up, dn } = uniRatios();
+  midiHeld.forEach((h) => {
+    if (!h || !h.freq) return;
+    const freq = h.freq;
+    try {
+      if (h.o1) {
+        h.o1.frequency.cancelScheduledValues(t);
+        h.o1.frequency.setTargetAtTime(bentHz(freq), t, 0.008);
+      }
+      if (h.o2) {
+        h.o2.frequency.cancelScheduledValues(t);
+        h.o2.frequency.setTargetAtTime(Math.max(20, osc2Hz(freq) * b), t, 0.008);
+      }
+      if (h.o3) {
+        h.o3.frequency.cancelScheduledValues(t);
+        h.o3.frequency.setTargetAtTime(Math.max(20, freq / 2 * b), t, 0.008);
+      }
+      if (h.oUp) {
+        h.oUp.frequency.cancelScheduledValues(t);
+        h.oUp.frequency.setTargetAtTime(Math.max(20, freq * up * b), t, 0.008);
+      }
+      if (h.oDn) {
+        h.oDn.frequency.cancelScheduledValues(t);
+        h.oDn.frequency.setTargetAtTime(Math.max(20, freq * dn * b), t, 0.008);
+      }
+      if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(bentHz(freq)), t, 0.02);
+    } catch (_) {}
+  });
+}
+
 function applyKeysDet() {
   const a = audio();
   if (!a) return;
@@ -691,7 +743,7 @@ function applyKeysDet() {
   midiHeld.forEach((h) => {
     if (!h || !h.o2 || !h.freq) return;
     try {
-      h.o2.frequency.setTargetAtTime(osc2Hz(h.freq), t, 0.02);
+      h.o2.frequency.setTargetAtTime(osc2Hz(h.freq) * bendRatio(), t, 0.02);
     } catch (_) {}
   });
 }
@@ -719,20 +771,23 @@ function applyKeysFenv() {
 
 function glideOsc(o1, o2, freq, t, o3) {
   const r = osc2Ratio();
-  const subF = Math.max(20, freq / 2);
+  const b = bendRatio();
   const g = Math.max(0, keysGlide);
+  const from = lastKeyFreq * b;
+  const to = freq * b;
+  const subF = Math.max(20, freq / 2 * b);
   if (g > 0.004 && lastKeyFreq > 20) {
-    o1.frequency.setValueAtTime(lastKeyFreq, t);
-    o2.frequency.setValueAtTime(Math.max(20, lastKeyFreq * r), t);
-    o1.frequency.exponentialRampToValueAtTime(freq, t + g);
-    o2.frequency.exponentialRampToValueAtTime(osc2Hz(freq), t + g);
+    o1.frequency.setValueAtTime(Math.max(20, from), t);
+    o2.frequency.setValueAtTime(Math.max(20, from * r), t);
+    o1.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + g);
+    o2.frequency.exponentialRampToValueAtTime(Math.max(20, to * r), t + g);
     if (o3) {
-      o3.frequency.setValueAtTime(Math.max(20, lastKeyFreq / 2), t);
+      o3.frequency.setValueAtTime(Math.max(20, from / 2), t);
       o3.frequency.exponentialRampToValueAtTime(subF, t + g);
     }
   } else {
-    o1.frequency.setValueAtTime(freq, t);
-    o2.frequency.setValueAtTime(osc2Hz(freq), t);
+    o1.frequency.setValueAtTime(Math.max(20, to), t);
+    o2.frequency.setValueAtTime(Math.max(20, to * r), t);
     if (o3) o3.frequency.setValueAtTime(subF, t);
   }
   lastKeyFreq = freq;
@@ -2912,6 +2967,7 @@ function paintDevices() {
         <div class="abl-lfo-waves">
           <button type="button" id="abl-mono" class="${keysMono ? 'on' : ''}" aria-pressed="${keysMono}">Mono</button>
         </div>
+        ${knob('abl-bnd', 'Bnd', 0, 12, 1, keysBend)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
         ${knob('abl-dec', 'Dec', 0.01, 1.2, 0.01, keysDec)}
         ${knob('abl-sus', 'Sus', 0.05, 1, 0.01, keysSus)}
@@ -2968,6 +3024,7 @@ function paintDevices() {
   const vib = root.querySelector('#abl-vib');
   const trm = root.querySelector('#abl-trm');
   const gli = root.querySelector('#abl-gli');
+  const bnd = root.querySelector('#abl-bnd');
   const atk = root.querySelector('#abl-atk');
   const dec = root.querySelector('#abl-dec');
   const sus = root.querySelector('#abl-sus');
@@ -3124,6 +3181,7 @@ function paintDevices() {
       applyKeysMono();
     });
   }
+  bindAnalog(bnd, 'bnd', 'Bnd', (v) => { keysBend = Math.round(v); applyPitchBend(); });
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
   bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
   bindAnalog(sus, 'sus', 'Sus', (v) => { keysSus = v; applyKeysEnv(); });
@@ -3368,6 +3426,14 @@ function kickMeters() {
 
 export function studioMidi(cmd, d1, d2) {
   const vel = (d2 || 0) / 127;
+  if (cmd === 0xe0) {
+    const raw = ((d2 & 0x7f) << 7) | (d1 & 0x7f);
+    pitchWheel = Math.max(-1, Math.min(1, (raw - 8192) / 8192));
+    applyPitchBend();
+    const st = pitchWheel * bendAmt();
+    midiStatus(`Bend ${st >= 0 ? '+' : ''}${st.toFixed(2)}`);
+    return;
+  }
   if (cmd === 0xb0) {
     if (midiMapOn && midiLearn) {
       midiMap[`cc:${d1}`] = { ...midiLearn };
@@ -3543,6 +3609,11 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'mono') {
     keysMono = vel >= 0.5;
     applyKeysMono();
+  } else if (target.type === 'bnd') {
+    keysBend = Math.round(vel * 12);
+    applyPitchBend();
+    const el = document.getElementById('abl-bnd');
+    if (el) el.value = String(keysBend);
   } else if (target.type === 'atk') {
     keysAtk = 0.005 + vel * 0.795;
     const el = document.getElementById('abl-atk');
@@ -3649,11 +3720,12 @@ function retuneVoice(h, pitch, vel) {
     } catch (_) {}
   };
   const { up, dn } = uniRatios();
-  glideTo(h.o1, from, freq);
-  glideTo(h.o2, osc2Hz(from), osc2Hz(freq));
-  glideTo(h.o3, from / 2, freq / 2);
-  glideTo(h.oUp, from * up, freq * up);
-  glideTo(h.oDn, from * dn, freq * dn);
+  const b = bendRatio();
+  glideTo(h.o1, from * b, freq * b);
+  glideTo(h.o2, osc2Hz(from) * b, osc2Hz(freq) * b);
+  glideTo(h.o3, from / 2 * b, freq / 2 * b);
+  glideTo(h.oUp, from * up * b, freq * up * b);
+  glideTo(h.oDn, from * dn * b, freq * dn * b);
   h.freq = freq;
   lastKeyFreq = freq;
   if (vel != null) h.vel = vel;
@@ -3665,7 +3737,7 @@ function retuneVoice(h, pitch, vel) {
       h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
     }
     if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
-    if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(freq), t, 0.02);
+    if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(bentHz(freq)), t, 0.02);
   } catch (_) {}
   applyHeldSlope(h, filtType(), cut, t);
 }
