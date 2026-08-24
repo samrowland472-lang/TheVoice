@@ -69,6 +69,7 @@ let keysPEnv = 0;
 let keysPAtk = 0.01;
 let keysPDec = 0.22;
 let keysPSus = 0;
+let keysPRel = 0;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -1344,7 +1345,7 @@ function fRel() {
 }
 
 function voiceTail() {
-  return Math.max(Math.max(0.03, keysRel), fRel()) + 0.05;
+  return Math.max(Math.max(0.03, keysRel), fRel(), pRel()) + 0.05;
 }
 
 function filterEnvSustain(cut) {
@@ -1429,6 +1430,10 @@ function pSus() {
   return Math.max(0, Math.min(1, Number(keysPSus) || 0));
 }
 
+function pRel() {
+  return Math.max(0, Math.min(1.5, Number(keysPRel) || 0));
+}
+
 function pEnvPeakCents() {
   return pEnvAmt() * 100;
 }
@@ -1445,16 +1450,34 @@ function schedulePitchEnv(param, t, dur) {
   const atk = pAtk();
   const dec = pDec();
   const sus = pEnvSustainCents();
+  const rel = pRel();
   param.cancelScheduledValues(t);
   param.setValueAtTime(0, t);
   if (Math.abs(peak) < 0.5 && Math.abs(sus) < 0.5) return;
   param.linearRampToValueAtTime(peak, t + atk);
   if (dec > 0.008) param.linearRampToValueAtTime(sus, t + atk + dec);
-  else if (dur != null) {
+  if (dur != null) {
     const off = t + Math.max(0.05, dur);
-    param.setValueAtTime(peak, off);
-    param.linearRampToValueAtTime(0, off + 0.02);
+    const hold = dec > 0.008 ? sus : peak;
+    if (rel > 0.008) {
+      param.setValueAtTime(hold, off);
+      param.linearRampToValueAtTime(0, off + rel);
+    } else if (dec <= 0.008) {
+      param.setValueAtTime(peak, off);
+      param.linearRampToValueAtTime(0, off + 0.02);
+    }
   }
+}
+
+function schedulePitchRel(param, t) {
+  if (!param) return;
+  const rel = pRel();
+  if (rel <= 0.008) return;
+  try {
+    param.cancelScheduledValues(t);
+    param.setValueAtTime(Number(param.value) || 0, t);
+    param.linearRampToValueAtTime(0, t + rel);
+  } catch (_) {}
 }
 
 function startPitchEnv(ctx, oscs, t, dur, stopAt) {
@@ -3715,6 +3738,7 @@ function paintDevices() {
         ${knob('abl-patk', 'PAtk', 0.005, 1.5, 0.005, keysPAtk)}
         ${knob('abl-pdec', 'PDec', 0, 1.5, 0.01, keysPDec)}
         ${knob('abl-psus', 'PSus', 0, 1, 0.01, keysPSus)}
+        ${knob('abl-prel', 'PRel', 0, 1.5, 0.01, keysPRel)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         ${knob('abl-ldly', 'Dly', 0, 2, 0.01, keysLfoDelay)}
@@ -3807,6 +3831,7 @@ function paintDevices() {
   const patk = root.querySelector('#abl-patk');
   const pdec = root.querySelector('#abl-pdec');
   const psus = root.querySelector('#abl-psus');
+  const prel = root.querySelector('#abl-prel');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const ldly = root.querySelector('#abl-ldly');
@@ -4018,6 +4043,7 @@ function paintDevices() {
   bindAnalog(patk, 'patk', 'PAtk', (v) => { keysPAtk = v; });
   bindAnalog(pdec, 'pdec', 'PDec', (v) => { keysPDec = v; applyKeysPenv(); });
   bindAnalog(psus, 'psus', 'PSus', (v) => { keysPSus = v; applyKeysPenv(); });
+  bindAnalog(prel, 'prel', 'PRel', (v) => { keysPRel = v; });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -4623,6 +4649,10 @@ function applyMidiTarget(target, vel) {
     applyKeysPenv();
     const el = document.getElementById('abl-psus');
     if (el) el.value = String(keysPSus);
+  } else if (target.type === 'prel') {
+    keysPRel = vel * 1.5;
+    const el = document.getElementById('abl-prel');
+    if (el) el.value = String(keysPRel);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
@@ -5007,7 +5037,10 @@ function studioNoteOff(pitch) {
     if (h.nse) h.nse.stop(t + tail);
     if (h.drift) h.drift.stop(t + tail);
     if (h.pwDc) h.pwDc.stop(t + tail);
-    if (h.pEnv) h.pEnv.stop(t + tail);
+    if (h.pEnv) {
+      schedulePitchRel(h.pEnv.offset, t);
+      h.pEnv.stop(t + tail);
+    }
     if (h.lfo && !h.lfoShared) h.lfo.stop(t + tail);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
