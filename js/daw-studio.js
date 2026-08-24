@@ -39,6 +39,7 @@ let keysDec = 0.08;
 let keysSus = 0.55;
 let keysRel = 0.35;
 let keysOsc = 0.5;
+let keysOsc1 = 'sawtooth';
 let keysDet = 9;
 let keysOct = 0;
 let keysSemi = 0;
@@ -186,6 +187,36 @@ function applyKeysEnv() {
 function oscMixGains() {
   const sqr = Math.max(0, Math.min(1, keysOsc));
   return { saw: 1 - sqr, sqr };
+}
+
+const OSC1_WAVES = ['sawtooth', 'triangle', 'sine'];
+
+function osc1Wave() {
+  return OSC1_WAVES.includes(keysOsc1) ? keysOsc1 : 'sawtooth';
+}
+
+function osc1WaveFromVel(vel) {
+  if (vel < 0.34) return 'sawtooth';
+  if (vel < 0.67) return 'triangle';
+  return 'sine';
+}
+
+function syncOsc1WaveUi() {
+  const w = osc1Wave();
+  document.querySelectorAll('[data-osc1-wave]').forEach((btn) => {
+    const on = btn.dataset.osc1Wave === w;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+function applyKeysOsc1() {
+  const w = osc1Wave();
+  midiHeld.forEach((h) => {
+    if (!h || !h.o1) return;
+    try { h.o1.type = w; } catch (_) {}
+  });
+  syncOsc1WaveUi();
 }
 
 function applyKeysOsc() {
@@ -1115,7 +1146,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const o1 = ctx.createOscillator();
   const o2 = ctx.createOscillator();
   const o3 = ctx.createOscillator();
-  o1.type = 'sawtooth';
+  o1.type = osc1Wave();
   shapeOsc2(o2, ctx);
   o3.type = 'sine';
   const fromF = lastKeyFreq;
@@ -2728,6 +2759,11 @@ function paintDevices() {
       ${onBtn('analog', 'Analog')}
       <div class="abl-dev-body">
         ${knob('abl-osc', 'Sqr', 0, 1, 0.01, keysOsc)}
+        <div class="abl-lfo-waves" id="abl-osc1-waves">
+          <button type="button" data-osc1-wave="sawtooth"${keysOsc1 === 'sawtooth' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sawtooth'}">Saw</button>
+          <button type="button" data-osc1-wave="triangle"${keysOsc1 === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'triangle'}">Tri</button>
+          <button type="button" data-osc1-wave="sine"${keysOsc1 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sine'}">Sin</button>
+        </div>
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
@@ -2832,6 +2868,23 @@ function paintDevices() {
     });
   };
   bindAnalog(osc, 'osc', 'Sqr', (v) => { keysOsc = v; applyKeysOsc(); });
+  const osc1w = root.querySelector('#abl-osc1-waves');
+  if (osc1w) {
+    osc1w.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'osc1' };
+      midiStatus('Learn Analog Osc1 — move a CC');
+      syncTransport();
+    });
+    osc1w.querySelectorAll('[data-osc1-wave]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (midiMapOn) return;
+        keysOsc1 = btn.dataset.osc1Wave;
+        applyKeysOsc1();
+      });
+    });
+  }
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
   bindAnalog(nse, 'nse', 'Nse', (v) => { keysNoise = v; applyKeysNoise(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
@@ -3205,6 +3258,9 @@ function applyMidiTarget(target, vel) {
     applyKeysOsc();
     const el = document.getElementById('abl-osc');
     if (el) el.value = String(keysOsc);
+  } else if (target.type === 'osc1') {
+    keysOsc1 = osc1WaveFromVel(vel);
+    applyKeysOsc1();
   } else if (target.type === 'sub') {
     keysSub = vel;
     applyKeysSub();
@@ -3390,7 +3446,7 @@ function studioNoteOn(pitch, vel) {
   const o1 = a.ctx.createOscillator();
   const o2 = a.ctx.createOscillator();
   const o3 = a.ctx.createOscillator();
-  o1.type = 'sawtooth';
+  o1.type = osc1Wave();
   shapeOsc2(o2, a.ctx);
   o3.type = 'sine';
   const fromF = lastKeyFreq;
