@@ -52,6 +52,7 @@ let keysLfoWave = 'sine';
 let keysLfoSync = false;
 let keysUni = 0.35;
 let keysDrv = 0.22;
+let keysFilt = 'lowpass';
 let lastKeyFreq = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -85,7 +86,7 @@ function applyKeysFilter() {
   if (!a || !mix.keys) return;
   if (!mix._keysFilter) {
     const f = a.ctx.createBiquadFilter();
-    f.type = 'lowpass';
+    f.type = filtType();
     try { mix.keys.input.disconnect(mix.keys.vol); } catch (_) {}
     mix.keys.input.connect(f);
     f.connect(mix.keys.vol);
@@ -93,8 +94,36 @@ function applyKeysFilter() {
   }
   const t = a.ctx.currentTime;
   const on = fx.on.analog !== false;
+  const type = filtType();
+  try { mix._keysFilter.type = type; } catch (_) {}
   mix._keysFilter.frequency.setTargetAtTime(on ? keysCutoff : 18000, t, 0.015);
   mix._keysFilter.Q.setTargetAtTime(on ? Math.max(0.2, keysRes) : 0.3, t, 0.015);
+  midiHeld.forEach((h) => {
+    if (!h || !h.f) return;
+    try { h.f.type = type; } catch (_) {}
+  });
+}
+
+const FILT_TYPES = ['lowpass', 'bandpass', 'highpass'];
+
+function filtType() {
+  if (fx.on.analog === false) return 'lowpass';
+  return FILT_TYPES.includes(keysFilt) ? keysFilt : 'lowpass';
+}
+
+function filtTypeFromVel(vel) {
+  if (vel < 0.34) return 'lowpass';
+  if (vel < 0.67) return 'bandpass';
+  return 'highpass';
+}
+
+function syncFiltTypeUi() {
+  const w = FILT_TYPES.includes(keysFilt) ? keysFilt : 'lowpass';
+  document.querySelectorAll('[data-filt-type]').forEach((btn) => {
+    const on = btn.dataset.filtType === w;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
 }
 
 function applyKeysEnv() {
@@ -964,7 +993,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   glideOsc(o1, o2, freq, t, o3);
   const f = ctx.createBiquadFilter();
   const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
-  f.type = 'lowpass';
+  f.type = filtType();
   f.frequency.setValueAtTime(cut, t);
   f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + Math.max(0.04, dur * 0.7));
   f.Q.value = fx.on.analog === false ? 0.3 : keysRes;
@@ -2577,6 +2606,11 @@ function paintDevices() {
         ${knob('abl-drv', 'Drv', 0, 1, 0.01, keysDrv)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
+        <div class="abl-lfo-waves" id="abl-filt-types">
+          <button type="button" data-filt-type="lowpass"${keysFilt === 'lowpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'lowpass'}">LP</button>
+          <button type="button" data-filt-type="bandpass"${keysFilt === 'bandpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'bandpass'}">BP</button>
+          <button type="button" data-filt-type="highpass"${keysFilt === 'highpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'highpass'}">HP</button>
+        </div>
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
@@ -2664,6 +2698,24 @@ function paintDevices() {
   bindAnalog(drv, 'drv', 'Drv', (v) => { keysDrv = v; applyKeysDrv(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
+  const filts = root.querySelector('#abl-filt-types');
+  if (filts) {
+    filts.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'filt' };
+      midiStatus('Learn Analog Filt — move a CC');
+      syncTransport();
+    });
+    filts.querySelectorAll('[data-filt-type]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (midiMapOn) return;
+        keysFilt = btn.dataset.filtType;
+        applyKeysFilter();
+        syncFiltTypeUi();
+      });
+    });
+  }
   bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
@@ -3041,6 +3093,10 @@ function applyMidiTarget(target, vel) {
     applyKeysFilter();
     const el = document.getElementById('abl-res');
     if (el) el.value = String(keysRes);
+  } else if (target.type === 'filt') {
+    keysFilt = filtTypeFromVel(vel);
+    applyKeysFilter();
+    syncFiltTypeUi();
   } else if (target.type === 'fenv') {
     keysFenv = vel;
     applyKeysFenv();
@@ -3165,7 +3221,7 @@ function studioNoteOn(pitch, vel) {
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
   const f = a.ctx.createBiquadFilter();
-  f.type = 'lowpass';
+  f.type = filtType();
   const cut = Math.max(80, keysCutoff);
   f.frequency.setValueAtTime(cut, t);
   f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + atk + dec);
