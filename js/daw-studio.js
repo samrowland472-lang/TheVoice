@@ -50,6 +50,7 @@ let keysVib = 0.18;
 let keysTrem = 0.22;
 let keysLfoWave = 'sine';
 let keysLfoSync = false;
+let keysUni = 0.35;
 let lastKeyFreq = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -140,6 +141,62 @@ function applyKeysSub() {
   midiHeld.forEach((h) => {
     if (!h || !h.gSub) return;
     try { h.gSub.gain.setTargetAtTime(sub, t, 0.02); } catch (_) {}
+  });
+}
+
+function uniMix() {
+  return Math.max(0, Math.min(1, keysUni)) * 0.45;
+}
+
+function uniRatios() {
+  const c = 4 + Math.max(0, Math.min(1, keysUni)) * 18;
+  return { up: Math.pow(2, c / 1200), dn: Math.pow(2, -c / 1200) };
+}
+
+function startUnison(ctx, dest, freq, t, stopAt, fromFreq) {
+  const oUp = ctx.createOscillator();
+  const oDn = ctx.createOscillator();
+  oUp.type = 'sawtooth';
+  oDn.type = 'square';
+  const { up, dn } = uniRatios();
+  const g = Math.max(0, keysGlide);
+  const from = fromFreq != null ? fromFreq : lastKeyFreq;
+  if (g > 0.004 && from > 20) {
+    oUp.frequency.setValueAtTime(Math.max(20, from * up), t);
+    oDn.frequency.setValueAtTime(Math.max(20, from * dn), t);
+    oUp.frequency.exponentialRampToValueAtTime(freq * up, t + g);
+    oDn.frequency.exponentialRampToValueAtTime(freq * dn, t + g);
+  } else {
+    oUp.frequency.setValueAtTime(freq * up, t);
+    oDn.frequency.setValueAtTime(freq * dn, t);
+  }
+  const gUni = ctx.createGain();
+  gUni.gain.value = uniMix();
+  oUp.connect(gUni);
+  oDn.connect(gUni);
+  gUni.connect(dest);
+  oUp.start(t);
+  oDn.start(t);
+  if (stopAt != null) {
+    oUp.stop(stopAt);
+    oDn.stop(stopAt);
+  }
+  return { oUp, oDn, gUni };
+}
+
+function applyKeysUni() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const mixV = uniMix();
+  const { up, dn } = uniRatios();
+  midiHeld.forEach((h) => {
+    if (!h || !h.gUni) return;
+    try {
+      h.gUni.gain.setTargetAtTime(mixV, t, 0.02);
+      if (h.oUp && h.freq) h.oUp.frequency.setTargetAtTime(h.freq * up, t, 0.02);
+      if (h.oDn && h.freq) h.oDn.frequency.setTargetAtTime(h.freq * dn, t, 0.02);
+    } catch (_) {}
   });
 }
 
@@ -865,6 +922,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   o1.type = 'sawtooth';
   o2.type = 'square';
   o3.type = 'sine';
+  const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
   const f = ctx.createBiquadFilter();
   const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
@@ -882,8 +940,9 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   gSub.gain.value = subMix();
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
+  const uni = startUnison(ctx, f, freq, t, t + dur + keysRel + 0.05, fromF);
   const nse = startNoise(ctx, f, t, t + dur + keysRel + 0.05);
-  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3], t, t + dur + keysRel + 0.05);
+  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + keysRel + 0.05);
   f.connect(lfoN.gTrem);
   lfoN.gTrem.connect(g);
   o1.start(t); o2.start(t); o3.start(t);
@@ -2474,6 +2533,7 @@ function paintDevices() {
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
+        ${knob('abl-uni', 'Uni', 0, 1, 0.01, keysUni)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
@@ -2528,6 +2588,7 @@ function paintDevices() {
   const sub = root.querySelector('#abl-sub');
   const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
+  const uni = root.querySelector('#abl-uni');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const fenv = root.querySelector('#abl-fenv');
@@ -2557,6 +2618,7 @@ function paintDevices() {
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
   bindAnalog(nse, 'nse', 'Nse', (v) => { keysNoise = v; applyKeysNoise(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
+  bindAnalog(uni, 'uni', 'Uni', (v) => { keysUni = v; applyKeysUni(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
@@ -2916,6 +2978,11 @@ function applyMidiTarget(target, vel) {
     applyKeysDet();
     const el = document.getElementById('abl-det');
     if (el) el.value = String(keysDet);
+  } else if (target.type === 'uni') {
+    keysUni = vel;
+    applyKeysUni();
+    const el = document.getElementById('abl-uni');
+    if (el) el.value = String(keysUni);
   } else if (target.type === 'cut') {
     keysCutoff = 200 + vel * 7800;
     applyKeysFilter();
@@ -3045,6 +3112,7 @@ function studioNoteOn(pitch, vel) {
   o1.type = 'sawtooth';
   o2.type = 'square';
   o3.type = 'sine';
+  const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
@@ -3068,12 +3136,13 @@ function studioNoteOn(pitch, vel) {
   gSub.gain.value = subMix();
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
+  const uni = startUnison(a.ctx, f, freq, t, null, fromF);
   const nse = startNoise(a.ctx, f, t);
-  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3], t);
+  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t);
   f.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut });
 }
 
 function studioNoteOff(pitch) {
@@ -3088,6 +3157,8 @@ function studioNoteOff(pitch) {
     h.o1.stop(t + rel + 0.05);
     h.o2.stop(t + rel + 0.05);
     if (h.o3) h.o3.stop(t + rel + 0.05);
+    if (h.oUp) h.oUp.stop(t + rel + 0.05);
+    if (h.oDn) h.oDn.stop(t + rel + 0.05);
     if (h.nse) h.nse.stop(t + rel + 0.05);
     if (h.lfo) h.lfo.stop(t + rel + 0.05);
   } catch (_) {}
