@@ -38,6 +38,7 @@ let keysAtk = 0.01;
 let keysDec = 0.08;
 let keysSus = 0.55;
 let keysRel = 0.35;
+let keysOsc = 0.5;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
 function applyFx() {
@@ -90,6 +91,25 @@ function applyKeysEnv() {
     try {
       h.g.gain.cancelScheduledValues(t);
       h.g.gain.setTargetAtTime(sus, t, 0.04);
+    } catch (_) {}
+  });
+}
+
+function oscMixGains() {
+  const sqr = Math.max(0, Math.min(1, keysOsc));
+  return { saw: 1 - sqr, sqr };
+}
+
+function applyKeysOsc() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const { saw, sqr } = oscMixGains();
+  midiHeld.forEach((h) => {
+    if (!h || !h.gSaw || !h.gSqr) return;
+    try {
+      h.gSaw.gain.setTargetAtTime(saw, t, 0.02);
+      h.gSqr.gain.setTargetAtTime(sqr, t, 0.02);
     } catch (_) {}
   });
 }
@@ -623,7 +643,13 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   f.frequency.exponentialRampToValueAtTime(Math.max(120, cut * 0.35), t + dur * 0.7);
   f.Q.value = fx.on.analog === false ? 0.3 : keysRes;
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
-  o1.connect(f); o2.connect(f); f.connect(g);
+  const { saw, sqr } = oscMixGains();
+  const gSaw = ctx.createGain();
+  const gSqr = ctx.createGain();
+  gSaw.gain.value = saw;
+  gSqr.gain.value = sqr;
+  o1.connect(gSaw); o2.connect(gSqr);
+  gSaw.connect(f); gSqr.connect(f); f.connect(g);
   o1.start(t); o2.start(t);
   o1.stop(t + dur + keysRel + 0.05);
   o2.stop(t + dur + keysRel + 0.05);
@@ -2207,6 +2233,7 @@ function paintDevices() {
     <article class="abl-dev${fx.on.analog === false ? ' bypassed' : ''}" data-dev="analog">
       ${onBtn('analog', 'Analog')}
       <div class="abl-dev-body">
+        ${knob('abl-osc', 'Sqr', 0, 1, 0.01, keysOsc)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
@@ -2245,6 +2272,7 @@ function paintDevices() {
       </div>
     </article>
   `;
+  const osc = root.querySelector('#abl-osc');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const atk = root.querySelector('#abl-atk');
@@ -2264,6 +2292,7 @@ function paintDevices() {
       apply(parseFloat(el.value));
     });
   };
+  bindAnalog(osc, 'osc', 'Sqr', (v) => { keysOsc = v; applyKeysOsc(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
@@ -2561,6 +2590,11 @@ function applyMidiTarget(target, vel) {
     applySend(target.id);
     const el = document.querySelector(`[data-send="${target.id}"]`);
     if (el) el.value = String(m.sendVal);
+  } else if (target.type === 'osc') {
+    keysOsc = vel;
+    applyKeysOsc();
+    const el = document.getElementById('abl-osc');
+    if (el) el.value = String(keysOsc);
   } else if (target.type === 'cut') {
     keysCutoff = 200 + vel * 7800;
     applyKeysFilter();
@@ -2665,10 +2699,16 @@ function studioNoteOn(pitch, vel) {
   g.gain.setValueAtTime(0.0008, t);
   g.gain.exponentialRampToValueAtTime(v, t + atk);
   g.gain.exponentialRampToValueAtTime(Math.max(0.0008, v * keysSus), t + atk + dec);
-  o1.connect(f); o2.connect(f); f.connect(g); g.connect(mix.keys.input);
+  const { saw, sqr } = oscMixGains();
+  const gSaw = a.ctx.createGain();
+  const gSqr = a.ctx.createGain();
+  gSaw.gain.value = saw;
+  gSqr.gain.value = sqr;
+  o1.connect(gSaw); o2.connect(gSqr);
+  gSaw.connect(f); gSqr.connect(f); f.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, g, peak: v, rec });
+  midiHeld.set(pitch, { o1, o2, g, gSaw, gSqr, peak: v, rec });
 }
 
 function studioNoteOff(pitch) {
