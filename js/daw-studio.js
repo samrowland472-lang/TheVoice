@@ -71,6 +71,7 @@ let keysVib = 0.18;
 let keysTrem = 0.22;
 let keysLfoWave = 'sine';
 let keysLfoSync = false;
+let keysLfoRtg = true;
 let keysUni = 0.35;
 let keysSpread = 0;
 let keysDrv = 0.22;
@@ -783,6 +784,28 @@ function lfoFade() {
   return Math.max(0, Math.min(2, Number(keysLfoFade) || 0));
 }
 
+function lfoRtg() {
+  return keysLfoRtg !== false;
+}
+
+let sharedLfo = null;
+
+function ensureSharedLfo(ctx, t) {
+  if (sharedLfo) {
+    try {
+      sharedLfo.type = lfoWave();
+      sharedLfo.frequency.setTargetAtTime(lfoHz(), t, 0.02);
+    } catch (_) {}
+    return sharedLfo;
+  }
+  const lfo = ctx.createOscillator();
+  lfo.type = lfoWave();
+  lfo.frequency.value = lfoHz();
+  try { lfo.start(t); } catch (_) { try { lfo.start(); } catch (__) {} }
+  sharedLfo = lfo;
+  return lfo;
+}
+
 function syncLfoRateUi() {
   const lab = document.getElementById('abl-rate-lab');
   if (lab) lab.textContent = keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate';
@@ -803,9 +826,12 @@ function syncLfoWaveUi() {
 }
 
 function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
-  const lfo = ctx.createOscillator();
-  lfo.type = lfoWave();
-  lfo.frequency.value = lfoHz();
+  const own = lfoRtg();
+  const lfo = own ? ctx.createOscillator() : ensureSharedLfo(ctx, t);
+  if (own) {
+    lfo.type = lfoWave();
+    lfo.frequency.value = lfoHz();
+  }
   const gLfo = ctx.createGain();
   const gVib = ctx.createGain();
   const gTrem = ctx.createGain();
@@ -841,9 +867,11 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   });
   lfo.connect(gTremAmt);
   gTremAmt.connect(gTrem.gain);
-  lfo.start(t);
-  if (stopAt != null) lfo.stop(stopAt);
-  return { lfo, gLfo, gVib, gTrem, gTremAmt };
+  if (own) {
+    lfo.start(t);
+    if (stopAt != null) lfo.stop(stopAt);
+  }
+  return { lfo, gLfo, gVib, gTrem, gTremAmt, shared: !own };
 }
 
 function applyKeysLfo() {
@@ -851,6 +879,12 @@ function applyKeysLfo() {
   if (!a) return;
   const t = a.ctx.currentTime;
   const rate = lfoHz();
+  if (sharedLfo) {
+    try {
+      sharedLfo.type = lfoWave();
+      sharedLfo.frequency.setTargetAtTime(rate, t, 0.02);
+    } catch (_) {}
+  }
   midiHeld.forEach((h) => {
     if (!h || !h.lfo) return;
     try {
@@ -862,6 +896,14 @@ function applyKeysLfo() {
     } catch (_) {}
   });
   syncLfoRateUi();
+  syncLfoRtgUi();
+}
+
+function syncLfoRtgUi() {
+  const btn = document.getElementById('abl-lfortg');
+  if (!btn) return;
+  btn.classList.toggle('on', lfoRtg());
+  btn.setAttribute('aria-pressed', lfoRtg() ? 'true' : 'false');
 }
 
 function detuneRatio() {
@@ -3289,6 +3331,7 @@ function paintDevices() {
         ${knob('abl-lfad', 'Fad', 0, 2, 0.01, keysLfoFade)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
           <button type="button" id="abl-sync" class="${keysLfoSync ? 'on' : ''}" aria-pressed="${keysLfoSync}">Sync</button>
+          <button type="button" id="abl-lfortg" class="${keysLfoRtg ? 'on' : ''}" aria-pressed="${keysLfoRtg}">Rtg</button>
           <button type="button" data-lfo-wave="sine"${keysLfoWave === 'sine' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'sine'}">Sin</button>
           <button type="button" data-lfo-wave="triangle"${keysLfoWave === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'triangle'}">Tri</button>
           <button type="button" data-lfo-wave="square"${keysLfoWave === 'square' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'square'}">Sqr</button>
@@ -3544,6 +3587,22 @@ function paintDevices() {
       e.preventDefault();
       if (midiMapOn) return;
       keysLfoSync = !keysLfoSync;
+      applyKeysLfo();
+    });
+  }
+  const lfoRtgBtn = root.querySelector('#abl-lfortg');
+  if (lfoRtgBtn) {
+    lfoRtgBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'lfortg' };
+      midiStatus('Learn Analog LFO Rtg — move a CC');
+      syncTransport();
+    });
+    lfoRtgBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysLfoRtg = !lfoRtg();
       applyKeysLfo();
     });
   }
@@ -4063,6 +4122,9 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'sync') {
     keysLfoSync = vel >= 0.5;
     applyKeysLfo();
+  } else if (target.type === 'lfortg') {
+    keysLfoRtg = vel >= 0.5;
+    applyKeysLfo();
   } else if (target.type === 'lfoa') {
     keysLfoAmt = vel;
     applyKeysLfo();
@@ -4361,7 +4423,7 @@ function studioNoteOn(pitch, vel) {
   f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
 }
 
 function studioNoteOff(pitch) {
@@ -4396,7 +4458,7 @@ function studioNoteOff(pitch) {
     if (h.oUp) h.oUp.stop(t + tail);
     if (h.oDn) h.oDn.stop(t + tail);
     if (h.nse) h.nse.stop(t + tail);
-    if (h.lfo) h.lfo.stop(t + tail);
+    if (h.lfo && !h.lfoShared) h.lfo.stop(t + tail);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
   midiHeld.delete(pitch);
