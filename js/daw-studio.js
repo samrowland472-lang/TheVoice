@@ -67,6 +67,7 @@ let keysLfoRate = 5;
 let keysLfoAmt = 0.28;
 let keysLfoDelay = 0;
 let keysLfoFade = 0;
+let keysLfoOff = 0;
 let keysVib = 0.18;
 let keysTrem = 0.22;
 let keysLfoWave = 'sine';
@@ -784,6 +785,17 @@ function lfoFade() {
   return Math.max(0, Math.min(2, Number(keysLfoFade) || 0));
 }
 
+function lfoOff() {
+  return Math.max(0, Math.min(360, Number(keysLfoOff) || 0));
+}
+
+function lfoStartAt(t) {
+  const hz = lfoHz();
+  const off = lfoOff();
+  if (off < 0.5 || hz < 0.05) return t;
+  return t - (off / 360) / hz;
+}
+
 function lfoRtg() {
   return keysLfoRtg !== false;
 }
@@ -801,7 +813,7 @@ function ensureSharedLfo(ctx, t) {
   const lfo = ctx.createOscillator();
   lfo.type = lfoWave();
   lfo.frequency.value = lfoHz();
-  try { lfo.start(t); } catch (_) { try { lfo.start(); } catch (__) {} }
+  try { lfo.start(lfoStartAt(t)); } catch (_) { try { lfo.start(); } catch (__) {} }
   sharedLfo = lfo;
   return lfo;
 }
@@ -868,7 +880,7 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   lfo.connect(gTremAmt);
   gTremAmt.connect(gTrem.gain);
   if (own) {
-    lfo.start(t);
+    lfo.start(lfoStartAt(t));
     if (stopAt != null) lfo.stop(stopAt);
   }
   return { lfo, gLfo, gVib, gTrem, gTremAmt, shared: !own };
@@ -3329,6 +3341,7 @@ function paintDevices() {
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         ${knob('abl-ldly', 'Dly', 0, 2, 0.01, keysLfoDelay)}
         ${knob('abl-lfad', 'Fad', 0, 2, 0.01, keysLfoFade)}
+        ${knob('abl-loff', 'Off', 0, 360, 1, keysLfoOff)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
           <button type="button" id="abl-sync" class="${keysLfoSync ? 'on' : ''}" aria-pressed="${keysLfoSync}">Sync</button>
           <button type="button" id="abl-lfortg" class="${keysLfoRtg ? 'on' : ''}" aria-pressed="${keysLfoRtg}">Rtg</button>
@@ -3409,6 +3422,7 @@ function paintDevices() {
   const amt = root.querySelector('#abl-amt');
   const ldly = root.querySelector('#abl-ldly');
   const lfad = root.querySelector('#abl-lfad');
+  const loff = root.querySelector('#abl-loff');
   const vib = root.querySelector('#abl-vib');
   const trm = root.querySelector('#abl-trm');
   const gli = root.querySelector('#abl-gli');
@@ -3609,6 +3623,7 @@ function paintDevices() {
   bindAnalog(amt, 'lfoa', 'Amt', (v) => { keysLfoAmt = v; applyKeysLfo(); });
   bindAnalog(ldly, 'lfod', 'Dly', (v) => { keysLfoDelay = v; });
   bindAnalog(lfad, 'lfof', 'Fad', (v) => { keysLfoFade = v; });
+  bindAnalog(loff, 'lfoo', 'Off', (v) => { keysLfoOff = v; });
   const waves = root.querySelector('#abl-lfo-waves');
   if (waves) {
     waves.addEventListener('pointerdown', () => {
@@ -4138,6 +4153,10 @@ function applyMidiTarget(target, vel) {
     keysLfoFade = vel * 2;
     const el = document.getElementById('abl-lfad');
     if (el) el.value = String(keysLfoFade);
+  } else if (target.type === 'lfoo') {
+    keysLfoOff = vel * 360;
+    const el = document.getElementById('abl-loff');
+    if (el) el.value = String(keysLfoOff);
   } else if (target.type === 'lfow') {
     keysLfoWave = lfoWaveFromVel(vel);
     applyKeysLfo();
