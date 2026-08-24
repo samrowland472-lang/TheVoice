@@ -39,6 +39,7 @@ let keysDec = 0.08;
 let keysSus = 0.55;
 let keysRel = 0.35;
 let keysOsc = 0.5;
+let keysDet = 9;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
 function applyFx() {
@@ -110,6 +111,23 @@ function applyKeysOsc() {
     try {
       h.gSaw.gain.setTargetAtTime(saw, t, 0.02);
       h.gSqr.gain.setTargetAtTime(sqr, t, 0.02);
+    } catch (_) {}
+  });
+}
+
+function detuneRatio() {
+  return Math.pow(2, keysDet / 1200);
+}
+
+function applyKeysDet() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const r = detuneRatio();
+  midiHeld.forEach((h) => {
+    if (!h || !h.o2 || !h.freq) return;
+    try {
+      h.o2.frequency.setTargetAtTime(h.freq * r, t, 0.02);
     } catch (_) {}
   });
 }
@@ -635,7 +653,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   o1.type = 'sawtooth';
   o2.type = 'square';
   o1.frequency.value = freq;
-  o2.frequency.value = freq * 1.005;
+  o2.frequency.value = freq * detuneRatio();
   const f = ctx.createBiquadFilter();
   const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
   f.type = 'lowpass';
@@ -2234,6 +2252,7 @@ function paintDevices() {
       ${onBtn('analog', 'Analog')}
       <div class="abl-dev-body">
         ${knob('abl-osc', 'Sqr', 0, 1, 0.01, keysOsc)}
+        ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
@@ -2273,6 +2292,7 @@ function paintDevices() {
     </article>
   `;
   const osc = root.querySelector('#abl-osc');
+  const det = root.querySelector('#abl-det');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const atk = root.querySelector('#abl-atk');
@@ -2293,6 +2313,7 @@ function paintDevices() {
     });
   };
   bindAnalog(osc, 'osc', 'Sqr', (v) => { keysOsc = v; applyKeysOsc(); });
+  bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
@@ -2595,6 +2616,11 @@ function applyMidiTarget(target, vel) {
     applyKeysOsc();
     const el = document.getElementById('abl-osc');
     if (el) el.value = String(keysOsc);
+  } else if (target.type === 'det') {
+    keysDet = -50 + vel * 100;
+    applyKeysDet();
+    const el = document.getElementById('abl-det');
+    if (el) el.value = String(keysDet);
   } else if (target.type === 'cut') {
     keysCutoff = 200 + vel * 7800;
     applyKeysFilter();
@@ -2687,7 +2713,7 @@ function studioNoteOn(pitch, vel) {
   o1.type = 'sawtooth';
   o2.type = 'square';
   o1.frequency.value = freq;
-  o2.frequency.value = freq * 1.005;
+  o2.frequency.value = freq * detuneRatio();
   const f = a.ctx.createBiquadFilter();
   f.type = 'lowpass';
   f.frequency.value = keysCutoff;
@@ -2708,7 +2734,7 @@ function studioNoteOn(pitch, vel) {
   gSaw.connect(f); gSqr.connect(f); f.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, g, gSaw, gSqr, peak: v, rec });
+  midiHeld.set(pitch, { o1, o2, g, gSaw, gSqr, peak: v, rec, freq });
 }
 
 function studioNoteOff(pitch) {
