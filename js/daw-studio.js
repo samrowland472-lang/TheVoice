@@ -52,6 +52,7 @@ let keysSemi = 0;
 let keysPw = 0.5;
 let keysKey = 0;
 let keysVel = 0;
+let keysAft = 0.7;
 let keysFenv = 0.75;
 let keysFenvInv = false;
 let keysGlide = 0;
@@ -76,6 +77,7 @@ let keysVoices = 8;
 const monoStack = [];
 let keysBend = 2;
 let pitchWheel = 0;
+let aftertouch = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
@@ -119,9 +121,16 @@ function trackCut(cut, pitch) {
 function analogCut(base, pitch, vel) {
   const tracked = trackCut(base, pitch);
   const amt = Math.max(0, Math.min(1, Number(keysVel) || 0));
-  if (amt <= 0) return tracked;
   const v = Math.max(0, Math.min(1, vel == null || Number.isNaN(Number(vel)) ? 1 : Number(vel)));
-  return Math.max(80, Math.min(18000, tracked * Math.pow(2, amt * (v - 1) * 2)));
+  let cut = amt <= 0 ? tracked : Math.max(80, Math.min(18000, tracked * Math.pow(2, amt * (v - 1) * 2)));
+  const aftAmt = Math.max(0, Math.min(1, Number(keysAft) || 0));
+  if (aftAmt <= 0) return cut;
+  const p = Math.max(0, Math.min(1, Number(aftertouch) || 0));
+  return Math.max(80, Math.min(18000, cut * Math.pow(2, aftAmt * p * 2)));
+}
+
+function applyKeysAft() {
+  applyKeysFilter();
 }
 
 function applyKeysFilter() {
@@ -3168,6 +3177,7 @@ function paintDevices() {
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-key', 'Key', 0, 1, 0.01, keysKey)}
         ${knob('abl-vel', 'Vel', 0, 1, 0.01, keysVel)}
+        ${knob('abl-aft', 'Aft', 0, 1, 0.01, keysAft)}
         <div class="abl-lfo-waves" id="abl-filt-types">
           <button type="button" data-filt-type="lowpass"${keysFilt === 'lowpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'lowpass'}">LP</button>
           <button type="button" data-filt-type="bandpass"${keysFilt === 'bandpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'bandpass'}">BP</button>
@@ -3252,6 +3262,7 @@ function paintDevices() {
   const res = root.querySelector('#abl-res');
   const key = root.querySelector('#abl-key');
   const velf = root.querySelector('#abl-vel');
+  const aft = root.querySelector('#abl-aft');
   const fenv = root.querySelector('#abl-fenv');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
@@ -3362,6 +3373,7 @@ function paintDevices() {
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(key, 'key', 'Key', (v) => { keysKey = v; applyKeysKey(); });
   bindAnalog(velf, 'vel', 'Vel', (v) => { keysVel = v; applyKeysVel(); });
+  bindAnalog(aft, 'aft', 'Aft', (v) => { keysAft = v; applyKeysAft(); });
   const filts = root.querySelector('#abl-filt-types');
   if (filts) {
     filts.addEventListener('pointerdown', () => {
@@ -3739,6 +3751,12 @@ export function studioMidi(cmd, d1, d2) {
     midiStatus(`Bend ${st >= 0 ? '+' : ''}${st.toFixed(2)}`);
     return;
   }
+  if (cmd === 0xd0) {
+    aftertouch = Math.max(0, Math.min(1, (d1 || 0) / 127));
+    applyKeysAft();
+    midiStatus(`Aft ${Math.round(aftertouch * 127)}`);
+    return;
+  }
   if (cmd === 0xb0) {
     if (midiMapOn && midiLearn) {
       midiMap[`cc:${d1}`] = { ...midiLearn };
@@ -3894,6 +3912,11 @@ function applyMidiTarget(target, vel) {
     applyKeysVel();
     const el = document.getElementById('abl-vel');
     if (el) el.value = String(keysVel);
+  } else if (target.type === 'aft') {
+    keysAft = vel;
+    applyKeysAft();
+    const el = document.getElementById('abl-aft');
+    if (el) el.value = String(keysAft);
   } else if (target.type === 'filt') {
     keysFilt = filtTypeFromVel(vel);
     applyKeysFilter();
