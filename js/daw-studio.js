@@ -63,6 +63,8 @@ let keysDrv = 0.22;
 let keysFilt = 'lowpass';
 let keysSlope = 12;
 let lastKeyFreq = 0;
+let keysMono = false;
+const monoStack = [];
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
@@ -2907,6 +2909,9 @@ function paintDevices() {
         ${knob('abl-vib', 'Vib', 0, 1, 0.01, keysVib)}
         ${knob('abl-trm', 'Trm', 0, 1, 0.01, keysTrem)}
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
+        <div class="abl-lfo-waves">
+          <button type="button" id="abl-mono" class="${keysMono ? 'on' : ''}" aria-pressed="${keysMono}">Mono</button>
+        </div>
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
         ${knob('abl-dec', 'Dec', 0.01, 1.2, 0.01, keysDec)}
         ${knob('abl-sus', 'Sus', 0.05, 1, 0.01, keysSus)}
@@ -3103,6 +3108,22 @@ function paintDevices() {
   bindAnalog(vib, 'vib', 'Vib', (v) => { keysVib = v; applyKeysLfo(); });
   bindAnalog(trm, 'trm', 'Trm', (v) => { keysTrem = v; applyKeysLfo(); });
   bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
+  const monoBtn = root.querySelector('#abl-mono');
+  if (monoBtn) {
+    monoBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'mono' };
+      midiStatus('Learn Analog Mono — move a CC');
+      syncTransport();
+    });
+    monoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysMono = !keysMono;
+      applyKeysMono();
+    });
+  }
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
   bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
   bindAnalog(sus, 'sus', 'Sus', (v) => { keysSus = v; applyKeysEnv(); });
@@ -3519,6 +3540,9 @@ function applyMidiTarget(target, vel) {
     keysGlide = vel * 0.8;
     const el = document.getElementById('abl-gli');
     if (el) el.value = String(keysGlide);
+  } else if (target.type === 'mono') {
+    keysMono = vel >= 0.5;
+    applyKeysMono();
   } else if (target.type === 'atk') {
     keysAtk = 0.005 + vel * 0.795;
     const el = document.getElementById('abl-atk');
@@ -3589,11 +3613,92 @@ function growRecNotes() {
   if (dirty && detail === 'keys') paintRoll();
 }
 
+function syncMonoUi() {
+  const btn = document.getElementById('abl-mono');
+  if (!btn) return;
+  btn.classList.toggle('on', !!keysMono);
+  btn.setAttribute('aria-pressed', keysMono ? 'true' : 'false');
+}
+
+function applyKeysMono() {
+  if (keysMono && midiHeld.size > 1) {
+    const keys = [...midiHeld.keys()];
+    const keep = keys[keys.length - 1];
+    keys.forEach((p) => { if (p !== keep) studioNoteOff(p); });
+  }
+  syncMonoUi();
+}
+
+function retuneVoice(h, pitch, vel) {
+  const a = audio();
+  if (!a || !h) return;
+  const t = a.ctx.currentTime;
+  const freq = 440 * Math.pow(2, (pitch - 69) / 12);
+  const g = Math.max(0, keysGlide);
+  const from = h.freq || lastKeyFreq || freq;
+  const glideTo = (osc, startHz, destHz) => {
+    if (!osc) return;
+    try {
+      osc.frequency.cancelScheduledValues(t);
+      if (g > 0.004 && startHz > 20 && Math.abs(startHz - destHz) > 0.5) {
+        osc.frequency.setValueAtTime(Math.max(20, startHz), t);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(20, destHz), t + g);
+      } else {
+        osc.frequency.setValueAtTime(Math.max(20, destHz), t);
+      }
+    } catch (_) {}
+  };
+  const { up, dn } = uniRatios();
+  glideTo(h.o1, from, freq);
+  glideTo(h.o2, osc2Hz(from), osc2Hz(freq));
+  glideTo(h.o3, from / 2, freq / 2);
+  glideTo(h.oUp, from * up, freq * up);
+  glideTo(h.oDn, from * dn, freq * dn);
+  h.freq = freq;
+  lastKeyFreq = freq;
+  if (vel != null) h.vel = vel;
+  const cut = analogCut(keysCutoff, pitch, h.vel);
+  h.cut = cut;
+  try {
+    if (h.f) {
+      h.f.frequency.cancelScheduledValues(t);
+      h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
+    }
+    if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
+    if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(freq), t, 0.02);
+  } catch (_) {}
+  applyHeldSlope(h, filtType(), cut, t);
+}
+
+function pushMono(pitch) {
+  const i = monoStack.indexOf(pitch);
+  if (i >= 0) monoStack.splice(i, 1);
+  monoStack.push(pitch);
+}
+
+function dropMono(pitch) {
+  const i = monoStack.indexOf(pitch);
+  if (i >= 0) monoStack.splice(i, 1);
+}
+
 function studioNoteOn(pitch, vel) {
   ensureMix();
   const a = audio();
   if (!a || !mix.keys) return;
+  pushMono(pitch);
+  if (keysMono && midiHeld.size) {
+    if (midiHeld.has(pitch)) return;
+    const oldPitch = [...midiHeld.keys()][midiHeld.size - 1];
+    const h = midiHeld.get(oldPitch);
+    midiHeld.delete(oldPitch);
+    if (h.rec) recEnd(h.rec);
+    retuneVoice(h, pitch, vel);
+    h.rec = recBegin(pitch, vel);
+    midiHeld.set(pitch, h);
+    return;
+  }
   studioNoteOff(pitch);
+  pushMono(pitch);
   const t = a.ctx.currentTime;
   const freq = 440 * Math.pow(2, (pitch - 69) / 12);
   const o1 = a.ctx.createOscillator();
@@ -3633,6 +3738,17 @@ function studioNoteOn(pitch, vel) {
 }
 
 function studioNoteOff(pitch) {
+  dropMono(pitch);
+  if (keysMono && midiHeld.has(pitch) && monoStack.length) {
+    const next = monoStack[monoStack.length - 1];
+    const cur = midiHeld.get(pitch);
+    midiHeld.delete(pitch);
+    if (cur.rec) recEnd(cur.rec);
+    retuneVoice(cur, next, cur.vel);
+    cur.rec = recBegin(next, cur.vel);
+    midiHeld.set(next, cur);
+    return;
+  }
   const h = midiHeld.get(pitch);
   if (!h) return;
   const a = audio();
