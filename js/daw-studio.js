@@ -72,6 +72,7 @@ let keysSlope = 12;
 let lastKeyFreq = 0;
 let keysMono = false;
 let keysRetrig = false;
+let keysVoices = 8;
 const monoStack = [];
 let keysBend = 2;
 let pitchWheel = 0;
@@ -3191,6 +3192,7 @@ function paintDevices() {
         ${knob('abl-vib', 'Vib', 0, 1, 0.01, keysVib)}
         ${knob('abl-trm', 'Trm', 0, 1, 0.01, keysTrem)}
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
+        ${knob('abl-voices', 'Vce', 1, 16, 1, keysVoices)}
         <div class="abl-lfo-waves">
           <button type="button" id="abl-mono" class="${keysMono ? 'on' : ''}" aria-pressed="${keysMono}">Mono</button>
           <button type="button" id="abl-retrig" class="${keysRetrig ? 'on' : ''}" aria-pressed="${keysRetrig}">Retrig</button>
@@ -3256,6 +3258,7 @@ function paintDevices() {
   const vib = root.querySelector('#abl-vib');
   const trm = root.querySelector('#abl-trm');
   const gli = root.querySelector('#abl-gli');
+  const voices = root.querySelector('#abl-voices');
   const bnd = root.querySelector('#abl-bnd');
   const atk = root.querySelector('#abl-atk');
   const dec = root.querySelector('#abl-dec');
@@ -3450,6 +3453,7 @@ function paintDevices() {
   bindAnalog(vib, 'vib', 'Vib', (v) => { keysVib = v; applyKeysLfo(); });
   bindAnalog(trm, 'trm', 'Trm', (v) => { keysTrem = v; applyKeysLfo(); });
   bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
+  bindAnalog(voices, 'voices', 'Vce', (v) => { keysVoices = Math.round(v); applyKeysVoices(); });
   const monoBtn = root.querySelector('#abl-mono');
   if (monoBtn) {
     monoBtn.addEventListener('pointerdown', (e) => {
@@ -3936,6 +3940,11 @@ function applyMidiTarget(target, vel) {
     keysGlide = vel * 0.8;
     const el = document.getElementById('abl-gli');
     if (el) el.value = String(keysGlide);
+  } else if (target.type === 'voices') {
+    keysVoices = Math.round(1 + vel * 15);
+    applyKeysVoices();
+    const el = document.getElementById('abl-voices');
+    if (el) el.value = String(keysVoices);
   } else if (target.type === 'mono') {
     keysMono = vel >= 0.5;
     applyKeysMono();
@@ -4031,6 +4040,28 @@ function applyKeysMono() {
     keys.forEach((p) => { if (p !== keep) studioNoteOff(p); });
   }
   syncMonoUi();
+}
+
+function voiceCap() {
+  return Math.max(1, Math.min(16, Math.round(Number(keysVoices) || 8)));
+}
+
+function stealOldestVoice() {
+  const oldest = midiHeld.keys().next().value;
+  if (oldest == null) return;
+  studioNoteOff(oldest);
+}
+
+function stealForNewVoice() {
+  if (keysMono) return;
+  const cap = voiceCap();
+  while (midiHeld.size >= cap) stealOldestVoice();
+}
+
+function applyKeysVoices() {
+  if (keysMono) return;
+  const cap = voiceCap();
+  while (midiHeld.size > cap) stealOldestVoice();
 }
 
 function syncRetrigUi() {
@@ -4149,6 +4180,7 @@ function studioNoteOn(pitch, vel) {
   }
   studioNoteOff(pitch);
   pushMono(pitch);
+  stealForNewVoice();
   const t = a.ctx.currentTime;
   const freq = 440 * Math.pow(2, (pitch - 69) / 12);
   const o1 = a.ctx.createOscillator();
