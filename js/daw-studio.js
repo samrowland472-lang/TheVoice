@@ -61,6 +61,7 @@ let keysUni = 0.35;
 let keysSpread = 0;
 let keysDrv = 0.22;
 let keysFilt = 'lowpass';
+let keysSlope = 12;
 let lastKeyFreq = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -137,11 +138,74 @@ function applyKeysFilter() {
       h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
       if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
     } catch (_) {}
+    applyHeldSlope(h, type, cut, t);
   });
 }
 
 function applyKeysKey() {
   applyKeysFilter();
+}
+
+function filtSlope() {
+  return Number(keysSlope) === 24 ? 24 : 12;
+}
+
+function filtSlopeFromVel(vel) {
+  return vel >= 0.5 ? 24 : 12;
+}
+
+function syncFiltSlopeUi() {
+  const sl = String(filtSlope());
+  document.querySelectorAll('[data-filt-slope]').forEach((btn) => {
+    const on = btn.dataset.filtSlope === sl;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+function makeSlopePair(ctx, cut, t, envDur) {
+  const type = filtType();
+  const q = fx.on.analog === false ? 0.3 : keysRes;
+  const end = filterEnvEnd(cut);
+  const f = ctx.createBiquadFilter();
+  const f2 = ctx.createBiquadFilter();
+  f.type = type;
+  f.frequency.setValueAtTime(cut, t);
+  if (envDur != null) f.frequency.exponentialRampToValueAtTime(end, t + envDur);
+  f.Q.value = q;
+  if (filtSlope() === 24 && fx.on.analog !== false) {
+    f2.type = type;
+    f2.Q.value = q;
+    f2.frequency.setValueAtTime(cut, t);
+    if (envDur != null) f2.frequency.exponentialRampToValueAtTime(end, t + envDur);
+  } else {
+    f2.type = 'allpass';
+    f2.frequency.value = 1000;
+    f2.Q.value = 0.0001;
+  }
+  f.connect(f2);
+  return { f, f2 };
+}
+
+function applyHeldSlope(h, type, cut, t) {
+  if (!h || !h.f2) return;
+  try {
+    if (filtSlope() === 24 && fx.on.analog !== false) {
+      h.f2.type = type;
+      h.f2.Q.setTargetAtTime(Math.max(0.2, keysRes), t, 0.015);
+      h.f2.frequency.cancelScheduledValues(t);
+      h.f2.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
+    } else {
+      h.f2.type = 'allpass';
+      h.f2.frequency.setTargetAtTime(1000, t, 0.015);
+      h.f2.Q.setTargetAtTime(0.0001, t, 0.015);
+    }
+  } catch (_) {}
+}
+
+function applyKeysSlope() {
+  applyKeysFilter();
+  syncFiltSlopeUi();
 }
 
 function applyKeysVel() {
@@ -554,7 +618,7 @@ function syncLfoWaveUi() {
   });
 }
 
-function startLfo(ctx, filter, cut, freq, oscs, t, stopAt) {
+function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   const lfo = ctx.createOscillator();
   lfo.type = lfoWave();
   lfo.frequency.value = lfoHz();
@@ -562,6 +626,7 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt) {
   gLfo.gain.value = lfoDepth(cut);
   lfo.connect(gLfo);
   gLfo.connect(filter.frequency);
+  if (filter2 && filter2.frequency) gLfo.connect(filter2.frequency);
   const gVib = ctx.createGain();
   gVib.gain.value = vibDepthHz(freq);
   lfo.connect(gVib);
@@ -646,6 +711,7 @@ function applyKeysFenv() {
       h.f.frequency.cancelScheduledValues(t);
       h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
     } catch (_) {}
+    applyHeldSlope(h, filtType(), cut, t);
   });
 }
 
@@ -1194,12 +1260,8 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   o3.type = 'sine';
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
-  const f = ctx.createBiquadFilter();
   const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
-  f.type = filtType();
-  f.frequency.setValueAtTime(cut, t);
-  f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + Math.max(0.04, dur * 0.7));
-  f.Q.value = fx.on.analog === false ? 0.3 : keysRes;
+  const { f, f2 } = makeSlopePair(ctx, cut, t, Math.max(0.04, dur * 0.7));
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   const { saw, sqr } = oscMixGains();
   const gSaw = ctx.createGain();
@@ -1212,9 +1274,9 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   const uni = startUnison(ctx, f, freq, t, t + dur + keysRel + 0.05, fromF);
   const nse = startNoise(ctx, f, t, t + dur + keysRel + 0.05);
-  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + keysRel + 0.05);
+  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + keysRel + 0.05, f2);
   const sh = startDrive(ctx);
-  f.connect(sh);
+  f2.connect(sh);
   sh.connect(lfoN.gTrem);
   lfoN.gTrem.connect(g);
   o1.start(t); o2.start(t); o3.start(t);
@@ -2829,6 +2891,10 @@ function paintDevices() {
           <button type="button" data-filt-type="bandpass"${keysFilt === 'bandpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'bandpass'}">BP</button>
           <button type="button" data-filt-type="highpass"${keysFilt === 'highpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'highpass'}">HP</button>
         </div>
+        <div class="abl-lfo-waves" id="abl-filt-slopes">
+          <button type="button" data-filt-slope="12"${keysSlope !== 24 ? ' class="on"' : ''} aria-pressed="${keysSlope !== 24}">12</button>
+          <button type="button" data-filt-slope="24"${keysSlope === 24 ? ' class="on"' : ''} aria-pressed="${keysSlope === 24}">24</button>
+        </div>
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
@@ -2977,6 +3043,23 @@ function paintDevices() {
         keysFilt = btn.dataset.filtType;
         applyKeysFilter();
         syncFiltTypeUi();
+      });
+    });
+  }
+  const slopes = root.querySelector('#abl-filt-slopes');
+  if (slopes) {
+    slopes.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'slope' };
+      midiStatus('Learn Analog Slope — move a CC');
+      syncTransport();
+    });
+    slopes.querySelectorAll('[data-filt-slope]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (midiMapOn) return;
+        keysSlope = Number(btn.dataset.filtSlope) === 24 ? 24 : 12;
+        applyKeysSlope();
       });
     });
   }
@@ -3397,6 +3480,9 @@ function applyMidiTarget(target, vel) {
     keysFilt = filtTypeFromVel(vel);
     applyKeysFilter();
     syncFiltTypeUi();
+  } else if (target.type === 'slope') {
+    keysSlope = filtSlopeFromVel(vel);
+    applyKeysSlope();
   } else if (target.type === 'fenv') {
     keysFenv = vel;
     applyKeysFenv();
@@ -3520,12 +3606,8 @@ function studioNoteOn(pitch, vel) {
   glideOsc(o1, o2, freq, t, o3);
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
-  const f = a.ctx.createBiquadFilter();
-  f.type = filtType();
   const cut = analogCut(keysCutoff, pitch, vel);
-  f.frequency.setValueAtTime(cut, t);
-  f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + atk + dec);
-  f.Q.value = keysRes;
+  const { f, f2 } = makeSlopePair(a.ctx, cut, t, atk + dec);
   const g = a.ctx.createGain();
   const v = Math.max(0.001, vel * 0.28);
   g.gain.setValueAtTime(0.0008, t);
@@ -3542,12 +3624,12 @@ function studioNoteOn(pitch, vel) {
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   const uni = startUnison(a.ctx, f, freq, t, null, fromF);
   const nse = startNoise(a.ctx, f, t);
-  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t);
+  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2);
   const sh = startDrive(a.ctx);
-  f.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
+  f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
 }
 
 function studioNoteOff(pitch) {
