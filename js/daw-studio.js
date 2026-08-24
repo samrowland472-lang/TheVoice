@@ -2270,23 +2270,30 @@ function paintDevices() {
   bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
   bindAnalog(sus, 'sus', 'Sus', (v) => { keysSus = v; applyKeysEnv(); });
   bindAnalog(rel, 'rel', 'Rel', (v) => { keysRel = v; });
-  const bindFx = (id, key, parse) => {
+  const bindFx = (id, key, parse, label, min, max) => {
     const el = root.querySelector(id);
     if (!el) return;
+    el.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'fx', key, el: el.id, min, max, label };
+      midiStatus(`Learn ${label} — move a CC`);
+      syncTransport();
+    });
     el.addEventListener('input', () => {
+      if (midiMapOn) return;
       fx[key] = parse(el.value);
       applyFx();
     });
   };
-  bindFx('#abl-send', 'send', parseFloat);
-  bindFx('#abl-delay', 'delayMs', parseFloat);
-  bindFx('#abl-fdbk', 'delayFb', parseFloat);
-  bindFx('#abl-wet', 'delayWet', parseFloat);
-  bindFx('#abl-comp', 'compTh', parseFloat);
-  bindFx('#abl-ratio', 'compRatio', parseFloat);
-  bindFx('#abl-eq-l', 'eqL', parseFloat);
-  bindFx('#abl-eq-m', 'eqM', parseFloat);
-  bindFx('#abl-eq-h', 'eqH', parseFloat);
+  bindFx('#abl-send', 'send', parseFloat, 'Delay Send', 0, 1);
+  bindFx('#abl-delay', 'delayMs', parseFloat, 'Delay Time', 50, 900);
+  bindFx('#abl-fdbk', 'delayFb', parseFloat, 'Delay Fdbk', 0, 0.85);
+  bindFx('#abl-wet', 'delayWet', parseFloat, 'Delay Wet', 0, 1);
+  bindFx('#abl-comp', 'compTh', parseFloat, 'Comp Th', -40, -4);
+  bindFx('#abl-ratio', 'compRatio', parseFloat, 'Comp Ratio', 1, 12);
+  bindFx('#abl-eq-l', 'eqL', parseFloat, 'EQ Lo', -12, 12);
+  bindFx('#abl-eq-m', 'eqM', parseFloat, 'EQ Mid', -12, 12);
+  bindFx('#abl-eq-h', 'eqH', parseFloat, 'EQ Hi', -12, 12);
   [['#abl-kill-l', 'killL'], ['#abl-kill-m', 'killM'], ['#abl-kill-h', 'killH']].forEach(([id, key]) => {
     const el = root.querySelector(id);
     if (!el) return;
@@ -2505,7 +2512,7 @@ export function studioMidi(cmd, d1, d2) {
     if (midiMapOn && midiLearn) {
       midiMap[`cc:${d1}`] = { ...midiLearn };
       saveMidiMap();
-      midiStatus(`CC ${d1} → ${midiLearn.type} ${midiLearn.id || ''}`.trim());
+      midiStatus(`CC ${d1} → ${midiLearn.label || `${midiLearn.type} ${midiLearn.id || midiLearn.key || ''}`.trim()}`);
       midiLearn = null;
       midiMapOn = false;
       syncTransport();
@@ -2581,6 +2588,15 @@ function applyMidiTarget(target, vel) {
     keysRel = 0.05 + vel * 1.15;
     const el = document.getElementById('abl-rel');
     if (el) el.value = String(keysRel);
+  } else if (target.type === 'fx' && target.key) {
+    const min = Number(target.min);
+    const max = Number(target.max);
+    const lo = Number.isFinite(min) ? min : 0;
+    const hi = Number.isFinite(max) ? max : 1;
+    fx[target.key] = lo + vel * (hi - lo);
+    applyFx();
+    const el = document.getElementById(target.el);
+    if (el) el.value = String(fx[target.key]);
   }
 }
 
