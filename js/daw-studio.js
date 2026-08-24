@@ -258,6 +258,7 @@ function ensureMix() {
       muted: false,
       soloed: false,
       peak: 0,
+      sendVal: s.id === 'keys' ? 1 : 0,
     };
   });
   const bus = ctx.createGain();
@@ -272,7 +273,13 @@ function ensureMix() {
   wet.gain.value = 0.7;
   const send = ctx.createGain();
   send.gain.value = 0.45;
-  mix.keys.analyser.connect(send);
+  STRIPS.filter((s) => s.id !== 'master' && s.id !== 'return').forEach((s) => {
+    const sendG = ctx.createGain();
+    sendG.gain.value = mix[s.id].sendVal;
+    mix[s.id].analyser.connect(sendG);
+    sendG.connect(send);
+    mix[s.id].send = sendG;
+  });
   send.connect(delay);
   delay.connect(fb);
   fb.connect(delay);
@@ -319,6 +326,13 @@ function applyMute() {
     if (anySolo && s.id !== 'master' && s.id !== 'return' && !m.soloed) on = false;
     m.mute.gain.setTargetAtTime(on ? 1 : 0, audio().ctx.currentTime, 0.01);
   });
+}
+
+function applySend(id) {
+  const m = mix[id];
+  const a = audio();
+  if (!m || !m.send || !a) return;
+  m.send.gain.setTargetAtTime(Math.max(0, Math.min(1, m.sendVal || 0)), a.ctx.currentTime, 0.02);
 }
 
 function envGain(dest, t, vel, a, d, sus, r, dur) {
@@ -1651,10 +1665,16 @@ function paintMixer() {
   ensureMix();
   root.innerHTML = STRIPS.map((s) => {
     const m = mix[s.id];
+    const canSend = s.id !== 'master' && s.id !== 'return';
+    const sendVal = m.sendVal || 0;
+    const sendHtml = canSend
+      ? `<label class="abl-send-lab">A <input type="range" min="0" max="1" step="0.01" value="${sendVal}" data-send="${s.id}" aria-label="${s.name} send A" aria-valuetext="${Math.round(sendVal * 100)}%"></label>`
+      : `<span class="abl-send-lab abl-send-lab-empty" aria-hidden="true">A</span>`;
     return `<div class="abl-strip" data-strip="${s.id}" style="--strip:${s.color}">
       <canvas class="abl-meter" data-meter="${s.id}" width="10" height="92" aria-hidden="true"></canvas>
       <input type="range" min="0" max="1.4" step="0.01" value="${m.level}" data-vol="${s.id}" aria-label="${s.name} volume" aria-valuetext="${Math.round(m.level * 100)}%">
       <input type="range" min="-1" max="1" step="0.01" value="${m.panVal}" data-pan="${s.id}" aria-label="${s.name} pan" aria-valuetext="${m.panVal === 0 ? 'center' : (m.panVal < 0 ? 'left' : 'right')}">
+      ${sendHtml}
       <div class="abl-strip-btns">
         <button type="button" class="abl-m${m.muted ? ' on' : ''}" data-mute="${s.id}" aria-pressed="${m.muted ? 'true' : 'false'}" aria-label="Mute ${s.name}">M</button>
         <button type="button" class="abl-s${m.soloed ? ' on' : ''}" data-solo="${s.id}" aria-pressed="${m.soloed ? 'true' : 'false'}" aria-label="Solo ${s.name}">S</button>
@@ -1687,6 +1707,21 @@ function paintMixer() {
       const m = mix[el.dataset.pan];
       m.panVal = parseFloat(el.value);
       if (m.pan) m.pan.pan.setTargetAtTime(m.panVal, audio().ctx.currentTime, 0.02);
+    });
+  });
+  root.querySelectorAll('[data-send]').forEach((el) => {
+    el.addEventListener('input', () => {
+      if (midiMapOn) {
+        midiLearn = { type: 'send', id: el.dataset.send };
+        midiStatus(`Learn send A ${el.dataset.send} — move a CC`);
+        syncTransport();
+        return;
+      }
+      const m = mix[el.dataset.send];
+      if (!m) return;
+      m.sendVal = parseFloat(el.value) || 0;
+      applySend(el.dataset.send);
+      el.setAttribute('aria-valuetext', `${Math.round(m.sendVal * 100)}%`);
     });
   });
   root.querySelectorAll('[data-mute]').forEach((el) => {
@@ -2472,6 +2507,13 @@ function applyMidiTarget(target, vel) {
     m.pan.pan.setTargetAtTime(m.panVal, a.ctx.currentTime, 0.02);
     const el = document.querySelector(`[data-pan="${target.id}"]`);
     if (el) el.value = String(m.panVal);
+  } else if (target.type === 'send') {
+    const m = mix[target.id];
+    if (!m) return;
+    m.sendVal = vel;
+    applySend(target.id);
+    const el = document.querySelector(`[data-send="${target.id}"]`);
+    if (el) el.value = String(m.sendVal);
   } else if (target.type === 'cut') {
     keysCutoff = 80 + vel * 8000;
   }
