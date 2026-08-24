@@ -40,6 +40,7 @@ let keysSus = 0.55;
 let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
+let keysOsc2 = 'pulse';
 let keysOct1 = 0;
 let keysSemi1 = 0;
 let keysDet1 = 0;
@@ -292,6 +293,28 @@ function applyKeysOsc1() {
   syncOsc1WaveUi();
 }
 
+const OSC2_WAVES = ['sawtooth', 'triangle', 'sine', 'pulse'];
+
+function osc2Wave() {
+  return OSC2_WAVES.includes(keysOsc2) ? keysOsc2 : 'pulse';
+}
+
+function osc2WaveFromVel(vel) {
+  if (vel < 0.25) return 'sawtooth';
+  if (vel < 0.5) return 'triangle';
+  if (vel < 0.75) return 'sine';
+  return 'pulse';
+}
+
+function syncOsc2WaveUi() {
+  const w = osc2Wave();
+  document.querySelectorAll('[data-osc2-wave]').forEach((btn) => {
+    const on = btn.dataset.osc2Wave === w;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
 function applyKeysOsc() {
   const a = audio();
   if (!a) return;
@@ -329,10 +352,27 @@ function pulseWave(ctx) {
 
 function shapeOsc2(osc, ctx) {
   if (!osc || !ctx) return;
-  try { osc.setPeriodicWave(pulseWave(ctx)); } catch (_) { osc.type = 'square'; }
+  const w = osc2Wave();
+  if (w === 'pulse') {
+    try { osc.setPeriodicWave(pulseWave(ctx)); } catch (_) { osc.type = 'square'; }
+    return;
+  }
+  try { osc.type = w; } catch (_) { osc.type = 'square'; }
+}
+
+function applyKeysOsc2() {
+  const a = audio();
+  if (a) {
+    midiHeld.forEach((h) => {
+      if (!h || !h.o2) return;
+      try { shapeOsc2(h.o2, a.ctx); } catch (_) {}
+    });
+  }
+  syncOsc2WaveUi();
 }
 
 function applyKeysPw() {
+  if (osc2Wave() !== 'pulse') return;
   const a = audio();
   if (!a) return;
   midiHeld.forEach((h) => {
@@ -2973,6 +3013,12 @@ function paintDevices() {
           <button type="button" data-nse-col="white"${keysNseCol === 'white' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'white'}">Wht</button>
           <button type="button" data-nse-col="pink"${keysNseCol === 'pink' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'pink'}">Pnk</button>
         </div>
+        <div class="abl-lfo-waves" id="abl-osc2-waves">
+          <button type="button" data-osc2-wave="sawtooth"${keysOsc2 === 'sawtooth' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'sawtooth'}">Saw</button>
+          <button type="button" data-osc2-wave="triangle"${keysOsc2 === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'triangle'}">Tri</button>
+          <button type="button" data-osc2-wave="sine"${keysOsc2 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'sine'}">Sin</button>
+          <button type="button" data-osc2-wave="pulse"${keysOsc2 === 'pulse' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'pulse'}">Pls</button>
+        </div>
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
         ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
@@ -3102,6 +3148,23 @@ function paintDevices() {
         if (midiMapOn) return;
         keysOsc1 = btn.dataset.osc1Wave;
         applyKeysOsc1();
+      });
+    });
+  }
+  const osc2w = root.querySelector('#abl-osc2-waves');
+  if (osc2w) {
+    osc2w.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'osc2' };
+      midiStatus('Learn Analog Osc2 — move a CC');
+      syncTransport();
+    });
+    osc2w.querySelectorAll('[data-osc2-wave]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (midiMapOn) return;
+        keysOsc2 = btn.dataset.osc2Wave;
+        applyKeysOsc2();
       });
     });
   }
@@ -3559,6 +3622,9 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'osc1') {
     keysOsc1 = osc1WaveFromVel(vel);
     applyKeysOsc1();
+  } else if (target.type === 'osc2') {
+    keysOsc2 = osc2WaveFromVel(vel);
+    applyKeysOsc2();
   } else if (target.type === 'sub') {
     keysSub = vel;
     applyKeysSub();
