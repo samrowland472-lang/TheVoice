@@ -40,6 +40,7 @@ let keysSus = 0.55;
 let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
+let keysOct1 = 0;
 let keysDet = 9;
 let keysOct = 0;
 let keysSemi = 0;
@@ -673,6 +674,18 @@ function detuneRatio() {
   return Math.pow(2, keysDet / 1200);
 }
 
+function osc1Oct() {
+  return Math.max(-2, Math.min(2, Math.round(Number(keysOct1) || 0)));
+}
+
+function osc1Ratio() {
+  return Math.pow(2, osc1Oct());
+}
+
+function osc1Hz(freq) {
+  return Math.max(20, (freq || 440) * osc1Ratio());
+}
+
 function osc2Oct() {
   return Math.max(-2, Math.min(2, Math.round(Number(keysOct) || 0)));
 }
@@ -714,7 +727,7 @@ function applyPitchBend() {
     try {
       if (h.o1) {
         h.o1.frequency.cancelScheduledValues(t);
-        h.o1.frequency.setTargetAtTime(bentHz(freq), t, 0.008);
+        h.o1.frequency.setTargetAtTime(osc1Hz(freq) * b, t, 0.008);
       }
       if (h.o2) {
         h.o2.frequency.cancelScheduledValues(t);
@@ -749,6 +762,19 @@ function applyKeysDet() {
   });
 }
 
+function applyKeysOct1() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const b = bendRatio();
+  midiHeld.forEach((h) => {
+    if (!h || !h.o1 || !h.freq) return;
+    try {
+      h.o1.frequency.setTargetAtTime(osc1Hz(h.freq) * b, t, 0.02);
+    } catch (_) {}
+  });
+}
+
 function filterEnvEnd(cut) {
   const amt = Math.max(0, Math.min(1, keysFenv));
   const closed = Math.max(80, cut * 0.12);
@@ -772,22 +798,23 @@ function applyKeysFenv() {
 
 function glideOsc(o1, o2, freq, t, o3) {
   const r = osc2Ratio();
+  const r1 = osc1Ratio();
   const b = bendRatio();
   const g = Math.max(0, keysGlide);
   const from = lastKeyFreq * b;
   const to = freq * b;
   const subF = Math.max(20, freq / 2 * b);
   if (g > 0.004 && lastKeyFreq > 20) {
-    o1.frequency.setValueAtTime(Math.max(20, from), t);
+    o1.frequency.setValueAtTime(Math.max(20, from * r1), t);
     o2.frequency.setValueAtTime(Math.max(20, from * r), t);
-    o1.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + g);
+    o1.frequency.exponentialRampToValueAtTime(Math.max(20, to * r1), t + g);
     o2.frequency.exponentialRampToValueAtTime(Math.max(20, to * r), t + g);
     if (o3) {
       o3.frequency.setValueAtTime(Math.max(20, from / 2), t);
       o3.frequency.exponentialRampToValueAtTime(subF, t + g);
     }
   } else {
-    o1.frequency.setValueAtTime(Math.max(20, to), t);
+    o1.frequency.setValueAtTime(Math.max(20, to * r1), t);
     o2.frequency.setValueAtTime(Math.max(20, to * r), t);
     if (o3) o3.frequency.setValueAtTime(subF, t);
   }
@@ -2927,6 +2954,7 @@ function paintDevices() {
           <button type="button" data-osc1-wave="triangle"${keysOsc1 === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'triangle'}">Tri</button>
           <button type="button" data-osc1-wave="sine"${keysOsc1 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sine'}">Sin</button>
         </div>
+        ${knob('abl-oct1', 'O1', -2, 2, 1, keysOct1)}
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         <div class="abl-lfo-waves" id="abl-nse-cols">
@@ -3007,6 +3035,7 @@ function paintDevices() {
     </article>
   `;
   const osc = root.querySelector('#abl-osc');
+  const oct1 = root.querySelector('#abl-oct1');
   const sub = root.querySelector('#abl-sub');
   const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
@@ -3081,6 +3110,7 @@ function paintDevices() {
       });
     });
   }
+  bindAnalog(oct1, 'oct1', 'O1', (v) => { keysOct1 = Math.round(v); applyKeysOct1(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
@@ -3526,6 +3556,11 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'ncol') {
     keysNseCol = nseColFromVel(vel);
     applyKeysNseCol();
+  } else if (target.type === 'oct1') {
+    keysOct1 = Math.round(-2 + vel * 4);
+    applyKeysOct1();
+    const el = document.getElementById('abl-oct1');
+    if (el) el.value = String(keysOct1);
   } else if (target.type === 'det') {
     keysDet = -50 + vel * 100;
     applyKeysDet();
@@ -3786,7 +3821,7 @@ function retuneVoice(h, pitch, vel) {
   };
   const { up, dn } = uniRatios();
   const b = bendRatio();
-  glideTo(h.o1, from * b, freq * b);
+  glideTo(h.o1, osc1Hz(from) * b, osc1Hz(freq) * b);
   glideTo(h.o2, osc2Hz(from) * b, osc2Hz(freq) * b);
   glideTo(h.o3, from / 2 * b, freq / 2 * b);
   glideTo(h.oUp, from * up * b, freq * up * b);
