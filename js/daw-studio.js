@@ -58,6 +58,7 @@ let keysFenvInv = false;
 let keysFAtk = 0.09;
 let keysFDec = 0;
 let keysFSus = 0;
+let keysFRel = 0;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -188,18 +189,18 @@ function syncFiltSlopeUi() {
   });
 }
 
-function makeSlopePair(ctx, cut, t) {
+function makeSlopePair(ctx, cut, t, dur) {
   const type = filtType();
   const q = fx.on.analog === false ? 0.3 : keysRes;
   const f = ctx.createBiquadFilter();
   const f2 = ctx.createBiquadFilter();
   f.type = type;
   f.Q.value = q;
-  scheduleFiltEnv(f.frequency, cut, t);
+  scheduleFiltEnv(f.frequency, cut, t, dur);
   if (filtSlope() === 24 && fx.on.analog !== false) {
     f2.type = type;
     f2.Q.value = q;
-    scheduleFiltEnv(f2.frequency, cut, t);
+    scheduleFiltEnv(f2.frequency, cut, t, dur);
   } else {
     f2.type = 'allpass';
     f2.frequency.value = 1000;
@@ -975,6 +976,14 @@ function fSus() {
   return Math.max(0, Math.min(1, Number(keysFSus) || 0));
 }
 
+function fRel() {
+  return Math.max(0, Math.min(1.5, Number(keysFRel) || 0));
+}
+
+function voiceTail() {
+  return Math.max(Math.max(0.03, keysRel), fRel()) + 0.05;
+}
+
 function filterEnvSustain(cut) {
   const c = Math.max(80, cut);
   const peak = filterEnvEnd(c);
@@ -982,17 +991,35 @@ function filterEnvSustain(cut) {
   return Math.max(80, c + (peak - c) * fSus());
 }
 
-function scheduleFiltEnv(param, cut, t) {
+function scheduleFiltEnv(param, cut, t, dur) {
   if (!param) return;
   const start = Math.max(80, cut);
   const peak = Math.max(80, filterEnvEnd(cut));
   const atk = fAtk();
   const dec = fDec();
   const sus = filterEnvSustain(cut);
+  const rel = fRel();
   param.cancelScheduledValues(t);
   param.setValueAtTime(start, t);
   param.exponentialRampToValueAtTime(peak, t + atk);
   if (dec > 0.008) param.exponentialRampToValueAtTime(sus, t + atk + dec);
+  if (rel > 0.008 && dur != null) {
+    const off = t + Math.max(0.05, dur);
+    param.setValueAtTime(sus, off);
+    param.exponentialRampToValueAtTime(start, off + rel);
+  }
+}
+
+function scheduleFiltRel(param, cut, t) {
+  if (!param) return;
+  const rel = fRel();
+  if (rel <= 0.008) return;
+  const rest = Math.max(80, cut);
+  try {
+    param.cancelScheduledValues(t);
+    param.setValueAtTime(Math.max(80, param.value || rest), t);
+    param.exponentialRampToValueAtTime(rest, t + rel);
+  } catch (_) {}
 }
 
 function syncFenvInvUi() {
@@ -1572,7 +1599,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
   const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
-  const { f, f2 } = makeSlopePair(ctx, cut, t);
+  const { f, f2 } = makeSlopePair(ctx, cut, t, dur);
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   const { saw, sqr } = oscMixGains();
   const gSaw = ctx.createGain();
@@ -1584,17 +1611,18 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   startRing(ctx, o1, o2, f);
-  const uni = startUnison(ctx, f, freq, t, t + dur + keysRel + 0.05, fromF);
-  const nse = startNoise(ctx, f, t, t + dur + keysRel + 0.05);
-  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + keysRel + 0.05, f2);
+  const tail = voiceTail();
+  const uni = startUnison(ctx, f, freq, t, t + dur + tail, fromF);
+  const nse = startNoise(ctx, f, t, t + dur + tail);
+  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2);
   const sh = startDrive(ctx);
   f2.connect(sh);
   sh.connect(lfoN.gTrem);
   lfoN.gTrem.connect(g);
   o1.start(t); o2.start(t); o3.start(t);
-  o1.stop(t + dur + keysRel + 0.05);
-  o2.stop(t + dur + keysRel + 0.05);
-  o3.stop(t + dur + keysRel + 0.05);
+  o1.stop(t + dur + tail);
+  o2.stop(t + dur + tail);
+  o3.stop(t + dur + tail);
 }
 
 function trigMetro(t, accent) {
@@ -3226,6 +3254,7 @@ function paintDevices() {
         ${knob('abl-fatk', 'FAtk', 0.01, 1.5, 0.01, keysFAtk)}
         ${knob('abl-fdec', 'FDec', 0, 1.5, 0.01, keysFDec)}
         ${knob('abl-fsus', 'FSus', 0, 1, 0.01, keysFSus)}
+        ${knob('abl-frel', 'FRel', 0, 1.5, 0.01, keysFRel)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
@@ -3302,6 +3331,7 @@ function paintDevices() {
   const fatk = root.querySelector('#abl-fatk');
   const fdec = root.querySelector('#abl-fdec');
   const fsus = root.querySelector('#abl-fsus');
+  const frel = root.querySelector('#abl-frel');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const vib = root.querySelector('#abl-vib');
@@ -3467,6 +3497,7 @@ function paintDevices() {
   bindAnalog(fatk, 'fatk', 'FAtk', (v) => { keysFAtk = v; });
   bindAnalog(fdec, 'fdec', 'FDec', (v) => { keysFDec = v; });
   bindAnalog(fsus, 'fsus', 'FSus', (v) => { keysFSus = v; applyKeysFenv(); });
+  bindAnalog(frel, 'frel', 'FRel', (v) => { keysFRel = v; });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -3986,6 +4017,10 @@ function applyMidiTarget(target, vel) {
     applyKeysFenv();
     const el = document.getElementById('abl-fsus');
     if (el) el.value = String(keysFSus);
+  } else if (target.type === 'frel') {
+    keysFRel = vel * 1.5;
+    const el = document.getElementById('abl-frel');
+    if (el) el.value = String(keysFRel);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
@@ -4305,16 +4340,21 @@ function studioNoteOff(pitch) {
   const a = audio();
   const t = a ? a.ctx.currentTime : 0;
   const rel = Math.max(0.03, keysRel);
+  const tail = voiceTail();
   try {
     h.g.gain.cancelScheduledValues(t);
     h.g.gain.setTargetAtTime(0.0008, t, rel / 3);
-    h.o1.stop(t + rel + 0.05);
-    h.o2.stop(t + rel + 0.05);
-    if (h.o3) h.o3.stop(t + rel + 0.05);
-    if (h.oUp) h.oUp.stop(t + rel + 0.05);
-    if (h.oDn) h.oDn.stop(t + rel + 0.05);
-    if (h.nse) h.nse.stop(t + rel + 0.05);
-    if (h.lfo) h.lfo.stop(t + rel + 0.05);
+    if (h.f) scheduleFiltRel(h.f.frequency, h.cut || keysCutoff, t);
+    if (h.f2 && filtSlope() === 24 && fx.on.analog !== false) {
+      scheduleFiltRel(h.f2.frequency, h.cut || keysCutoff, t);
+    }
+    h.o1.stop(t + tail);
+    h.o2.stop(t + tail);
+    if (h.o3) h.o3.stop(t + tail);
+    if (h.oUp) h.oUp.stop(t + tail);
+    if (h.oDn) h.oDn.stop(t + tail);
+    if (h.nse) h.nse.stop(t + tail);
+    if (h.lfo) h.lfo.stop(t + tail);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
   midiHeld.delete(pitch);
