@@ -56,6 +56,7 @@ let keysTrem = 0.22;
 let keysLfoWave = 'sine';
 let keysLfoSync = false;
 let keysUni = 0.35;
+let keysSpread = 0;
 let keysDrv = 0.22;
 let keysFilt = 'lowpass';
 let lastKeyFreq = 0;
@@ -260,6 +261,10 @@ function uniRatios() {
   return { up: Math.pow(2, c / 1200), dn: Math.pow(2, -c / 1200) };
 }
 
+function spreadAmt() {
+  return Math.max(0, Math.min(1, Number(keysSpread) || 0));
+}
+
 function startUnison(ctx, dest, freq, t, stopAt, fromFreq) {
   const oUp = ctx.createOscillator();
   const oDn = ctx.createOscillator();
@@ -277,18 +282,36 @@ function startUnison(ctx, dest, freq, t, stopAt, fromFreq) {
     oUp.frequency.setValueAtTime(freq * up, t);
     oDn.frequency.setValueAtTime(freq * dn, t);
   }
+  const mixV = uniMix();
   const gUni = ctx.createGain();
-  gUni.gain.value = uniMix();
+  const gUniDn = ctx.createGain();
+  gUni.gain.value = mixV;
+  gUniDn.gain.value = mixV;
+  const spr = spreadAmt();
+  let panUp = null;
+  let panDn = null;
   oUp.connect(gUni);
-  oDn.connect(gUni);
-  gUni.connect(dest);
+  oDn.connect(gUniDn);
+  if (ctx.createStereoPanner) {
+    panUp = ctx.createStereoPanner();
+    panDn = ctx.createStereoPanner();
+    panUp.pan.value = spr;
+    panDn.pan.value = -spr;
+    gUni.connect(panUp);
+    gUniDn.connect(panDn);
+    panUp.connect(dest);
+    panDn.connect(dest);
+  } else {
+    gUni.connect(dest);
+    gUniDn.connect(dest);
+  }
   oUp.start(t);
   oDn.start(t);
   if (stopAt != null) {
     oUp.stop(stopAt);
     oDn.stop(stopAt);
   }
-  return { oUp, oDn, gUni };
+  return { oUp, oDn, gUni, gUniDn, panUp, panDn };
 }
 
 function applyKeysUni() {
@@ -301,8 +324,23 @@ function applyKeysUni() {
     if (!h || !h.gUni) return;
     try {
       h.gUni.gain.setTargetAtTime(mixV, t, 0.02);
+      if (h.gUniDn) h.gUniDn.gain.setTargetAtTime(mixV, t, 0.02);
       if (h.oUp && h.freq) h.oUp.frequency.setTargetAtTime(h.freq * up, t, 0.02);
       if (h.oDn && h.freq) h.oDn.frequency.setTargetAtTime(h.freq * dn, t, 0.02);
+    } catch (_) {}
+  });
+}
+
+function applyKeysSpread() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const spr = spreadAmt();
+  midiHeld.forEach((h) => {
+    if (!h) return;
+    try {
+      if (h.panUp) h.panUp.pan.setTargetAtTime(spr, t, 0.02);
+      if (h.panDn) h.panDn.pan.setTargetAtTime(-spr, t, 0.02);
     } catch (_) {}
   });
 }
@@ -2697,6 +2735,7 @@ function paintDevices() {
         ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
         ${knob('abl-pw', 'PW', 0.05, 0.95, 0.01, keysPw)}
         ${knob('abl-uni', 'Uni', 0, 1, 0.01, keysUni)}
+        ${knob('abl-spr', 'Spr', 0, 1, 0.01, keysSpread)}
         ${knob('abl-drv', 'Drv', 0, 1, 0.01, keysDrv)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
@@ -2763,6 +2802,7 @@ function paintDevices() {
   const semi = root.querySelector('#abl-semi');
   const pw = root.querySelector('#abl-pw');
   const uni = root.querySelector('#abl-uni');
+  const spr = root.querySelector('#abl-spr');
   const drv = root.querySelector('#abl-drv');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
@@ -2799,6 +2839,7 @@ function paintDevices() {
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
   bindAnalog(pw, 'pw', 'PW', (v) => { keysPw = v; applyKeysPw(); });
   bindAnalog(uni, 'uni', 'Uni', (v) => { keysUni = v; applyKeysUni(); });
+  bindAnalog(spr, 'spr', 'Spr', (v) => { keysSpread = v; applyKeysSpread(); });
   bindAnalog(drv, 'drv', 'Drv', (v) => { keysDrv = v; applyKeysDrv(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
@@ -3199,6 +3240,11 @@ function applyMidiTarget(target, vel) {
     applyKeysUni();
     const el = document.getElementById('abl-uni');
     if (el) el.value = String(keysUni);
+  } else if (target.type === 'spr') {
+    keysSpread = vel;
+    applyKeysSpread();
+    const el = document.getElementById('abl-spr');
+    if (el) el.value = String(keysSpread);
   } else if (target.type === 'drv') {
     keysDrv = vel;
     applyKeysDrv();
@@ -3378,7 +3424,7 @@ function studioNoteOn(pitch, vel) {
   f.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut, vel });
 }
 
 function studioNoteOff(pitch) {
