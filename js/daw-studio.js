@@ -64,6 +64,7 @@ let keysFilt = 'lowpass';
 let keysSlope = 12;
 let lastKeyFreq = 0;
 let keysMono = false;
+let keysRetrig = false;
 const monoStack = [];
 let keysBend = 2;
 let pitchWheel = 0;
@@ -2966,6 +2967,7 @@ function paintDevices() {
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
         <div class="abl-lfo-waves">
           <button type="button" id="abl-mono" class="${keysMono ? 'on' : ''}" aria-pressed="${keysMono}">Mono</button>
+          <button type="button" id="abl-retrig" class="${keysRetrig ? 'on' : ''}" aria-pressed="${keysRetrig}">Retrig</button>
         </div>
         ${knob('abl-bnd', 'Bnd', 0, 12, 1, keysBend)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
@@ -3179,6 +3181,22 @@ function paintDevices() {
       if (midiMapOn) return;
       keysMono = !keysMono;
       applyKeysMono();
+    });
+  }
+  const retrigBtn = root.querySelector('#abl-retrig');
+  if (retrigBtn) {
+    retrigBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'retrig' };
+      midiStatus('Learn Analog Retrig — move a CC');
+      syncTransport();
+    });
+    retrigBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysRetrig = !keysRetrig;
+      applyKeysRetrig();
     });
   }
   bindAnalog(bnd, 'bnd', 'Bnd', (v) => { keysBend = Math.round(v); applyPitchBend(); });
@@ -3609,6 +3627,9 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'mono') {
     keysMono = vel >= 0.5;
     applyKeysMono();
+  } else if (target.type === 'retrig') {
+    keysRetrig = vel >= 0.5;
+    applyKeysRetrig();
   } else if (target.type === 'bnd') {
     keysBend = Math.round(vel * 12);
     applyPitchBend();
@@ -3700,6 +3721,50 @@ function applyKeysMono() {
   syncMonoUi();
 }
 
+function syncRetrigUi() {
+  const btn = document.getElementById('abl-retrig');
+  if (!btn) return;
+  btn.classList.toggle('on', !!keysRetrig);
+  btn.setAttribute('aria-pressed', keysRetrig ? 'true' : 'false');
+}
+
+function applyKeysRetrig() {
+  syncRetrigUi();
+}
+
+function retrigVoice(h, pitch, vel) {
+  const a = audio();
+  if (!a || !h || !h.g) return;
+  const t = a.ctx.currentTime;
+  const atk = Math.max(0.005, keysAtk);
+  const dec = Math.max(0.01, keysDec);
+  const v = Math.max(0.001, (vel != null ? vel : h.vel || 0.85) * 0.28);
+  h.peak = v;
+  try {
+    h.g.gain.cancelScheduledValues(t);
+    h.g.gain.setValueAtTime(0.0008, t);
+    h.g.gain.exponentialRampToValueAtTime(v, t + atk);
+    h.g.gain.exponentialRampToValueAtTime(Math.max(0.0008, v * keysSus), t + atk + dec);
+  } catch (_) {}
+  const cut = analogCut(keysCutoff, pitch, vel != null ? vel : h.vel);
+  h.cut = cut;
+  const envDur = Math.max(0.04, atk + dec);
+  const end = filterEnvEnd(cut);
+  try {
+    if (h.f) {
+      h.f.frequency.cancelScheduledValues(t);
+      h.f.frequency.setValueAtTime(Math.max(80, cut), t);
+      h.f.frequency.exponentialRampToValueAtTime(end, t + envDur);
+    }
+    if (h.f2 && filtSlope() === 24 && fx.on.analog !== false) {
+      h.f2.frequency.cancelScheduledValues(t);
+      h.f2.frequency.setValueAtTime(Math.max(80, cut), t);
+      h.f2.frequency.exponentialRampToValueAtTime(end, t + envDur);
+    }
+    if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
+  } catch (_) {}
+}
+
 function retuneVoice(h, pitch, vel) {
   const a = audio();
   if (!a || !h) return;
@@ -3765,6 +3830,7 @@ function studioNoteOn(pitch, vel) {
     midiHeld.delete(oldPitch);
     if (h.rec) recEnd(h.rec);
     retuneVoice(h, pitch, vel);
+    if (keysRetrig) retrigVoice(h, pitch, vel);
     h.rec = recBegin(pitch, vel);
     midiHeld.set(pitch, h);
     return;
@@ -3817,6 +3883,7 @@ function studioNoteOff(pitch) {
     midiHeld.delete(pitch);
     if (cur.rec) recEnd(cur.rec);
     retuneVoice(cur, next, cur.vel);
+    if (keysRetrig) retrigVoice(cur, next, cur.vel);
     cur.rec = recBegin(next, cur.vel);
     midiHeld.set(next, cur);
     return;
