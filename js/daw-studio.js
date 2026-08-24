@@ -910,6 +910,7 @@ function clock() {
     else step = (step + 1) % ROLL_STEPS;
     nextTime += stepDur() + swingAdd;
   }
+  growRecNotes();
   timer = setTimeout(clock, 20);
 }
 
@@ -2037,16 +2038,15 @@ function bindKeys() {
     }
     const pitch = KEY_MAP[String(ev.key).toLowerCase()];
     if (pitch == null || held.has(ev.key)) return;
-    ensureMix();
-    const t = audio().ctx.currentTime;
-    trigKey(t, pitch, 0.85, 2);
-    held.set(ev.key, true);
-    if (recOn && playing) {
-      notes.push({ pitch, start: step % ROLL_STEPS, length: 2, vel: 100 });
-      paintRoll();
-    }
+    ev.preventDefault();
+    held.set(ev.key, pitch);
+    studioNoteOn(pitch, 0.85);
   });
-  document.addEventListener('keyup', (ev) => held.delete(ev.key));
+  document.addEventListener('keyup', (ev) => {
+    const pitch = held.get(ev.key);
+    held.delete(ev.key);
+    if (pitch != null) studioNoteOff(pitch);
+  });
 }
 
 function snapFromPreset(name) {
@@ -2542,6 +2542,47 @@ function applyMidiTarget(target, vel) {
   }
 }
 
+function recBegin(pitch, vel) {
+  if (!recOn || !playing) return null;
+  const a = audio();
+  const n = {
+    pitch,
+    start: step % ROLL_STEPS,
+    length: 1,
+    vel: Math.max(1, Math.round((vel || 0.85) * 127)),
+    recT0: a ? a.ctx.currentTime : 0,
+  };
+  notes.push(n);
+  paintRoll();
+  return n;
+}
+
+function recGrow(n) {
+  if (!n || n.recT0 == null) return;
+  const a = audio();
+  if (!a) return;
+  const sixteenths = Math.max(1, Math.round((a.ctx.currentTime - n.recT0) / stepDur()));
+  n.length = Math.max(1, Math.min(ROLL_STEPS, sixteenths));
+}
+
+function recEnd(n) {
+  if (!n) return;
+  recGrow(n);
+  delete n.recT0;
+  paintRoll();
+}
+
+function growRecNotes() {
+  let dirty = false;
+  notes.forEach((n) => {
+    if (n.recT0 == null) return;
+    const prev = n.length;
+    recGrow(n);
+    if (n.length !== prev) dirty = true;
+  });
+  if (dirty && detail === 'keys') paintRoll();
+}
+
 function studioNoteOn(pitch, vel) {
   ensureMix();
   const a = audio();
@@ -2567,11 +2608,8 @@ function studioNoteOn(pitch, vel) {
   g.gain.setTargetAtTime(Math.max(0.0008, v * keysSus), t + atk, 0.05);
   o1.connect(f); o2.connect(f); f.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t);
-  midiHeld.set(pitch, { o1, o2, g, peak: v });
-  if (recOn && playing) {
-    notes.push({ pitch, start: step % ROLL_STEPS, length: 2, vel: Math.round(vel * 127) });
-    paintRoll();
-  }
+  const rec = recBegin(pitch, vel);
+  midiHeld.set(pitch, { o1, o2, g, peak: v, rec });
 }
 
 function studioNoteOff(pitch) {
@@ -2586,6 +2624,7 @@ function studioNoteOff(pitch) {
     h.o1.stop(t + rel + 0.05);
     h.o2.stop(t + rel + 0.05);
   } catch (_) {}
+  if (h.rec) recEnd(h.rec);
   midiHeld.delete(pitch);
 }
 
