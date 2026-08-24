@@ -41,6 +41,8 @@ let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
 let keysOsc2 = 'pulse';
+let keysOsc1On = true;
+let keysOsc2On = true;
 let keysOscSync = false;
 let keysRing = 0;
 let keysFm = 0;
@@ -287,9 +289,20 @@ function applyKeysEnv() {
   });
 }
 
+function osc1On() {
+  return keysOsc1On !== false;
+}
+
+function osc2On() {
+  return keysOsc2On !== false;
+}
+
 function oscMixGains() {
-  const sqr = Math.max(0, Math.min(1, keysOsc));
-  return { saw: 1 - sqr, sqr };
+  const sqr = Math.max(0, Math.min(1, Number(keysOsc) || 0));
+  return {
+    saw: osc1On() ? 1 - sqr : 0,
+    sqr: osc2On() ? sqr : 0,
+  };
 }
 
 const OSC1_WAVES = ['sawtooth', 'triangle', 'sine'];
@@ -358,7 +371,34 @@ function applyKeysOsc() {
   });
 }
 
+function syncOsc1OnUi() {
+  const btn = document.getElementById('abl-osc1on');
+  if (!btn) return;
+  btn.classList.toggle('on', osc1On());
+  btn.setAttribute('aria-pressed', osc1On() ? 'true' : 'false');
+}
+
+function syncOsc2OnUi() {
+  const btn = document.getElementById('abl-osc2on');
+  if (!btn) return;
+  btn.classList.toggle('on', osc2On());
+  btn.setAttribute('aria-pressed', osc2On() ? 'true' : 'false');
+}
+
+function applyKeysOsc1On() {
+  applyKeysOsc();
+  syncOsc1OnUi();
+}
+
+function applyKeysOsc2On() {
+  applyKeysOsc();
+  applyKeysFm();
+  applyKeysRing();
+  syncOsc2OnUi();
+}
+
 function ringMix() {
+  if (!osc2On()) return 0;
   return Math.max(0, Math.min(1, Number(keysRing) || 0)) * 0.55;
 }
 
@@ -391,6 +431,7 @@ function fmAmt() {
 
 function fmDepthHz(freq) {
   if (fx.on.analog === false) return 0;
+  if (!osc2On()) return 0;
   return Math.max(0, (freq || 440) * 8 * fmAmt());
 }
 
@@ -3575,6 +3616,7 @@ function paintDevices() {
           <button type="button" data-osc1-wave="sawtooth"${keysOsc1 === 'sawtooth' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sawtooth'}">Saw</button>
           <button type="button" data-osc1-wave="triangle"${keysOsc1 === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'triangle'}">Tri</button>
           <button type="button" data-osc1-wave="sine"${keysOsc1 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sine'}">Sin</button>
+          <button type="button" id="abl-osc1on" class="${keysOsc1On ? 'on' : ''}" aria-pressed="${keysOsc1On}">On</button>
         </div>
         ${knob('abl-oct1', 'O1', -2, 2, 1, keysOct1)}
         ${knob('abl-semi1', 'S1', -12, 12, 1, keysSemi1)}
@@ -3592,6 +3634,7 @@ function paintDevices() {
           <button type="button" data-osc2-wave="sine"${keysOsc2 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'sine'}">Sin</button>
           <button type="button" data-osc2-wave="pulse"${keysOsc2 === 'pulse' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'pulse'}">Pls</button>
           <button type="button" id="abl-oscsync" class="${keysOscSync ? 'on' : ''}" aria-pressed="${keysOscSync}">Sync</button>
+          <button type="button" id="abl-osc2on" class="${keysOsc2On ? 'on' : ''}" aria-pressed="${keysOsc2On}">On</button>
         </div>
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
@@ -3762,6 +3805,22 @@ function paintDevices() {
       });
     });
   }
+  const osc1OnBtn = root.querySelector('#abl-osc1on');
+  if (osc1OnBtn) {
+    osc1OnBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'osc1on' };
+      midiStatus('Learn Analog Osc1 On — move a CC');
+      syncTransport();
+    });
+    osc1OnBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysOsc1On = !osc1On();
+      applyKeysOsc1On();
+    });
+  }
   const osc2w = root.querySelector('#abl-osc2-waves');
   if (osc2w) {
     osc2w.addEventListener('pointerdown', () => {
@@ -3793,6 +3852,22 @@ function paintDevices() {
       if (midiMapOn) return;
       keysOscSync = !keysOscSync;
       applyKeysOscSync();
+    });
+  }
+  const osc2OnBtn = root.querySelector('#abl-osc2on');
+  if (osc2OnBtn) {
+    osc2OnBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'osc2on' };
+      midiStatus('Learn Analog Osc2 On — move a CC');
+      syncTransport();
+    });
+    osc2OnBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysOsc2On = !osc2On();
+      applyKeysOsc2On();
     });
   }
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
@@ -4325,6 +4400,12 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'oscsync') {
     keysOscSync = vel >= 0.5;
     applyKeysOscSync();
+  } else if (target.type === 'osc1on') {
+    keysOsc1On = vel >= 0.5;
+    applyKeysOsc1On();
+  } else if (target.type === 'osc2on') {
+    keysOsc2On = vel >= 0.5;
+    applyKeysOsc2On();
   } else if (target.type === 'sub') {
     keysSub = vel;
     applyKeysSub();
