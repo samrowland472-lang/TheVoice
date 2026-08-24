@@ -41,6 +41,7 @@ let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysDet = 9;
 let keysOct = 0;
+let keysSemi = 0;
 let keysFenv = 0.75;
 let keysGlide = 0;
 let keysSub = 0.35;
@@ -418,8 +419,12 @@ function osc2Oct() {
   return Math.max(-2, Math.min(2, Math.round(Number(keysOct) || 0)));
 }
 
+function osc2Semi() {
+  return Math.max(-12, Math.min(12, Math.round(Number(keysSemi) || 0)));
+}
+
 function osc2Ratio() {
-  return Math.pow(2, osc2Oct()) * detuneRatio();
+  return Math.pow(2, osc2Oct() + osc2Semi() / 12) * detuneRatio();
 }
 
 function osc2Hz(freq) {
@@ -2615,6 +2620,7 @@ function paintDevices() {
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
+        ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
         ${knob('abl-uni', 'Uni', 0, 1, 0.01, keysUni)}
         ${knob('abl-drv', 'Drv', 0, 1, 0.01, keysDrv)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
@@ -2677,6 +2683,7 @@ function paintDevices() {
   const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
   const oct = root.querySelector('#abl-oct');
+  const semi = root.querySelector('#abl-semi');
   const uni = root.querySelector('#abl-uni');
   const drv = root.querySelector('#abl-drv');
   const cut = root.querySelector('#abl-cut');
@@ -2709,6 +2716,7 @@ function paintDevices() {
   bindAnalog(nse, 'nse', 'Nse', (v) => { keysNoise = v; applyKeysNoise(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
+  bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
   bindAnalog(uni, 'uni', 'Uni', (v) => { keysUni = v; applyKeysUni(); });
   bindAnalog(drv, 'drv', 'Drv', (v) => { keysDrv = v; applyKeysDrv(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
@@ -3093,6 +3101,11 @@ function applyMidiTarget(target, vel) {
     applyKeysDet();
     const el = document.getElementById('abl-oct');
     if (el) el.value = String(keysOct);
+  } else if (target.type === 'semi') {
+    keysSemi = Math.round(-12 + vel * 24);
+    applyKeysDet();
+    const el = document.getElementById('abl-semi');
+    if (el) el.value = String(keysSemi);
   } else if (target.type === 'uni') {
     keysUni = vel;
     applyKeysUni();
