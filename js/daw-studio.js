@@ -41,6 +41,7 @@ let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
 let keysOsc2 = 'pulse';
+let keysOscSync = false;
 let keysOct1 = 0;
 let keysSemi1 = 0;
 let keysDet1 = 0;
@@ -352,12 +353,95 @@ function pulseWave(ctx) {
 
 function shapeOsc2(osc, ctx) {
   if (!osc || !ctx) return;
+  if (oscSyncOn()) {
+    try { osc.setPeriodicWave(syncWave(ctx)); } catch (_) { osc.type = 'sawtooth'; }
+    return;
+  }
   const w = osc2Wave();
   if (w === 'pulse') {
     try { osc.setPeriodicWave(pulseWave(ctx)); } catch (_) { osc.type = 'square'; }
     return;
   }
   try { osc.type = w; } catch (_) { osc.type = 'square'; }
+}
+
+function oscSyncOn() {
+  return !!keysOscSync;
+}
+
+function oscSyncRatio() {
+  const r1 = Math.max(1e-6, osc1Ratio());
+  return Math.max(0.25, Math.min(16, osc2Ratio() / r1));
+}
+
+function slaveAt(phase, wave, duty) {
+  const p = phase - Math.floor(phase);
+  if (wave === 'sine') return Math.sin(2 * Math.PI * p);
+  if (wave === 'triangle') return 1 - 4 * Math.abs(p - 0.5);
+  if (wave === 'pulse') return p < duty ? 1 : -1;
+  return 2 * p - 1;
+}
+
+let syncCache = { key: '', wave: null, ctx: null };
+
+function syncWave(ctx) {
+  const w = osc2Wave();
+  const ratio = oscSyncRatio();
+  const d = w === 'pulse' ? pwDuty() : 0.5;
+  const key = `${w}:${Math.round(ratio * 2000)}:${Math.round(d * 100)}`;
+  if (syncCache.wave && syncCache.key === key && syncCache.ctx === ctx) return syncCache.wave;
+  const N = 1024;
+  const samples = new Float32Array(N);
+  let mean = 0;
+  for (let n = 0; n < N; n++) {
+    const s = slaveAt((ratio * n) / N, w, d);
+    samples[n] = s;
+    mean += s;
+  }
+  mean /= N;
+  const nHarms = 72;
+  const real = new Float32Array(nHarms);
+  const imag = new Float32Array(nHarms);
+  const twoN = 2 / N;
+  for (let k = 1; k < nHarms; k++) {
+    let re = 0;
+    let im = 0;
+    for (let n = 0; n < N; n++) {
+      const th = (2 * Math.PI * k * n) / N;
+      const x = samples[n] - mean;
+      re += x * Math.cos(th);
+      im += x * Math.sin(th);
+    }
+    real[k] = re * twoN;
+    imag[k] = im * twoN;
+  }
+  const wave = ctx.createPeriodicWave(real, imag);
+  syncCache = { key, wave, ctx };
+  return wave;
+}
+
+function syncOscSyncUi() {
+  const btn = document.getElementById('abl-oscsync');
+  if (!btn) return;
+  btn.classList.toggle('on', oscSyncOn());
+  btn.setAttribute('aria-pressed', oscSyncOn() ? 'true' : 'false');
+}
+
+function applyKeysOscSync() {
+  const a = audio();
+  if (a) {
+    const t = a.ctx.currentTime;
+    midiHeld.forEach((h) => retuneHeldOsc2(h, t, a.ctx, true));
+  }
+  syncOscSyncUi();
+}
+
+function retuneHeldOsc2(h, t, ctx, forceShape) {
+  if (!h || !h.o2) return;
+  try {
+    if (ctx && (forceShape || oscSyncOn())) shapeOsc2(h.o2, ctx);
+    if (h.freq) h.o2.frequency.setTargetAtTime(osc2PlayHz(h.freq), t, 0.02);
+  } catch (_) {}
 }
 
 function applyKeysOsc2() {
@@ -752,6 +836,14 @@ function osc2Hz(freq) {
   return Math.max(20, (freq || 440) * osc2Ratio());
 }
 
+function osc2FreqMul() {
+  return oscSyncOn() ? osc1Ratio() : osc2Ratio();
+}
+
+function osc2PlayHz(freq) {
+  return Math.max(20, (freq || 440) * osc2FreqMul() * bendRatio());
+}
+
 function bendAmt() {
   return Math.max(0, Math.min(12, Number(keysBend) || 0));
 }
@@ -781,7 +873,7 @@ function applyPitchBend() {
       }
       if (h.o2) {
         h.o2.frequency.cancelScheduledValues(t);
-        h.o2.frequency.setTargetAtTime(Math.max(20, osc2Hz(freq) * b), t, 0.008);
+        h.o2.frequency.setTargetAtTime(osc2PlayHz(freq), t, 0.008);
       }
       if (h.o3) {
         h.o3.frequency.cancelScheduledValues(t);
@@ -804,12 +896,7 @@ function applyKeysDet() {
   const a = audio();
   if (!a) return;
   const t = a.ctx.currentTime;
-  midiHeld.forEach((h) => {
-    if (!h || !h.o2 || !h.freq) return;
-    try {
-      h.o2.frequency.setTargetAtTime(osc2Hz(h.freq) * bendRatio(), t, 0.02);
-    } catch (_) {}
-  });
+  midiHeld.forEach((h) => retuneHeldOsc2(h, t, a.ctx));
 }
 
 function applyKeysOct1() {
@@ -818,10 +905,11 @@ function applyKeysOct1() {
   const t = a.ctx.currentTime;
   const b = bendRatio();
   midiHeld.forEach((h) => {
-    if (!h || !h.o1 || !h.freq) return;
+    if (!h || !h.freq) return;
     try {
-      h.o1.frequency.setTargetAtTime(osc1Hz(h.freq) * b, t, 0.02);
+      if (h.o1) h.o1.frequency.setTargetAtTime(osc1Hz(h.freq) * b, t, 0.02);
     } catch (_) {}
+    if (oscSyncOn()) retuneHeldOsc2(h, t, a.ctx);
   });
 }
 
@@ -847,7 +935,7 @@ function applyKeysFenv() {
 }
 
 function glideOsc(o1, o2, freq, t, o3) {
-  const r = osc2Ratio();
+  const r = osc2FreqMul();
   const r1 = osc1Ratio();
   const b = bendRatio();
   const g = Math.max(0, keysGlide);
@@ -3018,6 +3106,7 @@ function paintDevices() {
           <button type="button" data-osc2-wave="triangle"${keysOsc2 === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'triangle'}">Tri</button>
           <button type="button" data-osc2-wave="sine"${keysOsc2 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'sine'}">Sin</button>
           <button type="button" data-osc2-wave="pulse"${keysOsc2 === 'pulse' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'pulse'}">Pls</button>
+          <button type="button" id="abl-oscsync" class="${keysOscSync ? 'on' : ''}" aria-pressed="${keysOscSync}">Sync</button>
         </div>
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
@@ -3166,6 +3255,22 @@ function paintDevices() {
         keysOsc2 = btn.dataset.osc2Wave;
         applyKeysOsc2();
       });
+    });
+  }
+  const oscSyncBtn = root.querySelector('#abl-oscsync');
+  if (oscSyncBtn) {
+    oscSyncBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'oscsync' };
+      midiStatus('Learn Analog Osc Sync — move a CC');
+      syncTransport();
+    });
+    oscSyncBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysOscSync = !keysOscSync;
+      applyKeysOscSync();
     });
   }
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
@@ -3625,6 +3730,9 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'osc2') {
     keysOsc2 = osc2WaveFromVel(vel);
     applyKeysOsc2();
+  } else if (target.type === 'oscsync') {
+    keysOscSync = vel >= 0.5;
+    applyKeysOscSync();
   } else if (target.type === 'sub') {
     keysSub = vel;
     applyKeysSub();
@@ -3914,7 +4022,7 @@ function retuneVoice(h, pitch, vel) {
   const { up, dn } = uniRatios();
   const b = bendRatio();
   glideTo(h.o1, osc1Hz(from) * b, osc1Hz(freq) * b);
-  glideTo(h.o2, osc2Hz(from) * b, osc2Hz(freq) * b);
+  glideTo(h.o2, osc2PlayHz(from), osc2PlayHz(freq));
   glideTo(h.o3, from / 2 * b, freq / 2 * b);
   glideTo(h.oUp, from * up * b, freq * up * b);
   glideTo(h.oDn, from * dn * b, freq * dn * b);
