@@ -47,6 +47,7 @@ let keysNoise = 0.12;
 let keysLfoRate = 5;
 let keysLfoAmt = 0.28;
 let keysVib = 0.18;
+let keysTrem = 0.22;
 let lastKeyFreq = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -190,6 +191,11 @@ function vibDepthHz(freq) {
   return Math.max(0, (freq || 440) * 0.035 * amt);
 }
 
+function tremDepth() {
+  if (fx.on.analog === false) return 0;
+  return Math.max(0, Math.min(1, keysTrem)) * 0.45;
+}
+
 function startLfo(ctx, filter, cut, freq, oscs, t, stopAt) {
   const lfo = ctx.createOscillator();
   lfo.type = 'sine';
@@ -204,9 +210,15 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt) {
   (oscs || []).forEach((o) => {
     if (o && o.frequency) gVib.connect(o.frequency);
   });
+  const gTrem = ctx.createGain();
+  gTrem.gain.value = 1;
+  const gTremAmt = ctx.createGain();
+  gTremAmt.gain.value = tremDepth();
+  lfo.connect(gTremAmt);
+  gTremAmt.connect(gTrem.gain);
   lfo.start(t);
   if (stopAt != null) lfo.stop(stopAt);
-  return { lfo, gLfo, gVib };
+  return { lfo, gLfo, gVib, gTrem, gTremAmt };
 }
 
 function applyKeysLfo() {
@@ -220,6 +232,7 @@ function applyKeysLfo() {
       h.lfo.frequency.setTargetAtTime(rate, t, 0.02);
       if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(h.cut || keysCutoff), t, 0.02);
       if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(h.freq), t, 0.02);
+      if (h.gTremAmt) h.gTremAmt.gain.setTargetAtTime(tremDepth(), t, 0.02);
     } catch (_) {}
   });
 }
@@ -822,8 +835,9 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   const nse = startNoise(ctx, f, t, t + dur + keysRel + 0.05);
-  startLfo(ctx, f, cut, freq, [o1, o2, o3], t, t + dur + keysRel + 0.05);
-  f.connect(g);
+  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3], t, t + dur + keysRel + 0.05);
+  f.connect(lfoN.gTrem);
+  lfoN.gTrem.connect(g);
   o1.start(t); o2.start(t); o3.start(t);
   o1.stop(t + dur + keysRel + 0.05);
   o2.stop(t + dur + keysRel + 0.05);
@@ -2418,6 +2432,7 @@ function paintDevices() {
         ${knob('abl-rate', 'Rate', 0.1, 18, 0.1, keysLfoRate)}
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         ${knob('abl-vib', 'Vib', 0, 1, 0.01, keysVib)}
+        ${knob('abl-trm', 'Trm', 0, 1, 0.01, keysTrem)}
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
         ${knob('abl-dec', 'Dec', 0.01, 1.2, 0.01, keysDec)}
@@ -2465,6 +2480,7 @@ function paintDevices() {
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const vib = root.querySelector('#abl-vib');
+  const trm = root.querySelector('#abl-trm');
   const gli = root.querySelector('#abl-gli');
   const atk = root.querySelector('#abl-atk');
   const dec = root.querySelector('#abl-dec');
@@ -2493,6 +2509,7 @@ function paintDevices() {
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   bindAnalog(amt, 'lfoa', 'Amt', (v) => { keysLfoAmt = v; applyKeysLfo(); });
   bindAnalog(vib, 'vib', 'Vib', (v) => { keysVib = v; applyKeysLfo(); });
+  bindAnalog(trm, 'trm', 'Trm', (v) => { keysTrem = v; applyKeysLfo(); });
   bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
   bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
@@ -2839,6 +2856,11 @@ function applyMidiTarget(target, vel) {
     applyKeysLfo();
     const el = document.getElementById('abl-vib');
     if (el) el.value = String(keysVib);
+  } else if (target.type === 'trm') {
+    keysTrem = vel;
+    applyKeysLfo();
+    const el = document.getElementById('abl-trm');
+    if (el) el.value = String(keysTrem);
   } else if (target.type === 'gli') {
     keysGlide = vel * 0.8;
     const el = document.getElementById('abl-gli');
@@ -2951,10 +2973,10 @@ function studioNoteOn(pitch, vel) {
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   const nse = startNoise(a.ctx, f, t);
   const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3], t);
-  f.connect(g); g.connect(mix.keys.input);
+  f.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut });
+  midiHeld.set(pitch, { o1, o2, o3, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut });
 }
 
 function studioNoteOff(pitch) {
