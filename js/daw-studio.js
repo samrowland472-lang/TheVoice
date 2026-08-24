@@ -68,6 +68,7 @@ let keysFRel = 0;
 let keysPEnv = 0;
 let keysPAtk = 0.01;
 let keysPDec = 0.22;
+let keysPSus = 0;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -1424,6 +1425,10 @@ function pDec() {
   return Math.max(0, Math.min(1.5, Number(keysPDec) || 0.22));
 }
 
+function pSus() {
+  return Math.max(0, Math.min(1, Number(keysPSus) || 0));
+}
+
 function pEnvPeakCents() {
   return pEnvAmt() * 100;
 }
@@ -1431,7 +1436,7 @@ function pEnvPeakCents() {
 function pEnvSustainCents() {
   const peak = pEnvPeakCents();
   if (pDec() <= 0.008) return peak;
-  return 0;
+  return peak * pSus();
 }
 
 function schedulePitchEnv(param, t, dur) {
@@ -3709,6 +3714,7 @@ function paintDevices() {
         ${knob('abl-penv', 'PEnv', -24, 24, 1, keysPEnv)}
         ${knob('abl-patk', 'PAtk', 0.005, 1.5, 0.005, keysPAtk)}
         ${knob('abl-pdec', 'PDec', 0, 1.5, 0.01, keysPDec)}
+        ${knob('abl-psus', 'PSus', 0, 1, 0.01, keysPSus)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         ${knob('abl-ldly', 'Dly', 0, 2, 0.01, keysLfoDelay)}
@@ -3800,6 +3806,7 @@ function paintDevices() {
   const penv = root.querySelector('#abl-penv');
   const patk = root.querySelector('#abl-patk');
   const pdec = root.querySelector('#abl-pdec');
+  const psus = root.querySelector('#abl-psus');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const ldly = root.querySelector('#abl-ldly');
@@ -4010,6 +4017,7 @@ function paintDevices() {
   bindAnalog(penv, 'penv', 'PEnv', (v) => { keysPEnv = v; applyKeysPenv(); });
   bindAnalog(patk, 'patk', 'PAtk', (v) => { keysPAtk = v; });
   bindAnalog(pdec, 'pdec', 'PDec', (v) => { keysPDec = v; applyKeysPenv(); });
+  bindAnalog(psus, 'psus', 'PSus', (v) => { keysPSus = v; applyKeysPenv(); });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -4610,6 +4618,11 @@ function applyMidiTarget(target, vel) {
     applyKeysPenv();
     const el = document.getElementById('abl-pdec');
     if (el) el.value = String(keysPDec);
+  } else if (target.type === 'psus') {
+    keysPSus = vel;
+    applyKeysPenv();
+    const el = document.getElementById('abl-psus');
+    if (el) el.value = String(keysPSus);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
