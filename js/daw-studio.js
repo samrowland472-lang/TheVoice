@@ -72,6 +72,7 @@ let keysLfoFade = 0;
 let keysLfoOff = 0;
 let keysVib = 0.18;
 let keysTrem = 0.22;
+let keysLfoPwm = 0;
 let keysLfoWave = 'sine';
 let keysLfoSync = false;
 let keysLfoRtg = true;
@@ -508,7 +509,7 @@ function shapeOsc2(osc, ctx) {
   }
   const w = osc2Wave();
   if (w === 'pulse') {
-    try { osc.setPeriodicWave(pulseWave(ctx)); } catch (_) { osc.type = 'square'; }
+    try { osc.type = 'sawtooth'; } catch (_) { osc.type = 'square'; }
     return;
   }
   try { osc.type = w; } catch (_) { osc.type = 'square'; }
@@ -580,7 +581,10 @@ function applyKeysOscSync() {
   const a = audio();
   if (a) {
     const t = a.ctx.currentTime;
-    midiHeld.forEach((h) => retuneHeldOsc2(h, t, a.ctx, true));
+    midiHeld.forEach((h) => {
+      retuneHeldOsc2(h, t, a.ctx, true);
+      applyHeldPwm(h, t);
+    });
   }
   syncOscSyncUi();
 }
@@ -596,21 +600,83 @@ function retuneHeldOsc2(h, t, ctx, forceShape) {
 function applyKeysOsc2() {
   const a = audio();
   if (a) {
+    const t = a.ctx.currentTime;
     midiHeld.forEach((h) => {
       if (!h || !h.o2) return;
       try { shapeOsc2(h.o2, a.ctx); } catch (_) {}
+      applyHeldPwm(h, t);
     });
   }
   syncOsc2WaveUi();
 }
 
+function pwOffset() {
+  if (osc2Wave() !== 'pulse' || oscSyncOn()) return 0;
+  return (pwDuty() - 0.5) * 1.8;
+}
+
+function pwmDepth() {
+  if (fx.on.analog === false) return 0;
+  if (osc2Wave() !== 'pulse' || oscSyncOn()) return 0;
+  return Math.max(0, Math.min(1, Number(keysLfoPwm) || 0)) * 0.45;
+}
+
+let pwmStepCurve = null;
+let pwmIdentCurve = null;
+
+function pwmShaperCurve(step) {
+  if (step) {
+    if (pwmStepCurve) return pwmStepCurve;
+    const n = 255;
+    const c = new Float32Array(n);
+    for (let i = 0; i < n; i++) c[i] = i / (n - 1) < 0.5 ? -1 : 1;
+    pwmStepCurve = c;
+    return c;
+  }
+  if (pwmIdentCurve) return pwmIdentCurve;
+  const n = 255;
+  const c = new Float32Array(n);
+  for (let i = 0; i < n; i++) c[i] = (i / (n - 1)) * 2 - 1;
+  pwmIdentCurve = c;
+  return c;
+}
+
+function startPwm(ctx, o2, dest) {
+  const sum = ctx.createGain();
+  const dc = ctx.createConstantSource();
+  dc.offset.value = pwOffset();
+  const gPwm = ctx.createGain();
+  gPwm.gain.value = 0;
+  const shaper = ctx.createWaveShaper();
+  shaper.curve = pwmShaperCurve(osc2Wave() === 'pulse' && !oscSyncOn());
+  try { shaper.oversample = '4x'; } catch (_) {}
+  if (o2) o2.connect(sum);
+  dc.connect(sum);
+  gPwm.connect(sum);
+  sum.connect(shaper);
+  shaper.connect(dest);
+  try { dc.start(); } catch (_) {}
+  return { dc, gPwm, shaper };
+}
+
+function applyHeldPwm(h, t) {
+  if (!h) return;
+  try {
+    if (h.pwDc) h.pwDc.offset.setTargetAtTime(pwOffset(), t, 0.02);
+    if (h.pwmSh) h.pwmSh.curve = pwmShaperCurve(osc2Wave() === 'pulse' && !oscSyncOn());
+    if (h.gPwm) h.gPwm.gain.setTargetAtTime(pwmDepth(), t, 0.02);
+  } catch (_) {}
+}
+
 function applyKeysPw() {
-  if (osc2Wave() !== 'pulse') return;
   const a = audio();
   if (!a) return;
+  const t = a.ctx.currentTime;
   midiHeld.forEach((h) => {
-    if (!h || !h.o2) return;
-    try { shapeOsc2(h.o2, a.ctx); } catch (_) {}
+    applyHeldPwm(h, t);
+    if (oscSyncOn() && h && h.o2) {
+      try { shapeOsc2(h.o2, a.ctx); } catch (_) {}
+    }
   });
 }
 
@@ -942,7 +1008,7 @@ function syncLfoWaveUi() {
   });
 }
 
-function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
+function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2, gPwm) {
   const own = lfoRtg();
   const lfo = own ? ctx.createOscillator() : ensureSharedLfo(ctx, t);
   if (own) {
@@ -959,7 +1025,9 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   const filtD = lfoDepth(cut);
   const vibD = vibDepthHz(freq);
   const tremD = tremDepth();
+  const pwmD = pwmDepth();
   const arm = (g, depth) => {
+    if (!g) return;
     if (delay > 0.008 || fade > 0.008) {
       g.gain.setValueAtTime(0, t);
       if (fade > 0.008) {
@@ -975,6 +1043,7 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   arm(gLfo, filtD);
   arm(gVib, vibD);
   arm(gTremAmt, tremD);
+  arm(gPwm, pwmD);
   lfo.connect(gLfo);
   gLfo.connect(filter.frequency);
   if (filter2 && filter2.frequency) gLfo.connect(filter2.frequency);
@@ -984,11 +1053,12 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   });
   lfo.connect(gTremAmt);
   gTremAmt.connect(gTrem.gain);
+  if (gPwm) lfo.connect(gPwm);
   if (own) {
     lfo.start(lfoStartAt(t));
     if (stopAt != null) lfo.stop(stopAt);
   }
-  return { lfo, gLfo, gVib, gTrem, gTremAmt, shared: !own };
+  return { lfo, gLfo, gVib, gTrem, gTremAmt, gPwm, shared: !own };
 }
 
 function applyKeysLfo() {
@@ -1010,6 +1080,7 @@ function applyKeysLfo() {
       if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(h.cut || keysCutoff), t, 0.02);
       if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(h.freq), t, 0.02);
       if (h.gTremAmt) h.gTremAmt.gain.setTargetAtTime(tremDepth(), t, 0.02);
+      if (h.gPwm) h.gPwm.gain.setTargetAtTime(pwmDepth(), t, 0.02);
     } catch (_) {}
   });
   syncLfoRateUi();
@@ -1797,20 +1868,23 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   gSaw.gain.value = saw;
   gSqr.gain.value = sqr;
   gSub.gain.value = subMix();
-  o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
+  o1.connect(gSaw);
+  const pwm = startPwm(ctx, o2, gSqr);
+  o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   startRing(ctx, o1, o2, f);
   startFm(ctx, o1, o2, freq);
   const tail = voiceTail();
   const uni = startUnison(ctx, f, freq, t, t + dur + tail, fromF);
   const nse = startNoise(ctx, f, t, t + dur + tail);
-  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2);
+  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2, pwm.gPwm);
   startDrift(ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t, t + dur + tail);
   const sh = startDrive(ctx);
   f2.connect(sh);
   sh.connect(lfoN.gTrem);
   lfoN.gTrem.connect(g);
   o1.start(t); o2.start(t); o3.start(t);
+  try { pwm.dc.stop(t + dur + tail); } catch (_) {}
   o1.stop(t + dur + tail);
   o2.stop(t + dur + tail);
   o3.stop(t + dur + tail);
@@ -3462,6 +3536,7 @@ function paintDevices() {
         </div>
         ${knob('abl-vib', 'Vib', 0, 1, 0.01, keysVib)}
         ${knob('abl-trm', 'Trm', 0, 1, 0.01, keysTrem)}
+        ${knob('abl-pwm', 'PWM', 0, 1, 0.01, keysLfoPwm)}
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
         ${knob('abl-voices', 'Vce', 1, 16, 1, keysVoices)}
         <div class="abl-lfo-waves">
@@ -3538,6 +3613,7 @@ function paintDevices() {
   const loff = root.querySelector('#abl-loff');
   const vib = root.querySelector('#abl-vib');
   const trm = root.querySelector('#abl-trm');
+  const pwm = root.querySelector('#abl-pwm');
   const gli = root.querySelector('#abl-gli');
   const voices = root.querySelector('#abl-voices');
   const bnd = root.querySelector('#abl-bnd');
@@ -3759,6 +3835,7 @@ function paintDevices() {
   }
   bindAnalog(vib, 'vib', 'Vib', (v) => { keysVib = v; applyKeysLfo(); });
   bindAnalog(trm, 'trm', 'Trm', (v) => { keysTrem = v; applyKeysLfo(); });
+  bindAnalog(pwm, 'pwm', 'PWM', (v) => { keysLfoPwm = v; applyKeysLfo(); });
   bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
   bindAnalog(voices, 'voices', 'Vce', (v) => { keysVoices = Math.round(v); applyKeysVoices(); });
   const monoBtn = root.querySelector('#abl-mono');
@@ -4296,6 +4373,11 @@ function applyMidiTarget(target, vel) {
     applyKeysLfo();
     const el = document.getElementById('abl-trm');
     if (el) el.value = String(keysTrem);
+  } else if (target.type === 'pwm') {
+    keysLfoPwm = vel;
+    applyKeysLfo();
+    const el = document.getElementById('abl-pwm');
+    if (el) el.value = String(keysLfoPwm);
   } else if (target.type === 'gli') {
     keysGlide = vel * 0.8;
     const el = document.getElementById('abl-gli');
@@ -4559,19 +4641,21 @@ function studioNoteOn(pitch, vel) {
   gSaw.gain.value = saw;
   gSqr.gain.value = sqr;
   gSub.gain.value = subMix();
-  o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
+  o1.connect(gSaw);
+  const pwm = startPwm(a.ctx, o2, gSqr);
+  o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   const ring = startRing(a.ctx, o1, o2, f);
   const fm = startFm(a.ctx, o1, o2, freq);
   const uni = startUnison(a.ctx, f, freq, t, null, fromF);
   const nse = startNoise(a.ctx, f, t);
-  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2);
+  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2, pwm.gPwm);
   const drift = startDrift(a.ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t);
   const sh = startDrive(a.ctx);
   f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gFm: fm.gFm, gDrift: drift.gDrift, drift: drift.src, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, gPwm: pwm.gPwm, pwDc: pwm.dc, pwmSh: pwm.shaper, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gFm: fm.gFm, gDrift: drift.gDrift, drift: drift.src, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
 }
 
 function studioNoteOff(pitch) {
@@ -4607,6 +4691,7 @@ function studioNoteOff(pitch) {
     if (h.oDn) h.oDn.stop(t + tail);
     if (h.nse) h.nse.stop(t + tail);
     if (h.drift) h.drift.stop(t + tail);
+    if (h.pwDc) h.pwDc.stop(t + tail);
     if (h.lfo && !h.lfoShared) h.lfo.stop(t + tail);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
