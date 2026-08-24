@@ -42,6 +42,7 @@ let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
 let keysOct1 = 0;
 let keysSemi1 = 0;
+let keysDet1 = 0;
 let keysDet = 9;
 let keysOct = 0;
 let keysSemi = 0;
@@ -683,8 +684,12 @@ function osc1Semi() {
   return Math.max(-12, Math.min(12, Math.round(Number(keysSemi1) || 0)));
 }
 
+function osc1Det() {
+  return Math.max(-50, Math.min(50, Number(keysDet1) || 0));
+}
+
 function osc1Ratio() {
-  return Math.pow(2, osc1Oct() + osc1Semi() / 12);
+  return Math.pow(2, osc1Oct() + osc1Semi() / 12 + osc1Det() / 1200);
 }
 
 function osc1Hz(freq) {
@@ -2961,6 +2966,7 @@ function paintDevices() {
         </div>
         ${knob('abl-oct1', 'O1', -2, 2, 1, keysOct1)}
         ${knob('abl-semi1', 'S1', -12, 12, 1, keysSemi1)}
+        ${knob('abl-det1', 'D1', -50, 50, 1, keysDet1)}
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         <div class="abl-lfo-waves" id="abl-nse-cols">
@@ -3043,6 +3049,7 @@ function paintDevices() {
   const osc = root.querySelector('#abl-osc');
   const oct1 = root.querySelector('#abl-oct1');
   const semi1 = root.querySelector('#abl-semi1');
+  const det1 = root.querySelector('#abl-det1');
   const sub = root.querySelector('#abl-sub');
   const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
@@ -3119,6 +3126,7 @@ function paintDevices() {
   }
   bindAnalog(oct1, 'oct1', 'O1', (v) => { keysOct1 = Math.round(v); applyKeysOct1(); });
   bindAnalog(semi1, 'semi1', 'S1', (v) => { keysSemi1 = Math.round(v); applyKeysOct1(); });
+  bindAnalog(det1, 'det1', 'D1', (v) => { keysDet1 = v; applyKeysOct1(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
@@ -3574,6 +3582,11 @@ function applyMidiTarget(target, vel) {
     applyKeysOct1();
     const el = document.getElementById('abl-semi1');
     if (el) el.value = String(keysSemi1);
+  } else if (target.type === 'det1') {
+    keysDet1 = -50 + vel * 100;
+    applyKeysOct1();
+    const el = document.getElementById('abl-det1');
+    if (el) el.value = String(keysDet1);
   } else if (target.type === 'det') {
     keysDet = -50 + vel * 100;
     applyKeysDet();
