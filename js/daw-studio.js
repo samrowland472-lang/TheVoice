@@ -57,6 +57,7 @@ let keysFenv = 0.75;
 let keysFenvInv = false;
 let keysFAtk = 0.09;
 let keysFDec = 0;
+let keysFSus = 0;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -970,9 +971,15 @@ function fDec() {
   return Math.max(0, Math.min(1.5, Number(keysFDec) || 0));
 }
 
+function fSus() {
+  return Math.max(0, Math.min(1, Number(keysFSus) || 0));
+}
+
 function filterEnvSustain(cut) {
   const c = Math.max(80, cut);
-  return fDec() > 0.008 ? c : filterEnvEnd(c);
+  const peak = filterEnvEnd(c);
+  if (fDec() <= 0.008) return peak;
+  return Math.max(80, c + (peak - c) * fSus());
 }
 
 function scheduleFiltEnv(param, cut, t) {
@@ -981,10 +988,11 @@ function scheduleFiltEnv(param, cut, t) {
   const peak = Math.max(80, filterEnvEnd(cut));
   const atk = fAtk();
   const dec = fDec();
+  const sus = filterEnvSustain(cut);
   param.cancelScheduledValues(t);
   param.setValueAtTime(start, t);
   param.exponentialRampToValueAtTime(peak, t + atk);
-  if (dec > 0.008) param.exponentialRampToValueAtTime(start, t + atk + dec);
+  if (dec > 0.008) param.exponentialRampToValueAtTime(sus, t + atk + dec);
 }
 
 function syncFenvInvUi() {
@@ -3217,6 +3225,7 @@ function paintDevices() {
         </div>
         ${knob('abl-fatk', 'FAtk', 0.01, 1.5, 0.01, keysFAtk)}
         ${knob('abl-fdec', 'FDec', 0, 1.5, 0.01, keysFDec)}
+        ${knob('abl-fsus', 'FSus', 0, 1, 0.01, keysFSus)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
@@ -3292,6 +3301,7 @@ function paintDevices() {
   const fenv = root.querySelector('#abl-fenv');
   const fatk = root.querySelector('#abl-fatk');
   const fdec = root.querySelector('#abl-fdec');
+  const fsus = root.querySelector('#abl-fsus');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const vib = root.querySelector('#abl-vib');
@@ -3456,6 +3466,7 @@ function paintDevices() {
   }
   bindAnalog(fatk, 'fatk', 'FAtk', (v) => { keysFAtk = v; });
   bindAnalog(fdec, 'fdec', 'FDec', (v) => { keysFDec = v; });
+  bindAnalog(fsus, 'fsus', 'FSus', (v) => { keysFSus = v; applyKeysFenv(); });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -3970,6 +3981,11 @@ function applyMidiTarget(target, vel) {
     keysFDec = vel * 1.5;
     const el = document.getElementById('abl-fdec');
     if (el) el.value = String(keysFDec);
+  } else if (target.type === 'fsus') {
+    keysFSus = vel;
+    applyKeysFenv();
+    const el = document.getElementById('abl-fsus');
+    if (el) el.value = String(keysFSus);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
