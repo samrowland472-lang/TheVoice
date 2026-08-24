@@ -2251,12 +2251,25 @@ function paintDevices() {
   const dec = root.querySelector('#abl-dec');
   const sus = root.querySelector('#abl-sus');
   const rel = root.querySelector('#abl-rel');
-  if (cut) cut.addEventListener('input', () => { keysCutoff = parseFloat(cut.value); applyKeysFilter(); });
-  if (res) res.addEventListener('input', () => { keysRes = parseFloat(res.value); applyKeysFilter(); });
-  if (atk) atk.addEventListener('input', () => { keysAtk = parseFloat(atk.value); });
-  if (dec) dec.addEventListener('input', () => { keysDec = parseFloat(dec.value); });
-  if (sus) sus.addEventListener('input', () => { keysSus = parseFloat(sus.value); applyKeysEnv(); });
-  if (rel) rel.addEventListener('input', () => { keysRel = parseFloat(rel.value); });
+  const bindAnalog = (el, type, label, apply) => {
+    if (!el) return;
+    el.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type };
+      midiStatus(`Learn Analog ${label} — move a CC`);
+      syncTransport();
+    });
+    el.addEventListener('input', () => {
+      if (midiMapOn) return;
+      apply(parseFloat(el.value));
+    });
+  };
+  bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
+  bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
+  bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
+  bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
+  bindAnalog(sus, 'sus', 'Sus', (v) => { keysSus = v; applyKeysEnv(); });
+  bindAnalog(rel, 'rel', 'Rel', (v) => { keysRel = v; });
   const bindFx = (id, key, parse) => {
     const el = root.querySelector(id);
     if (!el) return;
@@ -2542,7 +2555,32 @@ function applyMidiTarget(target, vel) {
     const el = document.querySelector(`[data-send="${target.id}"]`);
     if (el) el.value = String(m.sendVal);
   } else if (target.type === 'cut') {
-    keysCutoff = 80 + vel * 8000;
+    keysCutoff = 200 + vel * 7800;
+    applyKeysFilter();
+    const el = document.getElementById('abl-cut');
+    if (el) el.value = String(keysCutoff);
+  } else if (target.type === 'res') {
+    keysRes = 0.2 + vel * 17.8;
+    applyKeysFilter();
+    const el = document.getElementById('abl-res');
+    if (el) el.value = String(keysRes);
+  } else if (target.type === 'atk') {
+    keysAtk = 0.005 + vel * 0.795;
+    const el = document.getElementById('abl-atk');
+    if (el) el.value = String(keysAtk);
+  } else if (target.type === 'dec') {
+    keysDec = 0.01 + vel * 1.19;
+    const el = document.getElementById('abl-dec');
+    if (el) el.value = String(keysDec);
+  } else if (target.type === 'sus') {
+    keysSus = 0.05 + vel * 0.95;
+    applyKeysEnv();
+    const el = document.getElementById('abl-sus');
+    if (el) el.value = String(keysSus);
+  } else if (target.type === 'rel') {
+    keysRel = 0.05 + vel * 1.15;
+    const el = document.getElementById('abl-rel');
+    if (el) el.value = String(keysRel);
   }
 }
 
