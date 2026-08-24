@@ -43,6 +43,8 @@ let keysOsc1 = 'sawtooth';
 let keysOsc2 = 'pulse';
 let keysOsc1On = true;
 let keysOsc2On = true;
+let keysOsc1Lvl = 1;
+let keysOsc2Lvl = 1;
 let keysOscSync = false;
 let keysRing = 0;
 let keysFm = 0;
@@ -297,11 +299,23 @@ function osc2On() {
   return keysOsc2On !== false;
 }
 
+function osc1Lvl() {
+  const n = Number(keysOsc1Lvl);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(0, Math.min(1, n));
+}
+
+function osc2Lvl() {
+  const n = Number(keysOsc2Lvl);
+  if (!Number.isFinite(n)) return 1;
+  return Math.max(0, Math.min(1, n));
+}
+
 function oscMixGains() {
   const sqr = Math.max(0, Math.min(1, Number(keysOsc) || 0));
   return {
-    saw: osc1On() ? 1 - sqr : 0,
-    sqr: osc2On() ? sqr : 0,
+    saw: osc1On() ? (1 - sqr) * osc1Lvl() : 0,
+    sqr: osc2On() ? sqr * osc2Lvl() : 0,
   };
 }
 
@@ -3618,6 +3632,7 @@ function paintDevices() {
           <button type="button" data-osc1-wave="sine"${keysOsc1 === 'sine' ? ' class="on"' : ''} aria-pressed="${keysOsc1 === 'sine'}">Sin</button>
           <button type="button" id="abl-osc1on" class="${keysOsc1On ? 'on' : ''}" aria-pressed="${keysOsc1On}">On</button>
         </div>
+        ${knob('abl-lvl1', 'L1', 0, 1, 0.01, keysOsc1Lvl)}
         ${knob('abl-oct1', 'O1', -2, 2, 1, keysOct1)}
         ${knob('abl-semi1', 'S1', -12, 12, 1, keysSemi1)}
         ${knob('abl-det1', 'D1', -50, 50, 1, keysDet1)}
@@ -3636,6 +3651,7 @@ function paintDevices() {
           <button type="button" id="abl-oscsync" class="${keysOscSync ? 'on' : ''}" aria-pressed="${keysOscSync}">Sync</button>
           <button type="button" id="abl-osc2on" class="${keysOsc2On ? 'on' : ''}" aria-pressed="${keysOsc2On}">On</button>
         </div>
+        ${knob('abl-lvl2', 'L2', 0, 1, 0.01, keysOsc2Lvl)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
         ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
@@ -3731,6 +3747,8 @@ function paintDevices() {
     </article>
   `;
   const osc = root.querySelector('#abl-osc');
+  const lvl1 = root.querySelector('#abl-lvl1');
+  const lvl2 = root.querySelector('#abl-lvl2');
   const oct1 = root.querySelector('#abl-oct1');
   const semi1 = root.querySelector('#abl-semi1');
   const det1 = root.querySelector('#abl-det1');
@@ -3788,6 +3806,8 @@ function paintDevices() {
     });
   };
   bindAnalog(osc, 'osc', 'Sqr', (v) => { keysOsc = v; applyKeysOsc(); });
+  bindAnalog(lvl1, 'lvl1', 'L1', (v) => { keysOsc1Lvl = v; applyKeysOsc(); });
+  bindAnalog(lvl2, 'lvl2', 'L2', (v) => { keysOsc2Lvl = v; applyKeysOsc(); });
   const osc1w = root.querySelector('#abl-osc1-waves');
   if (osc1w) {
     osc1w.addEventListener('pointerdown', () => {
@@ -4406,6 +4426,16 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'osc2on') {
     keysOsc2On = vel >= 0.5;
     applyKeysOsc2On();
+  } else if (target.type === 'lvl1') {
+    keysOsc1Lvl = vel;
+    applyKeysOsc();
+    const el = document.getElementById('abl-lvl1');
+    if (el) el.value = String(keysOsc1Lvl);
+  } else if (target.type === 'lvl2') {
+    keysOsc2Lvl = vel;
+    applyKeysOsc();
+    const el = document.getElementById('abl-lvl2');
+    if (el) el.value = String(keysOsc2Lvl);
   } else if (target.type === 'sub') {
     keysSub = vel;
     applyKeysSub();
