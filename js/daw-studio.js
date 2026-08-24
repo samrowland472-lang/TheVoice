@@ -42,6 +42,7 @@ let keysOsc = 0.5;
 let keysDet = 9;
 let keysOct = 0;
 let keysSemi = 0;
+let keysPw = 0.5;
 let keysFenv = 0.75;
 let keysGlide = 0;
 let keysSub = 0.35;
@@ -159,6 +160,41 @@ function applyKeysOsc() {
       h.gSaw.gain.setTargetAtTime(saw, t, 0.02);
       h.gSqr.gain.setTargetAtTime(sqr, t, 0.02);
     } catch (_) {}
+  });
+}
+
+function pwDuty() {
+  return Math.max(0.05, Math.min(0.95, Number(keysPw) || 0.5));
+}
+
+let pwCache = { d: -1, wave: null, ctx: null };
+
+function pulseWave(ctx) {
+  const d = pwDuty();
+  const key = Math.round(d * 100);
+  if (pwCache.wave && pwCache.d === key && pwCache.ctx === ctx) return pwCache.wave;
+  const n = 64;
+  const real = new Float32Array(n);
+  const imag = new Float32Array(n);
+  for (let k = 1; k < n; k++) {
+    imag[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * d);
+  }
+  const wave = ctx.createPeriodicWave(real, imag);
+  pwCache = { d: key, wave, ctx };
+  return wave;
+}
+
+function shapeOsc2(osc, ctx) {
+  if (!osc || !ctx) return;
+  try { osc.setPeriodicWave(pulseWave(ctx)); } catch (_) { osc.type = 'square'; }
+}
+
+function applyKeysPw() {
+  const a = audio();
+  if (!a) return;
+  midiHeld.forEach((h) => {
+    if (!h || !h.o2) return;
+    try { shapeOsc2(h.o2, a.ctx); } catch (_) {}
   });
 }
 
@@ -1004,7 +1040,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const o2 = ctx.createOscillator();
   const o3 = ctx.createOscillator();
   o1.type = 'sawtooth';
-  o2.type = 'square';
+  shapeOsc2(o2, ctx);
   o3.type = 'sine';
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
@@ -2621,6 +2657,7 @@ function paintDevices() {
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
         ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
+        ${knob('abl-pw', 'PW', 0.05, 0.95, 0.01, keysPw)}
         ${knob('abl-uni', 'Uni', 0, 1, 0.01, keysUni)}
         ${knob('abl-drv', 'Drv', 0, 1, 0.01, keysDrv)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
@@ -2684,6 +2721,7 @@ function paintDevices() {
   const det = root.querySelector('#abl-det');
   const oct = root.querySelector('#abl-oct');
   const semi = root.querySelector('#abl-semi');
+  const pw = root.querySelector('#abl-pw');
   const uni = root.querySelector('#abl-uni');
   const drv = root.querySelector('#abl-drv');
   const cut = root.querySelector('#abl-cut');
@@ -2717,6 +2755,7 @@ function paintDevices() {
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
+  bindAnalog(pw, 'pw', 'PW', (v) => { keysPw = v; applyKeysPw(); });
   bindAnalog(uni, 'uni', 'Uni', (v) => { keysUni = v; applyKeysUni(); });
   bindAnalog(drv, 'drv', 'Drv', (v) => { keysDrv = v; applyKeysDrv(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
@@ -3106,6 +3145,11 @@ function applyMidiTarget(target, vel) {
     applyKeysDet();
     const el = document.getElementById('abl-semi');
     if (el) el.value = String(keysSemi);
+  } else if (target.type === 'pw') {
+    keysPw = 0.05 + vel * 0.9;
+    applyKeysPw();
+    const el = document.getElementById('abl-pw');
+    if (el) el.value = String(keysPw);
   } else if (target.type === 'uni') {
     keysUni = vel;
     applyKeysUni();
@@ -3247,7 +3291,7 @@ function studioNoteOn(pitch, vel) {
   const o2 = a.ctx.createOscillator();
   const o3 = a.ctx.createOscillator();
   o1.type = 'sawtooth';
-  o2.type = 'square';
+  shapeOsc2(o2, a.ctx);
   o3.type = 'sine';
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
