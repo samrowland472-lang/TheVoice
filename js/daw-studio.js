@@ -834,6 +834,27 @@ function maybeFollow() {
   runFollow(pick);
 }
 
+/** Global Q in bars → 16th-note grid. 1 = 1 bar, 0.25 = 1/4, 0 = none (immediate). */
+function quantizeSteps() {
+  if (!quantize) return 0;
+  return Math.max(1, Math.round(quantize * 16));
+}
+
+function quantizeHit(st) {
+  const q = quantizeSteps();
+  if (!q) return true;
+  return (st % q) === 0;
+}
+
+function flushLaunch() {
+  if (!playing || !quantizeSteps()) {
+    applyPending();
+    return playing;
+  }
+  paintSession();
+  return true;
+}
+
 function clock() {
   if (!playing) return;
   const a = audio();
@@ -847,7 +868,7 @@ function clock() {
       punchBar(step);
       scheduleArrange(step, nextTime);
     } else {
-      if (step % 16 === 0) applyPending();
+      if (quantizeHit(step)) applyPending();
       scheduleStep(step, nextTime);
       followSteps += 1;
       if (step % 16 === 15) maybeFollow();
@@ -1576,8 +1597,7 @@ function paintSession() {
     pendingScene = s;
     SESS_TRACKS.forEach((tr) => { pendingClip[tr.id] = s; });
     followSteps = 0;
-    if (!playing) { applyPending(); studioPlay(); }
-    else paintSession();
+    if (!flushLaunch()) studioPlay();
   }
   function launchSlot(s, track) {
     selectedScene = s;
@@ -1592,8 +1612,7 @@ function paintSession() {
     } else {
       pendingClip[track] = s;
     }
-    if (!playing) { applyPending(); studioPlay(); }
-    else paintSession();
+    if (!flushLaunch()) studioPlay();
   }
   root.querySelectorAll('.abl-scene-launch').forEach((btn) => {
     btn.addEventListener('click', () => launchSceneRow(Number(btn.dataset.scene)));
@@ -1619,8 +1638,7 @@ function paintSession() {
           pendingClip[tr.id] = -1;
         }
       });
-      if (!playing) applyPending();
-      else paintSession();
+      flushLaunch();
     });
   });
   const stopAll = document.getElementById('abl-stop-clips');
@@ -2262,10 +2280,13 @@ function paintTransport() {
     <label class="abl-bpm-wrap">BPM <input id="abl-bpm" type="number" min="40" max="240" value="${bpm()}"></label>
     <button type="button" id="abl-tap">Tap</button>
     <label>Q
-      <select id="abl-q">
-        <option value="1" selected>1 bar</option>
-        <option value="0.25">1/4</option>
-        <option value="0">none</option>
+      <select id="abl-q" title="Global launch quantize — clips wait for this grid">
+        <option value="1"${quantize === 1 ? ' selected' : ''}>1 bar</option>
+        <option value="0.5"${quantize === 0.5 ? ' selected' : ''}>1/2</option>
+        <option value="0.25"${quantize === 0.25 ? ' selected' : ''}>1/4</option>
+        <option value="0.125"${quantize === 0.125 ? ' selected' : ''}>1/8</option>
+        <option value="0.0625"${quantize === 0.0625 ? ' selected' : ''}>1/16</option>
+        <option value="0"${quantize === 0 ? ' selected' : ''}>none</option>
       </select>
     </label>
     <span class="abl-spacer"></span>
@@ -2300,7 +2321,10 @@ function paintTransport() {
       syncTransport();
     }
   });
-  root.querySelector('#abl-q').addEventListener('change', (e) => { quantize = parseFloat(e.target.value) || 0; });
+  root.querySelector('#abl-q').addEventListener('change', (e) => {
+    quantize = parseFloat(e.target.value) || 0;
+    midiStatus(quantize ? `Q ${e.target.options[e.target.selectedIndex].text}` : 'Q none — instant launch');
+  });
   root.querySelector('#abl-midi-map').addEventListener('click', () => {
     midiMapOn = !midiMapOn;
     midiLearn = null;
