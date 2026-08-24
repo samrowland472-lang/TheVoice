@@ -42,6 +42,7 @@ let keysOsc = 0.5;
 let keysDet = 9;
 let keysFenv = 0.75;
 let keysGlide = 0;
+let keysSub = 0.35;
 let lastKeyFreq = 0;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
@@ -118,6 +119,21 @@ function applyKeysOsc() {
   });
 }
 
+function subMix() {
+  return Math.max(0, Math.min(1, keysSub));
+}
+
+function applyKeysSub() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const sub = subMix();
+  midiHeld.forEach((h) => {
+    if (!h || !h.gSub) return;
+    try { h.gSub.gain.setTargetAtTime(sub, t, 0.02); } catch (_) {}
+  });
+}
+
 function detuneRatio() {
   return Math.pow(2, keysDet / 1200);
 }
@@ -155,17 +171,23 @@ function applyKeysFenv() {
   });
 }
 
-function glideOsc(o1, o2, freq, t) {
+function glideOsc(o1, o2, freq, t, o3) {
   const r = detuneRatio();
+  const subF = Math.max(20, freq / 2);
   const g = Math.max(0, keysGlide);
   if (g > 0.004 && lastKeyFreq > 20) {
     o1.frequency.setValueAtTime(lastKeyFreq, t);
     o2.frequency.setValueAtTime(lastKeyFreq * r, t);
     o1.frequency.exponentialRampToValueAtTime(freq, t + g);
     o2.frequency.exponentialRampToValueAtTime(freq * r, t + g);
+    if (o3) {
+      o3.frequency.setValueAtTime(Math.max(20, lastKeyFreq / 2), t);
+      o3.frequency.exponentialRampToValueAtTime(subF, t + g);
+    }
   } else {
     o1.frequency.setValueAtTime(freq, t);
     o2.frequency.setValueAtTime(freq * r, t);
+    if (o3) o3.frequency.setValueAtTime(subF, t);
   }
   lastKeyFreq = freq;
 }
@@ -688,9 +710,11 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const dur = Math.max(0.05, lengthBeats * stepDur());
   const o1 = ctx.createOscillator();
   const o2 = ctx.createOscillator();
+  const o3 = ctx.createOscillator();
   o1.type = 'sawtooth';
   o2.type = 'square';
-  glideOsc(o1, o2, freq, t);
+  o3.type = 'sine';
+  glideOsc(o1, o2, freq, t, o3);
   const f = ctx.createBiquadFilter();
   const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
   f.type = 'lowpass';
@@ -701,13 +725,16 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const { saw, sqr } = oscMixGains();
   const gSaw = ctx.createGain();
   const gSqr = ctx.createGain();
+  const gSub = ctx.createGain();
   gSaw.gain.value = saw;
   gSqr.gain.value = sqr;
-  o1.connect(gSaw); o2.connect(gSqr);
-  gSaw.connect(f); gSqr.connect(f); f.connect(g);
-  o1.start(t); o2.start(t);
+  gSub.gain.value = subMix();
+  o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
+  gSaw.connect(f); gSqr.connect(f); gSub.connect(f); f.connect(g);
+  o1.start(t); o2.start(t); o3.start(t);
   o1.stop(t + dur + keysRel + 0.05);
   o2.stop(t + dur + keysRel + 0.05);
+  o3.stop(t + dur + keysRel + 0.05);
 }
 
 function trigMetro(t, accent) {
@@ -2289,6 +2316,7 @@ function paintDevices() {
       ${onBtn('analog', 'Analog')}
       <div class="abl-dev-body">
         ${knob('abl-osc', 'Sqr', 0, 1, 0.01, keysOsc)}
+        ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
@@ -2331,6 +2359,7 @@ function paintDevices() {
     </article>
   `;
   const osc = root.querySelector('#abl-osc');
+  const sub = root.querySelector('#abl-sub');
   const det = root.querySelector('#abl-det');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
@@ -2354,6 +2383,7 @@ function paintDevices() {
     });
   };
   bindAnalog(osc, 'osc', 'Sqr', (v) => { keysOsc = v; applyKeysOsc(); });
+  bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
@@ -2659,6 +2689,11 @@ function applyMidiTarget(target, vel) {
     applyKeysOsc();
     const el = document.getElementById('abl-osc');
     if (el) el.value = String(keysOsc);
+  } else if (target.type === 'sub') {
+    keysSub = vel;
+    applyKeysSub();
+    const el = document.getElementById('abl-sub');
+    if (el) el.value = String(keysSub);
   } else if (target.type === 'det') {
     keysDet = -50 + vel * 100;
     applyKeysDet();
@@ -2762,9 +2797,11 @@ function studioNoteOn(pitch, vel) {
   const freq = 440 * Math.pow(2, (pitch - 69) / 12);
   const o1 = a.ctx.createOscillator();
   const o2 = a.ctx.createOscillator();
+  const o3 = a.ctx.createOscillator();
   o1.type = 'sawtooth';
   o2.type = 'square';
-  glideOsc(o1, o2, freq, t);
+  o3.type = 'sine';
+  glideOsc(o1, o2, freq, t, o3);
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
   const f = a.ctx.createBiquadFilter();
@@ -2781,13 +2818,15 @@ function studioNoteOn(pitch, vel) {
   const { saw, sqr } = oscMixGains();
   const gSaw = a.ctx.createGain();
   const gSqr = a.ctx.createGain();
+  const gSub = a.ctx.createGain();
   gSaw.gain.value = saw;
   gSqr.gain.value = sqr;
-  o1.connect(gSaw); o2.connect(gSqr);
-  gSaw.connect(f); gSqr.connect(f); f.connect(g); g.connect(mix.keys.input);
-  o1.start(t); o2.start(t);
+  gSub.gain.value = subMix();
+  o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
+  gSaw.connect(f); gSqr.connect(f); gSub.connect(f); f.connect(g); g.connect(mix.keys.input);
+  o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, g, gSaw, gSqr, peak: v, rec, freq, f, cut });
+  midiHeld.set(pitch, { o1, o2, o3, g, gSaw, gSqr, gSub, peak: v, rec, freq, f, cut });
 }
 
 function studioNoteOff(pitch) {
@@ -2801,6 +2840,7 @@ function studioNoteOff(pitch) {
     h.g.gain.setTargetAtTime(0.0008, t, rel / 3);
     h.o1.stop(t + rel + 0.05);
     h.o2.stop(t + rel + 0.05);
+    if (h.o3) h.o3.stop(t + rel + 0.05);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
   midiHeld.delete(pitch);
