@@ -49,6 +49,7 @@ let keysLfoAmt = 0.28;
 let keysVib = 0.18;
 let keysTrem = 0.22;
 let keysLfoWave = 'sine';
+let keysLfoSync = false;
 let lastKeyFreq = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -209,6 +210,29 @@ function lfoWaveFromVel(vel) {
   return 'square';
 }
 
+const LFO_SYNC_BEATS = [0.125, 0.25, 0.5, 1, 2, 4, 8, 16];
+const LFO_SYNC_LABELS = ['1/32', '1/16', '1/8', '1/4', '1/2', '1', '2', '4'];
+
+function lfoSyncIndex() {
+  const t = (Math.max(0.1, Math.min(18, keysLfoRate)) - 0.1) / 17.9;
+  return Math.max(0, Math.min(LFO_SYNC_BEATS.length - 1, Math.round(t * (LFO_SYNC_BEATS.length - 1))));
+}
+
+function lfoHz() {
+  if (!keysLfoSync) return Math.max(0.05, keysLfoRate);
+  return Math.max(0.05, bpm() / (60 * LFO_SYNC_BEATS[lfoSyncIndex()]));
+}
+
+function syncLfoRateUi() {
+  const lab = document.getElementById('abl-rate-lab');
+  if (lab) lab.textContent = keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate';
+  const btn = document.getElementById('abl-sync');
+  if (btn) {
+    btn.classList.toggle('on', !!keysLfoSync);
+    btn.setAttribute('aria-pressed', keysLfoSync ? 'true' : 'false');
+  }
+}
+
 function syncLfoWaveUi() {
   const w = lfoWave();
   document.querySelectorAll('[data-lfo-wave]').forEach((btn) => {
@@ -221,7 +245,7 @@ function syncLfoWaveUi() {
 function startLfo(ctx, filter, cut, freq, oscs, t, stopAt) {
   const lfo = ctx.createOscillator();
   lfo.type = lfoWave();
-  lfo.frequency.value = Math.max(0.05, keysLfoRate);
+  lfo.frequency.value = lfoHz();
   const gLfo = ctx.createGain();
   gLfo.gain.value = lfoDepth(cut);
   lfo.connect(gLfo);
@@ -247,7 +271,7 @@ function applyKeysLfo() {
   const a = audio();
   if (!a) return;
   const t = a.ctx.currentTime;
-  const rate = Math.max(0.05, keysLfoRate);
+  const rate = lfoHz();
   midiHeld.forEach((h) => {
     if (!h || !h.lfo) return;
     try {
@@ -258,6 +282,7 @@ function applyKeysLfo() {
       if (h.gTremAmt) h.gTremAmt.gain.setTargetAtTime(tremDepth(), t, 0.02);
     } catch (_) {}
   });
+  syncLfoRateUi();
 }
 
 function detuneRatio() {
@@ -2452,9 +2477,10 @@ function paintDevices() {
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
-        ${knob('abl-rate', 'Rate', 0.1, 18, 0.1, keysLfoRate)}
+        <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
+          <button type="button" id="abl-sync" class="${keysLfoSync ? 'on' : ''}" aria-pressed="${keysLfoSync}">Sync</button>
           <button type="button" data-lfo-wave="sine"${keysLfoWave === 'sine' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'sine'}">Sin</button>
           <button type="button" data-lfo-wave="triangle"${keysLfoWave === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'triangle'}">Tri</button>
           <button type="button" data-lfo-wave="square"${keysLfoWave === 'square' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'square'}">Sqr</button>
@@ -2535,6 +2561,22 @@ function paintDevices() {
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
+  const syncBtn = root.querySelector('#abl-sync');
+  if (syncBtn) {
+    syncBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'sync' };
+      midiStatus('Learn Analog Sync — move a CC');
+      syncTransport();
+    });
+    syncBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysLfoSync = !keysLfoSync;
+      applyKeysLfo();
+    });
+  }
   bindAnalog(amt, 'lfoa', 'Amt', (v) => { keysLfoAmt = v; applyKeysLfo(); });
   const waves = root.querySelector('#abl-lfo-waves');
   if (waves) {
@@ -2680,6 +2722,7 @@ function paintTransport() {
     if (opts.setBpm) opts.setBpm(n);
     const p = pattern();
     if (p) p.bpm = n;
+    applyKeysLfo();
   });
   let taps = [];
   root.querySelector('#abl-tap').addEventListener('click', () => {
@@ -2691,6 +2734,7 @@ function paintTransport() {
       if (opts.setBpm) opts.setBpm(Math.round(60000 / avg));
       const p = pattern();
       if (p) p.bpm = Math.round(60000 / avg);
+      applyKeysLfo();
       syncTransport();
     }
   });
@@ -2892,6 +2936,9 @@ function applyMidiTarget(target, vel) {
     applyKeysLfo();
     const el = document.getElementById('abl-rate');
     if (el) el.value = String(keysLfoRate);
+  } else if (target.type === 'sync') {
+    keysLfoSync = vel >= 0.5;
+    applyKeysLfo();
   } else if (target.type === 'lfoa') {
     keysLfoAmt = vel;
     applyKeysLfo();
