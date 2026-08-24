@@ -65,6 +65,7 @@ let keysNoise = 0.12;
 let keysNseCol = 'white';
 let keysLfoRate = 5;
 let keysLfoAmt = 0.28;
+let keysLfoDelay = 0;
 let keysVib = 0.18;
 let keysTrem = 0.22;
 let keysLfoWave = 'sine';
@@ -773,6 +774,10 @@ function lfoHz() {
   return Math.max(0.05, bpm() / (60 * LFO_SYNC_BEATS[lfoSyncIndex()]));
 }
 
+function lfoDelay() {
+  return Math.max(0, Math.min(2, Number(keysLfoDelay) || 0));
+}
+
 function syncLfoRateUi() {
   const lab = document.getElementById('abl-rate-lab');
   if (lab) lab.textContent = keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate';
@@ -797,20 +802,33 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2) {
   lfo.type = lfoWave();
   lfo.frequency.value = lfoHz();
   const gLfo = ctx.createGain();
-  gLfo.gain.value = lfoDepth(cut);
+  const gVib = ctx.createGain();
+  const gTrem = ctx.createGain();
+  gTrem.gain.value = 1;
+  const gTremAmt = ctx.createGain();
+  const delay = lfoDelay();
+  const filtD = lfoDepth(cut);
+  const vibD = vibDepthHz(freq);
+  const tremD = tremDepth();
+  if (delay > 0.008) {
+    gLfo.gain.setValueAtTime(0, t);
+    gLfo.gain.setValueAtTime(filtD, t + delay);
+    gVib.gain.setValueAtTime(0, t);
+    gVib.gain.setValueAtTime(vibD, t + delay);
+    gTremAmt.gain.setValueAtTime(0, t);
+    gTremAmt.gain.setValueAtTime(tremD, t + delay);
+  } else {
+    gLfo.gain.value = filtD;
+    gVib.gain.value = vibD;
+    gTremAmt.gain.value = tremD;
+  }
   lfo.connect(gLfo);
   gLfo.connect(filter.frequency);
   if (filter2 && filter2.frequency) gLfo.connect(filter2.frequency);
-  const gVib = ctx.createGain();
-  gVib.gain.value = vibDepthHz(freq);
   lfo.connect(gVib);
   (oscs || []).forEach((o) => {
     if (o && o.frequency) gVib.connect(o.frequency);
   });
-  const gTrem = ctx.createGain();
-  gTrem.gain.value = 1;
-  const gTremAmt = ctx.createGain();
-  gTremAmt.gain.value = tremDepth();
   lfo.connect(gTremAmt);
   gTremAmt.connect(gTrem.gain);
   lfo.start(t);
@@ -3257,6 +3275,7 @@ function paintDevices() {
         ${knob('abl-frel', 'FRel', 0, 1.5, 0.01, keysFRel)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
+        ${knob('abl-ldly', 'Dly', 0, 2, 0.01, keysLfoDelay)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
           <button type="button" id="abl-sync" class="${keysLfoSync ? 'on' : ''}" aria-pressed="${keysLfoSync}">Sync</button>
           <button type="button" data-lfo-wave="sine"${keysLfoWave === 'sine' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'sine'}">Sin</button>
@@ -3334,6 +3353,7 @@ function paintDevices() {
   const frel = root.querySelector('#abl-frel');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
+  const ldly = root.querySelector('#abl-ldly');
   const vib = root.querySelector('#abl-vib');
   const trm = root.querySelector('#abl-trm');
   const gli = root.querySelector('#abl-gli');
@@ -3516,6 +3536,7 @@ function paintDevices() {
     });
   }
   bindAnalog(amt, 'lfoa', 'Amt', (v) => { keysLfoAmt = v; applyKeysLfo(); });
+  bindAnalog(ldly, 'lfod', 'Dly', (v) => { keysLfoDelay = v; });
   const waves = root.querySelector('#abl-lfo-waves');
   if (waves) {
     waves.addEventListener('pointerdown', () => {
@@ -4034,6 +4055,10 @@ function applyMidiTarget(target, vel) {
     applyKeysLfo();
     const el = document.getElementById('abl-amt');
     if (el) el.value = String(keysLfoAmt);
+  } else if (target.type === 'lfod') {
+    keysLfoDelay = vel * 2;
+    const el = document.getElementById('abl-ldly');
+    if (el) el.value = String(keysLfoDelay);
   } else if (target.type === 'lfow') {
     keysLfoWave = lfoWaveFromVel(vel);
     applyKeysLfo();
