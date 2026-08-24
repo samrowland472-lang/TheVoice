@@ -35,6 +35,7 @@ let swing = 0;
 let keysCutoff = 1800;
 let keysRes = 0.8;
 let keysAtk = 0.01;
+let keysDec = 0.08;
 let keysSus = 0.55;
 let keysRel = 0.35;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -621,7 +622,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   f.frequency.setValueAtTime(cut, t);
   f.frequency.exponentialRampToValueAtTime(Math.max(120, cut * 0.35), t + dur * 0.7);
   f.Q.value = fx.on.analog === false ? 0.3 : keysRes;
-  const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), 0.08, keysSus, keysRel, dur);
+  const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   o1.connect(f); o2.connect(f); f.connect(g);
   o1.start(t); o2.start(t);
   o1.stop(t + dur + keysRel + 0.05);
@@ -2209,6 +2210,7 @@ function paintDevices() {
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
+        ${knob('abl-dec', 'Dec', 0.01, 1.2, 0.01, keysDec)}
         ${knob('abl-sus', 'Sus', 0.05, 1, 0.01, keysSus)}
         ${knob('abl-rel', 'Rel', 0.05, 1.2, 0.01, keysRel)}
       </div>
@@ -2246,11 +2248,13 @@ function paintDevices() {
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const atk = root.querySelector('#abl-atk');
+  const dec = root.querySelector('#abl-dec');
   const sus = root.querySelector('#abl-sus');
   const rel = root.querySelector('#abl-rel');
   if (cut) cut.addEventListener('input', () => { keysCutoff = parseFloat(cut.value); applyKeysFilter(); });
   if (res) res.addEventListener('input', () => { keysRes = parseFloat(res.value); applyKeysFilter(); });
   if (atk) atk.addEventListener('input', () => { keysAtk = parseFloat(atk.value); });
+  if (dec) dec.addEventListener('input', () => { keysDec = parseFloat(dec.value); });
   if (sus) sus.addEventListener('input', () => { keysSus = parseFloat(sus.value); applyKeysEnv(); });
   if (rel) rel.addEventListener('input', () => { keysRel = parseFloat(rel.value); });
   const bindFx = (id, key, parse) => {
@@ -2603,9 +2607,10 @@ function studioNoteOn(pitch, vel) {
   const g = a.ctx.createGain();
   const v = Math.max(0.001, vel * 0.28);
   const atk = Math.max(0.005, keysAtk);
+  const dec = Math.max(0.01, keysDec);
   g.gain.setValueAtTime(0.0008, t);
   g.gain.exponentialRampToValueAtTime(v, t + atk);
-  g.gain.setTargetAtTime(Math.max(0.0008, v * keysSus), t + atk, 0.05);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0008, v * keysSus), t + atk + dec);
   o1.connect(f); o2.connect(f); f.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t);
   const rec = recBegin(pitch, vel);
