@@ -40,6 +40,7 @@ let keysSus = 0.55;
 let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysDet = 9;
+let keysOct = 0;
 let keysFenv = 0.75;
 let keysGlide = 0;
 let keysSub = 0.35;
@@ -413,15 +414,26 @@ function detuneRatio() {
   return Math.pow(2, keysDet / 1200);
 }
 
+function osc2Oct() {
+  return Math.max(-2, Math.min(2, Math.round(Number(keysOct) || 0)));
+}
+
+function osc2Ratio() {
+  return Math.pow(2, osc2Oct()) * detuneRatio();
+}
+
+function osc2Hz(freq) {
+  return Math.max(20, (freq || 440) * osc2Ratio());
+}
+
 function applyKeysDet() {
   const a = audio();
   if (!a) return;
   const t = a.ctx.currentTime;
-  const r = detuneRatio();
   midiHeld.forEach((h) => {
     if (!h || !h.o2 || !h.freq) return;
     try {
-      h.o2.frequency.setTargetAtTime(h.freq * r, t, 0.02);
+      h.o2.frequency.setTargetAtTime(osc2Hz(h.freq), t, 0.02);
     } catch (_) {}
   });
 }
@@ -447,21 +459,21 @@ function applyKeysFenv() {
 }
 
 function glideOsc(o1, o2, freq, t, o3) {
-  const r = detuneRatio();
+  const r = osc2Ratio();
   const subF = Math.max(20, freq / 2);
   const g = Math.max(0, keysGlide);
   if (g > 0.004 && lastKeyFreq > 20) {
     o1.frequency.setValueAtTime(lastKeyFreq, t);
-    o2.frequency.setValueAtTime(lastKeyFreq * r, t);
+    o2.frequency.setValueAtTime(Math.max(20, lastKeyFreq * r), t);
     o1.frequency.exponentialRampToValueAtTime(freq, t + g);
-    o2.frequency.exponentialRampToValueAtTime(freq * r, t + g);
+    o2.frequency.exponentialRampToValueAtTime(osc2Hz(freq), t + g);
     if (o3) {
       o3.frequency.setValueAtTime(Math.max(20, lastKeyFreq / 2), t);
       o3.frequency.exponentialRampToValueAtTime(subF, t + g);
     }
   } else {
     o1.frequency.setValueAtTime(freq, t);
-    o2.frequency.setValueAtTime(freq * r, t);
+    o2.frequency.setValueAtTime(osc2Hz(freq), t);
     if (o3) o3.frequency.setValueAtTime(subF, t);
   }
   lastKeyFreq = freq;
@@ -2602,6 +2614,7 @@ function paintDevices() {
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
+        ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
         ${knob('abl-uni', 'Uni', 0, 1, 0.01, keysUni)}
         ${knob('abl-drv', 'Drv', 0, 1, 0.01, keysDrv)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
@@ -2663,6 +2676,7 @@ function paintDevices() {
   const sub = root.querySelector('#abl-sub');
   const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
+  const oct = root.querySelector('#abl-oct');
   const uni = root.querySelector('#abl-uni');
   const drv = root.querySelector('#abl-drv');
   const cut = root.querySelector('#abl-cut');
@@ -2694,6 +2708,7 @@ function paintDevices() {
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
   bindAnalog(nse, 'nse', 'Nse', (v) => { keysNoise = v; applyKeysNoise(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
+  bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(uni, 'uni', 'Uni', (v) => { keysUni = v; applyKeysUni(); });
   bindAnalog(drv, 'drv', 'Drv', (v) => { keysDrv = v; applyKeysDrv(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
@@ -3073,6 +3088,11 @@ function applyMidiTarget(target, vel) {
     applyKeysDet();
     const el = document.getElementById('abl-det');
     if (el) el.value = String(keysDet);
+  } else if (target.type === 'oct') {
+    keysOct = Math.round(-2 + vel * 4);
+    applyKeysDet();
+    const el = document.getElementById('abl-oct');
+    if (el) el.value = String(keysOct);
   } else if (target.type === 'uni') {
     keysUni = vel;
     applyKeysUni();
