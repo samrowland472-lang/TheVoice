@@ -80,6 +80,7 @@ let keysLfoOff = 0;
 let keysVib = 0.18;
 let keysTrem = 0.22;
 let keysLfoPwm = 0;
+let keysLfoPan = 0;
 let keysLfoWave = 'sine';
 let keysLfoSync = false;
 let keysLfoRtg = true;
@@ -1089,7 +1090,23 @@ function syncLfoWaveUi() {
   });
 }
 
-function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2, gPwm) {
+function panDepth() {
+  if (fx.on.analog === false) return 0;
+  return Math.max(0, Math.min(1, Number(keysLfoPan) || 0));
+}
+
+function startVoicePan(ctx, dest) {
+  if (!ctx.createStereoPanner) return { out: dest, gPan: null };
+  const pan = ctx.createStereoPanner();
+  pan.pan.value = 0;
+  pan.connect(dest);
+  const gPan = ctx.createGain();
+  gPan.gain.value = 0;
+  gPan.connect(pan.pan);
+  return { out: pan, gPan };
+}
+
+function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2, gPwm, gPan) {
   const own = lfoRtg();
   const lfo = own ? ctx.createOscillator() : ensureSharedLfo(ctx, t);
   if (own) {
@@ -1107,6 +1124,7 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2, gPwm) {
   const vibD = vibDepthHz(freq);
   const tremD = tremDepth();
   const pwmD = pwmDepth();
+  const panD = panDepth();
   const arm = (g, depth) => {
     if (!g) return;
     if (delay > 0.008 || fade > 0.008) {
@@ -1125,6 +1143,7 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2, gPwm) {
   arm(gVib, vibD);
   arm(gTremAmt, tremD);
   arm(gPwm, pwmD);
+  arm(gPan, panD);
   lfo.connect(gLfo);
   gLfo.connect(filter.frequency);
   if (filter2 && filter2.frequency) gLfo.connect(filter2.frequency);
@@ -1135,11 +1154,12 @@ function startLfo(ctx, filter, cut, freq, oscs, t, stopAt, filter2, gPwm) {
   lfo.connect(gTremAmt);
   gTremAmt.connect(gTrem.gain);
   if (gPwm) lfo.connect(gPwm);
+  if (gPan) lfo.connect(gPan);
   if (own) {
     lfo.start(lfoStartAt(t));
     if (stopAt != null) lfo.stop(stopAt);
   }
-  return { lfo, gLfo, gVib, gTrem, gTremAmt, gPwm, shared: !own };
+  return { lfo, gLfo, gVib, gTrem, gTremAmt, gPwm, gPan, shared: !own };
 }
 
 function applyKeysLfo() {
@@ -1162,6 +1182,7 @@ function applyKeysLfo() {
       if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(h.freq), t, 0.02);
       if (h.gTremAmt) h.gTremAmt.gain.setTargetAtTime(tremDepth(), t, 0.02);
       if (h.gPwm) h.gPwm.gain.setTargetAtTime(pwmDepth(), t, 0.02);
+      if (h.gPan) h.gPan.gain.setTargetAtTime(panDepth(), t, 0.02);
     } catch (_) {}
   });
   syncLfoRateUi();
@@ -2016,7 +2037,8 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   lastKeyUntil = Math.max(lastKeyUntil, t + dur);
   const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
   const { f, f2 } = makeSlopePair(ctx, cut, t, dur);
-  const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
+  const panN = startVoicePan(ctx, dest);
+  const g = envGain(panN.out, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   const { saw, sqr } = oscMixGains();
   const gSaw = ctx.createGain();
   const gSqr = ctx.createGain();
@@ -2033,7 +2055,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const tail = voiceTail();
   const uni = startUnison(ctx, f, freq, t, t + dur + tail, fromF, overlapping);
   const nse = startNoise(ctx, f, t, t + dur + tail);
-  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2, pwm.gPwm);
+  const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2, pwm.gPwm, panN.gPan);
   startDrift(ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t, t + dur + tail);
   startPitchEnv(ctx, [o1, o2, o3, uni.oUp, uni.oDn], t, dur, t + dur + tail);
   const sh = startDrive(ctx);
@@ -3702,6 +3724,7 @@ function paintDevices() {
         ${knob('abl-vib', 'Vib', 0, 1, 0.01, keysVib)}
         ${knob('abl-trm', 'Trm', 0, 1, 0.01, keysTrem)}
         ${knob('abl-pwm', 'PWM', 0, 1, 0.01, keysLfoPwm)}
+        ${knob('abl-lpan', 'Pan', 0, 1, 0.01, keysLfoPan)}
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
         ${knob('abl-voices', 'Vce', 1, 16, 1, keysVoices)}
         <div class="abl-lfo-waves">
@@ -3785,6 +3808,7 @@ function paintDevices() {
   const vib = root.querySelector('#abl-vib');
   const trm = root.querySelector('#abl-trm');
   const pwm = root.querySelector('#abl-pwm');
+  const lpan = root.querySelector('#abl-lpan');
   const gli = root.querySelector('#abl-gli');
   const voices = root.querySelector('#abl-voices');
   const bnd = root.querySelector('#abl-bnd');
@@ -4044,6 +4068,7 @@ function paintDevices() {
   bindAnalog(vib, 'vib', 'Vib', (v) => { keysVib = v; applyKeysLfo(); });
   bindAnalog(trm, 'trm', 'Trm', (v) => { keysTrem = v; applyKeysLfo(); });
   bindAnalog(pwm, 'pwm', 'PWM', (v) => { keysLfoPwm = v; applyKeysLfo(); });
+  bindAnalog(lpan, 'lpan', 'Pan', (v) => { keysLfoPan = v; applyKeysLfo(); });
   bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
   bindAnalog(voices, 'voices', 'Vce', (v) => { keysVoices = Math.round(v); applyKeysVoices(); });
   const monoBtn = root.querySelector('#abl-mono');
@@ -4632,6 +4657,11 @@ function applyMidiTarget(target, vel) {
     applyKeysLfo();
     const el = document.getElementById('abl-pwm');
     if (el) el.value = String(keysLfoPwm);
+  } else if (target.type === 'lpan') {
+    keysLfoPan = vel;
+    applyKeysLfo();
+    const el = document.getElementById('abl-lpan');
+    if (el) el.value = String(keysLfoPan);
   } else if (target.type === 'gli') {
     keysGlide = vel * 0.8;
     const el = document.getElementById('abl-gli');
@@ -4919,14 +4949,15 @@ function studioNoteOn(pitch, vel) {
   const fm = startFm(a.ctx, o1, o2, freq);
   const uni = startUnison(a.ctx, f, freq, t, null, fromF, overlapping);
   const nse = startNoise(a.ctx, f, t);
-  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2, pwm.gPwm);
+  const panN = startVoicePan(a.ctx, mix.keys.input);
+  const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2, pwm.gPwm, panN.gPan);
   const drift = startDrift(a.ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t);
   const pEnv = startPitchEnv(a.ctx, [o1, o2, o3, uni.oUp, uni.oDn], t, null, null);
   const sh = startDrive(a.ctx);
-  f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
+  f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(panN.out);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, gPwm: pwm.gPwm, pwDc: pwm.dc, pwmSh: pwm.shaper, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gFm: fm.gFm, gDrift: drift.gDrift, drift: drift.src, pEnv, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, gPwm: pwm.gPwm, gPan: panN.gPan, pwDc: pwm.dc, pwmSh: pwm.shaper, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gFm: fm.gFm, gDrift: drift.gDrift, drift: drift.src, pEnv, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
 }
 
 function studioNoteOff(pitch) {
