@@ -3143,6 +3143,18 @@ input:focus-visible,
   padding: 3px 7px;
 }
 .abl-eq-kills button.on { background: #ff4d4d; color: #140808; border-color: #ff4d4d; }
+.abl-lfo-waves { display: flex; gap: 6px; flex-wrap: wrap; }
+.abl-lfo-waves button {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink-dim);
+  padding: 3px 7px;
+}
+.abl-lfo-waves button.on { background: var(--phosphor); color: #041018; border-color: var(--phosphor); }
 .consent-row {
   display: flex;
   align-items: center;
@@ -3640,6 +3652,7 @@ html[data-avenue="music"] .shell.is-daw .main-area,
 }
 .abl-dev-k input[type="range"] { width: 100%; accent-color: var(--phosphor); height: 18px; }
 .abl-chain .abl-eq-kills { grid-column: 1 / -1; }
+.abl-chain .abl-lfo-waves { grid-column: 1 / -1; }
 
 /* Produce: never overflow the laptop viewport */
 #music-view:not([hidden]) {

@@ -48,6 +48,7 @@ let keysLfoRate = 5;
 let keysLfoAmt = 0.28;
 let keysVib = 0.18;
 let keysTrem = 0.22;
+let keysLfoWave = 'sine';
 let lastKeyFreq = 0;
 let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
@@ -196,9 +197,30 @@ function tremDepth() {
   return Math.max(0, Math.min(1, keysTrem)) * 0.45;
 }
 
+const LFO_WAVES = ['sine', 'triangle', 'square'];
+
+function lfoWave() {
+  return LFO_WAVES.includes(keysLfoWave) ? keysLfoWave : 'sine';
+}
+
+function lfoWaveFromVel(vel) {
+  if (vel < 0.34) return 'sine';
+  if (vel < 0.67) return 'triangle';
+  return 'square';
+}
+
+function syncLfoWaveUi() {
+  const w = lfoWave();
+  document.querySelectorAll('[data-lfo-wave]').forEach((btn) => {
+    const on = btn.dataset.lfoWave === w;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
 function startLfo(ctx, filter, cut, freq, oscs, t, stopAt) {
   const lfo = ctx.createOscillator();
-  lfo.type = 'sine';
+  lfo.type = lfoWave();
   lfo.frequency.value = Math.max(0.05, keysLfoRate);
   const gLfo = ctx.createGain();
   gLfo.gain.value = lfoDepth(cut);
@@ -229,6 +251,7 @@ function applyKeysLfo() {
   midiHeld.forEach((h) => {
     if (!h || !h.lfo) return;
     try {
+      h.lfo.type = lfoWave();
       h.lfo.frequency.setTargetAtTime(rate, t, 0.02);
       if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(h.cut || keysCutoff), t, 0.02);
       if (h.gVib) h.gVib.gain.setTargetAtTime(vibDepthHz(h.freq), t, 0.02);
@@ -2431,6 +2454,11 @@ function paintDevices() {
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
         ${knob('abl-rate', 'Rate', 0.1, 18, 0.1, keysLfoRate)}
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
+        <div class="abl-lfo-waves" id="abl-lfo-waves">
+          <button type="button" data-lfo-wave="sine"${keysLfoWave === 'sine' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'sine'}">Sin</button>
+          <button type="button" data-lfo-wave="triangle"${keysLfoWave === 'triangle' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'triangle'}">Tri</button>
+          <button type="button" data-lfo-wave="square"${keysLfoWave === 'square' ? ' class="on"' : ''} aria-pressed="${keysLfoWave === 'square'}">Sqr</button>
+        </div>
         ${knob('abl-vib', 'Vib', 0, 1, 0.01, keysVib)}
         ${knob('abl-trm', 'Trm', 0, 1, 0.01, keysTrem)}
         ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
@@ -2508,6 +2536,24 @@ function paintDevices() {
   bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   bindAnalog(amt, 'lfoa', 'Amt', (v) => { keysLfoAmt = v; applyKeysLfo(); });
+  const waves = root.querySelector('#abl-lfo-waves');
+  if (waves) {
+    waves.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'lfow' };
+      midiStatus('Learn Analog Wave — move a CC');
+      syncTransport();
+    });
+    waves.querySelectorAll('[data-lfo-wave]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (midiMapOn) return;
+        keysLfoWave = btn.dataset.lfoWave;
+        applyKeysLfo();
+        syncLfoWaveUi();
+      });
+    });
+  }
   bindAnalog(vib, 'vib', 'Vib', (v) => { keysVib = v; applyKeysLfo(); });
   bindAnalog(trm, 'trm', 'Trm', (v) => { keysTrem = v; applyKeysLfo(); });
   bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
@@ -2851,6 +2897,10 @@ function applyMidiTarget(target, vel) {
     applyKeysLfo();
     const el = document.getElementById('abl-amt');
     if (el) el.value = String(keysLfoAmt);
+  } else if (target.type === 'lfow') {
+    keysLfoWave = lfoWaveFromVel(vel);
+    applyKeysLfo();
+    syncLfoWaveUi();
   } else if (target.type === 'vib') {
     keysVib = vel;
     applyKeysLfo();
