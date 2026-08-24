@@ -40,6 +40,7 @@ let keysSus = 0.55;
 let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysDet = 9;
+let keysFenv = 0.75;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
 function applyFx() {
@@ -128,6 +129,26 @@ function applyKeysDet() {
     if (!h || !h.o2 || !h.freq) return;
     try {
       h.o2.frequency.setTargetAtTime(h.freq * r, t, 0.02);
+    } catch (_) {}
+  });
+}
+
+function filterEnvEnd(cut) {
+  const amt = Math.max(0, Math.min(1, keysFenv));
+  const closed = Math.max(80, cut * 0.12);
+  return Math.max(80, cut + (closed - cut) * amt);
+}
+
+function applyKeysFenv() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  midiHeld.forEach((h) => {
+    if (!h || !h.f) return;
+    const cut = h.cut || keysCutoff;
+    try {
+      h.f.frequency.cancelScheduledValues(t);
+      h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
     } catch (_) {}
   });
 }
@@ -658,7 +679,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
   f.type = 'lowpass';
   f.frequency.setValueAtTime(cut, t);
-  f.frequency.exponentialRampToValueAtTime(Math.max(120, cut * 0.35), t + dur * 0.7);
+  f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + Math.max(0.04, dur * 0.7));
   f.Q.value = fx.on.analog === false ? 0.3 : keysRes;
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   const { saw, sqr } = oscMixGains();
@@ -2255,6 +2276,7 @@ function paintDevices() {
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
+        ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
         ${knob('abl-dec', 'Dec', 0.01, 1.2, 0.01, keysDec)}
         ${knob('abl-sus', 'Sus', 0.05, 1, 0.01, keysSus)}
@@ -2295,6 +2317,7 @@ function paintDevices() {
   const det = root.querySelector('#abl-det');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
+  const fenv = root.querySelector('#abl-fenv');
   const atk = root.querySelector('#abl-atk');
   const dec = root.querySelector('#abl-dec');
   const sus = root.querySelector('#abl-sus');
@@ -2316,6 +2339,7 @@ function paintDevices() {
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
+  bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
   bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
   bindAnalog(sus, 'sus', 'Sus', (v) => { keysSus = v; applyKeysEnv(); });
@@ -2631,6 +2655,11 @@ function applyMidiTarget(target, vel) {
     applyKeysFilter();
     const el = document.getElementById('abl-res');
     if (el) el.value = String(keysRes);
+  } else if (target.type === 'fenv') {
+    keysFenv = vel;
+    applyKeysFenv();
+    const el = document.getElementById('abl-fenv');
+    if (el) el.value = String(keysFenv);
   } else if (target.type === 'atk') {
     keysAtk = 0.005 + vel * 0.795;
     const el = document.getElementById('abl-atk');
@@ -2714,14 +2743,16 @@ function studioNoteOn(pitch, vel) {
   o2.type = 'square';
   o1.frequency.value = freq;
   o2.frequency.value = freq * detuneRatio();
+  const atk = Math.max(0.005, keysAtk);
+  const dec = Math.max(0.01, keysDec);
   const f = a.ctx.createBiquadFilter();
   f.type = 'lowpass';
-  f.frequency.value = keysCutoff;
+  const cut = Math.max(80, keysCutoff);
+  f.frequency.setValueAtTime(cut, t);
+  f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + atk + dec);
   f.Q.value = keysRes;
   const g = a.ctx.createGain();
   const v = Math.max(0.001, vel * 0.28);
-  const atk = Math.max(0.005, keysAtk);
-  const dec = Math.max(0.01, keysDec);
   g.gain.setValueAtTime(0.0008, t);
   g.gain.exponentialRampToValueAtTime(v, t + atk);
   g.gain.exponentialRampToValueAtTime(Math.max(0.0008, v * keysSus), t + atk + dec);
@@ -2734,7 +2765,7 @@ function studioNoteOn(pitch, vel) {
   gSaw.connect(f); gSqr.connect(f); f.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, g, gSaw, gSqr, peak: v, rec, freq });
+  midiHeld.set(pitch, { o1, o2, g, gSaw, gSqr, peak: v, rec, freq, f, cut });
 }
 
 function studioNoteOff(pitch) {
