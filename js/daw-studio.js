@@ -61,6 +61,9 @@ let keysFAtk = 0.09;
 let keysFDec = 0;
 let keysFSus = 0;
 let keysFRel = 0;
+let keysPEnv = 0;
+let keysPAtk = 0.01;
+let keysPDec = 0.22;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -116,6 +119,7 @@ function applyFx() {
   applyKeysLfo();
   applyKeysDrv();
   applyKeysDrift();
+  applyKeysPenv();
 }
 
 function keyAmt() {
@@ -1309,6 +1313,72 @@ function applyKeysFenv() {
   });
 }
 
+function pEnvAmt() {
+  if (fx.on.analog === false) return 0;
+  return Math.max(-24, Math.min(24, Number(keysPEnv) || 0));
+}
+
+function pAtk() {
+  return Math.max(0.005, Math.min(1.5, Number(keysPAtk) || 0.01));
+}
+
+function pDec() {
+  return Math.max(0, Math.min(1.5, Number(keysPDec) || 0.22));
+}
+
+function pEnvPeakCents() {
+  return pEnvAmt() * 100;
+}
+
+function pEnvSustainCents() {
+  const peak = pEnvPeakCents();
+  if (pDec() <= 0.008) return peak;
+  return 0;
+}
+
+function schedulePitchEnv(param, t, dur) {
+  if (!param) return;
+  const peak = pEnvPeakCents();
+  const atk = pAtk();
+  const dec = pDec();
+  const sus = pEnvSustainCents();
+  param.cancelScheduledValues(t);
+  param.setValueAtTime(0, t);
+  if (Math.abs(peak) < 0.5 && Math.abs(sus) < 0.5) return;
+  param.linearRampToValueAtTime(peak, t + atk);
+  if (dec > 0.008) param.linearRampToValueAtTime(sus, t + atk + dec);
+  else if (dur != null) {
+    const off = t + Math.max(0.05, dur);
+    param.setValueAtTime(peak, off);
+    param.linearRampToValueAtTime(0, off + 0.02);
+  }
+}
+
+function startPitchEnv(ctx, oscs, t, dur, stopAt) {
+  const src = ctx.createConstantSource();
+  src.offset.value = 0;
+  schedulePitchEnv(src.offset, t, dur);
+  (oscs || []).forEach((o) => {
+    if (o && o.detune) src.connect(o.detune);
+  });
+  try { src.start(t); } catch (_) {}
+  if (stopAt != null) {
+    try { src.stop(stopAt); } catch (_) {}
+  }
+  return src;
+}
+
+function applyKeysPenv() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const sus = pEnvSustainCents();
+  midiHeld.forEach((h) => {
+    if (!h || !h.pEnv) return;
+    try { h.pEnv.offset.setTargetAtTime(sus, t, 0.05); } catch (_) {}
+  });
+}
+
 function glideOsc(o1, o2, freq, t, o3) {
   const r = osc2FreqMul();
   const r1 = osc1Ratio();
@@ -1879,6 +1949,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const nse = startNoise(ctx, f, t, t + dur + tail);
   const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2, pwm.gPwm);
   startDrift(ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t, t + dur + tail);
+  startPitchEnv(ctx, [o1, o2, o3, uni.oUp, uni.oDn], t, dur, t + dur + tail);
   const sh = startDrive(ctx);
   f2.connect(sh);
   sh.connect(lfoN.gTrem);
@@ -3522,6 +3593,9 @@ function paintDevices() {
         ${knob('abl-fdec', 'FDec', 0, 1.5, 0.01, keysFDec)}
         ${knob('abl-fsus', 'FSus', 0, 1, 0.01, keysFSus)}
         ${knob('abl-frel', 'FRel', 0, 1.5, 0.01, keysFRel)}
+        ${knob('abl-penv', 'PEnv', -24, 24, 1, keysPEnv)}
+        ${knob('abl-patk', 'PAtk', 0.005, 1.5, 0.005, keysPAtk)}
+        ${knob('abl-pdec', 'PDec', 0, 1.5, 0.01, keysPDec)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         ${knob('abl-ldly', 'Dly', 0, 2, 0.01, keysLfoDelay)}
@@ -3606,6 +3680,9 @@ function paintDevices() {
   const fdec = root.querySelector('#abl-fdec');
   const fsus = root.querySelector('#abl-fsus');
   const frel = root.querySelector('#abl-frel');
+  const penv = root.querySelector('#abl-penv');
+  const patk = root.querySelector('#abl-patk');
+  const pdec = root.querySelector('#abl-pdec');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const ldly = root.querySelector('#abl-ldly');
@@ -3778,6 +3855,9 @@ function paintDevices() {
   bindAnalog(fdec, 'fdec', 'FDec', (v) => { keysFDec = v; });
   bindAnalog(fsus, 'fsus', 'FSus', (v) => { keysFSus = v; applyKeysFenv(); });
   bindAnalog(frel, 'frel', 'FRel', (v) => { keysFRel = v; });
+  bindAnalog(penv, 'penv', 'PEnv', (v) => { keysPEnv = v; applyKeysPenv(); });
+  bindAnalog(patk, 'patk', 'PAtk', (v) => { keysPAtk = v; });
+  bindAnalog(pdec, 'pdec', 'PDec', (v) => { keysPDec = v; applyKeysPenv(); });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -4331,6 +4411,20 @@ function applyMidiTarget(target, vel) {
     keysFRel = vel * 1.5;
     const el = document.getElementById('abl-frel');
     if (el) el.value = String(keysFRel);
+  } else if (target.type === 'penv') {
+    keysPEnv = Math.round((vel * 2 - 1) * 24);
+    applyKeysPenv();
+    const el = document.getElementById('abl-penv');
+    if (el) el.value = String(keysPEnv);
+  } else if (target.type === 'patk') {
+    keysPAtk = 0.005 + vel * 1.495;
+    const el = document.getElementById('abl-patk');
+    if (el) el.value = String(keysPAtk);
+  } else if (target.type === 'pdec') {
+    keysPDec = vel * 1.5;
+    applyKeysPenv();
+    const el = document.getElementById('abl-pdec');
+    if (el) el.value = String(keysPDec);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
@@ -4537,6 +4631,7 @@ function retrigVoice(h, pitch, vel) {
     if (h.f) scheduleFiltEnv(h.f.frequency, cut, t);
     if (h.f2 && filtSlope() === 24 && fx.on.analog !== false) scheduleFiltEnv(h.f2.frequency, cut, t);
     if (h.gLfo) h.gLfo.gain.setTargetAtTime(lfoDepth(cut), t, 0.02);
+    if (h.pEnv) schedulePitchEnv(h.pEnv.offset, t);
   } catch (_) {}
 }
 
@@ -4651,11 +4746,12 @@ function studioNoteOn(pitch, vel) {
   const nse = startNoise(a.ctx, f, t);
   const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2, pwm.gPwm);
   const drift = startDrift(a.ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t);
+  const pEnv = startPitchEnv(a.ctx, [o1, o2, o3, uni.oUp, uni.oDn], t, null, null);
   const sh = startDrive(a.ctx);
   f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, gPwm: pwm.gPwm, pwDc: pwm.dc, pwmSh: pwm.shaper, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gFm: fm.gFm, gDrift: drift.gDrift, drift: drift.src, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, lfoShared: lfo.shared, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, gPwm: pwm.gPwm, pwDc: pwm.dc, pwmSh: pwm.shaper, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gFm: fm.gFm, gDrift: drift.gDrift, drift: drift.src, pEnv, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
 }
 
 function studioNoteOff(pitch) {
@@ -4692,6 +4788,7 @@ function studioNoteOff(pitch) {
     if (h.nse) h.nse.stop(t + tail);
     if (h.drift) h.drift.stop(t + tail);
     if (h.pwDc) h.pwDc.stop(t + tail);
+    if (h.pEnv) h.pEnv.stop(t + tail);
     if (h.lfo && !h.lfoShared) h.lfo.stop(t + tail);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
