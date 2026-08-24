@@ -55,6 +55,7 @@ let keysVel = 0;
 let keysAft = 0.7;
 let keysFenv = 0.75;
 let keysFenvInv = false;
+let keysFAtk = 0.09;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -963,6 +964,10 @@ function filterEnvEnd(cut) {
   return Math.max(80, c + (closed - c) * amt);
 }
 
+function fAtk() {
+  return Math.max(0.01, Math.min(1.5, Number(keysFAtk) || 0.09));
+}
+
 function syncFenvInvUi() {
   const btn = document.getElementById('abl-fenvinv');
   if (!btn) return;
@@ -1540,7 +1545,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
   const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
-  const { f, f2 } = makeSlopePair(ctx, cut, t, Math.max(0.04, dur * 0.7));
+  const { f, f2 } = makeSlopePair(ctx, cut, t, fAtk());
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
   const { saw, sqr } = oscMixGains();
   const gSaw = ctx.createGain();
@@ -3191,6 +3196,7 @@ function paintDevices() {
         <div class="abl-lfo-waves">
           <button type="button" id="abl-fenvinv" class="${keysFenvInv ? 'on' : ''}" aria-pressed="${keysFenvInv}">Inv</button>
         </div>
+        ${knob('abl-fatk', 'FAtk', 0.01, 1.5, 0.01, keysFAtk)}
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
@@ -3264,6 +3270,7 @@ function paintDevices() {
   const velf = root.querySelector('#abl-vel');
   const aft = root.querySelector('#abl-aft');
   const fenv = root.querySelector('#abl-fenv');
+  const fatk = root.querySelector('#abl-fatk');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
   const vib = root.querySelector('#abl-vib');
@@ -3426,6 +3433,7 @@ function paintDevices() {
       applyKeysFenvInv();
     });
   }
+  bindAnalog(fatk, 'fatk', 'FAtk', (v) => { keysFAtk = v; });
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -3932,6 +3940,10 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'fenvinv') {
     keysFenvInv = vel >= 0.5;
     applyKeysFenvInv();
+  } else if (target.type === 'fatk') {
+    keysFAtk = 0.01 + vel * 1.49;
+    const el = document.getElementById('abl-fatk');
+    if (el) el.value = String(keysFAtk);
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
@@ -4114,7 +4126,7 @@ function retrigVoice(h, pitch, vel) {
   } catch (_) {}
   const cut = analogCut(keysCutoff, pitch, vel != null ? vel : h.vel);
   h.cut = cut;
-  const envDur = Math.max(0.04, atk + dec);
+  const envDur = fAtk();
   const end = filterEnvEnd(cut);
   try {
     if (h.f) {
@@ -4217,7 +4229,7 @@ function studioNoteOn(pitch, vel) {
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
   const cut = analogCut(keysCutoff, pitch, vel);
-  const { f, f2 } = makeSlopePair(a.ctx, cut, t, atk + dec);
+  const { f, f2 } = makeSlopePair(a.ctx, cut, t, fAtk());
   const g = a.ctx.createGain();
   const v = Math.max(0.001, vel * 0.28);
   g.gain.setValueAtTime(0.0008, t);
