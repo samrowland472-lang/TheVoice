@@ -43,7 +43,9 @@ let keysDet = 9;
 let keysFenv = 0.75;
 let keysGlide = 0;
 let keysSub = 0.35;
+let keysNoise = 0.12;
 let lastKeyFreq = 0;
+let noiseBuf = null;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
 function applyFx() {
@@ -131,6 +133,44 @@ function applyKeysSub() {
   midiHeld.forEach((h) => {
     if (!h || !h.gSub) return;
     try { h.gSub.gain.setTargetAtTime(sub, t, 0.02); } catch (_) {}
+  });
+}
+
+function noiseMix() {
+  return Math.max(0, Math.min(1, keysNoise)) * 0.22;
+}
+
+function ensureNoiseBuf(ctx) {
+  if (noiseBuf && noiseBuf.sampleRate === ctx.sampleRate) return noiseBuf;
+  const n = Math.max(1, Math.floor(ctx.sampleRate));
+  const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  noiseBuf = buf;
+  return buf;
+}
+
+function startNoise(ctx, dest, t, stopAt) {
+  const src = ctx.createBufferSource();
+  src.buffer = ensureNoiseBuf(ctx);
+  src.loop = true;
+  const gNse = ctx.createGain();
+  gNse.gain.value = noiseMix();
+  src.connect(gNse);
+  gNse.connect(dest);
+  src.start(t);
+  if (stopAt != null) src.stop(stopAt);
+  return { src, gNse };
+}
+
+function applyKeysNoise() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const n = noiseMix();
+  midiHeld.forEach((h) => {
+    if (!h || !h.gNse) return;
+    try { h.gNse.gain.setTargetAtTime(n, t, 0.02); } catch (_) {}
   });
 }
 
@@ -730,7 +770,9 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   gSqr.gain.value = sqr;
   gSub.gain.value = subMix();
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
-  gSaw.connect(f); gSqr.connect(f); gSub.connect(f); f.connect(g);
+  gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
+  const nse = startNoise(ctx, f, t, t + dur + keysRel + 0.05);
+  f.connect(g);
   o1.start(t); o2.start(t); o3.start(t);
   o1.stop(t + dur + keysRel + 0.05);
   o2.stop(t + dur + keysRel + 0.05);
@@ -2317,6 +2359,7 @@ function paintDevices() {
       <div class="abl-dev-body">
         ${knob('abl-osc', 'Sqr', 0, 1, 0.01, keysOsc)}
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
+        ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
@@ -2360,6 +2403,7 @@ function paintDevices() {
   `;
   const osc = root.querySelector('#abl-osc');
   const sub = root.querySelector('#abl-sub');
+  const nse = root.querySelector('#abl-nse');
   const det = root.querySelector('#abl-det');
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
@@ -2384,6 +2428,7 @@ function paintDevices() {
   };
   bindAnalog(osc, 'osc', 'Sqr', (v) => { keysOsc = v; applyKeysOsc(); });
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
+  bindAnalog(nse, 'nse', 'Nse', (v) => { keysNoise = v; applyKeysNoise(); });
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
@@ -2694,6 +2739,11 @@ function applyMidiTarget(target, vel) {
     applyKeysSub();
     const el = document.getElementById('abl-sub');
     if (el) el.value = String(keysSub);
+  } else if (target.type === 'nse') {
+    keysNoise = vel;
+    applyKeysNoise();
+    const el = document.getElementById('abl-nse');
+    if (el) el.value = String(keysNoise);
   } else if (target.type === 'det') {
     keysDet = -50 + vel * 100;
     applyKeysDet();
@@ -2823,10 +2873,12 @@ function studioNoteOn(pitch, vel) {
   gSqr.gain.value = sqr;
   gSub.gain.value = subMix();
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
-  gSaw.connect(f); gSqr.connect(f); gSub.connect(f); f.connect(g); g.connect(mix.keys.input);
+  gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
+  const nse = startNoise(a.ctx, f, t);
+  f.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, g, gSaw, gSqr, gSub, peak: v, rec, freq, f, cut });
+  midiHeld.set(pitch, { o1, o2, o3, nse: nse.src, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut });
 }
 
 function studioNoteOff(pitch) {
@@ -2841,6 +2893,7 @@ function studioNoteOff(pitch) {
     h.o1.stop(t + rel + 0.05);
     h.o2.stop(t + rel + 0.05);
     if (h.o3) h.o3.stop(t + rel + 0.05);
+    if (h.nse) h.nse.stop(t + rel + 0.05);
   } catch (_) {}
   if (h.rec) recEnd(h.rec);
   midiHeld.delete(pitch);
