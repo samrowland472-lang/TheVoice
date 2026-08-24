@@ -833,7 +833,11 @@ function applyKeysDrv() {
 }
 
 function noiseMix() {
-  return Math.max(0, Math.min(1, keysNoise)) * 0.22;
+  const base = Math.max(0, Math.min(1, Number(keysNoise) || 0)) * 0.22;
+  const c = nseCol();
+  if (c === 'brown') return Math.min(0.85, base * 2.8);
+  if (c === 'pink') return Math.min(0.85, base * 1.15);
+  return base;
 }
 
 function ensureNoiseBuf(ctx) {
@@ -847,20 +851,30 @@ function ensureNoiseBuf(ctx) {
 }
 
 function nseCol() {
-  return keysNseCol === 'pink' ? 'pink' : 'white';
+  const c = keysNseCol;
+  if (c === 'pink' || c === 'brown') return c;
+  return 'white';
 }
 
 function nseColFromVel(vel) {
-  return vel >= 0.5 ? 'pink' : 'white';
+  const v = Math.max(0, Math.min(1, Number(vel) || 0));
+  if (v < 0.33) return 'white';
+  if (v < 0.66) return 'pink';
+  return 'brown';
 }
 
 function applyNoiseColor(filter) {
   if (!filter) return;
   try {
-    if (nseCol() === 'pink') {
+    const c = nseCol();
+    if (c === 'pink') {
       filter.type = 'lowpass';
       filter.frequency.value = 1400;
       filter.Q.value = 0.5;
+    } else if (c === 'brown') {
+      filter.type = 'lowpass';
+      filter.frequency.value = 240;
+      filter.Q.value = 0.35;
     } else {
       filter.type = 'allpass';
       filter.frequency.value = 1000;
@@ -895,8 +909,14 @@ function startNoise(ctx, dest, t, stopAt) {
 }
 
 function applyKeysNseCol() {
+  const a = audio();
+  const t = a ? a.ctx.currentTime : 0;
+  const n = noiseMix();
   midiHeld.forEach((h) => {
     if (h && h.ncol) applyNoiseColor(h.ncol);
+    if (h && h.gNse && a) {
+      try { h.gNse.gain.setTargetAtTime(n, t, 0.02); } catch (_) {}
+    }
   });
   syncNseColUi();
 }
@@ -3564,6 +3584,7 @@ function paintDevices() {
         <div class="abl-lfo-waves" id="abl-nse-cols">
           <button type="button" data-nse-col="white"${keysNseCol === 'white' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'white'}">Wht</button>
           <button type="button" data-nse-col="pink"${keysNseCol === 'pink' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'pink'}">Pnk</button>
+          <button type="button" data-nse-col="brown"${keysNseCol === 'brown' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'brown'}">Brn</button>
         </div>
         <div class="abl-lfo-waves" id="abl-osc2-waves">
           <button type="button" data-osc2-wave="sawtooth"${keysOsc2 === 'sawtooth' ? ' class="on"' : ''} aria-pressed="${keysOsc2 === 'sawtooth'}">Saw</button>
