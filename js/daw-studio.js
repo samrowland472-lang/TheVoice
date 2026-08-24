@@ -44,6 +44,7 @@ let keysOct = 0;
 let keysSemi = 0;
 let keysPw = 0.5;
 let keysKey = 0;
+let keysVel = 0;
 let keysFenv = 0.75;
 let keysGlide = 0;
 let keysSub = 0.35;
@@ -98,6 +99,14 @@ function trackCut(cut, pitch) {
   return Math.max(80, Math.min(18000, base * Math.pow(2, amt * (note - 60) / 12)));
 }
 
+function analogCut(base, pitch, vel) {
+  const tracked = trackCut(base, pitch);
+  const amt = Math.max(0, Math.min(1, Number(keysVel) || 0));
+  if (amt <= 0) return tracked;
+  const v = Math.max(0, Math.min(1, vel == null || Number.isNaN(Number(vel)) ? 1 : Number(vel)));
+  return Math.max(80, Math.min(18000, tracked * Math.pow(2, amt * (v - 1) * 2)));
+}
+
 function applyKeysFilter() {
   const a = audio();
   if (!a || !mix.keys) return;
@@ -118,7 +127,7 @@ function applyKeysFilter() {
   midiHeld.forEach((h, pitch) => {
     if (!h || !h.f) return;
     try { h.f.type = type; } catch (_) {}
-    const cut = on ? trackCut(keysCutoff, pitch) : 12000;
+    const cut = on ? analogCut(keysCutoff, pitch, h.vel) : 12000;
     h.cut = cut;
     try {
       h.f.frequency.cancelScheduledValues(t);
@@ -129,6 +138,10 @@ function applyKeysFilter() {
 }
 
 function applyKeysKey() {
+  applyKeysFilter();
+}
+
+function applyKeysVel() {
   applyKeysFilter();
 }
 
@@ -1070,7 +1083,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const fromF = lastKeyFreq;
   glideOsc(o1, o2, freq, t, o3);
   const f = ctx.createBiquadFilter();
-  const cut = fx.on.analog === false ? 12000 : trackCut(cutHz || keysCutoff, pitch);
+  const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
   f.type = filtType();
   f.frequency.setValueAtTime(cut, t);
   f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + Math.max(0.04, dur * 0.7));
@@ -2688,6 +2701,7 @@ function paintDevices() {
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-key', 'Key', 0, 1, 0.01, keysKey)}
+        ${knob('abl-vel', 'Vel', 0, 1, 0.01, keysVel)}
         <div class="abl-lfo-waves" id="abl-filt-types">
           <button type="button" data-filt-type="lowpass"${keysFilt === 'lowpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'lowpass'}">LP</button>
           <button type="button" data-filt-type="bandpass"${keysFilt === 'bandpass' ? ' class="on"' : ''} aria-pressed="${keysFilt === 'bandpass'}">BP</button>
@@ -2753,6 +2767,7 @@ function paintDevices() {
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const key = root.querySelector('#abl-key');
+  const velf = root.querySelector('#abl-vel');
   const fenv = root.querySelector('#abl-fenv');
   const rate = root.querySelector('#abl-rate');
   const amt = root.querySelector('#abl-amt');
@@ -2788,6 +2803,7 @@ function paintDevices() {
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(key, 'key', 'Key', (v) => { keysKey = v; applyKeysKey(); });
+  bindAnalog(velf, 'vel', 'Vel', (v) => { keysVel = v; applyKeysVel(); });
   const filts = root.querySelector('#abl-filt-types');
   if (filts) {
     filts.addEventListener('pointerdown', () => {
@@ -3203,6 +3219,11 @@ function applyMidiTarget(target, vel) {
     applyKeysKey();
     const el = document.getElementById('abl-key');
     if (el) el.value = String(keysKey);
+  } else if (target.type === 'vel') {
+    keysVel = vel;
+    applyKeysVel();
+    const el = document.getElementById('abl-vel');
+    if (el) el.value = String(keysVel);
   } else if (target.type === 'filt') {
     keysFilt = filtTypeFromVel(vel);
     applyKeysFilter();
@@ -3332,7 +3353,7 @@ function studioNoteOn(pitch, vel) {
   const dec = Math.max(0.01, keysDec);
   const f = a.ctx.createBiquadFilter();
   f.type = filtType();
-  const cut = trackCut(keysCutoff, pitch);
+  const cut = analogCut(keysCutoff, pitch, vel);
   f.frequency.setValueAtTime(cut, t);
   f.frequency.exponentialRampToValueAtTime(filterEnvEnd(cut), t + atk + dec);
   f.Q.value = keysRes;
@@ -3357,7 +3378,7 @@ function studioNoteOn(pitch, vel) {
   f.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut, vel });
 }
 
 function studioNoteOff(pitch) {
