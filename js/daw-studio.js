@@ -53,6 +53,7 @@ let keysPw = 0.5;
 let keysKey = 0;
 let keysVel = 0;
 let keysFenv = 0.75;
+let keysFenvInv = false;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
@@ -943,8 +944,25 @@ function applyKeysOct1() {
 
 function filterEnvEnd(cut) {
   const amt = Math.max(0, Math.min(1, keysFenv));
-  const closed = Math.max(80, cut * 0.12);
-  return Math.max(80, cut + (closed - cut) * amt);
+  const c = Math.max(80, cut);
+  if (keysFenvInv) {
+    const opened = Math.min(18000, c / 0.12);
+    return Math.max(80, Math.min(18000, c + (opened - c) * amt));
+  }
+  const closed = Math.max(80, c * 0.12);
+  return Math.max(80, c + (closed - c) * amt);
+}
+
+function syncFenvInvUi() {
+  const btn = document.getElementById('abl-fenvinv');
+  if (!btn) return;
+  btn.classList.toggle('on', !!keysFenvInv);
+  btn.setAttribute('aria-pressed', keysFenvInv ? 'true' : 'false');
+}
+
+function applyKeysFenvInv() {
+  applyKeysFenv();
+  syncFenvInvUi();
 }
 
 function applyKeysFenv() {
@@ -3159,6 +3177,9 @@ function paintDevices() {
           <button type="button" data-filt-slope="24"${keysSlope === 24 ? ' class="on"' : ''} aria-pressed="${keysSlope === 24}">24</button>
         </div>
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
+        <div class="abl-lfo-waves">
+          <button type="button" id="abl-fenvinv" class="${keysFenvInv ? 'on' : ''}" aria-pressed="${keysFenvInv}">Inv</button>
+        </div>
         <label class="abl-dev-k"><span id="abl-rate-lab">${keysLfoSync ? LFO_SYNC_LABELS[lfoSyncIndex()] : 'Rate'}</span><input id="abl-rate" type="range" min="0.1" max="18" step="0.1" value="${keysLfoRate}"></label>
         ${knob('abl-amt', 'Amt', 0, 1, 0.01, keysLfoAmt)}
         <div class="abl-lfo-waves" id="abl-lfo-waves">
@@ -3374,6 +3395,22 @@ function paintDevices() {
     });
   }
   bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
+  const fenvInvBtn = root.querySelector('#abl-fenvinv');
+  if (fenvInvBtn) {
+    fenvInvBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'fenvinv' };
+      midiStatus('Learn Analog FEnv Inv — move a CC');
+      syncTransport();
+    });
+    fenvInvBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysFenvInv = !keysFenvInv;
+      applyKeysFenvInv();
+    });
+  }
   bindAnalog(rate, 'lfor', 'Rate', (v) => { keysLfoRate = v; applyKeysLfo(); });
   const syncBtn = root.querySelector('#abl-sync');
   if (syncBtn) {
@@ -3865,6 +3902,9 @@ function applyMidiTarget(target, vel) {
     applyKeysFenv();
     const el = document.getElementById('abl-fenv');
     if (el) el.value = String(keysFenv);
+  } else if (target.type === 'fenvinv') {
+    keysFenvInv = vel >= 0.5;
+    applyKeysFenvInv();
   } else if (target.type === 'lfor') {
     keysLfoRate = 0.1 + vel * 17.9;
     applyKeysLfo();
