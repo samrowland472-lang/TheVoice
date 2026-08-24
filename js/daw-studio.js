@@ -85,8 +85,10 @@ let keysDrv = 0.22;
 let keysFilt = 'lowpass';
 let keysSlope = 12;
 let lastKeyFreq = 0;
+let lastKeyUntil = 0;
 let keysMono = false;
 let keysRetrig = false;
+let keysLegato = false;
 let keysVoices = 8;
 const monoStack = [];
 let keysBend = 2;
@@ -712,24 +714,24 @@ function spreadAmt() {
   return Math.max(0, Math.min(1, Number(keysSpread) || 0));
 }
 
-function startUnison(ctx, dest, freq, t, stopAt, fromFreq) {
+function startUnison(ctx, dest, freq, t, stopAt, fromFreq, held) {
   const oUp = ctx.createOscillator();
   const oDn = ctx.createOscillator();
   oUp.type = 'sawtooth';
   oDn.type = 'square';
   const { up, dn } = uniRatios();
-  const g = Math.max(0, keysGlide);
+  const g = glideTime(held);
   const b = bendRatio();
   const from = (fromFreq != null ? fromFreq : lastKeyFreq) * b;
-  const dest = freq * b;
+  const destHz = freq * b;
   if (g > 0.004 && from > 20) {
     oUp.frequency.setValueAtTime(Math.max(20, from * up), t);
     oDn.frequency.setValueAtTime(Math.max(20, from * dn), t);
-    oUp.frequency.exponentialRampToValueAtTime(dest * up, t + g);
-    oDn.frequency.exponentialRampToValueAtTime(dest * dn, t + g);
+    oUp.frequency.exponentialRampToValueAtTime(destHz * up, t + g);
+    oDn.frequency.exponentialRampToValueAtTime(destHz * dn, t + g);
   } else {
-    oUp.frequency.setValueAtTime(dest * up, t);
-    oDn.frequency.setValueAtTime(dest * dn, t);
+    oUp.frequency.setValueAtTime(destHz * up, t);
+    oDn.frequency.setValueAtTime(destHz * dn, t);
   }
   const mixV = uniMix();
   const gUni = ctx.createGain();
@@ -1379,11 +1381,18 @@ function applyKeysPenv() {
   });
 }
 
-function glideOsc(o1, o2, freq, t, o3) {
+function glideTime(held) {
+  const g = Math.max(0, Number(keysGlide) || 0);
+  if (g <= 0.004) return 0;
+  if (keysLegato && !held) return 0;
+  return g;
+}
+
+function glideOsc(o1, o2, freq, t, o3, held) {
   const r = osc2FreqMul();
   const r1 = osc1Ratio();
   const b = bendRatio();
-  const g = Math.max(0, keysGlide);
+  const g = glideTime(held);
   const from = lastKeyFreq * b;
   const to = freq * b;
   const subF = Math.max(20, freq / 2 * b);
@@ -1927,7 +1936,9 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   shapeOsc2(o2, ctx);
   o3.type = 'sine';
   const fromF = lastKeyFreq;
-  glideOsc(o1, o2, freq, t, o3);
+  const overlapping = lastKeyUntil > t + 0.0005;
+  glideOsc(o1, o2, freq, t, o3, overlapping);
+  lastKeyUntil = Math.max(lastKeyUntil, t + dur);
   const cut = fx.on.analog === false ? 12000 : analogCut(cutHz || keysCutoff, pitch, vel);
   const { f, f2 } = makeSlopePair(ctx, cut, t, dur);
   const g = envGain(dest, t, vel * 0.28, Math.max(0.005, keysAtk), Math.max(0.01, keysDec), keysSus, keysRel, dur);
@@ -1945,7 +1956,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   startRing(ctx, o1, o2, f);
   startFm(ctx, o1, o2, freq);
   const tail = voiceTail();
-  const uni = startUnison(ctx, f, freq, t, t + dur + tail, fromF);
+  const uni = startUnison(ctx, f, freq, t, t + dur + tail, fromF, overlapping);
   const nse = startNoise(ctx, f, t, t + dur + tail);
   const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + tail, f2, pwm.gPwm);
   startDrift(ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t, t + dur + tail);
@@ -3616,6 +3627,7 @@ function paintDevices() {
         <div class="abl-lfo-waves">
           <button type="button" id="abl-mono" class="${keysMono ? 'on' : ''}" aria-pressed="${keysMono}">Mono</button>
           <button type="button" id="abl-retrig" class="${keysRetrig ? 'on' : ''}" aria-pressed="${keysRetrig}">Retrig</button>
+          <button type="button" id="abl-legato" class="${keysLegato ? 'on' : ''}" aria-pressed="${keysLegato}">Leg</button>
         </div>
         ${knob('abl-bnd', 'Bnd', 0, 12, 1, keysBend)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
@@ -3948,6 +3960,22 @@ function paintDevices() {
       if (midiMapOn) return;
       keysRetrig = !keysRetrig;
       applyKeysRetrig();
+    });
+  }
+  const legatoBtn = root.querySelector('#abl-legato');
+  if (legatoBtn) {
+    legatoBtn.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (!midiMapOn) return;
+      midiLearn = { type: 'legato' };
+      midiStatus('Learn Analog Legato — move a CC');
+      syncTransport();
+    });
+    legatoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (midiMapOn) return;
+      keysLegato = !keysLegato;
+      applyKeysLegato();
     });
   }
   bindAnalog(bnd, 'bnd', 'Bnd', (v) => { keysBend = Math.round(v); applyPitchBend(); });
@@ -4487,6 +4515,9 @@ function applyMidiTarget(target, vel) {
   } else if (target.type === 'retrig') {
     keysRetrig = vel >= 0.5;
     applyKeysRetrig();
+  } else if (target.type === 'legato') {
+    keysLegato = vel >= 0.5;
+    applyKeysLegato();
   } else if (target.type === 'bnd') {
     keysBend = Math.round(vel * 12);
     applyPitchBend();
@@ -4611,6 +4642,17 @@ function applyKeysRetrig() {
   syncRetrigUi();
 }
 
+function syncLegatoUi() {
+  const btn = document.getElementById('abl-legato');
+  if (!btn) return;
+  btn.classList.toggle('on', !!keysLegato);
+  btn.setAttribute('aria-pressed', keysLegato ? 'true' : 'false');
+}
+
+function applyKeysLegato() {
+  syncLegatoUi();
+}
+
 function retrigVoice(h, pitch, vel) {
   const a = audio();
   if (!a || !h || !h.g) return;
@@ -4640,7 +4682,7 @@ function retuneVoice(h, pitch, vel) {
   if (!a || !h) return;
   const t = a.ctx.currentTime;
   const freq = 440 * Math.pow(2, (pitch - 69) / 12);
-  const g = Math.max(0, keysGlide);
+  const g = glideTime(true);
   const from = h.freq || lastKeyFreq || freq;
   const glideTo = (osc, startHz, destHz) => {
     if (!osc) return;
@@ -4707,6 +4749,7 @@ function studioNoteOn(pitch, vel) {
     midiHeld.set(pitch, h);
     return;
   }
+  const overlapping = midiHeld.size > (midiHeld.has(pitch) ? 1 : 0);
   studioNoteOff(pitch);
   pushMono(pitch);
   stealForNewVoice();
@@ -4719,7 +4762,7 @@ function studioNoteOn(pitch, vel) {
   shapeOsc2(o2, a.ctx);
   o3.type = 'sine';
   const fromF = lastKeyFreq;
-  glideOsc(o1, o2, freq, t, o3);
+  glideOsc(o1, o2, freq, t, o3, overlapping);
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
   const cut = analogCut(keysCutoff, pitch, vel);
@@ -4742,7 +4785,7 @@ function studioNoteOn(pitch, vel) {
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
   const ring = startRing(a.ctx, o1, o2, f);
   const fm = startFm(a.ctx, o1, o2, freq);
-  const uni = startUnison(a.ctx, f, freq, t, null, fromF);
+  const uni = startUnison(a.ctx, f, freq, t, null, fromF, overlapping);
   const nse = startNoise(a.ctx, f, t);
   const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2, pwm.gPwm);
   const drift = startDrift(a.ctx, [o1, o2, o3, uni.oUp, uni.oDn], freq, t);
