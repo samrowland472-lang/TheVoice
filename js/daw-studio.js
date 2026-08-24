@@ -42,6 +42,7 @@ let keysOsc = 0.5;
 let keysOsc1 = 'sawtooth';
 let keysOsc2 = 'pulse';
 let keysOscSync = false;
+let keysRing = 0;
 let keysOct1 = 0;
 let keysSemi1 = 0;
 let keysDet1 = 0;
@@ -327,6 +328,33 @@ function applyKeysOsc() {
       h.gSaw.gain.setTargetAtTime(saw, t, 0.02);
       h.gSqr.gain.setTargetAtTime(sqr, t, 0.02);
     } catch (_) {}
+  });
+}
+
+function ringMix() {
+  return Math.max(0, Math.min(1, Number(keysRing) || 0)) * 0.55;
+}
+
+function startRing(ctx, o1, o2, dest) {
+  const mul = ctx.createGain();
+  mul.gain.value = 0;
+  const mix = ctx.createGain();
+  mix.gain.value = ringMix();
+  o2.connect(mul);
+  o1.connect(mul.gain);
+  mul.connect(mix);
+  mix.connect(dest);
+  return { mul, gRing: mix };
+}
+
+function applyKeysRing() {
+  const a = audio();
+  if (!a) return;
+  const t = a.ctx.currentTime;
+  const amt = ringMix();
+  midiHeld.forEach((h) => {
+    if (!h || !h.gRing) return;
+    try { h.gRing.gain.setTargetAtTime(amt, t, 0.02); } catch (_) {}
   });
 }
 
@@ -1495,6 +1523,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   gSub.gain.value = subMix();
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
+  startRing(ctx, o1, o2, f);
   const uni = startUnison(ctx, f, freq, t, t + dur + keysRel + 0.05, fromF);
   const nse = startNoise(ctx, f, t, t + dur + keysRel + 0.05);
   const lfoN = startLfo(ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, t + dur + keysRel + 0.05, f2);
@@ -3112,6 +3141,7 @@ function paintDevices() {
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
         ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
         ${knob('abl-pw', 'PW', 0.05, 0.95, 0.01, keysPw)}
+        ${knob('abl-ring', 'Rng', 0, 1, 0.01, keysRing)}
         ${knob('abl-uni', 'Uni', 0, 1, 0.01, keysUni)}
         ${knob('abl-spr', 'Spr', 0, 1, 0.01, keysSpread)}
         ${knob('abl-drv', 'Drv', 0, 1, 0.01, keysDrv)}
@@ -3191,6 +3221,7 @@ function paintDevices() {
   const oct = root.querySelector('#abl-oct');
   const semi = root.querySelector('#abl-semi');
   const pw = root.querySelector('#abl-pw');
+  const ring = root.querySelector('#abl-ring');
   const uni = root.querySelector('#abl-uni');
   const spr = root.querySelector('#abl-spr');
   const drv = root.querySelector('#abl-drv');
@@ -3299,6 +3330,7 @@ function paintDevices() {
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
   bindAnalog(pw, 'pw', 'PW', (v) => { keysPw = v; applyKeysPw(); });
+  bindAnalog(ring, 'ring', 'Rng', (v) => { keysRing = v; applyKeysRing(); });
   bindAnalog(uni, 'uni', 'Uni', (v) => { keysUni = v; applyKeysUni(); });
   bindAnalog(spr, 'spr', 'Spr', (v) => { keysSpread = v; applyKeysSpread(); });
   bindAnalog(drv, 'drv', 'Drv', (v) => { keysDrv = v; applyKeysDrv(); });
@@ -3781,6 +3813,11 @@ function applyMidiTarget(target, vel) {
     applyKeysPw();
     const el = document.getElementById('abl-pw');
     if (el) el.value = String(keysPw);
+  } else if (target.type === 'ring') {
+    keysRing = vel;
+    applyKeysRing();
+    const el = document.getElementById('abl-ring');
+    if (el) el.value = String(keysRing);
   } else if (target.type === 'uni') {
     keysUni = vel;
     applyKeysUni();
@@ -4100,6 +4137,7 @@ function studioNoteOn(pitch, vel) {
   gSub.gain.value = subMix();
   o1.connect(gSaw); o2.connect(gSqr); o3.connect(gSub);
   gSaw.connect(f); gSqr.connect(f); gSub.connect(f);
+  const ring = startRing(a.ctx, o1, o2, f);
   const uni = startUnison(a.ctx, f, freq, t, null, fromF);
   const nse = startNoise(a.ctx, f, t);
   const lfo = startLfo(a.ctx, f, cut, freq, [o1, o2, o3, uni.oUp, uni.oDn], t, null, f2);
@@ -4107,7 +4145,7 @@ function studioNoteOn(pitch, vel) {
   f2.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gRing: ring.gRing, gNse: nse.gNse, peak: v, rec, freq, f, f2, cut, vel });
 }
 
 function studioNoteOff(pitch) {
