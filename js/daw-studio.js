@@ -50,6 +50,7 @@ let keysFenv = 0.75;
 let keysGlide = 0;
 let keysSub = 0.35;
 let keysNoise = 0.12;
+let keysNseCol = 'white';
 let keysLfoRate = 5;
 let keysLfoAmt = 0.28;
 let keysVib = 0.18;
@@ -426,17 +427,59 @@ function ensureNoiseBuf(ctx) {
   return buf;
 }
 
+function nseCol() {
+  return keysNseCol === 'pink' ? 'pink' : 'white';
+}
+
+function nseColFromVel(vel) {
+  return vel >= 0.5 ? 'pink' : 'white';
+}
+
+function applyNoiseColor(filter) {
+  if (!filter) return;
+  try {
+    if (nseCol() === 'pink') {
+      filter.type = 'lowpass';
+      filter.frequency.value = 1400;
+      filter.Q.value = 0.5;
+    } else {
+      filter.type = 'allpass';
+      filter.frequency.value = 1000;
+      filter.Q.value = 0.0001;
+    }
+  } catch (_) {}
+}
+
+function syncNseColUi() {
+  const w = nseCol();
+  document.querySelectorAll('[data-nse-col]').forEach((btn) => {
+    const on = btn.dataset.nseCol === w;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
 function startNoise(ctx, dest, t, stopAt) {
   const src = ctx.createBufferSource();
   src.buffer = ensureNoiseBuf(ctx);
   src.loop = true;
+  const col = ctx.createBiquadFilter();
+  applyNoiseColor(col);
   const gNse = ctx.createGain();
   gNse.gain.value = noiseMix();
-  src.connect(gNse);
+  src.connect(col);
+  col.connect(gNse);
   gNse.connect(dest);
   src.start(t);
   if (stopAt != null) src.stop(stopAt);
-  return { src, gNse };
+  return { src, gNse, col };
+}
+
+function applyKeysNseCol() {
+  midiHeld.forEach((h) => {
+    if (h && h.ncol) applyNoiseColor(h.ncol);
+  });
+  syncNseColUi();
 }
 
 function applyKeysNoise() {
@@ -2766,6 +2809,10 @@ function paintDevices() {
         </div>
         ${knob('abl-sub', 'Sub', 0, 1, 0.01, keysSub)}
         ${knob('abl-nse', 'Nse', 0, 1, 0.01, keysNoise)}
+        <div class="abl-lfo-waves" id="abl-nse-cols">
+          <button type="button" data-nse-col="white"${keysNseCol === 'white' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'white'}">Wht</button>
+          <button type="button" data-nse-col="pink"${keysNseCol === 'pink' ? ' class="on"' : ''} aria-pressed="${keysNseCol === 'pink'}">Pnk</button>
+        </div>
         ${knob('abl-det', 'Det', -50, 50, 1, keysDet)}
         ${knob('abl-oct', 'Oct', -2, 2, 1, keysOct)}
         ${knob('abl-semi', 'Semi', -12, 12, 1, keysSemi)}
@@ -2887,6 +2934,23 @@ function paintDevices() {
   }
   bindAnalog(sub, 'sub', 'Sub', (v) => { keysSub = v; applyKeysSub(); });
   bindAnalog(nse, 'nse', 'Nse', (v) => { keysNoise = v; applyKeysNoise(); });
+  const ncols = root.querySelector('#abl-nse-cols');
+  if (ncols) {
+    ncols.addEventListener('pointerdown', () => {
+      if (!midiMapOn) return;
+      midiLearn = { type: 'ncol' };
+      midiStatus('Learn Analog Nse col — move a CC');
+      syncTransport();
+    });
+    ncols.querySelectorAll('[data-nse-col]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (midiMapOn) return;
+        keysNseCol = btn.dataset.nseCol;
+        applyKeysNseCol();
+      });
+    });
+  }
   bindAnalog(det, 'det', 'Det', (v) => { keysDet = v; applyKeysDet(); });
   bindAnalog(oct, 'oct', 'Oct', (v) => { keysOct = Math.round(v); applyKeysDet(); });
   bindAnalog(semi, 'semi', 'Semi', (v) => { keysSemi = Math.round(v); applyKeysDet(); });
@@ -3271,6 +3335,9 @@ function applyMidiTarget(target, vel) {
     applyKeysNoise();
     const el = document.getElementById('abl-nse');
     if (el) el.value = String(keysNoise);
+  } else if (target.type === 'ncol') {
+    keysNseCol = nseColFromVel(vel);
+    applyKeysNseCol();
   } else if (target.type === 'det') {
     keysDet = -50 + vel * 100;
     applyKeysDet();
@@ -3480,7 +3547,7 @@ function studioNoteOn(pitch, vel) {
   f.connect(sh); sh.connect(lfo.gTrem); lfo.gTrem.connect(g); g.connect(mix.keys.input);
   o1.start(t); o2.start(t); o3.start(t);
   const rec = recBegin(pitch, vel);
-  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut, vel });
+  midiHeld.set(pitch, { o1, o2, o3, oUp: uni.oUp, oDn: uni.oDn, gUni: uni.gUni, gUniDn: uni.gUniDn, panUp: uni.panUp, panDn: uni.panDn, nse: nse.src, ncol: nse.col, lfo: lfo.lfo, gLfo: lfo.gLfo, gVib: lfo.gVib, gTremAmt: lfo.gTremAmt, sh, g, gSaw, gSqr, gSub, gNse: nse.gNse, peak: v, rec, freq, f, cut, vel });
 }
 
 function studioNoteOff(pitch) {
