@@ -41,6 +41,8 @@ let keysRel = 0.35;
 let keysOsc = 0.5;
 let keysDet = 9;
 let keysFenv = 0.75;
+let keysGlide = 0;
+let lastKeyFreq = 0;
 const fx = { send: 0.45, delayMs: 375, delayFb: 0.35, delayWet: 0.7, compTh: -18, compRatio: 3.2, eqL: 0, eqM: 0, eqH: 0, killL: false, killM: false, killH: false, on: { analog: true, delay: true, comp: true, eq3: true } };
 
 function applyFx() {
@@ -151,6 +153,21 @@ function applyKeysFenv() {
       h.f.frequency.setTargetAtTime(filterEnvEnd(cut), t, 0.05);
     } catch (_) {}
   });
+}
+
+function glideOsc(o1, o2, freq, t) {
+  const r = detuneRatio();
+  const g = Math.max(0, keysGlide);
+  if (g > 0.004 && lastKeyFreq > 20) {
+    o1.frequency.setValueAtTime(lastKeyFreq, t);
+    o2.frequency.setValueAtTime(lastKeyFreq * r, t);
+    o1.frequency.exponentialRampToValueAtTime(freq, t + g);
+    o2.frequency.exponentialRampToValueAtTime(freq * r, t + g);
+  } else {
+    o1.frequency.setValueAtTime(freq, t);
+    o2.frequency.setValueAtTime(freq * r, t);
+  }
+  lastKeyFreq = freq;
 }
 
 const mix = {};
@@ -673,8 +690,7 @@ function trigKey(t, pitch, vel, lengthBeats, cutHz, dest) {
   const o2 = ctx.createOscillator();
   o1.type = 'sawtooth';
   o2.type = 'square';
-  o1.frequency.value = freq;
-  o2.frequency.value = freq * detuneRatio();
+  glideOsc(o1, o2, freq, t);
   const f = ctx.createBiquadFilter();
   const cut = fx.on.analog === false ? 12000 : Math.max(80, cutHz || keysCutoff);
   f.type = 'lowpass';
@@ -2277,6 +2293,7 @@ function paintDevices() {
         ${knob('abl-cut', 'Cut', 200, 8000, 1, keysCutoff)}
         ${knob('abl-res', 'Res', 0.2, 18, 0.1, keysRes)}
         ${knob('abl-fenv', 'FEnv', 0, 1, 0.01, keysFenv)}
+        ${knob('abl-gli', 'Gli', 0, 0.8, 0.01, keysGlide)}
         ${knob('abl-atk', 'Atk', 0.005, 0.8, 0.005, keysAtk)}
         ${knob('abl-dec', 'Dec', 0.01, 1.2, 0.01, keysDec)}
         ${knob('abl-sus', 'Sus', 0.05, 1, 0.01, keysSus)}
@@ -2318,6 +2335,7 @@ function paintDevices() {
   const cut = root.querySelector('#abl-cut');
   const res = root.querySelector('#abl-res');
   const fenv = root.querySelector('#abl-fenv');
+  const gli = root.querySelector('#abl-gli');
   const atk = root.querySelector('#abl-atk');
   const dec = root.querySelector('#abl-dec');
   const sus = root.querySelector('#abl-sus');
@@ -2340,6 +2358,7 @@ function paintDevices() {
   bindAnalog(cut, 'cut', 'Cut', (v) => { keysCutoff = v; applyKeysFilter(); });
   bindAnalog(res, 'res', 'Res', (v) => { keysRes = v; applyKeysFilter(); });
   bindAnalog(fenv, 'fenv', 'FEnv', (v) => { keysFenv = v; applyKeysFenv(); });
+  bindAnalog(gli, 'gli', 'Gli', (v) => { keysGlide = v; });
   bindAnalog(atk, 'atk', 'Atk', (v) => { keysAtk = v; });
   bindAnalog(dec, 'dec', 'Dec', (v) => { keysDec = v; });
   bindAnalog(sus, 'sus', 'Sus', (v) => { keysSus = v; applyKeysEnv(); });
@@ -2660,6 +2679,10 @@ function applyMidiTarget(target, vel) {
     applyKeysFenv();
     const el = document.getElementById('abl-fenv');
     if (el) el.value = String(keysFenv);
+  } else if (target.type === 'gli') {
+    keysGlide = vel * 0.8;
+    const el = document.getElementById('abl-gli');
+    if (el) el.value = String(keysGlide);
   } else if (target.type === 'atk') {
     keysAtk = 0.005 + vel * 0.795;
     const el = document.getElementById('abl-atk');
@@ -2741,8 +2764,7 @@ function studioNoteOn(pitch, vel) {
   const o2 = a.ctx.createOscillator();
   o1.type = 'sawtooth';
   o2.type = 'square';
-  o1.frequency.value = freq;
-  o2.frequency.value = freq * detuneRatio();
+  glideOsc(o1, o2, freq, t);
   const atk = Math.max(0.005, keysAtk);
   const dec = Math.max(0.01, keysDec);
   const f = a.ctx.createBiquadFilter();
