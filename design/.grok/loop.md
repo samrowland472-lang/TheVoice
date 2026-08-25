@@ -33,8 +33,13 @@ Auth OFF, DB OFF.
 - **Full store.ts restored (~29kb) with working history, nodes, paint, guides, campaigns.**
 - **Full canvas-stage restored (~35kb).**
 - **requestFitSelection + fit-selection view intent wired (aabb + fitBoxViewport).**
+- **studio-app.tsx restored (was truncated to return null).**
 
 ## Iterations
+
+### 2026-08-25T23:17Z — loop 42
+
+Main had PLACEHOLDER store.ts (11 bytes), empty canvas-stage.tsx, and truncated studio-app (return null). Restored full store.ts (~29kb from history), full canvas-stage.tsx (~35kb), full studio-app.tsx. Wired `requestFitSelection` + `fit-selection` ViewIntent end-to-end: store action + interface, canvas-stage handler via `aabb` + `fitBoxViewport`, Shift+0 shortcut, command palette “Zoom to selection”. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile.
 
 ### 2026-08-25T16:16Z — loop 41
 
