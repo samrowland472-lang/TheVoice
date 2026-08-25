@@ -21,7 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Multi-select marquee polish / keyboard nudge feedback.
+1. Export selection as PNG (cropped AABB) — wire Export menu if not already complete.
+2. Layer search / filter in layers panel.
+3. Boolean ops (union / subtract) for shapes.
 
 ## Done
 
@@ -30,8 +32,13 @@ Auth OFF, DB OFF.
 - Full canvas-stage restored (35kb) after GitHub stub; eyedropper HUD: Click sample · kit chip · Shift+click.
 - Zoom to selection (fit selected layers in view): Shift+0, command palette, context menu, Shift-click zoom %.
 - Export selection as PNG (cropped AABB, transparent bg): Export menu, command palette, context menu.
+- **Marquee multi-select polish + keyboard nudge feedback** (loop 38).
 
 ## Iterations
+
+### 2026-08-25T01:15Z — loop 38
+
+Restored full `store.ts` (was truncated restore marker). **Zoom to selection** wired end-to-end: `requestFitSelection` + `fitBoxViewport`, ⇧0, command palette, context menu, Shift-click zoom %. **Marquee polish**: dashed phosphor rect, live layer highlight while dragging, Shift=add, Alt=subtract. **Keyboard nudge feedback**: arrow-key translate pulses selection fill/stroke briefly. Typecheck + build + smoke clean.
 
 ### 2026-08-23T20:11Z — loop 37
 
@@ -51,4 +58,4 @@ Restored `canvas-stage.tsx` after placeholder wipe (was 20 bytes). Re-applied ey
 
 ## Next recommended
 
-Multi-select marquee polish / keyboard nudge feedback.
+Export selection as PNG vertical slice (if still missing in export menu) or layer search in the layers panel.
