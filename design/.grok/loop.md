@@ -30,10 +30,15 @@ Auth OFF, DB OFF.
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Zoom to selection (Shift+0, command palette).
 - Layer search / filter in layers panel (loop 39 claim).
-- **Full store.ts restored from history (~29kb) with working history, nodes, paint, guides, campaigns.**
-- **requestFitSelection + fit-selection view intent wired in canvas-stage (aabb + fitBoxViewport).**
+- **Full store.ts restored (~29kb) with working history, nodes, paint, guides, campaigns.**
+- **Full canvas-stage restored (~35kb).**
+- **requestFitSelection + fit-selection view intent wired (aabb + fitBoxViewport).**
 
 ## Iterations
+
+### 2026-08-25T16:16Z — loop 41
+
+Restored truncated `store.ts` (0 bytes → ~29kb from history) and `canvas-stage.tsx` (0 bytes → ~35kb). Wired `requestFitSelection` + `fit-selection` ViewIntent end-to-end: store action, canvas-stage handler via `aabb` + `fitBoxViewport`, Shift+0 shortcut, command palette “Zoom to selection”. Typecheck clean, build clean, browser-smoke: canvas present, no page errors (desktop clean; mobile hydration caret-color noise only).
 
 ### 2026-08-25T09:09Z — loop 40
 
