@@ -85,3 +85,16 @@ export function rectsIntersect(
 ) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
+
+/** Axis-aligned world bounds of a node, rotation-aware via corner transform. */
+export function nodeWorldAabb(n: DesignNode): { x: number; y: number; w: number; h: number } {
+  return aabb([n]);
+}
+
+/** Marquee (axis-aligned) hits a node if it intersects the node's rotated world AABB. */
+export function marqueeHitsNode(
+  n: DesignNode,
+  mq: { x: number; y: number; w: number; h: number },
+): boolean {
+  return rectsIntersect(nodeWorldAabb(n), mq);
+}

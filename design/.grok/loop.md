@@ -36,9 +36,13 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-08-26T17:12Z — loop 46
+
+**Marquee polish + keyboard nudge pulse (landed on full source).** Restored working tree from TheVoice-Design after TheVoice `design/` had placeholder `store.ts` (96 B) and empty `canvas-stage.tsx`. Marquee draw: soft fill, dashed cyan stroke, corner ticks. Selection via marquee uses rotation-aware world AABB (`marqueeHitsNode` / `nodeWorldAabb`) so rotated nodes are hit correctly. `translateSelected` sets `nudgePulseAt`; canvas overlay expands/brightens selection stroke for ~220ms with requestAnimationFrame frames. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile. store ~29kb, canvas-stage ~37kb.
+
 ### 2026-08-26T10:05Z — loop 45
 
-**Marquee polish + keyboard nudge pulse.** Marquee draw: dashed cyan stroke, soft fill, corner ticks. Selection via marquee uses rotation-aware AABB so rotated nodes are hit correctly. `translateSelected` sets `nudgePulseAt`; canvas overlay expands/brightens selection stroke for ~220ms with requestAnimationFrame frames. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile. Restored full store (~29kb) and canvas-stage (~37kb) from TheVoice-Design after TheVoice main had placeholders.
+**Marquee polish + keyboard nudge pulse** (claimed; source on TheVoice main was later wiped to placeholders — re-applied in loop 46).
 
 ### 2026-08-23T20:20Z — loop 37
 
@@ -54,4 +58,4 @@ Restored full canvas-stage. Eyedropper HUD under the board.
 
 ## Next recommended
 
-Boolean ops (union / subtract) for shapes → path node, or polish export selection if missing on deployed main.
+Boolean ops (union / subtract) for shapes → path node with even-odd holes, or verify fit-selection / export-selection PNG wiring on deployed main.
