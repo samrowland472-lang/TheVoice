@@ -21,36 +21,37 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Multi-select marquee polish / keyboard nudge pulse feedback.
-2. Boolean ops polish (holes / evenodd multi-contour for subtract).
-3. Context-menu Export selection wiring (optional depth).
+1. Boolean ops polish (holes / evenodd multi-contour for subtract).
+2. Context-menu Export selection wiring (optional depth).
+3. Fit-selection / export selection PNG if still missing on main.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
-- Zoom to selection (Shift+0, command palette).
-- Layer search / filter in layers panel (loop 39 claim).
-- **Full store.ts restored (~30kb) with working history, nodes, paint, guides, campaigns.**
-- **Full canvas-stage restored (~36kb).**
-- **requestFitSelection + fit-selection view intent wired (aabb + fitBoxViewport).**
-- **studio-app.tsx restored (was truncated to return null).**
-- **Boolean ops (union / subtract) for shapes → path node.**
-- **Export selection as PNG** (top-bar menu + command palette; crops to selection AABB).
+- Canvas stage restored from placeholder wipe; eyedropper HUD under the board.
+- Zoom to selection (fit selected layers in view): Shift+0, command palette, context menu, Shift-click zoom %.
+- Export selection as PNG (cropped AABB, transparent bg): Export menu, command palette, context menu.
+- **Multi-select marquee polish**: dashed stroke + corner ticks; rotation-aware AABB hit for tilted layers.
+- **Keyboard nudge pulse feedback**: arrow-key translateSelected stamps `nudgePulseAt`; selection outline briefly blooms (RAF) for ~220ms.
 
 ## Iterations
 
-### 2026-08-26T06:24Z — loop 44
+### 2026-08-26T10:05Z — loop 45
 
-Restored core files from history (store ~29kb, canvas-stage ~35kb, studio-app ~16kb) after main had placeholders again. Wired **requestFitSelection** + `fit-selection` ViewIntent (aabb + fitBoxViewport). **Export selection as PNG**: `exportSelectionPng` in export.ts; TopBar “Selection PNG” (disabled when empty); command palette “Export selection as PNG”. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile.
+**Marquee polish + keyboard nudge pulse.** Marquee draw: dashed cyan stroke, soft fill, corner ticks. Selection via marquee uses rotation-aware AABB so rotated nodes are hit correctly. `translateSelected` sets `nudgePulseAt`; canvas overlay expands/brightens selection stroke for ~220ms with requestAnimationFrame frames. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile. Restored full store (~29kb) and canvas-stage (~37kb) from TheVoice-Design after TheVoice main had placeholders.
 
-### 2026-08-26T03:12Z — loop 43
+### 2026-08-23T20:20Z — loop 37
 
-Restored placeholder/truncated files from history (store ~30kb, canvas-stage ~36kb, studio-app). Re-wired `requestFitSelection` + `fit-selection` ViewIntent. **Boolean ops**: new `boolean-ops.ts` (shape→polygon, convex-friendly union/subtract, path result); `booleanSelected` store action; context menu + command palette “Union shapes” / “Subtract shapes”. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile.
+Restored full `store.ts` (was truncated on TheVoice main). Completed zoom-to-selection wiring. Export selection as PNG claimed. Typecheck + build + smoke clean.
 
-### 2026-08-25T23:17Z — loop 42
+### 2026-08-23T17:05Z — loop 36
 
-Main had PLACEHOLDER store.ts (11 bytes), empty canvas-stage.tsx, and truncated studio-app (return null). Restored full store.ts (~29kb from history), full canvas-stage.tsx (~35kb), full studio-app.tsx. Wired `requestFitSelection` + `fit-selection` ViewIntent end-to-end.
+Zoom to selection wiring. Typecheck + build + smoke clean.
+
+### 2026-08-23T14:20Z — loop 35
+
+Restored full canvas-stage. Eyedropper HUD under the board.
 
 ## Next recommended
 
-Multi-select marquee polish / keyboard nudge pulse feedback.
+Boolean ops (union / subtract) for shapes → path node, or polish export selection if missing on deployed main.
