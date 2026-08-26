@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Export selection as PNG polish (menu wiring if still thin).
-2. Multi-select marquee polish / keyboard nudge pulse feedback.
-3. Boolean ops polish (holes / evenodd multi-contour for subtract).
+1. Multi-select marquee polish / keyboard nudge pulse feedback.
+2. Boolean ops polish (holes / evenodd multi-contour for subtract).
+3. Context-menu Export selection wiring (optional depth).
 
 ## Done
 
@@ -35,8 +35,13 @@ Auth OFF, DB OFF.
 - **requestFitSelection + fit-selection view intent wired (aabb + fitBoxViewport).**
 - **studio-app.tsx restored (was truncated to return null).**
 - **Boolean ops (union / subtract) for shapes → path node.**
+- **Export selection as PNG** (top-bar menu + command palette; crops to selection AABB).
 
 ## Iterations
+
+### 2026-08-26T06:24Z — loop 44
+
+Restored core files from history (store ~29kb, canvas-stage ~35kb, studio-app ~16kb) after main had placeholders again. Wired **requestFitSelection** + `fit-selection` ViewIntent (aabb + fitBoxViewport). **Export selection as PNG**: `exportSelectionPng` in export.ts; TopBar “Selection PNG” (disabled when empty); command palette “Export selection as PNG”. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile.
 
 ### 2026-08-26T03:12Z — loop 43
 
@@ -48,4 +53,4 @@ Main had PLACEHOLDER store.ts (11 bytes), empty canvas-stage.tsx, and truncated 
 
 ## Next recommended
 
-Export selection as PNG polish (menu wiring if still thin).
+Multi-select marquee polish / keyboard nudge pulse feedback.
