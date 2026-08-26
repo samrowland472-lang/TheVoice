@@ -22,40 +22,25 @@ Auth OFF, DB OFF.
 ## Backlog (priority order)
 
 1. Boolean ops polish (holes / evenodd multi-contour for subtract).
-2. Context-menu Export selection wiring (optional depth).
-3. Fit-selection / export selection PNG if still missing on main.
+2. Combine selected shapes UI entry.
+3. Pen path boolean refinements.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
-- Canvas stage restored from placeholder wipe; eyedropper HUD under the board.
-- Zoom to selection (fit selected layers in view): Shift+0, command palette, context menu, Shift-click zoom %.
-- Export selection as PNG (cropped AABB, transparent bg): Export menu, command palette, context menu.
-- **Multi-select marquee polish**: dashed stroke + corner ticks; rotation-aware AABB hit for tilted layers.
-- **Keyboard nudge pulse feedback**: arrow-key translateSelected stamps `nudgePulseAt`; selection outline briefly blooms (RAF) for ~220ms.
+- Canvas stage restored; eyedropper HUD under the board.
+- Zoom to selection: Shift+0, command palette, context menu, Shift-click zoom %.
+- Export selection as PNG (cropped AABB, transparent bg): Export menu, palette, context menu.
+- Multi-select marquee polish: dashed stroke + corner ticks; rotation-aware AABB hit.
+- Keyboard nudge pulse: selection outline blooms ~220ms on arrow nudge.
+- Fit-selection + export-selection fully wired.
 
 ## Iterations
 
-### 2026-08-26T17:12Z — loop 46
+### 2026-08-26T21:30Z — loop 47
 
-**Marquee polish + keyboard nudge pulse (landed on full source).** Restored working tree from TheVoice-Design after TheVoice `design/` had placeholder `store.ts` (96 B) and empty `canvas-stage.tsx`. Marquee draw: soft fill, dashed cyan stroke, corner ticks. Selection via marquee uses rotation-aware world AABB (`marqueeHitsNode` / `nodeWorldAabb`) so rotated nodes are hit correctly. `translateSelected` sets `nudgePulseAt`; canvas overlay expands/brightens selection stroke for ~220ms with requestAnimationFrame frames. Typecheck clean, build clean, browser-smoke: canvas present, no console/page errors on desktop and mobile. store ~29kb, canvas-stage ~37kb.
-
-### 2026-08-26T10:05Z — loop 45
-
-**Marquee polish + keyboard nudge pulse** (claimed; source on TheVoice main was later wiped to placeholders — re-applied in loop 46).
-
-### 2026-08-23T20:20Z — loop 37
-
-Restored full `store.ts` (was truncated on TheVoice main). Completed zoom-to-selection wiring. Export selection as PNG claimed. Typecheck + build + smoke clean.
-
-### 2026-08-23T17:05Z — loop 36
-
-Zoom to selection wiring. Typecheck + build + smoke clean.
-
-### 2026-08-23T14:20Z — loop 35
-
-Restored full canvas-stage. Eyedropper HUD under the board.
+**Selection tools polish (full vertical slice).** Restored full canvas-stage after placeholder wipe. Marquee: soft fill, dashed cyan stroke, corner ticks. Rotation-aware marquee via marqueeHitsNode/nodeWorldAabb. nudgePulseAt bloom on arrow nudge. requestFitSelection + exportSelectionPng wired (Export menu, palette, context, Shift+0, Shift-zoom%). Typecheck + build clean.
 
 ## Next recommended
 
-Boolean ops (union / subtract) for shapes → path node with even-odd holes, or verify fit-selection / export-selection PNG wiring on deployed main.
+Boolean ops (union / subtract) for shapes → path node with even-odd holes.
