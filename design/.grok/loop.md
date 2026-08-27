@@ -21,26 +21,27 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean ops polish (holes / evenodd multi-contour for subtract).
-2. Combine selected shapes UI entry.
-3. Pen path boolean refinements.
+1. Combine selected shapes UI polish (disabled state when <2 boolean-able).
+2. Pen path boolean refinements.
+3. Rotation-aware boolean (bake rotation into polygon before ops).
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Canvas stage restored; eyedropper HUD under the board.
-- Zoom to selection: Shift+0, command palette, context menu, Shift-click zoom %.
-- Export selection as PNG (cropped AABB, transparent bg): Export menu, palette, context menu.
-- Multi-select marquee polish: dashed stroke + corner ticks; rotation-aware AABB hit.
-- Keyboard nudge pulse: selection outline blooms ~220ms on arrow nudge.
-- Fit-selection + export-selection fully wired.
+- Zoom to selection: Shift+0, command palette, context menu.
+- Boolean ops: subtract punches evenodd holes; union combines shapes into path node. Context menu + command palette.
 
 ## Iterations
 
+### 2026-08-27T07:30Z — loop 48
+
+**Boolean ops (holes / evenodd multi-contour).** Restored wiped canvas-stage + studio-app from history; added requestFitSelection. PathNode gains holes[] + fillRule; render fills with evenodd. boolean-ops.ts: nodeToLocalPolygon, subtractShapes (outer+hole), unionShapes (multi-contour nonzero). Store: booleanUnionSelected / booleanSubtractSelected. UI: context menu + command palette. Typecheck + build clean.
+
 ### 2026-08-26T21:30Z — loop 47
 
-**Selection tools polish (full vertical slice).** Restored full canvas-stage after placeholder wipe. Marquee: soft fill, dashed cyan stroke, corner ticks. Rotation-aware marquee via marqueeHitsNode/nodeWorldAabb. nudgePulseAt bloom on arrow nudge. requestFitSelection + exportSelectionPng wired (Export menu, palette, context, Shift+0, Shift-zoom%). Typecheck + build clean.
+**Selection tools polish.** Marquee, nudge pulse, fit/export selection wiring.
 
 ## Next recommended
 
-Boolean ops (union / subtract) for shapes → path node with even-odd holes.
+Combine UI polish (grey out when selection cannot boolean) + rotation bake for boolean.
