@@ -11,7 +11,7 @@ If the previous iteration is < 4 minutes old, polish that slice or skip. Never p
 ## GitHub (required)
 
 Repo of record: **https://github.com/samrowland472-lang/TheVoice** — folder `design/`.
-Confirm file sizes after push (`types.ts` / `store.ts` / `render.ts` must be KB, not 11 bytes).
+Confirm file sizes after push (`types.ts` / `store.ts` / `render.ts` / `canvas-stage.tsx` / `export.ts` must be KB, not 11 bytes).
 
 ## Product
 
@@ -21,20 +21,24 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen path boolean refinements (true polygon clip on overlapping contours).
-2. Rotation-aware boolean polish (already baked; improve edge cases for compound paths).
-3. Multi-cutter subtract hole coordinate alignment (secondary holes vs shared origin).
+1. Concave / compound-path boolean (full Greiner–Hormann, not hull fallback).
+2. Rotation-aware boolean polish on already-holed path nodes.
+3. Inspector: hole count + fill-rule control on combined paths.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Canvas stage restored; eyedropper HUD under the board.
 - Zoom to selection: Shift+0, command palette, context menu.
-- Boolean ops: subtract punches evenodd holes; union combines shapes into path node. Context menu + command palette.
-- Combine UI polish: Union / Subtract disabled when <2 boolean-able shapes selected.
-- PathNode holes[] + fillRule; render + SVG export multi-contour; inspector hole count / fill rule.
+- Boolean ops: subtract punches evenodd holes from true intersection clip; union clusters overlapping shapes via hull; multi-cutter holes share base origin.
+- Combine UI: Union / Subtract in context menu + command palette (disabled when ineligible).
+- PathNode holes[] + fillRule; render + SVG export multi-contour.
 
 ## Iterations
+
+### 2026-08-28T19:10Z — loop 51
+
+**Restore wiped canvas + true polygon clip.** canvas-stage, studio-app, export, and viewport-aware render restored from Design history (placeholders were 12–13 bytes). Boolean subtract now clips cutter ∩ base (Sutherland–Hodgman when a contour is convex) so holes share the base origin; multi-cutter subtract stacks those intersection rings. Union clusters overlapping contours and hulls the merge. Context menu + command palette Union/Subtract; Shift+0 zoom-to-selection. SVG export writes holes + fill-rule. Typecheck + build + browser-smoke clean.
 
 ### 2026-08-28T07:20Z — loop 50
 
@@ -54,4 +58,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-True polygon clip on overlapping contours; multi-cutter hole origin alignment.
+Concave compound-path clip (Greiner–Hormann) and inspector hole/fill-rule controls.
