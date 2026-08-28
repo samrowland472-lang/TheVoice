@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Combine selected shapes UI polish (disabled state when <2 boolean-able).
-2. Pen path boolean refinements.
-3. Rotation-aware boolean (bake rotation into polygon before ops).
+1. Pen path boolean refinements (true polygon clip on overlapping contours).
+2. Rotation-aware boolean polish (already baked; improve edge cases for compound paths).
+3. Inspector: show hole count / fillRule for path nodes from boolean ops.
 
 ## Done
 
@@ -31,8 +31,13 @@ Auth OFF, DB OFF.
 - Canvas stage restored; eyedropper HUD under the board.
 - Zoom to selection: Shift+0, command palette, context menu.
 - Boolean ops: subtract punches evenodd holes; union combines shapes into path node. Context menu + command palette.
+- Combine UI polish: Union / Subtract disabled when <2 boolean-able shapes selected.
 
 ## Iterations
+
+### 2026-08-28T04:15Z — loop 49
+
+**Boolean ops + combine UI polish.** Restored wiped canvas-stage + studio-app. PathNode gains holes[] + fillRule; render fills with evenodd/nonzero multi-contour. boolean-ops.ts: isBooleanable, nodeToWorldPolygon (rotation baked), unionShapes, subtractShapes. Store: canBooleanSelected, booleanUnionSelected, booleanSubtractSelected. Context menu greys out Union/Subtract when selection cannot boolean; command palette Arrange group. requestFitSelection + fitBoxViewport wired. Typecheck + build + browser-smoke clean.
 
 ### 2026-08-27T07:30Z — loop 48
 
@@ -44,4 +49,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Combine UI polish (grey out when selection cannot boolean) + rotation bake for boolean.
+Pen path boolean refinements (true intersection clip) + inspector hole metadata.
