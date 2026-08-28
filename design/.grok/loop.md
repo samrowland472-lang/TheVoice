@@ -21,47 +21,31 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Rotation-aware boolean polish on already-holed path nodes (keep hole winding after rotate + second subtract).
-2. Boolean preview ghost on the board before commit.
-3. Intersect / exclude (xor) beside Union and Subtract.
+1. Boolean preview ghost on the board before commit.
+2. Intersect / exclude (xor) beside Union and Subtract.
+3. Flip / transform should keep hole windings on combined paths.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
-- Canvas stage restored; eyedropper HUD under the board.
-- Zoom to selection: Shift+0, command palette, context menu.
+- Canvas stage restored; eyedropper HUD under the board; viewport-aware render + color sampling.
+- Zoom to selection: Shift+0, command palette, context menu, Shift-click zoom %.
 - Boolean ops: subtract punches evenodd holes from true intersection clip; union clusters overlapping shapes.
-- Combine UI: Union / Subtract in context menu + command palette (disabled when ineligible).
+- Combine UI: Union / Subtract in context menu + command palette.
 - PathNode holes[] + fillRule; render + SVG export multi-contour.
-- Greiner–Hormann clip for concave union / difference (Sutherland–Hodgman still used when a contour is convex or GH yields nothing).
-- Inspector path card: point count, hole count, even-odd / non-zero fill rule.
+- Rotation-aware second-pass subtract: world-space holes follow rotation; outer CCW / holes CW; overlapping hole rings merge so even-odd does not recancel.
+- Inspector path card: point count, hole count, fill-rule control.
 
 ## Iterations
 
+### 2026-08-28T22:10Z — loop 53
+
+**Restore wiped stage + rotation-aware holed subtract.** canvas-stage, studio-app, and export were placeholders on main; restored the live artboard and SVG export with hole contours + fill-rule. Viewport-aware render and eyedropper sampling restored. Boolean subtract now keeps inherited holes after rotate, clips new punches to the still-filled region, opposite-winds holes, and merges overlapping rings. Store wires canBoolean / union / subtract and requestFitSelection. Inspector shows path pts/holes and fill-rule. Typecheck + build + browser-smoke.
+
 ### 2026-08-28T20:20Z — loop 52
 
-**Restore wiped stage + concave boolean clip.** canvas-stage, studio-app, and export were placeholders; restored the live artboard, viewport-aware render, eyedropper sampling, and SVG export with holes + fill-rule. Boolean subtract/union now run Greiner–Hormann on concave contours instead of hull-only merge. Store wires canBoolean / union / subtract and requestFitSelection (fit-box viewport). Inspector shows path pts/holes and fill-rule. Typecheck + build + browser-smoke clean.
-
-### 2026-08-28T19:10Z — loop 51
-
-**Restore wiped canvas + true polygon clip.** canvas-stage, studio-app, export, and viewport-aware render restored from Design history (placeholders were 12–13 bytes). Boolean subtract now clips cutter ∩ base (Sutherland–Hodgman when a contour is convex) so holes share the base origin; multi-cutter subtract stacks those intersection rings. Union clusters overlapping contours and hulls the merge. Context menu + command palette Union/Subtract; Shift+0 zoom-to-selection. SVG export writes holes + fill-rule. Typecheck + build + browser-smoke clean.
-
-### 2026-08-28T07:20Z — loop 50
-
-**Restore canvas-stage + wire boolean end-to-end.** Restored wiped canvas-stage (35KB) and full studio-app from history. PathNode gains holes[] + fillRule; render fills multi-contour with evenodd/nonzero; SVG export emits holes + fill-rule. Store: canBooleanSelected, booleanUnionSelected, booleanSubtractSelected (multi-cutter holes). Context menu Union/Subtract (disabled when ineligible); command palette Arrange group. Inspector shows path point/hole count + fill-rule control. requestFitSelection (Shift+0) + fitBoxViewport. Typecheck + build + browser-smoke clean.
-
-### 2026-08-28T04:15Z — loop 49
-
-**Boolean ops + combine UI polish.** Restored wiped canvas-stage + studio-app. PathNode gains holes[] + fillRule; render fills with evenodd/nonzero multi-contour. boolean-ops.ts: isBooleanable, nodeToWorldPolygon (rotation baked), unionShapes, subtractShapes. Store: canBooleanSelected, booleanUnionSelected, booleanSubtractSelected. Context menu greys out Union/Subtract when selection cannot boolean; command palette Arrange group. requestFitSelection + fitBoxViewport wired. Typecheck + build + browser-smoke clean.
-
-### 2026-08-27T07:30Z — loop 48
-
-**Boolean ops (holes / evenodd multi-contour).** Restored wiped canvas-stage + studio-app from history; added requestFitSelection. PathNode gains holes[] + fillRule; render fills with evenodd. boolean-ops.ts: nodeToLocalPolygon, subtractShapes (outer+hole), unionShapes (multi-contour nonzero). Store: booleanUnionSelected / booleanSubtractSelected. UI: context menu + command palette. Typecheck + build clean.
-
-### 2026-08-26T21:30Z — loop 47
-
-**Selection tools polish.** Marquee, nudge pulse, fit/export selection wiring.
+Restore wiped stage + concave boolean clip (stage later wiped again on GitHub).
 
 ## Next recommended
 
-Rotation-aware second-pass subtract on already-holed combined paths; optional intersect/exclude.
+Boolean preview ghost on the board before commit.
