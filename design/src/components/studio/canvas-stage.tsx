@@ -1,1 +1,1 @@
-SEE_WORKSPACE
+export { CanvasStage } from "./canvas-stage-impl";
