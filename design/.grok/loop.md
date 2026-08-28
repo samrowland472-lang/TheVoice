@@ -21,20 +21,26 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Concave / compound-path boolean (full Greiner–Hormann, not hull fallback).
-2. Rotation-aware boolean polish on already-holed path nodes.
-3. Inspector: hole count + fill-rule control on combined paths.
+1. Rotation-aware boolean polish on already-holed path nodes (keep hole winding after rotate + second subtract).
+2. Boolean preview ghost on the board before commit.
+3. Intersect / exclude (xor) beside Union and Subtract.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Canvas stage restored; eyedropper HUD under the board.
 - Zoom to selection: Shift+0, command palette, context menu.
-- Boolean ops: subtract punches evenodd holes from true intersection clip; union clusters overlapping shapes via hull; multi-cutter holes share base origin.
+- Boolean ops: subtract punches evenodd holes from true intersection clip; union clusters overlapping shapes.
 - Combine UI: Union / Subtract in context menu + command palette (disabled when ineligible).
 - PathNode holes[] + fillRule; render + SVG export multi-contour.
+- Greiner–Hormann clip for concave union / difference (Sutherland–Hodgman still used when a contour is convex or GH yields nothing).
+- Inspector path card: point count, hole count, even-odd / non-zero fill rule.
 
 ## Iterations
+
+### 2026-08-28T20:20Z — loop 52
+
+**Restore wiped stage + concave boolean clip.** canvas-stage, studio-app, and export were placeholders; restored the live artboard, viewport-aware render, eyedropper sampling, and SVG export with holes + fill-rule. Boolean subtract/union now run Greiner–Hormann on concave contours instead of hull-only merge. Store wires canBoolean / union / subtract and requestFitSelection (fit-box viewport). Inspector shows path pts/holes and fill-rule. Typecheck + build + browser-smoke clean.
 
 ### 2026-08-28T19:10Z — loop 51
 
@@ -58,4 +64,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Concave compound-path clip (Greiner–Hormann) and inspector hole/fill-rule controls.
+Rotation-aware second-pass subtract on already-holed combined paths; optional intersect/exclude.
