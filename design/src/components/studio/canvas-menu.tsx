@@ -5,6 +5,7 @@ export interface MenuItem {
   label: string;
   hint?: string;
   danger?: boolean;
+  disabled?: boolean;
   run: () => void;
 }
 
@@ -44,10 +45,16 @@ export function CanvasMenu({
           <button
             type="button"
             role="menuitem"
+            disabled={item.disabled}
             className={`flex h-9 w-full items-center justify-between px-3 text-left text-sm ${
-              item.danger ? "text-alert hover:bg-alert/10" : "text-ink hover:bg-surface-alt"
+              item.disabled
+                ? "cursor-not-allowed text-ink-faint"
+                : item.danger
+                  ? "text-alert hover:bg-alert/10"
+                  : "text-ink hover:bg-surface-alt"
             }`}
             onClick={() => {
+              if (item.disabled) return;
               onClose();
               item.run();
             }}
