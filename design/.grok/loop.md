@@ -21,10 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Rotation-aware boolean polish on already-holed path nodes (keep hole winding after rotate + second subtract).
-2. Boolean preview ghost on the board before commit.
-3. Intersect / exclude (xor) beside Union and Subtract.
-4. Inspector multi-select: mixed fill/stroke when several layers are selected.
+1. Boolean preview ghost on the board before commit.
+2. Intersect / exclude (xor) beside Union and Subtract.
+3. Inspector multi-select: mixed fill/stroke when several layers are selected.
 
 ## Done
 
@@ -34,8 +33,13 @@ Auth OFF, DB OFF.
 - Export selection as PNG.
 - Boolean helpers live in boolean-ops.ts.
 - Multi-select marquee polish + keyboard nudge feedback.
+- Rotation-aware second-pass subtract: outer CCW / holes CW, overlapping holes merged, Union + Subtract in inspector / command / context menu. SVG export writes hole rings + fill-rule.
 
 ## Iterations
+
+### 2026-08-28T23:10Z — loop 54
+
+**Boolean second pass.** Restored real `canvas-stage.tsx` + `export.ts` into the live studio. Subtract now maps rotated world holes, forces opposite winding, and merges overlapping punches so a second subtract after rotate does not refill evenodd islands. Union / Subtract live in the inspector (two or more shapes), command palette, and board context menu. Path SVG export includes holes. Typecheck + build + smoke clean.
 
 ### 2026-08-28T22:20Z — loop 53
 
@@ -47,4 +51,4 @@ Restore wiped stage + concave boolean clip (Greiner–Hormann).
 
 ## Next recommended
 
-Rotation-aware second-pass subtract on already-holed combined paths; optional intersect/exclude.
+Boolean preview ghost on the board before commit; then intersect / exclude.
