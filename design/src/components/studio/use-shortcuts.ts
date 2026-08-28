@@ -124,8 +124,7 @@ export function useShortcuts() {
 
       if (e.key === "0") {
         e.preventDefault();
-        if (e.shiftKey) s.requestFitSelection();
-        else s.requestFit();
+        s.requestFit();
         return;
       }
       if (e.key === "1" && !meta) {
@@ -157,22 +156,12 @@ export function useShortcuts() {
         return;
       }
 
-      const nudge = e.shiftKey ? 10 : 1;
-      if (e.key === "ArrowLeft") {
+      const nudge = e.altKey ? 0.5 : e.shiftKey ? 10 : 1;
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
         e.preventDefault();
-        s.translateSelected(-nudge, 0);
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        s.translateSelected(nudge, 0);
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        s.translateSelected(0, -nudge);
-      }
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        s.translateSelected(0, nudge);
+        const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
+        const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
+        useDesign.getState().translateSelected(dx, dy, { commit: !e.repeat });
       }
       if (meta) return;
       const tool = KEYS[e.key.toLowerCase()];
