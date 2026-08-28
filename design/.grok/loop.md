@@ -23,7 +23,7 @@ Auth OFF, DB OFF.
 
 1. Pen path boolean refinements (true polygon clip on overlapping contours).
 2. Rotation-aware boolean polish (already baked; improve edge cases for compound paths).
-3. Inspector: show hole count / fillRule for path nodes from boolean ops.
+3. Multi-cutter subtract hole coordinate alignment (secondary holes vs shared origin).
 
 ## Done
 
@@ -32,8 +32,13 @@ Auth OFF, DB OFF.
 - Zoom to selection: Shift+0, command palette, context menu.
 - Boolean ops: subtract punches evenodd holes; union combines shapes into path node. Context menu + command palette.
 - Combine UI polish: Union / Subtract disabled when <2 boolean-able shapes selected.
+- PathNode holes[] + fillRule; render + SVG export multi-contour; inspector hole count / fill rule.
 
 ## Iterations
+
+### 2026-08-28T07:20Z — loop 50
+
+**Restore canvas-stage + wire boolean end-to-end.** Restored wiped canvas-stage (35KB) and full studio-app from history. PathNode gains holes[] + fillRule; render fills multi-contour with evenodd/nonzero; SVG export emits holes + fill-rule. Store: canBooleanSelected, booleanUnionSelected, booleanSubtractSelected (multi-cutter holes). Context menu Union/Subtract (disabled when ineligible); command palette Arrange group. Inspector shows path point/hole count + fill-rule control. requestFitSelection (Shift+0) + fitBoxViewport. Typecheck + build + browser-smoke clean.
 
 ### 2026-08-28T04:15Z — loop 49
 
@@ -49,4 +54,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen path boolean refinements (true intersection clip) + inspector hole metadata.
+True polygon clip on overlapping contours; multi-cutter hole origin alignment.
