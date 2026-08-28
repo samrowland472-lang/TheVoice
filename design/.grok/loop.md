@@ -21,31 +21,30 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean preview ghost on the board before commit.
-2. Intersect / exclude (xor) beside Union and Subtract.
-3. Flip / transform should keep hole windings on combined paths.
+1. Rotation-aware boolean polish on already-holed path nodes (keep hole winding after rotate + second subtract).
+2. Boolean preview ghost on the board before commit.
+3. Intersect / exclude (xor) beside Union and Subtract.
+4. Inspector multi-select: mixed fill/stroke when several layers are selected.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
-- Canvas stage restored; eyedropper HUD under the board; viewport-aware render + color sampling.
-- Zoom to selection: Shift+0, command palette, context menu, Shift-click zoom %.
-- Boolean ops: subtract punches evenodd holes from true intersection clip; union clusters overlapping shapes.
-- Combine UI: Union / Subtract in context menu + command palette.
-- PathNode holes[] + fillRule; render + SVG export multi-contour.
-- Rotation-aware second-pass subtract: world-space holes follow rotation; outer CCW / holes CW; overlapping hole rings merge so even-odd does not recancel.
-- Inspector path card: point count, hole count, fill-rule control.
+- Canvas stage restored; eyedropper HUD under the board.
+- Zoom to selection: Shift+0, command palette, context menu.
+- Export selection as PNG.
+- Boolean helpers live in boolean-ops.ts.
+- Multi-select marquee polish + keyboard nudge feedback.
 
 ## Iterations
 
-### 2026-08-28T22:10Z — loop 53
+### 2026-08-28T22:20Z — loop 53
 
-**Restore wiped stage + rotation-aware holed subtract.** canvas-stage, studio-app, and export were placeholders on main; restored the live artboard and SVG export with hole contours + fill-rule. Viewport-aware render and eyedropper sampling restored. Boolean subtract now keeps inherited holes after rotate, clips new punches to the still-filled region, opposite-winds holes, and merges overlapping rings. Store wires canBoolean / union / subtract and requestFitSelection. Inspector shows path pts/holes and fill-rule. Typecheck + build + browser-smoke.
+**Marquee + nudge.** Restored wiped `canvas-stage.tsx` / `export.ts`. Marquee is rotation-aware (`marqueeHitsNode` / `marqueeContainsNode`); live-selects while dragging; Shift unions with the current selection; Alt requires full contain (dashed marquee). HUD under the board shows count + mode. Arrow nudge commits history once per hold (`!repeat`), Shift = 10px, Alt = 0.5px; phosphor HUD shows cumulative Δx/Δy then fades. Typecheck + build + smoke clean.
 
 ### 2026-08-28T20:20Z — loop 52
 
-Restore wiped stage + concave boolean clip (stage later wiped again on GitHub).
+Restore wiped stage + concave boolean clip (Greiner–Hormann).
 
 ## Next recommended
 
-Boolean preview ghost on the board before commit.
+Rotation-aware second-pass subtract on already-holed combined paths; optional intersect/exclude.

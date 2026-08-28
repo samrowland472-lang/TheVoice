@@ -83,7 +83,7 @@ export function rectsIntersect(
   a: { x: number; y: number; w: number; h: number },
   b: { x: number; y: number; w: number; h: number },
 ) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + b.h > b.y;
 }
 
 /** Axis-aligned world bounds of a node, rotation-aware via corner transform. */
@@ -97,4 +97,22 @@ export function marqueeHitsNode(
   mq: { x: number; y: number; w: number; h: number },
 ): boolean {
   return rectsIntersect(nodeWorldAabb(n), mq);
+}
+
+/** True when the node's rotated world AABB sits fully inside the marquee. */
+export function marqueeContainsNode(
+  n: DesignNode,
+  mq: { x: number; y: number; w: number; h: number },
+): boolean {
+  const b = nodeWorldAabb(n);
+  return b.x >= mq.x && b.y >= mq.y && b.x + b.w <= mq.x + mq.w && b.y + b.h <= mq.y + mq.h;
+}
+
+export function nodesInMarquee(
+  nodes: DesignNode[],
+  mq: { x: number; y: number; w: number; h: number },
+  mode: "intersect" | "contain" = "intersect",
+): string[] {
+  const test = mode === "contain" ? marqueeContainsNode : marqueeHitsNode;
+  return nodes.filter((n) => n.visible && !n.locked && test(n, mq)).map((n) => n.id);
 }
