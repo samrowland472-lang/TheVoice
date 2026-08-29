@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean preview ghost on the board before commit (hover Union/Subtract).
-2. Rotation-aware second-pass subtract on holed path nodes.
+1. Rotation-aware second-pass subtract on holed path nodes.
+2. Export selection as SVG (PNG already ships).
 
 ## Done
 
@@ -33,8 +33,13 @@ Auth OFF, DB OFF.
 - Boolean helpers live in boolean-ops.ts.
 - Multi-select marquee polish + keyboard nudge feedback.
 - Inspector mixed fill/stroke when several layers are selected.
+- Boolean preview ghost on the board before commit (hover Union/Subtract).
 
 ## Iterations
+
+### 2026-08-29T19:12Z — loop 65
+
+**Boolean preview ghost.** Shift-select two or more shapes and the inspector opens Boolean: Union, Subtract, Intersect, Exclude. Hover (or focus) a button to paint a dashed phosphor ghost of the result on the board; Subtract uses a warm cut tint. Click commits via applyBoolean; ⌘U / ⇧⌘U / ⌘I / ⇧⌘I stay wired. Restored wiped `export.ts`, pointer `canvas-stage`, and `studio-app`. Path fill now punches holes. Typecheck + build + smoke clean.
 
 ### 2026-08-29T18:10Z — loop 64
 
@@ -46,4 +51,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Boolean preview ghost on the board before commit.
+Rotation-aware second-pass subtract on holed path nodes.
