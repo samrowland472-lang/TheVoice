@@ -126,6 +126,12 @@ export function useShortcuts() {
         return;
       }
 
+      if (e.shiftKey && e.key.toLowerCase() === "s" && !meta) {
+        e.preventDefault();
+        s.smoothSelectedPath();
+        return;
+      }
+
       if (e.shiftKey && e.code === "KeyP" && !meta) {
         e.preventDefault();
         s.togglePresent();
