@@ -44,7 +44,7 @@ export function downloadPrintPdf(doc: DesignDocument) {
 }
 
 function esc(s: string) {
-  return s.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function ringD(originX: number, originY: number, pts: { x: number; y: number }[]): string {
