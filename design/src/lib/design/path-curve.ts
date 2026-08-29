@@ -148,3 +148,58 @@ export function dragPathHandle(pt: PathPoint, arm: "in" | "out", hx: number, hy:
   if (arm === "out") return { ...pt, out: handle, in: opposite, smooth: true };
   return { ...pt, in: handle, out: opposite, smooth: true };
 }
+
+/** Overlay: phosphor arms + diamonds for in/out, squares for anchors. */
+export function drawPathTangents(
+  ctx: CanvasRenderingContext2D,
+  ox: number,
+  oy: number,
+  pts: PathPoint[],
+  zoom: number,
+  active?: PathEditHit | null,
+) {
+  if (!pts.length) return;
+  const armW = 1.25 / zoom;
+  const diamond = 5 / zoom;
+  const anchor = 6 / zoom;
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i]!;
+    const ax = ox + p.x;
+    const ay = oy + p.y;
+    const arms: Array<{ arm: "in" | "out"; h: { x: number; y: number } }> = [];
+    if (hasHandle(p.in) && p.in) arms.push({ arm: "in", h: p.in });
+    if (hasHandle(p.out) && p.out) arms.push({ arm: "out", h: p.out });
+    for (const { arm, h } of arms) {
+      const hx = ax + h.x;
+      const hy = ay + h.y;
+      const hot = active?.index === i && active.arm === arm;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(hx, hy);
+      ctx.strokeStyle = hot ? "#7ee0ff" : "rgba(63,198,255,0.85)";
+      ctx.lineWidth = armW;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(hx, hy - diamond);
+      ctx.lineTo(hx + diamond, hy);
+      ctx.lineTo(hx, hy + diamond);
+      ctx.lineTo(hx - diamond, hy);
+      ctx.closePath();
+      ctx.fillStyle = hot ? "#7ee0ff" : "#0a0d0c";
+      ctx.fill();
+      ctx.strokeStyle = "#3fc6ff";
+      ctx.lineWidth = 1.2 / zoom;
+      ctx.stroke();
+    }
+    const aHot = active?.index === i && active.arm === "anchor";
+    ctx.fillStyle = aHot ? "#3fc6ff" : "#0a0d0c";
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.2 / zoom;
+    ctx.fillRect(ax - anchor / 2, ay - anchor / 2, anchor, anchor);
+    ctx.strokeRect(ax - anchor / 2, ay - anchor / 2, anchor, anchor);
+  }
+  ctx.restore();
+}
