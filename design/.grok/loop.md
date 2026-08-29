@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tangent handles drawn on the overlay (helpers exist in path-curve).
-2. MixedInk panel wired when multi-select has mixed fills.
+1. MixedInk panel wired when multi-select has mixed fills.
+2. Boolean preview ghost polish (live hover on inspector Union/Subtract).
 
 ## Done
 
@@ -34,29 +34,30 @@ Auth OFF, DB OFF.
 - Boolean preview ghost on the board before commit (hover Union/Subtract).
 - Rotation-aware second-pass subtract: overlapping holes union so even-odd does not refill.
 - Studio chrome restored (was returning null); viewport-aware drawDocument; applyBoolean + Selection SVG.
+- Pen tangent handles on the overlay (draw + drag in/out/anchor; Alt breaks smooth).
 
 ## Iterations
 
+### 2026-08-29T23:20Z — loop 68
+
+**Pen tangent overlay.** Restored wiped studio-app / canvas-stage. Selected paths show phosphor arms and diamond handles. Drag an in/out handle to reshape the cubic; Alt breaks the mirror. Anchors move under Select. Shift+S auto-smooths the selected path (writes handles). Paths render with `tracePath` so the board matches the handles. Typecheck + build + smoke clean.
+
 ### 2026-08-29T22:10Z — loop 67
 
-**Board + boolean + selection SVG.** Restored wiped `studio-app` (it returned null) and pointer `canvas-stage`. `drawDocument` takes the viewport again. Inspector Boolean: hover paints a dashed phosphor/warm ghost; click commits. Overlapping subtract punches merge so even-odd does not refill. Export → Selection SVG writes only the selected nodes (paths keep holes) cropped to their bounds.
+**Board + boolean + selection SVG.** Restored wiped `studio-app` and pointer `canvas-stage`.
 
 ### 2026-08-29T21:20Z — loop 66
 
-**Rotation-aware second-pass subtract.** Subtracting again on a holed path (including after rotate) unions overlapping punches instead of stacking even-odd rings that cancel.
+**Rotation-aware second-pass subtract.**
 
 ### 2026-08-29T19:12Z — loop 65
 
-**Boolean preview ghost.** Shift-select two or more shapes and the inspector opens Boolean: Union, Subtract, Intersect, Exclude.
+**Boolean preview ghost.**
 
 ### 2026-08-29T18:10Z — loop 64
 
 **Mixed fill/stroke inspector.**
 
-### 2026-08-29T08:15Z — loop 63
-
-**Pen tangent edit polish.**
-
 ## Next recommended
 
-Pen tangent handles on the overlay (path-curve helpers already exist).
+MixedInk panel wired when multi-select has mixed fills.
