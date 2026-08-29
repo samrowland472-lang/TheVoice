@@ -321,8 +321,54 @@ export function subtractShapes(base: DesignNode, ...cutters: DesignNode[]): Path
     const poly = nodeToWorldPolygon(cutter);
     if (!poly) continue;
     const punch = intersectPolygons(outer, poly);
-    if (punch && punch.length >= 3) holes.push(punch);
+    if (punch && punch.length >= 3) holes.push(ensureCw(punch));
   }
   if (!holes.length) return pathFromWorld("Subtract", outer, [], base, "nonzero");
   return pathFromWorld("Subtract", outer, holes, base, "evenodd");
+}
+
+function ensureCw(poly: Point[]): Point[] {
+  return ensureCcw(poly).slice().reverse();
+}
+
+export function intersectShapes(nodes: DesignNode[]): PathNode | null {
+  const items = nodes
+    .map((n) => {
+      const poly = nodeToWorldPolygon(n);
+      return poly ? { n, poly } : null;
+    })
+    .filter((x): x is { n: DesignNode; poly: Point[] } => !!x);
+  if (items.length < 2) return null;
+  let acc: Point[] | null = items[0]!.poly;
+  for (let i = 1; i < items.length; i++) {
+    if (!acc) return null;
+    acc = intersectPolygons(acc, items[i]!.poly);
+  }
+  if (!acc || acc.length < 3) return null;
+  return pathFromWorld("Intersect", ensureCcw(acc), [], items[0]!.n, "nonzero");
+}
+
+export function excludeShapes(nodes: DesignNode[]): PathNode | null {
+  const items = nodes
+    .map((n) => {
+      const poly = nodeToWorldPolygon(n);
+      return poly ? { n, poly, holes: nodeToWorldHoles(n) } : null;
+    })
+    .filter((x): x is { n: DesignNode; poly: Point[]; holes: Point[][] } => !!x);
+  if (items.length < 2) return null;
+  const primary = ensureCcw(items[0]!.poly);
+  const rings = items.slice(1).map((it) => ensureCcw(it.poly));
+  const inherited = items.flatMap((it) => it.holes.map(ensureCw));
+  return pathFromWorld("Exclude", primary, [...rings, ...inherited], items[0]!.n, "evenodd");
+}
+
+export type BooleanOp = "union" | "subtract" | "intersect" | "exclude";
+
+export function computeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | null {
+  const usable = nodes.filter(isBooleanable);
+  if (usable.length < 2) return null;
+  if (op === "union") return unionShapes(usable);
+  if (op === "subtract") return subtractShapes(usable[0]!, ...usable.slice(1));
+  if (op === "intersect") return intersectShapes(usable);
+  return excludeShapes(usable);
 }
