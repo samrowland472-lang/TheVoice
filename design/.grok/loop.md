@@ -21,9 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Spacing labels on smart-guide ticks while dragging.
-2. Pen tangent edit polish (drag in/out handles after auto-smooth).
-3. Mixed fill/stroke inspector when several layers are selected.
+1. Pen tangent edit polish (drag in/out handles after auto-smooth).
+2. Mixed fill/stroke inspector when several layers are selected.
 
 ## Done
 
@@ -43,21 +42,18 @@ Auth OFF, DB OFF.
 - Pointer canvas / export / studio-app restored after wipe; applyBoolean on the store (⌘U / ⌘I).
 - Auto-smooth selected path corners (average incoming/outgoing tangents). Shift+S, inspector, palette.
 - Boolean inspector buttons + live preview ghost; applyBoolean / requestFitSelection / smoothSelectedPath wired.
+- Spacing labels on smart-guide ticks while dragging.
 
 ## Iterations
+
+### 2026-08-29T07:20Z — loop 62
+
+**Spacing labels on smart-guide ticks.** Dragging a layer (or a multi-select) still snaps to artboard and sibling edges/centers/equal gaps. When a snap locks, phosphor dimension ticks draw the gap in board units between the moving box and the neighbor (or artboard edge) that shares an overlap. Labels sit on the tick with a ground chip. Also restored wiped pointer `canvas-stage` and `export.ts` from the studio so the board draws and ships PNG/JPG/SVG again.
 
 ### 2026-08-29T06:10Z — loop 61
 
 **Boolean inspector + preview ghost.** Select two or more shapes and the inspector shows Union / Subtract / Intersect / Exclude. Hover switches the cyan dashed ghost on the board; click (or ⌘U / ⇧⌘U / ⌘I / ⇧⌘I) commits a path and drops the source shapes. Also restored wiped `export.ts`, pointer `canvas-stage`, and `studio-app` so the board draws and accepts input again. `requestFitSelection` and `smoothSelectedPath` are on the store.
 
-### 2026-08-29T05:20Z — loop 60
-
-**Auto-smooth path corners.** Selected paths get cubic handles from averaged incoming/outgoing tangents (third of adjacent segment). Inspector Auto-smooth, Shift+S, command palette. Canvas + SVG export draw cubics. Restored wiped `canvas-stage` / `export` / `studio-app`. `applyBoolean` and zoom-to-selection are on the store again.
-
-### 2026-08-29T04:12Z — loop 59
-
-**Smart guides + restore wiped board.** Dragging a layer (or a multi-select) snaps to artboard edges/center and to unselected siblings' edges, centers, and equal gaps. Cyan dashed lines mark the lock. Also restored `canvas-stage`, `studio-app`, `export`, and viewport `drawDocument` after they collapsed to stubs. `applyBoolean` is on the store again (⌘U union / ⇧⌘U subtract, ⌘I intersect / ⇧⌘I exclude).
-
 ### Next recommended
 
-Spacing labels on smart-guide ticks while dragging.
+Pen tangent edit polish (drag in/out handles after auto-smooth).
