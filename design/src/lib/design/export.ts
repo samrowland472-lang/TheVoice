@@ -1,5 +1,6 @@
+import { aabb } from "./geometry";
 import { drawDocument } from "./render";
-import type { DesignDocument } from "./types";
+import type { DesignDocument, DesignNode, PathNode, TextNode } from "./types";
 
 export function rasterize(
   doc: DesignDocument,
@@ -42,25 +43,80 @@ export function downloadPrintPdf(doc: DesignDocument) {
   downloadDataUrl(exportPrintPng(doc), `${slug(doc.name)}-print.png`);
 }
 
-export function exportSvg(doc: DesignDocument): string {
-  const { width, height } = doc.artboard;
-  const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
-  const body = doc.nodes
-    .filter((n) => n.visible)
-    .map((n) => {
-      const fill = typeof n.fill === "string" ? n.fill : "#d9f5e3";
-      const rot = n.rotation ? ` transform=\"rotate(${n.rotation} ${n.x + n.w / 2} ${n.y + n.h / 2})\"` : "";
-      return `<rect x=\"${n.x}\" y=\"${n.y}\" width=\"${n.w}\" height=\"${n.h}\" fill=\"${fill}\"${rot}/>`;
-    })
-    .join("");
-  return `<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"${width}\" height=\"${height}\" viewBox=\"0 0 ${width} ${height}\"><rect width=\"${width}\" height=\"${height}\" fill=\"${bg}\"/>${body}</svg>`;
+function esc(s: string) {
+  return s.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
 }
 
-export function downloadSvg(doc: DesignDocument) {
-  const blob = new Blob([exportSvg(doc)], { type: "image/svg+xml" });
+function ringD(originX: number, originY: number, pts: { x: number; y: number }[]): string {
+  if (!pts.length) return "";
+  const bits = pts.map((p, i) => `${i === 0 ? "M" : "L"}${(originX + p.x).toFixed(2)} ${(originY + p.y).toFixed(2)}`);
+  return `${bits.join(" ")} Z`;
+}
+
+function nodeSvg(n: DesignNode): string {
+  const fill = typeof n.fill === "string" ? n.fill : "#d9f5e3";
+  const opacity = n.opacity < 1 ? ` opacity="${n.opacity}"` : "";
+  const rot = n.rotation ? ` transform="rotate(${n.rotation} ${n.x + n.w / 2} ${n.y + n.h / 2})"` : "";
+  const stroke =
+    n.strokeWidth > 0 && n.stroke !== "transparent"
+      ? ` stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"`
+      : "";
+  if (n.kind === "path") {
+    const p = n as PathNode;
+    const d = ringD(p.x, p.y, p.points) + (p.holes ?? []).map((h) => ringD(p.x, p.y, h)).join("");
+    const rule = p.fillRule ?? (p.holes?.length ? "evenodd" : "nonzero");
+    return `<path d="${d}" fill="${esc(fill)}" fill-rule="${rule}"${stroke}${opacity}${rot}/>`;
+  }
+  if (n.kind === "ellipse") {
+    return `<ellipse cx="${n.x + n.w / 2}" cy="${n.y + n.h / 2}" rx="${Math.abs(n.w / 2)}" ry="${Math.abs(n.h / 2)}" fill="${esc(fill)}"${stroke}${opacity}${rot}/>`;
+  }
+  if (n.kind === "text") {
+    const t = n as TextNode;
+    return `<text x="${t.x}" y="${t.y + t.fontSize}" fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${esc(t.fontFamily)}"${opacity}${rot}>${esc(t.text)}</text>`;
+  }
+  if (n.kind === "line") {
+    return `<line x1="${n.x}" y1="${n.y + n.h / 2}" x2="${n.x + n.w}" y2="${n.y + n.h / 2}" stroke="${esc(n.stroke === "transparent" ? fill : n.stroke)}" stroke-width="${Math.max(n.strokeWidth, 1)}"${opacity}${rot}/>`;
+  }
+  return `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}"${stroke}${opacity}${rot}/>`;
+}
+
+export function exportSvg(doc: DesignDocument, ids?: string[]): string {
+  const { width, height } = doc.artboard;
+  const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
+  const wanted = ids?.length ? new Set(ids) : null;
+  const nodes = doc.nodes.filter((n) => n.visible && (!wanted || wanted.has(n.id)));
+  const body = nodes.map(nodeSvg).join("");
+  if (wanted && nodes.length) {
+    const box = aabb(nodes);
+    const pad = 8;
+    const x = box.x - pad;
+    const y = box.y - pad;
+    const w = Math.max(1, box.w + pad * 2);
+    const h = Math.max(1, box.h + pad * 2);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="${x} ${y} ${w} ${h}">${body}</svg>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="${esc(bg)}"/>${body}</svg>`;
+}
+
+export function downloadSvg(doc: DesignDocument, ids?: string[]) {
+  const blob = new Blob([exportSvg(doc, ids)], { type: "image/svg+xml" });
   const url = URL.createObjectURL(blob);
-  downloadDataUrl(url, `${slug(doc.name)}.svg`);
+  const suffix = ids?.length ? "-selection" : "";
+  downloadDataUrl(url, `${slug(doc.name)}${suffix}.svg`);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function exportSelectionPng(doc: DesignDocument, ids: string[], scale = 2): string | null {
+  const nodes = doc.nodes.filter((n) => ids.includes(n.id) && n.visible);
+  if (!nodes.length) return null;
+  const box = aabb(nodes);
+  const pad = 8;
+  const crop: DesignDocument = {
+    ...doc,
+    artboard: { ...doc.artboard, width: Math.max(1, box.w + pad * 2), height: Math.max(1, box.h + pad * 2), background: "transparent" },
+    nodes: nodes.map((n) => ({ ...n, x: n.x - box.x + pad, y: n.y - box.y + pad })),
+  };
+  return rasterize(crop, scale).toDataURL("image/png");
 }
 
 export function slug(name: string) {
