@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { drawDocument, fitViewport } from "@/lib/design/render";
+import { aabb } from "@/lib/design/geometry";
+import { drawDocument, fitBoxViewport, fitViewport } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 
 export function CanvasStage() {
@@ -7,6 +8,31 @@ export function CanvasStage() {
   const mainRef = useRef<HTMLCanvasElement>(null);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
+  const viewIntent = useDesign((s) => s.viewIntent);
+  const selection = useDesign((s) => s.selection);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap || !doc || !viewIntent) return;
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    if (w < 8 || h < 8) return;
+    if (viewIntent.type === "fit") {
+      useDesign.getState().setViewport(fitViewport(doc.artboard.width, doc.artboard.height, w, h));
+    } else if (viewIntent.type === "zoom") {
+      const z = viewIntent.zoom;
+      useDesign.getState().setViewport({
+        zoom: z,
+        x: w / 2 - (doc.artboard.width / 2) * z,
+        y: h / 2 - (doc.artboard.height / 2) * z,
+      });
+    } else if (viewIntent.type === "fit-sel") {
+      const nodes = doc.nodes.filter((n) => selection.includes(n.id));
+      const box = nodes.length ? aabb(nodes) : { x: 0, y: 0, w: doc.artboard.width, h: doc.artboard.height };
+      useDesign.getState().setViewport(fitBoxViewport(box, w, h));
+    }
+    useDesign.getState().clearViewIntent();
+  }, [doc, viewIntent, selection]);
 
   useEffect(() => {
     const wrap = wrapRef.current;

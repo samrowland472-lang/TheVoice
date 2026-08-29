@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector multi-select: mixed fill/stroke when several layers are selected.
-2. Pen tangent / smooth-point handles on the board.
-3. Artboard-aware smart guides from unselected siblings while dragging.
+1. Pen tangent / smooth-point handles on the board.
+2. Artboard-aware smart guides from unselected siblings while dragging.
+3. Pointer tools on the board (marquee, move, draw) — stage still paints only.
 
 ## Done
 
@@ -36,8 +36,13 @@ Auth OFF, DB OFF.
 - Rotation-aware second-pass subtract with hole rings + fill-rule SVG export.
 - Boolean preview ghost on the board before commit.
 - Intersect and Exclude (xor) beside Union and Subtract.
+- Inspector mixed fill/stroke when several layers are selected.
 
 ## Iterations
+
+### 2026-08-29T02:20Z — loop 57
+
+**Inspector mixed ink + restore wiped studio files.** `export.ts` and `studio-app.tsx` were stubs; restored raster/SVG/PDF export (path hole rings + fill-rule) and the studio chrome. Viewport-aware `drawDocument`. Inspector shows Fill · mixed / Stroke · mixed on multi-select and writes one color or weight to every selected layer. Shift+0 zoom-to-selection and command “Export selection PNG”.
 
 ### 2026-08-29T01:10Z — loop 56
 
@@ -53,4 +58,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed-property multi-select, then pen tangent handles.
+Pen tangent / smooth-point handles, then smart guides while dragging.
