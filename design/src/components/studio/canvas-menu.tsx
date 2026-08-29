@@ -7,6 +7,8 @@ export interface MenuItem {
   danger?: boolean;
   disabled?: boolean;
   run: () => void;
+  onHover?: () => void;
+  onLeave?: () => void;
 }
 
 export function CanvasMenu({
@@ -53,6 +55,8 @@ export function CanvasMenu({
                   ? "text-alert hover:bg-alert/10"
                   : "text-ink hover:bg-surface-alt"
             }`}
+            onMouseEnter={() => item.onHover?.()}
+            onMouseLeave={() => item.onLeave?.()}
             onClick={() => {
               if (item.disabled) return;
               onClose();
