@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean preview ghost on the board before commit.
-2. Intersect / exclude (xor) beside Union and Subtract.
-3. Inspector multi-select: mixed fill/stroke when several layers are selected.
+1. Intersect / exclude (xor) beside Union and Subtract.
+2. Inspector multi-select: mixed fill/stroke when several layers are selected.
+3. Export selection as PNG from the board context menu.
 
 ## Done
 
@@ -34,21 +34,18 @@ Auth OFF, DB OFF.
 - Boolean helpers live in boolean-ops.ts.
 - Multi-select marquee polish + keyboard nudge feedback.
 - Rotation-aware second-pass subtract: outer CCW / holes CW, overlapping holes merged, Union + Subtract in inspector / command / context menu. SVG export writes hole rings + fill-rule.
+- Boolean preview ghost on the board before commit (hover Union/Subtract).
 
 ## Iterations
+
+### 2026-08-29T00:21Z — loop 55
+
+**Boolean preview ghost + restore wiped studio files.** Restored `canvas-stage.tsx`, `export.ts`, and `studio-app.tsx` after placeholder wipes. Hover Union or Subtract in the inspector to ghost the result on the artboard (phosphor for union, alert for subtract); click, ⌘U / ⇧⌘U, command palette, or the board menu to commit. Viewport-aware render + eyedropper sampling restored. Typecheck + build + smoke clean.
 
 ### 2026-08-28T23:10Z — loop 54
 
 **Boolean second pass.** Restored real `canvas-stage.tsx` + `export.ts` into the live studio. Subtract now maps rotated world holes, forces opposite winding, and merges overlapping punches so a second subtract after rotate does not refill evenodd islands. Union / Subtract live in the inspector (two or more shapes), command palette, and board context menu. Path SVG export includes holes. Typecheck + build + smoke clean.
 
-### 2026-08-28T22:20Z — loop 53
-
-**Marquee + nudge.** Restored wiped `canvas-stage.tsx` / `export.ts`. Marquee is rotation-aware (`marqueeHitsNode` / `marqueeContainsNode`); live-selects while dragging; Shift unions with the current selection; Alt requires full contain (dashed marquee). HUD under the board shows count + mode. Arrow nudge commits history once per hold (`!repeat`), Shift = 10px, Alt = 0.5px; phosphor HUD shows cumulative Δx/Δy then fades. Typecheck + build + smoke clean.
-
-### 2026-08-28T20:20Z — loop 52
-
-Restore wiped stage + concave boolean clip (Greiner–Hormann).
-
 ## Next recommended
 
-Boolean preview ghost on the board before commit; then intersect / exclude.
+Intersect / exclude boolean ops, then inspector mixed-property multi-select.
