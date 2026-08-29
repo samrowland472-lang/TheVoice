@@ -82,6 +82,11 @@ export function useShortcuts() {
         s.selectAll();
         return;
       }
+      if (meta && e.key.toLowerCase() === "u") {
+        e.preventDefault();
+        s.applyBoolean(e.shiftKey ? "subtract" : "union");
+        return;
+      }
       if (meta && e.key.toLowerCase() === "c") {
         e.preventDefault();
         s.copySelected();
