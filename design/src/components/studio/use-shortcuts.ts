@@ -87,6 +87,11 @@ export function useShortcuts() {
         s.applyBoolean(e.shiftKey ? "subtract" : "union");
         return;
       }
+      if (meta && e.key.toLowerCase() === "i") {
+        e.preventDefault();
+        s.applyBoolean(e.shiftKey ? "exclude" : "intersect");
+        return;
+      }
       if (meta && e.key.toLowerCase() === "c") {
         e.preventDefault();
         s.copySelected();
@@ -127,9 +132,10 @@ export function useShortcuts() {
         return;
       }
 
-      if (e.key === "0") {
+      if (e.code === "Digit0" || e.key === "0" || e.key === ")") {
         e.preventDefault();
-        s.requestFit();
+        if (e.shiftKey) s.requestFitSelection();
+        else s.requestFit();
         return;
       }
       if (e.key === "1" && !meta) {
@@ -152,7 +158,7 @@ export function useShortcuts() {
         s.requestZoom(s.viewport.zoom / 1.15);
         return;
       }
-      if (e.key === "[" ) {
+      if (e.key === "[") {
         s.setBrush({ size: Math.max(2, s.brush.size - 4) });
         return;
       }
