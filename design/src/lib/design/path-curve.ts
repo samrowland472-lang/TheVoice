@@ -104,3 +104,47 @@ export function autoSmoothPoint(pts: PathPoint[], index: number, closed: boolean
 export function smoothPathCorners(pts: PathPoint[], closed: boolean): PathPoint[] {
   return pts.map((_, i) => autoSmoothPoint(pts, i, closed));
 }
+
+export type PathEditHit = { index: number; arm: "in" | "out" | "anchor" };
+
+/** Hit a path anchor or cubic handle in document space. */
+export function hitPathEdit(
+  ox: number,
+  oy: number,
+  pts: PathPoint[],
+  wx: number,
+  wy: number,
+  zoom: number,
+): PathEditHit | null {
+  const handlePx = 8 / zoom;
+  const anchorPx = 7 / zoom;
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i]!;
+    if (hasHandle(p.out)) {
+      const hx = ox + p.x + p.out!.x;
+      const hy = oy + p.y + p.out!.y;
+      if (Math.hypot(wx - hx, wy - hy) <= handlePx) return { index: i, arm: "out" };
+    }
+    if (hasHandle(p.in)) {
+      const hx = ox + p.x + p.in!.x;
+      const hy = oy + p.y + p.in!.y;
+      if (Math.hypot(wx - hx, wy - hy) <= handlePx) return { index: i, arm: "in" };
+    }
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i]!;
+    if (Math.hypot(wx - (ox + p.x), wy - (oy + p.y)) <= anchorPx) return { index: i, arm: "anchor" };
+  }
+  return null;
+}
+
+/** Drag an in/out handle. Smooth points keep opposite handles mirrored; Alt breaks that. */
+export function dragPathHandle(pt: PathPoint, arm: "in" | "out", hx: number, hy: number, keepSmooth: boolean): PathPoint {
+  const handle = { x: hx - pt.x, y: hy - pt.y };
+  if (!keepSmooth) {
+    return arm === "out" ? { ...pt, out: handle, smooth: false } : { ...pt, in: handle, smooth: false };
+  }
+  const opposite = mirrorHandle(handle);
+  if (arm === "out") return { ...pt, out: handle, in: opposite, smooth: true };
+  return { ...pt, in: handle, out: opposite, smooth: true };
+}

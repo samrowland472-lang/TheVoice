@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tangent edit polish (drag in/out handles after auto-smooth).
-2. Mixed fill/stroke inspector when several layers are selected.
+1. Mixed fill/stroke inspector when several layers are selected.
+2. Boolean preview ghost on the board before commit (hover Union/Subtract).
 
 ## Done
 
@@ -43,8 +43,13 @@ Auth OFF, DB OFF.
 - Auto-smooth selected path corners (average incoming/outgoing tangents). Shift+S, inspector, palette.
 - Boolean inspector buttons + live preview ghost; applyBoolean / requestFitSelection / smoothSelectedPath wired.
 - Spacing labels on smart-guide ticks while dragging.
+- Pen tangent edit: click-drag while placing, drag in/out after smooth, Alt unpairs, cubics in canvas + SVG.
 
 ## Iterations
+
+### 2026-08-29T08:15Z — loop 63
+
+**Pen tangent edit polish.** Restored wiped pointer `canvas-stage`, `export.ts`, and `studio-app` so the board draws and takes input again. Pen click-drag writes cubic out/in handles on the new point (mirrored); select or pen can grab those handles after Shift+S auto-smooth. Alt-drag breaks the pair. Paths render and export as cubics (`tracePath` / `pathD`). Store gained `applyBoolean`, `smoothSelectedPath`, `requestFitSelection`, `patchPathPoint`. Spacing ticks still draw when a snap locks.
 
 ### 2026-08-29T07:20Z — loop 62
 
@@ -56,4 +61,4 @@ Auth OFF, DB OFF.
 
 ### Next recommended
 
-Pen tangent edit polish (drag in/out handles after auto-smooth).
+Mixed fill/stroke inspector when several layers are selected.
