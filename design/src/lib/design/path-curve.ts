@@ -54,3 +54,53 @@ export function pathD(ox: number, oy: number, pts: PathPoint[], closed: boolean)
 export function mirrorHandle(h: { x: number; y: number }) {
   return { x: -h.x, y: -h.y };
 }
+
+function unit(x: number, y: number) {
+  const len = Math.hypot(x, y);
+  if (len < 1e-6) return { x: 0, y: 0, len: 0 };
+  return { x: x / len, y: y / len, len };
+}
+
+/** Average incoming/outgoing tangents and write mirrored cubic handles. */
+export function autoSmoothPoint(pts: PathPoint[], index: number, closed: boolean): PathPoint {
+  const n = pts.length;
+  const cur = pts[index]!;
+  if (n < 2) return { ...cur, smooth: true };
+
+  const prev = index > 0 ? pts[index - 1]! : closed ? pts[n - 1]! : null;
+  const next = index < n - 1 ? pts[index + 1]! : closed ? pts[0]! : null;
+
+  const inDir = prev ? unit(cur.x - prev.x, cur.y - prev.y) : null;
+  const outDir = next ? unit(next.x - cur.x, next.y - cur.y) : null;
+
+  let tx = 0;
+  let ty = 0;
+  if (inDir && outDir) {
+    tx = inDir.x + outDir.x;
+    ty = inDir.y + outDir.y;
+  } else if (outDir) {
+    tx = outDir.x;
+    ty = outDir.y;
+  } else if (inDir) {
+    tx = inDir.x;
+    ty = inDir.y;
+  }
+  const t = unit(tx, ty);
+  if (t.len < 1e-6) {
+    return { ...cur, in: null, out: null, smooth: true };
+  }
+
+  const inLen = prev ? Math.hypot(cur.x - prev.x, cur.y - prev.y) / 3 : 0;
+  const outLen = next ? Math.hypot(next.x - cur.x, next.y - cur.y) / 3 : 0;
+
+  return {
+    ...cur,
+    in: inLen > 0.2 ? { x: -t.x * inLen, y: -t.y * inLen } : null,
+    out: outLen > 0.2 ? { x: t.x * outLen, y: t.y * outLen } : null,
+    smooth: true,
+  };
+}
+
+export function smoothPathCorners(pts: PathPoint[], closed: boolean): PathPoint[] {
+  return pts.map((_, i) => autoSmoothPoint(pts, i, closed));
+}

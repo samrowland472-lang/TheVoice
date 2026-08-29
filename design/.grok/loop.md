@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Convert selected path corners to auto-smooth (average incoming/outgoing tangents).
-2. Boolean inspector buttons + preview ghost after applyBoolean store wiring.
-3. Spacing labels on smart-guide ticks while dragging.
+1. Boolean inspector buttons + preview ghost after applyBoolean store wiring.
+2. Spacing labels on smart-guide ticks while dragging.
+3. Pen tangent edit on the board (drag in/out handles after auto-smooth).
 
 ## Done
 
@@ -41,21 +41,18 @@ Auth OFF, DB OFF.
 - Pen tangent / smooth-point handles: click-drag while drawing, edit on the board, cubic render + SVG.
 - Smart guides: artboard + sibling edges/centers + equal-gap snap while dragging.
 - Pointer canvas / export / studio-app restored after wipe; applyBoolean on the store (⌘U / ⌘I).
+- Auto-smooth selected path corners (average incoming/outgoing tangents). Shift+S, inspector, palette.
 
 ## Iterations
+
+### 2026-08-29T05:20Z — loop 60
+
+**Auto-smooth path corners.** Selected paths get cubic handles from averaged incoming/outgoing tangents (third of adjacent segment). Inspector Auto-smooth, Shift+S, command palette. Canvas + SVG export draw cubics. Restored wiped `canvas-stage` / `export` / `studio-app`. `applyBoolean` and zoom-to-selection are on the store again.
 
 ### 2026-08-29T04:12Z — loop 59
 
 **Smart guides + restore wiped board.** Dragging a layer (or a multi-select) snaps to artboard edges/center and to unselected siblings' edges, centers, and equal gaps. Cyan dashed lines mark the lock. Also restored `canvas-stage`, `studio-app`, `export`, and viewport `drawDocument` after they collapsed to stubs. `applyBoolean` is on the store again (⌘U union / ⇧⌘U subtract, ⌘I intersect / ⇧⌘I exclude).
 
-### 2026-08-29T03:10Z — loop 58
-
-**Pen tangents + restore wiped stage/export.** `canvas-stage.tsx`, `export.ts`, `studio-app.tsx`, and viewport `render.ts` were stubs again; restored board tools. Paths now store optional `in`/`out` handles. Click adds a corner; drag while placing pulls a mirrored smooth tangent. Select a path to drag anchors or handles (Alt breaks the pair). Double-click an anchor to drop handles. Canvas and SVG export draw cubics.
-
-### 2026-08-29T02:20Z — loop 57
-
-**Inspector mixed ink + restore wiped studio files.**
-
 ### Next recommended
 
-Auto-smooth selected path corners (average incoming/outgoing tangents).
+Boolean inspector buttons + preview ghost after applyBoolean.
