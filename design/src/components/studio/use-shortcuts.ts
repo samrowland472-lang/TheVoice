@@ -172,7 +172,7 @@ export function useShortcuts() {
         e.preventDefault();
         const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
         const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
-        useDesign.getState().translateSelected(dx, dy, { commit: !e.repeat });
+        useDesign.getState().translateSelected(dx, dy);
       }
       if (meta) return;
       const tool = KEYS[e.key.toLowerCase()];
