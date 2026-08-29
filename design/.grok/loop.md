@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Artboard-aware smart guides from unselected siblings while dragging.
-2. Convert selected path corners to auto-smooth (average incoming/outgoing tangents).
-3. Boolean applyBoolean wired back into store + inspector after the wipe.
+1. Convert selected path corners to auto-smooth (average incoming/outgoing tangents).
+2. Boolean inspector buttons + preview ghost after applyBoolean store wiring.
+3. Spacing labels on smart-guide ticks while dragging.
 
 ## Done
 
@@ -39,8 +39,14 @@ Auth OFF, DB OFF.
 - Inspector mixed fill/stroke when several layers are selected.
 - Restored pointer canvas (marquee, move, draw, pen) after wipe.
 - Pen tangent / smooth-point handles: click-drag while drawing, edit on the board, cubic render + SVG.
+- Smart guides: artboard + sibling edges/centers + equal-gap snap while dragging.
+- Pointer canvas / export / studio-app restored after wipe; applyBoolean on the store (⌘U / ⌘I).
 
 ## Iterations
+
+### 2026-08-29T04:12Z — loop 59
+
+**Smart guides + restore wiped board.** Dragging a layer (or a multi-select) snaps to artboard edges/center and to unselected siblings' edges, centers, and equal gaps. Cyan dashed lines mark the lock. Also restored `canvas-stage`, `studio-app`, `export`, and viewport `drawDocument` after they collapsed to stubs. `applyBoolean` is on the store again (⌘U union / ⇧⌘U subtract, ⌘I intersect / ⇧⌘I exclude).
 
 ### 2026-08-29T03:10Z — loop 58
 
@@ -52,4 +58,4 @@ Auth OFF, DB OFF.
 
 ### Next recommended
 
-Smart guides from unselected siblings while dragging, then auto-smooth conversion.
+Auto-smooth selected path corners (average incoming/outgoing tangents).
