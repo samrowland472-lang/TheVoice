@@ -1,9 +1,18 @@
 import { aabb } from "./geometry";
 import type { DesignNode } from "./types";
 
+export interface SpaceTick {
+  axis: "x" | "y";
+  a: number;
+  b: number;
+  mid: number;
+  size: number;
+}
+
 export interface GuideSet {
   x: number[];
   y: number[];
+  spaces?: SpaceTick[];
 }
 
 export type Box = { x: number; y: number; w: number; h: number };
@@ -27,9 +36,81 @@ function uniq(xs: number[], eps = 0.5) {
   return out;
 }
 
+function overlap1d(a0: number, a1: number, b0: number, b1: number) {
+  return Math.min(a1, b1) - Math.max(a0, b0);
+}
+
 /** Axis-aligned world bounds of a node, rotation-aware via corner transform. */
 export function nodeWorldAabb(n: DesignNode): Box {
   return aabb([n]);
+}
+
+/**
+ * After a snap delta is applied, measure gaps from the moving box to siblings
+ * and artboard edges that share an overlap and sit on a live guide.
+ */
+export function spacingTicks(
+  moving: Box,
+  siblings: Box[],
+  artboard: { width: number; height: number },
+  guides: GuideSet,
+): SpaceTick[] {
+  const ticks: SpaceTick[] = [];
+  const gx = new Set((guides.x ?? []).map((n) => Math.round(n * 10) / 10));
+  const gy = new Set((guides.y ?? []).map((n) => Math.round(n * 10) / 10));
+  const onX = (v: number) => gx.size === 0 || gx.has(Math.round(v * 10) / 10) || [...gx].some((g) => Math.abs(g - v) < 0.6);
+  const onY = (v: number) => gy.size === 0 || gy.has(Math.round(v * 10) / 10) || [...gy].some((g) => Math.abs(g - v) < 0.6);
+
+  const frames: Box[] = [
+    { x: 0, y: 0, w: 0, h: artboard.height },
+    { x: artboard.width, y: 0, w: 0, h: artboard.height },
+    ...siblings,
+  ];
+  for (const s of frames) {
+    const ovY = overlap1d(moving.y, moving.y + moving.h, s.y, s.y + s.h);
+    if (ovY <= 1) continue;
+    const mid = Math.max(moving.y, s.y) + ovY / 2;
+    if (s.x + s.w <= moving.x + 0.5) {
+      const a = s.x + s.w;
+      const b = moving.x;
+      if (b - a > 0.5 && (onX(a) || onX(b))) ticks.push({ axis: "x", a, b, mid, size: b - a });
+    } else if (moving.x + moving.w <= s.x + 0.5) {
+      const a = moving.x + moving.w;
+      const b = s.x;
+      if (b - a > 0.5 && (onX(a) || onX(b))) ticks.push({ axis: "x", a, b, mid, size: b - a });
+    }
+  }
+
+  const stacks: Box[] = [
+    { x: 0, y: 0, w: artboard.width, h: 0 },
+    { x: 0, y: artboard.height, w: artboard.width, h: 0 },
+    ...siblings,
+  ];
+  for (const s of stacks) {
+    const ovX = overlap1d(moving.x, moving.x + moving.w, s.x, s.x + s.w);
+    if (ovX <= 1) continue;
+    const mid = Math.max(moving.x, s.x) + ovX / 2;
+    if (s.y + s.h <= moving.y + 0.5) {
+      const a = s.y + s.h;
+      const b = moving.y;
+      if (b - a > 0.5 && (onY(a) || onY(b))) ticks.push({ axis: "y", a, b, mid, size: b - a });
+    } else if (moving.y + moving.h <= s.y + 0.5) {
+      const a = moving.y + moving.h;
+      const b = s.y;
+      if (b - a > 0.5 && (onY(a) || onY(b))) ticks.push({ axis: "y", a, b, mid, size: b - a });
+    }
+  }
+
+  ticks.sort((p, q) => p.size - q.size);
+  const kept: SpaceTick[] = [];
+  for (const t of ticks) {
+    const clash = kept.some(
+      (k) => k.axis === t.axis && Math.abs(k.a - t.a) < 1 && Math.abs(k.b - t.b) < 1,
+    );
+    if (!clash) kept.push(t);
+    if (kept.length >= 6) break;
+  }
+  return kept;
 }
 
 /**
@@ -44,7 +125,7 @@ export function smartSnap(
   threshold = 8,
   extra?: GuideSet,
 ): { dx: number; dy: number; guides: GuideSet } {
-  if (!moving.length) return { dx: 0, dy: 0, guides: { x: [], y: [] } };
+  if (!moving.length) return { dx: 0, dy: 0, guides: { x: [], y: [], spaces: [] } };
 
   const box = aabb(moving);
   const m = edges(box);
@@ -140,13 +221,17 @@ export function smartSnap(
     }
   }
 
+  const guides: GuideSet = {
+    x: bestX <= threshold ? uniq(gx) : [],
+    y: bestY <= threshold ? uniq(gy) : [],
+  };
+  const snappedBox = { x: box.x + (bestX <= threshold ? dx : 0), y: box.y + (bestY <= threshold ? dy : 0), w: box.w, h: box.h };
+  guides.spaces = spacingTicks(snappedBox, siblingBoxes, artboard, guides);
+
   return {
     dx: bestX <= threshold ? dx : 0,
     dy: bestY <= threshold ? dy : 0,
-    guides: {
-      x: bestX <= threshold ? uniq(gx) : [],
-      y: bestY <= threshold ? uniq(gy) : [],
-    },
+    guides,
   };
 }
 
