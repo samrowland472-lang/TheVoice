@@ -74,7 +74,7 @@ export function imageNode(
 }
 
 export function pathNode(
-  patch: Partial<PathNode> & { x: number; y: number; w: number; h: number; points: { x: number; y: number }[] },
+  patch: Partial<PathNode> & { x: number; y: number; w: number; h: number; points: PathNode["points"] },
 ): PathNode {
   return {
     ...BASE,

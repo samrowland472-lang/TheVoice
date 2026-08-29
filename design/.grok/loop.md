@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tangent / smooth-point handles on the board.
-2. Artboard-aware smart guides from unselected siblings while dragging.
-3. Pointer tools on the board (marquee, move, draw) — stage still paints only.
+1. Artboard-aware smart guides from unselected siblings while dragging.
+2. Convert selected path corners to auto-smooth (average incoming/outgoing tangents).
+3. Boolean applyBoolean wired back into store + inspector after the wipe.
 
 ## Done
 
@@ -37,25 +37,19 @@ Auth OFF, DB OFF.
 - Boolean preview ghost on the board before commit.
 - Intersect and Exclude (xor) beside Union and Subtract.
 - Inspector mixed fill/stroke when several layers are selected.
+- Restored pointer canvas (marquee, move, draw, pen) after wipe.
+- Pen tangent / smooth-point handles: click-drag while drawing, edit on the board, cubic render + SVG.
 
 ## Iterations
 
+### 2026-08-29T03:10Z — loop 58
+
+**Pen tangents + restore wiped stage/export.** `canvas-stage.tsx`, `export.ts`, `studio-app.tsx`, and viewport `render.ts` were stubs again; restored board tools. Paths now store optional `in`/`out` handles. Click adds a corner; drag while placing pulls a mirrored smooth tangent. Select a path to drag anchors or handles (Alt breaks the pair). Double-click an anchor to drop handles. Canvas and SVG export draw cubics.
+
 ### 2026-08-29T02:20Z — loop 57
 
-**Inspector mixed ink + restore wiped studio files.** `export.ts` and `studio-app.tsx` were stubs; restored raster/SVG/PDF export (path hole rings + fill-rule) and the studio chrome. Viewport-aware `drawDocument`. Inspector shows Fill · mixed / Stroke · mixed on multi-select and writes one color or weight to every selected layer. Shift+0 zoom-to-selection and command “Export selection PNG”.
+**Inspector mixed ink + restore wiped studio files.**
 
-### 2026-08-29T01:10Z — loop 56
+### Next recommended
 
-**Intersect / Exclude + restore wiped files.** Restored `canvas-stage.tsx`, `studio-app.tsx`, `export.ts`, and viewport `render.ts`. Two or more shapes now Union / Subtract / Intersect / Exclude from the inspector, board menu, command palette, and ⌘U / ⇧⌘U / ⌘I / ⇧⌘I. Hover ghosts the result. SVG export writes hole rings + fill-rule. Selection PNG export and zoom-to-selection (⇧0) live again.
-
-### 2026-08-29T00:21Z — loop 55
-
-**Boolean preview ghost + restore wiped studio files.**
-
-### 2026-08-28T23:10Z — loop 54
-
-**Boolean second pass.**
-
-## Next recommended
-
-Pen tangent / smooth-point handles, then smart guides while dragging.
+Smart guides from unselected siblings while dragging, then auto-smooth conversion.

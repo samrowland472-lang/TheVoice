@@ -104,12 +104,22 @@ export interface ImageNode extends BaseNode {
   };
 }
 
+/** Anchor on a path. `in` / `out` are offsets from the anchor. */
+export interface PathPoint {
+  x: number;
+  y: number;
+  in?: { x: number; y: number } | null;
+  out?: { x: number; y: number } | null;
+  /** When true, opposite handles stay mirrored. */
+  smooth?: boolean;
+}
+
 export interface PathNode extends BaseNode {
   kind: "path";
-  points: { x: number; y: number }[];
+  points: PathPoint[];
   closed: boolean;
   /** Inner contours (holes) in local coords — used by boolean subtract/union. */
-  holes?: { x: number; y: number }[][];
+  holes?: PathPoint[][];
   /** Canvas/SVG fill rule when holes are present. */
   fillRule?: "evenodd" | "nonzero";
 }
