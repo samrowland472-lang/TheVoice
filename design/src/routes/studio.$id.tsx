@@ -7,10 +7,10 @@ export const Route = createFileRoute("/studio/$id")({
 });
 
 function StudioPage() {
-  Route.useParams();
+  const { id } = Route.useParams();
   return (
     <AppShell>
-      <StudioApp />
+      <StudioApp id={id} />
     </AppShell>
   );
 }

@@ -21,39 +21,42 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Export selection as SVG (PNG already ships).
-2. Boolean preview ghost on hover after the restored pointer board.
+1. Pen tangent handles drawn on the overlay (helpers exist in path-curve).
+2. MixedInk panel wired when multi-select has mixed fills.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Canvas stage restored; eyedropper HUD under the board.
-- Zoom to selection: Shift+0, command palette, context menu.
-- Export selection as PNG.
+- Zoom to selection: Shift+0, command palette.
+- Export selection as SVG (tight viewBox, paths keep holes).
 - Boolean helpers live in boolean-ops.ts.
-- Multi-select marquee polish + keyboard nudge feedback.
-- Inspector mixed fill/stroke when several layers are selected.
 - Boolean preview ghost on the board before commit (hover Union/Subtract).
-- Rotation-aware second-pass subtract: overlapping holes union so even-odd does not refill; world-space rotation on holed paths; pointer board + Boolean inspector restored.
+- Rotation-aware second-pass subtract: overlapping holes union so even-odd does not refill.
+- Studio chrome restored (was returning null); viewport-aware drawDocument; applyBoolean + Selection SVG.
 
 ## Iterations
 
+### 2026-08-29T22:10Z — loop 67
+
+**Board + boolean + selection SVG.** Restored wiped `studio-app` (it returned null) and pointer `canvas-stage`. `drawDocument` takes the viewport again. Inspector Boolean: hover paints a dashed phosphor/warm ghost; click commits. Overlapping subtract punches merge so even-odd does not refill. Export → Selection SVG writes only the selected nodes (paths keep holes) cropped to their bounds.
+
 ### 2026-08-29T21:20Z — loop 66
 
-**Rotation-aware second-pass subtract.** Subtracting again on a holed path (including after rotate) unions overlapping punches instead of stacking even-odd rings that cancel. Cutter voids stay solid. Board pointer (select, move, draw, pan, wheel zoom) and viewport draw were restored so the op is usable. Inspector Boolean: Union / Subtract / Intersect / Exclude. Typecheck + build + smoke clean.
+**Rotation-aware second-pass subtract.** Subtracting again on a holed path (including after rotate) unions overlapping punches instead of stacking even-odd rings that cancel.
 
 ### 2026-08-29T19:12Z — loop 65
 
-**Boolean preview ghost.** Shift-select two or more shapes and the inspector opens Boolean: Union, Subtract, Intersect, Exclude. Hover (or focus) a button to paint a dashed phosphor ghost of the result on the board; Subtract uses a warm cut tint. Click commits via applyBoolean; ⌘U / ⇧⌘U / ⌘I / ⇧⌘I stay wired. Restored wiped `export.ts`, pointer `canvas-stage`, and `studio-app`. Path fill now punches holes. Typecheck + build + smoke clean.
+**Boolean preview ghost.** Shift-select two or more shapes and the inspector opens Boolean: Union, Subtract, Intersect, Exclude.
 
 ### 2026-08-29T18:10Z — loop 64
 
-**Mixed fill/stroke inspector.** Shift-select two or more layers and the inspector opens a Selection block: fill, stroke, width, and opacity write across the set. Mixed values show a count chip and a blank width field; a colour pick or “Fill all with ink” unifies them. Restored PathPoint on path nodes so cubic path helpers typecheck. Typecheck + build + smoke clean.
+**Mixed fill/stroke inspector.**
 
 ### 2026-08-29T08:15Z — loop 63
 
-**Pen tangent edit polish.** Restored wiped pointer `canvas-stage`, `export.ts`, and `studio-app` so the board draws and takes input again.
+**Pen tangent edit polish.**
 
 ## Next recommended
 
-Export selection as SVG (PNG already ships).
+Pen tangent handles on the overlay (path-curve helpers already exist).
