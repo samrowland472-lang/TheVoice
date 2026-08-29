@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { useDesign } from "@/lib/design/store";
 import { CanvasStage } from "./canvas-stage";
@@ -25,11 +25,10 @@ export function StudioApp() {
   const commands = useMemo<CommandItem[]>(() => {
     const s = () => useDesign.getState();
     return [
-      { id: "save", label: "Save", group: "File", hint: "⌘S", run: () => s().save() },
-      { id: "undo", label: "Undo", group: "Edit", hint: "⌘Z", run: () => s().undo() },
-      { id: "redo", label: "Redo", group: "Edit", hint: "⇧⌘Z", run: () => s().redo() },
+      { id: "save", label: "Save", group: "File", hint: "Cmd+S", run: () => s().save() },
+      { id: "undo", label: "Undo", group: "Edit", hint: "Cmd+Z", run: () => s().undo() },
       { id: "fit", label: "Fit artboard", group: "View", hint: "0", run: () => s().requestFit() },
-      { id: "present", label: "Present artboard", group: "View", hint: "⇧P", run: () => s().togglePresent() },
+      { id: "present", label: "Present artboard", group: "View", run: () => s().togglePresent() },
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
@@ -37,7 +36,7 @@ export function StudioApp() {
   }, [navigate]);
 
   if (!doc) {
-    return <div className="flex flex-1 items-center justify-center text-ink-dim">Loading artboard…</div>;
+    return <div className="flex flex-1 items-center justify-center text-ink-dim">Loading artboard</div>;
   }
 
   if (present) {
@@ -69,18 +68,6 @@ export function StudioApp() {
           </div>
           <AiPanel />
         </aside>
-      </div>
-      <div className="flex shrink-0 border-t border-border md:hidden">
-        {(["layers", "inspect", "ai"] as const).map((id) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setSheet(sheet === id ? null : id)}
-            className={cn("h-12 flex-1 text-xs font-medium capitalize", sheet === id ? "text-phosphor" : "text-ink-dim")}
-          >
-            {id === "ai" ? "Director" : id === "inspect" ? "Inspect" : "Layers"}
-          </button>
-        ))}
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} />
       <Toaster theme="dark" />
