@@ -154,8 +154,6 @@ export interface DesignDocument {
   updatedAt: number;
   createdAt: number;
   thumbnail?: string;
-  /** Hash of artboard+nodes used to skip re-raster when content is unchanged. */
-  thumbHash?: string;
   /** Manual ruler guides in artboard space. */
   guides?: { id: string; axis: "x" | "y"; pos: number }[];
   /** Shared id for a campaign set (story + square + banner). */

@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed fill/stroke inspector when several layers are selected.
-2. Boolean preview ghost on the board before commit (hover Union/Subtract).
+1. Boolean preview ghost on the board before commit (hover Union/Subtract).
+2. Rotation-aware second-pass subtract on holed path nodes.
 
 ## Done
 
@@ -32,33 +32,18 @@ Auth OFF, DB OFF.
 - Export selection as PNG.
 - Boolean helpers live in boolean-ops.ts.
 - Multi-select marquee polish + keyboard nudge feedback.
-- Rotation-aware second-pass subtract with hole rings + fill-rule SVG export.
-- Boolean preview ghost on the board before commit.
-- Intersect and Exclude (xor) beside Union and Subtract.
 - Inspector mixed fill/stroke when several layers are selected.
-- Restored pointer canvas (marquee, move, draw, pen) after wipe.
-- Pen tangent / smooth-point handles: click-drag while drawing, edit on the board, cubic render + SVG.
-- Smart guides: artboard + sibling edges/centers + equal-gap snap while dragging.
-- Pointer canvas / export / studio-app restored after wipe; applyBoolean on the store (⌘U / ⌘I).
-- Auto-smooth selected path corners (average incoming/outgoing tangents). Shift+S, inspector, palette.
-- Boolean inspector buttons + live preview ghost; applyBoolean / requestFitSelection / smoothSelectedPath wired.
-- Spacing labels on smart-guide ticks while dragging.
-- Pen tangent edit: click-drag while placing, drag in/out after smooth, Alt unpairs, cubics in canvas + SVG.
 
 ## Iterations
 
+### 2026-08-29T18:10Z — loop 64
+
+**Mixed fill/stroke inspector.** Shift-select two or more layers and the inspector opens a Selection block: fill, stroke, width, and opacity write across the set. Mixed values show a count chip and a blank width field; a colour pick or “Fill all with ink” unifies them. Restored PathPoint on path nodes so cubic path helpers typecheck. Typecheck + build + smoke clean.
+
 ### 2026-08-29T08:15Z — loop 63
 
-**Pen tangent edit polish.** Restored wiped pointer `canvas-stage`, `export.ts`, and `studio-app` so the board draws and takes input again. Pen click-drag writes cubic out/in handles on the new point (mirrored); select or pen can grab those handles after Shift+S auto-smooth. Alt-drag breaks the pair. Paths render and export as cubics (`tracePath` / `pathD`). Store gained `applyBoolean`, `smoothSelectedPath`, `requestFitSelection`, `patchPathPoint`. Spacing ticks still draw when a snap locks.
+**Pen tangent edit polish.** Restored wiped pointer `canvas-stage`, `export.ts`, and `studio-app` so the board draws and takes input again.
 
-### 2026-08-29T07:20Z — loop 62
+## Next recommended
 
-**Spacing labels on smart-guide ticks.** Dragging a layer (or a multi-select) still snaps to artboard and sibling edges/centers/equal gaps. When a snap locks, phosphor dimension ticks draw the gap in board units between the moving box and the neighbor (or artboard edge) that shares an overlap. Labels sit on the tick with a ground chip. Also restored wiped pointer `canvas-stage` and `export.ts` from the studio so the board draws and ships PNG/JPG/SVG again.
-
-### 2026-08-29T06:10Z — loop 61
-
-**Boolean inspector + preview ghost.** Select two or more shapes and the inspector shows Union / Subtract / Intersect / Exclude. Hover switches the cyan dashed ghost on the board; click (or ⌘U / ⇧⌘U / ⌘I / ⇧⌘I) commits a path and drops the source shapes. Also restored wiped `export.ts`, pointer `canvas-stage`, and `studio-app` so the board draws and accepts input again. `requestFitSelection` and `smoothSelectedPath` are on the store.
-
-### Next recommended
-
-Mixed fill/stroke inspector when several layers are selected.
+Boolean preview ghost on the board before commit.
