@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean inspector buttons + preview ghost after applyBoolean store wiring.
-2. Spacing labels on smart-guide ticks while dragging.
-3. Pen tangent edit on the board (drag in/out handles after auto-smooth).
+1. Spacing labels on smart-guide ticks while dragging.
+2. Pen tangent edit polish (drag in/out handles after auto-smooth).
+3. Mixed fill/stroke inspector when several layers are selected.
 
 ## Done
 
@@ -42,8 +42,13 @@ Auth OFF, DB OFF.
 - Smart guides: artboard + sibling edges/centers + equal-gap snap while dragging.
 - Pointer canvas / export / studio-app restored after wipe; applyBoolean on the store (⌘U / ⌘I).
 - Auto-smooth selected path corners (average incoming/outgoing tangents). Shift+S, inspector, palette.
+- Boolean inspector buttons + live preview ghost; applyBoolean / requestFitSelection / smoothSelectedPath wired.
 
 ## Iterations
+
+### 2026-08-29T06:10Z — loop 61
+
+**Boolean inspector + preview ghost.** Select two or more shapes and the inspector shows Union / Subtract / Intersect / Exclude. Hover switches the cyan dashed ghost on the board; click (or ⌘U / ⇧⌘U / ⌘I / ⇧⌘I) commits a path and drops the source shapes. Also restored wiped `export.ts`, pointer `canvas-stage`, and `studio-app` so the board draws and accepts input again. `requestFitSelection` and `smoothSelectedPath` are on the store.
 
 ### 2026-08-29T05:20Z — loop 60
 
@@ -55,4 +60,4 @@ Auth OFF, DB OFF.
 
 ### Next recommended
 
-Boolean inspector buttons + preview ghost after applyBoolean.
+Spacing labels on smart-guide ticks while dragging.
