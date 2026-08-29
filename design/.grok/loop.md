@@ -21,9 +21,9 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Intersect / exclude (xor) beside Union and Subtract.
-2. Inspector multi-select: mixed fill/stroke when several layers are selected.
-3. Export selection as PNG from the board context menu.
+1. Inspector multi-select: mixed fill/stroke when several layers are selected.
+2. Pen tangent / smooth-point handles on the board.
+3. Artboard-aware smart guides from unselected siblings while dragging.
 
 ## Done
 
@@ -33,19 +33,24 @@ Auth OFF, DB OFF.
 - Export selection as PNG.
 - Boolean helpers live in boolean-ops.ts.
 - Multi-select marquee polish + keyboard nudge feedback.
-- Rotation-aware second-pass subtract: outer CCW / holes CW, overlapping holes merged, Union + Subtract in inspector / command / context menu. SVG export writes hole rings + fill-rule.
-- Boolean preview ghost on the board before commit (hover Union/Subtract).
+- Rotation-aware second-pass subtract with hole rings + fill-rule SVG export.
+- Boolean preview ghost on the board before commit.
+- Intersect and Exclude (xor) beside Union and Subtract.
 
 ## Iterations
 
+### 2026-08-29T01:10Z — loop 56
+
+**Intersect / Exclude + restore wiped files.** Restored `canvas-stage.tsx`, `studio-app.tsx`, `export.ts`, and viewport `render.ts`. Two or more shapes now Union / Subtract / Intersect / Exclude from the inspector, board menu, command palette, and ⌘U / ⇧⌘U / ⌘I / ⇧⌘I. Hover ghosts the result. SVG export writes hole rings + fill-rule. Selection PNG export and zoom-to-selection (⇧0) live again.
+
 ### 2026-08-29T00:21Z — loop 55
 
-**Boolean preview ghost + restore wiped studio files.** Restored `canvas-stage.tsx`, `export.ts`, and `studio-app.tsx` after placeholder wipes. Hover Union or Subtract in the inspector to ghost the result on the artboard (phosphor for union, alert for subtract); click, ⌘U / ⇧⌘U, command palette, or the board menu to commit. Viewport-aware render + eyedropper sampling restored. Typecheck + build + smoke clean.
+**Boolean preview ghost + restore wiped studio files.**
 
 ### 2026-08-28T23:10Z — loop 54
 
-**Boolean second pass.** Restored real `canvas-stage.tsx` + `export.ts` into the live studio. Subtract now maps rotated world holes, forces opposite winding, and merges overlapping punches so a second subtract after rotate does not refill evenodd islands. Union / Subtract live in the inspector (two or more shapes), command palette, and board context menu. Path SVG export includes holes. Typecheck + build + smoke clean.
+**Boolean second pass.**
 
 ## Next recommended
 
-Intersect / exclude boolean ops, then inspector mixed-property multi-select.
+Inspector mixed-property multi-select, then pen tangent handles.
