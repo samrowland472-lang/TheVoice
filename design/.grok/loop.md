@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Rotation-aware second-pass subtract on holed path nodes.
-2. Export selection as SVG (PNG already ships).
+1. Export selection as SVG (PNG already ships).
+2. Boolean preview ghost on hover after the restored pointer board.
 
 ## Done
 
@@ -34,8 +34,13 @@ Auth OFF, DB OFF.
 - Multi-select marquee polish + keyboard nudge feedback.
 - Inspector mixed fill/stroke when several layers are selected.
 - Boolean preview ghost on the board before commit (hover Union/Subtract).
+- Rotation-aware second-pass subtract: overlapping holes union so even-odd does not refill; world-space rotation on holed paths; pointer board + Boolean inspector restored.
 
 ## Iterations
+
+### 2026-08-29T21:20Z — loop 66
+
+**Rotation-aware second-pass subtract.** Subtracting again on a holed path (including after rotate) unions overlapping punches instead of stacking even-odd rings that cancel. Cutter voids stay solid. Board pointer (select, move, draw, pan, wheel zoom) and viewport draw were restored so the op is usable. Inspector Boolean: Union / Subtract / Intersect / Exclude. Typecheck + build + smoke clean.
 
 ### 2026-08-29T19:12Z — loop 65
 
@@ -51,4 +56,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Rotation-aware second-pass subtract on holed path nodes.
+Export selection as SVG (PNG already ships).
