@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Multi-select inspector shows mixed values instead of first-node only.
-2. Rotation field as typed NumField (same blur commit as X/Y).
+1. Rotation field as typed NumField (same blur commit as X/Y).
+2. Mixed type size / weight when several text layers are selected.
 
 ## Done
 
@@ -42,8 +42,14 @@ Auth OFF, DB OFF.
 - Inspector X/Y/W/H, stroke, and type size draft locally while focused; commit on blur or Enter; Escape restores; live canvas drags still update the field when it is idle.
 - DesignState carries `booleanPreview`, `pathEditHit`, and `fit-sel` view intent.
 - Inspector tracking / leading as typed NumFields with the same blur commit; sliders still scrub live.
+- Multi-select inspector: X/Y/W/H, name, stroke, radius, blend, rotate, and opacity show mixed placeholders and write to every selected layer.
+- DesignState types booleanPreview, pathEditHit, and fit-sel view intent.
 
 ## Iterations
+
+### 2026-08-30T22:10Z — loop 82
+
+**Mixed multi-select inspector.** Selecting two or more layers titles the pane "N layers". Shared X/Y/W/H, name, stroke width, radius, blend, rotate, and opacity stay live; differing values show an em dash / Mixed and commit writes the new number onto every selected node. Fill stays on Mixed Ink. Type and image fields stay single-select. Store now types boolean preview, path-edit hit, and fit-selection.
 
 ### 2026-08-30T21:20Z — loop 81
 
@@ -67,4 +73,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Multi-select inspector shows mixed values instead of first-node only.
+Rotation field as typed NumField (same blur commit as X/Y).
