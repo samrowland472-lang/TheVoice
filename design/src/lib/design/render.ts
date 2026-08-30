@@ -1,6 +1,7 @@
 import { fontStack } from "./fonts";
 import { degToRad, nodeCenter } from "./geometry";
 import { hitNode, nodeLocalPoint } from "./hit";
+import { tracePath } from "./path-curve";
 import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Viewport } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
@@ -104,9 +105,6 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
       let ax = n.x;
       if (n.align === "center") ax = n.x + n.w / 2;
       if (n.align === "right") ax = n.x + n.w;
-      if (n.letterSpacing) {
-        // simplified
-      }
       ctx.fillText(line, ax, n.y + i * lh, n.w);
     }
   } else if (isImage(n)) {
@@ -127,19 +125,11 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
   } else if (isPath(n)) {
     if (n.points.length) {
       ctx.beginPath();
-      ctx.moveTo(n.x + n.points[0]!.x, n.y + n.points[0]!.y);
-      for (let i = 1; i < n.points.length; i++) {
-        ctx.lineTo(n.x + n.points[i]!.x, n.y + n.points[i]!.y);
-      }
-      if (n.closed) ctx.closePath();
+      tracePath(ctx, n.x, n.y, n.points, n.closed);
       const holes = n.holes ?? [];
       for (const hole of holes) {
         if (hole.length < 3) continue;
-        ctx.moveTo(n.x + hole[0]!.x, n.y + hole[0]!.y);
-        for (let i = 1; i < hole.length; i++) {
-          ctx.lineTo(n.x + hole[i]!.x, n.y + hole[i]!.y);
-        }
-        ctx.closePath();
+        tracePath(ctx, n.x, n.y, hole, true);
       }
       if (n.fill !== "transparent") {
         applyFill(ctx, n.fill, n.x, n.y, n.w, n.h);
@@ -192,16 +182,31 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
 export function drawDocument(
   ctx: CanvasRenderingContext2D,
   doc: DesignDocument,
-  opts?: { skipChrome?: boolean; dpr?: number; livePaint?: { id: string; canvas: HTMLCanvasElement } | null },
+  opts?: {
+    skipChrome?: boolean;
+    dpr?: number;
+    livePaint?: { id: string; canvas: HTMLCanvasElement } | null;
+    viewport?: Viewport;
+    ox?: number;
+    oy?: number;
+  },
 ) {
   const dpr = opts?.dpr ?? 1;
   const { width, height, background } = doc.artboard;
+  const vp = opts?.viewport;
+  const ox = opts?.ox ?? 0;
+  const oy = opts?.oy ?? 0;
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (!opts?.skipChrome) {
     ctx.fillStyle = "#070908";
     ctx.fillRect(0, 0, ctx.canvas.width / dpr, ctx.canvas.height / dpr);
   }
+  if (vp) {
+    ctx.translate(vp.x, vp.y);
+    ctx.scale(vp.zoom, vp.zoom);
+  }
+  ctx.translate(ox, oy);
   applyFill(ctx, background, 0, 0, width, height);
   ctx.fillRect(0, 0, width, height);
   ctx.beginPath();
