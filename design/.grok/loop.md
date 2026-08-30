@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tangent overlay polish on subtract results.
-2. Selection PNG crop that includes rotated path bounds.
+1. Selection PNG crop that includes rotated path bounds.
+2. Drag cubic handles on subtract holes from the pen overlay.
 
 ## Done
 
@@ -32,8 +32,13 @@ Auth OFF, DB OFF.
 - Overlapping subtract holes merge so even-odd does not refill.
 - Paths render holes and cubics with evenodd / nonzero.
 - Selection SVG export uses cubic `pathD`, holes, and even-odd / clip-rule.
+- Subtract results simplify, restore mirrored cubics, and show hole tangents.
 
 ## Iterations
+
+### 2026-08-30T04:12Z — loop 73
+
+**Pen tangents on subtract.** Boolean results drop collinear samples and get mirrored cubic handles. Select or Pen on the result draws phosphor arms on the outer contour and cooler hole diamonds. Inspector Boolean hover still ghosts; commit switches to Pen. Viewport + ox/oy render offsets stay wired so the overlay sits on the board.
 
 ### 2026-08-30T03:15Z — loop 72
 
@@ -49,4 +54,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen tangent overlay polish on subtract results.
+Selection PNG crop that includes rotated path bounds.
