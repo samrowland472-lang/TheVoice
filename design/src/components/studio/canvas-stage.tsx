@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
 import { drawDocument, fitBoxViewport, fitViewport } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
@@ -10,6 +11,7 @@ export function CanvasStage() {
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
   const selection = useDesign((s) => s.selection);
+  const booleanPreview = useDesign((s) => s.booleanPreview);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -48,8 +50,16 @@ export function CanvasStage() {
     main.style.height = `${h}px`;
     const ctx = main.getContext("2d");
     if (!ctx) return;
-    drawDocument(ctx, doc, viewport, { dpr });
-  }, [doc, viewport]);
+    let ghost = null;
+    if (booleanPreview && selection.length >= 2) {
+      const order = new Map(selection.map((id, i) => [id, i]));
+      const usable = doc.nodes
+        .filter((n) => selection.includes(n.id) && isBooleanable(n))
+        .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      ghost = computeBoolean(usable, booleanPreview);
+    }
+    drawDocument(ctx, doc, viewport, { dpr, ghost, ghostOp: booleanPreview });
+  }, [doc, viewport, selection, booleanPreview]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
