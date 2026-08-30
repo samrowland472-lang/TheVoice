@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean preview ghost polish (live hover on inspector Union/Subtract).
-2. Rotation-aware hole subtract polish on path nodes with mixed handles.
+1. Rotation-aware hole subtract polish on path nodes with mixed handles.
+2. Pointer canvas-stage restore (move / resize / draw on the board).
 
 ## Done
 
@@ -36,8 +36,13 @@ Auth OFF, DB OFF.
 - Studio chrome restored (was returning null); viewport-aware drawDocument; applyBoolean + Selection SVG.
 - Pen tangent handles on the overlay (draw + drag in/out/anchor; Alt breaks smooth).
 - MixedInk panel wired when multi-select has mixed fills.
+- Boolean preview ghost polish: inspector Union/Subtract/Intersect/Exclude hover ghosts the result on the board; click commits. Viewport-aware drawDocument. applyBoolean in the store.
 
 ## Iterations
+
+### 2026-08-30T01:10Z — loop 70
+
+**Boolean preview ghost polish.** Inspector Boolean · N shapes: hover Union / Subtract / Intersect / Exclude paints a phosphor ghost of the computed path on the artboard (cyan fill on subtract). Click commits — first selected shape is replaced, the rest drop. Viewport transform restored so the board sits in the pasteboard. applyBoolean + setBooleanPreview live in the store; Cmd+U / Shift+Cmd+U still commit. Typecheck + build + smoke clean.
 
 ### 2026-08-30T00:08Z — loop 69
 
@@ -65,4 +70,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Boolean preview ghost polish (live hover on inspector Union/Subtract).
+Rotation-aware hole subtract polish on path nodes with mixed handles.
