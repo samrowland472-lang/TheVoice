@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode } from "@/lib/design/types";
@@ -14,7 +14,7 @@ import { CommandPalette, type CommandItem } from "./command-palette";
 import { useShortcuts } from "./use-shortcuts";
 import { AiPanel } from "./ai-panel";
 
-export function StudioApp() {
+export function StudioApp({ id }: { id?: string }) {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const doc = useDesign((s) => s.doc);
@@ -23,7 +23,11 @@ export function StudioApp() {
   const brand = useDesign((s) => s.brand);
   const color = useDesign((s) => s.color);
   useShortcuts({ onPalette: () => setPaletteOpen(true) });
-  useParams({ from: "/studio/$id" });
+  useEffect(() => {
+    if (!id) return;
+    const s = useDesign.getState();
+    if (s.doc?.id !== id) s.open(id);
+  }, [id]);
 
   const selectedNodes = (doc?.nodes ?? []).filter((n): n is DesignNode => selection.includes(n.id));
 
