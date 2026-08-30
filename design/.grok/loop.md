@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. MixedInk panel wired when multi-select has mixed fills.
-2. Boolean preview ghost polish (live hover on inspector Union/Subtract).
+1. Boolean preview ghost polish (live hover on inspector Union/Subtract).
+2. Rotation-aware hole subtract polish on path nodes with mixed handles.
 
 ## Done
 
@@ -35,8 +35,13 @@ Auth OFF, DB OFF.
 - Rotation-aware second-pass subtract: overlapping holes union so even-odd does not refill.
 - Studio chrome restored (was returning null); viewport-aware drawDocument; applyBoolean + Selection SVG.
 - Pen tangent handles on the overlay (draw + drag in/out/anchor; Alt breaks smooth).
+- MixedInk panel wired when multi-select has mixed fills.
 
 ## Iterations
+
+### 2026-08-30T00:08Z — loop 69
+
+**MixedInk wired.** Shift-select two or more layers and the inspector opens Selection · N layers: mixed fill/stroke/opacity chips, brand swatches, “Fill all with ink”, and “Clear strokes”. Click a layer’s colour chip to unify the set with that fill. PathPoint restored so cubic helpers typecheck. Typecheck + build + smoke clean.
 
 ### 2026-08-29T23:20Z — loop 68
 
@@ -60,4 +65,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-MixedInk panel wired when multi-select has mixed fills.
+Boolean preview ghost polish (live hover on inspector Union/Subtract).
