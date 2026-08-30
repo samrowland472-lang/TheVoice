@@ -14,6 +14,8 @@ import { TopBar } from "./top-bar";
 import { CommandPalette, type CommandItem } from "./command-palette";
 import { useShortcuts } from "./use-shortcuts";
 import { AiPanel } from "./ai-panel";
+import { BooleanButtons } from "./boolean-buttons";
+import { applyBoolean } from "@/lib/design/boolean-actions";
 
 export function StudioApp({ id }: { id?: string }) {
   const navigate = useNavigate();
@@ -62,10 +64,10 @@ export function StudioApp({ id }: { id?: string }) {
           downloadSelectionPng(st.doc, st.selection, 2);
         },
       },
-      { id: "bool-union", label: "Boolean union", group: "Edit", hint: "Cmd+U", run: () => s().applyBoolean("union") },
-      { id: "bool-sub", label: "Boolean subtract", group: "Edit", hint: "Shift+Cmd+U", run: () => s().applyBoolean("subtract") },
-      { id: "bool-int", label: "Boolean intersect", group: "Edit", hint: "Cmd+I", run: () => s().applyBoolean("intersect") },
-      { id: "bool-exc", label: "Boolean exclude", group: "Edit", hint: "Shift+Cmd+I", run: () => s().applyBoolean("exclude") },
+      { id: "bool-union", label: "Boolean union", group: "Edit", hint: "Cmd+U", run: () => applyBoolean("union") },
+      { id: "bool-sub", label: "Boolean subtract", group: "Edit", hint: "Shift+Cmd+U", run: () => applyBoolean("subtract") },
+      { id: "bool-int", label: "Boolean intersect", group: "Edit", hint: "Cmd+I", run: () => applyBoolean("intersect") },
+      { id: "bool-exc", label: "Boolean exclude", group: "Edit", hint: "Shift+Cmd+I", run: () => applyBoolean("exclude") },
     ];
   }, [navigate]);
 
@@ -103,6 +105,7 @@ export function StudioApp({ id }: { id?: string }) {
                 <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
               </div>
             )}
+            <BooleanButtons />
             <Inspector />
           </div>
           <AiPanel />
