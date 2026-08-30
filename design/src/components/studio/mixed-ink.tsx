@@ -11,6 +11,12 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
+function solidOf(fill: DesignNode["fill"], fallback: string): string {
+  if (typeof fill === "string" && fill !== "transparent") return fill;
+  if (fill && typeof fill !== "string") return fill.stops[0]?.color ?? fallback;
+  return fallback;
+}
+
 export function MixedInk({
   nodes,
   brandColors,
@@ -65,6 +71,24 @@ export function MixedInk({
               <span className="font-mono text-[10px] text-phosphor">{fills.length} values</span>
             )}
           </div>
+          {mixedFill && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {nodes.map((n) => {
+                const hex = solidOf(n.fill, ink);
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    className="size-6 rounded-full border border-phosphor/50"
+                    style={{ background: hex }}
+                    title={`Unify with ${n.name || n.kind}`}
+                    aria-label={`Unify fill with ${n.name || n.kind}`}
+                    onClick={() => updateNodes(ids, { fill: n.fill }, true)}
+                  />
+                );
+              })}
+            </div>
+          )}
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {brandColors.map((c) => (
               <button
@@ -114,13 +138,22 @@ export function MixedInk({
             onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
           />
         </label>
-        <button
-          type="button"
-          className="h-8 rounded-[8px] border border-phosphor/40 text-[10px] text-phosphor hover:bg-phosphor/10"
-          onClick={() => updateNodes(ids, { fill: ink }, true)}
-        >
-          Fill all with ink
-        </button>
+        <div className="grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-phosphor/40 text-[10px] text-phosphor hover:bg-phosphor/10"
+            onClick={() => updateNodes(ids, { fill: ink }, true)}
+          >
+            Fill all with ink
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            onClick={() => updateNodes(ids, { stroke: "transparent", strokeWidth: 0 }, true)}
+          >
+            Clear strokes
+          </button>
+        </div>
       </div>
     </section>
   );
