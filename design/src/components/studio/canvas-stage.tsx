@@ -1,18 +1,26 @@
 import { useEffect, useRef } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
-import { drawDocument, fitBoxViewport, fitViewport } from "@/lib/design/render";
+import { hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
+import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { isPath } from "@/lib/design/types";
+import type { PathEditHit } from "@/lib/design/path-edit";
 
 export function CanvasStage() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLCanvasElement>(null);
+  const drag = useRef<{
+    id: string;
+    hit: PathEditHit;
+    keepSmooth: boolean;
+  } | null>(null);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
   const selection = useDesign((s) => s.selection);
   const booleanPreview = useDesign((s) => s.booleanPreview);
+  const pathEditHit = useDesign((s) => s.pathEditHit);
   const tool = useDesign((s) => s.tool);
   const present = useDesign((s) => s.present);
 
@@ -69,8 +77,9 @@ export function CanvasStage() {
       ghost,
       ghostOp: booleanPreview,
       tangentPath: showTangents ? selected : null,
+      tangentHit: showTangents ? pathEditHit : null,
     });
-  }, [doc, viewport, selection, booleanPreview, tool, present]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -78,8 +87,74 @@ export function CanvasStage() {
     useDesign.getState().setViewport(fitViewport(doc.artboard.width, doc.artboard.height, wrap.clientWidth, wrap.clientHeight));
   }, [doc?.id]);
 
+  function clientDoc(e: { clientX: number; clientY: number }) {
+    const wrap = wrapRef.current;
+    if (!wrap) return { x: 0, y: 0 };
+    const r = wrap.getBoundingClientRect();
+    return screenToDoc(e.clientX - r.left, e.clientY - r.top, useDesign.getState().viewport);
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    if (present || e.button !== 0) return;
+    const s = useDesign.getState();
+    if (s.tool !== "pen" && s.tool !== "select") return;
+    const selected = s.selection[0] ? s.doc?.nodes.find((n) => n.id === s.selection[0]) : null;
+    if (!selected || !isPath(selected)) return;
+    const d = clientDoc(e);
+    const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
+    if (!hit) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { id: selected.id, hit, keepSmooth: !e.altKey };
+    s.setPathEditHit(hit);
+    if (hit.arm !== "anchor") {
+      const local = pathWorldToLocal(selected, d.x, d.y);
+      s.editPathHit(selected.id, hit, local.x, local.y, !e.altKey, true);
+    } else {
+      s.commit();
+    }
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    const s = useDesign.getState();
+    const d = clientDoc(e);
+    const live = drag.current;
+    if (live) {
+      const n = s.doc?.nodes.find((x) => x.id === live.id);
+      if (!n || !isPath(n)) return;
+      const local = pathWorldToLocal(n, d.x, d.y);
+      s.editPathHit(live.id, live.hit, local.x, local.y, live.keepSmooth && !e.altKey);
+      return;
+    }
+    if (present || (s.tool !== "pen" && s.tool !== "select")) return;
+    const selected = s.selection[0] ? s.doc?.nodes.find((n) => n.id === s.selection[0]) : null;
+    if (!selected || !isPath(selected)) return;
+    const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
+    if (hit?.hole !== s.pathEditHit?.hole || hit?.index !== s.pathEditHit?.index || hit?.arm !== s.pathEditHit?.arm) {
+      s.setPathEditHit(hit);
+    }
+  }
+
+  function onPointerUp(e: React.PointerEvent) {
+    if (drag.current) {
+      drag.current = null;
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+    }
+  }
+
   return (
-    <div ref={wrapRef} className="pasteboard relative min-h-0 flex-1 touch-none overflow-hidden">
+    <div
+      ref={wrapRef}
+      className="pasteboard relative min-h-0 flex-1 touch-none overflow-hidden"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+    >
       <canvas ref={mainRef} className="absolute inset-0" />
     </div>
   );
