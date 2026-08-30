@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Rotation field as typed NumField (same blur commit as X/Y).
-2. Mixed type size / weight when several text layers are selected.
+1. Mixed type size / weight when several text layers are selected.
+2. Typed tracking / leading NumFields beside the live sliders.
 
 ## Done
 
@@ -44,8 +44,13 @@ Auth OFF, DB OFF.
 - Inspector tracking / leading as typed NumFields with the same blur commit; sliders still scrub live.
 - Multi-select inspector: X/Y/W/H, name, stroke, radius, blend, rotate, and opacity show mixed placeholders and write to every selected layer.
 - DesignState types booleanPreview, pathEditHit, and fit-sel view intent.
+- Rotation is a typed NumField (blur / Enter / Escape) next to the live slider; X/Y/W/H use the same field.
 
 ## Iterations
+
+### 2026-08-30T23:15Z — loop 83
+
+**Typed rotation.** Inspector Rotate is a `NumField` plus slider: type a degree, Enter or blur commits, Escape restores, slider still scrubs live. X / Y / W / H use the same draft-commit field so mid-type values no longer snap the node. Store now types `booleanPreview`, `pathEditHit`, and `fit-sel` view intent so the artboard typechecks.
 
 ### 2026-08-30T22:10Z — loop 82
 
@@ -73,4 +78,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Rotation field as typed NumField (same blur commit as X/Y).
+Mixed type size / weight when several text layers are selected.
