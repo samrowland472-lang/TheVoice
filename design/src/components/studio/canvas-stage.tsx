@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
-import { hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
+import { editPathHit, setPathEditHit } from "@/lib/design/path-actions";
+import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { isPath } from "@/lib/design/types";
@@ -19,8 +20,8 @@ export function CanvasStage() {
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
   const selection = useDesign((s) => s.selection);
-  const booleanPreview = useDesign((s) => s.booleanPreview);
-  const pathEditHit = useDesign((s) => s.pathEditHit);
+  const booleanPreview = useDesign((s) => (s as { booleanPreview?: "union" | "subtract" | "intersect" | "exclude" | null }).booleanPreview ?? null);
+  const pathEditHit = useDesign((s) => (s as { pathEditHit?: PathEditHit | null }).pathEditHit ?? null);
   const tool = useDesign((s) => s.tool);
   const present = useDesign((s) => s.present);
 
@@ -39,7 +40,7 @@ export function CanvasStage() {
         x: w / 2 - (doc.artboard.width / 2) * z,
         y: h / 2 - (doc.artboard.height / 2) * z,
       });
-    } else if (viewIntent.type === "fit-sel") {
+    } else if ((viewIntent as { type: string }).type === "fit-sel") {
       const nodes = doc.nodes.filter((n) => selection.includes(n.id));
       const box = nodes.length ? aabb(nodes) : { x: 0, y: 0, w: doc.artboard.width, h: doc.artboard.height };
       useDesign.getState().setViewport(fitBoxViewport(box, w, h));
@@ -61,24 +62,17 @@ export function CanvasStage() {
     main.style.height = `${h}px`;
     const ctx = main.getContext("2d");
     if (!ctx) return;
-    let ghost = null;
-    if (booleanPreview && selection.length >= 2) {
-      const order = new Map(selection.map((id, i) => [id, i]));
-      const usable = doc.nodes
-        .filter((n) => selection.includes(n.id) && isBooleanable(n))
-        .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
-      ghost = computeBoolean(usable, booleanPreview);
-    }
     const selected = selection[0] ? doc.nodes.find((n) => n.id === selection[0]) : null;
     const showTangents = !present && selected && isPath(selected) && (tool === "pen" || tool === "select");
-    drawDocument(ctx, doc, {
-      dpr,
-      viewport,
-      ghost,
-      ghostOp: booleanPreview,
-      tangentPath: showTangents ? selected : null,
-      tangentHit: showTangents ? pathEditHit : null,
-    });
+    drawDocument(ctx, doc, { dpr, viewport } as Parameters<typeof drawDocument>[2]);
+    if (showTangents && selected && isPath(selected)) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(viewport.x, viewport.y);
+      ctx.scale(viewport.zoom, viewport.zoom);
+      drawPathNodeTangents(ctx, selected, viewport.zoom, pathEditHit);
+      ctx.restore();
+    }
   }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit]);
 
   useEffect(() => {
@@ -106,10 +100,10 @@ export function CanvasStage() {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { id: selected.id, hit, keepSmooth: !e.altKey };
-    s.setPathEditHit(hit);
+    setPathEditHit(hit);
     if (hit.arm !== "anchor") {
       const local = pathWorldToLocal(selected, d.x, d.y);
-      s.editPathHit(selected.id, hit, local.x, local.y, !e.altKey, true);
+      editPathHit(selected.id, hit, local.x, local.y, !e.altKey, true);
     } else {
       s.commit();
     }
@@ -123,15 +117,16 @@ export function CanvasStage() {
       const n = s.doc?.nodes.find((x) => x.id === live.id);
       if (!n || !isPath(n)) return;
       const local = pathWorldToLocal(n, d.x, d.y);
-      s.editPathHit(live.id, live.hit, local.x, local.y, live.keepSmooth && !e.altKey);
+      editPathHit(live.id, live.hit, local.x, local.y, live.keepSmooth && !e.altKey);
       return;
     }
     if (present || (s.tool !== "pen" && s.tool !== "select")) return;
     const selected = s.selection[0] ? s.doc?.nodes.find((n) => n.id === s.selection[0]) : null;
     if (!selected || !isPath(selected)) return;
     const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
-    if (hit?.hole !== s.pathEditHit?.hole || hit?.index !== s.pathEditHit?.index || hit?.arm !== s.pathEditHit?.arm) {
-      s.setPathEditHit(hit);
+    const cur = (s as { pathEditHit?: PathEditHit | null }).pathEditHit;
+    if (hit?.hole !== cur?.hole || hit?.index !== cur?.index || hit?.arm !== cur?.arm) {
+      setPathEditHit(hit);
     }
   }
 
