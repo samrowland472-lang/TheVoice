@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { imageNode } from "@/lib/design/node-factory";
+import { applyBoolean, requestFitSelection, smoothSelectedPath } from "@/lib/design/boolean-actions";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -84,12 +85,12 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       }
       if (meta && e.key.toLowerCase() === "u") {
         e.preventDefault();
-        s.applyBoolean(e.shiftKey ? "subtract" : "union");
+        applyBoolean(e.shiftKey ? "subtract" : "union");
         return;
       }
       if (meta && e.key.toLowerCase() === "i") {
         e.preventDefault();
-        s.applyBoolean(e.shiftKey ? "exclude" : "intersect");
+        applyBoolean(e.shiftKey ? "exclude" : "intersect");
         return;
       }
       if (meta && e.key.toLowerCase() === "c") {
@@ -128,7 +129,7 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
 
       if (e.shiftKey && e.key.toLowerCase() === "s" && !meta) {
         e.preventDefault();
-        s.smoothSelectedPath();
+        smoothSelectedPath();
         return;
       }
 
@@ -140,7 +141,7 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
 
       if (e.code === "Digit0" || e.key === "0" || e.key === ")") {
         e.preventDefault();
-        if (e.shiftKey) s.requestFitSelection();
+        if (e.shiftKey) requestFitSelection();
         else s.requestFit();
         return;
       }
