@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector Boolean hover + commit buttons (wired to store preview).
-2. Marquee / move / create tools restored on the canvas overlay.
+1. Marquee / move / create tools restored on the canvas overlay.
+2. Path overlay: live cubic handles while drawing, not only after close.
 
 ## Done
 
@@ -35,8 +35,13 @@ Auth OFF, DB OFF.
 - Subtract results simplify, restore mirrored cubics, and show hole tangents.
 - Selection PNG crop uses rotated path/hole cubic hull + stroke pad.
 - Pen overlay hits and drags cubic handles on outer contours **and subtract holes**.
+- Inspector Boolean hover + commit: Union / Subtract / Intersect / Exclude preview ghost and apply.
 
 ## Iterations
+
+### 2026-08-30T07:20Z — loop 76
+
+**Inspector Boolean.** Two or more selected shapes expose Union, Subtract, Intersect, Exclude. Hover paints a phosphor ghost on the artboard; click (or ⌘U / ⇧⌘U / ⌘I / ⇧⌘I) commits a path and drops the cutters. Viewport now pans the stage so the ghost sits on the board.
 
 ### 2026-08-30T06:20Z — loop 75
 
@@ -60,4 +65,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector Boolean hover + commit buttons (wired to store preview).
+Marquee / move / create tools restored on the canvas overlay.
