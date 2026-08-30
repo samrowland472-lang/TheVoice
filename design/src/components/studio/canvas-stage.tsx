@@ -58,7 +58,7 @@ export function CanvasStage() {
         .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
       ghost = computeBoolean(usable, booleanPreview);
     }
-    drawDocument(ctx, doc, viewport, { dpr, ghost, ghostOp: booleanPreview });
+    drawDocument(ctx, doc, { dpr, viewport, ghost, ghostOp: booleanPreview });
   }, [doc, viewport, selection, booleanPreview]);
 
   useEffect(() => {

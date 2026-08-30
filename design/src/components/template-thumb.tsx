@@ -21,7 +21,7 @@ export function TemplateThumb({ template, className }: { template: Template; cla
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const vp = fitViewport(doc.artboard.width, doc.artboard.height, w, h, 8);
-    drawDocument(ctx, doc, vp, { dpr, skipChrome: true });
+    drawDocument(ctx, doc, { dpr, skipChrome: true, viewport: vp });
   }, [template.id]);
 
   return <canvas ref={ref} className={className} aria-hidden />;
