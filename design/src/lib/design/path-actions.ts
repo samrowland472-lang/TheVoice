@@ -29,7 +29,7 @@ export function appendPenPoint(wx: number, wy: number): string | null {
 }
 
 export function setPathEditHit(hit: PathEditHit | null) {
-  useDesign.setState({ pathEditHit: hit } as { pathEditHit: PathEditHit | null });
+  useDesign.setState({ pathEditHit: hit });
 }
 
 export function editPathHit(

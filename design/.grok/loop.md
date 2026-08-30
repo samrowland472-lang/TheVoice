@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector Boolean hover buttons wired to `setBooleanPreview`.
-2. Restore marquee / shape-create / pan overlay beside the live pen.
+1. Restore marquee / shape-create / pan overlay beside the live pen.
+2. Inspector numeric fields commit on blur for live drag vs typed values.
 
 ## Done
 
@@ -38,8 +38,13 @@ Auth OFF, DB OFF.
 - Inspector Boolean hover + commit: Union / Subtract / Intersect / Exclude preview ghost and apply.
 - Canvas overlay restored: marquee select, move + snap, create-drag shapes, pan, paint, pen rubber-band, handles, rulers.
 - Live pen cubics while drawing: click-drag handles, rubber-band, cubic `tracePath` on open paths.
+- Store `setBooleanPreview` / `applyBoolean` wired; inspector hover paints phosphor ghost; shortcuts Cmd+U / Shift+Cmd+U / Cmd+I / Shift+Cmd+I apply.
 
 ## Iterations
+
+### 2026-08-30T10:20Z — loop 79
+
+**Inspector Boolean hover.** Two or more booleanable shapes selected expose Union / Subtract / Intersect / Exclude. Hover (or focus) sets `booleanPreview`; the artboard paints a dashed phosphor ghost from `computeBoolean`. Click commits: the first shape becomes the result path, cutters drop, preview clears. Shift+S still smooths a path; Shift+0 fits the selection.
 
 ### 2026-08-30T09:20Z — loop 78
 
@@ -75,4 +80,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector Boolean hover buttons wired to `setBooleanPreview`.
+Restore marquee / shape-create / pan overlay beside the live pen.
