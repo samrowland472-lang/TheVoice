@@ -114,6 +114,13 @@ export function exportSelectionPng(doc: DesignDocument, ids: string[], scale = 2
   return rasterize(crop, scale).toDataURL("image/png");
 }
 
+export function downloadSelectionPng(doc: DesignDocument, ids: string[], scale = 2) {
+  const url = exportSelectionPng(doc, ids, scale);
+  if (!url) return false;
+  downloadDataUrl(url, `${slug(doc.name)}-selection.png`);
+  return true;
+}
+
 export function slug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "design";
 }
