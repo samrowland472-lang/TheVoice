@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Restore marquee / shape-create / pan overlay beside the live pen.
-2. Inspector numeric fields commit on blur for live drag vs typed values.
+1. Inspector tracking / leading as typed fields with the same blur commit.
+2. Multi-select inspector shows mixed values instead of first-node only.
 
 ## Done
 
@@ -39,8 +39,14 @@ Auth OFF, DB OFF.
 - Canvas overlay restored: marquee select, move + snap, create-drag shapes, pan, paint, pen rubber-band, handles, rulers.
 - Live pen cubics while drawing: click-drag handles, rubber-band, cubic `tracePath` on open paths.
 - Store `setBooleanPreview` / `applyBoolean` wired; inspector hover paints phosphor ghost; shortcuts Cmd+U / Shift+Cmd+U / Cmd+I / Shift+Cmd+I apply.
+- Inspector X/Y/W/H, stroke, and type size draft locally while focused; commit on blur or Enter; Escape restores; live canvas drags still update the field when it is idle.
+- DesignState carries `booleanPreview`, `pathEditHit`, and `fit-sel` view intent.
 
 ## Iterations
+
+### 2026-08-30T20:10Z — loop 80
+
+**Inspector numbers commit on blur.** X / Y / W / H, stroke width, and type size keep a focused draft so mid-type values do not snap the node. Enter commits; Escape restores the live measure. Unfocused fields follow canvas drags. Store now types boolean preview, path-edit hit, and fit-selection so the artboard typechecks.
 
 ### 2026-08-30T10:20Z — loop 79
 
@@ -80,4 +86,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Restore marquee / shape-create / pan overlay beside the live pen.
+Inspector tracking / leading as typed fields with the same blur commit.
