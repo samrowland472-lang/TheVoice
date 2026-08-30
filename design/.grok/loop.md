@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector tracking / leading as typed fields with the same blur commit.
-2. Multi-select inspector shows mixed values instead of first-node only.
+1. Multi-select inspector shows mixed values instead of first-node only.
+2. Rotation field as typed NumField (same blur commit as X/Y).
 
 ## Done
 
@@ -41,8 +41,13 @@ Auth OFF, DB OFF.
 - Store `setBooleanPreview` / `applyBoolean` wired; inspector hover paints phosphor ghost; shortcuts Cmd+U / Shift+Cmd+U / Cmd+I / Shift+Cmd+I apply.
 - Inspector X/Y/W/H, stroke, and type size draft locally while focused; commit on blur or Enter; Escape restores; live canvas drags still update the field when it is idle.
 - DesignState carries `booleanPreview`, `pathEditHit`, and `fit-sel` view intent.
+- Inspector tracking / leading as typed NumFields with the same blur commit; sliders still scrub live.
 
 ## Iterations
+
+### 2026-08-30T21:20Z — loop 81
+
+**Typed tracking and leading.** Type nodes expose Tracking (px) and Leading (unitless) as `NumField`s: draft while focused, commit on blur or Enter, Escape restores. Size, X/Y/W/H, and stroke width use the same field. Range sliders still live-scrub. Store types boolean preview, path-edit hit, and fit-selection so the artboard typechecks.
 
 ### 2026-08-30T20:10Z — loop 80
 
@@ -60,30 +65,6 @@ Auth OFF, DB OFF.
 
 **Canvas overlay restored.** Select-tool marquee and move are live again. Rectangle / ellipse / line / polygon / star / arrow / frame drag-create on the artboard. Viewport pans with Hand or space. Overlay draws grid, guides, selection handles, pen rubber-band, and boolean ghost. `drawDocument` honours viewport + paper offset.
 
-### 2026-08-30T07:20Z — loop 76
-
-**Inspector Boolean.** Two or more selected shapes expose Union, Subtract, Intersect, Exclude. Hover paints a phosphor ghost on the artboard; click (or ⌘U / ⇧⌘U / ⌘I / ⇧⌘I) commits a path and drops the cutters. Viewport now pans the stage so the ghost sits on the board.
-
-### 2026-08-30T06:20Z — loop 75
-
-**Hole-handle drag.** Select or Pen on a path with holes: cooler diamonds on inner contours are live. Drag an in/out arm to reshape the hole; Alt breaks smooth mirroring. Paths stroke through `tracePath`. Store gained `editPathHit`, `applyBoolean`, and fit-selection.
-
-### 2026-08-30T05:16Z — loop 74
-
-**Rotated selection PNG.** `aabb` now samples path anchors, cubic handles, and holes in world space after rotation, then pads by half stroke.
-
-### 2026-08-30T04:12Z — loop 73
-
-**Pen tangents on subtract.** Boolean results drop collinear samples and get mirrored cubic handles.
-
-### 2026-08-30T03:15Z — loop 72
-
-**Selection SVG with holes and cubics.**
-
-### 2026-08-30T02:25Z — loop 71
-
-**Boolean ghost + rotation-aware holes.**
-
 ## Next recommended
 
-Inspector tracking / leading as typed fields with the same blur commit.
+Multi-select inspector shows mixed values instead of first-node only.
