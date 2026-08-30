@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path overlay: live cubic handles while drawing, not only after close.
-2. Inspector Boolean hover buttons wired to `setBooleanPreview`.
+1. Inspector Boolean hover buttons wired to `setBooleanPreview`.
+2. Restore marquee / shape-create / pan overlay beside the live pen.
 
 ## Done
 
@@ -37,8 +37,13 @@ Auth OFF, DB OFF.
 - Pen overlay hits and drags cubic handles on outer contours **and subtract holes**.
 - Inspector Boolean hover + commit: Union / Subtract / Intersect / Exclude preview ghost and apply.
 - Canvas overlay restored: marquee select, move + snap, create-drag shapes, pan, paint, pen rubber-band, handles, rulers.
+- Live pen cubics while drawing: click-drag handles, rubber-band, cubic `tracePath` on open paths.
 
 ## Iterations
+
+### 2026-08-30T09:20Z — loop 78
+
+**Live pen cubics.** Pen click-adds anchors and click-drag pulls mirrored handles while the path is still open. Rubber-band follows the cursor with the last outgoing cubic. `drawDocument` strokes paths through `tracePath` so those curves show on the board, not only after close. Enter still closes; handles stay selected.
 
 ### 2026-08-30T08:20Z — loop 77
 
@@ -70,4 +75,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Path overlay: live cubic handles while drawing, not only after close.
+Inspector Boolean hover buttons wired to `setBooleanPreview`.
