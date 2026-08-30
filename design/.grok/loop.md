@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Marquee / move / create tools restored on the canvas overlay.
-2. Path overlay: live cubic handles while drawing, not only after close.
+1. Path overlay: live cubic handles while drawing, not only after close.
+2. Inspector Boolean hover buttons wired to `setBooleanPreview`.
 
 ## Done
 
@@ -36,8 +36,13 @@ Auth OFF, DB OFF.
 - Selection PNG crop uses rotated path/hole cubic hull + stroke pad.
 - Pen overlay hits and drags cubic handles on outer contours **and subtract holes**.
 - Inspector Boolean hover + commit: Union / Subtract / Intersect / Exclude preview ghost and apply.
+- Canvas overlay restored: marquee select, move + snap, create-drag shapes, pan, paint, pen rubber-band, handles, rulers.
 
 ## Iterations
+
+### 2026-08-30T08:20Z — loop 77
+
+**Canvas overlay restored.** Select-tool marquee and move are live again. Rectangle / ellipse / line / polygon / star / arrow / frame drag-create on the artboard. Viewport pans with Hand or space. Overlay draws grid, guides, selection handles, pen rubber-band, and boolean ghost. `drawDocument` honours viewport + paper offset.
 
 ### 2026-08-30T07:20Z — loop 76
 
@@ -65,4 +70,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Marquee / move / create tools restored on the canvas overlay.
+Path overlay: live cubic handles while drawing, not only after close.
