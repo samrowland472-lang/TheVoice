@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Toaster } from "sonner";
+import { downloadSelectionPng, downloadSvg } from "@/lib/design/export";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode } from "@/lib/design/types";
 import { CanvasStage } from "./canvas-stage";
@@ -41,6 +42,26 @@ export function StudioApp({ id }: { id?: string }) {
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
+      {
+        id: "sel-svg",
+        label: "Export selection SVG",
+        group: "File",
+        run: () => {
+          const st = s();
+          if (!st.doc || !st.selection.length) return;
+          downloadSvg(st.doc, st.selection);
+        },
+      },
+      {
+        id: "sel-png",
+        label: "Export selection PNG",
+        group: "File",
+        run: () => {
+          const st = s();
+          if (!st.doc || !st.selection.length) return;
+          downloadSelectionPng(st.doc, st.selection, 2);
+        },
+      },
     ];
   }, [navigate]);
 
