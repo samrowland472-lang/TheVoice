@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Drag cubic handles on subtract holes from the pen overlay.
-2. Inspector Boolean hover + commit buttons (wired to store preview).
+1. Inspector Boolean hover + commit buttons (wired to store preview).
+2. Marquee / move / create tools restored on the canvas overlay.
 
 ## Done
 
@@ -34,25 +34,30 @@ Auth OFF, DB OFF.
 - Selection SVG export uses cubic `pathD`, holes, and even-odd / clip-rule.
 - Subtract results simplify, restore mirrored cubics, and show hole tangents.
 - Selection PNG crop uses rotated path/hole cubic hull + stroke pad.
+- Pen overlay hits and drags cubic handles on outer contours **and subtract holes**.
 
 ## Iterations
 
+### 2026-08-30T06:20Z — loop 75
+
+**Hole-handle drag.** Select or Pen on a path with holes: cooler diamonds on inner contours are live. Drag an in/out arm to reshape the hole; Alt breaks smooth mirroring. Paths stroke through `tracePath`. Store gained `editPathHit`, `applyBoolean`, and fit-selection.
+
 ### 2026-08-30T05:16Z — loop 74
 
-**Rotated selection PNG.** `aabb` now samples path anchors, cubic handles, and holes in world space after rotation, then pads by half stroke. Export → Selection PNG / Selection SVG crop to that box. Canvas paths stroke the same cubics via `tracePath`; `drawDocument` honors viewport, paper ox/oy, boolean ghost, and pen tangents. Boolean shortcuts and Shift+0 fit-selection land in the store.
+**Rotated selection PNG.** `aabb` now samples path anchors, cubic handles, and holes in world space after rotation, then pads by half stroke.
 
 ### 2026-08-30T04:12Z — loop 73
 
-**Pen tangents on subtract.** Boolean results drop collinear samples and get mirrored cubic handles. Select or Pen on the result draws phosphor arms on the outer contour and cooler hole diamonds.
+**Pen tangents on subtract.** Boolean results drop collinear samples and get mirrored cubic handles.
 
 ### 2026-08-30T03:15Z — loop 72
 
-**Selection SVG with holes and cubics.** Export → Selection SVG (or command palette) writes only the chosen layers, cropped to their box.
+**Selection SVG with holes and cubics.**
 
 ### 2026-08-30T02:25Z — loop 71
 
-**Boolean ghost + rotation-aware holes.** Shift-select two or more shapes. First selected layer keeps ink.
+**Boolean ghost + rotation-aware holes.**
 
 ## Next recommended
 
-Drag cubic handles on subtract holes from the pen overlay.
+Inspector Boolean hover + commit buttons (wired to store preview).
