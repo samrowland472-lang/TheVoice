@@ -1,374 +1,285 @@
-import type { DesignNode, PathNode, ShapeNode } from "./types";
+import { pathNode } from "./node-factory";
 import { nodeCenter, rotatePoint } from "./geometry";
-import { uid } from "./id";
+import { hasHandle } from "./path-curve";
+import type { DesignNode, PathNode, PathPoint } from "./types";
+import { isPath } from "./types";
 
-export type Point = { x: number; y: number };
+export type BooleanOp = "union" | "subtract" | "intersect" | "exclude";
 
-const EPS = 1e-9;
+export type Contour = PathPoint[];
 
-/** Shapes that can participate in boolean ops. */
-export function isBooleanable(n: DesignNode): boolean {
-  if (n.locked || !n.visible) return false;
-  if (n.kind === "path") return (n as PathNode).closed && (n as PathNode).points.length >= 3;
-  return n.kind === "rect" || n.kind === "ellipse" || n.kind === "polygon" || n.kind === "star";
+const SHAPE_KINDS = new Set(["rect", "ellipse", "polygon", "star", "arrow", "path"]);
+
+export function canBoolean(n: DesignNode): boolean {
+  if (!n.visible || n.locked) return false;
+  if (!SHAPE_KINDS.has(n.kind)) return false;
+  if (isPath(n)) return n.points.length >= 3;
+  return n.w > 1 && n.h > 1;
 }
 
-export function nodeToWorldPolygon(n: DesignNode, segments = 48): Point[] | null {
-  if (!isBooleanable(n)) return null;
-  const c = nodeCenter(n);
-  let local: Point[] = [];
+export function booleanableOf(nodes: DesignNode[]): DesignNode[] {
+  return nodes.filter(canBoolean);
+}
 
-  if (n.kind === "path") {
-    const p = n as PathNode;
-    local = p.points.map((pt) => ({ x: n.x + pt.x, y: n.y + pt.y }));
-  } else if (n.kind === "rect") {
-    local = [
-      { x: n.x, y: n.y },
-      { x: n.x + n.w, y: n.y },
-      { x: n.x + n.w, y: n.y + n.h },
-      { x: n.x, y: n.y + n.h },
+export function isBooleanable(n: DesignNode): boolean {
+  return canBoolean(n);
+}
+
+function worldPoint(n: DesignNode, lx: number, ly: number): PathPoint {
+  const local = { x: n.x + lx, y: n.y + ly };
+  if (!n.rotation) return local;
+  const c = nodeCenter(n);
+  return rotatePoint(local.x, local.y, c.x, c.y, n.rotation);
+}
+
+function sampleEllipse(cx: number, cy: number, rx: number, ry: number, steps = 32): PathPoint[] {
+  const pts: PathPoint[] = [];
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2 - Math.PI / 2;
+    pts.push({ x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry });
+  }
+  return pts;
+}
+
+function roundedRectLocal(n: DesignNode): PathPoint[] {
+  const r = Math.max(0, Math.min(n.radius, Math.min(n.w, n.h) / 2));
+  if (r < 0.5) {
+    return [
+      { x: 0, y: 0 },
+      { x: n.w, y: 0 },
+      { x: n.w, y: n.h },
+      { x: 0, y: n.h },
     ];
-  } else if (n.kind === "ellipse") {
-    for (let i = 0; i < segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
-      local.push({
-        x: n.x + n.w / 2 + (n.w / 2) * Math.cos(a),
-        y: n.y + n.h / 2 + (n.h / 2) * Math.sin(a),
-      });
+  }
+  const steps = 5;
+  const pts: PathPoint[] = [];
+  const corners: [number, number, number, number][] = [
+    [n.w - r, r, 0, Math.PI / 2],
+    [n.w - r, n.h - r, Math.PI / 2, Math.PI],
+    [r, n.h - r, Math.PI, (3 * Math.PI) / 2],
+    [r, r, (3 * Math.PI) / 2, Math.PI * 2],
+  ];
+  for (const [cx, cy, a0, a1] of corners) {
+    for (let i = 0; i <= steps; i++) {
+      const a = a0 + ((a1 - a0) * i) / steps;
+      pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
     }
-  } else if (n.kind === "polygon" || n.kind === "star") {
-    const sides = (n as ShapeNode).sides ?? (n.kind === "star" ? 5 : 6);
-    const cx = n.x + n.w / 2;
-    const cy = n.y + n.h / 2;
-    const rx = n.w / 2;
-    const ry = n.h / 2;
-    if (n.kind === "star") {
-      for (let i = 0; i < sides * 2; i++) {
-        const a = (i * Math.PI) / sides - Math.PI / 2;
-        const r = i % 2 === 0 ? 1 : 0.4;
-        local.push({ x: cx + rx * r * Math.cos(a), y: cy + ry * r * Math.sin(a) });
-      }
-    } else {
-      for (let i = 0; i < sides; i++) {
-        const a = (i / sides) * Math.PI * 2 - Math.PI / 2;
-        local.push({ x: cx + rx * Math.cos(a), y: cy + ry * Math.sin(a) });
+  }
+  return pts;
+}
+
+function polygonLocal(n: DesignNode, sides: number): PathPoint[] {
+  const cx = n.w / 2;
+  const cy = n.h / 2;
+  const rx = n.w / 2;
+  const ry = n.h / 2;
+  const pts: PathPoint[] = [];
+  for (let i = 0; i < sides; i++) {
+    const a = (i / sides) * Math.PI * 2 - Math.PI / 2;
+    pts.push({ x: cx + Math.cos(a) * rx, y: cy + Math.sin(a) * ry });
+  }
+  return pts;
+}
+
+function starLocal(n: DesignNode, points = 5): PathPoint[] {
+  const cx = n.w / 2;
+  const cy = n.h / 2;
+  const rx = n.w / 2;
+  const ry = n.h / 2;
+  const pts: PathPoint[] = [];
+  for (let i = 0; i < points * 2; i++) {
+    const inner = i % 2 === 0 ? 1 : 0.4;
+    const a = (i * Math.PI) / points - Math.PI / 2;
+    pts.push({ x: cx + Math.cos(a) * rx * inner, y: cy + Math.sin(a) * ry * inner });
+  }
+  return pts;
+}
+
+function arrowLocal(n: DesignNode): PathPoint[] {
+  return [
+    { x: 0, y: n.h * 0.35 },
+    { x: n.w * 0.62, y: n.h * 0.35 },
+    { x: n.w * 0.62, y: 0 },
+    { x: n.w, y: n.h / 2 },
+    { x: n.w * 0.62, y: n.h },
+    { x: n.w * 0.62, y: n.h * 0.65 },
+    { x: 0, y: n.h * 0.65 },
+  ];
+}
+
+function flattenLocal(pts: PathPoint[], steps = 8): PathPoint[] {
+  if (!pts.length) return [];
+  const n = pts.length;
+  const out: PathPoint[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % n]!;
+    out.push({ x: a.x, y: a.y });
+    if (hasHandle(a.out) || hasHandle(b.in)) {
+      const c1x = a.x + (a.out?.x ?? 0);
+      const c1y = a.y + (a.out?.y ?? 0);
+      const c2x = b.x + (b.in?.x ?? 0);
+      const c2y = b.y + (b.in?.y ?? 0);
+      for (let s = 1; s < steps; s++) {
+        const t = s / steps;
+        const u = 1 - t;
+        out.push({
+          x: u * u * u * a.x + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * b.x,
+          y: u * u * u * a.y + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * b.y,
+        });
       }
     }
   }
-
-  if (local.length < 3) return null;
-  if (!n.rotation) return local;
-  return local.map((p) => rotatePoint(p.x, p.y, c.x, c.y, n.rotation));
+  return out;
 }
 
-export function nodeToWorldHoles(n: DesignNode): Point[][] {
-  if (n.kind !== "path") return [];
-  const holes = (n as PathNode).holes ?? [];
-  const c = nodeCenter(n);
-  return holes
-    .filter((h) => h.length >= 3)
-    .map((h) => {
-      const world = h.map((pt) => ({ x: n.x + pt.x, y: n.y + pt.y }));
-      if (!n.rotation) return world;
-      return world.map((p) => rotatePoint(p.x, p.y, c.x, c.y, n.rotation));
-    });
+function mapContour(n: DesignNode, local: PathPoint[]): Contour {
+  return flattenLocal(local).map((p) => {
+    const w = worldPoint(n, p.x, p.y);
+    return { x: w.x, y: w.y };
+  });
 }
 
-function boundsOf(pts: Point[]) {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity;
-  for (const p of pts) {
+export function nodeToWorldContours(n: DesignNode): Contour[] {
+  if (isPath(n)) {
+    const outer = mapContour(n, n.points);
+    const holes = (n.holes ?? []).map((h) => mapContour(n, h));
+    return [outer, ...holes];
+  }
+  let local: PathPoint[] = [];
+  switch (n.kind) {
+    case "rect":
+      local = roundedRectLocal(n);
+      break;
+    case "ellipse":
+      local = sampleEllipse(n.w / 2, n.h / 2, Math.abs(n.w / 2), Math.abs(n.h / 2));
+      break;
+    case "polygon":
+      local = polygonLocal(n, n.sides ?? 6);
+      break;
+    case "star":
+      local = starLocal(n, n.sides ?? 5);
+      break;
+    case "arrow":
+      local = arrowLocal(n);
+      break;
+    default:
+      return [];
+  }
+  return [mapContour(n, local)];
+}
+
+function contourBox(c: Contour) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of c) {
     minX = Math.min(minX, p.x);
     minY = Math.min(minY, p.y);
     maxX = Math.max(maxX, p.x);
     maxY = Math.max(maxY, p.y);
   }
-  return { minX, minY, maxX, maxY, w: maxX - minX, h: maxY - minY };
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-function toLocal(pts: Point[], originX: number, originY: number): Point[] {
-  return pts.map((p) => ({ x: p.x - originX, y: p.y - originY }));
+function boxesOverlap(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function cross(a: Point, b: Point, c: Point) {
-  return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-}
-
-function isConvex(poly: Point[]): boolean {
-  if (poly.length < 3) return false;
-  let sign = 0;
-  const n = poly.length;
-  for (let i = 0; i < n; i++) {
-    const z = cross(poly[i]!, poly[(i + 1) % n]!, poly[(i + 2) % n]!);
-    if (Math.abs(z) < EPS) continue;
-    const s = z > 0 ? 1 : -1;
-    if (sign === 0) sign = s;
-    else if (s !== sign) return false;
-  }
-  return sign !== 0;
-}
-
-function ensureCcw(poly: Point[]): Point[] {
-  let area = 0;
-  for (let i = 0; i < poly.length; i++) {
-    const a = poly[i]!;
-    const b = poly[(i + 1) % poly.length]!;
-    area += a.x * b.y - b.x * a.y;
-  }
-  return area < 0 ? [...poly].reverse() : poly;
-}
-
-export function pointInPoly(p: Point, poly: Point[]): boolean {
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const a = poly[i]!;
-    const b = poly[j]!;
-    const hit = a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y + EPS) + a.x;
-    if (hit) inside = !inside;
-  }
-  return inside;
-}
-
-function polysOverlap(a: Point[], b: Point[]): boolean {
-  if (a.some((p) => pointInPoly(p, b)) || b.some((p) => pointInPoly(p, a))) return true;
-  const n = a.length;
-  const m = b.length;
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < m; j++) {
-      if (segIntersect(a[i]!, a[(i + 1) % n]!, b[j]!, b[(j + 1) % m]!)) return true;
-    }
-  }
-  return false;
-}
-
-function segIntersect(a: Point, b: Point, c: Point, d: Point): boolean {
-  const d1 = cross(a, b, c);
-  const d2 = cross(a, b, d);
-  const d3 = cross(c, d, a);
-  const d4 = cross(c, d, b);
-  if (((d1 > EPS && d2 < -EPS) || (d1 < -EPS && d2 > EPS)) && ((d3 > EPS && d4 < -EPS) || (d3 < -EPS && d4 > EPS))) {
-    return true;
-  }
-  return false;
-}
-
-function intersectSeg(a: Point, b: Point, c: Point, d: Point): Point | null {
-  const den = (a.x - b.x) * (c.y - d.y) - (a.y - b.y) * (c.x - d.x);
-  if (Math.abs(den) < EPS) return null;
-  const t = ((a.x - c.x) * (c.y - d.y) - (a.y - c.y) * (c.x - d.x)) / den;
-  return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
-}
-
-function insideHalf(p: Point, a: Point, b: Point) {
-  return cross(a, b, p) >= -EPS;
-}
-
-export function sutherlandHodgman(subject: Point[], clip: Point[]): Point[] {
-  let output = subject;
-  const clipper = ensureCcw(clip);
-  for (let i = 0; i < clipper.length; i++) {
-    const a = clipper[i]!;
-    const b = clipper[(i + 1) % clipper.length]!;
-    const input = output;
-    output = [];
-    if (!input.length) break;
-    for (let j = 0; j < input.length; j++) {
-      const cur = input[j]!;
-      const prev = input[(j + input.length - 1) % input.length]!;
-      const curIn = insideHalf(cur, a, b);
-      const prevIn = insideHalf(prev, a, b);
-      if (curIn) {
-        if (!prevIn) {
-          const hit = intersectSeg(prev, cur, a, b);
-          if (hit) output.push(hit);
-        }
-        output.push(cur);
-      } else if (prevIn) {
-        const hit = intersectSeg(prev, cur, a, b);
-        if (hit) output.push(hit);
-      }
-    }
-  }
-  return dedupeRing(output);
-}
-
-function dedupeRing(pts: Point[]): Point[] {
-  const out: Point[] = [];
-  for (const p of pts) {
-    const last = out[out.length - 1];
-    if (last && Math.hypot(last.x - p.x, last.y - p.y) < 0.15) continue;
-    out.push(p);
-  }
-  if (out.length > 1) {
-    const a = out[0]!;
-    const b = out[out.length - 1]!;
-    if (Math.hypot(a.x - b.x, a.y - b.y) < 0.15) out.pop();
-  }
-  return out;
-}
-
-function convexHull(pts: Point[]): Point[] {
-  const sorted = [...pts].sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
-  if (sorted.length < 3) return sorted;
-  const lower: Point[] = [];
-  for (const p of sorted) {
+function convexHull(pts: PathPoint[]): Contour {
+  const unique = pts.slice().sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
+  if (unique.length < 3) return unique;
+  const cross = (o: PathPoint, a: PathPoint, b: PathPoint) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: PathPoint[] = [];
+  for (const p of unique) {
     while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
     lower.push(p);
   }
-  const upper: Point[] = [];
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    const p = sorted[i]!;
+  const upper: PathPoint[] = [];
+  for (let i = unique.length - 1; i >= 0; i--) {
+    const p = unique[i]!;
     while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
     upper.push(p);
   }
   lower.pop();
   upper.pop();
-  return lower.concat(upper);
+  return [...lower, ...upper];
 }
 
-export function intersectPolygons(a: Point[], b: Point[]): Point[] | null {
-  if (a.length < 3 || b.length < 3) return null;
-  if (!polysOverlap(a, b)) return null;
-  let result: Point[] = [];
-  if (isConvex(b)) result = sutherlandHodgman(a, b);
-  else if (isConvex(a)) result = sutherlandHodgman(b, a);
-  else {
-    const hullB = convexHull(b);
-    result = sutherlandHodgman(a, hullB);
-  }
-  return result.length >= 3 ? result : null;
-}
-
-function pathFromWorld(name: string, outer: Point[], holes: Point[][], style: DesignNode, fillRule: PathNode["fillRule"]): PathNode {
-  const all = [outer, ...holes].flat();
-  const b = boundsOf(all);
-  return {
-    id: uid(),
-    name,
-    kind: "path",
-    x: b.minX,
-    y: b.minY,
-    w: Math.max(1, b.w),
-    h: Math.max(1, b.h),
-    rotation: 0,
-    opacity: style.opacity,
-    visible: true,
-    locked: false,
-    blend: style.blend,
-    fill: style.fill,
-    stroke: style.stroke,
-    strokeWidth: style.strokeWidth,
-    radius: 0,
-    shadow: style.shadow,
-    points: toLocal(outer, b.minX, b.minY),
-    closed: true,
-    holes: holes.filter((h) => h.length >= 3).map((h) => toLocal(h, b.minX, b.minY)),
-    fillRule,
-  };
-}
-
-export function unionShapes(nodes: DesignNode[]): PathNode | null {
-  const items = nodes
-    .map((n) => {
-      const poly = nodeToWorldPolygon(n);
-      return poly ? { n, poly, holes: nodeToWorldHoles(n) } : null;
-    })
-    .filter((x): x is { n: DesignNode; poly: Point[]; holes: Point[][] } => !!x);
-  if (items.length < 2) return null;
-
-  const used = new Set<number>();
-  const groups: { outer: Point[]; holes: Point[][] }[] = [];
-
-  for (let i = 0; i < items.length; i++) {
-    if (used.has(i)) continue;
-    used.add(i);
-    let cluster = [items[i]!.poly];
-    const holes = [...items[i]!.holes];
-    let grew = true;
-    while (grew) {
-      grew = false;
-      for (let j = 0; j < items.length; j++) {
-        if (used.has(j)) continue;
-        if (cluster.some((poly) => polysOverlap(poly, items[j]!.poly))) {
-          used.add(j);
-          cluster.push(items[j]!.poly);
-          holes.push(...items[j]!.holes);
-          grew = true;
-        }
+export function unionOverlappingHoles(holes: Contour[]): Contour[] {
+  const items = holes.map((h) => ({ pts: h, box: contourBox(h) }));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    outer: for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        if (!boxesOverlap(items[i]!.box, items[j]!.box)) continue;
+        const merged = convexHull([...items[i]!.pts, ...items[j]!.pts]);
+        items.splice(j, 1);
+        items[i] = { pts: merged, box: contourBox(merged) };
+        changed = true;
+        break outer;
       }
     }
-    const merged = cluster.length === 1 ? cluster[0]! : convexHull(cluster.flat());
-    groups.push({ outer: merged, holes });
   }
+  return items.map((i) => i.pts);
+}
 
-  const first = items[0]!.n;
-  if (groups.length === 1) {
-    return pathFromWorld("Union", groups[0]!.outer, groups[0]!.holes, first, groups[0]!.holes.length ? "evenodd" : "nonzero");
+export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | null {
+  const usable = booleanableOf(nodes);
+  if (usable.length < 2) return null;
+  const groups = usable.map((n) => nodeToWorldContours(n)).filter((g) => g.length && g[0]!.length >= 3);
+  if (groups.length < 2) return null;
+  const first = usable[0]!;
+  let outer = groups[0]![0]!;
+  let holes: Contour[] = [];
+  let fillRule: PathNode["fillRule"] = "nonzero";
+  if (op === "union") {
+    holes = groups.slice(1).flatMap((g) => g);
+    fillRule = "nonzero";
+  } else if (op === "intersect") {
+    outer = groups[0]![0]!;
+    holes = [];
+    fillRule = "nonzero";
+  } else if (op === "exclude") {
+    holes = groups.slice(1).flatMap((g) => g);
+    fillRule = "evenodd";
+  } else {
+    const fromBase = groups[0]!.slice(1);
+    const cutters = groups.slice(1).flatMap((g) => g);
+    holes = unionOverlappingHoles([...fromBase, ...cutters]);
+    fillRule = "evenodd";
   }
-  const primary = groups[0]!;
-  const extra = groups.slice(1).map((g) => g.outer);
-  return pathFromWorld("Union", primary.outer, [...primary.holes, ...extra], first, "nonzero");
+  const allPts = [outer, ...holes].flat();
+  const minX = Math.min(...allPts.map((p) => p.x));
+  const minY = Math.min(...allPts.map((p) => p.y));
+  const maxX = Math.max(...allPts.map((p) => p.x));
+  const maxY = Math.max(...allPts.map((p) => p.y));
+  const ox = Number.isFinite(minX) ? minX : 0;
+  const oy = Number.isFinite(minY) ? minY : 0;
+  const rel = (c: Contour) => c.map((p) => ({ ...p, x: p.x - ox, y: p.y - oy }));
+  return pathNode({
+    id: first.id,
+    name: op === "union" ? "Union" : op === "subtract" ? "Subtract" : op === "intersect" ? "Intersect" : "Exclude",
+    x: ox,
+    y: oy,
+    w: Math.max(1, maxX - ox),
+    h: Math.max(1, maxY - oy),
+    rotation: 0,
+    opacity: first.opacity,
+    visible: true,
+    locked: false,
+    blend: first.blend,
+    fill: first.fill,
+    stroke: first.stroke,
+    strokeWidth: first.strokeWidth,
+    radius: 0,
+    shadow: first.shadow,
+    points: rel(outer),
+    holes: holes.map(rel),
+    closed: true,
+    fillRule,
+  });
 }
-
-export function subtractShapes(base: DesignNode, ...cutters: DesignNode[]): PathNode | null {
-  const outer = nodeToWorldPolygon(base);
-  if (!outer) return null;
-  const inherited = nodeToWorldHoles(base);
-  const holes: Point[][] = [...inherited];
-  for (const cutter of cutters) {
-    const poly = nodeToWorldPolygon(cutter);
-    if (!poly) continue;
-    const punch = intersectPolygons(outer, poly);
-    if (punch && punch.length >= 3) holes.push(ensureCw(punch));
-  }
-  if (!holes.length) return pathFromWorld("Subtract", outer, [], base, "nonzero");
-  return pathFromWorld("Subtract", outer, holes, base, "evenodd");
-}
-
-function ensureCw(poly: Point[]): Point[] {
-  return ensureCcw(poly).slice().reverse();
-}
-
-export function intersectShapes(nodes: DesignNode[]): PathNode | null {
-  const items = nodes
-    .map((n) => {
-      const poly = nodeToWorldPolygon(n);
-      return poly ? { n, poly } : null;
-    })
-    .filter((x): x is { n: DesignNode; poly: Point[] } => !!x);
-  if (items.length < 2) return null;
-  let acc: Point[] | null = items[0]!.poly;
-  for (let i = 1; i < items.length; i++) {
-    if (!acc) return null;
-    acc = intersectPolygons(acc, items[i]!.poly);
-  }
-  if (!acc || acc.length < 3) return null;
-  return pathFromWorld("Intersect", ensureCcw(acc), [], items[0]!.n, "nonzero");
-}
-
-export function excludeShapes(nodes: DesignNode[]): PathNode | null {
-  const items = nodes
-    .map((n) => {
-      const poly = nodeToWorldPolygon(n);
-      return poly ? { n, poly, holes: nodeToWorldHoles(n) } : null;
-    })
-    .filter((x): x is { n: DesignNode; poly: Point[]; holes: Point[][] } => !!x);
-  if (items.length < 2) return null;
-  const primary = ensureCcw(items[0]!.poly);
-  const rings = items.slice(1).map((it) => ensureCcw(it.poly));
-  const inherited = items.flatMap((it) => it.holes.map(ensureCw));
-  return pathFromWorld("Exclude", primary, [...rings, ...inherited], items[0]!.n, "evenodd");
-}
-
-export type BooleanOp = "union" | "subtract" | "intersect" | "exclude";
 
 export function computeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | null {
-  const usable = nodes.filter(isBooleanable);
-  if (usable.length < 2) return null;
-  if (op === "union") return unionShapes(usable);
-  if (op === "subtract") return subtractShapes(usable[0]!, ...usable.slice(1));
-  if (op === "intersect") return intersectShapes(usable);
-  return excludeShapes(usable);
+  return composeBoolean(nodes, op);
 }
