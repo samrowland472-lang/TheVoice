@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Export selection as SVG with holes and even-odd fill rule.
-2. Pen tangent overlay polish on subtract results.
+1. Pen tangent overlay polish on subtract results.
+2. Selection PNG crop that includes rotated path bounds.
 
 ## Done
 
@@ -31,8 +31,13 @@ Auth OFF, DB OFF.
 - Rotation-aware contours: cubic handles flattened, then rotated, before punch.
 - Overlapping subtract holes merge so even-odd does not refill.
 - Paths render holes and cubics with evenodd / nonzero.
+- Selection SVG export uses cubic `pathD`, holes, and even-odd / clip-rule.
 
 ## Iterations
+
+### 2026-08-30T03:15Z — loop 72
+
+**Selection SVG with holes and cubics.** Export → Selection SVG (or command palette) writes only the chosen layers, cropped to their box. Path `d` keeps cubic handles; holes are extra closed subpaths with `fill-rule` and `clip-rule` evenodd. Canvas paths now stroke the same cubics via `tracePath`, so print PNG matches the vector. Rasterize applies bleed/paper offset through `drawDocument` ox/oy.
 
 ### 2026-08-30T02:25Z — loop 71
 
@@ -44,4 +49,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Export selection as SVG with holes and even-odd fill rule.
+Pen tangent overlay polish on subtract results.

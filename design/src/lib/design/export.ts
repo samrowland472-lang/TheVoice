@@ -1,4 +1,5 @@
 import { aabb } from "./geometry";
+import { pathD } from "./path-curve";
 import { drawDocument } from "./render";
 import type { DesignDocument, DesignNode, PathNode, TextNode } from "./types";
 
@@ -15,8 +16,7 @@ export function rasterize(
   const ctx = canvas.getContext("2d")!;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const pad = paper * scale;
-  drawDocument(ctx, doc, { x: pad, y: pad, zoom: scale }, { skipChrome: true, dpr: 1 });
+  drawDocument(ctx, doc, { skipChrome: true, dpr: scale, ox: paper, oy: paper });
   return canvas;
 }
 
@@ -47,12 +47,6 @@ function esc(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function ringD(originX: number, originY: number, pts: { x: number; y: number }[]): string {
-  if (!pts.length) return "";
-  const bits = pts.map((p, i) => `${i === 0 ? "M" : "L"}${(originX + p.x).toFixed(2)} ${(originY + p.y).toFixed(2)}`);
-  return `${bits.join(" ")} Z`;
-}
-
 function nodeSvg(n: DesignNode): string {
   const fill = typeof n.fill === "string" ? n.fill : "#d9f5e3";
   const opacity = n.opacity < 1 ? ` opacity="${n.opacity}"` : "";
@@ -63,9 +57,10 @@ function nodeSvg(n: DesignNode): string {
       : "";
   if (n.kind === "path") {
     const p = n as PathNode;
-    const d = ringD(p.x, p.y, p.points) + (p.holes ?? []).map((h) => ringD(p.x, p.y, h)).join("");
-    const rule = p.fillRule ?? (p.holes?.length ? "evenodd" : "nonzero");
-    return `<path d="${d}" fill="${esc(fill)}" fill-rule="${rule}"${stroke}${opacity}${rot}/>`;
+    const holes = p.holes ?? [];
+    const d = pathD(p.x, p.y, p.points, p.closed || holes.length > 0) + holes.map((h) => pathD(p.x, p.y, h, true)).join("");
+    const rule = p.fillRule ?? (holes.length ? "evenodd" : "nonzero");
+    return `<path d="${esc(d)}" fill="${esc(fill)}" fill-rule="${rule}" clip-rule="${rule}"${stroke}${opacity}${rot}/>`;
   }
   if (n.kind === "ellipse") {
     return `<ellipse cx="${n.x + n.w / 2}" cy="${n.y + n.h / 2}" rx="${Math.abs(n.w / 2)}" ry="${Math.abs(n.h / 2)}" fill="${esc(fill)}"${stroke}${opacity}${rot}/>`;
