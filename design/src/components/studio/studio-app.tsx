@@ -62,6 +62,10 @@ export function StudioApp({ id }: { id?: string }) {
           downloadSelectionPng(st.doc, st.selection, 2);
         },
       },
+      { id: "bool-union", label: "Boolean union", group: "Edit", hint: "Cmd+U", run: () => s().applyBoolean("union") },
+      { id: "bool-sub", label: "Boolean subtract", group: "Edit", hint: "Shift+Cmd+U", run: () => s().applyBoolean("subtract") },
+      { id: "bool-int", label: "Boolean intersect", group: "Edit", hint: "Cmd+I", run: () => s().applyBoolean("intersect") },
+      { id: "bool-exc", label: "Boolean exclude", group: "Edit", hint: "Shift+Cmd+I", run: () => s().applyBoolean("exclude") },
     ];
   }, [navigate]);
 
