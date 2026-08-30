@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Selection PNG crop that includes rotated path bounds.
-2. Drag cubic handles on subtract holes from the pen overlay.
+1. Drag cubic handles on subtract holes from the pen overlay.
+2. Inspector Boolean hover + commit buttons (wired to store preview).
 
 ## Done
 
@@ -33,25 +33,26 @@ Auth OFF, DB OFF.
 - Paths render holes and cubics with evenodd / nonzero.
 - Selection SVG export uses cubic `pathD`, holes, and even-odd / clip-rule.
 - Subtract results simplify, restore mirrored cubics, and show hole tangents.
+- Selection PNG crop uses rotated path/hole cubic hull + stroke pad.
 
 ## Iterations
 
+### 2026-08-30T05:16Z — loop 74
+
+**Rotated selection PNG.** `aabb` now samples path anchors, cubic handles, and holes in world space after rotation, then pads by half stroke. Export → Selection PNG / Selection SVG crop to that box. Canvas paths stroke the same cubics via `tracePath`; `drawDocument` honors viewport, paper ox/oy, boolean ghost, and pen tangents. Boolean shortcuts and Shift+0 fit-selection land in the store.
+
 ### 2026-08-30T04:12Z — loop 73
 
-**Pen tangents on subtract.** Boolean results drop collinear samples and get mirrored cubic handles. Select or Pen on the result draws phosphor arms on the outer contour and cooler hole diamonds. Inspector Boolean hover still ghosts; commit switches to Pen. Viewport + ox/oy render offsets stay wired so the overlay sits on the board.
+**Pen tangents on subtract.** Boolean results drop collinear samples and get mirrored cubic handles. Select or Pen on the result draws phosphor arms on the outer contour and cooler hole diamonds.
 
 ### 2026-08-30T03:15Z — loop 72
 
-**Selection SVG with holes and cubics.** Export → Selection SVG (or command palette) writes only the chosen layers, cropped to their box. Path `d` keeps cubic handles; holes are extra closed subpaths with `fill-rule` and `clip-rule` evenodd. Canvas paths now stroke the same cubics via `tracePath`, so print PNG matches the vector. Rasterize applies bleed/paper offset through `drawDocument` ox/oy.
+**Selection SVG with holes and cubics.** Export → Selection SVG (or command palette) writes only the chosen layers, cropped to their box.
 
 ### 2026-08-30T02:25Z — loop 71
 
-**Boolean ghost + rotation-aware holes.** Shift-select two or more shapes. Inspector Boolean: hover Union / Subtract / Intersect / Exclude to ghost the path on the board; click commits. First selected layer keeps ink. Pen curves are sampled before subtract so a rotated path punches the stroke, not the anchors. Typecheck + build + smoke clean.
-
-### 2026-08-30T00:08Z — loop 69
-
-**MixedInk wired.**
+**Boolean ghost + rotation-aware holes.** Shift-select two or more shapes. First selected layer keeps ink.
 
 ## Next recommended
 
-Selection PNG crop that includes rotated path bounds.
+Drag cubic handles on subtract holes from the pen overlay.
