@@ -2,25 +2,30 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { useDesign } from "@/lib/design/store";
+import type { DesignNode } from "@/lib/design/types";
 import { CanvasStage } from "./canvas-stage";
 import { Inspector } from "./inspector";
 import { LayersPanel } from "./layers-panel";
+import { MixedInk } from "./mixed-ink";
 import { PaintDock } from "./paint-dock";
 import { ToolRail } from "./tool-rail";
 import { TopBar } from "./top-bar";
 import { CommandPalette, type CommandItem } from "./command-palette";
 import { useShortcuts } from "./use-shortcuts";
 import { AiPanel } from "./ai-panel";
-import { cn } from "@/lib/utils";
 
 export function StudioApp() {
   const navigate = useNavigate();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [sheet, setSheet] = useState<"layers" | "inspect" | "ai" | null>(null);
   const doc = useDesign((s) => s.doc);
   const present = useDesign((s) => s.present);
+  const selection = useDesign((s) => s.selection);
+  const brand = useDesign((s) => s.brand);
+  const color = useDesign((s) => s.color);
   useShortcuts({ onPalette: () => setPaletteOpen(true) });
   useParams({ from: "/studio/$id" });
+
+  const selectedNodes = (doc?.nodes ?? []).filter((n): n is DesignNode => selection.includes(n.id));
 
   const commands = useMemo<CommandItem[]>(() => {
     const s = () => useDesign.getState();
@@ -64,6 +69,11 @@ export function StudioApp() {
             <LayersPanel />
           </div>
           <div className="min-h-0 flex-1 overflow-auto">
+            {selectedNodes.length >= 2 && (
+              <div className="px-3">
+                <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
+              </div>
+            )}
             <Inspector />
           </div>
           <AiPanel />
