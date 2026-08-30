@@ -17,7 +17,7 @@ const KEYS: Record<string, Tool> = {
   f: "frame",
 };
 
-export function useShortcuts() {
+export function useShortcuts(_opts?: { onPalette?: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
