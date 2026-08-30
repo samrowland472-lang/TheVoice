@@ -3,6 +3,7 @@ import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
 import { drawDocument, fitBoxViewport, fitViewport } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
+import { isPath } from "@/lib/design/types";
 
 export function CanvasStage() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -12,6 +13,8 @@ export function CanvasStage() {
   const viewIntent = useDesign((s) => s.viewIntent);
   const selection = useDesign((s) => s.selection);
   const booleanPreview = useDesign((s) => s.booleanPreview);
+  const tool = useDesign((s) => s.tool);
+  const present = useDesign((s) => s.present);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -58,8 +61,16 @@ export function CanvasStage() {
         .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
       ghost = computeBoolean(usable, booleanPreview);
     }
-    drawDocument(ctx, doc, { dpr, viewport, ghost, ghostOp: booleanPreview });
-  }, [doc, viewport, selection, booleanPreview]);
+    const selected = selection[0] ? doc.nodes.find((n) => n.id === selection[0]) : null;
+    const showTangents = !present && selected && isPath(selected) && (tool === "pen" || tool === "select");
+    drawDocument(ctx, doc, {
+      dpr,
+      viewport,
+      ghost,
+      ghostOp: booleanPreview,
+      tangentPath: showTangents ? selected : null,
+    });
+  }, [doc, viewport, selection, booleanPreview, tool, present]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
