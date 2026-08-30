@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
-import { editPathHit, setPathEditHit } from "@/lib/design/path-actions";
+import { appendPenPoint, editPathHit, setPathEditHit } from "@/lib/design/path-actions";
 import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
 import { hasHandle } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
@@ -141,7 +141,7 @@ export function CanvasStage() {
           }
         }
       }
-      const id = s.appendPenPoint(d.x, d.y);
+      const id = appendPenPoint(d.x, d.y);
       if (!id) return;
       const hit: PathEditHit = { index: 0, arm: "out" };
       const node = useDesign.getState().doc?.nodes.find((n) => n.id === id);
