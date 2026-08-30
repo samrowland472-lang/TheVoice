@@ -3,6 +3,7 @@ import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
 import { editPathHit, setPathEditHit } from "@/lib/design/path-actions";
 import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
+import { hasHandle } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { isPath } from "@/lib/design/types";
@@ -15,7 +16,9 @@ export function CanvasStage() {
     id: string;
     hit: PathEditHit;
     keepSmooth: boolean;
+    mode: "edit" | "pull";
   } | null>(null);
+  const hoverRef = useRef<{ x: number; y: number } | null>(null);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
@@ -65,14 +68,37 @@ export function CanvasStage() {
     const selected = selection[0] ? doc.nodes.find((n) => n.id === selection[0]) : null;
     const showTangents = !present && selected && isPath(selected) && (tool === "pen" || tool === "select");
     drawDocument(ctx, doc, { dpr, viewport } as Parameters<typeof drawDocument>[2]);
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.translate(viewport.x, viewport.y);
+    ctx.scale(viewport.zoom, viewport.zoom);
     if (showTangents && selected && isPath(selected)) {
-      ctx.save();
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.translate(viewport.x, viewport.y);
-      ctx.scale(viewport.zoom, viewport.zoom);
       drawPathNodeTangents(ctx, selected, viewport.zoom, pathEditHit);
-      ctx.restore();
     }
+    if (!present && tool === "pen" && selected && isPath(selected) && !selected.closed && selected.points.length) {
+      const last = selected.points[selected.points.length - 1]!;
+      const hover = hoverRef.current;
+      if (hover && !drag.current) {
+        ctx.beginPath();
+        ctx.moveTo(selected.x + last.x, selected.y + last.y);
+        if (hasHandle(last.out) && last.out) {
+          const c1x = selected.x + last.x + last.out.x;
+          const c1y = selected.y + last.y + last.out.y;
+          ctx.bezierCurveTo(c1x, c1y, hover.x, hover.y, hover.x, hover.y);
+        } else {
+          ctx.lineTo(hover.x, hover.y);
+        }
+        ctx.strokeStyle = "rgba(63,198,255,0.55)";
+        ctx.lineWidth = 1.25 / viewport.zoom;
+        ctx.setLineDash([6 / viewport.zoom, 5 / viewport.zoom]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    void computeBoolean;
+    void isBooleanable;
+    void booleanPreview;
+    ctx.restore();
   }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit]);
 
   useEffect(() => {
@@ -91,15 +117,49 @@ export function CanvasStage() {
   function onPointerDown(e: React.PointerEvent) {
     if (present || e.button !== 0) return;
     const s = useDesign.getState();
-    if (s.tool !== "pen" && s.tool !== "select") return;
+    const d = clientDoc(e);
+    if (s.tool === "pen") {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const selected = s.selection[0] ? s.doc?.nodes.find((n) => n.id === s.selection[0]) : null;
+      if (selected && isPath(selected) && !selected.closed) {
+        const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
+        if (hit && hit.arm !== "anchor") {
+          drag.current = { id: selected.id, hit, keepSmooth: !e.altKey, mode: "edit" };
+          setPathEditHit(hit);
+          const local = pathWorldToLocal(selected, d.x, d.y);
+          editPathHit(selected.id, hit, local.x, local.y, !e.altKey, true);
+          return;
+        }
+        const first = selected.points[0];
+        if (first && selected.points.length >= 2) {
+          const fx = selected.x + first.x;
+          const fy = selected.y + first.y;
+          if (Math.hypot(d.x - fx, d.y - fy) <= 10 / s.viewport.zoom) {
+            s.closeSelectedPath();
+            return;
+          }
+        }
+      }
+      const id = s.appendPenPoint(d.x, d.y);
+      if (!id) return;
+      const hit: PathEditHit = { index: 0, arm: "out" };
+      const node = useDesign.getState().doc?.nodes.find((n) => n.id === id);
+      if (node && isPath(node)) {
+        hit.index = node.points.length - 1;
+      }
+      drag.current = { id, hit, keepSmooth: true, mode: "pull" };
+      setPathEditHit(hit);
+      return;
+    }
+    if (s.tool !== "select") return;
     const selected = s.selection[0] ? s.doc?.nodes.find((n) => n.id === s.selection[0]) : null;
     if (!selected || !isPath(selected)) return;
-    const d = clientDoc(e);
     const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
     if (!hit) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: selected.id, hit, keepSmooth: !e.altKey };
+    drag.current = { id: selected.id, hit, keepSmooth: !e.altKey, mode: "edit" };
     setPathEditHit(hit);
     if (hit.arm !== "anchor") {
       const local = pathWorldToLocal(selected, d.x, d.y);
@@ -112,6 +172,7 @@ export function CanvasStage() {
   function onPointerMove(e: React.PointerEvent) {
     const s = useDesign.getState();
     const d = clientDoc(e);
+    hoverRef.current = d;
     const live = drag.current;
     if (live) {
       const n = s.doc?.nodes.find((x) => x.id === live.id);
@@ -151,6 +212,11 @@ export function CanvasStage() {
       onPointerCancel={onPointerUp}
     >
       <canvas ref={mainRef} className="absolute inset-0" />
+      {tool === "pen" && !present && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
+          Click add · drag cubic · ⌫ last · Enter close · Esc finish
+        </div>
+      )}
     </div>
   );
 }
