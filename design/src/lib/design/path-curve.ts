@@ -105,7 +105,7 @@ export function smoothPathCorners(pts: PathPoint[], closed: boolean): PathPoint[
   return pts.map((_, i) => autoSmoothPoint(pts, i, closed));
 }
 
-export type PathEditHit = { index: number; arm: "in" | "out" | "anchor" };
+export type PathEditHit = { index: number; arm: "in" | "out" | "anchor"; hole?: number };
 
 /** Hit a path anchor or cubic handle in document space. */
 export function hitPathEdit(
@@ -157,7 +157,9 @@ export function drawPathTangents(
   pts: PathPoint[],
   zoom: number,
   active?: PathEditHit | null,
+  tone: "phosphor" | "cool" = "phosphor",
 ) {
+  void tone;
   if (!pts.length) return;
   const armW = 1.25 / zoom;
   const diamond = 5 / zoom;
