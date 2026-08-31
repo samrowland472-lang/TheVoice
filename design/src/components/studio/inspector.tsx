@@ -78,7 +78,25 @@ export function Inspector() {
             ))}
           </div>
           <Field label={`Rotate ${Math.round(node.rotation)}°`}>
-            <input type="range" className="range-phosphor w-full" min={-180} max={180} value={node.rotation} onChange={(e) => updateNodes([node.id], { rotation: Number(e.target.value) })} />
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                className="range-phosphor min-w-0 flex-1"
+                min={-180}
+                max={180}
+                aria-label="rotate"
+                value={node.rotation}
+                onChange={(e) => updateNodes([node.id], { rotation: Number(e.target.value) })}
+              />
+              <NumField
+                className="field w-16 font-mono"
+                value={node.rotation}
+                min={-180}
+                max={180}
+                aria-label="rotate"
+                onCommit={(n) => updateNodes([node.id], { rotation: n }, true)}
+              />
+            </div>
           </Field>
           <Field label={`Opacity ${Math.round(node.opacity * 100)}%`}>
             <input type="range" className="range-phosphor w-full" min={0} max={1} step={0.01} value={node.opacity} onChange={(e) => updateNodes([node.id], { opacity: Number(e.target.value) })} />
@@ -87,7 +105,13 @@ export function Inspector() {
           <Field label="Stroke">
             <div className="flex gap-2">
               <input type="color" className="h-8 flex-1 rounded-[8px] border border-border" value={node.stroke === "transparent" ? "#3fc6ff" : node.stroke} onChange={(e) => updateNodes([node.id], { stroke: e.target.value, strokeWidth: Math.max(node.strokeWidth, 1) }, true)} />
-              <input className="field w-16 font-mono" type="number" min={0} value={node.strokeWidth} onChange={(e) => updateNodes([node.id], { strokeWidth: Number(e.target.value) }, true)} />
+              <NumField
+                className="field w-16 font-mono"
+                value={node.strokeWidth}
+                min={0}
+                aria-label="stroke width"
+                onCommit={(n) => updateNodes([node.id], { strokeWidth: n }, true)}
+              />
             </div>
           </Field>
           {node.kind === "rect" && (

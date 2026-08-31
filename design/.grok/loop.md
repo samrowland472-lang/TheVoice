@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector rotation / stroke width use NumField drafts.
-2. Mixed-type size / weight sliders beside the draft fields.
+1. Mixed-type size / weight sliders beside the draft fields.
+2. Single-select type size / weight / tracking / leading use NumField drafts (inspector-type still raw).
 
 ## Done
 
@@ -35,8 +35,13 @@ Auth OFF, DB OFF.
 - Inspector tracking / leading drafts sit beside the sliders; typed weight snaps to the nearest 100.
 - Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
 - Mixed-type tracking / leading sliders sit beside the draft fields; drag writes onto every selected text layer.
+- Inspector rotation / stroke width use NumField drafts; full Zustand store restored so the studio hydrates.
 
 ## Iterations
+
+### 2026-08-31T06:10Z — loop 90
+
+**Rotation / stroke drafts + store restore.** Select a layer: Rotate keeps the slider and gains a draft field (−180 to 180). Type a degree, Enter or click away; Escape restores the live angle. Stroke width no longer commits on every keystroke. Restored the truncated Zustand store (~29kb) so hydrate, history, and tools work again.
 
 ### 2026-08-31T05:25Z — loop 89
 
@@ -64,4 +69,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector rotation / stroke width use NumField drafts.
+Mixed-type size / weight sliders beside the draft fields.
