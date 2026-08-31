@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed-type size / weight sliders beside the draft fields.
-2. Single-select type size / weight / tracking / leading use NumField drafts (inspector-type still raw).
+1. Single-select type size / weight / tracking / leading use NumField drafts (inspector-type still raw).
+2. Mixed-type family slider is N/A — next depth is inspector-type drafts + sliders for size/weight.
 
 ## Done
 
@@ -36,8 +36,13 @@ Auth OFF, DB OFF.
 - Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
 - Mixed-type tracking / leading sliders sit beside the draft fields; drag writes onto every selected text layer.
 - Inspector rotation / stroke width use NumField drafts; full Zustand store restored so the studio hydrates.
+- Mixed-type size / weight sliders sit beside the draft fields; drag writes onto every selected text layer. Zustand store restored (~29kb) so hydrate, history, and tools work.
 
 ## Iterations
+
+### 2026-08-31T07:15Z — loop 91
+
+**Mixed size / weight sliders + store restore.** Shift-select two text layers: Size and Weight keep the draft field and gain a phosphor slider. Drag sets point size (6–400) or weight (400–800, snapped to 100) on every selected text layer; type a figure and Enter or click away to commit. Differing values still show Mixed and an em dash until you set one. Restored the truncated Zustand store (~29kb) with `booleanPreview`, `pathEditHit`, and `fit-sel` so the studio hydrates again.
 
 ### 2026-08-31T06:10Z — loop 90
 
@@ -69,4 +74,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Mixed-type size / weight sliders beside the draft fields.
+Single-select type size / weight / tracking / leading use NumField drafts in inspector-type (still raw number inputs).
