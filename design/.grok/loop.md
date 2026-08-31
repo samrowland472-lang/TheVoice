@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tool: Alt-drag to break a handle while drawing.
-2. Pen tool: click first point to close with a closing cubic.
+1. Pen tool: click first point to close with a closing cubic.
+2. Pen tool: Option/Alt after release to convert the last point to a corner.
 
 ## Done
 
@@ -42,8 +42,13 @@ Auth OFF, DB OFF.
 - Path inspector pane: point list with X/Y drafts, close/open, smooth/corner, delete point. Zustand store implementation restored (~29kb).
 - Image filters (brightness / contrast / saturate / blur) and source crop apply in the canvas renderer and PNG/JPG export. Zustand store implementation restored (~29kb).
 - Pen click-drag pulls mirrored cubic handles while drawing; click without drag stays a corner. Zustand store implementation restored (~29kb).
+- Pen Alt-drag breaks a handle while drawing (sticky corner). Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-08-31T22:10Z — loop 97
+
+**Pen Alt-break while drawing.** Hold Alt as you drag a new pen point (or press Alt mid-drag) and the outgoing handle leaves the incoming one behind — a corner instead of a smooth pair. The artboard hint names Alt break. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-08-31T20:10Z — loop 96
 
@@ -67,4 +72,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen tool: Alt-drag to break a handle independently while drawing.
+Pen tool: click the first point to close the path with a closing cubic.
