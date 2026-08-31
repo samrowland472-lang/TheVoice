@@ -105,6 +105,31 @@ export function smoothPathCorners(pts: PathPoint[], closed: boolean): PathPoint[
   return pts.map((_, i) => autoSmoothPoint(pts, i, closed));
 }
 
+function unitHandle(from: PathPoint, toward: PathPoint, scale = 1 / 3) {
+  const dx = toward.x - from.x;
+  const dy = toward.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 0.2) return null;
+  return { x: dx * scale, y: dy * scale };
+}
+
+/** Close an open contour and guarantee the last→first segment is cubic. */
+export function closePathWithCubic<T extends { points: PathPoint[]; closed: boolean }>(n: T): T {
+  if (n.closed || n.points.length < 3) return n;
+  const pts = n.points.map((p) => ({ ...p, in: p.in ? { ...p.in } : null, out: p.out ? { ...p.out } : null }));
+  const first = pts[0]!;
+  const last = pts[pts.length - 1]!;
+  if (!hasHandle(last.out)) {
+    last.out = hasHandle(last.in) && last.in ? mirrorHandle(last.in) : unitHandle(last, first);
+  }
+  if (!hasHandle(first.in)) {
+    first.in = hasHandle(first.out) && first.out ? mirrorHandle(first.out) : unitHandle(first, last);
+  }
+  first.smooth = Boolean(hasHandle(first.in) && hasHandle(first.out));
+  last.smooth = Boolean(hasHandle(last.in) && hasHandle(last.out));
+  return { ...n, points: pts, closed: true };
+}
+
 export type PathEditHit = { index: number; arm: "in" | "out" | "anchor"; hole?: number };
 
 /** Hit a path anchor or cubic handle in document space. */
