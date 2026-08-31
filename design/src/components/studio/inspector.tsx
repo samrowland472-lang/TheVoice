@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useDesign } from "@/lib/design/store";
 import type { BlendMode } from "@/lib/design/types";
-import { isImage } from "@/lib/design/types";
+import { isImage, isPath } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 import { FillEditor, Section, ShadowEditor, Swatches, Field } from "./inspector-parts";
+import { PathFields } from "./inspector-path";
 import { HotspotField, ImageFields, LinkedRow, TextFields } from "./inspector-type";
 
 const BLENDS: BlendMode[] = [
@@ -168,6 +169,7 @@ export function Inspector() {
           <ShadowEditor node={node} />
           {node.kind === "text" && <TextFields node={node} />}
           {isImage(node) && <ImageFields node={node} />}
+          {isPath(node) && <PathFields node={node} />}
           <Field label="Align">
             <div className="mb-1 grid grid-cols-2 gap-1">
               <button type="button" disabled={selection.length < 2} className={cn("h-7 rounded-[8px] text-[10px]", selection.length >= 2 && !alignToBoard ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim", selection.length < 2 && "opacity-40")} onClick={() => setAlignToBoard(false)}>Selection</button>
