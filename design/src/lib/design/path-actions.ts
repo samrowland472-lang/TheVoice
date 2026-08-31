@@ -1,9 +1,26 @@
 import { applyPathEdit, type PathEditHit } from "./path-edit";
-import { autoSmoothPoint, closePathWithCubic } from "./path-curve";
+import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
 import { pathNode } from "./node-factory";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
+
+/** After a pen point is released, Alt converts it to a corner (drop outgoing handle). */
+export function cornerLastPenPoint(): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc || s.tool !== "pen") return false;
+  const sel = s.selection[0] ? doc.nodes.find((x) => x.id === s.selection[0]) : null;
+  if (!sel || !isPath(sel) || sel.closed || !sel.points.length) return false;
+  const last = sel.points[sel.points.length - 1]!;
+  if (!hasHandle(last.out) && last.smooth === false) return false;
+  const nextPt: PathPoint = { ...last, out: null, smooth: false };
+  const points = sel.points.map((p, i) => (i === sel.points.length - 1 ? nextPt : p));
+  s.commit();
+  s.replaceNode(sel.id, { ...sel, points }, false);
+  setPathEditHit({ index: points.length - 1, arm: "anchor" });
+  return true;
+}
 
 export function appendPenPoint(wx: number, wy: number): string | null {
   const s = useDesign.getState();
