@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { CANVAS_FONTS } from "@/lib/design/fonts";
-import { paletteFromSrc, paletteName } from "@/lib/design/palette";
-import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
 import { useDesign } from "@/lib/design/store";
-import type { Align, BlendMode, DesignNode, GradientFill, ImageNode, TextNode } from "@/lib/design/types";
-import { isGradient, isImage } from "@/lib/design/types";
+import type { BlendMode } from "@/lib/design/types";
+import { isImage } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
+import { FillEditor, HotspotField, ImageFields, LinkedRow, Section, ShadowEditor, Swatches, TextFields, Field } from "./inspector-parts";
 
 const BLENDS: BlendMode[] = [
   "source-over",
