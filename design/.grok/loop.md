@@ -21,7 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector type size / weight use NumField drafts on the single-select pane.
+1. Inspector tracking / leading use NumField drafts next to the sliders.
+2. Snap typed weight to the nearest 100 and show the committed value immediately.
 
 ## Done
 
@@ -30,8 +31,13 @@ Auth OFF, DB OFF.
 - Mixed type family / tracking / leading / align when two or more text layers are selected.
 - NumField supports mixed placeholder (em dash) and blur / Enter / Escape.
 - Store types `booleanPreview` and `fit-sel` view intent; canvas fits the selection box.
+- Inspector type size / weight use NumField drafts on the single-select pane.
 
 ## Iterations
+
+### 2026-08-31T03:15Z — loop 86
+
+**Single-select type drafts.** Select one text layer and Inspect size / weight no longer commit on every keystroke. Type a point size, press Enter or click away; Escape restores the live value. Weight is typed the same way and snaps to the nearest hundred on commit.
 
 ### 2026-08-31T01:10Z — loop 85
 
@@ -43,4 +49,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector type size / weight use NumField drafts on the single-select pane.
+Inspector tracking / leading use NumField drafts next to the sliders.
