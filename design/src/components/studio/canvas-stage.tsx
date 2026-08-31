@@ -266,7 +266,7 @@ export function CanvasStage() {
       <canvas ref={mainRef} className="absolute inset-0" />
       {tool === "pen" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Click add · drag cubic · Alt break · ⌫ last · Enter close · Esc finish
+          Click add · drag cubic · Alt break · Alt after drop corners last · ⌫ last · Enter close · Esc finish
         </div>
       )}
     </div>
