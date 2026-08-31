@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
 import { appendPenPoint, editPathHit, setPathEditHit } from "@/lib/design/path-actions";
@@ -18,8 +18,12 @@ export function CanvasStage() {
     hit: PathEditHit;
     keepSmooth: boolean;
     mode: "edit" | "pull";
+    originX: number;
+    originY: number;
+    pulled: boolean;
   } | null>(null);
   const hoverRef = useRef<{ x: number; y: number } | null>(null);
+  const [hoverTick, setHoverTick] = useState(0);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
@@ -116,7 +120,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -142,7 +146,15 @@ export function CanvasStage() {
       if (selected && isPath(selected) && !selected.closed) {
         const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
         if (hit && hit.arm !== "anchor") {
-          drag.current = { id: selected.id, hit, keepSmooth: !e.altKey, mode: "edit" };
+          drag.current = {
+            id: selected.id,
+            hit,
+            keepSmooth: !e.altKey,
+            mode: "edit",
+            originX: d.x,
+            originY: d.y,
+            pulled: true,
+          };
           setPathEditHit(hit);
           const local = pathWorldToLocal(selected, d.x, d.y);
           editPathHit(selected.id, hit, local.x, local.y, !e.altKey, true);
@@ -165,7 +177,15 @@ export function CanvasStage() {
       if (node && isPath(node)) {
         hit.index = node.points.length - 1;
       }
-      drag.current = { id, hit, keepSmooth: true, mode: "pull" };
+      drag.current = {
+        id,
+        hit,
+        keepSmooth: true,
+        mode: "pull",
+        originX: d.x,
+        originY: d.y,
+        pulled: false,
+      };
       setPathEditHit(hit);
       return;
     }
@@ -176,7 +196,15 @@ export function CanvasStage() {
     if (!hit) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { id: selected.id, hit, keepSmooth: !e.altKey, mode: "edit" };
+    drag.current = {
+      id: selected.id,
+      hit,
+      keepSmooth: !e.altKey,
+      mode: "edit",
+      originX: d.x,
+      originY: d.y,
+      pulled: true,
+    };
     setPathEditHit(hit);
     if (hit.arm !== "anchor") {
       const local = pathWorldToLocal(selected, d.x, d.y);
@@ -190,10 +218,16 @@ export function CanvasStage() {
     const s = useDesign.getState();
     const d = clientDoc(e);
     hoverRef.current = d;
+    if (!drag.current) setHoverTick((n) => n + 1);
     const live = drag.current;
     if (live) {
       const n = s.doc?.nodes.find((x) => x.id === live.id);
       if (!n || !isPath(n)) return;
+      if (live.mode === "pull" && !live.pulled) {
+        const dist = Math.hypot(d.x - live.originX, d.y - live.originY);
+        if (dist < 3 / s.viewport.zoom) return;
+        live.pulled = true;
+      }
       const local = pathWorldToLocal(n, d.x, d.y);
       editPathHit(live.id, live.hit, local.x, local.y, live.keepSmooth && !e.altKey);
       return;
