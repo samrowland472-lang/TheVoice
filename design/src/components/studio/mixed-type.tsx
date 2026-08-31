@@ -9,6 +9,10 @@ function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
 
+function formatNum(n: number) {
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+}
+
 export function MixedType({ nodes }: { nodes: TextNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const brand = useDesign((s) => s.brand);
@@ -117,9 +121,25 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             onCommit={(n) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) })}
           />
         </label>
-        <label className="block text-[11px] text-ink-dim">
-          <span className="mb-1 block">{mixedTracking ? "Tracking · mixed" : "Tracking"}</span>
+      </div>
+      <label className="mt-2 block text-[11px] text-ink-dim">
+        <span className="mb-1 block">
+          {mixedTracking ? "Tracking · mixed" : `Tracking ${formatNum(first.letterSpacing)}`}
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            className="range-phosphor min-w-0 flex-1"
+            min={-8}
+            max={40}
+            step={0.25}
+            aria-label={mixedTracking ? "type tracking mixed" : "type tracking"}
+            value={first.letterSpacing}
+            onChange={(e) => patch({ letterSpacing: Number(e.target.value) }, false)}
+            onPointerUp={() => useDesign.getState().commit()}
+          />
           <NumField
+            className="field w-16 font-mono"
             value={first.letterSpacing}
             mixed={mixedTracking}
             min={-8}
@@ -127,10 +147,26 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             aria-label="type tracking"
             onCommit={(n) => patch({ letterSpacing: n })}
           />
-        </label>
-        <label className="block text-[11px] text-ink-dim">
-          <span className="mb-1 block">{mixedLeading ? "Leading · mixed" : "Leading"}</span>
+        </div>
+      </label>
+      <label className="mt-2 block text-[11px] text-ink-dim">
+        <span className="mb-1 block">
+          {mixedLeading ? "Leading · mixed" : `Leading ${formatNum(first.lineHeight)}`}
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            className="range-phosphor min-w-0 flex-1"
+            min={0.7}
+            max={2}
+            step={0.02}
+            aria-label={mixedLeading ? "type leading mixed" : "type leading"}
+            value={first.lineHeight}
+            onChange={(e) => patch({ lineHeight: Number(e.target.value) }, false)}
+            onPointerUp={() => useDesign.getState().commit()}
+          />
           <NumField
+            className="field w-16 font-mono"
             value={first.lineHeight}
             mixed={mixedLeading}
             min={0.7}
@@ -138,8 +174,8 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             aria-label="type leading"
             onCommit={(n) => patch({ lineHeight: n })}
           />
-        </label>
-      </div>
+        </div>
+      </label>
       <div className="mt-2">
         <div className="mb-1 text-[11px] text-ink-dim">{mixedAlign ? "Align · mixed" : "Align"}</div>
         <div className="flex gap-1" role="group" aria-label={mixedAlign ? "type align mixed" : "type align"}>

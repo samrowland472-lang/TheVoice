@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed-type tracking / leading sliders beside the draft fields.
-2. Inspector rotation / stroke width use NumField drafts.
+1. Inspector rotation / stroke width use NumField drafts.
+2. Mixed-type size / weight sliders beside the draft fields.
 
 ## Done
 
@@ -34,8 +34,13 @@ Auth OFF, DB OFF.
 - Inspector type size / weight use NumField drafts on the single-select pane.
 - Inspector tracking / leading drafts sit beside the sliders; typed weight snaps to the nearest 100.
 - Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
+- Mixed-type tracking / leading sliders sit beside the draft fields; drag writes onto every selected text layer.
 
 ## Iterations
+
+### 2026-08-31T05:25Z — loop 89
+
+**Mixed tracking / leading sliders.** Shift-select two text layers: Tracking and Leading now keep the draft field and gain a phosphor slider. Drag sets letter-spacing or line-height on every selected text layer; type a figure and Enter or click away to commit. Differing values still show Mixed and an em dash until you set one. Restored the truncated Zustand store so the studio hydrates again.
 
 ### 2026-08-31T05:10Z — loop 88
 
@@ -59,4 +64,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Mixed-type tracking / leading sliders beside the draft fields.
+Inspector rotation / stroke width use NumField drafts.
