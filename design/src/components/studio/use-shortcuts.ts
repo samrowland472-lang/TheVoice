@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { imageNode } from "@/lib/design/node-factory";
 import { applyBoolean, requestFitSelection, smoothSelectedPath } from "@/lib/design/boolean-actions";
+import { cornerLastPenPoint } from "@/lib/design/path-actions";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -124,6 +125,13 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       if (e.key === "Enter" && s.tool === "pen") {
         e.preventDefault();
         s.closeSelectedPath();
+        return;
+      }
+
+      if ((e.key === "Alt" || e.code === "AltLeft" || e.code === "AltRight") && s.tool === "pen" && !meta) {
+        if (cornerLastPenPoint()) {
+          e.preventDefault();
+        }
         return;
       }
 
