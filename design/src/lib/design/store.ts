@@ -56,7 +56,6 @@ interface DesignState {
   booleanPreview: BooleanOp | null;
   pathEditHit: PathEditHit | null;
   paletteOpen: boolean;
-  /** Timestamp (performance.now) when selection was last nudged via keyboard; drives pulse UI. */
   nudgePulseAt: number | null;
 
   hydrate: () => void;
@@ -122,6 +121,7 @@ interface DesignState {
   togglePresent: () => void;
   setPresent: (v: boolean) => void;
   requestFit: () => void;
+  requestFitSel: () => void;
   requestZoom: (zoom: number) => void;
   clearViewIntent: () => void;
   setPaletteOpen: (v: boolean) => void;
