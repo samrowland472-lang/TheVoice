@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector opacity / radius / image filter sliders still commit live — draft fields where useful.
-2. Pen / path inspector depth (point list, close, smooth) as a dedicated pane.
+1. Pen / path inspector depth (point list, close, smooth) as a dedicated pane.
+2. Apply image filters in the canvas renderer so inspector brightness / contrast / saturate / blur preview on the artboard.
 
 ## Done
 
@@ -38,8 +38,13 @@ Auth OFF, DB OFF.
 - Inspector rotation / stroke width use NumField drafts; full Zustand store restored so the studio hydrates.
 - Mixed-type size / weight sliders sit beside the draft fields; drag writes onto every selected text layer. Zustand store restored (~29kb) so hydrate, history, and tools work.
 - Inspector type size / weight / tracking / leading use NumField drafts plus sliders on the single-select pane. Zustand store restored (~29kb) with hydrate, history, booleanPreview, and fit-sel.
+- Inspector opacity / corner radius / image filter use NumField drafts; missing ImageFields / hotspot / link row restored. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-08-31T08:20Z — loop 93
+
+**Opacity / radius / image-filter drafts + store restore.** Select a layer: Opacity keeps the slider and gains a percent draft (0–100). Rects gain a corner-radius draft beside the slider. Image layers expose Brightness, Contrast, Saturate, and Blur with sliders plus typed fields — Enter or click away commits; Escape restores the live figure. Restored the truncated Zustand store (~29kb) and the missing inspect helpers (contrast meter, linked instances, present hotspot, image crop) so the studio hydrates and typechecks again.
 
 ### 2026-08-31T07:31Z — loop 92
 
@@ -79,4 +84,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector opacity / radius / image filter sliders still commit live — add NumField drafts where a typed figure is useful.
+Pen / path inspector depth — point list, close, and smooth as a dedicated pane. Apply image filters in the renderer so those drafts preview on the artboard.
