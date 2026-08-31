@@ -99,7 +99,27 @@ export function Inspector() {
             </div>
           </Field>
           <Field label={`Opacity ${Math.round(node.opacity * 100)}%`}>
-            <input type="range" className="range-phosphor w-full" min={0} max={1} step={0.01} value={node.opacity} onChange={(e) => updateNodes([node.id], { opacity: Number(e.target.value) })} />
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                className="range-phosphor min-w-0 flex-1"
+                min={0}
+                max={1}
+                step={0.01}
+                aria-label="opacity"
+                value={node.opacity}
+                onChange={(e) => updateNodes([node.id], { opacity: Number(e.target.value) })}
+                onPointerUp={() => useDesign.getState().commit()}
+              />
+              <NumField
+                className="field w-16 font-mono"
+                value={Math.round(node.opacity * 100)}
+                min={0}
+                max={100}
+                aria-label="opacity"
+                onCommit={(n) => updateNodes([node.id], { opacity: n / 100 }, true)}
+              />
+            </div>
           </Field>
           <FillEditor node={node} />
           <Field label="Stroke">
@@ -115,8 +135,27 @@ export function Inspector() {
             </div>
           </Field>
           {node.kind === "rect" && (
-            <Field label={`Radius ${node.radius}`}>
-              <input type="range" className="range-phosphor w-full" min={0} max={Math.min(node.w, node.h) / 2} value={node.radius} onChange={(e) => updateNodes([node.id], { radius: Number(e.target.value) })} />
+            <Field label={`Radius ${Math.round(node.radius)}`}>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  className="range-phosphor min-w-0 flex-1"
+                  min={0}
+                  max={Math.max(0, Math.min(node.w, node.h) / 2)}
+                  aria-label="corner radius"
+                  value={node.radius}
+                  onChange={(e) => updateNodes([node.id], { radius: Number(e.target.value) })}
+                  onPointerUp={() => useDesign.getState().commit()}
+                />
+                <NumField
+                  className="field w-16 font-mono"
+                  value={node.radius}
+                  min={0}
+                  max={Math.max(0, Math.min(node.w, node.h) / 2)}
+                  aria-label="corner radius"
+                  onCommit={(n) => updateNodes([node.id], { radius: n }, true)}
+                />
+              </div>
             </Field>
           )}
           <Field label="Blend">
