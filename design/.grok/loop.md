@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
-2. Mixed-type tracking / leading sliders beside the draft fields.
+1. Mixed-type tracking / leading sliders beside the draft fields.
+2. Inspector rotation / stroke width use NumField drafts.
 
 ## Done
 
@@ -33,8 +33,13 @@ Auth OFF, DB OFF.
 - Store types `booleanPreview` and `fit-sel` view intent; canvas fits the selection box.
 - Inspector type size / weight use NumField drafts on the single-select pane.
 - Inspector tracking / leading drafts sit beside the sliders; typed weight snaps to the nearest 100.
+- Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
 
 ## Iterations
+
+### 2026-08-31T05:10Z — loop 88
+
+**Geometry drafts.** Select a layer and Inspect X, Y, W, H no longer commit on every keystroke. Type a figure, press Enter or click away; Escape restores the live value. Width and height clamp to 1 so a layer cannot collapse to zero while you type.
 
 ### 2026-08-31T04:20Z — loop 87
 
@@ -54,4 +59,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
+Mixed-type tracking / leading sliders beside the draft fields.
