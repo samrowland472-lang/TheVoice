@@ -6,6 +6,11 @@ import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type
 
 const imageCache = new Map<string, HTMLImageElement>();
 
+function clampFilter(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
 export function getCachedImage(src: string): HTMLImageElement | null {
   const hit = imageCache.get(src);
   if (hit) return hit;
@@ -109,8 +114,25 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
     }
   } else if (isImage(n)) {
     const img = getCachedImage(n.src);
-    if (img && img.complete) {
-      ctx.drawImage(img, n.x, n.y, n.w, n.h);
+    if (img && img.complete && img.naturalWidth > 0) {
+      const f = n.filters ?? { brightness: 1, contrast: 1, saturate: 1, blur: 0 };
+      const parts: string[] = [];
+      if (f.brightness !== 1) parts.push(`brightness(${clampFilter(f.brightness, 0, 4)})`);
+      if (f.contrast !== 1) parts.push(`contrast(${clampFilter(f.contrast, 0, 4)})`);
+      if (f.saturate !== 1) parts.push(`saturate(${clampFilter(f.saturate, 0, 4)})`);
+      if (f.blur > 0) parts.push(`blur(${clampFilter(f.blur, 0, 80)}px)`);
+      if (parts.length) ctx.filter = parts.join(" ");
+      const crop = n.crop;
+      if (crop && crop.w > 0 && crop.h > 0) {
+        const sx = crop.x * img.naturalWidth;
+        const sy = crop.y * img.naturalHeight;
+        const sw = Math.max(1, crop.w * img.naturalWidth);
+        const sh = Math.max(1, crop.h * img.naturalHeight);
+        ctx.drawImage(img, sx, sy, sw, sh, n.x, n.y, n.w, n.h);
+      } else {
+        ctx.drawImage(img, n.x, n.y, n.w, n.h);
+      }
+      if (parts.length) ctx.filter = "none";
     } else {
       applyFill(ctx, "#1a201c", n.x, n.y, n.w, n.h);
       ctx.fillRect(n.x, n.y, n.w, n.h);
