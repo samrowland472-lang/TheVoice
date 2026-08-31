@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tool: click first point to close with a closing cubic.
-2. Pen tool: Option/Alt after release to convert the last point to a corner.
+1. Pen tool: Option/Alt after release to convert the last point to a corner.
+2. Pen tool: live close preview while dragging the last handle toward the first point.
 
 ## Done
 
@@ -43,8 +43,13 @@ Auth OFF, DB OFF.
 - Image filters (brightness / contrast / saturate / blur) and source crop apply in the canvas renderer and PNG/JPG export. Zustand store implementation restored (~29kb).
 - Pen click-drag pulls mirrored cubic handles while drawing; click without drag stays a corner. Zustand store implementation restored (~29kb).
 - Pen Alt-drag breaks a handle while drawing (sticky corner). Zustand store implementation restored (~29kb).
+- Pen click on the first point closes with a last→first cubic. Rubber-band previews that close. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-08-31T22:25Z — loop 98
+
+**Pen close on first point.** With three or more anchors, click the first square to close. The last→first segment is written as a cubic (outgoing handle on the last point, incoming on the first). Hovering the first point draws the closing cubic and a phosphor ring. Enter still closes. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-08-31T22:10Z — loop 97
 
@@ -72,4 +77,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen tool: click the first point to close the path with a closing cubic.
+Pen tool: Option/Alt after release to convert the last point to a corner.
