@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector tracking / leading use NumField drafts next to the sliders.
-2. Snap typed weight to the nearest 100 and show the committed value immediately.
+1. Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.
+2. Mixed-type tracking / leading sliders beside the draft fields.
 
 ## Done
 
@@ -32,8 +32,13 @@ Auth OFF, DB OFF.
 - NumField supports mixed placeholder (em dash) and blur / Enter / Escape.
 - Store types `booleanPreview` and `fit-sel` view intent; canvas fits the selection box.
 - Inspector type size / weight use NumField drafts on the single-select pane.
+- Inspector tracking / leading drafts sit beside the sliders; typed weight snaps to the nearest 100.
 
 ## Iterations
+
+### 2026-08-31T04:20Z — loop 87
+
+**Tracking / leading drafts.** Select one text layer: Tracking and Leading keep their sliders and gain a draft field. Type a value, Enter or click away to commit; Escape restores the live figure. Size and weight use the same draft pattern; typed weight snaps to the nearest hundred and the field shows that weight at once. Mixed selection weight drafts snap the same way.
 
 ### 2026-08-31T03:15Z — loop 86
 
@@ -49,4 +54,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector tracking / leading use NumField drafts next to the sliders.
+Inspector X/Y/W/H use NumField drafts so geometry does not commit mid-keystroke.

@@ -3,7 +3,6 @@ import { useDesign } from "@/lib/design/store";
 import type { Align, DesignNode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 
-const WEIGHTS = [400, 500, 600, 700, 800];
 const ALIGNS: Align[] = ["left", "center", "right"];
 
 function unique<T>(values: T[]): T[] {
@@ -109,27 +108,14 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
         </label>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">{mixedWeight ? "Weight · mixed" : "Weight"}</span>
-          <select
-            className="field"
-            aria-label={mixedWeight ? "type weight mixed" : "type weight"}
-            value={mixedWeight ? "" : String(first.fontWeight)}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              if (!Number.isFinite(n)) return;
-              patch({ fontWeight: n });
-            }}
-          >
-            {mixedWeight && (
-              <option value="" disabled>
-                Mixed
-              </option>
-            )}
-            {WEIGHTS.map((w) => (
-              <option key={w} value={w}>
-                {w}
-              </option>
-            ))}
-          </select>
+          <NumField
+            value={first.fontWeight}
+            mixed={mixedWeight}
+            min={400}
+            max={800}
+            aria-label="type weight"
+            onCommit={(n) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) })}
+          />
         </label>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">{mixedTracking ? "Tracking · mixed" : "Tracking"}</span>
