@@ -98,10 +98,24 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
           ))}
         </select>
       </label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block text-[11px] text-ink-dim">
-          <span className="mb-1 block">{mixedSize ? "Size · mixed" : "Size"}</span>
+      <label className="block text-[11px] text-ink-dim">
+        <span className="mb-1 block">
+          {mixedSize ? "Size · mixed" : `Size ${formatNum(first.fontSize)}`}
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            className="range-phosphor min-w-0 flex-1"
+            min={6}
+            max={400}
+            step={1}
+            aria-label={mixedSize ? "type size mixed" : "type size"}
+            value={first.fontSize}
+            onChange={(e) => patch({ fontSize: Number(e.target.value) }, false)}
+            onPointerUp={() => useDesign.getState().commit()}
+          />
           <NumField
+            className="field w-16 font-mono"
             value={first.fontSize}
             mixed={mixedSize}
             min={6}
@@ -109,10 +123,31 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             aria-label="type size"
             onCommit={(n) => patch({ fontSize: n })}
           />
-        </label>
-        <label className="block text-[11px] text-ink-dim">
-          <span className="mb-1 block">{mixedWeight ? "Weight · mixed" : "Weight"}</span>
+        </div>
+      </label>
+      <label className="mt-2 block text-[11px] text-ink-dim">
+        <span className="mb-1 block">
+          {mixedWeight ? "Weight · mixed" : `Weight ${formatNum(first.fontWeight)}`}
+        </span>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            className="range-phosphor min-w-0 flex-1"
+            min={400}
+            max={800}
+            step={100}
+            aria-label={mixedWeight ? "type weight mixed" : "type weight"}
+            value={first.fontWeight}
+            onChange={(e) =>
+              patch(
+                { fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) },
+                false,
+              )
+            }
+            onPointerUp={() => useDesign.getState().commit()}
+          />
           <NumField
+            className="field w-16 font-mono"
             value={first.fontWeight}
             mixed={mixedWeight}
             min={400}
@@ -120,8 +155,8 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             aria-label="type weight"
             onCommit={(n) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) })}
           />
-        </label>
-      </div>
+        </div>
+      </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
         <span className="mb-1 block">
           {mixedTracking ? "Tracking · mixed" : `Tracking ${formatNum(first.letterSpacing)}`}
