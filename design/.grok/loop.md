@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Single-select type size / weight / tracking / leading use NumField drafts (inspector-type still raw).
-2. Mixed-type family slider is N/A — next depth is inspector-type drafts + sliders for size/weight.
+1. Inspector opacity / radius / image filter sliders still commit live — draft fields where useful.
+2. Pen / path inspector depth (point list, close, smooth) as a dedicated pane.
 
 ## Done
 
@@ -37,8 +37,13 @@ Auth OFF, DB OFF.
 - Mixed-type tracking / leading sliders sit beside the draft fields; drag writes onto every selected text layer.
 - Inspector rotation / stroke width use NumField drafts; full Zustand store restored so the studio hydrates.
 - Mixed-type size / weight sliders sit beside the draft fields; drag writes onto every selected text layer. Zustand store restored (~29kb) so hydrate, history, and tools work.
+- Inspector type size / weight / tracking / leading use NumField drafts plus sliders on the single-select pane. Zustand store restored (~29kb) with hydrate, history, booleanPreview, and fit-sel.
 
 ## Iterations
+
+### 2026-08-31T07:31Z — loop 92
+
+**Single-select type drafts + store restore.** Select one text layer: Size, Weight, Tracking, and Leading keep their phosphor sliders and gain draft fields. Type a figure, Enter or click away to commit; Escape restores the live value. Weight snaps to the nearest 100. Restored the truncated Zustand store (~29kb) with `booleanPreview`, `pathEditHit`, and `fit-sel` so the studio hydrates again.
 
 ### 2026-08-31T07:15Z — loop 91
 
@@ -74,4 +79,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Single-select type size / weight / tracking / leading use NumField drafts in inspector-type (still raw number inputs).
+Inspector opacity / radius / image filter sliders still commit live — add NumField drafts where a typed figure is useful.
