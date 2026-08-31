@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen / path inspector depth (point list, close, smooth) as a dedicated pane.
-2. Apply image filters in the canvas renderer so inspector brightness / contrast / saturate / blur preview on the artboard.
+1. Apply image filters in the canvas renderer so inspector brightness / contrast / saturate / blur preview on the artboard.
+2. Pen tool: click-drag to pull cubic handles while drawing.
 
 ## Done
 
@@ -39,8 +39,13 @@ Auth OFF, DB OFF.
 - Mixed-type size / weight sliders sit beside the draft fields; drag writes onto every selected text layer. Zustand store restored (~29kb) so hydrate, history, and tools work.
 - Inspector type size / weight / tracking / leading use NumField drafts plus sliders on the single-select pane. Zustand store restored (~29kb) with hydrate, history, booleanPreview, and fit-sel.
 - Inspector opacity / corner radius / image filter use NumField drafts; missing ImageFields / hotspot / link row restored. Zustand store implementation restored (~29kb).
+- Path inspector pane: point list with X/Y drafts, close/open, smooth/corner, delete point. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-08-31T10:30Z — loop 94
+
+**Path inspector + store restore.** Select a pen path: Inspect grows a Path pane with a numbered point list. Type local X/Y and Enter to move an anchor; Smooth writes cubic handles, Corner clears them; Close/Open toggles the contour (needs three points). Click a point row to mark it active. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-08-31T08:20Z — loop 93
 
@@ -50,38 +55,6 @@ Auth OFF, DB OFF.
 
 **Single-select type drafts + store restore.** Select one text layer: Size, Weight, Tracking, and Leading keep their phosphor sliders and gain draft fields. Type a figure, Enter or click away to commit; Escape restores the live value. Weight snaps to the nearest 100. Restored the truncated Zustand store (~29kb) with `booleanPreview`, `pathEditHit`, and `fit-sel` so the studio hydrates again.
 
-### 2026-08-31T07:15Z — loop 91
-
-**Mixed size / weight sliders + store restore.** Shift-select two text layers: Size and Weight keep the draft field and gain a phosphor slider. Drag sets point size (6–400) or weight (400–800, snapped to 100) on every selected text layer; type a figure and Enter or click away to commit. Differing values still show Mixed and an em dash until you set one. Restored the truncated Zustand store (~29kb) with `booleanPreview`, `pathEditHit`, and `fit-sel` so the studio hydrates again.
-
-### 2026-08-31T06:10Z — loop 90
-
-**Rotation / stroke drafts + store restore.** Select a layer: Rotate keeps the slider and gains a draft field (−180 to 180). Type a degree, Enter or click away; Escape restores the live angle. Stroke width no longer commits on every keystroke. Restored the truncated Zustand store (~29kb) so hydrate, history, and tools work again.
-
-### 2026-08-31T05:25Z — loop 89
-
-**Mixed tracking / leading sliders.** Shift-select two text layers: Tracking and Leading now keep the draft field and gain a phosphor slider. Drag sets letter-spacing or line-height on every selected text layer; type a figure and Enter or click away to commit. Differing values still show Mixed and an em dash until you set one. Restored the truncated Zustand store so the studio hydrates again.
-
-### 2026-08-31T05:10Z — loop 88
-
-**Geometry drafts.** Select a layer and Inspect X, Y, W, H no longer commit on every keystroke. Type a figure, press Enter or click away; Escape restores the live value. Width and height clamp to 1 so a layer cannot collapse to zero while you type.
-
-### 2026-08-31T04:20Z — loop 87
-
-**Tracking / leading drafts.** Select one text layer: Tracking and Leading keep their sliders and gain a draft field. Type a value, Enter or click away to commit; Escape restores the live figure. Size and weight use the same draft pattern; typed weight snaps to the nearest hundred and the field shows that weight at once. Mixed selection weight drafts snap the same way.
-
-### 2026-08-31T03:15Z — loop 86
-
-**Single-select type drafts.** Select one text layer and Inspect size / weight no longer commit on every keystroke. Type a point size, press Enter or click away; Escape restores the live value. Weight is typed the same way and snaps to the nearest hundred on commit.
-
-### 2026-08-31T01:10Z — loop 85
-
-**Mixed type family, tracking, leading, align.** Shift-select two text layers and the Type pane now sets family, tracking, leading and paragraph align across the set. Differing values show Mixed or an em dash; Display / Body still apply the brand pairing to every selected text layer.
-
-### 2026-08-31T00:30Z — loop 84
-
-**Mixed type size and weight.** Shift-select two text layers and the inspector grows a Type pane. Differing sizes show an em dash; type a point size and Enter writes it onto every selected text layer. Weight does the same from the Mixed menu. Single-select copy still lives in Inspect.
-
 ## Next recommended
 
-Pen / path inspector depth — point list, close, and smooth as a dedicated pane. Apply image filters in the renderer so those drafts preview on the artboard.
+Apply image filters in the canvas renderer so inspector brightness / contrast / saturate / blur preview on the artboard.
