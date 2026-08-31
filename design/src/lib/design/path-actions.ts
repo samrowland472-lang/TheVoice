@@ -12,6 +12,7 @@ export function appendPenPoint(wx: number, wy: number): string | null {
   const sel = s.selection[0] ? doc.nodes.find((x) => x.id === s.selection[0]) : null;
   if (sel && isPath(sel) && !sel.closed) {
     const pt = { x: wx - sel.x, y: wy - sel.y, in: null, out: null, smooth: true };
+    s.commit();
     s.replaceNode(sel.id, { ...sel, points: [...sel.points, pt] }, false);
     return sel.id;
   }

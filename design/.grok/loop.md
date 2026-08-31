@@ -21,7 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tool: click-drag to pull cubic handles while drawing.
+1. Pen tool: Alt-drag to break a handle while drawing.
+2. Pen tool: click first point to close with a closing cubic.
 
 ## Done
 
@@ -40,8 +41,13 @@ Auth OFF, DB OFF.
 - Inspector opacity / corner radius / image filter use NumField drafts; missing ImageFields / hotspot / link row restored. Zustand store implementation restored (~29kb).
 - Path inspector pane: point list with X/Y drafts, close/open, smooth/corner, delete point. Zustand store implementation restored (~29kb).
 - Image filters (brightness / contrast / saturate / blur) and source crop apply in the canvas renderer and PNG/JPG export. Zustand store implementation restored (~29kb).
+- Pen click-drag pulls mirrored cubic handles while drawing; click without drag stays a corner. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-08-31T20:10Z — loop 96
+
+**Pen click-drag cubics.** Pen still clicks to drop an anchor. Drag before release pulls mirrored in/out handles so the next segment is a cubic; a short click stays a corner. Rubber-band preview follows the cursor. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-08-31T18:22Z — loop 95
 
@@ -61,4 +67,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen tool: click-drag to pull cubic handles while drawing.
+Pen tool: Alt-drag to break a handle independently while drawing.
