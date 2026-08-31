@@ -21,17 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed type family / tracking / leading / align when several text layers are selected.
-2. Inspector type size / weight use NumField drafts on the single-select pane.
+1. Inspector type size / weight use NumField drafts on the single-select pane.
 
 ## Done
 
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Mixed type size / weight when two or more text layers are selected.
+- Mixed type family / tracking / leading / align when two or more text layers are selected.
 - NumField supports mixed placeholder (em dash) and blur / Enter / Escape.
 - Store types `booleanPreview` and `fit-sel` view intent; canvas fits the selection box.
 
 ## Iterations
+
+### 2026-08-31T01:10Z — loop 85
+
+**Mixed type family, tracking, leading, align.** Shift-select two text layers and the Type pane now sets family, tracking, leading and paragraph align across the set. Differing values show Mixed or an em dash; Display / Body still apply the brand pairing to every selected text layer.
 
 ### 2026-08-31T00:30Z — loop 84
 
@@ -39,4 +43,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Mixed type family / tracking / leading / align when several text layers are selected.
+Inspector type size / weight use NumField drafts on the single-select pane.
