@@ -21,8 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Apply image filters in the canvas renderer so inspector brightness / contrast / saturate / blur preview on the artboard.
-2. Pen tool: click-drag to pull cubic handles while drawing.
+1. Pen tool: click-drag to pull cubic handles while drawing.
 
 ## Done
 
@@ -40,8 +39,13 @@ Auth OFF, DB OFF.
 - Inspector type size / weight / tracking / leading use NumField drafts plus sliders on the single-select pane. Zustand store restored (~29kb) with hydrate, history, booleanPreview, and fit-sel.
 - Inspector opacity / corner radius / image filter use NumField drafts; missing ImageFields / hotspot / link row restored. Zustand store implementation restored (~29kb).
 - Path inspector pane: point list with X/Y drafts, close/open, smooth/corner, delete point. Zustand store implementation restored (~29kb).
+- Image filters (brightness / contrast / saturate / blur) and source crop apply in the canvas renderer and PNG/JPG export. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-08-31T18:22Z — loop 95
+
+**Live image filters on the artboard.** Image layers now preview inspector brightness, contrast, saturate, and blur through the canvas `filter` pipeline. Normalized crop rectangles sample the source bitmap. PNG/JPG export uses the same renderer. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-08-31T10:30Z — loop 94
 
@@ -57,4 +61,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Apply image filters in the canvas renderer so inspector brightness / contrast / saturate / blur preview on the artboard.
+Pen tool: click-drag to pull cubic handles while drawing.
