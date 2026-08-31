@@ -180,7 +180,7 @@ export function CanvasStage() {
       drag.current = {
         id,
         hit,
-        keepSmooth: true,
+        keepSmooth: !e.altKey,
         mode: "pull",
         originX: d.x,
         originY: d.y,
@@ -228,8 +228,9 @@ export function CanvasStage() {
         if (dist < 3 / s.viewport.zoom) return;
         live.pulled = true;
       }
+      if (e.altKey) live.keepSmooth = false;
       const local = pathWorldToLocal(n, d.x, d.y);
-      editPathHit(live.id, live.hit, local.x, local.y, live.keepSmooth && !e.altKey);
+      editPathHit(live.id, live.hit, local.x, local.y, live.keepSmooth);
       return;
     }
     if (present || (s.tool !== "pen" && s.tool !== "select")) return;
@@ -265,7 +266,7 @@ export function CanvasStage() {
       <canvas ref={mainRef} className="absolute inset-0" />
       {tool === "pen" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Click add · drag cubic · ⌫ last · Enter close · Esc finish
+          Click add · drag cubic · Alt break · ⌫ last · Enter close · Esc finish
         </div>
       )}
     </div>
