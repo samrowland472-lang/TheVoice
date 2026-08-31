@@ -1,5 +1,5 @@
 import { applyPathEdit, type PathEditHit } from "./path-edit";
-import { autoSmoothPoint } from "./path-curve";
+import { autoSmoothPoint, closePathWithCubic } from "./path-curve";
 import { pathNode } from "./node-factory";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
@@ -69,7 +69,7 @@ export function setPathClosed(id: string, closed: boolean) {
   if (closed && n.points.length < 3) return;
   const s = useDesign.getState();
   s.commit();
-  s.replaceNode(id, { ...n, closed }, false);
+  s.replaceNode(id, closed ? closePathWithCubic(n) : { ...n, closed: false }, false);
 }
 
 export function setPathPointPosition(id: string, index: number, x: number, y: number, hole?: number) {
