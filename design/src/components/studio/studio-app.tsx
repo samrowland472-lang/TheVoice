@@ -62,6 +62,7 @@ export function StudioApp({ id }: { id: string }) {
       { id: "present", label: "Present artboard", group: "View", run: () => s().togglePresent() },
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
+      { id: "knife", label: "Knife — cut a path segment", group: "Tools", hint: "K", run: () => s().setTool("knife") },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
     ];
   }, [navigate]);
