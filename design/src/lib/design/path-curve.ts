@@ -4,6 +4,20 @@ export function hasHandle(h: { x: number; y: number } | null | undefined) {
   return Boolean(h && (Math.abs(h.x) > 0.2 || Math.abs(h.y) > 0.2));
 }
 
+/** Screen-pixel radius for pen snap-close to the first point. */
+export const PEN_CLOSE_SNAP_PX = 9;
+
+export function nearPenClose(
+  probeX: number,
+  probeY: number,
+  firstX: number,
+  firstY: number,
+  zoom: number,
+  px = PEN_CLOSE_SNAP_PX,
+) {
+  return Math.hypot(probeX - firstX, probeY - firstY) <= px / zoom;
+}
+
 export function tracePath(ctx: CanvasRenderingContext2D, ox: number, oy: number, pts: PathPoint[], closed: boolean) {
   if (!pts.length) return;
   ctx.moveTo(ox + pts[0]!.x, oy + pts[0]!.y);
