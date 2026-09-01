@@ -21,20 +21,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path boolean preview fidelity on holes after offset.
-2. Convert text outlines to editable paths.
+1. Convert text outlines to editable paths.
+2. Real polygon clipper for boolean union/intersect (hull is still an approximation).
 
 ## Done
 
+- Boolean preview keeps offset/outline holes: nested rings are not convex-hulled together; subtract punches the cutter and fills islands from cutter holes; windings oriented for evenodd.
+- Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 - Convert selected shape (rect, ellipse, line, polygon, star, arrow) to an editable path. Offset / outline auto-convert first. Inspector Path row + command palette.
 - Offset outlines fillet sharp corners, then Douglas–Peucker simplify. Inspector Offset row: Outline stroke, Round corners, Offset out/in, Simplify.
 - Outline stroke / offset path: selected contour becomes a new layer.
 - Knife: click a path segment to cut.
 - Pen: double-click a corner to auto-smooth; snap two open path ends together to join.
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
-- Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ## Iterations
+
+### 2026-09-01T10:21Z — loop 109
+
+**Boolean preview fidelity on holes after offset.** Nested offset rings no longer collapse into one hull. Subtract keeps cutter islands; union keeps surviving holes. Offset/outline orients hole winding opposite the outer. Restored the truncated Zustand store (~29kb).
 
 ### 2026-09-01T09:45Z — loop 108
 
@@ -50,4 +55,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Path boolean preview fidelity on holes after offset.
+Convert text outlines to editable paths.

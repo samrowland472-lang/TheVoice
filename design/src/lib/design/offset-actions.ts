@@ -1,9 +1,16 @@
+import { contourArea, orientContour } from "./boolean-ops";
 import { pathNode } from "./node-factory";
 import { offsetPolyline, outlineStroke, roundPolylineCorners, simplifyPolyline, toPathPoints } from "./path-offset";
 import { asEditablePath, isConvertibleShape, shapeToPathNode } from "./shape-to-path";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
+
+function withOrientedHoles(points: PathPoint[], holes?: PathPoint[][]): PathPoint[][] | undefined {
+  if (!holes?.length) return holes;
+  const outerPos = contourArea(points) >= 0;
+  return holes.map((h) => orientContour(h, !outerPos));
+}
 
 function selectedPath(convert = true): PathNode | null {
   const { doc, selection } = useDesign.getState();
@@ -62,7 +69,7 @@ export function outlineSelectedStroke(cornerRadius?: number): boolean {
       return inner ? [inner.points, ...(inner.hole ? [inner.hole] : [])] : [];
     }),
   ];
-  addOutlined(n, outlined.points, holes.length ? holes : undefined);
+  addOutlined(n, outlined.points, holes.length ? withOrientedHoles(outlined.points, holes) : undefined);
   return true;
 }
 
@@ -81,7 +88,8 @@ export function offsetSelectedPath(direction: "out" | "in", cornerRadius?: numbe
     rotation: n.rotation,
     points,
     closed: n.closed,
-    holes,
+    holes: withOrientedHoles(points, holes),
+    fillRule: holes?.length ? "evenodd" : n.fillRule,
     fill: "transparent",
     stroke: n.stroke === "transparent" ? "#3fc6ff" : n.stroke,
     strokeWidth: Math.max(1, n.strokeWidth || 2),
