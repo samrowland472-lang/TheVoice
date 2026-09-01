@@ -21,7 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tool: snap-close when the last outgoing handle crosses the first point during a pull (commit on release already ships; refine threshold / undo grouping).
+1. Pen: double-click a corner to auto-smooth, or snap two open path ends together to join.
 
 ## Done
 
@@ -44,9 +44,14 @@ Auth OFF, DB OFF.
 - Pen Alt-drag breaks a handle while drawing (sticky corner). Zustand store implementation restored (~29kb).
 - Pen click on the first point closes with a last\u2192first cubic. Rubber-band previews that close. Zustand store implementation restored (~29kb).
 - Pen Alt after release corners the last point (drops the outgoing handle). Zustand store implementation restored (~29kb).
-- Pen live close preview while dragging the last outgoing handle toward the first point. Release inside the snap ring closes with a last\u2192first cubic. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
+- Pen live close preview while dragging the last outgoing handle toward the first point. Release inside the snap ring closes with a last→first cubic. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
+- Pen snap-close uses a 9px ring shared with first-point click. Handle-drag then snap-close is one undo. Close writes last→first cubics. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-01T03:10Z — loop 101
+
+**Pen snap-close threshold + one undo.** Snap ring is 9 screen pixels (shared helper with first-point click). Releasing the last outgoing handle inside the ring closes with `closePathWithCubic` without a second history snapshot, so one Undo restores the open contour. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-09-01T01:40Z — loop 100
 
@@ -62,4 +67,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen tool: tighten snap-close threshold and group the handle-drag + close as one undo step.
+Pen: double-click a corner to auto-smooth, or snap two open path ends together to join.
