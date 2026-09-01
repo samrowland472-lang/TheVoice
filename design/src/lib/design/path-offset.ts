@@ -112,7 +112,7 @@ function offsetWithMiter(samples: Sample[], distance: number, miterLimit = 4): V
   return pts;
 }
 
-function simplifyPolyline(pts: Vec[], eps: number): Vec[] {
+export function simplifyPolyline(pts: Vec[], eps: number): Vec[] {
   if (pts.length < 3) return pts.slice();
   const keep = new Array(pts.length).fill(false);
   keep[0] = true;
@@ -152,7 +152,83 @@ export function toPathPoints(pts: Vec[]): PathPoint[] {
   return pts.map((p) => ({ x: p.x, y: p.y, in: null, out: null, smooth: false }));
 }
 
-export function offsetPolyline(pts: PathPoint[], closed: boolean, distance: number): PathPoint[] {
+/** Fillet sharp corners. Radius is clamped to half the shorter adjoining edge. */
+export function roundPolylineCorners(pts: Vec[], radius: number, closed: boolean): Vec[] {
+  if (pts.length < 3 || radius < 0.4) return pts.slice();
+  const n = pts.length;
+  const out: Vec[] = [];
+  const last = closed ? n : n - 1;
+  const first = closed ? 0 : 1;
+  if (!closed) out.push(pts[0]!);
+  for (let i = first; i < last; i++) {
+    const prev = pts[(i - 1 + n) % n]!;
+    const cur = pts[i]!;
+    const next = pts[(i + 1) % n]!;
+    const inDir = norm(sub(cur, prev));
+    const outDir = norm(sub(next, cur));
+    const inLen = len(sub(cur, prev));
+    const outLen = len(sub(next, cur));
+    if (len(inDir) < EPS || len(outDir) < EPS) {
+      out.push(cur);
+      continue;
+    }
+    const cross = inDir.x * outDir.y - inDir.y * outDir.x;
+    const dot = Math.max(-1, Math.min(1, inDir.x * outDir.x + inDir.y * outDir.y));
+    if (Math.abs(cross) < 0.04 && dot > 0) {
+      out.push(cur);
+      continue;
+    }
+    const turn = Math.acos(dot);
+    if (turn < 0.08) {
+      out.push(cur);
+      continue;
+    }
+    const maxPull = Math.min(inLen, outLen) * 0.48;
+    const pull = Math.min(radius, maxPull);
+    const start = add(cur, mul(inDir, -pull));
+    const end = add(cur, mul(outDir, pull));
+    const sign = cross >= 0 ? 1 : -1;
+    const nIn = mul(perpLeft(inDir), sign);
+    const nOut = mul(perpLeft(outDir), sign);
+    const joined = norm(add(nIn, nOut));
+    const filletR = pull / Math.max(EPS, Math.tan(turn / 2));
+    const c = add(cur, mul(joined, -filletR));
+    const a0 = Math.atan2(start.y - c.y, start.x - c.x);
+    const a1 = Math.atan2(end.y - c.y, end.x - c.x);
+    let delta = a1 - a0;
+    if (sign > 0) {
+      while (delta <= 0) delta += Math.PI * 2;
+      if (delta > Math.PI) delta -= Math.PI * 2;
+    } else {
+      while (delta >= 0) delta -= Math.PI * 2;
+      if (delta < -Math.PI) delta += Math.PI * 2;
+    }
+    const steps = Math.max(3, Math.min(10, Math.ceil((Math.abs(delta) * Math.max(4, filletR)) / 12)));
+    out.push(start);
+    const rr = len(sub(start, c)) || filletR;
+    for (let s = 1; s < steps; s++) {
+      const a = a0 + (delta * s) / steps;
+      out.push({ x: c.x + Math.cos(a) * rr, y: c.y + Math.sin(a) * rr });
+    }
+    out.push(end);
+  }
+  if (!closed) out.push(pts[n - 1]!);
+  return out;
+}
+
+function finishOffset(raw: Vec[], closed: boolean, distance: number, radius?: number): Vec[] {
+  const r = radius ?? Math.abs(distance);
+  const rounded = roundPolylineCorners(raw, r, closed);
+  const simple = simplifyPolyline(rounded, Math.max(0.75, Math.abs(distance) * 0.12));
+  return simple.length >= 2 ? simple : raw;
+}
+
+export function offsetPolyline(
+  pts: PathPoint[],
+  closed: boolean,
+  distance: number,
+  cornerRadius?: number,
+): PathPoint[] {
   if (Math.abs(distance) < 0.25 || pts.length < 2) return clonePts(pts);
   const samples = sampleContour(pts, closed);
   if (samples.length < 2) return clonePts(pts);
@@ -164,7 +240,7 @@ export function offsetPolyline(pts: PathPoint[], closed: boolean, distance: numb
       raw = raw.slice().reverse();
     }
   }
-  const simple = simplifyPolyline(raw, Math.max(0.6, Math.abs(distance) * 0.08));
+  const simple = finishOffset(raw, closed, distance, cornerRadius);
   if (simple.length < 2) return clonePts(pts);
   return toPathPoints(simple);
 }
@@ -191,7 +267,12 @@ export interface StrokeOutline {
 }
 
 /** Expand a stroke into a filled contour. Closed paths keep the original as a hole. */
-export function outlineStroke(pts: PathPoint[], closed: boolean, strokeWidth: number): StrokeOutline | null {
+export function outlineStroke(
+  pts: PathPoint[],
+  closed: boolean,
+  strokeWidth: number,
+  cornerRadius?: number,
+): StrokeOutline | null {
   const half = Math.max(0.5, strokeWidth / 2);
   if (pts.length < 2) return null;
   const samples = sampleContour(pts, closed);
@@ -201,8 +282,8 @@ export function outlineStroke(pts: PathPoint[], closed: boolean, strokeWidth: nu
   if (closed) {
     const outerCand = Math.abs(signedArea(left)) >= Math.abs(signedArea(right)) ? left : right;
     const innerCand = outerCand === left ? right : left;
-    const outer = simplifyPolyline(outerCand, Math.max(0.6, half * 0.08));
-    const inner = simplifyPolyline(innerCand, Math.max(0.6, half * 0.08));
+    const outer = finishOffset(outerCand, true, half, cornerRadius);
+    const inner = finishOffset(innerCand, true, half, cornerRadius);
     if (outer.length < 3) return null;
     const hole =
       inner.length >= 3 && Math.abs(signedArea(inner)) > 4
@@ -222,7 +303,7 @@ export function outlineStroke(pts: PathPoint[], closed: boolean, strokeWidth: nu
     ...right.slice().reverse(),
     ...capArc(start.p, r0, l0),
   ];
-  const simple = simplifyPolyline(ring, Math.max(0.6, half * 0.08));
+  const simple = finishOffset(ring, true, half, cornerRadius);
   if (simple.length < 3) return null;
   return { points: toPathPoints(simple), hole: null, closed: true };
 }
