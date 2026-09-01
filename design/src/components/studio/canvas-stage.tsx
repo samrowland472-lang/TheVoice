@@ -82,13 +82,65 @@ export function CanvasStage() {
     }
     if (!present && tool === "pen" && selected && isPath(selected) && !selected.closed && selected.points.length) {
       const last = selected.points[selected.points.length - 1]!;
+      const first = selected.points[0]!;
       const hover = hoverRef.current;
-      if (hover && !drag.current) {
+      const live = drag.current;
+      const closeThresh = 14 / viewport.zoom;
+      const fx = selected.x + first.x;
+      const fy = selected.y + first.y;
+      const lx = selected.x + last.x;
+      const ly = selected.y + last.y;
+      const pullingLastOut =
+        Boolean(live) &&
+        live!.id === selected.id &&
+        live!.hit.arm === "out" &&
+        live!.hit.index === selected.points.length - 1 &&
+        live!.hit.hole == null;
+      const probe = pullingLastOut && last.out
+        ? { x: lx + last.out.x, y: ly + last.out.y }
+        : hover;
+      const nearFirst =
+        selected.points.length >= 3 &&
+        probe != null &&
+        Math.hypot(probe.x - fx, probe.y - fy) <= closeThresh;
+      if (nearFirst) {
+        const c1x = hasHandle(last.out) && last.out ? lx + last.out.x : lx;
+        const c1y = hasHandle(last.out) && last.out ? ly + last.out.y : ly;
+        let c2x = fx;
+        let c2y = fy;
+        if (hasHandle(first.in) && first.in) {
+          c2x = fx + first.in.x;
+          c2y = fy + first.in.y;
+        } else if (hasHandle(first.out) && first.out) {
+          c2x = fx - first.out.x;
+          c2y = fy - first.out.y;
+        } else {
+          c2x = fx + (lx - fx) / 3;
+          c2y = fy + (ly - fy) / 3;
+        }
         ctx.beginPath();
-        ctx.moveTo(selected.x + last.x, selected.y + last.y);
+        ctx.moveTo(lx, ly);
+        ctx.bezierCurveTo(c1x, c1y, c2x, c2y, fx, fy);
+        ctx.strokeStyle = "rgba(126,224,255,0.95)";
+        ctx.lineWidth = 1.6 / viewport.zoom;
+        ctx.setLineDash([5 / viewport.zoom, 4 / viewport.zoom]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.arc(fx, fy, 10 / viewport.zoom, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(63,198,255,0.95)";
+        ctx.lineWidth = 1.8 / viewport.zoom;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(fx, fy, 3.5 / viewport.zoom, 0, Math.PI * 2);
+        ctx.fillStyle = "#3fc6ff";
+        ctx.fill();
+      } else if (hover && !live) {
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
         if (hasHandle(last.out) && last.out) {
-          const c1x = selected.x + last.x + last.out.x;
-          const c1y = selected.y + last.y + last.out.y;
+          const c1x = lx + last.out.x;
+          const c1y = ly + last.out.y;
           ctx.bezierCurveTo(c1x, c1y, hover.x, hover.y, hover.x, hover.y);
         } else {
           ctx.lineTo(hover.x, hover.y);
@@ -244,7 +296,31 @@ export function CanvasStage() {
   }
 
   function onPointerUp(e: React.PointerEvent) {
-    if (drag.current) {
+    const live = drag.current;
+    if (live) {
+      const s = useDesign.getState();
+      const n = s.doc?.nodes.find((x) => x.id === live.id);
+      if (
+        s.tool === "pen" &&
+        n &&
+        isPath(n) &&
+        !n.closed &&
+        n.points.length >= 3 &&
+        live.hit.arm === "out" &&
+        live.hit.index === n.points.length - 1 &&
+        live.hit.hole == null
+      ) {
+        const first = n.points[0]!;
+        const last = n.points[n.points.length - 1]!;
+        const fx = n.x + first.x;
+        const fy = n.y + first.y;
+        const probe = last.out
+          ? { x: n.x + last.x + last.out.x, y: n.y + last.y + last.out.y }
+          : clientDoc(e);
+        if (Math.hypot(probe.x - fx, probe.y - fy) <= 14 / s.viewport.zoom) {
+          s.closeSelectedPath();
+        }
+      }
       drag.current = null;
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -266,7 +342,7 @@ export function CanvasStage() {
       <canvas ref={mainRef} className="absolute inset-0" />
       {tool === "pen" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Click add · drag cubic · Alt break · Alt after drop corners last · ⌫ last · Enter close · Esc finish
+          Click add · drag cubic · pull last handle to first to preview close · Alt break · ⌫ last · Enter close · Esc finish
         </div>
       )}
     </div>
