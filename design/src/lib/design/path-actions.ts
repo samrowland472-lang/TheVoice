@@ -1,5 +1,6 @@
 import { applyPathEdit, type PathEditHit } from "./path-edit";
 import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
+import { cutContour, hitPathSegment } from "./path-cut";
 import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
 import { pathNode } from "./node-factory";
 import { useDesign } from "./store";
@@ -160,6 +161,47 @@ export function joinSelectedPathToNearest(wx: number, wy: number, zoom: number):
     arm: "anchor",
   });
   return true;
+}
+
+/** Cut the nearest path contour under the knife at (wx, wy). */
+export function knifeCutAt(wx: number, wy: number, zoom: number): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc) return false;
+  const paths = doc.nodes.filter(isPath).filter((n) => n.visible && !n.locked && n.points.length >= 2);
+  const preferred = s.selection[0] ? paths.find((n) => n.id === s.selection[0]) : undefined;
+  const order = preferred ? [preferred, ...paths.filter((n) => n.id !== preferred.id)] : paths;
+  for (const n of order) {
+    const hit = hitPathSegment(n.points, n.closed, wx - n.x, wy - n.y, zoom);
+    if (!hit) continue;
+    const cut = cutContour(n.points, n.closed, hit);
+    s.commit();
+    s.replaceNode(n.id, { ...n, points: cut.keep, closed: cut.closed }, false);
+    if (cut.extra && cut.extra.length >= 2) {
+      const extra = pathNode({
+        x: n.x,
+        y: n.y,
+        w: n.w,
+        h: n.h,
+        points: cut.extra,
+        closed: false,
+        fill: n.fill,
+        stroke: n.stroke,
+        strokeWidth: n.strokeWidth,
+        opacity: n.opacity,
+        blend: n.blend,
+        rotation: n.rotation,
+      });
+      extra.name = n.name;
+      s.addNode(extra, false);
+      s.select([n.id, extra.id]);
+    } else {
+      s.select([n.id]);
+    }
+    setPathEditHit({ index: Math.min(cut.cutIndex, Math.max(0, cut.keep.length - 1)), arm: "anchor" });
+    return true;
+  }
+  return false;
 }
 
 export function deletePathPoint(id: string, index: number, hole?: number) {
