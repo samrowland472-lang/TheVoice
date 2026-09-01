@@ -21,24 +21,26 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path offset / outline stroke as a new contour.
+1. Path simplify / corner radius on offset outlines.
+2. Convert selected shape to editable path before offset.
 
 ## Done
 
-- Knife: click a path segment to cut. Closed contours open at the nick; open paths split into two layers. Phosphor crosshair preview. `K` selects the tool. Zustand store implementation restored (~29kb).
-- Pen: double-click a corner to auto-smooth; snap two open path ends together to join (9px ring). Zustand store implementation restored (~29kb).
+- Outline stroke / offset path: selected contour becomes a new layer. Closed strokes fill with an even-odd hole; open strokes cap into a closed outline. Inspector + command palette. Zustand store restored (~29kb).
+- Knife: click a path segment to cut. Closed contours open at the nick; open paths split into two layers. Phosphor crosshair preview. `K` selects the tool.
+- Pen: double-click a corner to auto-smooth; snap two open path ends together to join (9px ring).
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 
 ## Iterations
+
+### 2026-09-01T08:20Z — loop 106
+
+**Outline stroke as a new contour.** Select a path, then Outline stroke / Offset out / Offset in in the inspector (or the command palette). Stroke width drives the distance. Closed paths keep a hole so the outline is a filled ring; open paths get round caps. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-09-01T07:35Z — loop 105
 
 **Knife lives on the artboard.** The scissors tool now cuts on pointer-down: hover draws a phosphor nick and slash; click runs `knifeCutAt` (rotated local space). Closed paths open; open paths split into two layers. Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
-### 2026-09-01T07:20Z — loop 104
-
-**Knife cut on a clicked segment.** `K` or the scissors tool. Hover a path to see a phosphor nick; click splits the contour (`cutContour` / de Casteljau). Closed paths open at the cut; open paths become two layers. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
-
 ## Next recommended
 
-Path offset / outline stroke as a new contour.
+Path simplify / corner radius on offset outlines.
