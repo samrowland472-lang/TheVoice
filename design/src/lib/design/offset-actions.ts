@@ -3,8 +3,9 @@ import { pathNode } from "./node-factory";
 import { offsetPolyline, outlineStroke, roundPolylineCorners, simplifyPolyline, toPathPoints } from "./path-offset";
 import { asEditablePath, isConvertibleShape, shapeToPathNode } from "./shape-to-path";
 import { useDesign } from "./store";
+import { textNodeToPathNodes } from "./text-to-path";
 import type { PathNode, PathPoint } from "./types";
-import { isPath } from "./types";
+import { isPath, isText } from "./types";
 
 function withOrientedHoles(points: PathPoint[], holes?: PathPoint[][]): PathPoint[][] | undefined {
   if (!holes?.length) return holes;
@@ -18,6 +19,7 @@ function selectedPath(convert = true): PathNode | null {
   const n = doc.nodes.find((x) => x.id === selection[0]);
   if (!n) return null;
   if (isPath(n)) return n;
+  if (convert && isText(n)) return convertSelectedTextToPath() ?? null;
   if (convert && isConvertibleShape(n)) return convertSelectedShapeToPath() ?? asEditablePath(n);
   return null;
 }
@@ -33,6 +35,29 @@ export function convertSelectedShapeToPath(): PathNode | null {
   s.commit();
   s.replaceNode(n.id, path, false);
   return path;
+}
+
+/** Replace selected type with editable outline paths (counters become holes). */
+export function convertSelectedTextToPath(): PathNode | null {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc || !s.selection.length) return null;
+  const n = doc.nodes.find((x) => x.id === s.selection[0]);
+  if (!n || !isText(n) || !n.text.trim()) return null;
+  const paths = textNodeToPathNodes(n);
+  if (!paths.length) return null;
+  const [first, ...rest] = paths;
+  first.id = n.id;
+  s.commit();
+  s.replaceNode(n.id, first, false);
+  const ids = [n.id];
+  for (const extra of rest) {
+    extra.name = n.name;
+    s.addNode(extra, false);
+    ids.push(extra.id);
+  }
+  s.select(ids);
+  return first;
 }
 
 function addOutlined(n: PathNode, points: PathPoint[], holes?: PathPoint[][]) {
