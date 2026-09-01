@@ -1,7 +1,7 @@
 import { pathNode } from "./node-factory";
 import { nodeCenter, rotatePoint } from "./geometry";
 import { hasHandle } from "./path-curve";
-import { clipMany, type ClipOp } from "./polygon-clip";
+import { clipMany, groupIslands, type ClipOp } from "./polygon-clip";
 import type { DesignNode, PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
 
@@ -195,17 +195,25 @@ export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | n
   if (usable.length < 2) return null;
   const groups = usable.map((n) => nodeToWorldContours(n)).filter((g) => g.length && g[0]!.length >= 3);
   if (groups.length < 2) return null;
+  const parts = composeBooleanParts(usable, groups, op);
+  return parts[0] ?? null;
+}
+
+export function composeBooleanParts(
+  usable: DesignNode[],
+  groups: Contour[][],
+  op: BooleanOp,
+): PathNode[] {
   const first = usable[0]!;
   const clipped = clipMany(groups, op as ClipOp);
-  if (!clipped.length) return null;
-  const ranked = clipped
-    .map((c) => ({ c, area: Math.abs(contourArea(c)) }))
-    .filter((x) => x.area > 0.5)
-    .sort((a, b) => b.area - a.area);
-  if (!ranked.length) return null;
-  const outer = ranked[0]!.c;
-  const holes = ranked.slice(1).map((x) => x.c);
-  const fillRule: PathNode["fillRule"] = "evenodd";
+  if (!clipped.length) return [];
+  const islands = groupIslands(clipped);
+  if (!islands.length) return [];
+  const label = op === "union" ? "Union" : op === "subtract" ? "Subtract" : op === "intersect" ? "Intersect" : "Exclude";
+  return islands.map((island, i) => ringToPath(first, island.outer, island.holes, i === 0 ? label : `${label} ${i + 1}`, i === 0 ? first.id : undefined));
+}
+
+function ringToPath(first: DesignNode, outer: Contour, holes: Contour[], name: string, id?: string): PathNode {
   const allPts = [outer, ...holes].flat();
   const minX = Math.min(...allPts.map((p) => p.x));
   const minY = Math.min(...allPts.map((p) => p.y));
@@ -217,8 +225,8 @@ export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | n
   const outerRel = rel(outer);
   const outerCw = contourArea(outerRel) < 0;
   return pathNode({
-    id: first.id,
-    name: op === "union" ? "Union" : op === "subtract" ? "Subtract" : op === "intersect" ? "Intersect" : "Exclude",
+    ...(id ? { id } : {}),
+    name,
     x: ox,
     y: oy,
     w: Math.max(1, maxX - ox),
@@ -236,10 +244,18 @@ export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | n
     points: outerRel,
     holes: holes.map((h) => orientContour(rel(h), !outerCw)),
     closed: true,
-    fillRule,
+    fillRule: "evenodd",
   });
 }
 
 export function computeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | null {
   return composeBoolean(nodes, op);
+}
+
+export function computeBooleanParts(nodes: DesignNode[], op: BooleanOp): PathNode[] {
+  const usable = booleanableOf(nodes);
+  if (usable.length < 2) return [];
+  const groups = usable.map((n) => nodeToWorldContours(n)).filter((g) => g.length && g[0]!.length >= 3);
+  if (groups.length < 2) return [];
+  return composeBooleanParts(usable, groups, op);
 }
