@@ -3,9 +3,18 @@ import type { PathPoint } from "./types";
 export type Ring = PathPoint[];
 
 const EPS = 1e-7;
+const GRID = 1e-4;
+
+function snap(n: number) {
+  return Math.round(n / GRID) * GRID;
+}
+
+function snapPt(p: PathPoint): PathPoint {
+  return { x: snap(p.x), y: snap(p.y) };
+}
 
 function almost(a: number, b: number) {
-  return Math.abs(a - b) <= EPS;
+  return Math.abs(a - b) <= GRID * 2;
 }
 
 export function ringArea(pts: PathPoint[]): number {
@@ -52,6 +61,22 @@ function onSeg(ax: number, ay: number, bx: number, by: number, px: number, py: n
   return Math.abs(cross) <= 1e-4;
 }
 
+function collinearOverlapParams(a: PathPoint, b: PathPoint, c: PathPoint, d: PathPoint): number[] {
+  const rX = b.x - a.x;
+  const rY = b.y - a.y;
+  const sX = d.x - c.x;
+  const sY = d.y - c.y;
+  const den = rX * sY - rY * sX;
+  if (Math.abs(den) > 1e-6) return [];
+  if (!onSeg(a.x, a.y, b.x, b.y, c.x, c.y) && !onSeg(a.x, a.y, b.x, b.y, d.x, d.y) && !onSeg(c.x, c.y, d.x, d.y, a.x, a.y)) {
+    return [];
+  }
+  const ts: number[] = [];
+  if (onSeg(a.x, a.y, b.x, b.y, c.x, c.y)) ts.push(paramOn(a, b, c));
+  if (onSeg(a.x, a.y, b.x, b.y, d.x, d.y)) ts.push(paramOn(a, b, d));
+  return ts;
+}
+
 function segIntersect(a: PathPoint, b: PathPoint, c: PathPoint, d: PathPoint): PathPoint | null {
   const rX = b.x - a.x;
   const rY = b.y - a.y;
@@ -62,7 +87,7 @@ function segIntersect(a: PathPoint, b: PathPoint, c: PathPoint, d: PathPoint): P
   const t = ((c.x - a.x) * sY - (c.y - a.y) * sX) / den;
   const u = ((c.x - a.x) * rY - (c.y - a.y) * rX) / den;
   if (t < -EPS || t > 1 + EPS || u < -EPS || u > 1 + EPS) return null;
-  return { x: a.x + t * rX, y: a.y + t * rY };
+  return snapPt({ x: a.x + t * rX, y: a.y + t * rY });
 }
 
 type SplitPt = { x: number; y: number; t: number };
@@ -92,29 +117,32 @@ function dedupeRing(ring: Ring): Ring {
 
 function splitRing(ring: Ring, cutters: Ring[]): Ring {
   const n = ring.length;
-  if (n < 2) return ring;
+  if (n < 2) return ring.map(snapPt);
   const out: PathPoint[] = [];
   for (let i = 0; i < n; i++) {
-    const a = ring[i]!;
-    const b = ring[(i + 1) % n]!;
+    const a = snapPt(ring[i]!);
+    const b = snapPt(ring[(i + 1) % n]!);
     const extras: SplitPt[] = [];
     for (const other of cutters) {
       const m = other.length;
       for (let k = 0; k < m; k++) {
-        const c = other[k]!;
-        const d = other[(k + 1) % m]!;
+        const c = snapPt(other[k]!);
+        const d = snapPt(other[(k + 1) % m]!);
         const hit = segIntersect(a, b, c, d);
         if (hit) extras.push({ x: hit.x, y: hit.y, t: paramOn(a, b, hit) });
+        for (const t of collinearOverlapParams(a, b, c, d)) {
+          extras.push({ x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y), t });
+        }
         if (onSeg(a.x, a.y, b.x, b.y, c.x, c.y)) extras.push({ x: c.x, y: c.y, t: paramOn(a, b, c) });
       }
     }
     extras.sort((p, q) => p.t - q.t);
-    out.push({ x: a.x, y: a.y });
+    out.push(a);
     let lastT = 0;
     for (const e of extras) {
       if (e.t < 1e-5 || e.t > 1 - 1e-5) continue;
       if (e.t - lastT < 1e-5) continue;
-      out.push({ x: e.x, y: e.y });
+      out.push(snapPt({ x: e.x, y: e.y }));
       lastT = e.t;
     }
   }
@@ -172,8 +200,34 @@ function fragmentsOf(rings: Ring[], other: Ring[], fromA: boolean, op: ClipOp): 
   return frags;
 }
 
+function collapseColinear(ring: Ring): Ring {
+  if (ring.length < 4) return ring;
+  const out: PathPoint[] = [];
+  const n = ring.length;
+  for (let i = 0; i < n; i++) {
+    const prev = ring[(i + n - 1) % n]!;
+    const cur = ring[i]!;
+    const next = ring[(i + 1) % n]!;
+    const ax = cur.x - prev.x;
+    const ay = cur.y - prev.y;
+    const bx = next.x - cur.x;
+    const by = next.y - cur.y;
+    const cross = ax * by - ay * bx;
+    if (Math.abs(cross) <= 1e-3 && ax * bx + ay * by > 0) continue;
+    out.push(cur);
+  }
+  return out.length >= 3 ? out : ring;
+}
+
 function chainFrags(frags: Frag[]): Ring[] {
-  const unused = frags.filter((f) => Math.hypot(f.bx - f.ax, f.by - f.ay) > 1e-4);
+  const unused = frags
+    .map((f) => ({
+      ax: snap(f.ax),
+      ay: snap(f.ay),
+      bx: snap(f.bx),
+      by: snap(f.by),
+    }))
+    .filter((f) => Math.hypot(f.bx - f.ax, f.by - f.ay) > GRID * 4);
   const rings: Ring[] = [];
   while (unused.length) {
     const start = unused.pop()!;
@@ -220,15 +274,23 @@ function chainFrags(frags: Frag[]): Ring[] {
       if (!f) break;
       ring.push(rev ? { x: f.ax, y: f.ay } : { x: f.bx, y: f.by });
     }
-    const clean = dedupeRing(ring);
+    const clean = collapseColinear(dedupeRing(ring));
     if (clean.length >= 3 && Math.abs(ringArea(clean)) > 0.5) rings.push(clean);
   }
   return rings;
 }
 
+function capRing(ring: Ring, max = 480): Ring {
+  if (ring.length <= max) return ring.map(snapPt);
+  const step = ring.length / max;
+  const out: PathPoint[] = [];
+  for (let i = 0; i < max; i++) out.push(snapPt(ring[Math.floor(i * step)]!));
+  return dedupeRing(out);
+}
+
 export function clipRings(subject: Ring[], clip: Ring[], op: ClipOp): Ring[] {
-  const sub = subject.filter((r) => r.length >= 3);
-  const clp = clip.filter((r) => r.length >= 3);
+  const sub = subject.filter((r) => r.length >= 3).map((r) => capRing(r));
+  const clp = clip.filter((r) => r.length >= 3).map((r) => capRing(r));
   if (!sub.length) return [];
   if (!clp.length) return op === "subtract" || op === "union" || op === "exclude" ? sub : [];
   const subSplit = sub.map((r) => splitRing(r, clp));
