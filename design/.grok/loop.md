@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen join preview ring when two open ends are within the snap distance.
-2. Knife / cut path at a clicked segment.
+1. Knife / cut path at a clicked segment.
+2. Path offset / outline stroke as a new contour.
 
 ## Done
 
@@ -48,8 +48,13 @@ Auth OFF, DB OFF.
 - Pen Alt after release corners the last point (drops the outgoing handle). Zustand store implementation restored (~29kb).
 - Pen live close preview while dragging the last outgoing handle toward the first point. Release inside the snap ring closes with a last→first cubic. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 - Pen snap-close uses a 9px ring shared with first-point click. Handle-drag then snap-close is one undo. Close writes last→first cubics. Zustand store implementation restored (~29kb).
+- Pen join preview: two open ends within 9px draw phosphor rings and a dashed stitch; releasing an end anchor joins or closes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-01T04:10Z — loop 103
+
+**Pen join preview ring.** Hovering or dragging near two open path ends (same or other contour) draws 9px phosphor rings and a dashed stitch. Releasing an end-point anchor inside the ring joins them (`joinSelectedPathToNearest`) or closes a 3+ point contour. Snap-close and first-point click share `PEN_SNAP_PX`. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-09-01T03:30Z — loop 102
 
@@ -73,4 +78,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen join preview ring when two open ends are within the snap distance.
+Knife / cut path at a clicked segment.

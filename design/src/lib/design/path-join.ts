@@ -59,6 +59,27 @@ export function joinOpenPathNodes(keep: PathNode, keepEnd: PathEnd, other: PathN
   return { ...keep, points: [...a.slice(0, -1), joined, ...b.slice(1)], closed: false };
 }
 
+export type JoinPair = {
+  from: { node: PathNode; end: PathEnd };
+  to: { node: PathNode; end: PathEnd };
+};
+
+/** Two open ends within snap distance of a world point. */
+export function findJoinPair(
+  nodes: PathNode[],
+  wx: number,
+  wy: number,
+  thresh: number,
+): JoinPair | null {
+  const open = nodes.filter((n) => !n.closed && n.points.length >= 1);
+  const from = nearestOpenPathEnd(open, wx, wy, thresh);
+  if (!from) return null;
+  const to = nearestOpenPathEnd(open, wx, wy, thresh, { id: from.node.id, end: from.end });
+  if (!to) return null;
+  if (from.node.id === to.node.id && from.node.points.length < 3) return null;
+  return { from: { node: from.node, end: from.end }, to: { node: to.node, end: to.end } };
+}
+
 export function nearestOpenPathEnd(
   nodes: PathNode[],
   wx: number,
