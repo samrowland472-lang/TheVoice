@@ -177,8 +177,25 @@ export function cutContour(pts: PathPoint[], closed: boolean, hit: SegmentHit): 
   return { keep: left, extra: right.length >= 2 ? right : null, closed: false, cutIndex };
 }
 
+export interface CompoundHit {
+  hole: number | null;
+  hit: SegmentHit;
+}
+
+/** Closest segment on the outer or any hole of a compound path. */
+export function hitCompoundSegment(n: PathNode, lx: number, ly: number, zoom: number): CompoundHit | null {
+  let best: CompoundHit | null = null;
+  const outer = hitPathSegment(n.points, n.closed, lx, ly, zoom);
+  if (outer) best = { hole: null, hit: outer };
+  (n.holes ?? []).forEach((ring, i) => {
+    const h = hitPathSegment(ring, true, lx, ly, zoom);
+    if (h && (!best || h.dist < best.hit.dist)) best = { hole: i, hit: h };
+  });
+  return best;
+}
+
 export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: number): { x: number; y: number } | null {
-  const hit = hitPathSegment(n.points, n.closed, lx, ly, zoom);
-  if (!hit) return null;
-  return { x: n.x + hit.local.x, y: n.y + hit.local.y };
+  const found = hitCompoundSegment(n, lx, ly, zoom);
+  if (!found) return null;
+  return { x: n.x + found.hit.local.x, y: n.y + found.hit.local.y };
 }
