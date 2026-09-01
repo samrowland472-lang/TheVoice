@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean clipper robustness on self-overlapping / high-vertex traces and shared edges.
-2. Knife through boolean compounds and live boolean of more than two selections with a progress preview.
+1. Knife through boolean compounds and live boolean of more than two selections with a progress preview.
+2. Self-overlapping figure-eight traces still need a winding pass before clip.
 
 ## Done
 
+- Clipper snaps vertices, splits collinear shared edges, caps high-vertex rings, and drops colinear slivers so abutting squares union cleanly.
 - Real polygon clipper for union / subtract / intersect / exclude (edge split + fragment classify + chain). Overlapping squares yield an 8-vertex union and a true L subtract instead of a convex hull. Zustand store restored (~27kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Convert type to editable paths. Inspector Path row + command palette. Counters become holes. Multi-letter copy becomes one path per island. Offset / outline auto-converts type first.
 - Boolean union no longer treats other solids as holes; nested offset rings stay nested (containment is not hulled). Hole windings opposite the outer.
@@ -41,6 +42,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-01T22:15Z — loop 114
+
+**Boolean clipper robustness.** Shared / collinear edges now split at both endpoints instead of being skipped as parallel misses. Vertices snap to a 0.0001 grid so chain-matching does not drop rings. High-vertex traces cap at 480 points. Colinear mid-vertices collapse after chain. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
+
 ### 2026-09-01T20:45Z — loop 113
 
 **Boolean islands as layers.** Union/exclude of disjoint or multi-body results no longer packs sibling contours into one evenodd path. Each island is its own path layer; nested rings remain holes. Restored the truncated Zustand store so hydrate, history, and boolean apply work.
@@ -55,4 +60,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Boolean clipper robustness on self-overlapping traces and shared edges.
+Knife through boolean compounds; live boolean of more than two selections.
