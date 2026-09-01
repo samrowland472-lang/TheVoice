@@ -1,6 +1,7 @@
 import { pathNode } from "./node-factory";
 import { nodeCenter, rotatePoint } from "./geometry";
 import { hasHandle } from "./path-curve";
+import { clipMany, type ClipOp } from "./polygon-clip";
 import type { DesignNode, PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
 
@@ -169,49 +170,6 @@ export function nodeToWorldContours(n: DesignNode): Contour[] {
   return [mapContour(n, local)];
 }
 
-function contourBox(c: Contour) {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const p of c) {
-    minX = Math.min(minX, p.x);
-    minY = Math.min(minY, p.y);
-    maxX = Math.max(maxX, p.x);
-    maxY = Math.max(maxY, p.y);
-  }
-  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-}
-
-function boxesOverlap(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-
-function boxContains(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) {
-  return b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h;
-}
-
-function contourInsideBox(c: Contour, box: { x: number; y: number; w: number; h: number }) {
-  return c.length > 0 && boxContains(box, contourBox(c));
-}
-
-function convexHull(pts: PathPoint[]): Contour {
-  const unique = pts.slice().sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
-  if (unique.length < 3) return unique;
-  const cross = (o: PathPoint, a: PathPoint, b: PathPoint) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-  const lower: PathPoint[] = [];
-  for (const p of unique) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
-    lower.push(p);
-  }
-  const upper: PathPoint[] = [];
-  for (let i = unique.length - 1; i >= 0; i--) {
-    const p = unique[i]!;
-    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
-    upper.push(p);
-  }
-  lower.pop();
-  upper.pop();
-  return [...lower, ...upper];
-}
-
 export function contourArea(pts: PathPoint[]): number {
   let a = 0;
   const n = pts.length;
@@ -232,63 +190,22 @@ export function orientContour(pts: PathPoint[], clockwise: boolean): PathPoint[]
   return pts.slice().reverse();
 }
 
-export function unionOverlappingHoles(holes: Contour[]): Contour[] {
-  const items = holes.map((h) => ({ pts: h, box: contourBox(h) }));
-  let changed = true;
-  while (changed) {
-    changed = false;
-    outer: for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
-        if (!boxesOverlap(items[i]!.box, items[j]!.box)) continue;
-        // Nested rings (offset holes, islands) share a containing box.
-        // Hulling them together collapses the hole. Keep both.
-        if (boxContains(items[i]!.box, items[j]!.box) || boxContains(items[j]!.box, items[i]!.box)) {
-          continue;
-        }
-        const merged = convexHull([...items[i]!.pts, ...items[j]!.pts]);
-        items.splice(j, 1);
-        items[i] = { pts: merged, box: contourBox(merged) };
-        changed = true;
-        break outer;
-      }
-    }
-  }
-  return items.map((i) => i.pts);
-}
-
 export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | null {
   const usable = booleanableOf(nodes);
   if (usable.length < 2) return null;
   const groups = usable.map((n) => nodeToWorldContours(n)).filter((g) => g.length && g[0]!.length >= 3);
   if (groups.length < 2) return null;
   const first = usable[0]!;
-  let outer = groups[0]![0]!;
-  let holes: Contour[] = [];
-  let fillRule: PathNode["fillRule"] = "nonzero";
-  if (op === "union") {
-    const outers = groups.map((g) => g[0]!);
-    outer = convexHull(outers.flat());
-    const hullBox = contourBox(outer);
-    holes = groups.flatMap((g) => g.slice(1)).filter((h) => contourInsideBox(h, hullBox));
-    fillRule = "evenodd";
-  } else if (op === "intersect") {
-    outer = groups.reduce((smallest, g) => {
-      const a = contourBox(smallest);
-      const b = contourBox(g[0]!);
-      return a.w * a.h <= b.w * b.h ? smallest : g[0]!;
-    }, groups[0]![0]!);
-    const box = contourBox(outer);
-    holes = groups.flatMap((g) => g.slice(1)).filter((h) => contourInsideBox(h, box));
-    fillRule = "nonzero";
-  } else if (op === "exclude") {
-    holes = groups.slice(1).flatMap((g) => [g[0]!, ...g.slice(1)]);
-    fillRule = "evenodd";
-  } else {
-    const fromBase = groups[0]!.slice(1);
-    const cutters = groups.slice(1).flatMap((g) => g);
-    holes = unionOverlappingHoles([...fromBase, ...cutters]);
-    fillRule = "evenodd";
-  }
+  const clipped = clipMany(groups, op as ClipOp);
+  if (!clipped.length) return null;
+  const ranked = clipped
+    .map((c) => ({ c, area: Math.abs(contourArea(c)) }))
+    .filter((x) => x.area > 0.5)
+    .sort((a, b) => b.area - a.area);
+  if (!ranked.length) return null;
+  const outer = ranked[0]!.c;
+  const holes = ranked.slice(1).map((x) => x.c);
+  const fillRule: PathNode["fillRule"] = "evenodd";
   const allPts = [outer, ...holes].flat();
   const minX = Math.min(...allPts.map((p) => p.x));
   const minY = Math.min(...allPts.map((p) => p.y));

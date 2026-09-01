@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Real polygon clipper for boolean union/intersect (hull is still an approximation).
+1. Boolean clipper robustness on self-overlapping / high-vertex traces; keep extra islands as separate path layers when they are not holes.
+2. Knife through boolean compounds and live boolean of more than two selections with a progress preview.
 
 ## Done
 
+- Real polygon clipper for union / subtract / intersect / exclude (edge split + fragment classify + chain). Overlapping squares yield an 8-vertex union and a true L subtract instead of a convex hull. Zustand store restored (~27kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Convert type to editable paths. Inspector Path row + command palette. Counters become holes. Multi-letter copy becomes one path per island. Offset / outline auto-converts type first.
 - Boolean union no longer treats other solids as holes; nested offset rings stay nested (containment is not hulled). Hole windings opposite the outer.
 - Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
@@ -38,30 +40,14 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-01T20:35Z — loop 112
+
+**Real boolean clipper.** Union / subtract / intersect / exclude now split contours at crossings, keep or drop edge fragments by inside tests, and chain them into result rings. Concave unions stay concave; subtract punches an L; exclude keeps the overlap as a hole. Restored the truncated Zustand store so the studio hydrates again.
+
 ### 2026-09-01T18:20Z — loop 111
 
 **Type to path.** Selected text rasterizes at the live type size, traces outer contours and counters, then replaces the type layer with closed editable paths. Holes keep opposite winding for evenodd. Command palette: Convert type to path. Inspector Type → Path. Zustand store kept whole (~29kb) with boolean preview and path-edit hit.
 
-### 2026-09-01T10:32Z — loop 110
-
-**Boolean hole polish + store restore.** Nested offset rings that sit inside each other no longer collapse into one hull. Union keeps a combined outer and only the holes that still sit inside it; intersect keeps the smaller outer and interior holes. Hole windings flip opposite the outer for evenodd. Restored the truncated Zustand store (~29kb) so hydrate, history, boolean preview, and fit-selection work again.
-
-### 2026-09-01T10:21Z — loop 109
-
-**Boolean preview fidelity on holes after offset.** Nested offset rings no longer collapse into one hull. Subtract keeps cutter islands; union keeps surviving holes. Offset/outline orients hole winding opposite the outer. Restored the truncated Zustand store (~29kb).
-
-### 2026-09-01T09:45Z — loop 108
-
-**Shapes become paths before offset.** Rect (with radius), ellipse, line, polygon, star, and arrow convert in place to cubic/polyline paths. Offset out and Outline stroke run that conversion first. Inspector Path: Convert to path. Command palette: Convert shape to path. Restored the truncated Zustand store (~29kb).
-
-### 2026-09-01T09:25Z — loop 107
-
-**Rounded, simplified offset outlines.** Offset and outline now fillet corners (radius from stroke width) and simplify the resulting polyline so outlines stay editable.
-
-### 2026-09-01T08:20Z — loop 106
-
-**Outline stroke as a new contour.** Select a path, then Outline stroke / Offset out / Offset in in the inspector (or the command palette).
-
 ## Next recommended
 
-Real polygon clipper for boolean union/intersect (hull is still an approximation).
+Boolean clipper robustness on self-overlapping traces; emit sibling islands as extra path layers.
