@@ -43,6 +43,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-01T23:35Z — loop 116
+
+**Polish: knife + n-ary boolean actually wired.** Restored the full Zustand store (~29kb) so the studio hydrates. Knife click cuts compound outers and holes; leftover holes become sibling paths. Hovering a boolean on 3+ shapes draws stepwise progress ghosts then every island.
+
 ### 2026-09-01T23:20Z — loop 115
 
 **Knife through compounds + multi-boolean progress preview.** Knife now nicks holes, not only the outer ring. Opening a boolean compound promotes holes to their own layers. Hovering Union/Subtract/Intersect/Exclude over three or more shapes draws each fold as a phosphor ghost, with the final islands strongest. Wired knife clicks on the artboard (K). Restored the truncated Zustand store so hydrate, history, and apply still work.
