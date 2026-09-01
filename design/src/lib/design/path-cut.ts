@@ -1,0 +1,184 @@
+import { hasHandle } from "./path-curve";
+import type { PathNode, PathPoint } from "./types";
+
+export const KNIFE_HIT_PX = 10;
+
+type Vec = { x: number; y: number };
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+function lerpV(a: Vec, b: Vec, t: number): Vec {
+  return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) };
+}
+
+function clonePt(p: PathPoint): PathPoint {
+  return {
+    x: p.x,
+    y: p.y,
+    in: p.in ? { ...p.in } : null,
+    out: p.out ? { ...p.out } : null,
+    smooth: p.smooth,
+  };
+}
+
+/** Cubic controls in absolute local space for segment A → B. */
+export function segmentControls(a: PathPoint, b: PathPoint) {
+  const p0: Vec = { x: a.x, y: a.y };
+  const p3: Vec = { x: b.x, y: b.y };
+  const curved = hasHandle(a.out) || hasHandle(b.in);
+  const p1: Vec = curved ? { x: a.x + (a.out?.x ?? 0), y: a.y + (a.out?.y ?? 0) } : lerpV(p0, p3, 1 / 3);
+  const p2: Vec = curved ? { x: b.x + (b.in?.x ?? 0), y: b.y + (b.in?.y ?? 0) } : lerpV(p0, p3, 2 / 3);
+  return { p0, p1, p2, p3, curved };
+}
+
+export function cubicAt(p0: Vec, p1: Vec, p2: Vec, p3: Vec, t: number): Vec {
+  const u = 1 - t;
+  const uu = u * u;
+  const tt = t * t;
+  return {
+    x: uu * u * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + tt * t * p3.x,
+    y: uu * u * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + tt * t * p3.y,
+  };
+}
+
+/** de Casteljau split. Returns left and right control polygons. */
+export function splitCubic(p0: Vec, p1: Vec, p2: Vec, p3: Vec, t: number) {
+  const a = lerpV(p0, p1, t);
+  const b = lerpV(p1, p2, t);
+  const c = lerpV(p2, p3, t);
+  const d = lerpV(a, b, t);
+  const e = lerpV(b, c, t);
+  const m = lerpV(d, e, t);
+  return {
+    left: [p0, a, d, m] as const,
+    right: [m, e, c, p3] as const,
+    mid: m,
+  };
+}
+
+function sampleDist(p0: Vec, p1: Vec, p2: Vec, p3: Vec, x: number, y: number) {
+  let bestT = 0;
+  let best = Infinity;
+  const steps = 24;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const p = cubicAt(p0, p1, p2, p3, t);
+    const d = Math.hypot(p.x - x, p.y - y);
+    if (d < best) {
+      best = d;
+      bestT = t;
+    }
+  }
+  const span = 1 / steps;
+  let lo = Math.max(0, bestT - span);
+  let hi = Math.min(1, bestT + span);
+  for (let k = 0; k < 10; k++) {
+    const t1 = lo + (hi - lo) / 3;
+    const t2 = hi - (hi - lo) / 3;
+    const d1 = Math.hypot(cubicAt(p0, p1, p2, p3, t1).x - x, cubicAt(p0, p1, p2, p3, t1).y - y);
+    const d2 = Math.hypot(cubicAt(p0, p1, p2, p3, t2).x - x, cubicAt(p0, p1, p2, p3, t2).y - y);
+    if (d1 < d2) hi = t2;
+    else lo = t1;
+  }
+  const t = (lo + hi) / 2;
+  const p = cubicAt(p0, p1, p2, p3, t);
+  return { t, dist: Math.hypot(p.x - x, p.y - y), point: p };
+}
+
+export interface SegmentHit {
+  index: number;
+  t: number;
+  local: Vec;
+  dist: number;
+}
+
+export function hitPathSegment(pts: PathPoint[], closed: boolean, lx: number, ly: number, zoom: number): SegmentHit | null {
+  const n = pts.length;
+  if (n < 2) return null;
+  const last = closed ? n : n - 1;
+  let best: SegmentHit | null = null;
+  for (let i = 0; i < last; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % n]!;
+    const { p0, p1, p2, p3 } = segmentControls(a, b);
+    const s = sampleDist(p0, p1, p2, p3, lx, ly);
+    if (!best || s.dist < best.dist) {
+      best = { index: i, t: s.t, local: s.point, dist: s.dist };
+    }
+  }
+  if (!best || best.dist > KNIFE_HIT_PX / zoom) return null;
+  if (best.t < 0.04 || best.t > 0.96) {
+    best = { ...best, t: Math.min(0.96, Math.max(0.04, best.t)) };
+  }
+  return best;
+}
+
+function applySplit(pts: PathPoint[], closed: boolean, hit: SegmentHit): PathPoint[] {
+  const n = pts.length;
+  const aIdx = hit.index;
+  const bIdx = (hit.index + 1) % n;
+  const a = clonePt(pts[aIdx]!);
+  const b = clonePt(pts[bIdx]!);
+  const { p0, p1, p2, p3, curved } = segmentControls(a, b);
+  const { left, right, mid } = splitCubic(p0, p1, p2, p3, hit.t);
+  if (curved) {
+    a.out = { x: left[1].x - a.x, y: left[1].y - a.y };
+    b.in = { x: right[2].x - b.x, y: right[2].y - b.y };
+  }
+  const midPt: PathPoint = {
+    x: mid.x,
+    y: mid.y,
+    in: curved ? { x: left[2].x - mid.x, y: left[2].y - mid.y } : null,
+    out: curved ? { x: right[1].x - mid.x, y: right[1].y - mid.y } : null,
+    smooth: curved,
+  };
+  const next = pts.map(clonePt);
+  next[aIdx] = a;
+  next[bIdx] = b;
+  next.splice(aIdx + 1, 0, midPt);
+  return next;
+}
+
+export interface CutResult {
+  keep: PathPoint[];
+  extra: PathPoint[] | null;
+  closed: boolean;
+  cutIndex: number;
+}
+
+/** Cut a contour at the hit segment. Closed opens at the nick; open splits in two. */
+export function cutContour(pts: PathPoint[], closed: boolean, hit: SegmentHit): CutResult {
+  const inserted = applySplit(pts, closed, hit);
+  const cutIndex = hit.index + 1;
+  if (closed) {
+    const rotated = [...inserted.slice(cutIndex), ...inserted.slice(0, cutIndex)];
+    const start = clonePt(rotated[0]!);
+    start.in = null;
+    const end = clonePt(rotated[rotated.length - 1]!);
+    end.out = null;
+    rotated[0] = start;
+    rotated[rotated.length - 1] = end;
+    return { keep: rotated, extra: null, closed: false, cutIndex: 0 };
+  }
+  const left = inserted.slice(0, cutIndex + 1).map(clonePt);
+  const right = inserted.slice(cutIndex).map(clonePt);
+  if (left.length) {
+    const last = left[left.length - 1]!;
+    last.out = null;
+    last.smooth = false;
+  }
+  if (right.length) {
+    const first = right[0]!;
+    first.in = null;
+    first.smooth = false;
+  }
+  return { keep: left, extra: right.length >= 2 ? right : null, closed: false, cutIndex };
+}
+
+export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: number): { x: number; y: number } | null {
+  const hit = hitPathSegment(n.points, n.closed, lx, ly, zoom);
+  if (!hit) return null;
+  return { x: n.x + hit.local.x, y: n.y + hit.local.y };
+}
