@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Toaster } from "sonner";
+import {
+  offsetSelectedPath,
+  outlineSelectedStroke,
+  roundSelectedPathCorners,
+  simplifySelectedPath,
+} from "@/lib/design/offset-actions";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { CommandPalette, type CommandItem } from "./command-palette";
@@ -42,7 +48,7 @@ export function StudioApp({ id }: { id: string }) {
     const t = window.setInterval(() => {
       if (useDesign.getState().dirty) useDesign.getState().save();
     }, 8000);
-    return () => window.clearInterval(t);
+    return () => window.clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -63,6 +69,11 @@ export function StudioApp({ id }: { id: string }) {
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
       { id: "knife", label: "Knife — cut a path segment", group: "Tools", hint: "K", run: () => s().setTool("knife") },
+      { id: "outline", label: "Outline stroke", group: "Path", run: () => outlineSelectedStroke() },
+      { id: "offset-out", label: "Offset path out", group: "Path", run: () => offsetSelectedPath("out") },
+      { id: "offset-in", label: "Offset path in", group: "Path", run: () => offsetSelectedPath("in") },
+      { id: "round-corners", label: "Round path corners", group: "Path", run: () => roundSelectedPathCorners() },
+      { id: "simplify", label: "Simplify path", group: "Path", run: () => simplifySelectedPath() },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
     ];
   }, [navigate]);
