@@ -22,7 +22,9 @@ export function BooleanButtons() {
   if (count < 2) return null;
   return (
     <div className="mt-2 px-3">
-      <div className="mb-1 text-[10px] uppercase tracking-wide text-ink-dim">Boolean</div>
+      <div className="mb-1 text-[10px] uppercase tracking-wide text-ink-dim">
+        Boolean{count > 2 ? ` · ${count}` : ""}
+      </div>
       <div className="grid grid-cols-2 gap-1">
         {OPS.map(({ op, label }) => (
           <button
