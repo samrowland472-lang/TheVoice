@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Convert text outlines to editable paths.
-2. Real polygon clipper for boolean union/intersect (hull is still an approximation).
+1. Real polygon clipper for boolean union/intersect (hull is still an approximation).
 
 ## Done
 
+- Convert type to editable paths. Inspector Path row + command palette. Counters become holes. Multi-letter copy becomes one path per island. Offset / outline auto-converts type first.
 - Boolean union no longer treats other solids as holes; nested offset rings stay nested (containment is not hulled). Hole windings opposite the outer.
 - Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 - Boolean preview keeps offset/outline holes: nested rings are not convex-hulled together; subtract punches the cutter and fills islands from cutter holes; windings oriented for evenodd.
@@ -37,6 +37,10 @@ Auth OFF, DB OFF.
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 
 ## Iterations
+
+### 2026-09-01T18:20Z — loop 111
+
+**Type to path.** Selected text rasterizes at the live type size, traces outer contours and counters, then replaces the type layer with closed editable paths. Holes keep opposite winding for evenodd. Command palette: Convert type to path. Inspector Type → Path. Zustand store kept whole (~29kb) with boolean preview and path-edit hit.
 
 ### 2026-09-01T10:32Z — loop 110
 
@@ -60,4 +64,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Convert text outlines to editable paths.
+Real polygon clipper for boolean union/intersect (hull is still an approximation).
