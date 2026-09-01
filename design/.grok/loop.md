@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Knife through boolean compounds and live boolean of more than two selections with a progress preview.
-2. Self-overlapping figure-eight traces still need a winding pass before clip.
+1. Self-overlapping figure-eight traces still need a winding pass before clip.
+2. Knife drag-across (cut a stroke through several segments at once).
 
 ## Done
 
+- Knife hits compound holes as well as outers. Cutting a hole lifts it to an open path. Opening a compound outer releases holes as sibling islands. Live boolean hover folds more than two shapes and ghosts every accumulate plus every island. Zustand store restored (~29kb).
 - Clipper snaps vertices, splits collinear shared edges, caps high-vertex rings, and drops colinear slivers so abutting squares union cleanly.
 - Real polygon clipper for union / subtract / intersect / exclude (edge split + fragment classify + chain). Overlapping squares yield an 8-vertex union and a true L subtract instead of a convex hull. Zustand store restored (~27kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Convert type to editable paths. Inspector Path row + command palette. Counters become holes. Multi-letter copy becomes one path per island. Offset / outline auto-converts type first.
@@ -41,6 +42,10 @@ Auth OFF, DB OFF.
 - Boolean sibling islands land as separate path layers; nested rings stay holes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-01T23:20Z — loop 115
+
+**Knife through compounds + multi-boolean progress preview.** Knife now nicks holes, not only the outer ring. Opening a boolean compound promotes holes to their own layers. Hovering Union/Subtract/Intersect/Exclude over three or more shapes draws each fold as a phosphor ghost, with the final islands strongest. Wired knife clicks on the artboard (K). Restored the truncated Zustand store so hydrate, history, and apply still work.
 
 ### 2026-09-01T22:15Z — loop 114
 
@@ -60,4 +65,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Knife through boolean compounds; live boolean of more than two selections.
+Winding pass for self-overlapping figure-eight traces before clip.
