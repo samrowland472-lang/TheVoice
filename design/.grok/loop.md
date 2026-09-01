@@ -21,7 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean clipper robustness on self-overlapping / high-vertex traces; keep extra islands as separate path layers when they are not holes.
+1. Boolean clipper robustness on self-overlapping / high-vertex traces and shared edges.
 2. Knife through boolean compounds and live boolean of more than two selections with a progress preview.
 
 ## Done
@@ -37,8 +37,13 @@ Auth OFF, DB OFF.
 - Knife: click a path segment to cut.
 - Pen: double-click a corner to auto-smooth; snap two open path ends together to join.
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
+- Boolean sibling islands land as separate path layers; nested rings stay holes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-01T20:45Z — loop 113
+
+**Boolean islands as layers.** Union/exclude of disjoint or multi-body results no longer packs sibling contours into one evenodd path. Each island is its own path layer; nested rings remain holes. Restored the truncated Zustand store so hydrate, history, and boolean apply work.
 
 ### 2026-09-01T20:35Z — loop 112
 
@@ -50,4 +55,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Boolean clipper robustness on self-overlapping traces; emit sibling islands as extra path layers.
+Boolean clipper robustness on self-overlapping traces and shared edges.

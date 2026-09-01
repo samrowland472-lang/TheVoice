@@ -1,4 +1,4 @@
-import { computeBoolean, type BooleanOp } from "./boolean-ops";
+import { computeBooleanParts, type BooleanOp } from "./boolean-ops";
 import { smoothPathCorners } from "./path-curve";
 import { useDesign } from "./store";
 import type { DesignNode } from "./types";
@@ -14,21 +14,25 @@ export function applyBoolean(op: BooleanOp) {
   const order = selection
     .map((id) => doc.nodes.find((n) => n.id === id))
     .filter((n): n is DesignNode => Boolean(n));
-  const result = computeBoolean(order, op);
-  if (!result) return;
+  const parts = computeBooleanParts(order, op);
+  if (!parts.length) return;
   commit();
-  const keepId = order.find((n) => n.id === result.id)?.id ?? order[0]!.id;
+  const primary = parts[0]!;
+  const extras = parts.slice(1);
+  const keepId = order.find((n) => n.id === primary.id)?.id ?? order[0]!.id;
   const drop = new Set(order.filter((n) => n.id !== keepId).map((n) => n.id));
   const live = useDesign.getState().doc;
   if (!live) return;
+  const replaced = live.nodes
+    .map((n) => (n.id === keepId ? { ...primary, id: keepId } : n))
+    .filter((n) => !drop.has(n.id));
+  const keepIdx = replaced.findIndex((n) => n.id === keepId);
+  const nextNodes = [...replaced];
+  if (keepIdx >= 0) nextNodes.splice(keepIdx + 1, 0, ...extras);
+  else nextNodes.push(...extras);
   useDesign.setState({
-    doc: {
-      ...live,
-      nodes: live.nodes
-        .map((n) => (n.id === keepId ? { ...result, id: keepId } : n))
-        .filter((n) => !drop.has(n.id)),
-    },
-    selection: [keepId],
+    doc: { ...live, nodes: nextNodes },
+    selection: [keepId, ...extras.map((n) => n.id)],
     booleanPreview: null,
     dirty: true,
   });
