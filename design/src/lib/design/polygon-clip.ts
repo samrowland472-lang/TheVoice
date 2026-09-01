@@ -252,3 +252,24 @@ export function clipMany(groups: Ring[][], op: ClipOp): Ring[] {
   }
   return acc;
 }
+
+export type Island = { outer: Ring; holes: Ring[] };
+
+/** Nested rings become holes of the smallest containing outer; siblings stay islands. */
+export function groupIslands(rings: Ring[]): Island[] {
+  const ranked = rings
+    .map((r) => ({ r, area: Math.abs(ringArea(r)) }))
+    .filter((x) => x.area > 0.5)
+    .sort((a, b) => b.area - a.area);
+  const islands: Island[] = [];
+  for (const item of ranked) {
+    const probe = item.r[0]!;
+    let parent: Island | undefined;
+    for (let i = islands.length - 1; i >= 0; i--) {
+      if (pointInRing(probe.x, probe.y, islands[i]!.outer)) parent = islands[i];
+    }
+    if (parent) parent.holes.push(item.r);
+    else islands.push({ outer: item.r, holes: [] });
+  }
+  return islands;
+}
