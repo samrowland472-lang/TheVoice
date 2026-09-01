@@ -48,7 +48,7 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
-### 2026-09-01T01:26Z — loop 100
+### 2026-09-01T01:40Z — loop 100
 
 **Pen live close preview on last-handle drag.** With three or more anchors, dragging the last point’s outgoing handle toward the first square draws the closing cubic and a phosphor ring. Release inside the ring commits `closePathWithCubic` (incoming handle on the first point, outgoing on the last). Hovering the first point still previews the same close. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
