@@ -31,6 +31,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-01T07:35Z — loop 105
+
+**Knife lives on the artboard.** The scissors tool now cuts on pointer-down: hover draws a phosphor nick and slash; click runs `knifeCutAt` (rotated local space). Closed paths open; open paths split into two layers. Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
+
 ### 2026-09-01T07:20Z — loop 104
 
 **Knife cut on a clicked segment.** `K` or the scissors tool. Hover a path to see a phosphor nick; click splits the contour (`cutContour` / de Casteljau). Closed paths open at the cut; open paths become two layers. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
