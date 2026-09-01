@@ -1,5 +1,13 @@
 import { applyPathEdit, type PathEditHit } from "./path-edit";
-import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
+import {
+  autoSmoothPoint,
+  closePathWithCubic,
+  hasHandle,
+  joinOpenPathNodes,
+  nearestOpenPathEnd,
+  PEN_SNAP_PX,
+  type PathEnd,
+} from "./path-curve";
 import { pathNode } from "./node-factory";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
@@ -118,6 +126,47 @@ export function setPathPointSmooth(id: string, index: number, smooth: boolean, h
   s.commit();
   s.replaceNode(id, next, false);
   setPathEditHit({ index, arm: "anchor", hole });
+}
+
+export function joinSelectedPathToNearest(wx: number, wy: number, zoom: number): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc) return false;
+  const thresh = PEN_SNAP_PX / zoom;
+  const open = doc.nodes.filter(isPath).filter((n) => !n.closed);
+  const sel = s.selection[0] ? open.find((n) => n.id === s.selection[0]) : null;
+  const from = sel
+    ? nearestOpenPathEnd([sel], wx, wy, thresh) ?? nearestOpenPathEnd(open, wx, wy, thresh)
+    : nearestOpenPathEnd(open, wx, wy, thresh);
+  if (!from) return false;
+  const to = nearestOpenPathEnd(open, wx, wy, thresh, { id: from.node.id, end: from.end });
+  if (!to) return false;
+  if (from.node.id === to.node.id) {
+    if (from.node.points.length < 3) return false;
+    s.commit();
+    s.replaceNode(from.node.id, closePathWithCubic(from.node), false);
+    setPathEditHit({ index: 0, arm: "anchor" });
+    return true;
+  }
+  const keep = from.node;
+  const other = to.node;
+  const keepEnd: PathEnd = from.end;
+  const merged = joinOpenPathNodes(keep, keepEnd, other, to.end);
+  s.commit();
+  s.replaceNode(keep.id, merged, false);
+  const leftover = useDesign.getState().doc;
+  if (leftover) {
+    useDesign.setState({
+      doc: { ...leftover, nodes: leftover.nodes.filter((n) => n.id !== other.id) },
+      selection: [keep.id],
+      dirty: true,
+    });
+  }
+  setPathEditHit({
+    index: keepEnd === "end" ? Math.max(0, keep.points.length - 1) : 0,
+    arm: "anchor",
+  });
+  return true;
 }
 
 export function deletePathPoint(id: string, index: number, hole?: number) {
