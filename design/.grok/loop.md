@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen: double-click a corner to auto-smooth, or snap two open path ends together to join.
+1. Pen join preview ring when two open ends are within the snap distance.
+2. Knife / cut path at a clicked segment.
 
 ## Done
 
+- Pen: double-click a corner to auto-smooth; snap two open path ends together to join (9px ring). Zustand store implementation restored (~29kb).
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 - Mixed type size / weight when two or more text layers are selected.
 - Mixed type family / tracking / leading / align when two or more text layers are selected.
@@ -49,6 +51,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-01T03:30Z — loop 102
+
+**Pen join + double-click smooth.** Drag or click one open path end onto another (same or other contour) to join within a 9px snap ring. Double-click a corner anchor to auto-smooth mirrored handles. Close uses `closePathWithCubic` and stays selected. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
+
 ### 2026-09-01T03:10Z — loop 101
 
 **Pen snap-close threshold + one undo.** Snap ring is 9 screen pixels (shared helper with first-point click). Releasing the last outgoing handle inside the ring closes with `closePathWithCubic` without a second history snapshot, so one Undo restores the open contour. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
@@ -67,4 +73,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen: double-click a corner to auto-smooth, or snap two open path ends together to join.
+Pen join preview ring when two open ends are within the snap distance.
