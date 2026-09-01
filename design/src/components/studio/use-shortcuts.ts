@@ -13,6 +13,7 @@ const KEYS: Record<string, Tool> = {
   l: "line",
   t: "text",
   p: "pen",
+  k: "knife",
   b: "brush",
   e: "eraser",
   i: "eyedropper",
