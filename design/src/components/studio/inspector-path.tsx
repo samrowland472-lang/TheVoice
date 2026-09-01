@@ -1,5 +1,11 @@
 import { smoothSelectedPath } from "@/lib/design/boolean-actions";
 import {
+  offsetSelectedPath,
+  outlineSelectedStroke,
+  roundSelectedPathCorners,
+  simplifySelectedPath,
+} from "@/lib/design/offset-actions";
+import {
   deletePathPoint,
   selectPathPoint,
   setPathClosed,
@@ -145,6 +151,50 @@ export function PathFields({ node }: { node: PathNode }) {
             onClick={() => popLastPathPoint()}
           >
             Pop last
+          </button>
+        </div>
+      </Field>
+      <Field label="Offset">
+        <div className="grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            aria-label="outline stroke"
+            onClick={() => outlineSelectedStroke()}
+          >
+            Outline stroke
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            aria-label="round offset corners"
+            onClick={() => roundSelectedPathCorners()}
+          >
+            Round corners
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            aria-label="offset path outward"
+            onClick={() => offsetSelectedPath("out")}
+          >
+            Offset out
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            aria-label="offset path inward"
+            onClick={() => offsetSelectedPath("in")}
+          >
+            Offset in
+          </button>
+          <button
+            type="button"
+            className="col-span-2 h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            aria-label="simplify path"
+            onClick={() => simplifySelectedPath()}
+          >
+            Simplify
           </button>
         </div>
       </Field>
