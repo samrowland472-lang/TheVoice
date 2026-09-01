@@ -184,6 +184,14 @@ function boxesOverlap(a: { x: number; y: number; w: number; h: number }, b: { x:
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+function boxContains(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) {
+  return b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h;
+}
+
+function contourInsideBox(c: Contour, box: { x: number; y: number; w: number; h: number }) {
+  return c.length > 0 && boxContains(box, contourBox(c));
+}
+
 function convexHull(pts: PathPoint[]): Contour {
   const unique = pts.slice().sort((a, b) => (a.x === b.x ? a.y - b.y : a.x - b.x));
   if (unique.length < 3) return unique;
@@ -204,6 +212,26 @@ function convexHull(pts: PathPoint[]): Contour {
   return [...lower, ...upper];
 }
 
+export function contourArea(pts: PathPoint[]): number {
+  let a = 0;
+  const n = pts.length;
+  if (n < 3) return 0;
+  for (let i = 0; i < n; i++) {
+    const p = pts[i]!;
+    const q = pts[(i + 1) % n]!;
+    a += p.x * q.y - q.x * p.y;
+  }
+  return a / 2;
+}
+
+export function orientContour(pts: PathPoint[], clockwise: boolean): PathPoint[] {
+  if (pts.length < 3) return pts;
+  const pos = contourArea(pts) >= 0;
+  const isCw = !pos;
+  if (isCw === clockwise) return pts;
+  return pts.slice().reverse();
+}
+
 export function unionOverlappingHoles(holes: Contour[]): Contour[] {
   const items = holes.map((h) => ({ pts: h, box: contourBox(h) }));
   let changed = true;
@@ -212,6 +240,11 @@ export function unionOverlappingHoles(holes: Contour[]): Contour[] {
     outer: for (let i = 0; i < items.length; i++) {
       for (let j = i + 1; j < items.length; j++) {
         if (!boxesOverlap(items[i]!.box, items[j]!.box)) continue;
+        // Nested rings (offset holes, islands) share a containing box.
+        // Hulling them together collapses the hole. Keep both.
+        if (boxContains(items[i]!.box, items[j]!.box) || boxContains(items[j]!.box, items[i]!.box)) {
+          continue;
+        }
         const merged = convexHull([...items[i]!.pts, ...items[j]!.pts]);
         items.splice(j, 1);
         items[i] = { pts: merged, box: contourBox(merged) };
@@ -233,14 +266,22 @@ export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | n
   let holes: Contour[] = [];
   let fillRule: PathNode["fillRule"] = "nonzero";
   if (op === "union") {
-    holes = groups.slice(1).flatMap((g) => g);
-    fillRule = "nonzero";
+    const outers = groups.map((g) => g[0]!);
+    outer = convexHull(outers.flat());
+    const hullBox = contourBox(outer);
+    holes = groups.flatMap((g) => g.slice(1)).filter((h) => contourInsideBox(h, hullBox));
+    fillRule = "evenodd";
   } else if (op === "intersect") {
-    outer = groups[0]![0]!;
-    holes = [];
+    outer = groups.reduce((smallest, g) => {
+      const a = contourBox(smallest);
+      const b = contourBox(g[0]!);
+      return a.w * a.h <= b.w * b.h ? smallest : g[0]!;
+    }, groups[0]![0]!);
+    const box = contourBox(outer);
+    holes = groups.flatMap((g) => g.slice(1)).filter((h) => contourInsideBox(h, box));
     fillRule = "nonzero";
   } else if (op === "exclude") {
-    holes = groups.slice(1).flatMap((g) => g);
+    holes = groups.slice(1).flatMap((g) => [g[0]!, ...g.slice(1)]);
     fillRule = "evenodd";
   } else {
     const fromBase = groups[0]!.slice(1);
@@ -256,6 +297,8 @@ export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | n
   const ox = Number.isFinite(minX) ? minX : 0;
   const oy = Number.isFinite(minY) ? minY : 0;
   const rel = (c: Contour) => c.map((p) => ({ ...p, x: p.x - ox, y: p.y - oy }));
+  const outerRel = rel(outer);
+  const outerCw = contourArea(outerRel) < 0;
   return pathNode({
     id: first.id,
     name: op === "union" ? "Union" : op === "subtract" ? "Subtract" : op === "intersect" ? "Intersect" : "Exclude",
@@ -273,8 +316,8 @@ export function composeBoolean(nodes: DesignNode[], op: BooleanOp): PathNode | n
     strokeWidth: first.strokeWidth,
     radius: 0,
     shadow: first.shadow,
-    points: rel(outer),
-    holes: holes.map(rel),
+    points: outerRel,
+    holes: holes.map((h) => orientContour(rel(h), !outerCw)),
     closed: true,
     fillRule,
   });
