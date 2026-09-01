@@ -26,8 +26,9 @@ Auth OFF, DB OFF.
 
 ## Done
 
-- Boolean preview keeps offset/outline holes: nested rings are not convex-hulled together; subtract punches the cutter and fills islands from cutter holes; windings oriented for evenodd.
+- Boolean union no longer treats other solids as holes; nested offset rings stay nested (containment is not hulled). Hole windings opposite the outer.
 - Zustand store restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
+- Boolean preview keeps offset/outline holes: nested rings are not convex-hulled together; subtract punches the cutter and fills islands from cutter holes; windings oriented for evenodd.
 - Convert selected shape (rect, ellipse, line, polygon, star, arrow) to an editable path. Offset / outline auto-convert first. Inspector Path row + command palette.
 - Offset outlines fillet sharp corners, then Douglas–Peucker simplify. Inspector Offset row: Outline stroke, Round corners, Offset out/in, Simplify.
 - Outline stroke / offset path: selected contour becomes a new layer.
@@ -36,6 +37,10 @@ Auth OFF, DB OFF.
 - Hub, studio chrome, canvas tools, inspector, present, export PNG/JPG/SVG.
 
 ## Iterations
+
+### 2026-09-01T10:32Z — loop 110
+
+**Boolean hole polish + store restore.** Nested offset rings that sit inside each other no longer collapse into one hull. Union keeps a combined outer and only the holes that still sit inside it; intersect keeps the smaller outer and interior holes. Hole windings flip opposite the outer for evenodd. Restored the truncated Zustand store (~29kb) so hydrate, history, boolean preview, and fit-selection work again.
 
 ### 2026-09-01T10:21Z — loop 109
 
