@@ -1,4 +1,4 @@
-import { applyPathEdit, type PathEditHit } from "./path-edit";
+import { applyPathEdit, pathWorldToLocal, type PathEditHit } from "./path-edit";
 import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
 import { cutContour, hitPathSegment } from "./path-cut";
 import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
@@ -172,7 +172,8 @@ export function knifeCutAt(wx: number, wy: number, zoom: number): boolean {
   const preferred = s.selection[0] ? paths.find((n) => n.id === s.selection[0]) : undefined;
   const order = preferred ? [preferred, ...paths.filter((n) => n.id !== preferred.id)] : paths;
   for (const n of order) {
-    const hit = hitPathSegment(n.points, n.closed, wx - n.x, wy - n.y, zoom);
+    const local = pathWorldToLocal(n, wx, wy);
+    const hit = hitPathSegment(n.points, n.closed, local.x, local.y, zoom);
     if (!hit) continue;
     const cut = cutContour(n.points, n.closed, hit);
     s.commit();
