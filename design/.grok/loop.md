@@ -21,7 +21,7 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Pen tool: live close preview while dragging the last handle toward the first point.
+1. Pen tool: snap-close when the last outgoing handle crosses the first point during a pull (commit on release already ships; refine threshold / undo grouping).
 
 ## Done
 
@@ -44,8 +44,13 @@ Auth OFF, DB OFF.
 - Pen Alt-drag breaks a handle while drawing (sticky corner). Zustand store implementation restored (~29kb).
 - Pen click on the first point closes with a last\u2192first cubic. Rubber-band previews that close. Zustand store implementation restored (~29kb).
 - Pen Alt after release corners the last point (drops the outgoing handle). Zustand store implementation restored (~29kb).
+- Pen live close preview while dragging the last outgoing handle toward the first point. Release inside the snap ring closes with a last\u2192first cubic. Zustand store implementation restored (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ## Iterations
+
+### 2026-09-01T01:26Z — loop 100
+
+**Pen live close preview on last-handle drag.** With three or more anchors, dragging the last point’s outgoing handle toward the first square draws the closing cubic and a phosphor ring. Release inside the ring commits `closePathWithCubic` (incoming handle on the first point, outgoing on the last). Hovering the first point still previews the same close. Restored the truncated Zustand store (~29kb) with hydrate, history, `booleanPreview`, `pathEditHit`, and `fit-sel`.
 
 ### 2026-08-31T23:26Z — loop 99
 
@@ -57,4 +62,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Pen tool: live close preview while dragging the last handle toward the first point.
+Pen tool: tighten snap-close threshold and group the handle-drag + close as one undo step.
