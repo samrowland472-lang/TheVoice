@@ -1,13 +1,6 @@
 import { applyPathEdit, type PathEditHit } from "./path-edit";
-import {
-  autoSmoothPoint,
-  closePathWithCubic,
-  hasHandle,
-  joinOpenPathNodes,
-  nearestOpenPathEnd,
-  PEN_SNAP_PX,
-  type PathEnd,
-} from "./path-curve";
+import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
+import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
 import { pathNode } from "./node-factory";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
