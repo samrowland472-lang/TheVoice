@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import {
+  convertSelectedShapeToPath,
+  convertSelectedTextToPath,
   offsetSelectedPath,
   outlineSelectedStroke,
   roundSelectedPathCorners,
@@ -69,6 +71,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
       { id: "knife", label: "Knife — cut a path segment", group: "Tools", hint: "K", run: () => s().setTool("knife") },
+      { id: "type-to-path", label: "Convert type to path", group: "Path", run: () => convertSelectedTextToPath() },
+      { id: "shape-to-path", label: "Convert shape to path", group: "Path", run: () => convertSelectedShapeToPath() },
       { id: "outline", label: "Outline stroke", group: "Path", run: () => outlineSelectedStroke() },
       { id: "offset-out", label: "Offset path out", group: "Path", run: () => offsetSelectedPath("out") },
       { id: "offset-in", label: "Offset path in", group: "Path", run: () => offsetSelectedPath("in") },
