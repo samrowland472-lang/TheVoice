@@ -1,14 +1,31 @@
 import { pathNode } from "./node-factory";
 import { offsetPolyline, outlineStroke, roundPolylineCorners, simplifyPolyline, toPathPoints } from "./path-offset";
+import { asEditablePath, isConvertibleShape, shapeToPathNode } from "./shape-to-path";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
 
-function selectedPath(): PathNode | null {
+function selectedPath(convert = true): PathNode | null {
   const { doc, selection } = useDesign.getState();
   if (!doc || !selection.length) return null;
   const n = doc.nodes.find((x) => x.id === selection[0]);
-  return n && isPath(n) ? n : null;
+  if (!n) return null;
+  if (isPath(n)) return n;
+  if (convert && isConvertibleShape(n)) return convertSelectedShapeToPath() ?? asEditablePath(n);
+  return null;
+}
+
+/** Replace a primitive shape with an editable path that keeps the same id. */
+export function convertSelectedShapeToPath(): PathNode | null {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc || !s.selection.length) return null;
+  const n = doc.nodes.find((x) => x.id === s.selection[0]);
+  if (!n || isPath(n) || !isConvertibleShape(n)) return n && isPath(n) ? n : null;
+  const path = shapeToPathNode(n);
+  s.commit();
+  s.replaceNode(n.id, path, false);
+  return path;
 }
 
 function addOutlined(n: PathNode, points: PathPoint[], holes?: PathPoint[][]) {
