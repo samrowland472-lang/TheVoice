@@ -21,19 +21,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean apply on 3+ mixed compounds should keep hole ownership when an island sits inside a punched hole.
-2. Align / distribute on converted path islands.
+1. Align / distribute on converted path islands.
+2. Self-overlapping figure-eight traces still need a winding pass before clip.
 
 ## Done
 
-- Boolean preview keeps nested holes when offset rings mix with type-converted paths. Island grouping walks nearest-parent depth so a hole stays a hole instead of a second filled island. Hover Union/Subtract/Intersect/Exclude draws every resulting island with evenodd punches.
-- Knife live preview: hover marks the nick; drag draws a phosphor cut line and ticks every crossing. Click still nicks one. Drag-across splits closed rings into open pieces and lifts cut holes. Knife wired on the artboard (K).
+- Boolean apply keeps hole ownership on 3+ mixed compounds: an island that lives inside a punched hole stays on the same evenodd path instead of becoming a second filled node. `groupIslands` parents every ring to its smallest container and hangs the whole descendant tree off the root outer.
+- Hover boolean ghosts draw every resulting compound, including nested islands.
+- Design store is typed so the studio typechecks.
+- Knife live preview on the artboard (K).
 
 ## Iterations
 
+### 2026-09-02T07:30Z — loop 123
+
+**Boolean apply keeps islands inside punched holes.** Three-plus selections (donut + island-in-hole + another shape) now commit as one evenodd compound per top-level outer. Nested fill rings stay descendants of the hole that owns them. Preview traces every part.
+
 ### 2026-09-02T05:25Z — loop 122
 
-**Boolean preview holes on mixed compounds.** Nested offset rings plus type-converted letters no longer fill their counters in the hover ghost. `groupIslands` parents each ring to the smallest container and treats odd depth as a hole. Canvas traces every boolean part with evenodd fill.
+**Boolean preview holes on mixed compounds.** Nested offset rings plus type-converted letters no longer fill their counters in the hover ghost.
 
 ### 2026-09-02T04:20Z — loop 121
 
@@ -41,4 +47,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Boolean apply on three-plus mixed compounds: keep hole ownership when an island lives inside a punched hole.
+Align / distribute on converted path islands.
