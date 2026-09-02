@@ -1,4 +1,4 @@
-import { aabb } from "./geometry";
+import { aabb, nodeCenter, rotatePoint } from "./geometry";
 import { groupIslandsNested } from "./island-group";
 import { uid } from "./id";
 import type { DesignNode, PathNode, PathPoint } from "./types";
@@ -11,13 +11,45 @@ function shiftRing(ring: PathPoint[], dx: number, dy: number): PathPoint[] {
   return ring.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
 }
 
+function rotateOffset(h: { x: number; y: number } | null | undefined, deg: number) {
+  if (!h) return h;
+  const r = rotatePoint(h.x, h.y, 0, 0, deg);
+  return { x: r.x, y: r.y };
+}
+
+/** Flatten node rotation into path points so island boxes match ink on the artboard. */
+export function bakePathRotation(n: PathNode): PathNode {
+  if (!n.rotation) return n;
+  const c = nodeCenter(n);
+  const deg = n.rotation;
+  const mapRing = (ring: PathPoint[]) =>
+    ring.map((p) => {
+      const w = rotatePoint(n.x + p.x, n.y + p.y, c.x, c.y, deg);
+      return {
+        ...p,
+        x: w.x,
+        y: w.y,
+        in: rotateOffset(p.in, deg) ?? p.in,
+        out: rotateOffset(p.out, deg) ?? p.out,
+      };
+    });
+  return {
+    ...n,
+    rotation: 0,
+    x: 0,
+    y: 0,
+    points: mapRing(n.points),
+    holes: n.holes?.map(mapRing),
+  };
+}
+
 /** Pull a path node's box onto its actual contour so islands can align independently. */
 export function tightenPathNode(n: PathNode): PathNode {
-  if (n.rotation) return n;
+  const baked = bakePathRotation(n);
   const samples: { x: number; y: number }[] = [];
-  for (const p of n.points) samples.push(p);
-  for (const hole of n.holes ?? []) for (const p of hole) samples.push(p);
-  if (!samples.length) return n;
+  for (const p of baked.points) samples.push(p);
+  for (const hole of baked.holes ?? []) for (const p of hole) samples.push(p);
+  if (!samples.length) return baked;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -28,25 +60,26 @@ export function tightenPathNode(n: PathNode): PathNode {
     maxX = Math.max(maxX, p.x);
     maxY = Math.max(maxY, p.y);
   }
-  if (!Number.isFinite(minX)) return n;
+  if (!Number.isFinite(minX)) return baked;
   const dx = minX;
   const dy = minY;
   if (
+    !baked.rotation &&
     Math.abs(dx) < 1e-6 &&
     Math.abs(dy) < 1e-6 &&
-    Math.abs(n.w - (maxX - minX)) < 0.5 &&
-    Math.abs(n.h - (maxY - minY)) < 0.5
+    Math.abs(baked.w - (maxX - minX)) < 0.5 &&
+    Math.abs(baked.h - (maxY - minY)) < 0.5
   ) {
-    return n;
+    return baked;
   }
   return {
-    ...n,
-    x: n.x + dx,
-    y: n.y + dy,
+    ...baked,
+    x: baked.x + dx,
+    y: baked.y + dy,
     w: Math.max(1, maxX - minX),
     h: Math.max(1, maxY - minY),
-    points: shiftRing(n.points, -dx, -dy),
-    holes: n.holes?.map((h) => shiftRing(h, -dx, -dy)),
+    points: shiftRing(baked.points, -dx, -dy),
+    holes: baked.holes?.map((h) => shiftRing(h, -dx, -dy)),
   };
 }
 
@@ -71,6 +104,7 @@ function ringBox(ring: PathPoint[]) {
 
 /** Disjoint outer rings on one path (holes stay attached to their parent). */
 export function splitCompoundIslands(n: PathNode): PathNode[] {
+  n = tightenPathNode(n);
   const rings = [n.points, ...(n.holes ?? [])].filter((r) => r.length >= 3);
   if (rings.length < 2) return [n];
   const groups = groupIslandsNested(rings);

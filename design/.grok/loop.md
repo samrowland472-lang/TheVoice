@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Align / distribute with rotation-aware island boxes.
-2. Knife live preview along the whole stroke, not only the pointer tip.
+1. Knife live preview along the whole stroke, not only the pointer tip.
+2. Align / distribute using oriented (rotated) boxes instead of axis-aligned ink boxes.
 
 ## Done
 
+- Align / distribute bake rotated path islands into world-space ink boxes before explode.
 - Knife planarizes figure-eight / bowtie traces into simple lobes before the cut, and the K tool now draws and applies the stroke on the artboard.
 - Align / distribute explode disjoint islands that still live on one compound path (sibling rings stored as holes) into separate layers, then space by ink boxes.
 - Store align/distribute now call `alignNodes` / `distributeNodes` instead of the node frame stub.
@@ -38,6 +39,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-02T21:20Z — loop 128
+
+**Rotation-aware island boxes.** Align and distribute flatten a path's rotation into its points, then tighten and explode islands on those world-space boxes. A rotated compound of two marks now spaces by ink, not by the unrotated frame.
 
 ### 2026-09-02T12:20Z — loop 127
 
@@ -53,7 +58,7 @@ Auth OFF, DB OFF.
 
 ### 2026-09-02T08:20Z — loop 124
 
-**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto its contour.
+**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto their contour.
 
 ### 2026-09-02T07:30Z — loop 123
 
@@ -61,4 +66,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Align / distribute with rotation-aware island boxes.
+Knife live preview along the whole stroke, not only the pointer tip.

@@ -8,10 +8,16 @@ const text = readFileSync(new URL("../src/lib/design/text-to-path.ts", import.me
 
 test("align module uses geometry boxes, not the stored node frame", () => {
   assert.match(align, /export function tightenPathNode/);
+  assert.match(align, /export function bakePathRotation/);
   assert.match(align, /export function alignNodes/);
   assert.match(align, /export function distributeNodes/);
   assert.match(align, /geometryBox/);
   assert.match(align, /aabb\(\[n\]\)/);
+});
+
+test("rotated compounds bake into world-space island boxes before split", () => {
+  assert.match(align, /n = tightenPathNode\(n\)/);
+  assert.match(align, /rotatePoint\(n\.x \+ p\.x, n\.y \+ p\.y, c\.x, c\.y, deg\)/);
 });
 
 test("store wires align and distribute through geometry helpers", () => {
