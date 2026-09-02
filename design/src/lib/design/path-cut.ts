@@ -1,5 +1,6 @@
 import { hasHandle } from "./path-curve";
 import type { PathNode, PathPoint } from "./types";
+import { explodeTwistedPath } from "./winding-pass";
 
 export const KNIFE_HIT_PX = 10;
 
@@ -255,9 +256,15 @@ export function hitCompoundSegment(n: PathNode, lx: number, ly: number, zoom: nu
 }
 
 export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: number): { x: number; y: number } | null {
-  const found = hitCompoundSegment(n, lx, ly, zoom);
-  if (!found) return null;
-  return { x: n.x + found.hit.local.x, y: n.y + found.hit.local.y };
+  let best: { x: number; y: number; dist: number } | null = null;
+  for (const part of explodeTwistedPath(n)) {
+    const found = hitCompoundSegment(part, lx, ly, zoom);
+    if (!found) continue;
+    if (!best || found.hit.dist < best.dist) {
+      best = { x: n.x + found.hit.local.x, y: n.y + found.hit.local.y, dist: found.hit.dist };
+    }
+  }
+  return best ? { x: best.x, y: best.y } : null;
 }
 
 function segSeg(a: Vec, b: Vec, c: Vec, d: Vec): { t: number; u: number; p: Vec } | null {
