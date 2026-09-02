@@ -267,6 +267,32 @@ export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: num
   return best ? { x: best.x, y: best.y } : null;
 }
 
+/** World-space cut marks along a knife stroke, including every crossing — not only the pointer tip. */
+export function knifeStrokePreview(
+  n: PathNode,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): { x: number; y: number }[] {
+  const a = { x: ax - n.x, y: ay - n.y };
+  const b = { x: bx - n.x, y: by - n.y };
+  const marks: { x: number; y: number }[] = [];
+  const seen = new Set<string>();
+  for (const part of explodeTwistedPath(n)) {
+    for (const h of strokeHitsCompound(part, a, b)) {
+      const wx = n.x + h.hit.local.x;
+      const wy = n.y + h.hit.local.y;
+      const key = `${wx.toFixed(2)},${wy.toFixed(2)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      marks.push({ x: wx, y: wy });
+    }
+  }
+  marks.sort((p, q) => Math.hypot(p.x - ax, p.y - ay) - Math.hypot(q.x - ax, q.y - ay));
+  return marks;
+}
+
 function segSeg(a: Vec, b: Vec, c: Vec, d: Vec): { t: number; u: number; p: Vec } | null {
   const rx = b.x - a.x;
   const ry = b.y - a.y;
