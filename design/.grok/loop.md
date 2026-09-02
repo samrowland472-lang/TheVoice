@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Knife live preview of the cut line while dragging.
-2. Boolean preview holes from nested offset rings when mixed with type-converted paths.
+1. Boolean preview holes from nested offset rings when mixed with type-converted paths.
+2. Ghost every boolean island (not only the first) while hovering Union/Subtract.
 
 ## Done
 
+- Knife live preview: hover marks the nick; drag draws a phosphor cut line and ticks every crossing. Click still nicks one. Drag-across splits closed rings into open pieces and lifts cut holes. Knife wired on the artboard (K).
 - Boolean live preview for mixed path+shape selections, including self-overlapping lobes. Clipper restored (~13kb): figure-eight splits into two triangles; overlapping squares yield an 8-vertex union and a 6-vertex L subtract. Hover ghosts every island (and n-ary fold steps). Zustand store restored (~29kb) with hydrate, history, booleanPreview, pathEditHit, and fit-sel.
 - Knife drag-across cuts every segment the stroke crosses (outers and holes). Click still nicks one. Store restored (~29kb). Clipper restored with winding lobes.
 - Winding pass actually wired: clipper restored (~12kb) so figure-eight traces split into two simple lobes before union/subtract; overlapping squares still yield an 8-vertex union and an L subtract. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
@@ -46,6 +47,10 @@ Auth OFF, DB OFF.
 - Boolean sibling islands land as separate path layers; nested rings stay holes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-02T04:20Z — loop 121
+
+**Knife live preview.** The knife tool is live on the artboard. Hover a path to see the nick mark. Drag to preview the phosphor cut line and every crossing tick; release cuts all of them. Click still nicks one segment. Closed rings split into open pieces; cut holes lift off as their own paths.
 
 ### 2026-09-02T03:25Z — loop 120
 
@@ -89,4 +94,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Knife live preview of the cut line while dragging.
+Boolean preview holes from nested offset rings when mixed with type-converted paths.
