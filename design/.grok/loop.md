@@ -26,6 +26,7 @@ Auth OFF, DB OFF.
 
 ## Done
 
+- Align-to-selection target uses the union of oriented frames, not the sample AABB.
 - Align / distribute rebase path islands onto a minimum-area oriented frame, then space by that rotated box's projection.
 - Knife live preview draws the full stroke and a mark at every crossing, not only the pointer tip.
 - Align / distribute bake rotated path islands into world-space ink boxes before explode.
@@ -41,6 +42,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-02T23:40Z — loop 131
+
+**Align-to-selection uses oriented frames.** The target box is the union of each layer's rotated frame projection (`unionOrientedBox`), matching how each layer already moves. A diamond and a square now share a selection edge that follows those frames, not the fat ink AABB.
 
 ### 2026-09-02T23:25Z — loop 130
 
