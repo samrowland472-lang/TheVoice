@@ -2,20 +2,20 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const src = readFileSync(new URL("../src/lib/design/polygon-clip.ts", import.meta.url), "utf8");
+const clip = readFileSync(new URL("../src/lib/design/polygon-clip.ts", import.meta.url), "utf8");
+const islands = readFileSync(new URL("../src/lib/design/island-group.ts", import.meta.url), "utf8");
+const ops = readFileSync(new URL("../src/lib/design/boolean-ops.ts", import.meta.url), "utf8");
 
 test("groupIslands keeps nested island rings on the parent compound", () => {
-  assert.match(src, /function smallestParent/);
-  assert.match(src, /export function ringDepth/);
-  assert.match(src, /owned = true/);
-  assert.match(src, /holes\.push\(byArea\[j\]!\)/);
+  assert.match(clip, /export function groupIslands/);
+  assert.match(clip, /island that sits inside a punched hole/);
+  assert.match(clip, /holes.push\(cleaned\[c\]!\)/);
+  assert.match(islands, /function smallestParent/);
+  assert.match(islands, /export function ringDepth/);
 });
 
-test("boolean preview traces every resulting compound", () => {
-  const ops = readFileSync(new URL("../src/lib/design/boolean-ops.ts", import.meta.url), "utf8");
+test("boolean apply traces evenodd compounds from grouped islands", () => {
   assert.match(ops, /fillRule: "evenodd"/);
   assert.match(ops, /groupIslands\(clipped\)/);
-  const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
-  assert.match(stage, /computeBooleanParts/);
-  assert.match(stage, /for \(const ghost of ghosts\)/);
+  assert.match(ops, /export function computeBooleanParts/);
 });

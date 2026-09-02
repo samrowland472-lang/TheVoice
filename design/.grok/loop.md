@@ -21,17 +21,23 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Align / distribute on converted path islands.
-2. Self-overlapping figure-eight traces still need a winding pass before clip.
+1. Self-overlapping figure-eight traces still need a winding pass before clip.
+2. Align / distribute across islands that still live on one compound path.
 
 ## Done
 
+- Align and distribute use each layer's geometry box, so converted type islands (tightened onto their own contours) line up and space by ink, not by the original text frame.
+- Distribute actually runs: three-plus selected layers even out horizontal or vertical gaps; first and last stay put.
 - Boolean apply keeps hole ownership on 3+ mixed compounds: an island that lives inside a punched hole stays on the same evenodd path instead of becoming a second filled node. `groupIslands` parents every ring to its smallest container and hangs the whole descendant tree off the root outer.
 - Hover boolean ghosts draw every resulting compound, including nested islands.
 - Design store is typed so the studio typechecks.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-02T08:20Z — loop 124
+
+**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto its contour. Align left/center/right/top/middle/bottom and distribute H/V use those geometry boxes, so letters and boolean islands move independently instead of sharing the old text frame.
 
 ### 2026-09-02T07:30Z — loop 123
 
@@ -47,4 +53,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Align / distribute on converted path islands.
+Self-overlapping figure-eight traces still need a winding pass before clip.
