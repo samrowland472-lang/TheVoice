@@ -21,27 +21,34 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Align / distribute across islands that still live on one compound path.
-2. Knife cuts on self-overlapping traces after the winding split.
+1. Knife cuts on self-overlapping traces after the winding split.
+2. Align / distribute with rotation-aware island boxes.
 
 ## Done
 
-- Figure-eight / bowtie traces run a winding pass before boolean clip: returning to a vertex closes a simple lobe, crossings are inserted first, and nested twists recurse so clip sees simple rings.
-- Align and distribute use each layer's geometry box, so converted type islands (tightened onto their own contours) line up and space by ink, not by the original text frame.
-- Distribute actually runs: three-plus selected layers even out horizontal or vertical gaps; first and last stay put.
+- Align / distribute explode disjoint islands that still live on one compound path (sibling rings stored as holes) into separate layers, then space by ink boxes.
+- Store align/distribute now call `alignNodes` / `distributeNodes` instead of the node frame stub.
+- Inspector counts islands, so one selected compound of three glyphs still offers Distribute.
+- Figure-eight / bowtie traces run a winding pass before boolean clip.
+- Align and distribute use each layer's geometry box.
+- Distribute actually runs: three-plus selected layers even out horizontal or vertical gaps.
 - Boolean apply keeps hole ownership on 3+ mixed compounds.
 - Hover boolean ghosts draw every resulting compound, including nested islands.
 - Knife live preview on the artboard (K).
 
 ## Iterations
 
+### 2026-09-02T11:20Z — loop 126
+
+**Align / distribute across compound islands.** A path that still holds several disjoint outers (union leftovers, unsplit type) splits those islands on align or distribute. First island keeps the original id; extras become sibling path layers. Holes stay on their parent. Inspector treats island count as the selection size for Align-to-selection and Distribute.
+
 ### 2026-09-02T08:28Z — loop 125
 
-**Winding pass on self-overlapping traces.** Figure-eight and bowtie contours are split into simple lobes before union/subtract/intersect/exclude. Each return to a vertex closes a lobe; remaining twists recurse with a depth cap.
+**Winding pass on self-overlapping traces.** Figure-eight and bowtie contours are split into simple lobes before union/subtract/intersect/exclude.
 
 ### 2026-09-02T08:20Z — loop 124
 
-**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto its contour. Align left/center/right/top/middle/bottom and distribute H/V use those geometry boxes.
+**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto its contour.
 
 ### 2026-09-02T07:30Z — loop 123
 
@@ -49,4 +56,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Align / distribute across islands that still live on one compound path.
+Knife cuts on self-overlapping traces after the winding split.
