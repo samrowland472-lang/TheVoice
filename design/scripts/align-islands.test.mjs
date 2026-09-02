@@ -15,12 +15,19 @@ test("align module uses geometry boxes, not the stored node frame", () => {
 });
 
 test("store wires align and distribute through geometry helpers", () => {
-  assert.match(store, /alignNodes\(doc\.nodes, ids, edge, box\)/);
-  assert.match(store, /distributeNodes\(doc\.nodes, selection, axis\)/);
+  assert.match(store, /alignNodes\(exploded\.nodes, ids, edge, box\)/);
+  assert.match(store, /distributeNodes\(exploded\.nodes, exploded\.selection, axis\)/);
 });
 
 test("converted type islands tighten onto their own contour", () => {
   assert.match(text, /tightenPathNode\(node\)/);
+});
+
+test("compound paths explode disjoint islands before align", () => {
+  assert.match(align, /export function splitCompoundIslands/);
+  assert.match(align, /export function explodeSelectedIslands/);
+  assert.match(align, /groupIslandsNested/);
+  assert.match(store, /explodeSelectedIslands\(doc\.nodes, selection\)/);
 });
 
 test("distribute even spacing keeps first and last, spaces the middle", () => {
