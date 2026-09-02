@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { BRUSHES } from "./brushes";
 import { formatById } from "./formats";
-import { alignNodes, distributeNodes, explodeSelectedIslands } from "./align";
+import { alignNodes, distributeNodes, explodeSelectedIslands, unionOrientedBox } from "./align";
 import { aabb } from "./geometry";
 import { uid } from "./id";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
@@ -331,7 +331,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const ids = new Set(exploded.selection);
     const selected = exploded.nodes.filter((n: DesignNode) => ids.has(n.id));
     const toSelection = relative === "selection" || (relative !== "artboard" && selected.length > 1);
-    const box = toSelection ? aabb(selected) : { x: 0, y: 0, w: doc.artboard.width, h: doc.artboard.height };
+    const box = toSelection ? unionOrientedBox(selected) : { x: 0, y: 0, w: doc.artboard.width, h: doc.artboard.height };
     set({
       doc: { ...doc, nodes: alignNodes(exploded.nodes, ids, edge, box) },
       selection: exploded.selection,
