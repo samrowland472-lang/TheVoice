@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Align / distribute using oriented (rotated) boxes instead of axis-aligned ink boxes.
-2. Knife apply planarized lobes when a stroke crosses only one figure-eight lobe.
+1. Knife apply planarized lobes when a stroke crosses only one figure-eight lobe.
+2. Align to a key object (last selected) using the same oriented boxes.
 
 ## Done
 
+- Align / distribute rebase path islands onto a minimum-area oriented frame, then space by that rotated box's projection.
 - Knife live preview draws the full stroke and a mark at every crossing, not only the pointer tip.
 - Align / distribute bake rotated path islands into world-space ink boxes before explode.
 - Knife planarizes figure-eight / bowtie traces into simple lobes before the cut, and the K tool now draws and applies the stroke on the artboard.
@@ -40,6 +41,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-02T23:25Z — loop 130
+
+**Oriented boxes for align / distribute.** Paths tighten onto a min-area OBB (rotation + local frame). Align and distribute measure the projection of that rotated frame, not the raw ink AABB. Converted type and exploded compounds pick up the same frame.
 
 ### 2026-09-02T22:25Z — loop 129
 
@@ -59,7 +64,7 @@ Auth OFF, DB OFF.
 
 ### 2026-09-02T08:28Z — loop 125
 
-**Winding pass on self-overlapping traces.** Figure-eight and bowtie contours are split into simple lobes before union/subtract/intersect/exclude.
+**Winding pass on self-overlapping traces.** Figure-eight and bowtie traces are split into simple lobes before union/subtract/intersect/exclude.
 
 ### 2026-09-02T08:20Z — loop 124
 
@@ -71,4 +76,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Align / distribute using oriented (rotated) boxes instead of axis-aligned ink boxes.
+Knife apply planarized lobes when a stroke crosses only one figure-eight lobe.

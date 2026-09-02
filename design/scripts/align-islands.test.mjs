@@ -12,12 +12,15 @@ test("align module uses geometry boxes, not the stored node frame", () => {
   assert.match(align, /export function alignNodes/);
   assert.match(align, /export function distributeNodes/);
   assert.match(align, /geometryBox/);
-  assert.match(align, /aabb\(\[n\]\)/);
+  assert.match(align, /applyOrientedFrame/);
+  assert.match(align, /minAreaObb/);
 });
 
 test("rotated compounds bake into world-space island boxes before split", () => {
   assert.match(align, /n = tightenPathNode\(n\)/);
   assert.match(align, /rotatePoint\(n\.x \+ p\.x, n\.y \+ p\.y, c\.x, c\.y, deg\)/);
+  assert.match(align, /return applyOrientedFrame\(tight\)/);
+  assert.match(align, /return applyOrientedFrame\(part\)/);
 });
 
 test("store wires align and distribute through geometry helpers", () => {
