@@ -1,5 +1,8 @@
 import { aabb } from "./geometry";
+import { groupIslandsNested } from "./island-group";
+import { uid } from "./id";
 import type { DesignNode, PathNode, PathPoint } from "./types";
+import { isPath } from "./types";
 
 export type AlignEdge = "left" | "center" | "right" | "top" | "middle" | "bottom";
 export type DistributeAxis = "h" | "v";
@@ -49,6 +52,77 @@ export function tightenPathNode(n: PathNode): PathNode {
 
 export function geometryBox(n: DesignNode) {
   return aabb([n]);
+}
+
+function ringBox(ring: PathPoint[]) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of ring) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  if (!Number.isFinite(minX)) return { x: 0, y: 0, w: 0, h: 0 };
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+}
+
+/** Disjoint outer rings on one path (holes stay attached to their parent). */
+export function splitCompoundIslands(n: PathNode): PathNode[] {
+  const rings = [n.points, ...(n.holes ?? [])].filter((r) => r.length >= 3);
+  if (rings.length < 2) return [n];
+  const groups = groupIslandsNested(rings);
+  if (groups.length <= 1) return [n];
+  return groups.map((g, i) => {
+    const all = [g.outer, ...g.holes];
+    const box = ringBox(all.flat());
+    const dx = box.x;
+    const dy = box.y;
+    return {
+      ...n,
+      id: i === 0 ? n.id : uid("pt"),
+      name: i === 0 ? n.name : `${n.name} ${i + 1}`,
+      x: n.x + dx,
+      y: n.y + dy,
+      w: Math.max(1, box.w),
+      h: Math.max(1, box.h),
+      points: shiftRing(g.outer, -dx, -dy),
+      holes: g.holes.length ? g.holes.map((h) => shiftRing(h, -dx, -dy)) : undefined,
+      fillRule: g.holes.length ? (n.fillRule ?? "evenodd") : n.fillRule,
+    };
+  });
+}
+
+export function explodeSelectedIslands(
+  nodes: DesignNode[],
+  selected: string[],
+): { nodes: DesignNode[]; selection: string[] } {
+  const ids = new Set(selected);
+  const next: DesignNode[] = [];
+  const selection: string[] = [];
+  for (const n of nodes) {
+    if (!ids.has(n.id) || !isPath(n) || n.locked) {
+      next.push(n);
+      if (ids.has(n.id)) selection.push(n.id);
+      continue;
+    }
+    const parts = splitCompoundIslands(n);
+    next.push(...parts);
+    for (const p of parts) selection.push(p.id);
+  }
+  return { nodes: next, selection };
+}
+
+export function countIslandItems(nodes: DesignNode[], selected: string[]): number {
+  const ids = new Set(selected);
+  let count = 0;
+  for (const n of nodes) {
+    if (!ids.has(n.id) || n.locked) continue;
+    count += isPath(n) ? splitCompoundIslands(n).length : 1;
+  }
+  return count;
 }
 
 export function alignNodes(
