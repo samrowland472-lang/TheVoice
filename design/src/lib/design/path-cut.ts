@@ -199,3 +199,65 @@ export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: num
   if (!found) return null;
   return { x: n.x + found.hit.local.x, y: n.y + found.hit.local.y };
 }
+
+function segSeg(a: Vec, b: Vec, c: Vec, d: Vec): { t: number; u: number; p: Vec } | null {
+  const rx = b.x - a.x;
+  const ry = b.y - a.y;
+  const sx = d.x - c.x;
+  const sy = d.y - c.y;
+  const den = rx * sy - ry * sx;
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c.x - a.x) * sy - (c.y - a.y) * sx) / den;
+  const u = ((c.x - a.x) * ry - (c.y - a.y) * rx) / den;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return { t, u, p: { x: a.x + t * rx, y: a.y + t * ry } };
+}
+
+/** Intersections of a drag stroke with one contour, nearest-first along the stroke. */
+export function strokeHitsContour(pts: PathPoint[], closed: boolean, a: Vec, b: Vec): SegmentHit[] {
+  const n = pts.length;
+  if (n < 2) return [];
+  const last = closed ? n : n - 1;
+  const hits: SegmentHit[] = [];
+  for (let i = 0; i < last; i++) {
+    const pa = pts[i]!;
+    const pb = pts[(i + 1) % n]!;
+    const { p0, p1, p2, p3 } = segmentControls(pa, pb);
+    let prev = p0;
+    const steps = 16;
+    for (let s = 1; s <= steps; s++) {
+      const t1 = s / steps;
+      const cur = cubicAt(p0, p1, p2, p3, t1);
+      const hit = segSeg(prev, cur, a, b);
+      if (hit) {
+        const tSeg = (s - 1 + hit.t) / steps;
+        hits.push({
+          index: i,
+          t: Math.min(0.96, Math.max(0.04, tSeg)),
+          local: hit.p,
+          dist: 0,
+        });
+        break;
+      }
+      prev = cur;
+    }
+  }
+  hits.sort((x, y) => {
+    const dx = (p: SegmentHit) => Math.hypot(p.local.x - a.x, p.local.y - a.y);
+    return dx(x) - dx(y);
+  });
+  return hits;
+}
+
+export function strokeHitsCompound(
+  n: PathNode,
+  a: Vec,
+  b: Vec,
+): { hole: number | null; hit: SegmentHit }[] {
+  const out: { hole: number | null; hit: SegmentHit }[] = [];
+  for (const hit of strokeHitsContour(n.points, n.closed, a, b)) out.push({ hole: null, hit });
+  (n.holes ?? []).forEach((ring, i) => {
+    for (const hit of strokeHitsContour(ring, true, a, b)) out.push({ hole: i, hit });
+  });
+  return out;
+}
