@@ -1,4 +1,5 @@
-import type { PathPoint } from "./types";
+import { uid } from "./id";
+import type { PathNode, PathPoint } from "./types";
 import { ringArea } from "./polygon-clip";
 
 export type Ring = PathPoint[];
@@ -126,6 +127,60 @@ function extractWindingLobes(split: Ring): Ring[] {
     if (start !== end) pushLobe(split);
   }
   return lobes;
+}
+
+function asPathPoint(p: PathPoint): PathPoint {
+  return { x: p.x, y: p.y, in: p.in ?? null, out: p.out ?? null, smooth: p.smooth };
+}
+
+function pointInRing(pt: { x: number; y: number }, ring: Ring): boolean {
+  let inside = false;
+  const n = ring.length;
+  const EPS = 1e-9;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const a = ring[i]!;
+    const b = ring[j]!;
+    const inter =
+      a.y > pt.y !== b.y > pt.y && pt.x < ((b.x - a.x) * (pt.y - a.y)) / (b.y - a.y || EPS) + a.x;
+    if (inter) inside = !inside;
+  }
+  return inside;
+}
+
+function holeFitsLobe(hole: Ring, lobe: Ring): boolean {
+  if (hole.length < 3 || lobe.length < 3) return false;
+  let hits = 0;
+  const sample = Math.min(hole.length, 5);
+  for (let i = 0; i < sample; i++) {
+    if (pointInRing(hole[Math.floor((i * hole.length) / sample)]!, lobe)) hits += 1;
+  }
+  return hits >= Math.ceil(sample / 2);
+}
+
+/** Split a figure-eight / bowtie path into simple closed lobes for knife. */
+export function explodeTwistedPath(n: PathNode): PathNode[] {
+  if (!n.closed || n.points.length < 4) return [n];
+  const lobes = splitSelfOverlapping(n.points);
+  if (lobes.length <= 1) return [n];
+  const unusedHoles = [...(n.holes ?? [])];
+  return lobes.map((lobe, i) => {
+    const holes: Ring[] = [];
+    for (let h = unusedHoles.length - 1; h >= 0; h--) {
+      const hole = unusedHoles[h]!;
+      if (holeFitsLobe(hole, lobe)) {
+        holes.push(hole);
+        unusedHoles.splice(h, 1);
+      }
+    }
+    return {
+      ...n,
+      id: i === 0 ? n.id : uid("pt"),
+      name: i === 0 ? n.name : `${n.name} ${i + 1}`,
+      points: lobe.map(asPathPoint),
+      holes: holes.length ? holes.map((ring) => ring.map(asPathPoint)) : undefined,
+      closed: true,
+    };
+  });
 }
 
 export function splitSelfOverlapping(ring: Ring, depth = 0): Ring[] {
