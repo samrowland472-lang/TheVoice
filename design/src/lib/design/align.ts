@@ -7,6 +7,8 @@ import { isPath } from "./types";
 export type AlignEdge = "left" | "center" | "right" | "top" | "middle" | "bottom";
 export type DistributeAxis = "h" | "v";
 
+type Pt = { x: number; y: number };
+
 function shiftRing(ring: PathPoint[], dx: number, dy: number): PathPoint[] {
   return ring.map((p) => ({ ...p, x: p.x + dx, y: p.y + dy }));
 }
@@ -14,6 +16,12 @@ function shiftRing(ring: PathPoint[], dx: number, dy: number): PathPoint[] {
 function rotateOffset(h: { x: number; y: number } | null | undefined, deg: number) {
   if (!h) return h;
   const r = rotatePoint(h.x, h.y, 0, 0, deg);
+  return { x: r.x, y: r.y };
+}
+
+function unrotateOffset(h: { x: number; y: number } | null | undefined, deg: number) {
+  if (!h) return h;
+  const r = rotatePoint(h.x, h.y, 0, 0, -deg);
   return { x: r.x, y: r.y };
 }
 
@@ -43,6 +51,116 @@ export function bakePathRotation(n: PathNode): PathNode {
   };
 }
 
+function convexHull(pts: Pt[]): Pt[] {
+  const uniq = new Map<string, Pt>();
+  for (const p of pts) uniq.set(`${p.x.toFixed(4)},${p.y.toFixed(4)}`, p);
+  const points = [...uniq.values()].sort((a, b) => a.x - b.x || a.y - b.y);
+  if (points.length <= 2) return points;
+  const cross = (o: Pt, a: Pt, b: Pt) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: Pt[] = [];
+  for (const p of points) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper: Pt[] = [];
+  for (let i = points.length - 1; i >= 0; i--) {
+    const p = points[i]!;
+    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+/** Minimum-area oriented box around world samples (rotating calipers on the hull). */
+export function minAreaObb(pts: Pt[]): { cx: number; cy: number; w: number; h: number; rotation: number } {
+  const hull = convexHull(pts);
+  if (hull.length === 0) return { cx: 0, cy: 0, w: 1, h: 1, rotation: 0 };
+  if (hull.length === 1) return { cx: hull[0]!.x, cy: hull[0]!.y, w: 1, h: 1, rotation: 0 };
+  if (hull.length === 2) {
+    const a = hull[0]!;
+    const b = hull[1]!;
+    const ang = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+    return {
+      cx: (a.x + b.x) / 2,
+      cy: (a.y + b.y) / 2,
+      w: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+      h: 1,
+      rotation: ang,
+    };
+  }
+  let best = { area: Infinity, cx: 0, cy: 0, w: 1, h: 1, rotation: 0 };
+  for (let i = 0; i < hull.length; i++) {
+    const a = hull[i]!;
+    const b = hull[(i + 1) % hull.length]!;
+    const ang = Math.atan2(b.y - a.y, b.x - a.x);
+    const c = Math.cos(ang);
+    const s = Math.sin(ang);
+    let minP = Infinity;
+    let maxP = -Infinity;
+    let minQ = Infinity;
+    let maxQ = -Infinity;
+    for (const p of hull) {
+      const pr = p.x * c + p.y * s;
+      const qr = -p.x * s + p.y * c;
+      minP = Math.min(minP, pr);
+      maxP = Math.max(maxP, pr);
+      minQ = Math.min(minQ, qr);
+      maxQ = Math.max(maxQ, qr);
+    }
+    const w = maxP - minP;
+    const h = maxQ - minQ;
+    const area = w * h;
+    if (area < best.area) {
+      const midP = (minP + maxP) / 2;
+      const midQ = (minQ + maxQ) / 2;
+      best = {
+        area,
+        cx: midP * c - midQ * s,
+        cy: midP * s + midQ * c,
+        w: Math.max(1, w),
+        h: Math.max(1, h),
+        rotation: (ang * 180) / Math.PI,
+      };
+    }
+  }
+  return best;
+}
+
+/** Rebase a path onto its minimum-area oriented frame so align uses rotated ink, not the AABB. */
+export function applyOrientedFrame(n: PathNode): PathNode {
+  const samples: Pt[] = [];
+  for (const p of n.points) samples.push({ x: n.x + p.x, y: n.y + p.y });
+  for (const hole of n.holes ?? []) for (const p of hole) samples.push({ x: n.x + p.x, y: n.y + p.y });
+  if (samples.length < 2) return n;
+  const obb = minAreaObb(samples);
+  const x = obb.cx - obb.w / 2;
+  const y = obb.cy - obb.h / 2;
+  const mapRing = (ring: PathPoint[]) =>
+    ring.map((p) => {
+      const world = { x: n.x + p.x, y: n.y + p.y };
+      const local = rotatePoint(world.x, world.y, obb.cx, obb.cy, -obb.rotation);
+      return {
+        ...p,
+        x: local.x - x,
+        y: local.y - y,
+        in: unrotateOffset(p.in, obb.rotation) ?? p.in,
+        out: unrotateOffset(p.out, obb.rotation) ?? p.out,
+      };
+    });
+  return {
+    ...n,
+    x,
+    y,
+    w: obb.w,
+    h: obb.h,
+    rotation: obb.rotation,
+    points: mapRing(n.points),
+    holes: n.holes?.map(mapRing),
+  };
+}
+
 /** Pull a path node's box onto its actual contour so islands can align independently. */
 export function tightenPathNode(n: PathNode): PathNode {
   const baked = bakePathRotation(n);
@@ -63,16 +181,7 @@ export function tightenPathNode(n: PathNode): PathNode {
   if (!Number.isFinite(minX)) return baked;
   const dx = minX;
   const dy = minY;
-  if (
-    !baked.rotation &&
-    Math.abs(dx) < 1e-6 &&
-    Math.abs(dy) < 1e-6 &&
-    Math.abs(baked.w - (maxX - minX)) < 0.5 &&
-    Math.abs(baked.h - (maxY - minY)) < 0.5
-  ) {
-    return baked;
-  }
-  return {
+  const tight: PathNode = {
     ...baked,
     x: baked.x + dx,
     y: baked.y + dy,
@@ -81,10 +190,31 @@ export function tightenPathNode(n: PathNode): PathNode {
     points: shiftRing(baked.points, -dx, -dy),
     holes: baked.holes?.map((h) => shiftRing(h, -dx, -dy)),
   };
+  return applyOrientedFrame(tight);
 }
 
+/** Axis-aligned projection of the node's oriented frame (rotated box, not raw ink AABB). */
 export function geometryBox(n: DesignNode) {
-  return aabb([n]);
+  const c = { x: n.x + n.w / 2, y: n.y + n.h / 2 };
+  const pts = [
+    { x: n.x, y: n.y },
+    { x: n.x + n.w, y: n.y },
+    { x: n.x + n.w, y: n.y + n.h },
+    { x: n.x, y: n.y + n.h },
+  ];
+  const corners = n.rotation ? pts.map((p) => rotatePoint(p.x, p.y, c.x, c.y, n.rotation)) : pts;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of corners) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  if (!Number.isFinite(minX)) return aabb([n]);
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
 function ringBox(ring: PathPoint[]) {
@@ -114,7 +244,7 @@ export function splitCompoundIslands(n: PathNode): PathNode[] {
     const box = ringBox(all.flat());
     const dx = box.x;
     const dy = box.y;
-    return {
+    const part: PathNode = {
       ...n,
       id: i === 0 ? n.id : uid("pt"),
       name: i === 0 ? n.name : `${n.name} ${i + 1}`,
@@ -122,10 +252,12 @@ export function splitCompoundIslands(n: PathNode): PathNode[] {
       y: n.y + dy,
       w: Math.max(1, box.w),
       h: Math.max(1, box.h),
+      rotation: 0,
       points: shiftRing(g.outer, -dx, -dy),
       holes: g.holes.length ? g.holes.map((h) => shiftRing(h, -dx, -dy)) : undefined,
       fillRule: g.holes.length ? (n.fillRule ?? "evenodd") : n.fillRule,
     };
+    return applyOrientedFrame(part);
   });
 }
 
