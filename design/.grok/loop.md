@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Knife cuts on self-overlapping traces after the winding split.
-2. Align / distribute with rotation-aware island boxes.
+1. Align / distribute with rotation-aware island boxes.
+2. Knife live preview along the whole stroke, not only the pointer tip.
 
 ## Done
 
+- Knife planarizes figure-eight / bowtie traces into simple lobes before the cut, and the K tool now draws and applies the stroke on the artboard.
 - Align / distribute explode disjoint islands that still live on one compound path (sibling rings stored as holes) into separate layers, then space by ink boxes.
 - Store align/distribute now call `alignNodes` / `distributeNodes` instead of the node frame stub.
 - Inspector counts islands, so one selected compound of three glyphs still offers Distribute.
@@ -37,6 +38,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-02T12:20Z — loop 127
+
+**Knife on self-overlapping traces.** Figure-eight and bowtie contours split into simple lobes before a knife cut. Drag with K across one lobe: that ring opens, the other lobe stays a closed sibling. Hover snap and the cut stroke both use the planarized rings.
 
 ### 2026-09-02T11:20Z — loop 126
 
@@ -56,4 +61,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Knife cuts on self-overlapping traces after the winding split.
+Align / distribute with rotation-aware island boxes.
