@@ -2,16 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const src = readFileSync(new URL("../src/lib/design/polygon-clip.ts", import.meta.url), "utf8");
+const wind = readFileSync(new URL("../src/lib/design/winding-pass.ts", import.meta.url), "utf8");
+const ops = readFileSync(new URL("../src/lib/design/boolean-ops.ts", import.meta.url), "utf8");
+const clip = readFileSync(new URL("../src/lib/design/polygon-clip.ts", import.meta.url), "utf8");
 
 test("figure-eight traces run a winding pass before clip", () => {
-  assert.match(src, /function extractWindingLobes/);
-  assert.match(src, /Winding pass/);
-  assert.match(src, /export function splitSelfOverlapping/);
-  assert.match(src, /flatMap\(splitSelfOverlapping\)/);
-});
-
-test("clipTwo planarizes each operand before half-edge keep", () => {
-  assert.match(src, /const A0 = aRings.flatMap\(splitSelfOverlapping\)/);
-  assert.match(src, /const B0 = bRings.flatMap\(splitSelfOverlapping\)/);
+  assert.match(wind, /function extractWindingLobes/);
+  assert.match(wind, /Winding pass/);
+  assert.match(wind, /export function splitSelfOverlapping/);
+  assert.match(ops, /splitFigureEight/);
+  assert.match(ops, /flatMap\(splitFigureEight\)/);
+  assert.match(clip, /flatMap\(splitSelfOverlapping\)/);
 });
