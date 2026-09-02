@@ -21,36 +21,32 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Self-overlapping figure-eight traces still need a winding pass before clip.
-2. Align / distribute across islands that still live on one compound path.
+1. Align / distribute across islands that still live on one compound path.
+2. Knife cuts on self-overlapping traces after the winding split.
 
 ## Done
 
+- Figure-eight / bowtie traces run a winding pass before boolean clip: returning to a vertex closes a simple lobe, crossings are inserted first, and nested twists recurse so clip sees simple rings.
 - Align and distribute use each layer's geometry box, so converted type islands (tightened onto their own contours) line up and space by ink, not by the original text frame.
 - Distribute actually runs: three-plus selected layers even out horizontal or vertical gaps; first and last stay put.
-- Boolean apply keeps hole ownership on 3+ mixed compounds: an island that lives inside a punched hole stays on the same evenodd path instead of becoming a second filled node. `groupIslands` parents every ring to its smallest container and hangs the whole descendant tree off the root outer.
+- Boolean apply keeps hole ownership on 3+ mixed compounds.
 - Hover boolean ghosts draw every resulting compound, including nested islands.
-- Design store is typed so the studio typechecks.
 - Knife live preview on the artboard (K).
 
 ## Iterations
 
+### 2026-09-02T08:28Z — loop 125
+
+**Winding pass on self-overlapping traces.** Figure-eight and bowtie contours are split into simple lobes before union/subtract/intersect/exclude. Each return to a vertex closes a lobe; remaining twists recurse with a depth cap.
+
 ### 2026-09-02T08:20Z — loop 124
 
-**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto its contour. Align left/center/right/top/middle/bottom and distribute H/V use those geometry boxes, so letters and boolean islands move independently instead of sharing the old text frame.
+**Align / distribute on converted path islands.** Type converted to paths now tightens each glyph onto its contour. Align left/center/right/top/middle/bottom and distribute H/V use those geometry boxes.
 
 ### 2026-09-02T07:30Z — loop 123
 
-**Boolean apply keeps islands inside punched holes.** Three-plus selections (donut + island-in-hole + another shape) now commit as one evenodd compound per top-level outer. Nested fill rings stay descendants of the hole that owns them. Preview traces every part.
-
-### 2026-09-02T05:25Z — loop 122
-
-**Boolean preview holes on mixed compounds.** Nested offset rings plus type-converted letters no longer fill their counters in the hover ghost.
-
-### 2026-09-02T04:20Z — loop 121
-
-**Knife live preview.** The knife tool is live on the artboard.
+**Boolean apply keeps islands inside punched holes.**
 
 ## Next recommended
 
-Self-overlapping figure-eight traces still need a winding pass before clip.
+Align / distribute across islands that still live on one compound path.
