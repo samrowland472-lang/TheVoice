@@ -26,6 +26,7 @@ Auth OFF, DB OFF.
 
 ## Done
 
+- Winding pass actually wired: clipper restored (~12kb) so figure-eight traces split into two simple lobes before union/subtract; overlapping squares still yield an 8-vertex union and an L subtract. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Winding pass: self-crossing figure-eight traces split into simple lobes before clip. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Knife hits compound holes as well as outers. Cutting a hole lifts it to an open path. Opening a compound outer releases holes as sibling islands. Live boolean hover folds more than two shapes and ghosts every accumulate plus every island. Zustand store restored (~29kb).
 - Clipper snaps vertices, splits collinear shared edges, caps high-vertex rings, and drops colinear slivers so abutting squares union cleanly.
@@ -43,6 +44,10 @@ Auth OFF, DB OFF.
 - Boolean sibling islands land as separate path layers; nested rings stay holes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-02T01:15Z — loop 118
+
+**Polish winding + restore clipper and store.** `polygon-clip.ts` was a 605-byte stub; restored the real clipper and run a winding stack before clip so a figure-eight becomes two triangles. Zustand store restored (~29kb) with `booleanPreview`, `pathEditHit`, and `fit-sel`. Verified: two-lobe split, 8-vertex union, L subtract.
 
 ### 2026-09-02T00:30Z — loop 117
 
