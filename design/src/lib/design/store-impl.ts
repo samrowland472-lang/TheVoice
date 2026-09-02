@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { BRUSHES } from "./brushes";
 import { formatById } from "./formats";
+import { alignNodes, distributeNodes, explodeSelectedIslands } from "./align";
 import { aabb } from "./geometry";
 import { uid } from "./id";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
@@ -326,25 +327,14 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const { doc, selection } = get();
     if (!doc || !selection.length) return;
     get().commit();
-    const ids = new Set(selection);
-    const selected = doc.nodes.filter((n: DesignNode) => ids.has(n.id));
+    const exploded = explodeSelectedIslands(doc.nodes, selection);
+    const ids = new Set(exploded.selection);
+    const selected = exploded.nodes.filter((n: DesignNode) => ids.has(n.id));
     const toSelection = relative === "selection" || (relative !== "artboard" && selected.length > 1);
     const box = toSelection ? aabb(selected) : { x: 0, y: 0, w: doc.artboard.width, h: doc.artboard.height };
     set({
-      doc: {
-        ...doc,
-        nodes: doc.nodes.map((n: DesignNode) => {
-          if (!ids.has(n.id) || n.locked) return n;
-          const p = { ...n };
-          if (edge === "left") p.x = box.x;
-          if (edge === "center") p.x = box.x + (box.w - n.w) / 2;
-          if (edge === "right") p.x = box.x + box.w - n.w;
-          if (edge === "top") p.y = box.y;
-          if (edge === "middle") p.y = box.y + (box.h - n.h) / 2;
-          if (edge === "bottom") p.y = box.y + box.h - n.h;
-          return p;
-        }),
-      },
+      doc: { ...doc, nodes: alignNodes(exploded.nodes, ids, edge, box) },
+      selection: exploded.selection,
       dirty: true,
     });
   },
@@ -392,7 +382,17 @@ export const useDesign = create<any>((set: any, get: any) => ({
     get().updateNodes(selection, {}, true);
     void deg;
   },
-  distributeSelected: () => undefined,
+  distributeSelected: (axis: "h" | "v" = "h") => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    get().commit();
+    const exploded = explodeSelectedIslands(doc.nodes, selection);
+    set({
+      doc: { ...doc, nodes: distributeNodes(exploded.nodes, exploded.selection, axis) },
+      selection: exploded.selection,
+      dirty: true,
+    });
+  },
   duplicateProject: (id: string) => {
     const src = loadDoc(id);
     if (!src) return "";
