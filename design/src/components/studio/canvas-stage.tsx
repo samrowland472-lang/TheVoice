@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
-import { appendPenPoint, editPathHit, setPathEditHit } from "@/lib/design/path-actions";
+import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit } from "@/lib/design/path-actions";
+import { knifePreviewPoint, knifeStrokePreview } from "@/lib/design/path-cut";
 import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
 import { hasHandle } from "@/lib/design/path-curve";
 import { tracePath } from "@/lib/design/path-curve";
@@ -23,6 +24,7 @@ export function CanvasStage() {
     pulled: boolean;
   } | null>(null);
   const hoverRef = useRef<{ x: number; y: number } | null>(null);
+  const knifeRef = useRef<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [hoverTick, setHoverTick] = useState(0);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
@@ -152,6 +154,63 @@ export function CanvasStage() {
         ctx.setLineDash([]);
       }
     }
+    if (!present && tool === "knife") {
+      const hover = hoverRef.current;
+      const stroke = knifeRef.current;
+      ctx.save();
+      ctx.strokeStyle = "rgba(63,198,255,0.92)";
+      ctx.fillStyle = "#3fc6ff";
+      ctx.lineWidth = 1.4 / viewport.zoom;
+      if (stroke) {
+        ctx.beginPath();
+        ctx.moveTo(stroke.ax, stroke.ay);
+        ctx.lineTo(stroke.bx, stroke.by);
+        ctx.setLineDash([5 / viewport.zoom, 4 / viewport.zoom]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const marks: { x: number; y: number }[] = [];
+        const seen = new Set<string>();
+        for (const node of doc.nodes) {
+          if (!isPath(node) || !node.visible || node.locked) continue;
+          for (const p of knifeStrokePreview(node, stroke.ax, stroke.ay, stroke.bx, stroke.by)) {
+            const key = `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            marks.push(p);
+          }
+        }
+        for (const p of marks) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4 / viewport.zoom, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 7 / viewport.zoom, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(63,198,255,0.7)";
+          ctx.stroke();
+        }
+      } else if (hover) {
+        let snap: { x: number; y: number } | null = null;
+        for (const node of doc.nodes) {
+          if (!isPath(node) || !node.visible || node.locked) continue;
+          const local = pathWorldToLocal(node, hover.x, hover.y);
+          const hit = knifePreviewPoint(node, local.x, local.y, viewport.zoom);
+          if (hit) {
+            snap = hit;
+            break;
+          }
+        }
+        const p = snap ?? hover;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4 / viewport.zoom, 0, Math.PI * 2);
+        ctx.fill();
+        if (snap) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 8 / viewport.zoom, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
     if (!present && booleanPreview && selection.length >= 2) {
       const picked = selection.flatMap((id) => {
         const n = doc.nodes.find((x) => x.id === id);
@@ -191,6 +250,13 @@ export function CanvasStage() {
     if (present || e.button !== 0) return;
     const s = useDesign.getState();
     const d = clientDoc(e);
+    if (s.tool === "knife") {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      knifeRef.current = { ax: d.x, ay: d.y, bx: d.x, by: d.y };
+      setHoverTick((n) => n + 1);
+      return;
+    }
     if (s.tool === "pen") {
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -270,6 +336,14 @@ export function CanvasStage() {
     const s = useDesign.getState();
     const d = clientDoc(e);
     hoverRef.current = d;
+    if (s.tool === "knife") {
+      if (knifeRef.current) {
+        knifeRef.current.bx = d.x;
+        knifeRef.current.by = d.y;
+      }
+      setHoverTick((n) => n + 1);
+      return;
+    }
     if (!drag.current) setHoverTick((n) => n + 1);
     const live = drag.current;
     if (live) {
@@ -296,6 +370,19 @@ export function CanvasStage() {
   }
 
   function onPointerUp(e: React.PointerEvent) {
+    const knife = knifeRef.current;
+    if (knife) {
+      const s = useDesign.getState();
+      knifeCutStroke(knife.ax, knife.ay, knife.bx, knife.by, s.viewport.zoom);
+      knifeRef.current = null;
+      setHoverTick((n) => n + 1);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+      return;
+    }
     const live = drag.current;
     if (live) {
       const s = useDesign.getState();
@@ -343,6 +430,11 @@ export function CanvasStage() {
       {tool === "pen" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
           Click add · drag cubic · pull last handle to first to preview close · Alt break · ⌫ last · Enter close · Esc finish
+        </div>
+      )}
+      {tool === "knife" && !present && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
+          Drag across a path — every crossing lights up, then the stroke cuts
         </div>
       )}
     </div>
