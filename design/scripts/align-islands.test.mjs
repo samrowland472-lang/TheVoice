@@ -26,6 +26,8 @@ test("rotated compounds bake into world-space island boxes before split", () => 
 test("store wires align and distribute through geometry helpers", () => {
   assert.match(store, /alignNodes\(exploded\.nodes, ids, edge, box\)/);
   assert.match(store, /distributeNodes\(exploded\.nodes, exploded\.selection, axis\)/);
+  assert.match(store, /unionOrientedBox\(selected\)/);
+  assert.match(align, /export function unionOrientedBox/);
 });
 
 test("converted type islands tighten onto their own contour", () => {
