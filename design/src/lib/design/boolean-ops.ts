@@ -1,7 +1,8 @@
 import { pathNode } from "./node-factory";
 import { nodeCenter, rotatePoint } from "./geometry";
 import { hasHandle } from "./path-curve";
-import { clipMany, groupIslands, type ClipOp } from "./polygon-clip";
+import { clipMany, type ClipOp } from "./polygon-clip";
+import { groupIslandsNested as groupIslands } from "./island-group";
 import type { DesignNode, PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
 
