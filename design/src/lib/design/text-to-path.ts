@@ -1,3 +1,4 @@
+import { tightenPathNode } from "./align";
 import { contourArea, orientContour } from "./boolean-ops";
 import { fontStack } from "./fonts";
 import { pathNode } from "./node-factory";
@@ -293,7 +294,7 @@ export function textNodeToPathNodes(n: TextNode): PathNode[] {
     });
     node.linkId = n.linkId;
     node.href = n.href;
-    nodes.push(node);
+    nodes.push(tightenPathNode(node));
   }
   return nodes;
 }
