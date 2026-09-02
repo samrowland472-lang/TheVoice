@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Knife live preview along the whole stroke, not only the pointer tip.
-2. Align / distribute using oriented (rotated) boxes instead of axis-aligned ink boxes.
+1. Align / distribute using oriented (rotated) boxes instead of axis-aligned ink boxes.
+2. Knife apply planarized lobes when a stroke crosses only one figure-eight lobe.
 
 ## Done
 
+- Knife live preview draws the full stroke and a mark at every crossing, not only the pointer tip.
 - Align / distribute bake rotated path islands into world-space ink boxes before explode.
 - Knife planarizes figure-eight / bowtie traces into simple lobes before the cut, and the K tool now draws and applies the stroke on the artboard.
 - Align / distribute explode disjoint islands that still live on one compound path (sibling rings stored as holes) into separate layers, then space by ink boxes.
@@ -39,6 +40,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-02T22:25Z — loop 129
+
+**Knife preview along the whole stroke.** Drag with K and the dashed cut line shows every intersection on the path before release. Hover still snaps to the nearest segment; release applies `knifeCutStroke`.
 
 ### 2026-09-02T21:20Z — loop 128
 
@@ -66,4 +71,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Knife live preview along the whole stroke, not only the pointer tip.
+Align / distribute using oriented (rotated) boxes instead of axis-aligned ink boxes.

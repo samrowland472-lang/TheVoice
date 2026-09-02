@@ -10,4 +10,6 @@ test("knife planarizes figure-eight traces before cut", () => {
   assert.match(wind, /splitSelfOverlapping\(n\.points\)/);
   assert.match(cut, /explodeTwistedPath\(n\)/);
   assert.match(cut, /knifePreviewPoint/);
+  assert.match(cut, /knifeStrokePreview/);
+  assert.match(cut, /every crossing/);
 });
