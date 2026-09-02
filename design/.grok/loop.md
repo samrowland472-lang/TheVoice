@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Knife drag-across (cut a stroke through several segments at once).
-2. Boolean live preview of mixed path+shape selections when a lobe is self-overlapping.
+1. Boolean live preview of mixed path+shape selections when a lobe is self-overlapping.
 
 ## Done
 
+- Knife drag-across cuts every segment the stroke crosses (outers and holes). Click still nicks one. Store restored (~29kb). Clipper restored with winding lobes.
 - Winding pass actually wired: clipper restored (~12kb) so figure-eight traces split into two simple lobes before union/subtract; overlapping squares still yield an 8-vertex union and an L subtract. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Winding pass: self-crossing figure-eight traces split into simple lobes before clip. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Knife hits compound holes as well as outers. Cutting a hole lifts it to an open path. Opening a compound outer releases holes as sibling islands. Live boolean hover folds more than two shapes and ghosts every accumulate plus every island. Zustand store restored (~29kb).
@@ -44,6 +44,10 @@ Auth OFF, DB OFF.
 - Boolean sibling islands land as separate path layers; nested rings stay holes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-02T02:20Z — loop 119
+
+**Knife drag-across + restore store/clipper.** Dragging K across a path cuts every crossed segment in one stroke; holes lift to open paths. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel. Clipper restored so figure-eight traces split into simple lobes before union/subtract.
 
 ### 2026-09-02T01:15Z — loop 118
 
@@ -79,4 +83,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Knife drag-across (cut a stroke through several segments at once).
+Boolean live preview of mixed path+shape selections when a lobe is self-overlapping.
