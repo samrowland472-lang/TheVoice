@@ -3,6 +3,7 @@ import { nodeCenter, rotatePoint } from "./geometry";
 import { hasHandle } from "./path-curve";
 import { clipMany, type ClipOp } from "./polygon-clip";
 import { groupIslandsNested as groupIslands } from "./island-group";
+import { splitSelfOverlapping as splitFigureEight } from "./winding-pass";
 import type { DesignNode, PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
 
@@ -206,7 +207,8 @@ export function composeBooleanParts(
   op: BooleanOp,
 ): PathNode[] {
   const first = usable[0]!;
-  const clipped = clipMany(groups, op as ClipOp);
+  const planar = groups.map((g) => g.flatMap(splitFigureEight));
+  const clipped = clipMany(planar, op as ClipOp);
   if (!clipped.length) return [];
   const islands = groupIslands(clipped);
   if (!islands.length) return [];
