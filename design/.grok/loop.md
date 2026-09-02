@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Self-overlapping figure-eight traces still need a winding pass before clip.
-2. Knife drag-across (cut a stroke through several segments at once).
+1. Knife drag-across (cut a stroke through several segments at once).
+2. Boolean live preview of mixed path+shape selections when a lobe is self-overlapping.
 
 ## Done
 
+- Winding pass: self-crossing figure-eight traces split into simple lobes before clip. Zustand store restored (~29kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
 - Knife hits compound holes as well as outers. Cutting a hole lifts it to an open path. Opening a compound outer releases holes as sibling islands. Live boolean hover folds more than two shapes and ghosts every accumulate plus every island. Zustand store restored (~29kb).
 - Clipper snaps vertices, splits collinear shared edges, caps high-vertex rings, and drops colinear slivers so abutting squares union cleanly.
 - Real polygon clipper for union / subtract / intersect / exclude (edge split + fragment classify + chain). Overlapping squares yield an 8-vertex union and a true L subtract instead of a convex hull. Zustand store restored (~27kb) with hydrate, history, boolean preview, path-edit hit, and fit-sel.
@@ -42,6 +43,10 @@ Auth OFF, DB OFF.
 - Boolean sibling islands land as separate path layers; nested rings stay holes. Zustand store implementation restored (~29kb).
 
 ## Iterations
+
+### 2026-09-02T00:30Z — loop 117
+
+**Winding pass before clip.** Self-overlapping figure-eight traces now insert their own crossings and walk a winding stack so each lobe becomes a simple ring before union/subtract/intersect/exclude. Zustand store restored (~29kb) so hydrate, history, boolean preview, and path-edit hit work again.
 
 ### 2026-09-01T23:35Z — loop 116
 
@@ -65,8 +70,8 @@ Auth OFF, DB OFF.
 
 ### 2026-09-01T18:20Z — loop 111
 
-**Type to path.** Selected text rasterizes at the live type size, traces outer contours and counters, then replaces the type layer with closed editable paths. Holes keep opposite winding for evenodd. Command palette: Convert type to path. Inspector Type → Path. Zustand store kept whole (~29kb) with boolean preview and path-edit hit.
+**Type to path.** Selected text rasterizes at the live type size, traces outer contours and counters, then replaces the type layer with editable paths. Holes keep opposite winding for evenodd. Command palette: Convert type to path. Inspector Type → Path. Zustand store kept whole (~29kb) with boolean preview and path-edit hit.
 
 ## Next recommended
 
-Winding pass for self-overlapping figure-eight traces before clip.
+Knife drag-across (cut a stroke through several segments at once).
