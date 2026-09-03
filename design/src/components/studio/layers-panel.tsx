@@ -55,6 +55,7 @@ export function LayersPanel() {
       <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
         {layers.map((n, i) => {
           const active = selection.includes(n.id);
+          const isKey = selection.length >= 2 && selection[selection.length - 1] === n.id;
           const dragging = draggingSet?.has(n.id) ?? false;
           return (
             <li key={n.id} data-layer-id={n.id} className="relative">
@@ -105,6 +106,11 @@ export function LayersPanel() {
                 >
                   {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
                   {n.name || n.kind}
+                  {isKey && (
+                    <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
+                      Key
+                    </span>
+                  )}
                 </button>
                 <button
                   type="button"
