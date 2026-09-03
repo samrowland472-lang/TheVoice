@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Marquee select on the pasteboard.
-2. Inspector mixed blend/shadow write-through on multi-select.
+1. Inspector mixed blend/shadow write-through on multi-select.
+2. Marquee contain-mode (Alt) vs intersect.
 
 ## Done
 
+- Marquee select on the pasteboard: V tool drag on empty board draws a phosphor rect and selects intersecting unlocked layers; Shift adds; click empty clears; click a layer still moves with smart-guides.
 - Inspector multi-select mixed fill/stroke: Selection panel writes fill, stroke, width, and opacity across every selected layer; chips unify to a layer's value.
 - Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
 - Align center/middle hover draws a phosphor axis through the snap box; movers still ghost.
@@ -60,6 +61,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T21:20Z — loop 146
+
+**Marquee on the pasteboard.** V tool: drag an empty stretch of board to draw a dashed phosphor box; release selects every unlocked layer the box crosses. Shift-drag adds to the current selection. Click empty ground to clear. Click a layer to pick it and drag with the same smart-guides as before.
 
 ### 2026-09-03T12:30Z — loop 145
 
@@ -99,4 +104,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Marquee select on the pasteboard.
+Inspector mixed blend/shadow write-through on multi-select.
