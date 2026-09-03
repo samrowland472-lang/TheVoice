@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { countIslandItems } from "@/lib/design/align";
 import { useDesign } from "@/lib/design/store";
 import type { BlendMode } from "@/lib/design/types";
@@ -34,7 +33,9 @@ export function Inspector() {
   const rotateSelected = useDesign((s) => s.rotateSelected);
   const distributeSelected = useDesign((s) => s.distributeSelected);
   const alignSelected = useDesign((s) => s.alignSelected);
-  const [alignToBoard, setAlignToBoard] = useState(false);
+  const alignTarget = useDesign((s) => s.alignTarget) as string;
+  const setAlignTarget = useDesign((s) => s.setAlignTarget);
+  const setAlignHoverEdge = useDesign((s) => s.setAlignHoverEdge);
 
   if (!doc) return null;
   const islandItems = countIslandItems(doc.nodes, selection);
@@ -173,13 +174,21 @@ export function Inspector() {
           {isImage(node) && <ImageFields node={node} />}
           {isPath(node) && <PathFields node={node} />}
           <Field label="Align">
-            <div className="mb-1 grid grid-cols-2 gap-1">
-              <button type="button" disabled={islandItems < 2} className={cn("h-7 rounded-[8px] text-[10px]", islandItems >= 2 && !alignToBoard ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim", islandItems < 2 && "opacity-40")} onClick={() => setAlignToBoard(false)}>Selection</button>
-              <button type="button" className={cn("h-7 rounded-[8px] text-[10px]", alignToBoard || islandItems < 2 ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} onClick={() => setAlignToBoard(true)}>Artboard</button>
+            <div className="mb-1 grid grid-cols-3 gap-1">
+              <button type="button" disabled={islandItems < 2} className={cn("h-7 rounded-[8px] text-[10px]", islandItems >= 2 && alignTarget === "selection" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim", islandItems < 2 && "opacity-40")} onClick={() => setAlignTarget("selection")}>Selection</button>
+              <button type="button" disabled={islandItems < 2} className={cn("h-7 rounded-[8px] text-[10px]", islandItems >= 2 && alignTarget === "key" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim", islandItems < 2 && "opacity-40")} onClick={() => setAlignTarget("key")}>Key</button>
+              <button type="button" className={cn("h-7 rounded-[8px] text-[10px]", alignTarget === "artboard" || islandItems < 2 ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} onClick={() => setAlignTarget("artboard")}>Artboard</button>
             </div>
             <div className="grid grid-cols-3 gap-1">
               {(["left", "center", "right", "top", "middle", "bottom"] as const).map((edge) => (
-                <button key={edge} type="button" className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim capitalize hover:border-phosphor hover:text-ink" onClick={() => alignSelected(edge, islandItems > 1 && !alignToBoard ? "selection" : "artboard")}>{edge}</button>
+                <button
+                  key={edge}
+                  type="button"
+                  className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim capitalize hover:border-phosphor hover:text-ink"
+                  onPointerEnter={() => setAlignHoverEdge(edge)}
+                  onPointerLeave={() => setAlignHoverEdge(null)}
+                  onClick={() => alignSelected(edge, islandItems > 1 ? alignTarget : "artboard")}
+                >{edge}</button>
               ))}
             </div>
           </Field>
