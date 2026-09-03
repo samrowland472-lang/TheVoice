@@ -217,6 +217,33 @@ export function geometryBox(n: DesignNode) {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
+/** Last-selected id is the key object when two or more layers are selected. */
+export function keyObjectId(selection: string[]): string | null {
+  if (selection.length < 2) return null;
+  return selection[selection.length - 1] ?? null;
+}
+
+/** Rotated-frame corners of a node, in document space (TL, TR, BR, BL). */
+export function orientedFrameCorners(n: DesignNode): { x: number; y: number }[] {
+  const c = { x: n.x + n.w / 2, y: n.y + n.h / 2 };
+  const pts = [
+    { x: n.x, y: n.y },
+    { x: n.x + n.w, y: n.y },
+    { x: n.x + n.w, y: n.y + n.h },
+    { x: n.x, y: n.y + n.h },
+  ];
+  return n.rotation ? pts.map((p) => rotatePoint(p.x, p.y, c.x, c.y, n.rotation)) : pts;
+}
+
+/** Oriented-frame projection of the last-selected (key) layer. */
+export function keyOrientedBox(nodes: DesignNode[], selection: string[]) {
+  const id = keyObjectId(selection);
+  if (!id) return null;
+  const key = nodes.find((n) => n.id === id);
+  if (!key) return null;
+  return geometryBox(key);
+}
+
 /** Union of oriented-frame projections — the target box for Align to selection. */
 export function unionOrientedBox(nodes: DesignNode[]) {
   let minX = Infinity;
