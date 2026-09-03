@@ -5,6 +5,7 @@ import { isImage, isPath } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 import { FillEditor, Section, ShadowEditor, Swatches, Field } from "./inspector-parts";
+import { MixedInk } from "./mixed-ink";
 import { PathFields } from "./inspector-path";
 import { HotspotField, ImageFields, LinkedRow, TextFields } from "./inspector-type";
 
@@ -39,7 +40,11 @@ export function Inspector() {
 
   if (!doc) return null;
   const islandItems = countIslandItems(doc.nodes, selection);
-  const node = selection[0] ? doc.nodes.find((n) => n.id === selection[0]) : null;
+  const selectedNodes = selection
+    .map((id) => doc.nodes.find((n) => n.id === id))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n));
+  const node = selectedNodes[selectedNodes.length - 1] ?? null;
+  const multi = selectedNodes.length > 1;
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
 
   return (
@@ -67,8 +72,12 @@ export function Inspector() {
         <Swatches colors={brand.colors} onPick={setColor} />
       </Section>
 
+      {multi && (
+        <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
+      )}
+
       {node && (
-        <Section title={node.name || node.kind}>
+        <Section title={multi ? `Key · ${node.name || node.kind}` : node.name || node.kind}>
           <Field label="Name">
             <input className="field" value={node.name} onChange={(e) => updateNodes([node.id], { name: e.target.value }, true)} />
           </Field>
@@ -102,7 +111,7 @@ export function Inspector() {
               />
             </div>
           </Field>
-          <Field label={`Opacity ${Math.round(node.opacity * 100)}%`}>
+          {!multi && <Field label={`Opacity ${Math.round(node.opacity * 100)}%`}>
             <div className="flex items-center gap-2">
               <input
                 type="range"
@@ -124,9 +133,9 @@ export function Inspector() {
                 onCommit={(n) => updateNodes([node.id], { opacity: n / 100 }, true)}
               />
             </div>
-          </Field>
-          <FillEditor node={node} />
-          <Field label="Stroke">
+          </Field>}
+          {!multi && <FillEditor node={node} />}
+          {!multi && <Field label="Stroke">
             <div className="flex gap-2">
               <input type="color" className="h-8 flex-1 rounded-[8px] border border-border" value={node.stroke === "transparent" ? "#3fc6ff" : node.stroke} onChange={(e) => updateNodes([node.id], { stroke: e.target.value, strokeWidth: Math.max(node.strokeWidth, 1) }, true)} />
               <NumField
@@ -137,7 +146,7 @@ export function Inspector() {
                 onCommit={(n) => updateNodes([node.id], { strokeWidth: n }, true)}
               />
             </div>
-          </Field>
+          </Field>}
           {node.kind === "rect" && (
             <Field label={`Radius ${Math.round(node.radius)}`}>
               <div className="flex items-center gap-2">
