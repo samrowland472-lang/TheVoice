@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
-2. Inspector multi-select: mixed fill/stroke when several shapes share a property.
+1. Inspector multi-select: mixed fill/stroke when several shapes share a property.
+2. Marquee select on the pasteboard.
 
 ## Done
 
+- Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
 - Align center/middle hover draws a phosphor axis through the snap box; movers still ghost.
 - Align hover ghosts movers for Selection and Artboard, not only Key.
 - Distribute hover ghosts landing frames; Key target pins the reserved slot.
@@ -36,10 +37,8 @@ Auth OFF, DB OFF.
 - Align Key target is wired: last-selected layer is the snap box; that key stays put.
 - Key oriented frame draws on the artboard (dashed phosphor + top tick); hovering an edge lights that side of the frame.
 - Layers Key badge click promotes another selected layer to key without changing stack order.
-
 - Align set to Key draws that last-selected layer's rotated frame on the artboard (dashed phosphor box + top-edge mark) so the snap target is visible before an edge is pressed.
 - Layers list marks the last-selected layer as Key when two or more layers are selected; Align offers a Key target that uses that layer's oriented box.
-
 - Align to a key object uses the last-selected layer's oriented frame; Selection and Artboard targets stay available.
 - Knife live preview outlines only the planar lobe a stroke will open; untouched bowtie rings stay unmarked.
 - Knife apply planarizes figure-eight / bowtie traces and cuts only the crossed lobe; the other lobe stays a closed sibling.
@@ -60,6 +59,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T11:20Z — loop 144
+
+**Smart-guides on drag.** V tool: drag a layer (or a multi-select) and phosphor lines lock to sibling edges/centers and the artboard. Equal-gap ticks appear when a space matches. Snap toggle still applies; hold Alt to slide free.
 
 ### 2026-09-03T09:20Z — loop 143
 
@@ -91,4 +94,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
+Inspector multi-select: mixed fill/stroke when several shapes share a property.
