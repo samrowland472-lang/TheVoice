@@ -21,11 +21,14 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Align preview against Selection and Artboard targets the same way Key already ghosts movers.
-2. Distribute preview marks the key pin so the reserved slot is obvious.
+1. Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
+2. Inspector multi-select: mixed fill/stroke when several shapes share a property.
 
 ## Done
 
+- Align hover ghosts movers for Selection and Artboard, not only Key.
+- Distribute hover ghosts landing frames; Key target pins the reserved slot.
+- Store wires `previewAlignNodes`, `alignTarget`, and `distributeNodes(..., keyId)`.
 - Distribute with Align set to Key keeps the key layer fixed and spaces the rest evenly around it.
 - Hovering Horizontal / Vertical ghosts the movers before commit.
 - Hovering an Align edge ghosts the other selected frames against the key box before commit.
@@ -57,6 +60,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-03T08:30Z — loop 141
+
+**Align ghosts for every target.** Shift-select two or more layers. Align → Selection or Artboard, then hover Left/Top/Right/Bottom: faint frames show where movers will land. Key still draws the dashed snap box. Hover Horizontal / Vertical to preview distribute; on Key the pin stays put and others space around it. Faint Key in Layers promotes another selected layer.
+
 ### 2026-09-03T07:50Z — loop 140
 
 **Distribute around the key.** Shift-select three or more layers, Align → Key. Hover Horizontal or Vertical: movers ghost into even gaps while the key frame stays put. Click to commit. Selection / Artboard distribute still spans first-to-last as before.
@@ -75,4 +82,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Ghost Align movers against Selection and Artboard targets the same way Key already does.
+Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
