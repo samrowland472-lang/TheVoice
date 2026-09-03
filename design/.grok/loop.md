@@ -23,6 +23,7 @@ Auth OFF, DB OFF.
 
 1. Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
 2. Inspector multi-select: mixed fill/stroke when several shapes share a property.
+3. Align center/middle hover draws a target axis through the snap box.
 
 ## Done
 
@@ -37,7 +38,7 @@ Auth OFF, DB OFF.
 - Layers Key badge click promotes another selected layer to key without changing stack order.
 
 - Align set to Key draws that last-selected layer's rotated frame on the artboard (dashed phosphor box + top-edge mark) so the snap target is visible before an edge is pressed.
-- Layers list marks the last-selected layer as Key when two or more are selected; Align offers a Key target that uses that layer's oriented box.
+- Layers list marks the last-selected layer as Key when two or more layers are selected; Align offers a Key target that uses that layer's oriented box.
 
 - Align to a key object uses the last-selected layer's oriented frame; Selection and Artboard targets stay available.
 - Knife live preview outlines only the planar lobe a stroke will open; untouched bowtie rings stay unmarked.
@@ -59,6 +60,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T08:45Z — loop 142
+
+**Align preview is live in the store and on the board.** Selection and Artboard hover now ghost mover frames the same way Key does. Distribute hover marks the key pin. Last-selected stays last through island explode so Key does not jump. Layers faint Key promotes without reordering.
 
 ### 2026-09-03T08:30Z — loop 141
 
