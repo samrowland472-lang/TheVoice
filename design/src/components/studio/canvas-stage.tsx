@@ -1,1 +1,14 @@
-see workspace file
+import { useEffect, useRef, useState } from "react";
+import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
+import { aabb } from "@/lib/design/geometry";
+import { hitTop } from "@/lib/design/hit";
+import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit } from "@/lib/design/path-actions";
+import { knifePreviewLobe, knifeStrokePreview } from "@/lib/design/path-cut";
+import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
+import { hasHandle } from "@/lib/design/path-curve";
+import { tracePath } from "@/lib/design/path-curve";
+import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
+import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
+import { useDesign } from "@/lib/design/store";
+import { isPath } from "@/lib/design/types";
+import type { PathEditHit } from "@/lib/design/path-edit";
