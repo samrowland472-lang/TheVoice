@@ -252,3 +252,52 @@ export function nodesInMarquee(nodes: DesignNode[], mq: Box, mode: "intersect" |
   const test = mode === "contain" ? marqueeContainsNode : marqueeHitsNode;
   return nodes.filter((n) => n.visible && !n.locked && test(n, mq)).map((n) => n.id);
 }
+
+/** Phosphor smart-guides: full-span edge/center lines plus gap ticks. */
+export function drawSmartGuides(
+  ctx: CanvasRenderingContext2D,
+  guides: GuideSet,
+  artboard: { width: number; height: number },
+  zoom: number,
+) {
+  const lw = 1.15 / zoom;
+  ctx.save();
+  ctx.strokeStyle = "rgba(63,198,255,0.92)";
+  ctx.fillStyle = "rgba(63,198,255,0.95)";
+  ctx.lineWidth = lw;
+  ctx.setLineDash([5 / zoom, 4 / zoom]);
+  for (const x of guides.x) {
+    ctx.beginPath();
+    ctx.moveTo(x, -12 / zoom);
+    ctx.lineTo(x, artboard.height + 12 / zoom);
+    ctx.stroke();
+  }
+  for (const y of guides.y) {
+    ctx.beginPath();
+    ctx.moveTo(-12 / zoom, y);
+    ctx.lineTo(artboard.width + 12 / zoom, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  const tick = 5 / zoom;
+  for (const s of guides.spaces ?? []) {
+    ctx.beginPath();
+    if (s.axis === "x") {
+      ctx.moveTo(s.a, s.mid);
+      ctx.lineTo(s.b, s.mid);
+      ctx.moveTo(s.a, s.mid - tick);
+      ctx.lineTo(s.a, s.mid + tick);
+      ctx.moveTo(s.b, s.mid - tick);
+      ctx.lineTo(s.b, s.mid + tick);
+    } else {
+      ctx.moveTo(s.mid, s.a);
+      ctx.lineTo(s.mid, s.b);
+      ctx.moveTo(s.mid - tick, s.a);
+      ctx.lineTo(s.mid + tick, s.a);
+      ctx.moveTo(s.mid - tick, s.b);
+      ctx.lineTo(s.mid + tick, s.b);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
