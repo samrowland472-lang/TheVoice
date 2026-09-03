@@ -1,13 +1,8 @@
-import { applyPathEdit, pathWorldToLocal, type PathEditHit } from "./path-edit";
+import { applyPathEdit, type PathEditHit } from "./path-edit";
 import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
-import {
-  cutContourMany,
-  hitCompoundSegment,
-  strokeHitsCompound,
-  type SegmentHit,
-} from "./path-cut";
 import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
 import { pathNode } from "./node-factory";
+import { applyKnifePointToPath, applyKnifeStrokeToPath } from "./knife-apply";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
@@ -167,66 +162,6 @@ export function joinSelectedPathToNearest(wx: number, wy: number, zoom: number):
   return true;
 }
 
-function clonePathStyle(n: PathNode, points: PathPoint[], closed: boolean, holes?: PathPoint[][]): PathNode {
-  const extra = pathNode({
-    x: n.x,
-    y: n.y,
-    w: n.w,
-    h: n.h,
-    points,
-    closed,
-    holes: holes && holes.length ? holes : undefined,
-    fill: n.fill,
-    stroke: n.stroke,
-    strokeWidth: n.strokeWidth,
-    opacity: n.opacity,
-    blend: n.blend,
-    rotation: n.rotation,
-  });
-  extra.name = n.name;
-  return extra;
-}
-
-function applyCutsToPath(
-  n: PathNode,
-  groups: { hole: number | null; hits: SegmentHit[] }[],
-): { keep: PathNode; extras: PathNode[] } | null {
-  if (!groups.length) return null;
-  let keep: PathNode = { ...n, holes: n.holes ? n.holes.map((h) => h.map((p) => ({ ...p }))) : n.holes };
-  const extras: PathNode[] = [];
-  const outerGroup = groups.find((g) => g.hole == null);
-  const holeGroups = groups.filter((g) => g.hole != null);
-  if (outerGroup) {
-    const pieces = cutContourMany(keep.points, keep.closed, outerGroup.hits);
-    const released = keep.closed && (keep.holes?.length ?? 0) > 0;
-    keep = { ...keep, points: pieces[0] ?? keep.points, closed: false, holes: released ? undefined : keep.holes };
-    for (const piece of pieces.slice(1)) {
-      if (piece.length >= 2) extras.push(clonePathStyle(n, piece, false));
-    }
-    if (released) {
-      for (const hole of n.holes ?? []) {
-        if (hole.length >= 3) extras.push(clonePathStyle(n, hole, true));
-      }
-    }
-  }
-  const survivingHoles = [...(keep.holes ?? [])];
-  const removed = new Set<number>();
-  for (const g of holeGroups.sort((a, b) => (b.hole ?? 0) - (a.hole ?? 0))) {
-    const idx = g.hole!;
-    const ring = survivingHoles[idx];
-    if (!ring) continue;
-    const pieces = cutContourMany(ring, true, g.hits);
-    removed.add(idx);
-    for (const piece of pieces) {
-      if (piece.length >= 2) extras.push(clonePathStyle(n, piece, false));
-    }
-  }
-  if (removed.size) {
-    keep = { ...keep, holes: survivingHoles.filter((_, i) => !removed.has(i)) };
-  }
-  return { keep, extras };
-}
-
 function knifePaths(): PathNode[] {
   const s = useDesign.getState();
   const doc = s.doc;
@@ -239,10 +174,7 @@ function knifePaths(): PathNode[] {
 export function knifeCutAt(wx: number, wy: number, zoom: number): boolean {
   const s = useDesign.getState();
   for (const n of knifePaths()) {
-    const local = pathWorldToLocal(n, wx, wy);
-    const found = hitCompoundSegment(n, local.x, local.y, zoom);
-    if (!found) continue;
-    const applied = applyCutsToPath(n, [{ hole: found.hole, hits: [found.hit] }]);
+    const applied = applyKnifePointToPath(n, wx, wy, zoom);
     if (!applied) continue;
     s.commit();
     s.replaceNode(n.id, applied.keep, false);
@@ -266,18 +198,7 @@ export function knifeCutStroke(ax: number, ay: number, bx: number, by: number, z
   let firstKeep: string | null = null;
   const extraIds: string[] = [];
   for (const n of knifePaths()) {
-    const a = pathWorldToLocal(n, ax, ay);
-    const b = pathWorldToLocal(n, bx, by);
-    const hits = strokeHitsCompound(n, a, b);
-    if (!hits.length) continue;
-    const grouped = new Map<number | string, { hole: number | null; hits: SegmentHit[] }>();
-    for (const h of hits) {
-      const key = h.hole == null ? "outer" : h.hole;
-      const g = grouped.get(key) ?? { hole: h.hole, hits: [] };
-      g.hits.push(h.hit);
-      grouped.set(key, g);
-    }
-    const applied = applyCutsToPath(n, [...grouped.values()]);
+    const applied = applyKnifeStrokeToPath(n, ax, ay, bx, by);
     if (!applied) continue;
     if (!any) s.commit();
     any = true;
