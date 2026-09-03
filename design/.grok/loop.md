@@ -21,11 +21,13 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Knife apply planarized lobes when a stroke crosses only one figure-eight lobe.
-2. Align to a key object (last selected) using the same oriented boxes.
+1. Align to a key object (last selected) using the same oriented boxes.
+2. Knife live preview should mark only the lobe that will open when a stroke crosses one bowtie ring.
 
 ## Done
 
+- Knife apply planarizes figure-eight / bowtie traces and cuts only the crossed lobe; the other lobe stays a closed sibling.
+- Store is typed (`DesignStore`) so typecheck can see real document nodes instead of `any`.
 - Align-to-selection target uses the union of oriented frames, not the sample AABB.
 - Align / distribute rebase path islands onto a minimum-area oriented frame, then space by that rotated box's projection.
 - Knife live preview draws the full stroke and a mark at every crossing, not only the pointer tip.
@@ -42,6 +44,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T00:20Z — loop 132
+
+**Knife apply on one figure-eight lobe.** Release a K stroke that only crosses one bowtie ring: that lobe opens into an open path, the other lobe stays a closed sibling layer. Click-cut does the same. Preview already used planarized rings; apply now matches.
 
 ### 2026-09-02T23:40Z — loop 131
 
@@ -81,4 +87,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Knife apply planarized lobes when a stroke crosses only one figure-eight lobe.
+Align to a key object (last selected) using the same oriented boxes.
