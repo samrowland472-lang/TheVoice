@@ -23,10 +23,10 @@ Auth OFF, DB OFF.
 
 1. Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
 2. Inspector multi-select: mixed fill/stroke when several shapes share a property.
-3. Align center/middle hover draws a target axis through the snap box.
 
 ## Done
 
+- Align center/middle hover draws a phosphor axis through the snap box; movers still ghost.
 - Align hover ghosts movers for Selection and Artboard, not only Key.
 - Distribute hover ghosts landing frames; Key target pins the reserved slot.
 - Store wires `previewAlignNodes`, `alignTarget`, and `distributeNodes(..., keyId)`.
@@ -60,6 +60,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T09:20Z — loop 143
+
+**Center and middle draw a target axis.** Shift-select two or more layers, pick Selection / Key / Artboard, hover Center or Middle: a dashed phosphor line runs through the snap box while mover frames ghost to their landing. Key still keeps its dashed frame; faint Key in Layers promotes without reordering. Distribute hover still pins the key when Align is Key.
 
 ### 2026-09-03T08:45Z — loop 142
 
