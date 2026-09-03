@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector multi-select: mixed fill/stroke when several shapes share a property.
-2. Marquee select on the pasteboard.
+1. Marquee select on the pasteboard.
+2. Inspector mixed blend/shadow write-through on multi-select.
 
 ## Done
 
+- Inspector multi-select mixed fill/stroke: Selection panel writes fill, stroke, width, and opacity across every selected layer; chips unify to a layer's value.
 - Smart-guides while dragging: live edge/center snaps against neighbors and the artboard.
 - Align center/middle hover draws a phosphor axis through the snap box; movers still ghost.
 - Align hover ghosts movers for Selection and Artboard, not only Key.
@@ -59,6 +60,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T12:30Z — loop 145
+
+**Mixed ink on multi-select.** Shift-select two or more layers. Inspector opens Selection with Fill · mixed / Stroke · mixed when values differ. Pick a colour, a brand swatch, or a layer chip to unify; width and opacity write through. Single-layer fill/stroke stay on one object. Key geometry still edits the last-selected layer.
 
 ### 2026-09-03T11:20Z — loop 144
 
@@ -94,4 +99,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector multi-select: mixed fill/stroke when several shapes share a property.
+Marquee select on the pasteboard.
