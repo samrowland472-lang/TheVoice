@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { aabb } from "@/lib/design/geometry";
 import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit } from "@/lib/design/path-actions";
-import { knifePreviewPoint, knifeStrokePreview } from "@/lib/design/path-cut";
+import { knifePreviewLobe, knifeStrokePreview } from "@/lib/design/path-cut";
 import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
 import { hasHandle } from "@/lib/design/path-curve";
 import { tracePath } from "@/lib/design/path-curve";
@@ -172,7 +172,18 @@ export function CanvasStage() {
         const seen = new Set<string>();
         for (const node of doc.nodes) {
           if (!isPath(node) || !node.visible || node.locked) continue;
-          for (const p of knifeStrokePreview(node, stroke.ax, stroke.ay, stroke.bx, stroke.by)) {
+          const preview = knifeStrokePreview(node, stroke.ax, stroke.ay, stroke.bx, stroke.by);
+          ctx.save();
+          ctx.strokeStyle = "rgba(63,198,255,0.55)";
+          ctx.lineWidth = 2.2 / viewport.zoom;
+          ctx.setLineDash([]);
+          for (const lobe of preview.lobes) {
+            ctx.beginPath();
+            tracePath(ctx, node.x, node.y, lobe.points, lobe.closed);
+            ctx.stroke();
+          }
+          ctx.restore();
+          for (const p of preview.marks) {
             const key = `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
             if (seen.has(key)) continue;
             seen.add(key);
@@ -193,9 +204,16 @@ export function CanvasStage() {
         for (const node of doc.nodes) {
           if (!isPath(node) || !node.visible || node.locked) continue;
           const local = pathWorldToLocal(node, hover.x, hover.y);
-          const hit = knifePreviewPoint(node, local.x, local.y, viewport.zoom);
+          const hit = knifePreviewLobe(node, local.x, local.y, viewport.zoom);
           if (hit) {
-            snap = hit;
+            snap = { x: hit.x, y: hit.y };
+            ctx.save();
+            ctx.strokeStyle = "rgba(63,198,255,0.55)";
+            ctx.lineWidth = 2.2 / viewport.zoom;
+            ctx.beginPath();
+            tracePath(ctx, node.x, node.y, hit.lobe.points, hit.lobe.closed);
+            ctx.stroke();
+            ctx.restore();
             break;
           }
         }
@@ -434,7 +452,7 @@ export function CanvasStage() {
       )}
       {tool === "knife" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag across a path — every crossing lights up, then the stroke cuts
+          Drag across one ring — only that lobe lights, then the stroke opens it
         </div>
       )}
     </div>
