@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Draw the key object's oriented frame on the artboard while Align is set to Key.
+1. Draw the key object's oriented frame while dragging Align edges so the live snap target is visible before commit.
+2. Let a click on the Key badge in Layers promote a different selected layer to key without reordering the stack.
 
 ## Done
 
+- Align set to Key draws that last-selected layer's rotated frame on the artboard (dashed phosphor box + top-edge mark) so the snap target is visible before an edge is pressed.
 - Layers list marks the last-selected layer as Key when two or more are selected; Align offers a Key target that uses that layer's oriented box.
 
 - Align to a key object uses the last-selected layer's oriented frame; Selection and Artboard targets stay available.
@@ -47,6 +49,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T06:25Z — loop 137
+
+**Key frame on the artboard.** Shift-select two layers, Inspector Align → Key: the last-selected layer's oriented box draws on the board (dashed phosphor, tick on the top edge). Edges snap others to that frame; the key stays put. Selection and Artboard targets stay available.
 
 ### 2026-09-03T03:20Z — loop 136
 
@@ -102,4 +108,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Draw the key object's oriented frame on the artboard while Align is set to Key.
+Draw the key object's oriented frame while dragging Align edges so the live snap target is visible before commit.

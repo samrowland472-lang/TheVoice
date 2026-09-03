@@ -5,6 +5,8 @@ import { test } from "node:test";
 const align = readFileSync(new URL("../src/lib/design/align.ts", import.meta.url), "utf8");
 const store = readFileSync(new URL("../src/lib/design/store-impl.ts", import.meta.url), "utf8");
 const text = readFileSync(new URL("../src/lib/design/text-to-path.ts", import.meta.url), "utf8");
+const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
+const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 
 test("align module uses geometry boxes, not the stored node frame", () => {
   assert.match(align, /export function tightenPathNode/);
@@ -24,13 +26,22 @@ test("rotated compounds bake into world-space island boxes before split", () => 
 });
 
 test("store wires align and distribute through geometry helpers", () => {
-  assert.match(store, /alignNodes\(exploded\.nodes, ids, edge, box\)/);
+  assert.match(store, /alignNodes\(exploded\.nodes, moveIds, edge, box\)/);
   assert.match(store, /distributeNodes\(exploded\.nodes, exploded\.selection, axis\)/);
   assert.match(store, /unionOrientedBox\(selected\)/);
   assert.match(align, /export function unionOrientedBox/);
   assert.match(align, /export function keyOrientedBox/);
+  assert.match(align, /export function keyObjectId/);
+  assert.match(align, /export function orientedFrameCorners/);
   assert.match(store, /keyOrientedBox\(exploded\.nodes, exploded\.selection\)/);
   assert.match(store, /relative === "key"/);
+  assert.match(store, /moveIds\.delete\(keyId\)/);
+});
+
+test("artboard draws the key oriented frame while Align is Key", () => {
+  assert.match(stage, /alignTarget === "key"/);
+  assert.match(stage, /orientedFrameCorners\(key\)/);
+  assert.match(inspector, />Key</);
 });
 
 test("converted type islands tighten onto their own contour", () => {
