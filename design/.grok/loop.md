@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mark the key object in the layers panel (last selected) so Key align is visible before an edge is pressed.
+1. Draw the key object's oriented frame on the artboard while Align is set to Key.
 
 ## Done
+
+- Layers list marks the last-selected layer as Key when two or more are selected; Align offers a Key target that uses that layer's oriented box.
 
 - Align to a key object uses the last-selected layer's oriented frame; Selection and Artboard targets stay available.
 - Knife live preview outlines only the planar lobe a stroke will open; untouched bowtie rings stay unmarked.
@@ -45,6 +47,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T03:20Z — loop 136
+
+**Key mark in layers.** Shift-select two layers: the last one shows KEY in the stack. Inspector Align → Key, then an edge: others snap to that layer's oriented box; the key stays put. Store is typed so typecheck sees real document nodes.
 
 ### 2026-09-03T01:28Z — loop 135
 
@@ -96,4 +102,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Mark the key object in the layers panel (last selected) so Key align is visible before an edge is pressed.
+Draw the key object's oriented frame on the artboard while Align is set to Key.
