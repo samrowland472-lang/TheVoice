@@ -171,14 +171,16 @@ export function Inspector() {
               </div>
             </Field>
           )}
-          <Field label="Blend">
-            <select className="field" value={node.blend} onChange={(e) => updateNodes([node.id], { blend: e.target.value as BlendMode }, true)}>
-              {BLENDS.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </Field>
-          <ShadowEditor node={node} />
+          {!multi && (
+            <Field label="Blend">
+              <select className="field" value={node.blend} onChange={(e) => updateNodes([node.id], { blend: e.target.value as BlendMode }, true)}>
+                {BLENDS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </Field>
+          )}
+          {!multi && <ShadowEditor node={node} />}
           {node.kind === "text" && <TextFields node={node} />}
           {isImage(node) && <ImageFields node={node} />}
           {isPath(node) && <PathFields node={node} />}
