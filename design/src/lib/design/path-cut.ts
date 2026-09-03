@@ -256,31 +256,52 @@ export function hitCompoundSegment(n: PathNode, lx: number, ly: number, zoom: nu
 }
 
 export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: number): { x: number; y: number } | null {
-  let best: { x: number; y: number; dist: number } | null = null;
+  const hit = knifePreviewLobe(n, lx, ly, zoom);
+  return hit ? { x: hit.x, y: hit.y } : null;
+}
+
+/** Nearest planar lobe under the pointer — the ring a click-cut would open. */
+export function knifePreviewLobe(
+  n: PathNode,
+  lx: number,
+  ly: number,
+  zoom: number,
+): { x: number; y: number; lobe: PathNode } | null {
+  let best: { x: number; y: number; dist: number; lobe: PathNode } | null = null;
   for (const part of explodeTwistedPath(n)) {
     const found = hitCompoundSegment(part, lx, ly, zoom);
     if (!found) continue;
     if (!best || found.hit.dist < best.dist) {
-      best = { x: n.x + found.hit.local.x, y: n.y + found.hit.local.y, dist: found.hit.dist };
+      best = { x: n.x + found.hit.local.x, y: n.y + found.hit.local.y, dist: found.hit.dist, lobe: part };
     }
   }
-  return best ? { x: best.x, y: best.y } : null;
+  return best;
 }
 
-/** World-space cut marks along a knife stroke, including every crossing — not only the pointer tip. */
+export interface KnifeStrokePreview {
+  marks: { x: number; y: number }[];
+  /** Planar lobes the stroke actually crosses — the rings that will open. */
+  lobes: PathNode[];
+}
+
+/** World-space cut marks on only the lobes a stroke will open. Untouched bowtie rings stay unmarked. */
 export function knifeStrokePreview(
   n: PathNode,
   ax: number,
   ay: number,
   bx: number,
   by: number,
-): { x: number; y: number }[] {
+): KnifeStrokePreview {
   const a = { x: ax - n.x, y: ay - n.y };
   const b = { x: bx - n.x, y: by - n.y };
   const marks: { x: number; y: number }[] = [];
+  const lobes: PathNode[] = [];
   const seen = new Set<string>();
   for (const part of explodeTwistedPath(n)) {
-    for (const h of strokeHitsCompound(part, a, b)) {
+    const hits = strokeHitsCompound(part, a, b);
+    if (!hits.length) continue;
+    lobes.push(part);
+    for (const h of hits) {
       const wx = n.x + h.hit.local.x;
       const wy = n.y + h.hit.local.y;
       const key = `${wx.toFixed(2)},${wy.toFixed(2)}`;
@@ -290,7 +311,7 @@ export function knifeStrokePreview(
     }
   }
   marks.sort((p, q) => Math.hypot(p.x - ax, p.y - ay) - Math.hypot(q.x - ax, q.y - ay));
-  return marks;
+  return { marks, lobes };
 }
 
 function segSeg(a: Vec, b: Vec, c: Vec, d: Vec): { t: number; u: number; p: Vec } | null {
