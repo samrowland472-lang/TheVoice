@@ -8,7 +8,9 @@ const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", 
 test("snap exports marquee intersection helpers", () => {
   assert.match(snap, /export function nodesInMarquee/);
   assert.match(snap, /export function marqueeHitsNode/);
+  assert.match(snap, /export function marqueeContainsNode/);
   assert.match(snap, /export function rectsIntersect/);
+  assert.match(snap, /mode === "contain"/);
 });
 
 test("select tool starts a pasteboard marquee and commits intersecting ids", () => {
@@ -18,4 +20,12 @@ test("select tool starts a pasteboard marquee and commits intersecting ids", () 
   assert.match(stage, /smartSnap\(/);
   assert.match(stage, /drawSmartGuides\(/);
   assert.match(stage, /s\.snap && !e\.altKey/);
+});
+
+test("alt during marquee switches contain mode and draws corner ticks", () => {
+  assert.match(stage, /contain: e\.altKey/);
+  assert.match(stage, /mq\.contain = e\.altKey/);
+  assert.match(stage, /mq\.contain \? "contain" : "intersect"/);
+  assert.match(stage, /nodeWorldAabb/);
+  assert.match(stage, /Alt contain/);
 });
