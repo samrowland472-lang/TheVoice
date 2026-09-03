@@ -21,10 +21,14 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Draw the key object's oriented frame while dragging Align edges so the live snap target is visible before commit.
-2. Let a click on the Key badge in Layers promote a different selected layer to key without reordering the stack.
+1. Align preview: while hovering an Align edge, ghost the movers against the key frame before commit.
+2. Distribute relative to the key object (keep key fixed, space the rest).
 
 ## Done
+
+- Align Key target is wired: last-selected layer is the snap box; that key stays put.
+- Key oriented frame draws on the artboard (dashed phosphor + top tick); hovering an edge lights that side of the frame.
+- Layers Key badge click promotes another selected layer to key without changing stack order.
 
 - Align set to Key draws that last-selected layer's rotated frame on the artboard (dashed phosphor box + top-edge mark) so the snap target is visible before an edge is pressed.
 - Layers list marks the last-selected layer as Key when two or more are selected; Align offers a Key target that uses that layer's oriented box.
@@ -49,6 +53,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T07:30Z — loop 138
+
+**Key frame while aligning.** Shift-select two or more layers, Inspector Align → Key: the last-selected layer draws a dashed phosphor frame with a top-edge tick. Hover Left/Right/Top/Bottom to light the snap side; press an edge to snap others to that box. Click Key on another selected layer in the stack to promote it without reordering.
 
 ### 2026-09-03T06:25Z — loop 137
 
@@ -108,4 +116,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Draw the key object's oriented frame while dragging Align edges so the live snap target is visible before commit.
+Ghost movers against the key frame while an Align edge is hovered, so the result is visible before commit.
