@@ -4,4 +4,4 @@ export {
   makeText,
   ensurePaintLayer,
 } from "./store-impl";
-export type { ViewIntent } from "./store-impl";
+export type { ViewIntent, DesignStore } from "./store-impl";
