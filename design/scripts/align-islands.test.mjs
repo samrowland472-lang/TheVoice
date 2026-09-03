@@ -26,16 +26,15 @@ test("rotated compounds bake into world-space island boxes before split", () => 
 });
 
 test("store wires align and distribute through geometry helpers", () => {
-  assert.match(store, /alignNodes\(exploded\.nodes, moveIds, edge, box\)/);
-  assert.match(store, /distributeNodes\(exploded\.nodes, exploded\.selection, axis\)/);
-  assert.match(store, /unionOrientedBox\(selected\)/);
+  assert.match(store, /previewAlignNodes\(doc\.nodes, selection, edge, rel, doc\.artboard\)/);
+  assert.match(store, /distributeNodes\(exploded\.nodes, exploded\.selection, axis, keyId\)/);
   assert.match(align, /export function unionOrientedBox/);
   assert.match(align, /export function keyOrientedBox/);
   assert.match(align, /export function keyObjectId/);
   assert.match(align, /export function orientedFrameCorners/);
-  assert.match(store, /keyOrientedBox\(exploded\.nodes, exploded\.selection\)/);
-  assert.match(store, /relative === "key"/);
-  assert.match(store, /moveIds\.delete\(keyId\)/);
+  assert.match(align, /export function previewAlignNodes/);
+  assert.match(store, /alignTarget === "key"/);
+  assert.match(align, /keyId && delta.has\(keyId\)/);
 });
 
 test("artboard draws the key oriented frame while Align is Key", () => {
