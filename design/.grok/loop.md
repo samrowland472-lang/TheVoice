@@ -65,3 +65,47 @@ Auth OFF, DB OFF.
 ### 2026-09-03T22:20Z — loop 147
 
 **Marquee contain vs intersect.** V tool: drag empty board to marquee as before. Hold Alt while dragging — the box tightens (corner ticks) and only fully enclosed unlocked layers join the selection. Release Alt mid-drag to go back to intersect. Shift still adds. Live phosphor frames preview which layers will hit.
+
+### 2026-09-03T21:20Z — loop 146
+
+**Marquee on the pasteboard.** V tool: drag an empty stretch of board to draw a dashed phosphor box; release selects every unlocked layer the box crosses. Shift-drag adds to the current selection. Click empty ground to clear. Click a layer to pick it and drag with the same smart-guides as before.
+
+### 2026-09-03T12:30Z — loop 145
+
+**Mixed ink on multi-select.** Shift-select two or more layers. Inspector opens Selection with Fill · mixed / Stroke · mixed when values differ. Pick a colour, a brand swatch, or a layer chip to unify; width and opacity write through. Single-layer fill/stroke stay on one object. Key geometry still edits the last-selected layer.
+
+### 2026-09-03T11:20Z — loop 144
+
+**Smart-guides on drag.** V tool: drag a layer (or a multi-select) and phosphor lines lock to sibling edges/centers and the artboard. Equal-gap ticks appear when a space matches. Snap toggle still applies; hold Alt to slide free.
+
+### 2026-09-03T09:20Z — loop 143
+
+**Center and middle draw a target axis.** Shift-select two or more layers, pick Selection / Key / Artboard, hover Center or Middle: a dashed phosphor line runs through the snap box while mover frames ghost to their landing. Key still keeps its dashed frame; faint Key in Layers promotes without reordering. Distribute hover still pins the key when Align is Key.
+
+### 2026-09-03T08:45Z — loop 142
+
+**Align preview is live in the store and on the board.** Selection and Artboard hover now ghost mover frames the same way Key does. Distribute hover marks the key pin. Last-selected stays last through island explode so Key does not jump. Layers faint Key promotes without reordering.
+
+### 2026-09-03T08:30Z — loop 141
+
+**Align ghosts for every target.** Shift-select two or more layers. Align → Selection or Artboard, then hover Left/Top/Right/Bottom: faint frames show where movers will land. Key still draws the dashed snap box. Hover Horizontal / Vertical to preview distribute; on Key the pin stays put and others space around it. Faint Key in Layers promotes another selected layer.
+
+### 2026-09-03T07:50Z — loop 140
+
+**Distribute around the key.** Shift-select three or more layers, Align → Key. Hover Horizontal or Vertical: movers ghost into even gaps while the key frame stays put. Click to commit. Selection / Artboard distribute still spans first-to-last as before.
+
+### 2026-09-03T07:45Z — loop 139
+
+**Ghost movers on Align hover.** Shift-select two or more layers, Align → Key. The key frame is dashed on the board. Hover Left/Top/Right/Bottom: that edge lights and the other layers draw faint frames where they will land. Click to commit; the key stays put. Faint Key in Layers promotes another selected layer.
+
+### 2026-09-03T07:30Z — loop 138
+
+**Key frame while aligning.** Shift-select two or more layers, Inspector Align → Key: the last-selected layer draws a dashed phosphor frame with a top-edge tick. Hover Left/Right/Top/Bottom to light the snap side; press an edge to snap others to that box. Click Key on another selected layer in the stack to promote it without reordering.
+
+### 2026-09-03T06:25Z — loop 137
+
+**Key frame on the artboard.** Shift-select two layers, Inspector Align → Key: the last-selected layer's oriented box draws on the board (dashed phosphor, tick on the top edge). Edges snap others to that frame; the key stays put. Selection and Artboard targets stay available.
+
+## Next recommended
+
+Inspector mixed blend/shadow write-through on multi-select.
