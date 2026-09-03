@@ -123,6 +123,26 @@ export function MixedInk({
               onChange={(e) => updateNodes(ids, { strokeWidth: Number(e.target.value) }, true)}
             />
           </div>
+          {mixedStroke && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {nodes.map((n) => (
+                <button
+                  key={`stroke-${n.id}`}
+                  type="button"
+                  className="size-6 rounded-full border border-phosphor/50"
+                  style={{
+                    background: n.stroke === "transparent" ? "transparent" : n.stroke,
+                    boxShadow: n.stroke === "transparent" ? "inset 0 0 0 1px rgba(63,198,255,0.45)" : undefined,
+                  }}
+                  title={`Unify stroke with ${n.name || n.kind}`}
+                  aria-label={`Unify stroke with ${n.name || n.kind}`}
+                  onClick={() =>
+                    updateNodes(ids, { stroke: n.stroke, strokeWidth: Math.max(n.strokeWidth, firstWidth) }, true)
+                  }
+                />
+              ))}
+            </div>
+          )}
         </label>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">
@@ -134,8 +154,10 @@ export function MixedInk({
             min={0}
             max={1}
             step={0.01}
+            aria-label="selection opacity"
             value={firstOpacity}
             onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
+            onPointerUp={() => useDesign.getState().commit()}
           />
         </label>
         <div className="grid grid-cols-2 gap-1">
