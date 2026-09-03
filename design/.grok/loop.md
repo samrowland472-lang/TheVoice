@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Align to a key object (last selected) using the same oriented boxes.
+1. Mark the key object in the layers panel (last selected) so Key align is visible before an edge is pressed.
 
 ## Done
 
+- Align to a key object uses the last-selected layer's oriented frame; Selection and Artboard targets stay available.
 - Knife live preview outlines only the planar lobe a stroke will open; untouched bowtie rings stay unmarked.
 - Knife apply planarizes figure-eight / bowtie traces and cuts only the crossed lobe; the other lobe stays a closed sibling.
 - Store is typed (`DesignStore`) so typecheck can see real document nodes instead of `any`.
@@ -44,6 +45,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T01:28Z — loop 135
+
+**Align to key object.** Shift-select two or more layers, set Align to Key, then press an edge. Layers snap to the last-selected layer's oriented box; that key stays put. Selection still uses the union of frames; Artboard still uses the page.
 
 ### 2026-09-03T01:25Z — loop 134
 
@@ -91,4 +96,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Align to a key object (last selected) using the same oriented boxes.
+Mark the key object in the layers panel (last selected) so Key align is visible before an edge is pressed.

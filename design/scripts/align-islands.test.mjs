@@ -28,6 +28,9 @@ test("store wires align and distribute through geometry helpers", () => {
   assert.match(store, /distributeNodes\(exploded\.nodes, exploded\.selection, axis\)/);
   assert.match(store, /unionOrientedBox\(selected\)/);
   assert.match(align, /export function unionOrientedBox/);
+  assert.match(align, /export function keyOrientedBox/);
+  assert.match(store, /keyOrientedBox\(exploded\.nodes, exploded\.selection\)/);
+  assert.match(store, /relative === "key"/);
 });
 
 test("converted type islands tighten onto their own contour", () => {
