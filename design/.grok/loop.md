@@ -22,10 +22,10 @@ Auth OFF, DB OFF.
 ## Backlog (priority order)
 
 1. Align to a key object (last selected) using the same oriented boxes.
-2. Knife live preview should mark only the lobe that will open when a stroke crosses one bowtie ring.
 
 ## Done
 
+- Knife live preview outlines only the planar lobe a stroke will open; untouched bowtie rings stay unmarked.
 - Knife apply planarizes figure-eight / bowtie traces and cuts only the crossed lobe; the other lobe stays a closed sibling.
 - Store is typed (`DesignStore`) so typecheck can see real document nodes instead of `any`.
 - Align-to-selection target uses the union of oriented frames, not the sample AABB.
@@ -44,6 +44,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-03T01:25Z — loop 134
+
+**Knife preview on one bowtie lobe.** Drag K across a single ring of a figure-eight: only that lobe lights and only its crossings mark. The other ring stays quiet until the stroke actually crosses it. Apply uses the same planar cut.
 
 ### 2026-09-03T00:20Z — loop 132
 
