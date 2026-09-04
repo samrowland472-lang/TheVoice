@@ -1,4 +1,4 @@
-import { CANVAS_FONTS } from "@/lib/design/fonts";
+import { CANVAS_FONTS, anyFaceHasAxis, clampAxis, faceAxis } from "@/lib/design/fonts";
 import { useDesign } from "@/lib/design/store";
 import {
   clampTypeSize,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/design/text-style";
 import type { Align, DesignNode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
+import { MixedAxisSliders } from "./mixed-type-axes";
 
 const ALIGNS: Align[] = ["left", "center", "right"];
 
@@ -19,6 +20,10 @@ function unique<T>(values: T[]): T[] {
 
 function formatNum(n: number) {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+}
+
+function faceSupports(family: string, tag: "opsz" | "wdth") {
+  return Boolean(faceAxis(family, tag));
 }
 
 export function MixedType({ nodes }: { nodes: TextNode[] }) {
@@ -51,6 +56,32 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
     patch(cloneType(style), commit);
   }
 
+  function writeAxis(tag: "opsz" | "wdth", value: number | undefined, commit = true) {
+    const idsForAxis = new Set(nodes.filter((n) => faceSupports(n.fontFamily, tag)).map((n) => n.id));
+    if (!idsForAxis.size) return;
+    if (value != null) {
+      const partial = tag === "opsz" ? { opticalSize: value } : { fontWidth: value };
+      updateNodes([...idsForAxis], partial as Partial<DesignNode>, commit);
+      return;
+    }
+    if (commit) useDesign.getState().commit();
+    const doc = useDesign.getState().doc;
+    if (!doc) return;
+    useDesign.setState({
+      doc: {
+        ...doc,
+        nodes: doc.nodes.map((n) => {
+          if (!idsForAxis.has(n.id) || n.kind !== "text") return n;
+          const next = { ...n };
+          if (tag === "opsz") delete next.opticalSize;
+          else delete next.fontWidth;
+          return next;
+        }),
+      },
+      dirty: true,
+    });
+  }
+
   function writeSize(nextKeySize: number, commit: boolean, flatten: boolean) {
     const size = clampTypeSize(nextKeySize);
     if (flatten || !mixedSize) {
@@ -73,6 +104,18 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
     });
   }
 
+  function patchAxes(partial: Partial<TextNode>, commit = true) {
+    if ("opticalSize" in partial) {
+      writeAxis("opsz", partial.opticalSize, commit);
+      return;
+    }
+    if ("fontWidth" in partial) {
+      writeAxis("wdth", partial.fontWidth, commit);
+      return;
+    }
+    patch(partial, commit);
+  }
+
   return (
     <section className="border-b border-border py-3">
       <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">
@@ -84,237 +127,67 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
         values show Mixed or an em dash until you set one.
       </p>
       <div className="mb-2 flex gap-1">
-        <button
-          type="button"
-          className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          onClick={() =>
-            patch({
-              fontFamily: display,
-              fontWeight: 600,
-              fontSize: Math.max(...nodes.map((n) => n.fontSize), 40),
-            })
-          }
-        >
-          Display
-        </button>
-        <button
-          type="button"
-          className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          onClick={() =>
-            patch({
-              fontFamily: body,
-              fontWeight: 400,
-              fontSize: Math.min(...nodes.map((n) => n.fontSize), 28),
-            })
-          }
-        >
-          Body
-        </button>
+        <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: display, fontWeight: 600, fontSize: Math.max(...nodes.map((n) => n.fontSize), 40) })}>Display</button>
+        <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: body, fontWeight: 400, fontSize: Math.min(...nodes.map((n) => n.fontSize), 28) })}>Body</button>
       </div>
       <label className="mb-2 block text-[11px] text-ink-dim">
         <span className="mb-1 block">{mixedFamily ? "Family · mixed" : "Family"}</span>
-        <select
-          className="field"
-          aria-label={mixedFamily ? "type family mixed" : "type family"}
-          value={mixedFamily ? "" : keyNode.fontFamily}
-          onChange={(e) => {
-            const family = e.target.value;
-            if (!family) return;
-            patch({ fontFamily: family });
-          }}
-        >
-          {mixedFamily && (
-            <option value="" disabled>
-              Mixed
-            </option>
-          )}
-          {CANVAS_FONTS.map((f) => (
-            <option key={f.id} value={f.family}>
-              {f.family}
-            </option>
-          ))}
+        <select className="field" aria-label={mixedFamily ? "type family mixed" : "type family"} value={mixedFamily ? "" : keyNode.fontFamily} onChange={(e) => { const family = e.target.value; if (!family) return; patch({ fontFamily: family }); }}>
+          {mixedFamily && (<option value="" disabled>Mixed</option>)}
+          {CANVAS_FONTS.map((f) => (<option key={f.id} value={f.family}>{f.family}</option>))}
         </select>
       </label>
       <label className="block text-[11px] text-ink-dim">
-        <span className="mb-1 block">
-          {mixedSize ? "Size · mixed · scale from key" : `Size ${formatNum(keyNode.fontSize)}`}
-        </span>
+        <span className="mb-1 block">{mixedSize ? "Size · mixed · scale from key" : `Size ${formatNum(keyNode.fontSize)}`}</span>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            className="range-phosphor min-w-0 flex-1"
-            min={6}
-            max={400}
-            step={1}
-            aria-label={mixedSize ? "type size mixed" : "type size"}
-            value={keyNode.fontSize}
-            onChange={(e) => writeSize(Number(e.target.value), false, false)}
-            onPointerUp={() => useDesign.getState().commit()}
-          />
-          <NumField
-            className="field w-16 font-mono"
-            value={keyNode.fontSize}
-            mixed={mixedSize}
-            min={6}
-            max={400}
-            aria-label="type size"
-            onCommit={(n) => writeSize(n, true, true)}
-          />
+          <input type="range" className="range-phosphor min-w-0 flex-1" min={6} max={400} step={1} aria-label={mixedSize ? "type size mixed" : "type size"} value={keyNode.fontSize} onChange={(e) => writeSize(Number(e.target.value), false, false)} onPointerUp={() => useDesign.getState().commit()} />
+          <NumField className="field w-16 font-mono" value={keyNode.fontSize} mixed={mixedSize} min={6} max={400} aria-label="type size" onCommit={(n) => writeSize(n, true, true)} />
         </div>
       </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
-        <span className="mb-1 block">
-          {mixedWeight ? "Weight · mixed" : `Weight ${formatNum(keyNode.fontWeight)}`}
-        </span>
+        <span className="mb-1 block">{mixedWeight ? "Weight · mixed" : `Weight ${formatNum(keyNode.fontWeight)}`}</span>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            className="range-phosphor min-w-0 flex-1"
-            min={400}
-            max={800}
-            step={100}
-            aria-label={mixedWeight ? "type weight mixed" : "type weight"}
-            value={keyNode.fontWeight}
-            onChange={(e) =>
-              patch(
-                { fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) },
-                false,
-              )
-            }
-            onPointerUp={() => useDesign.getState().commit()}
-          />
-          <NumField
-            className="field w-16 font-mono"
-            value={keyNode.fontWeight}
-            mixed={mixedWeight}
-            min={400}
-            max={800}
-            aria-label="type weight"
-            onCommit={(n) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) })}
-          />
+          <input type="range" className="range-phosphor min-w-0 flex-1" min={400} max={800} step={100} aria-label={mixedWeight ? "type weight mixed" : "type weight"} value={keyNode.fontWeight} onChange={(e) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) }, false)} onPointerUp={() => useDesign.getState().commit()} />
+          <NumField className="field w-16 font-mono" value={keyNode.fontWeight} mixed={mixedWeight} min={400} max={800} aria-label="type weight" onCommit={(n) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) })} />
         </div>
       </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
-        <span className="mb-1 block">
-          {mixedTracking ? "Tracking · mixed" : `Tracking ${formatNum(keyNode.letterSpacing)}`}
-        </span>
+        <span className="mb-1 block">{mixedTracking ? "Tracking · mixed" : `Tracking ${formatNum(keyNode.letterSpacing)}`}</span>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            className="range-phosphor min-w-0 flex-1"
-            min={-8}
-            max={40}
-            step={0.25}
-            aria-label={mixedTracking ? "type tracking mixed" : "type tracking"}
-            value={keyNode.letterSpacing}
-            onChange={(e) => patch({ letterSpacing: Number(e.target.value) }, false)}
-            onPointerUp={() => useDesign.getState().commit()}
-          />
-          <NumField
-            className="field w-16 font-mono"
-            value={keyNode.letterSpacing}
-            mixed={mixedTracking}
-            min={-8}
-            max={40}
-            aria-label="type tracking"
-            onCommit={(n) => patch({ letterSpacing: n })}
-          />
+          <input type="range" className="range-phosphor min-w-0 flex-1" min={-8} max={40} step={0.25} aria-label={mixedTracking ? "type tracking mixed" : "type tracking"} value={keyNode.letterSpacing} onChange={(e) => patch({ letterSpacing: Number(e.target.value) }, false)} onPointerUp={() => useDesign.getState().commit()} />
+          <NumField className="field w-16 font-mono" value={keyNode.letterSpacing} mixed={mixedTracking} min={-8} max={40} aria-label="type tracking" onCommit={(n) => patch({ letterSpacing: n })} />
         </div>
       </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
-        <span className="mb-1 block">
-          {mixedLeading ? "Leading · mixed" : `Leading ${formatNum(keyNode.lineHeight)}`}
-        </span>
+        <span className="mb-1 block">{mixedLeading ? "Leading · mixed" : `Leading ${formatNum(keyNode.lineHeight)}`}</span>
         <div className="flex items-center gap-2">
-          <input
-            type="range"
-            className="range-phosphor min-w-0 flex-1"
-            min={0.7}
-            max={2}
-            step={0.02}
-            aria-label={mixedLeading ? "type leading mixed" : "type leading"}
-            value={keyNode.lineHeight}
-            onChange={(e) => patch({ lineHeight: Number(e.target.value) }, false)}
-            onPointerUp={() => useDesign.getState().commit()}
-          />
-          <NumField
-            className="field w-16 font-mono"
-            value={keyNode.lineHeight}
-            mixed={mixedLeading}
-            min={0.7}
-            max={2}
-            aria-label="type leading"
-            onCommit={(n) => patch({ lineHeight: n })}
-          />
+          <input type="range" className="range-phosphor min-w-0 flex-1" min={0.7} max={2} step={0.02} aria-label={mixedLeading ? "type leading mixed" : "type leading"} value={keyNode.lineHeight} onChange={(e) => patch({ lineHeight: Number(e.target.value) }, false)} onPointerUp={() => useDesign.getState().commit()} />
+          <NumField className="field w-16 font-mono" value={keyNode.lineHeight} mixed={mixedLeading} min={0.7} max={2} aria-label="type leading" onCommit={(n) => patch({ lineHeight: n })} />
         </div>
       </label>
+      <MixedAxisSliders nodes={nodes} patch={patchAxes} />
       <div className="mt-2">
         <div className="mb-1 text-[11px] text-ink-dim">{mixedAlign ? "Align · mixed" : "Align"}</div>
         <div className="flex gap-1" role="group" aria-label={mixedAlign ? "type align mixed" : "type align"}>
           {ALIGNS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${
-                !mixedAlign && keyNode.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"
-              }`}
-              onClick={() => patch({ align: a })}
-            >
-              {a}
-            </button>
+            <button key={a} type="button" className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${!mixedAlign && keyNode.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"}`} onClick={() => patch({ align: a })}>{a}</button>
           ))}
         </div>
       </div>
       <label className="mt-2 flex items-center gap-2 text-xs text-ink-dim">
-        <input
-          type="checkbox"
-          aria-label={mixedCase ? "type uppercase mixed" : "type uppercase"}
-          checked={!mixedCase && keyNode.uppercase}
-          onChange={(e) => patch({ uppercase: e.target.checked })}
-        />
+        <input type="checkbox" aria-label={mixedCase ? "type uppercase mixed" : "type uppercase"} checked={!mixedCase && keyNode.uppercase} onChange={(e) => patch({ uppercase: e.target.checked })} />
         {mixedCase ? "Uppercase · mixed" : "Uppercase"}
       </label>
       {mixedStack && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {nodes.map((n) => (
-            <button
-              key={n.id}
-              type="button"
-              className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
-              title={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n)}`}
-              aria-label={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n)}`}
-              onClick={() => stampType(n)}
-            >
-              {typeChipLabel(n)}
-            </button>
+            <button key={n.id} type="button" className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor" title={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n)}`} aria-label={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n)}`} onClick={() => stampType(n)}>{typeChipLabel(n)}</button>
           ))}
         </div>
       )}
       <div className="mt-2 grid grid-cols-2 gap-1">
-        <button
-          type="button"
-          className="h-8 rounded-[8px] border border-phosphor/40 text-[10px] text-phosphor hover:bg-phosphor/10"
-          onClick={() => stampType(keyNode)}
-        >
-          Match key
-        </button>
-        <button
-          type="button"
-          className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          onClick={() =>
-            patch({
-              fontFamily: "Chakra Petch",
-              fontWeight: 600,
-              fontSize: 48,
-              letterSpacing: 0,
-              lineHeight: 1.1,
-              align: "left",
-              uppercase: false,
-            })
-          }
-        >
-          Reset type
-        </button>
+        <button type="button" className="h-8 rounded-[8px] border border-phosphor/40 text-[10px] text-phosphor hover:bg-phosphor/10" onClick={() => stampType(keyNode)}>Match key</button>
+        <button type="button" className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: "Chakra Petch", fontWeight: 600, fontSize: 48, letterSpacing: 0, lineHeight: 1.1, align: "left", uppercase: false, opticalSize: undefined, fontWidth: undefined })}>Reset type</button>
       </div>
     </section>
   );
