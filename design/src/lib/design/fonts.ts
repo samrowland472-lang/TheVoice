@@ -52,26 +52,19 @@ export function canvasFont(family: string): CanvasFont | undefined {
   return CANVAS_FONTS.find((c) => c.family === family);
 }
 
-export function clampAxis(axis: FontAxis, value: number | undefined, auto?: number): number {
-  const raw = value ?? auto ?? axis.fallback;
-  if (!Number.isFinite(raw)) return axis.fallback;
-  return Math.min(axis.max, Math.max(axis.min, raw));
-}
-
-export function faceSupports(family: string, tag: FontAxis["tag"]): FontAxis | undefined {
+export function faceAxis(family: string, tag: "opsz" | "wdth"): FontAxis | undefined {
   const face = canvasFont(family);
   return tag === "opsz" ? face?.opsz : face?.wdth;
 }
 
-export function effectiveAxis(
-  node: { fontFamily: string; fontSize: number; opticalSize?: number; fontWidth?: number },
-  tag: FontAxis["tag"],
-): number | undefined {
-  const axis = faceSupports(node.fontFamily, tag);
-  if (!axis) return undefined;
-  return tag === "opsz"
-    ? clampAxis(axis, node.opticalSize, node.fontSize)
-    : clampAxis(axis, node.fontWidth);
+export function anyFaceHasAxis(families: string[], tag: "opsz" | "wdth"): boolean {
+  return families.some((family) => Boolean(faceAxis(family, tag)));
+}
+
+export function clampAxis(axis: FontAxis, value: number | undefined, auto?: number): number {
+  const raw = value ?? auto ?? axis.fallback;
+  if (!Number.isFinite(raw)) return axis.fallback;
+  return Math.min(axis.max, Math.max(axis.min, raw));
 }
 
 export function variationSettings(node: {
