@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed image filters write-through on multi-select photos.
+1. Inspector mixed type write-through on multi-select text (family, size, tracking).
 
 ## Done
 
+- Inspector mixed image filters: multi-select photos write brightness, contrast, saturate, and blur across every pick; chips stamp a layer’s full stack; Match key / Reset all; key sliders hide when two-plus photos are selected.
 - Inspector mixed shadow chips apply a cloned full shadow (colour, blur, X/Y), not colour alone; chips preview the drop; unified Selection also has an X slider.
 - Inspector mixed blend/shadow: multi-select Selection panel writes blend and shadow across every selected layer; chips unify to a layer’s shadow; key blend/shadow stay single-layer.
 - Marquee contain-mode: hold Alt while dragging the V-tool box to select only layers fully inside; default still intersects; live frames mark hits; contain draws corner ticks.
@@ -63,6 +64,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-04T01:20Z — loop 150
+
+**Mixed photo filters.** Shift-select two photos. Inspector Photos writes brightness, contrast, saturate, and blur onto every pick: mixed keys read as mixed; a chip copies that layer’s full stack; Match key clones the last-selected photo; Reset all returns to flat. Single-photo sliders stay on one layer.
 
 ### 2026-09-04T00:15Z — loop 149
 
@@ -118,4 +123,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed image filters write-through on multi-select photos.
+Inspector mixed type write-through on multi-select text (family, size, tracking).
