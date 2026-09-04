@@ -75,9 +75,7 @@ export interface BaseNode {
   strokeWidth: number;
   radius: number;
   shadow: Shadow | null;
-  /** Shared id — style/copy edits update every instance. Transform stays local. */
   linkId?: string;
-  /** Present hotspot: `doc:<id>` or a URL. */
   href?: string;
 }
 
@@ -91,23 +89,19 @@ export interface TextNode extends BaseNode {
   lineHeight: number;
   align: Align;
   uppercase: boolean;
-  /** When true (default), copy wraps to the frame width instead of squeezing. */
   wrap?: boolean;
   valign?: Valign;
-  /** Optical size axis (opsz). Undefined follows fontSize when the face supports it. */
   opticalSize?: number;
-  /** Width axis (wdth). Undefined uses the face fallback. */
   fontWidth?: number;
-  /** Slant axis (slnt). Undefined uses the face fallback (usually upright). */
   fontSlant?: number;
-  /** Italic axis (ital). Undefined uses the face fallback (usually roman). */
   fontItalic?: number;
+  fontGrade?: number;
+  fontSoft?: number;
 }
 
 export interface ImageNode extends BaseNode {
   kind: "image";
   src: string;
-  /** Normalized source rect (0–1). Null = full image. */
   crop: { x: number; y: number; w: number; h: number } | null;
   filters: {
     brightness: number;
@@ -117,13 +111,11 @@ export interface ImageNode extends BaseNode {
   };
 }
 
-/** Anchor on a path. `in` / `out` are offsets from the anchor. */
 export interface PathPoint {
   x: number;
   y: number;
   in?: { x: number; y: number } | null;
   out?: { x: number; y: number } | null;
-  /** When true, opposite handles stay mirrored. */
   smooth?: boolean;
 }
 
@@ -131,9 +123,7 @@ export interface PathNode extends BaseNode {
   kind: "path";
   points: PathPoint[];
   closed: boolean;
-  /** Inner contours (holes) in local coords — used by boolean subtract/union. */
   holes?: PathPoint[][];
-  /** Canvas/SVG fill rule when holes are present. */
   fillRule?: "evenodd" | "nonzero";
 }
 
@@ -155,7 +145,6 @@ export interface Artboard {
   background: Fill;
   name: string;
   formatId: string;
-  /** Extra pixels around PNG/JPG export (print bleed). */
   bleed?: number;
 }
 
@@ -167,11 +156,8 @@ export interface DesignDocument {
   updatedAt: number;
   createdAt: number;
   thumbnail?: string;
-  /** Manual ruler guides in artboard space. */
   guides?: { id: string; axis: "x" | "y"; pos: number }[];
-  /** Shared id for a campaign set (story + square + banner). */
   campaignId?: string;
-  /** Present-mode speaker notes (local only). */
   notes?: string;
 }
 
@@ -183,7 +169,6 @@ export interface ProjectMeta {
   height: number;
   updatedAt: number;
   thumbnail?: string;
-  /** Pinned projects sort to the front of Recents. */
   pinned?: boolean;
   folder?: string;
   tags?: string[];
