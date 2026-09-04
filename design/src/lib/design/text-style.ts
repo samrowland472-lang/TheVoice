@@ -1,3 +1,4 @@
+import { clampAxis, faceAxis } from "./fonts";
 import type { Align, TextNode } from "./types";
 
 export type TypeStyle = {
@@ -55,11 +56,52 @@ export function typeKey(node: Pick<TextNode, keyof TypeStyle> | TypeStyle): stri
   ].join(":");
 }
 
-export function typeChipLabel(node: Pick<TextNode, keyof TypeStyle> | TypeStyle): string {
+function formatChipNum(n: number) {
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+}
+
+function axisToken(node: TypeStyle, tag: "opsz" | "wdth"): string | null {
+  const axis = faceAxis(node.fontFamily, tag);
+  if (!axis) return null;
+  if (tag === "opsz") {
+    if (node.opticalSize == null) return "auto";
+    return formatChipNum(clampAxis(axis, node.opticalSize, node.fontSize));
+  }
+  if (node.fontWidth == null) return "auto";
+  return formatChipNum(clampAxis(axis, node.fontWidth));
+}
+
+/** True when supporting faces in the set do not share one opsz or wdth token. */
+export function typeAxesDiffer(
+  nodes: Array<Pick<TextNode, keyof TypeStyle> | TypeStyle>,
+  tag: "opsz" | "wdth",
+): boolean {
+  const tokens = new Set<string>();
+  for (const raw of nodes) {
+    const token = axisToken(normalizeType(raw), tag);
+    if (token != null) tokens.add(token);
+  }
+  return tokens.size > 1;
+}
+
+export function typeChipLabel(
+  node: Pick<TextNode, keyof TypeStyle> | TypeStyle,
+  peers?: Array<Pick<TextNode, keyof TypeStyle> | TypeStyle>,
+): string {
   const t = normalizeType(node);
   const family = t.fontFamily.split(" ").pop() || t.fontFamily;
-  const size = Number.isInteger(t.fontSize) ? String(t.fontSize) : String(Math.round(t.fontSize * 10) / 10);
-  return `${family} ${size}`;
+  const size = formatChipNum(t.fontSize);
+  const group = peers && peers.length ? peers : [node];
+  const parts = [`${family} ${size}`];
+  if (typeAxesDiffer(group, "opsz")) {
+    const token = axisToken(t, "opsz");
+    if (token) parts.push(token === "auto" ? "opsz auto" : `opsz ${token}`);
+  }
+  if (typeAxesDiffer(group, "wdth")) {
+    const token = axisToken(t, "wdth");
+    if (token) parts.push(token === "auto" ? "wdth auto" : `wdth ${token}`);
+  }
+  return parts.join(" · ");
 }
 
 export function clampTypeSize(n: number): number {

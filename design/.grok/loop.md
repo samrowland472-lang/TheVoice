@@ -21,16 +21,20 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Type chips label optical size / width when those axes differ across the selection.
-2. Inspector mixed italic / slant axis when a face exposes `ital` or `slnt`.
+1. Inspector mixed italic / slant axis when a face exposes `ital` or `slnt`.
 
 ## Done
 
+- Type chips label optical size / width when those axes differ across the selection (opsz auto vs locked, wdth values).
 - Type-to-path, PNG raster, and SVG export honor opsz / wdth via the same variation settings as the artboard. SVG writes `font-variation-settings`, weight, tracking, and anchor.
 - Inspector mixed type optical size / width: Fraunces shows Optical (auto from size or locked), Instrument Sans shows Width; multi-select writes only onto faces that support the axis; Auto from size clears the lock.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-04T12:35Z — loop 154
+
+**Axis chips.** Mixed type chips now name opsz / wdth when those axes disagree across the pick. Two Fraunces layers with different optical sizes read as `Fraunces 48 · opsz 36` and `Fraunces 48 · opsz auto`; Instrument width mismatches show `wdth`.
 
 ### 2026-09-04T09:35Z — loop 153
 
@@ -42,4 +46,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Type chips label optical size / width when those axes differ across the selection.
+Inspector mixed italic / slant axis when a face exposes `ital` or `slnt`.

@@ -32,6 +32,10 @@ test("chips stamp a layer full type and match key", () => {
   assert.match(mixed, /cloneType/);
   assert.match(mixed, /Match key/);
   assert.match(mixed, /Reset type/);
+  assert.match(mixed, /typeChipLabel\(n, nodes\)/);
+  assert.match(helpers, /export function typeAxesDiffer/);
+  assert.match(helpers, /opsz auto/);
+  assert.match(helpers, /wdth /);
 });
 
 test("inspector hosts mixed type and hides key sliders", () => {
