@@ -24,33 +24,13 @@ export function TextFields({ node, hideType = false }: { node: TextNode; hideTyp
       {hideType ? null : (
       <>
       <div className="flex gap-1">
-        <button
-          type="button"
-          className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          onClick={() => updateNodes([node.id], { fontFamily: display, fontWeight: 600, fontSize: Math.max(node.fontSize, 40) } as Partial<DesignNode>, true)}
-        >
-          Display
-        </button>
-        <button
-          type="button"
-          className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          onClick={() => updateNodes([node.id], { fontFamily: body, fontWeight: 400, fontSize: Math.min(node.fontSize, 28) } as Partial<DesignNode>, true)}
-        >
-          Body
-        </button>
+        <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => updateNodes([node.id], { fontFamily: display, fontWeight: 600, fontSize: Math.max(node.fontSize, 40) } as Partial<DesignNode>, true)}>Display</button>
+        <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => updateNodes([node.id], { fontFamily: body, fontWeight: 400, fontSize: Math.min(node.fontSize, 28) } as Partial<DesignNode>, true)}>Body</button>
       </div>
       <ContrastMeter node={node} />
       <Field label="Font">
-        <select
-          className="field"
-          value={node.fontFamily}
-          onChange={(e) => updateNodes([node.id], { fontFamily: e.target.value } as Partial<DesignNode>, true)}
-        >
-          {CANVAS_FONTS.map((f) => (
-            <option key={f.id} value={f.family}>
-              {f.family}
-            </option>
-          ))}
+        <select className="field" value={node.fontFamily} onChange={(e) => updateNodes([node.id], { fontFamily: e.target.value } as Partial<DesignNode>, true)}>
+          {CANVAS_FONTS.map((f) => (<option key={f.id} value={f.family}>{f.family}</option>))}
         </select>
       </Field>
       <Field label={`Size ${Math.round(node.fontSize)}`}>
@@ -80,9 +60,7 @@ export function TextFields({ node, hideType = false }: { node: TextNode; hideTyp
       <Field label="Align">
         <div className="flex gap-1">
           {(["left", "center", "right"] as Align[]).map((a) => (
-            <button key={a} type="button" className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${node.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"}`} onClick={() => updateNodes([node.id], { align: a } as Partial<DesignNode>, true)}>
-              {a}
-            </button>
+            <button key={a} type="button" className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${node.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"}`} onClick={() => updateNodes([node.id], { align: a } as Partial<DesignNode>, true)}>{a}</button>
           ))}
         </div>
       </Field>
@@ -92,6 +70,119 @@ export function TextFields({ node, hideType = false }: { node: TextNode; hideTyp
       </label>
       </>
       )}
+    </>
+  );
+}
+
+export function ContrastMeter({ node }: { node: TextNode }) {
+  const doc = useDesign((s) => s.doc);
+  const brand = useDesign((s) => s.brand);
+  if (!doc) return null;
+  const ink = solidHex(node.fill, "#d9f5e3");
+  const ground = solidHex(doc.artboard.background, "#0a0d0c");
+  const ratio = contrastRatio(ink, ground);
+  const large = node.fontSize >= 24 || (node.fontSize >= 18 && node.fontWeight >= 700);
+  const level = ratio == null ? "fail" : wcagLevel(ratio, large);
+  const suggested = bestInk(ground, brand.colors.map((c) => c.hex));
+  return (
+    <div className="flex items-center justify-between gap-2 text-[10px] text-ink-dim">
+      <span>Contrast {ratio == null ? "\u2014" : ratio.toFixed(1)} \u00b7 {level.toUpperCase()}</span>
+      {level === "fail" && (
+        <button type="button" className="text-phosphor" onClick={() => useDesign.getState().updateNodes([node.id], { fill: suggested } as Partial<DesignNode>, true)}>Fix ink</button>
+      )}
+    </div>
+  );
+}
+
+export function LinkedRow({ nodeId, linkId }: { nodeId: string; linkId?: string }) {
+  const unlinkSelected = useDesign((s) => s.unlinkSelected);
+  const duplicateLinked = useDesign((s) => s.duplicateLinked);
+  const select = useDesign((s) => s.select);
+  const doc = useDesign((s) => s.doc);
+  const siblings = (doc?.nodes ?? []).filter((n) => linkId && n.linkId === linkId);
+  return (
+    <div className="flex items-center justify-between gap-2 text-[11px] text-ink-dim">
+      <span>{linkId ? `Linked \u00b7 ${siblings.length}` : "Standalone"}</span>
+      <div className="flex gap-1">
+        {linkId && siblings.length > 1 && (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => select(siblings.map((n) => n.id))}>Select all</button>
+        )}
+        {linkId ? (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => { select([nodeId]); unlinkSelected(); }}>Unlink</button>
+        ) : (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => { select([nodeId]); duplicateLinked(); }}>Instance</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function HotspotField({ node }: { node: DesignNode }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const index = useDesign((s) => s.index);
+  const doc = useDesign((s) => s.doc);
+  const pages = index.filter((p) => p.id !== doc?.id);
+  return (
+    <Field label="Hotspot">
+      <input className="field" placeholder="https:// or pick a page" value={node.href ?? ""} onChange={(e) => updateNodes([node.id], { href: e.target.value || undefined }, true)} />
+      {pages.length > 0 && (
+        <select className="field mt-1" value={node.href?.startsWith("doc:") ? node.href : ""} onChange={(e) => updateNodes([node.id], { href: e.target.value || undefined }, true)}>
+          <option value="">Page link</option>
+          {pages.map((p) => (<option key={p.id} value={`doc:${p.id}`}>{p.name}</option>))}
+        </select>
+      )}
+    </Field>
+  );
+}
+
+export function ImageFields({ node, hideFilters = false }: { node: ImageNode; hideFilters?: boolean }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const addBrandColor = useDesign((s) => s.addBrandColor);
+  const [swatches, setSwatches] = useState<string[]>([]);
+  const filters = node.filters ?? { brightness: 1, contrast: 1, saturate: 1, blur: 0 };
+  useEffect(() => {
+    let alive = true;
+    void paletteFromSrc(node.src).then((colors) => { if (alive) setSwatches(colors); }).catch(() => { if (alive) setSwatches([]); });
+    return () => { alive = false; };
+  }, [node.src]);
+  function patchFilter(key: keyof ImageNode["filters"], value: number) {
+    updateNodes([node.id], { filters: { ...filters, [key]: value } } as Partial<DesignNode>, true);
+  }
+  function liveFilter(key: keyof ImageNode["filters"], value: number) {
+    updateNodes([node.id], { filters: { ...filters, [key]: value } } as Partial<DesignNode>);
+  }
+  return (
+    <>
+      {swatches.length > 0 && (
+        <Field label="Sampled ink">
+          <div className="flex flex-wrap gap-1.5">
+            {swatches.map((hex, i) => (
+              <button key={hex + i} type="button" className="size-6 rounded-full border border-border" style={{ background: hex }} title={paletteName(hex, i)} aria-label={paletteName(hex, i)} onClick={() => addBrandColor(hex)} />
+            ))}
+          </div>
+        </Field>
+      )}
+      <Field label="Crop">
+        <div className="flex gap-1">
+          <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => updateNodes([node.id], { crop: null } as Partial<DesignNode>, true)}>Full frame</button>
+          <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => updateNodes([node.id], { crop: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 } } as Partial<DesignNode>, true)}>Inset</button>
+        </div>
+      </Field>
+      {!hideFilters && (
+        [
+          { key: "brightness" as const, label: "Brightness", min: 0, max: 2, step: 0.01 },
+          { key: "contrast" as const, label: "Contrast", min: 0, max: 2, step: 0.01 },
+          { key: "saturate" as const, label: "Saturate", min: 0, max: 2, step: 0.01 },
+          { key: "blur" as const, label: "Blur", min: 0, max: 24, step: 0.25 },
+        ] as const
+      ).map((f) => (
+        <Field key={f.key} label={`${f.label} ${f.key === "blur" ? filters[f.key] : Math.round(filters[f.key] * 100)}`}>
+          <div className="flex items-center gap-2">
+            <input type="range" className="range-phosphor min-w-0 flex-1" min={f.min} max={f.max} step={f.step} aria-label={f.label.toLowerCase()} value={filters[f.key]} onChange={(e) => liveFilter(f.key, Number(e.target.value))} onPointerUp={() => useDesign.getState().commit()} />
+            <NumField className="field w-16 font-mono" value={f.key === "blur" ? filters[f.key] : Math.round(filters[f.key] * 100)} min={0} max={f.key === "blur" ? 24 : 200} aria-label={f.label.toLowerCase()} onCommit={(n) => patchFilter(f.key, f.key === "blur" ? n : n / 100)} />
+          </div>
+        </Field>
+      ))}
     </>
   );
 }
