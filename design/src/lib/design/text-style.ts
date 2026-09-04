@@ -13,6 +13,8 @@ export type TypeStyle = {
   fontWidth?: number;
   fontSlant?: number;
   fontItalic?: number;
+  fontGrade?: number;
+  fontSoft?: number;
 };
 
 export const DEFAULT_TYPE: TypeStyle = {
@@ -38,6 +40,8 @@ export function normalizeType(node: Pick<TextNode, keyof TypeStyle> | TypeStyle)
     fontWidth: node.fontWidth,
     fontSlant: node.fontSlant,
     fontItalic: node.fontItalic,
+    fontGrade: node.fontGrade,
+    fontSoft: node.fontSoft,
   };
 }
 
@@ -59,6 +63,8 @@ export function typeKey(node: Pick<TextNode, keyof TypeStyle> | TypeStyle): stri
     t.fontWidth == null ? "auto" : String(Math.round(t.fontWidth * 10) / 10),
     t.fontSlant == null ? "auto" : String(Math.round(t.fontSlant * 10) / 10),
     t.fontItalic == null ? "auto" : String(Math.round(t.fontItalic * 100) / 100),
+    t.fontGrade == null ? "auto" : String(Math.round(t.fontGrade * 10) / 10),
+    t.fontSoft == null ? "auto" : String(Math.round(t.fontSoft * 10) / 10),
   ].join(":");
 }
 
@@ -81,11 +87,18 @@ function axisToken(node: TypeStyle, tag: FontAxisTag): string | null {
     if (node.fontSlant == null) return "auto";
     return formatChipNum(clampAxis(axis, node.fontSlant));
   }
-  if (node.fontItalic == null) return "auto";
-  return formatChipNum(clampAxis(axis, node.fontItalic));
+  if (tag === "ital") {
+    if (node.fontItalic == null) return "auto";
+    return formatChipNum(clampAxis(axis, node.fontItalic));
+  }
+  if (tag === "GRAD") {
+    if (node.fontGrade == null) return "auto";
+    return formatChipNum(clampAxis(axis, node.fontGrade));
+  }
+  if (node.fontSoft == null) return "auto";
+  return formatChipNum(clampAxis(axis, node.fontSoft));
 }
 
-/** True when supporting faces in the set do not share one axis token. */
 export function typeAxesDiffer(
   nodes: Array<Pick<TextNode, keyof TypeStyle> | TypeStyle>,
   tag: FontAxisTag,
@@ -123,7 +136,15 @@ export function typeChipLabel(
     const token = axisToken(t, "ital");
     if (token) parts.push(token === "auto" ? "ital auto" : `ital ${token}`);
   }
-  return parts.join(" · ");
+  if (typeAxesDiffer(group, "GRAD")) {
+    const token = axisToken(t, "GRAD");
+    if (token) parts.push(token === "auto" ? "GRAD auto" : `GRAD ${token}`);
+  }
+  if (typeAxesDiffer(group, "SOFT")) {
+    const token = axisToken(t, "SOFT");
+    if (token) parts.push(token === "auto" ? "SOFT auto" : `SOFT ${token}`);
+  }
+  return parts.join(" \u00b7 ");
 }
 
 export function clampTypeSize(n: number): number {
@@ -131,7 +152,6 @@ export function clampTypeSize(n: number): number {
   return Math.min(400, Math.max(6, n));
 }
 
-/** Scale every layer's size from the key so mixed stacks keep their steps. */
 export function scaledTypeSizes(
   nodes: Pick<TextNode, "id" | "fontSize">[],
   keyId: string,
