@@ -1,5 +1,6 @@
+import { cloneShadow, DEFAULT_SHADOW, shadowChipLabel, shadowKey } from "@/lib/design/shadow";
 import { useDesign } from "@/lib/design/store";
-import type { BlendMode, DesignNode, Shadow } from "@/lib/design/types";
+import type { BlendMode, DesignNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 
 const BLENDS: BlendMode[] = [
@@ -11,13 +12,6 @@ const BLENDS: BlendMode[] = [
   "lighten",
   "soft-light",
 ];
-
-const DEFAULT_SHADOW: Shadow = { color: "#000000", blur: 28, ox: 0, oy: 18 };
-
-function shadowKey(shadow: Shadow | null): string {
-  if (!shadow) return "off";
-  return `on:${shadow.color}:${shadow.blur}:${shadow.ox}:${shadow.oy}`;
-}
 
 function fillKey(fill: DesignNode["fill"]): string {
   if (typeof fill === "string") return fill;
@@ -74,7 +68,8 @@ export function MixedInk({
       </div>
       <div className="flex flex-col gap-2">
         <p className="text-[10px] text-ink-dim">
-          Mixed ink writes fill, stroke, opacity, blend, and shadow onto every selected layer.
+          Mixed ink writes fill, stroke, opacity, blend, and the full shadow (colour, blur, offset)
+          onto every selected layer.
         </p>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">{mixedFill ? "Fill · mixed" : "Fill"}</span>
@@ -207,7 +202,7 @@ export function MixedInk({
               className="text-[10px] text-phosphor"
               onClick={() => {
                 const anyOn = nodes.some((n) => n.shadow);
-                updateNodes(ids, { shadow: anyOn ? null : DEFAULT_SHADOW }, true);
+                updateNodes(ids, { shadow: anyOn ? null : cloneShadow(DEFAULT_SHADOW) }, true);
               }}
             >
               {nodes.every((n) => n.shadow) ? "Clear all" : "Add all"}
@@ -219,12 +214,22 @@ export function MixedInk({
                 <button
                   key={`sh-${n.id}`}
                   type="button"
-                  className="h-6 rounded-full border border-phosphor/50 px-2 font-mono text-[9px] text-phosphor"
-                  title={`Unify shadow with ${n.name || n.kind}`}
-                  aria-label={`Unify shadow with ${n.name || n.kind}`}
-                  onClick={() => updateNodes(ids, { shadow: n.shadow }, true)}
+                  className="flex h-7 items-center gap-1.5 rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+                  title={`Unify full shadow with ${n.name || n.kind}: ${shadowChipLabel(n.shadow)}`}
+                  aria-label={`Unify full shadow with ${n.name || n.kind}: ${shadowChipLabel(n.shadow)}`}
+                  onClick={() => updateNodes(ids, { shadow: cloneShadow(n.shadow) }, true)}
                 >
-                  {n.shadow ? n.shadow.color : "off"}
+                  <span
+                    className="size-3.5 shrink-0 rounded-[3px] bg-ink"
+                    style={
+                      n.shadow
+                        ? {
+                            boxShadow: `${n.shadow.ox / 4}px ${n.shadow.oy / 4}px ${Math.max(1, n.shadow.blur / 6)}px ${n.shadow.color}`,
+                          }
+                        : { boxShadow: "inset 0 0 0 1px rgba(63,198,255,0.35)" }
+                    }
+                  />
+                  {shadowChipLabel(n.shadow)}
                 </button>
               ))}
             </div>
@@ -251,6 +256,21 @@ export function MixedInk({
                   value={nodes[0].shadow.blur}
                   onChange={(e) =>
                     updateNodes(ids, { shadow: { ...nodes[0].shadow!, blur: Number(e.target.value) } })
+                  }
+                  onPointerUp={() => useDesign.getState().commit()}
+                />
+              </label>
+              <label className="block text-[11px] text-ink-dim">
+                <span className="mb-1 block">X {nodes[0].shadow.ox}</span>
+                <input
+                  type="range"
+                  className="range-phosphor w-full"
+                  min={-40}
+                  max={40}
+                  aria-label="selection shadow x"
+                  value={nodes[0].shadow.ox}
+                  onChange={(e) =>
+                    updateNodes(ids, { shadow: { ...nodes[0].shadow!, ox: Number(e.target.value) } })
                   }
                   onPointerUp={() => useDesign.getState().commit()}
                 />
