@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed grade / softness when a face exposes `GRAD` or `SOFT`.
+1. Inspector mixed wonk when a face exposes `WONK` (Fraunces).
+2. Path knife / boolean polish.
 
 ## Done
 
+- Inspector mixed grade / softness: Roboto Flex exposes Grade (`GRAD`), Fraunces exposes Softness (`SOFT`); multi-select writes only onto faces that support the axis; Default grade / Sharp clear the lock. Chips name `GRAD` / `SOFT` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
 - Inspector mixed italic / slant: Inter exposes Slant (`slnt`), Newsreader exposes Italic (`ital`); multi-select writes only onto faces that support the axis; Upright / Roman clear the lock. Chips name `slnt` / `ital` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
 - Type chips label optical size / width when those axes differ across the selection (opsz auto vs locked, wdth values).
 - Type-to-path, PNG raster, and SVG export honor opsz / wdth via the same variation settings as the artboard. SVG writes `font-variation-settings`, weight, tracking, and anchor.
@@ -32,6 +34,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-04T19:20Z — loop 156
+
+**Grade and softness axes.** Roboto Flex adds Grade, Fraunces adds Softness. Mixed picks write `GRAD` / `SOFT` only onto faces that expose them. Chips read `Flex 48 · GRAD 80` next to `Fraunces 48 · SOFT 40`.
 
 ### 2026-09-04T13:15Z — loop 155
 
@@ -51,4 +57,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed grade / softness when a face exposes `GRAD` or `SOFT`.
+Inspector mixed wonk when a face exposes `WONK`.
