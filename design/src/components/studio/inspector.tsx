@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 import { FillEditor, Section, ShadowEditor, Swatches, Field } from "./inspector-parts";
 import { MixedInk } from "./mixed-ink";
+import { MixedFilters } from "./mixed-filters";
 import { PathFields } from "./inspector-path";
 import { HotspotField, ImageFields, LinkedRow, TextFields } from "./inspector-type";
 
@@ -75,6 +76,7 @@ export function Inspector() {
       {multi && (
         <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
       )}
+      {multi && <MixedFilters nodes={selectedNodes} />}
 
       {node && (
         <Section title={multi ? `Key · ${node.name || node.kind}` : node.name || node.kind}>
@@ -182,7 +184,12 @@ export function Inspector() {
           )}
           {!multi && <ShadowEditor node={node} />}
           {node.kind === "text" && <TextFields node={node} />}
-          {isImage(node) && <ImageFields node={node} />}
+          {isImage(node) && (
+            <ImageFields
+              node={node}
+              hideFilters={selectedNodes.filter(isImage).length > 1}
+            />
+          )}
           {isPath(node) && <PathFields node={node} />}
           <Field label="Align">
             <div className="mb-1 grid grid-cols-3 gap-1">
