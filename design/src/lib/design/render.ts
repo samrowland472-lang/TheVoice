@@ -1,4 +1,4 @@
-import { fontStack } from "./fonts";
+import { applyFontFace } from "./fonts";
 import { degToRad, nodeCenter } from "./geometry";
 import { hitNode, nodeLocalPoint } from "./hit";
 import { tracePath } from "./path-curve";
@@ -99,10 +99,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
     ctx.shadowOffsetY = n.shadow.oy;
   }
   if (isText(n)) {
-    ctx.font = `${n.fontWeight} ${n.fontSize}px ${fontStack(n.fontFamily)}`;
-    if ("letterSpacing" in ctx) {
-      (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${n.letterSpacing}px`;
-    }
+    applyFontFace(ctx, n);
     ctx.textAlign = n.align === "center" ? "center" : n.align === "right" ? "right" : "left";
     ctx.textBaseline = "top";
     ctx.fillStyle = typeof n.fill === "string" ? n.fill : "#d9f5e3";
