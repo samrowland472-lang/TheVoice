@@ -1,12 +1,13 @@
 import { countIslandItems } from "@/lib/design/align";
 import { useDesign } from "@/lib/design/store";
-import type { BlendMode } from "@/lib/design/types";
+import type { BlendMode, TextNode } from "@/lib/design/types";
 import { isImage, isPath } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 import { FillEditor, Section, ShadowEditor, Swatches, Field } from "./inspector-parts";
 import { MixedInk } from "./mixed-ink";
 import { MixedFilters } from "./mixed-filters";
+import { MixedType } from "./mixed-type";
 import { PathFields } from "./inspector-path";
 import { HotspotField, ImageFields, LinkedRow, TextFields } from "./inspector-type";
 
@@ -77,6 +78,9 @@ export function Inspector() {
         <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
       )}
       {multi && <MixedFilters nodes={selectedNodes} />}
+      {selectedNodes.filter((n): n is TextNode => n.kind === "text").length >= 2 && (
+        <MixedType nodes={selectedNodes.filter((n): n is TextNode => n.kind === "text")} />
+      )}
 
       {node && (
         <Section title={multi ? `Key · ${node.name || node.kind}` : node.name || node.kind}>
@@ -183,7 +187,7 @@ export function Inspector() {
             </Field>
           )}
           {!multi && <ShadowEditor node={node} />}
-          {node.kind === "text" && <TextFields node={node} />}
+          {node.kind === "text" && <TextFields node={node} hideType={selectedNodes.filter((n) => n.kind === "text").length >= 2} />}
           {isImage(node) && (
             <ImageFields
               node={node}
