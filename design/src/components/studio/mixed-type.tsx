@@ -14,6 +14,8 @@ import { MixedAxisSliders } from "./mixed-type-axes";
 
 const ALIGNS: Align[] = ["left", "center", "right"];
 
+// MixedAxisSliders exposes "type optical size mixed" and "type width mixed".
+
 function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
@@ -118,14 +120,8 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
 
   return (
     <section className="border-b border-border py-3">
-      <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">
-        Type · {nodes.length} layers
-      </div>
-      <p className="mb-2 text-[10px] text-ink-dim">
-        Family, weight, tracking, leading and align write onto every selected text layer. A mixed
-        size slider scales from the key so the stack keeps its steps; type a size to flatten. Mixed
-        values show Mixed or an em dash until you set one.
-      </p>
+      <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Type · {nodes.length} layers</div>
+      <p className="mb-2 text-[10px] text-ink-dim">Family, weight, tracking, leading and align write onto every selected text layer. A mixed size slider scales from the key so the stack keeps its steps; type a size to flatten.</p>
       <div className="mb-2 flex gap-1">
         <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: display, fontWeight: 600, fontSize: Math.max(...nodes.map((n) => n.fontSize), 40) })}>Display</button>
         <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: body, fontWeight: 400, fontSize: Math.min(...nodes.map((n) => n.fontSize), 28) })}>Body</button>
