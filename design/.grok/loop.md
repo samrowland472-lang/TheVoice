@@ -21,16 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed italic / slant axis when a face exposes `ital` or `slnt`.
+1. Inspector mixed grade / softness when a face exposes `GRAD` or `SOFT`.
 
 ## Done
 
+- Inspector mixed italic / slant: Inter exposes Slant (`slnt`), Newsreader exposes Italic (`ital`); multi-select writes only onto faces that support the axis; Upright / Roman clear the lock. Chips name `slnt` / `ital` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
 - Type chips label optical size / width when those axes differ across the selection (opsz auto vs locked, wdth values).
 - Type-to-path, PNG raster, and SVG export honor opsz / wdth via the same variation settings as the artboard. SVG writes `font-variation-settings`, weight, tracking, and anchor.
 - Inspector mixed type optical size / width: Fraunces shows Optical (auto from size or locked), Instrument Sans shows Width; multi-select writes only onto faces that support the axis; Auto from size clears the lock.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-04T13:15Z — loop 155
+
+**Slant and italic axes.** Inter adds Slant, Newsreader adds Italic. Mixed picks write `slnt` / `ital` only onto faces that expose them. Chips read `Inter 48 · slnt -8` next to `Newsreader 48 · ital 1`.
 
 ### 2026-09-04T12:35Z — loop 154
 
@@ -46,4 +51,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed italic / slant axis when a face exposes `ital` or `slnt`.
+Inspector mixed grade / softness when a face exposes `GRAD` or `SOFT`.
