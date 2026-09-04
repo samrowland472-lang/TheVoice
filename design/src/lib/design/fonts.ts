@@ -58,6 +58,22 @@ export function clampAxis(axis: FontAxis, value: number | undefined, auto?: numb
   return Math.min(axis.max, Math.max(axis.min, raw));
 }
 
+export function faceSupports(family: string, tag: FontAxis["tag"]): FontAxis | undefined {
+  const face = canvasFont(family);
+  return tag === "opsz" ? face?.opsz : face?.wdth;
+}
+
+export function effectiveAxis(
+  node: { fontFamily: string; fontSize: number; opticalSize?: number; fontWidth?: number },
+  tag: FontAxis["tag"],
+): number | undefined {
+  const axis = faceSupports(node.fontFamily, tag);
+  if (!axis) return undefined;
+  return tag === "opsz"
+    ? clampAxis(axis, node.opticalSize, node.fontSize)
+    : clampAxis(axis, node.fontWidth);
+}
+
 export function variationSettings(node: {
   fontFamily: string;
   fontSize: number;

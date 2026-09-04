@@ -94,6 +94,10 @@ export interface TextNode extends BaseNode {
   /** When true (default), copy wraps to the frame width instead of squeezing. */
   wrap?: boolean;
   valign?: Valign;
+  /** Optical size axis (opsz). Undefined follows fontSize when the face supports it. */
+  opticalSize?: number;
+  /** Width axis (wdth). Undefined uses the face fallback. */
+  fontWidth?: number;
 }
 
 export interface ImageNode extends BaseNode {
