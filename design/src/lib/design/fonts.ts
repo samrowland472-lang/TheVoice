@@ -74,7 +74,7 @@ export const CANVAS_FONTS: CanvasFont[] = [
 
 export function fontStack(family: string): string {
   const f = CANVAS_FONTS.find((c) => c.family === family);
-  return f ? `"${f.family}", ${f.fallback}` : `"${family}", system-ui, sans-serif`;
+  return f ? '"' + f.family + '", ' + f.fallback : '"' + family + '", system-ui, sans-serif';
 }
 
 export const FONT_LINK =
@@ -110,24 +110,12 @@ export function variationSettings(node: {
 }): string {
   const face = canvasFont(node.fontFamily);
   const parts: string[] = [];
-  if (face?.opsz) {
-    parts.push(`\"opsz\" ${clampAxis(face.opsz, node.opticalSize, node.fontSize)}`);
-  }
-  if (face?.wdth) {
-    parts.push(`\"wdth\" ${clampAxis(face.wdth, node.fontWidth)}`);
-  }
-  if (face?.slnt) {
-    parts.push(`\"slnt\" ${clampAxis(face.slnt, node.fontSlant)}`);
-  }
-  if (face?.ital) {
-    parts.push(`\"ital\" ${clampAxis(face.ital, node.fontItalic)}`);
-  }
-  if (face?.GRAD) {
-    parts.push(`\"GRAD\" ${clampAxis(face.GRAD, node.fontGrade)}`);
-  }
-  if (face?.SOFT) {
-    parts.push(`\"SOFT\" ${clampAxis(face.SOFT, node.fontSoft)}`);
-  }
+  if (face?.opsz) parts.push('"opsz" ' + clampAxis(face.opsz, node.opticalSize, node.fontSize));
+  if (face?.wdth) parts.push('"wdth" ' + clampAxis(face.wdth, node.fontWidth));
+  if (face?.slnt) parts.push('"slnt" ' + clampAxis(face.slnt, node.fontSlant));
+  if (face?.ital) parts.push('"ital" ' + clampAxis(face.ital, node.fontItalic));
+  if (face?.GRAD) parts.push('"GRAD" ' + clampAxis(face.GRAD, node.fontGrade));
+  if (face?.SOFT) parts.push('"SOFT" ' + clampAxis(face.SOFT, node.fontSoft));
   return parts.join(", ");
 }
 
@@ -146,7 +134,7 @@ export function applyFontFace(
     fontSoft?: number;
   },
 ) {
-  ctx.font = `${node.fontWeight} ${node.fontSize}px ${fontStack(node.fontFamily)}`;
+  ctx.font = node.fontWeight + " " + node.fontSize + "px " + fontStack(node.fontFamily);
   const settings = variationSettings(node);
   const varied = ctx as CanvasRenderingContext2D & {
     fontVariationSettings?: string;
@@ -156,6 +144,6 @@ export function applyFontFace(
     varied.fontVariationSettings = settings || "normal";
   }
   if ("letterSpacing" in varied) {
-    varied.letterSpacing = `${node.letterSpacing}px`;
+    varied.letterSpacing = node.letterSpacing + "px";
   }
 }
