@@ -6,6 +6,8 @@ const wind = readFileSync(new URL("../src/lib/design/winding-pass.ts", import.me
 const cut = readFileSync(new URL("../src/lib/design/path-cut.ts", import.meta.url), "utf8");
 const actions = readFileSync(new URL("../src/lib/design/path-actions.ts", import.meta.url), "utf8");
 const apply = readFileSync(new URL("../src/lib/design/knife-apply.ts", import.meta.url), "utf8");
+const shape = readFileSync(new URL("../src/lib/design/shape-to-path.ts", import.meta.url), "utf8");
+const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
 
 test("knife planarizes figure-eight traces before cut", () => {
   assert.match(wind, /export function explodeTwistedPath/);
@@ -28,4 +30,11 @@ test("knife apply cuts only the crossed figure-eight lobe", () => {
 test("knife preview returns only crossed bowtie lobes", () => {
   assert.match(cut, /Untouched bowtie rings stay unmarked/);
   assert.match(cut, /lobes: PathNode\[\]/);
+});
+
+test("knife converts primitive shapes before the cut", () => {
+  assert.match(shape, /export function asEditablePath/);
+  assert.match(actions, /asEditablePath\(n\)/);
+  assert.match(stage, /asEditablePath\(raw\)/);
+  assert.match(stage, /knifeStrokePreview\(node/);
 });

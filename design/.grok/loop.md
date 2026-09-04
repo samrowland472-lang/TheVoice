@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path knife / boolean polish.
-2. Inspector mixed fill / stroke when the pick is mixed ink.
+1. Inspector mixed fill / stroke when the pick is mixed ink.
+2. Boolean preview on the artboard for three-plus shapes.
 
 ## Done
 
+- Knife on primitives: rect, ellipse, polygon, star, arrow, and line convert in place when the knife stroke or click hits them. Preview marks the same converted contour. Existing path / figure-eight cuts stay as they were.
 - Inspector mixed wonk: Fraunces exposes Wonk (`WONK` 0–1); multi-select writes only onto faces that expose it; Unwonk clears the lock. Chips name `WONK` when values disagree. Variation settings ride the artboard, outline, and SVG export.
 - Inspector mixed grade / softness: Roboto Flex exposes Grade (`GRAD`), Fraunces exposes Softness (`SOFT`); multi-select writes only onto faces that support the axis; Default grade / Sharp clear the lock. Chips name `GRAD` / `SOFT` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
 - Inspector mixed italic / slant: Inter exposes Slant (`slnt`), Newsreader exposes Italic (`ital`); multi-select writes only onto faces that support the axis; Upright / Roman clear the lock. Chips name `slnt` / `ital` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
@@ -35,6 +36,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-04T23:10Z — loop 158
+
+**Knife on shapes.** Draw a rectangle or ellipse, pick Knife (K), drag across the silhouette. The shape becomes a path and opens along the stroke. Hover and stroke marks follow the same contour.
 
 ### 2026-09-04T22:05Z — loop 157
 
@@ -62,4 +67,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Path knife / boolean polish.
+Inspector mixed fill / stroke when the pick is mixed ink.
