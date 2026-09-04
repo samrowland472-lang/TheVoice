@@ -39,3 +39,15 @@ test("inspector hosts mixed type and hides key sliders", () => {
   assert.match(inspector, /hideType=/);
   assert.match(fields, /hideType/);
 });
+
+test("mixed type writes optical size and width onto faces that support them", () => {
+  assert.match(mixed, /type optical size mixed/);
+  assert.match(mixed, /type width mixed/);
+  assert.match(mixed, /writeAxis/);
+  assert.match(mixed, /faceSupports/);
+  assert.match(mixed, /opticalSize/);
+  assert.match(mixed, /fontWidth/);
+  assert.match(fields, /TypeAxes/);
+  assert.match(fields, /type optical size/);
+  assert.match(fields, /type width/);
+});
