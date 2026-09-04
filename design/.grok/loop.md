@@ -22,10 +22,11 @@ Auth OFF, DB OFF.
 ## Backlog (priority order)
 
 1. Inspector mixed fill / stroke when the pick is mixed ink.
-2. Boolean preview on the artboard for three-plus shapes.
+2. Boolean apply on three-plus picks: keep every island in place after commit.
 
 ## Done
 
+- Boolean preview ghosts every island from three-plus picks (union / subtract / intersect / exclude), not only the first compound.
 - Knife on primitives: rect, ellipse, polygon, star, arrow, and line convert in place when the knife stroke or click hits them. Preview marks the same converted contour. Existing path / figure-eight cuts stay as they were.
 - Inspector mixed wonk: Fraunces exposes Wonk (`WONK` 0–1); multi-select writes only onto faces that expose it; Unwonk clears the lock. Chips name `WONK` when values disagree. Variation settings ride the artboard, outline, and SVG export.
 - Inspector mixed grade / softness: Roboto Flex exposes Grade (`GRAD`), Fraunces exposes Softness (`SOFT`); multi-select writes only onto faces that support the axis; Default grade / Sharp clear the lock. Chips name `GRAD` / `SOFT` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
@@ -36,6 +37,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-04T23:25Z — loop 159
+
+**Boolean preview, all islands.** Hover Union / Subtract / Intersect / Exclude with three or more shapes. Every resulting island draws on the artboard, not just the first.
 
 ### 2026-09-04T23:10Z — loop 158
 

@@ -17,7 +17,8 @@ export function nodeAxisValue(n: TextNode, tag: FontAxisTag): number | undefined
   if (tag === "slnt") return n.fontSlant;
   if (tag === "ital") return n.fontItalic;
   if (tag === "GRAD") return n.fontGrade;
-  return n.fontSoft;
+  if (tag === "SOFT") return n.fontSoft;
+  return n.fontWonk;
 }
 
 function axisValues(nodes: TextNode[], tag: FontAxisTag): number[] {
@@ -47,14 +48,15 @@ export function axisField(tag: FontAxisTag): keyof TextNode {
   if (tag === "slnt") return "fontSlant";
   if (tag === "ital") return "fontItalic";
   if (tag === "GRAD") return "fontGrade";
-  return "fontSoft";
+  if (tag === "SOFT") return "fontSoft";
+  return "fontWonk";
 }
 
 export function patchFor(tag: FontAxisTag, value: number | undefined): Partial<TextNode> {
   return { [axisField(tag)]: value } as Partial<TextNode>;
 }
 
-export const AXIS_TAGS: FontAxisTag[] = ["opsz", "wdth", "slnt", "ital", "GRAD", "SOFT"];
+export const AXIS_TAGS: FontAxisTag[] = ["opsz", "wdth", "slnt", "ital", "GRAD", "SOFT", "WONK"];
 
 const AXIS_UI: Record<
   FontAxisTag,
@@ -66,6 +68,7 @@ const AXIS_UI: Record<
   ital: { label: "Italic", aria: "type italic", step: 0.01, auto: "Roman" },
   GRAD: { label: "Grade", aria: "type grade", step: 1, auto: "Default grade" },
   SOFT: { label: "Softness", aria: "type softness", step: 1, auto: "Sharp" },
+  WONK: { label: "Wonk", aria: "type wonk", step: 0.01, auto: "Unwonk" },
 };
 
 export function MixedAxisSliders({
