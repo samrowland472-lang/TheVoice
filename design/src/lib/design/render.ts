@@ -2,6 +2,7 @@ import { fontStack } from "./fonts";
 import { degToRad, nodeCenter } from "./geometry";
 import { hitNode, nodeLocalPoint } from "./hit";
 import { tracePath } from "./path-curve";
+import { layoutTextLines } from "./text-layout";
 import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Viewport } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
@@ -99,19 +100,27 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
   }
   if (isText(n)) {
     ctx.font = `${n.fontWeight} ${n.fontSize}px ${fontStack(n.fontFamily)}`;
+    if ("letterSpacing" in ctx) {
+      (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${n.letterSpacing}px`;
+    }
     ctx.textAlign = n.align === "center" ? "center" : n.align === "right" ? "right" : "left";
     ctx.textBaseline = "top";
     ctx.fillStyle = typeof n.fill === "string" ? n.fill : "#d9f5e3";
-    const lines = n.text.split("\n");
-    const lh = n.fontSize * n.lineHeight;
+    const measure = (s: string) => ctx.measureText(s).width;
+    const { lines, lineHeight, startY } = layoutTextLines(n, measure);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(n.x, n.y, n.w, n.h);
+    ctx.clip();
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i]!;
-      if (n.uppercase) line = line.toUpperCase();
+      const line = lines[i]!;
       let ax = n.x;
       if (n.align === "center") ax = n.x + n.w / 2;
       if (n.align === "right") ax = n.x + n.w;
-      ctx.fillText(line, ax, n.y + i * lh, n.w);
+      const maxW = n.wrap === false ? n.w : undefined;
+      ctx.fillText(line, ax, n.y + startY + i * lineHeight, maxW);
     }
+    ctx.restore();
   } else if (isImage(n)) {
     const img = getCachedImage(n.src);
     if (img && img.complete && img.naturalWidth > 0) {
