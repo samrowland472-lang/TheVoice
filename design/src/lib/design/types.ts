@@ -97,6 +97,7 @@ export interface TextNode extends BaseNode {
   fontItalic?: number;
   fontGrade?: number;
   fontSoft?: number;
+  fontWonk?: number;
 }
 
 export interface ImageNode extends BaseNode {
