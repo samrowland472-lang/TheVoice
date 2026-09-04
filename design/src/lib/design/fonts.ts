@@ -1,4 +1,4 @@
-export type FontAxisTag = "opsz" | "wdth" | "slnt" | "ital" | "GRAD" | "SOFT";
+export type FontAxisTag = "opsz" | "wdth" | "slnt" | "ital" | "GRAD" | "SOFT" | "WONK";
 
 export interface FontAxis {
   tag: FontAxisTag;
@@ -19,6 +19,7 @@ export interface CanvasFont {
   ital?: FontAxis;
   GRAD?: FontAxis;
   SOFT?: FontAxis;
+  WONK?: FontAxis;
 }
 
 export const CANVAS_FONTS: CanvasFont[] = [
@@ -33,6 +34,7 @@ export const CANVAS_FONTS: CanvasFont[] = [
     role: "display",
     opsz: { tag: "opsz", min: 9, max: 144, fallback: 144 },
     SOFT: { tag: "SOFT", min: 0, max: 100, fallback: 0 },
+    WONK: { tag: "WONK", min: 0, max: 1, fallback: 0 },
   },
   { id: "outfit", family: "Outfit", fallback: "system-ui", weights: [300, 400, 500, 600, 700], role: "body" },
   {
@@ -78,7 +80,7 @@ export function fontStack(family: string): string {
 }
 
 export const FONT_LINK =
-  "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=Fraunces:opsz,SOFT,wght@9..144,0..100,400;9..144,0..100,600;9..144,0..100,700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wdth,wght@75..100,400;75..100,500;75..100,600;75..100,700&family=Inter:slnt,wght@-10..0,400;-10..0,500;-10..0,600;-10..0,700&family=Newsreader:ital,opsz,wght@0..1,6..72,400;0..1,6..72,600;0..1,6..72,700&family=Outfit:wght@300;400;500;600;700&family=Roboto+Flex:GRAD,wght@-200..150,400;-200..150,500;-200..150,600;-200..150,700&family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap";
+  "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Chakra+Petch:wght@400;500;600;700&family=Fraunces:opsz,SOFT,WONK,wght@9..144,0..100,0..1,400;9..144,0..100,0..1,600;9..144,0..100,0..1,700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wdth,wght@75..100,400;75..100,500;75..100,600;75..100,700&family=Inter:slnt,wght@-10..0,400;-10..0,500;-10..0,600;-10..0,700&family=Newsreader:ital,opsz,wght@0..1,6..72,400;0..1,6..72,600;0..1,6..72,700&family=Outfit:wght@300;400;500;600;700&family=Roboto+Flex:GRAD,wght@-200..150,400;-200..150,500;-200..150,600;-200..150,700&family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap";
 
 export function canvasFont(family: string): CanvasFont | undefined {
   return CANVAS_FONTS.find((c) => c.family === family);
@@ -107,6 +109,7 @@ export function variationSettings(node: {
   fontItalic?: number;
   fontGrade?: number;
   fontSoft?: number;
+  fontWonk?: number;
 }): string {
   const face = canvasFont(node.fontFamily);
   const parts: string[] = [];
@@ -116,6 +119,7 @@ export function variationSettings(node: {
   if (face?.ital) parts.push('"ital" ' + clampAxis(face.ital, node.fontItalic));
   if (face?.GRAD) parts.push('"GRAD" ' + clampAxis(face.GRAD, node.fontGrade));
   if (face?.SOFT) parts.push('"SOFT" ' + clampAxis(face.SOFT, node.fontSoft));
+  if (face?.WONK) parts.push('"WONK" ' + clampAxis(face.WONK, node.fontWonk));
   return parts.join(", ");
 }
 
@@ -132,6 +136,7 @@ export function applyFontFace(
     fontItalic?: number;
     fontGrade?: number;
     fontSoft?: number;
+    fontWonk?: number;
   },
 ) {
   ctx.font = node.fontWeight + " " + node.fontSize + "px " + fontStack(node.fontFamily);
