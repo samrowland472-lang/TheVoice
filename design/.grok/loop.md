@@ -21,10 +21,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Type-to-path and PNG/SVG export honor opsz / wdth the same way the board does.
-2. Type chips label optical size / width when those axes differ across the selection.
+1. Type chips label optical size / width when those axes differ across the selection.
+2. Inspector mixed italic / slant axis when a face exposes `ital` or `slnt`.
 
 ## Done
 
+- Type-to-path, PNG raster, and SVG export honor opsz / wdth via the same variation settings as the artboard. SVG writes `font-variation-settings`, weight, tracking, and anchor.
 - Inspector mixed type optical size / width: Fraunces shows Optical (auto from size or locked), Instrument Sans shows Width; multi-select writes only onto faces that support the axis; Auto from size clears the lock.
-- Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer; mixed size scales from the key so the stack keeps its steps; type a size to flatten; chips / Match key stamp the full stack.
+- Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
+
+## Iterations
+
+### 2026-09-04T09:35Z — loop 153
+
+**Axes on press.** Optical size and width now ride through outline conversion and export. Convert type to path or download PNG/SVG after locking opsz on Fraunces or wdth on Instrument Sans — the cut and the file keep the axis.
+
+### 2026-09-04T08:30Z — loop 152
+
+**Mixed type axes.** Pick Fraunces for Optical size, Instrument Sans for Width.
+
+## Next recommended
+
+Type chips label optical size / width when those axes differ across the selection.
