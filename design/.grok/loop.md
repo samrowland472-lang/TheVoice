@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed type write-through on multi-select text (family, size, tracking).
+1. Inspector mixed type optical size / OpenType sliders (opsz, width) when the face supports them.
 
 ## Done
 
+- Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer; mixed size scales from the key so the stack keeps its steps; type a size to flatten; chips / Match key stamp the full stack.
 - Inspector mixed image filters: multi-select photos write brightness, contrast, saturate, and blur across every pick; chips stamp a layer’s full stack; Match key / Reset all; key sliders hide when two-plus photos are selected.
 - Inspector mixed shadow chips apply a cloned full shadow (colour, blur, X/Y), not colour alone; chips preview the drop; unified Selection also has an X slider.
 - Inspector mixed blend/shadow: multi-select Selection panel writes blend and shadow across every selected layer; chips unify to a layer’s shadow; key blend/shadow stay single-layer.
@@ -64,6 +65,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-04T04:25Z — loop 151
+
+**Mixed type write-through.** Shift-select two text layers. Inspector Type writes family, weight, tracking, leading, align, and uppercase onto every pick. Mixed size scales from the last-selected key so headline/body steps stay; type a number to flatten. Chips and Match key stamp the full stack. Key type sliders stay hidden while two-plus texts are selected.
 
 ### 2026-09-04T01:20Z — loop 150
 
@@ -123,4 +128,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed type write-through on multi-select text (family, size, tracking).
+Inspector mixed type optical size / OpenType sliders when the face supports them.
