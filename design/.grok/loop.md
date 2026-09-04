@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed effects depth: per-layer shadow chips apply that layer’s full shadow (blur/offset), not only colour.
-2. Inspector mixed image filters write-through on multi-select photos.
+1. Inspector mixed image filters write-through on multi-select photos.
 
 ## Done
 
+- Inspector mixed shadow chips apply a cloned full shadow (colour, blur, X/Y), not colour alone; chips preview the drop; unified Selection also has an X slider.
 - Inspector mixed blend/shadow: multi-select Selection panel writes blend and shadow across every selected layer; chips unify to a layer’s shadow; key blend/shadow stay single-layer.
 - Marquee contain-mode: hold Alt while dragging the V-tool box to select only layers fully inside; default still intersects; live frames mark hits; contain draws corner ticks.
 - Marquee select on the pasteboard: V tool drag on empty board draws a phosphor rect and selects intersecting unlocked layers; Shift adds; click empty clears; click a layer still moves with smart-guides.
@@ -63,6 +63,10 @@ Auth OFF, DB OFF.
 - Knife live preview on the artboard (K).
 
 ## Iterations
+
+### 2026-09-04T00:15Z — loop 149
+
+**Full shadow on mixed chips.** Shift-select two layers with different drop shadows. Selection chips list colour, blur, and offset; click one to stamp that whole shadow onto every pick (not just the colour). When shadows already match, X and Y both write through.
 
 ### 2026-09-03T23:20Z — loop 148
 
@@ -114,4 +118,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed effects depth: per-layer shadow chips apply that layer’s full shadow (blur/offset), not only colour.
+Inspector mixed image filters write-through on multi-select photos.
