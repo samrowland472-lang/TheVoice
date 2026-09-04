@@ -55,3 +55,26 @@ export function typeChipLabel(node: Pick<TextNode, keyof TypeStyle> | TypeStyle)
   const size = Number.isInteger(t.fontSize) ? String(t.fontSize) : String(Math.round(t.fontSize * 10) / 10);
   return `${family} ${size}`;
 }
+
+export function clampTypeSize(n: number): number {
+  if (!Number.isFinite(n)) return DEFAULT_TYPE.fontSize;
+  return Math.min(400, Math.max(6, n));
+}
+
+/** Scale every layer's size from the key so mixed stacks keep their steps. */
+export function scaledTypeSizes(
+  nodes: Pick<TextNode, "id" | "fontSize">[],
+  keyId: string,
+  nextKeySize: number,
+): Map<string, number> {
+  const key = nodes.find((n) => n.id === keyId) ?? nodes[nodes.length - 1];
+  const from = key?.fontSize && key.fontSize > 0 ? key.fontSize : DEFAULT_TYPE.fontSize;
+  const to = clampTypeSize(nextKeySize);
+  const ratio = to / from;
+  const out = new Map<string, number>();
+  for (const n of nodes) {
+    const next = n.id === key?.id ? to : clampTypeSize(n.fontSize * ratio);
+    out.set(n.id, next);
+  }
+  return out;
+}
