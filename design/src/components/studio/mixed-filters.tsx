@@ -12,9 +12,30 @@ const SLIDERS = [
   { key: "blur" as const, label: "Blur", min: 0, max: 24, step: 0.25 },
 ];
 
+function patchImageFilters(
+  ids: string[],
+  patch: Partial<ImageNode["filters"]>,
+  commit = false,
+) {
+  const state = useDesign.getState();
+  const doc = state.doc;
+  if (!doc) return;
+  if (commit) state.commit();
+  const idset = new Set(ids);
+  useDesign.setState({
+    doc: {
+      ...doc,
+      nodes: doc.nodes.map((n: DesignNode) => {
+        if (!idset.has(n.id) || n.kind !== "image") return n;
+        return { ...n, filters: { ...normalizeFilters(n.filters), ...patch } };
+      }),
+    },
+    dirty: true,
+  });
+}
+
 export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
   const photos = nodes.filter(isImage);
-  const patchImageFilters = useDesign((s) => s.patchImageFilters);
   if (photos.length < 2) return null;
 
   const ids = photos.map((n) => n.id);

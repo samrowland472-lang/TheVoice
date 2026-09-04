@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const helpers = readFileSync(new URL("../src/lib/design/image-filters.ts", import.meta.url), "utf8");
-const store = readFileSync(new URL("../src/lib/design/store-impl.ts", import.meta.url), "utf8");
 const mixed = readFileSync(new URL("../src/components/studio/mixed-filters.tsx", import.meta.url), "utf8");
 const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 
@@ -18,9 +17,9 @@ test("filter helpers clone the full stack", () => {
 });
 
 test("store merges one filter key onto each photo", () => {
-  assert.match(store, /patchImageFilters/);
-  assert.match(store, /normalizeFilters\(n\.filters\)/);
-  assert.match(store, /n\.kind !== "image"/);
+  assert.match(mixed, /function patchImageFilters/);
+  assert.match(mixed, /normalizeFilters\(n\.filters\)/);
+  assert.match(mixed, /n\.kind !== "image"/);
 });
 
 test("mixed photo panel writes through and chips stamp the stack", () => {
