@@ -53,6 +53,8 @@ export function text(
     lineHeight: 1.1,
     align: "left" as Align,
     uppercase: false,
+    wrap: true,
+    valign: "top",
     fill: "#d9f5e3",
     ...patch,
   };

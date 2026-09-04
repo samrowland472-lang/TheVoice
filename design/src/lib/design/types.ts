@@ -11,6 +11,7 @@ export type BlendMode =
   | "color-burn";
 
 export type Align = "left" | "center" | "right";
+export type Valign = "top" | "middle" | "bottom";
 export type Tool =
   | "select"
   | "hand"
@@ -90,6 +91,9 @@ export interface TextNode extends BaseNode {
   lineHeight: number;
   align: Align;
   uppercase: boolean;
+  /** When true (default), copy wraps to the frame width instead of squeezing. */
+  wrap?: boolean;
+  valign?: Valign;
 }
 
 export interface ImageNode extends BaseNode {
@@ -185,13 +189,9 @@ export interface BrandColor {
 
 export interface BrandKit {
   name: string;
-  /** Named brand colours — used by inspector swatches and new ink. */
   colors: BrandColor[];
-  /** Preferred display (headline) font family. */
   displayFont: string;
-  /** Preferred body font family. */
   bodyFont: string;
-  /** Extra brand fonts available in the pairing list. */
   fonts: string[];
 }
 
