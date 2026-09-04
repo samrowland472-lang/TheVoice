@@ -3,6 +3,7 @@ import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
 import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
 import { pathNode } from "./node-factory";
 import { applyKnifePointToPath, applyKnifeStrokeToPath } from "./knife-apply";
+import { asEditablePath } from "./shape-to-path";
 import { useDesign } from "./store";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
@@ -166,7 +167,13 @@ function knifePaths(): PathNode[] {
   const s = useDesign.getState();
   const doc = s.doc;
   if (!doc) return [];
-  const paths = doc.nodes.filter(isPath).filter((n) => n.visible && !n.locked && n.points.length >= 2);
+  const paths: PathNode[] = [];
+  for (const n of doc.nodes) {
+    if (!n.visible || n.locked) continue;
+    const p = asEditablePath(n);
+    if (!p || p.points.length < 2) continue;
+    paths.push(p);
+  }
   const preferred = s.selection[0] ? paths.find((n) => n.id === s.selection[0]) : undefined;
   return preferred ? [preferred, ...paths.filter((n) => n.id !== preferred.id)] : paths;
 }
