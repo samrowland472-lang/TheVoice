@@ -1,5 +1,6 @@
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { useDesign } from "@/lib/design/store";
+import { cloneType, typeChipLabel, typeKey, type TypeStyle } from "@/lib/design/text-style";
 import type { Align, DesignNode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 
@@ -29,12 +30,18 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
   const mixedTracking = trackings.length > 1;
   const mixedLeading = leadings.length > 1;
   const mixedAlign = aligns.length > 1;
+  const mixedStack = new Set(nodes.map((n) => typeKey(n))).size > 1;
   const first = nodes[0]!;
+  const keyNode = nodes[nodes.length - 1]!;
   const display = brand.displayFont || "Chakra Petch";
   const body = brand.bodyFont || "Outfit";
 
   function patch(partial: Partial<TextNode>, commit = true) {
     updateNodes(ids, partial as Partial<DesignNode>, commit);
+  }
+
+  function stampType(style: TypeStyle, commit = true) {
+    patch(cloneType(style), commit);
   }
 
   return (
@@ -227,6 +234,48 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             </button>
           ))}
         </div>
+      </div>
+      {mixedStack && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {nodes.map((n) => (
+            <button
+              key={n.id}
+              type="button"
+              className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+              title={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n)}`}
+              aria-label={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n)}`}
+              onClick={() => stampType(n)}
+            >
+              {typeChipLabel(n)}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="mt-2 grid grid-cols-2 gap-1">
+        <button
+          type="button"
+          className="h-8 rounded-[8px] border border-phosphor/40 text-[10px] text-phosphor hover:bg-phosphor/10"
+          onClick={() => stampType(keyNode)}
+        >
+          Match key
+        </button>
+        <button
+          type="button"
+          className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+          onClick={() =>
+            patch({
+              fontFamily: "Chakra Petch",
+              fontWeight: 600,
+              fontSize: 48,
+              letterSpacing: 0,
+              lineHeight: 1.1,
+              align: "left",
+              uppercase: false,
+            })
+          }
+        >
+          Reset type
+        </button>
       </div>
     </section>
   );

@@ -5,6 +5,16 @@ import { test } from "node:test";
 const mixed = readFileSync(new URL("../src/components/studio/mixed-type.tsx", import.meta.url), "utf8");
 const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 const fields = readFileSync(new URL("../src/components/studio/inspector-type.tsx", import.meta.url), "utf8");
+const helpers = readFileSync(new URL("../src/lib/design/text-style.ts", import.meta.url), "utf8");
+
+test("type helpers clone the full stack", () => {
+  assert.match(helpers, /export function cloneType/);
+  assert.match(helpers, /export function typeChipLabel/);
+  assert.match(helpers, /export function normalizeType/);
+  assert.match(helpers, /fontFamily/);
+  assert.match(helpers, /fontSize/);
+  assert.match(helpers, /letterSpacing/);
+});
 
 test("mixed type writes family size tracking onto every pick", () => {
   assert.match(mixed, /function patch\(partial: Partial<TextNode>/);
