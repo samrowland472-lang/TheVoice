@@ -8,6 +8,8 @@ export type TypeStyle = {
   lineHeight: number;
   align: Align;
   uppercase: boolean;
+  opticalSize?: number;
+  fontWidth?: number;
 };
 
 export const DEFAULT_TYPE: TypeStyle = {
@@ -29,6 +31,8 @@ export function normalizeType(node: Pick<TextNode, keyof TypeStyle> | TypeStyle)
     lineHeight: node.lineHeight ?? DEFAULT_TYPE.lineHeight,
     align: node.align ?? DEFAULT_TYPE.align,
     uppercase: Boolean(node.uppercase),
+    opticalSize: node.opticalSize,
+    fontWidth: node.fontWidth,
   };
 }
 
@@ -46,6 +50,8 @@ export function typeKey(node: Pick<TextNode, keyof TypeStyle> | TypeStyle): stri
     Math.round(t.lineHeight * 100) / 100,
     t.align,
     t.uppercase ? "1" : "0",
+    t.opticalSize == null ? "auto" : String(Math.round(t.opticalSize * 10) / 10),
+    t.fontWidth == null ? "auto" : String(Math.round(t.fontWidth * 10) / 10),
   ].join(":");
 }
 
