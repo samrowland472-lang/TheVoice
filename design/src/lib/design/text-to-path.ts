@@ -1,6 +1,6 @@
 import { tightenPathNode } from "./align";
 import { contourArea, orientContour } from "./boolean-ops";
-import { fontStack } from "./fonts";
+import { applyFontFace } from "./fonts";
 import { pathNode } from "./node-factory";
 import { simplifyPolyline, toPathPoints, type Vec } from "./path-offset";
 import type { PathNode, PathPoint, TextNode } from "./types";
@@ -214,13 +214,10 @@ export function nestContours(rings: Ring[]): GlyphContour[] {
 }
 
 function paintText(ctx: CanvasRenderingContext2D, n: TextNode, ox: number, oy: number) {
-  ctx.font = `${n.fontWeight} ${n.fontSize}px ${fontStack(n.fontFamily)}`;
+  applyFontFace(ctx, n);
   ctx.textAlign = n.align === "center" ? "center" : n.align === "right" ? "right" : "left";
   ctx.textBaseline = "top";
   ctx.fillStyle = "#fff";
-  if ("letterSpacing" in ctx) {
-    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${n.letterSpacing}px`;
-  }
   const lines = n.text.split("\n");
   const lh = n.fontSize * n.lineHeight;
   for (let i = 0; i < lines.length; i++) {
