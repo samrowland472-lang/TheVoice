@@ -36,6 +36,8 @@ test("chips stamp a layer full type and match key", () => {
   assert.match(helpers, /export function typeAxesDiffer/);
   assert.match(helpers, /opsz auto/);
   assert.match(helpers, /wdth /);
+  assert.match(helpers, /slnt /);
+  assert.match(helpers, /ital /);
 });
 
 test("inspector hosts mixed type and hides key sliders", () => {
@@ -51,7 +53,11 @@ test("mixed type writes optical size and width onto faces that support them", ()
   assert.match(mixed, /faceSupports/);
   assert.match(mixed, /opticalSize/);
   assert.match(mixed, /fontWidth/);
+  assert.match(mixed, /fontSlant/);
+  assert.match(mixed, /fontItalic/);
   assert.match(fields, /TypeAxes/);
   assert.match(fields, /type optical size/);
   assert.match(fields, /type width/);
+  assert.match(fields, /type slant/);
+  assert.match(fields, /type italic/);
 });
