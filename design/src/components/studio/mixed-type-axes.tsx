@@ -11,11 +11,13 @@ function formatNum(n: number) {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
 }
 
-function nodeAxisValue(n: TextNode, tag: FontAxisTag): number | undefined {
+export function nodeAxisValue(n: TextNode, tag: FontAxisTag): number | undefined {
   if (tag === "opsz") return n.opticalSize;
   if (tag === "wdth") return n.fontWidth;
   if (tag === "slnt") return n.fontSlant;
-  return n.fontItalic;
+  if (tag === "ital") return n.fontItalic;
+  if (tag === "GRAD") return n.fontGrade;
+  return n.fontSoft;
 }
 
 function axisValues(nodes: TextNode[], tag: FontAxisTag): number[] {
@@ -39,12 +41,20 @@ function unionAxis(nodes: TextNode[], tag: FontAxisTag): FontAxis | null {
   };
 }
 
-function patchFor(tag: FontAxisTag, value: number | undefined): Partial<TextNode> {
-  if (tag === "opsz") return { opticalSize: value };
-  if (tag === "wdth") return { fontWidth: value };
-  if (tag === "slnt") return { fontSlant: value };
-  return { fontItalic: value };
+export function axisField(tag: FontAxisTag): keyof TextNode {
+  if (tag === "opsz") return "opticalSize";
+  if (tag === "wdth") return "fontWidth";
+  if (tag === "slnt") return "fontSlant";
+  if (tag === "ital") return "fontItalic";
+  if (tag === "GRAD") return "fontGrade";
+  return "fontSoft";
 }
+
+export function patchFor(tag: FontAxisTag, value: number | undefined): Partial<TextNode> {
+  return { [axisField(tag)]: value } as Partial<TextNode>;
+}
+
+export const AXIS_TAGS: FontAxisTag[] = ["opsz", "wdth", "slnt", "ital", "GRAD", "SOFT"];
 
 const AXIS_UI: Record<
   FontAxisTag,
@@ -54,6 +64,8 @@ const AXIS_UI: Record<
   wdth: { label: "Width", aria: "type width", step: 1 },
   slnt: { label: "Slant", aria: "type slant", step: 0.1, auto: "Upright" },
   ital: { label: "Italic", aria: "type italic", step: 0.01, auto: "Roman" },
+  GRAD: { label: "Grade", aria: "type grade", step: 1, auto: "Default grade" },
+  SOFT: { label: "Softness", aria: "type softness", step: 1, auto: "Sharp" },
 };
 
 export function MixedAxisSliders({
@@ -65,7 +77,7 @@ export function MixedAxisSliders({
 }) {
   const families = nodes.map((n) => n.fontFamily);
   const keyNode = nodes[nodes.length - 1]!;
-  const tags: FontAxisTag[] = ["opsz", "wdth", "slnt", "ital"];
+  const tags: FontAxisTag[] = AXIS_TAGS;
   const present = tags.filter((tag) => anyFaceHasAxis(families, tag) && unionAxis(nodes, tag));
   if (!present.length) return null;
 
@@ -83,11 +95,11 @@ export function MixedAxisSliders({
             : clampAxis(keyAxis, nodeAxisValue(keyNode, tag))
           : vals[vals.length - 1] ?? axis.fallback;
         const allAuto = nodes.filter((n) => faceAxis(n.fontFamily, tag)).every((n) => nodeAxisValue(n, tag) == null);
-        const autoSuffix = tag === "opsz" && allAuto ? " · auto" : allAuto && tag !== "wdth" ? " · auto" : "";
+        const autoSuffix = tag === "opsz" && allAuto ? " \u00b7 auto" : allAuto && tag !== "wdth" ? " \u00b7 auto" : "";
         return (
           <label key={tag} className="mt-2 block text-[11px] text-ink-dim">
             <span className="mb-1 block">
-              {mixed ? `${ui.label} · mixed` : `${ui.label} ${formatNum(value)}${autoSuffix}`}
+              {mixed ? `${ui.label} \u00b7 mixed` : `${ui.label} ${formatNum(value)}${autoSuffix}`}
             </span>
             <div className="flex items-center gap-2">
               <input
