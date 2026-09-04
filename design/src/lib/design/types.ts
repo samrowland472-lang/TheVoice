@@ -98,6 +98,10 @@ export interface TextNode extends BaseNode {
   opticalSize?: number;
   /** Width axis (wdth). Undefined uses the face fallback. */
   fontWidth?: number;
+  /** Slant axis (slnt). Undefined uses the face fallback (usually upright). */
+  fontSlant?: number;
+  /** Italic axis (ital). Undefined uses the face fallback (usually roman). */
+  fontItalic?: number;
 }
 
 export interface ImageNode extends BaseNode {
