@@ -1,3 +1,4 @@
+import { variationSettings } from "./fonts";
 import { aabb } from "./geometry";
 import { pathD } from "./path-curve";
 import { drawDocument } from "./render";
@@ -67,7 +68,16 @@ function nodeSvg(n: DesignNode): string {
   }
   if (n.kind === "text") {
     const t = n as TextNode;
-    return `<text x="${t.x}" y="${t.y + t.fontSize}" fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${esc(t.fontFamily)}"${opacity}${rot}>${esc(t.text)}</text>`;
+    const settings = variationSettings(t);
+    const axes = settings ? ` font-variation-settings="${esc(settings)}"` : "";
+    const track = t.letterSpacing ? ` letter-spacing="${t.letterSpacing}px"` : "";
+    const caseAttr = t.uppercase ? ` text-transform="uppercase"` : "";
+    const anchor = t.align === "center" ? "middle" : t.align === "right" ? "end" : "start";
+    let tx = t.x;
+    if (t.align === "center") tx = t.x + t.w / 2;
+    if (t.align === "right") tx = t.x + t.w;
+    const copy = t.uppercase ? t.text.toUpperCase() : t.text;
+    return `<text x="${tx}" y="${t.y + t.fontSize}" fill="${esc(fill)}" font-size="${t.fontSize}" font-weight="${t.fontWeight}" font-family="${esc(t.fontFamily)}" text-anchor="${anchor}"${track}${axes}${caseAttr}${opacity}${rot}>${esc(copy)}</text>`;
   }
   if (n.kind === "line") {
     return `<line x1="${n.x}" y1="${n.y + n.h / 2}" x2="${n.x + n.w}" y2="${n.y + n.h / 2}" stroke="${esc(n.stroke === "transparent" ? fill : n.stroke)}" stroke-width="${Math.max(n.strokeWidth, 1)}"${opacity}${rot}/>`;
