@@ -5,8 +5,10 @@ import { cn } from "@/lib/utils";
 import {
   MixedBlendChips,
   MixedFillChips,
+  MixedLockChips,
   MixedOpacityChips,
   MixedStrokeChips,
+  MixedVisibilityChips,
 } from "./mixed-ink-chips";
 
 const BLENDS: BlendMode[] = [
@@ -51,6 +53,10 @@ export function MixedInk({
   const mixedOpacity = opacities.length > 1;
   const mixedBlend = blends.length > 1;
   const mixedShadow = shadows.length > 1;
+  const visibles = unique(nodes.map((n) => n.visible));
+  const locks = unique(nodes.map((n) => n.locked));
+  const mixedVisible = visibles.length > 1;
+  const mixedLock = locks.length > 1;
   const firstSolid = (() => {
     const f = nodes[0]?.fill;
     if (typeof f === "string" && f !== "transparent") return f;
@@ -68,7 +74,7 @@ export function MixedInk({
       </div>
       <div className="flex flex-col gap-2">
         <p className="text-[10px] text-ink-dim">
-          Mixed ink writes fill, stroke, opacity, blend, and the full shadow (colour, blur, offset)
+          Mixed ink writes fill, stroke, opacity, blend, lock, visibility, and the full shadow
           onto every selected layer. A chip stamps that layer’s value on the pick.
         </p>
         <label className="block text-[11px] text-ink-dim">
@@ -157,6 +163,66 @@ export function MixedInk({
             ))}
           </select>
           {mixedBlend && <MixedBlendChips nodes={nodes} />}
+        </label>
+        <label className="block text-[11px] text-ink-dim">
+          <span className="mb-1 block">{mixedVisible ? "Visibility · mixed" : nodes[0]?.visible ? "Visibility · shown" : "Visibility · hidden"}</span>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              className={cn(
+                "h-8 rounded-[8px] border text-[10px]",
+                !mixedVisible && nodes[0]?.visible
+                  ? "border-phosphor/50 bg-phosphor/10 text-phosphor"
+                  : "border-border text-ink-dim hover:border-phosphor hover:text-ink",
+              )}
+              onClick={() => updateNodes(ids, { visible: true }, true)}
+            >
+              Show all
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "h-8 rounded-[8px] border text-[10px]",
+                !mixedVisible && nodes[0] && !nodes[0].visible
+                  ? "border-phosphor/50 bg-phosphor/10 text-phosphor"
+                  : "border-border text-ink-dim hover:border-phosphor hover:text-ink",
+              )}
+              onClick={() => updateNodes(ids, { visible: false }, true)}
+            >
+              Hide all
+            </button>
+          </div>
+          {mixedVisible && <MixedVisibilityChips nodes={nodes} />}
+        </label>
+        <label className="block text-[11px] text-ink-dim">
+          <span className="mb-1 block">{mixedLock ? "Lock · mixed" : nodes[0]?.locked ? "Lock · locked" : "Lock · open"}</span>
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              className={cn(
+                "h-8 rounded-[8px] border text-[10px]",
+                !mixedLock && nodes[0]?.locked
+                  ? "border-phosphor/50 bg-phosphor/10 text-phosphor"
+                  : "border-border text-ink-dim hover:border-phosphor hover:text-ink",
+              )}
+              onClick={() => updateNodes(ids, { locked: true }, true)}
+            >
+              Lock all
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "h-8 rounded-[8px] border text-[10px]",
+                !mixedLock && nodes[0] && !nodes[0].locked
+                  ? "border-phosphor/50 bg-phosphor/10 text-phosphor"
+                  : "border-border text-ink-dim hover:border-phosphor hover:text-ink",
+              )}
+              onClick={() => updateNodes(ids, { locked: false }, true)}
+            >
+              Unlock all
+            </button>
+          </div>
+          {mixedLock && <MixedLockChips nodes={nodes} />}
         </label>
         <div>
           <div className="flex items-center justify-between">
