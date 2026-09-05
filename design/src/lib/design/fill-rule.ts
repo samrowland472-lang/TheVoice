@@ -18,6 +18,15 @@ export function dropHole(n: PathNode, hole: number): PathNode {
   };
 }
 
+export function setHoleFillRule(n: PathNode, hole: number, rule: PathFillRule): PathNode {
+  const count = n.holes?.length ?? 0;
+  if (hole < 0 || hole >= count) return n;
+  const next = [...(n.holeFillRules ?? [])];
+  while (next.length < count) next.push(pathFillRule(n));
+  next[hole] = rule;
+  return { ...n, holeFillRules: next };
+}
+
 export function partitionPathHoles(n: PathNode): { cut: PathPoint[][]; islands: PathPoint[][] } {
   const cut: PathPoint[][] = [];
   const islands: PathPoint[][] = [];
