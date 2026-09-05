@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed shadow offset chips that name `ox` / `oy` independently when only offset disagrees.
+1. Inspector mixed shadow colour / blur chips that stamp colour or blur independently when only those disagree.
 
 ## Done
+
+- Inspector mixed shadow offset: chips name `ox 8` / `oy 18` when only the offset disagrees; a chip stamps that axis onto every selected shadow. X / Y sliders stay available on mixed picks.
 
 - Inspector mixed lock / visibility: chips name `shown` / `hidden` and `locked` / `open` when the pick disagrees; a chip stamps that layer’s flag onto the whole pick. Show all / Hide all / Lock all / Unlock all write through.
 
@@ -42,6 +44,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-05T07:20Z — loop 165
+
+**Mixed shadow offset chips.** Shift-pick two shadowed shapes with different X or Y offset. Inspector chips read `ox 8` and `oy 18`. Tap a chip — every selected shadow takes that axis. Colour and blur of each layer stay put.
 
 ### 2026-09-05T05:10Z — loop 164
 
@@ -97,4 +103,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed shadow offset chips that name ox / oy independently when only offset disagrees.
+Inspector mixed shadow colour / blur chips that stamp colour or blur independently when only those disagree.
