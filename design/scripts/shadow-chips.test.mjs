@@ -36,6 +36,18 @@ test("mixed-ink names ox and oy independently and stamps only that offset", () =
   assert.match(mixed, /mapShadows/);
 });
 
+test("mixed sliders stay live while colour and offset disagree", () => {
+  assert.match(mixed, /Colour · mixed/);
+  assert.match(mixed, /Blur · mixed/);
+  assert.match(mixed, /X · mixed/);
+  assert.match(mixed, /Y · mixed/);
+  assert.match(mixed, /ghost/);
+  assert.match(mixed, /mapShadows\(\(sh\) => stampShadowColor/);
+  assert.match(mixed, /mapShadows\(\(sh\) => stampShadowBlur/);
+  assert.match(mixed, /mapShadows\(\(sh\) => stampShadowOx/);
+  assert.match(mixed, /mapShadows\(\(sh\) => stampShadowOy/);
+});
+
 test("mixed-ink colour and blur chips stamp one field without replacing offsets", () => {
   assert.match(chips, /Unify shadow color/);
   assert.match(chips, /Unify shadow blur/);

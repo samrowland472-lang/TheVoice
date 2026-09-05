@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed shadow sliders that stay live while colour and offset chips disagree — ghost the first drop without writing it onto the pick.
+1. Inspector mixed shadow spread / inset — add a fifth field without collapsing colour / blur / offset write-through.
 
 ## Done
+
+- Inspector mixed shadow sliders stay live while colour and offset disagree: the first drop is a ghost value only. Colour, blur, ox, and oy sliders stamp that field through `mapShadows` so the rest of each drop stays put.
 
 - Inspector mixed shadow colour / blur: chips name hex and `b28` when those fields disagree; a chip stamps only colour or only blur onto every selected drop. Colour picker and blur slider write through per field so ox / oy stay put.
 
@@ -47,6 +49,10 @@ Auth OFF, DB OFF.
 
 ## Iterations
 
+### 2026-09-05T09:30Z — loop 167
+
+**Mixed shadow sliders stay live.** Shift-pick two layers whose drops disagree on colour or offset. Inspector sliders still move — they ghost the first drop and write only the field you drag. Colour / blur / ox / oy chips still unify one axis.
+
 ### 2026-09-05T09:15Z — loop 166
 
 **Mixed shadow colour / blur chips.** Shift-pick two layers whose drops share offset but not colour or blur. Inspector chips read the hex and `b28`. Tap a colour chip — every selected drop takes that colour and keeps its own ox / oy / blur.
@@ -61,4 +67,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed shadow sliders that stay live while colour and offset chips disagree — ghost the first drop without writing it onto the pick.
+Inspector mixed shadow spread / inset — add a fifth field without collapsing colour / blur / offset write-through.
