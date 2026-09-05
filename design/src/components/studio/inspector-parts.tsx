@@ -1,6 +1,17 @@
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
+import {
+  DEFAULT_SHADOW,
+  shadowInset,
+  shadowSpread,
+  stampShadowBlur,
+  stampShadowColor,
+  stampShadowInset,
+  stampShadowOx,
+  stampShadowOy,
+  stampShadowSpread,
+} from "@/lib/design/shadow";
 import { useDesign } from "@/lib/design/store";
 import type { Align, DesignNode, GradientFill, ImageNode, TextNode } from "@/lib/design/types";
 import { isGradient } from "@/lib/design/types";
@@ -96,33 +107,39 @@ export function FillEditor({ node }: { node: DesignNode }) {
 
 export function ShadowEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
+  const commit = () => useDesign.getState().commit();
   const sh = node.shadow;
+  const inset = shadowInset(sh);
+  const spread = shadowSpread(sh);
+
+  function write(next: NonNullable<DesignNode["shadow"]>, commitNow = false) {
+    updateNodes([node.id], { shadow: next }, commitNow);
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-ink-dim">Shadow</span>
+        <span className="text-[11px] text-ink-dim">{sh ? (inset ? "Shadow · inset" : "Shadow") : "Shadow off"}</span>
         <button
           type="button"
           className="text-[10px] text-phosphor"
-          onClick={() =>
-            updateNodes(
-              [node.id],
-              { shadow: sh ? null : { color: "#000000", blur: 28, ox: 0, oy: 18 } },
-              true,
-            )
-          }
+          onClick={() => updateNodes([node.id], { shadow: sh ? null : { ...DEFAULT_SHADOW } }, true)}
         >
           {sh ? "Clear" : "Add"}
         </button>
       </div>
       {sh && (
         <div className="mt-2 flex flex-col gap-2">
-          <input
-            type="color"
-            className="h-8 w-full rounded-[8px] border border-border"
-            value={sh.color}
-            onChange={(e) => updateNodes([node.id], { shadow: { ...sh, color: e.target.value } }, true)}
-          />
+          <Field label="Colour">
+            <input
+              type="color"
+              className="h-8 w-full rounded-[8px] border border-border"
+              value={sh.color}
+              aria-label="layer shadow colour"
+              onChange={(e) => write(stampShadowColor(sh, e.target.value))}
+              onPointerUp={commit}
+            />
+          </Field>
           <Field label={`Blur ${sh.blur}`}>
             <input
               type="range"
@@ -130,7 +147,21 @@ export function ShadowEditor({ node }: { node: DesignNode }) {
               min={0}
               max={80}
               value={sh.blur}
-              onChange={(e) => updateNodes([node.id], { shadow: { ...sh, blur: Number(e.target.value) } })}
+              aria-label="layer shadow blur"
+              onChange={(e) => write(stampShadowBlur(sh, Number(e.target.value)))}
+              onPointerUp={commit}
+            />
+          </Field>
+          <Field label={`X ${sh.ox}`}>
+            <input
+              type="range"
+              className="range-phosphor w-full"
+              min={-40}
+              max={40}
+              value={sh.ox}
+              aria-label="layer shadow x"
+              onChange={(e) => write(stampShadowOx(sh, Number(e.target.value)))}
+              onPointerUp={commit}
             />
           </Field>
           <Field label={`Y ${sh.oy}`}>
@@ -140,8 +171,33 @@ export function ShadowEditor({ node }: { node: DesignNode }) {
               min={-40}
               max={40}
               value={sh.oy}
-              onChange={(e) => updateNodes([node.id], { shadow: { ...sh, oy: Number(e.target.value) } })}
+              aria-label="layer shadow y"
+              onChange={(e) => write(stampShadowOy(sh, Number(e.target.value)))}
+              onPointerUp={commit}
             />
+          </Field>
+          <Field label={`Spread ${spread}`}>
+            <input
+              type="range"
+              className="range-phosphor w-full"
+              min={0}
+              max={40}
+              value={spread}
+              aria-label="layer shadow spread"
+              onChange={(e) => write(stampShadowSpread(sh, Number(e.target.value)))}
+              onPointerUp={commit}
+            />
+          </Field>
+          <Field label={inset ? "Inset" : "Drop"}>
+            <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+              <input
+                type="checkbox"
+                checked={inset}
+                aria-label="layer shadow inset"
+                onChange={(e) => write(stampShadowInset(sh, e.target.checked), true)}
+              />
+              Inset
+            </label>
           </Field>
         </div>
       )}
