@@ -34,3 +34,18 @@ test("opacity and blend chips stamp the picked layer onto the selection", () => 
   assert.match(chips, /opacity: n\.opacity/);
   assert.match(chips, /blend: n\.blend/);
 });
+
+test("lock and visibility chips stamp the picked layer onto the selection", () => {
+  assert.match(chips, /Unify visibility with/);
+  assert.match(chips, /Unify lock with/);
+  assert.match(chips, /visible: n\.visible/);
+  assert.match(chips, /locked: n\.locked/);
+  assert.match(chips, /visibilityChipLabel/);
+  assert.match(chips, /lockChipLabel/);
+  assert.match(mixed, /Visibility · mixed/);
+  assert.match(mixed, /Lock · mixed/);
+  assert.match(mixed, /MixedVisibilityChips/);
+  assert.match(mixed, /MixedLockChips/);
+  assert.match(mixed, /Show all/);
+  assert.match(mixed, /Unlock all/);
+});

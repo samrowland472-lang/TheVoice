@@ -105,3 +105,59 @@ export function MixedBlendChips({ nodes }: { nodes: DesignNode[] }) {
     </div>
   );
 }
+
+export function visibilityChipLabel(visible: boolean): string {
+  return visible ? "shown" : "hidden";
+}
+
+export function lockChipLabel(locked: boolean): string {
+  return locked ? "locked" : "open";
+}
+
+export function MixedVisibilityChips({ nodes }: { nodes: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = nodes.map((n) => n.id);
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {nodes.map((n) => {
+        const label = visibilityChipLabel(n.visible);
+        return (
+          <button
+            key={`vis-${n.id}`}
+            type="button"
+            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            title={`Unify visibility with ${n.name || n.kind}: ${label}`}
+            aria-label={`Unify visibility with ${n.name || n.kind}: ${label}`}
+            onClick={() => updateNodes(ids, { visible: n.visible }, true)}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MixedLockChips({ nodes }: { nodes: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = nodes.map((n) => n.id);
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {nodes.map((n) => {
+        const label = lockChipLabel(n.locked);
+        return (
+          <button
+            key={`lock-${n.id}`}
+            type="button"
+            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            title={`Unify lock with ${n.name || n.kind}: ${label}`}
+            aria-label={`Unify lock with ${n.name || n.kind}: ${label}`}
+            onClick={() => updateNodes(ids, { locked: n.locked }, true)}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
