@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed lock / visibility chips when the pick disagrees.
+1. Inspector mixed shadow offset chips that name `ox` / `oy` independently when only offset disagrees.
 
 ## Done
+
+- Inspector mixed lock / visibility: chips name `shown` / `hidden` and `locked` / `open` when the pick disagrees; a chip stamps that layer’s flag onto the whole pick. Show all / Hide all / Lock all / Unlock all write through.
 
 - Inspector mixed opacity / blend: chips name `72%` and `multiply` when those values disagree; a chip stamps that layer’s opacity or blend onto the whole pick. Labeled fill / stroke chips now stamp cloned fill and named stroke.
 - Inspector mixed radius / rotation: sliders write angle and corner onto every selected layer; chips name `12°` / `r 24` when values disagree and stamp that layer’s value on the pick.
@@ -40,6 +42,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-05T05:10Z — loop 164
+
+**Mixed lock / visibility chips.** Shift-pick two layers where one is hidden or locked. Inspector chips read `shown` / `hidden` and `locked` / `open`. Tap a chip — the whole pick takes that flag. Show all and Unlock all write through.
 
 ### 2026-09-05T04:18Z — loop 163
 
@@ -91,4 +97,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed lock / visibility chips when the pick disagrees.
+Inspector mixed shadow offset chips that name ox / oy independently when only offset disagrees.
