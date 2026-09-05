@@ -44,3 +44,20 @@ export function stampShadowBlur(shadow: Shadow | null, blur: number): Shadow {
   const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
   return { ...base, blur };
 }
+
+export function shadowColorLabel(color: string | null | undefined): string {
+  return color ?? DEFAULT_SHADOW.color;
+}
+
+export function shadowBlurLabel(blur: number | null | undefined): string {
+  return `b${blur ?? DEFAULT_SHADOW.blur}`;
+}
+
+export function shadowOffsetChipLabel(axis: "ox" | "oy", shadow: Shadow | null): string {
+  const value = shadow ? shadow[axis] : DEFAULT_SHADOW[axis];
+  return axis === "ox" ? shadowOxLabel(value) : shadowOyLabel(value);
+}
+
+export function stampShadowOffset(shadow: Shadow | null, axis: "ox" | "oy", value: number): Shadow {
+  return axis === "ox" ? stampShadowOx(shadow, value) : stampShadowOy(shadow, value);
+}
