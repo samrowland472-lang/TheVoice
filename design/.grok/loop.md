@@ -21,28 +21,18 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: pick a hole on the artboard and highlight its inspector row.
+1. Path inspector: scroll the highlighted hole row into view when picked from the board.
 
 ## Done
 
+- Path inspector hole pick: clicking inside a hole on the artboard selects that hole (`hitPathNode` body test after anchors). The matching Holes · row lights phosphor; Even-odd / Nonzero still stamp `holeFillRules`. The picked ring draws a cool stroke on the board. `fillPathCompound` + SVG `fill-rule="nonzero"` islands stay in render/export.
+
 - Path inspector per-hole fill-rule: compound paths list each hole with Even-odd (punch) vs Nonzero (island). `holeFillRules` persist with the node; canvas fill and SVG export partition cut rings into the outer evenodd path and draw island rings as separate nonzero fills. Deleting a hole drops its rule. Restored `esc()` entities in export.ts.
-
-- Inspector ShadowEditor live preview chip: a 7×7 surface next to Add/Clear uses `shadowPreviewCss` so drop vs inset, colour, blur, offset, and spread show as a real CSS `box-shadow` while sliders move. Header names Shadow · drop vs Shadow · inset. Restored `esc()` entities in export.ts so typecheck can parse.
-
-- True inner-shadow on the artboard: destination-out of an offset silhouette, then destination-in clip to the node. Drop shadows still use `canvasShadowParams`; inset no longer flips canvas offsets. Shared params keep authored ox/oy so SVG `operator="out"` and PNG raster match the board. Restored `esc()` entities in export.ts so typecheck passes.
-
-- SVG and PNG export honor shadow spread and inset the same way the artboard does. Shared `canvasShadowParams` fattens blur by spread; the canvas renderer and PNG rasterizer both use it. SVG export emits per-layer filters: drop shadows dilate by spread then blur, inset shadows composite `out` of the source alpha. Rebuilt the truncated MixedInk panel so typecheck and mixed-shadow chips stay live.
-
-- Inspector mixed shadow spread / inset: a fifth field. Chips name `s8` and `inset` / `drop` when those disagree; sliders and the inset checkbox write only that field through `mapShadows` / `stampShadowSpread` / `stampShadowInset` so colour, blur, and offset stay put. Rebuilt the truncated MixedInk panel so mixed sliders stay live.
-
-- Inspector mixed shadow sliders stay live while colour and offset disagree: the first drop is a ghost value only. Colour, blur, ox, and oy sliders stamp that field through `mapShadows` so the rest of each drop stays put.
-
-- Inspector ShadowEditor single-node spread / inset: colour, blur, X, Y, spread sliders and an Inset checkbox write through stamp helpers so spread and inset persist with the rest of the drop. Restored SVG `esc()` entities in export.ts so typecheck passes.
 
 ## Iteration
 
-2026-09-05 23:10 BST — Path inspector per-hole fill-rule (punch vs island).
+2026-09-06 00:10 BST — Pick a hole on the artboard; highlight its inspector row.
 
 ## Next recommended
 
-Path inspector: pick a hole on the artboard and highlight its inspector row.
+Path inspector: scroll the highlighted hole row into view when picked from the board.
