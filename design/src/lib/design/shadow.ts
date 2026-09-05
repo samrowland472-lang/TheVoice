@@ -113,3 +113,11 @@ export function canvasShadowParams(shadow: Shadow) {
     inset: shadowInset(shadow),
   };
 }
+
+/** CSS box-shadow string that mirrors drop vs inset on the inspector chip. */
+export function shadowPreviewCss(shadow: Shadow | null | undefined): string {
+  if (!shadow) return "none";
+  const spread = shadowSpread(shadow);
+  const inset = shadowInset(shadow) ? "inset " : "";
+  return `${inset}${shadow.ox}px ${shadow.oy}px ${shadow.blur}px ${spread}px ${shadow.color}`;
+}

@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector ShadowEditor live preview of inset vs drop on the selected node chip.
-2. Path inspector: expose per-hole fill-rule when a compound path is selected.
+1. Path inspector: expose per-hole fill-rule when a compound path is selected.
 
 ## Done
+
+- Inspector ShadowEditor live preview chip: a 7×7 surface next to Add/Clear uses `shadowPreviewCss` so drop vs inset, colour, blur, offset, and spread show as a real CSS `box-shadow` while sliders move. Header names Shadow · drop vs Shadow · inset. Restored `esc()` entities in export.ts so typecheck can parse.
 
 - True inner-shadow on the artboard: destination-out of an offset silhouette, then destination-in clip to the node. Drop shadows still use `canvasShadowParams`; inset no longer flips canvas offsets. Shared params keep authored ox/oy so SVG `operator="out"` and PNG raster match the board. Restored `esc()` entities in export.ts so typecheck passes.
 
@@ -38,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-05 — Single-node ShadowEditor spread slider and inset checkbox.
+2026-09-05 15:20 BST — Inspector ShadowEditor live inset vs drop preview chip.
 
 ## Next recommended
 
-Inspector ShadowEditor live preview of inset vs drop on the selected node chip.
+Path inspector: expose per-hole fill-rule when a compound path is selected.
