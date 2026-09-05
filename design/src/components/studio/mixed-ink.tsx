@@ -2,6 +2,12 @@ import { cloneShadow, DEFAULT_SHADOW, shadowChipLabel, shadowKey } from "@/lib/d
 import { useDesign } from "@/lib/design/store";
 import type { BlendMode, DesignNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
+import {
+  MixedBlendChips,
+  MixedFillChips,
+  MixedOpacityChips,
+  MixedStrokeChips,
+} from "./mixed-ink-chips";
 
 const BLENDS: BlendMode[] = [
   "source-over",
@@ -20,12 +26,6 @@ function fillKey(fill: DesignNode["fill"]): string {
 
 function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
-}
-
-function solidOf(fill: DesignNode["fill"], fallback: string): string {
-  if (typeof fill === "string" && fill !== "transparent") return fill;
-  if (fill && typeof fill !== "string") return fill.stops[0]?.color ?? fallback;
-  return fallback;
 }
 
 export function MixedInk({
@@ -69,7 +69,7 @@ export function MixedInk({
       <div className="flex flex-col gap-2">
         <p className="text-[10px] text-ink-dim">
           Mixed ink writes fill, stroke, opacity, blend, and the full shadow (colour, blur, offset)
-          onto every selected layer.
+          onto every selected layer. A chip stamps that layer’s value on the pick.
         </p>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">{mixedFill ? "Fill · mixed" : "Fill"}</span>
@@ -87,24 +87,7 @@ export function MixedInk({
               <span className="font-mono text-[10px] text-phosphor">{fills.length} values</span>
             )}
           </div>
-          {mixedFill && (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {nodes.map((n) => {
-                const hex = solidOf(n.fill, ink);
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    className="size-6 rounded-full border border-phosphor/50"
-                    style={{ background: hex }}
-                    title={`Unify with ${n.name || n.kind}`}
-                    aria-label={`Unify fill with ${n.name || n.kind}`}
-                    onClick={() => updateNodes(ids, { fill: n.fill }, true)}
-                  />
-                );
-              })}
-            </div>
-          )}
+          {mixedFill && <MixedFillChips nodes={nodes} ink={ink} />}
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {brandColors.map((c) => (
               <button
@@ -139,26 +122,7 @@ export function MixedInk({
               onChange={(e) => updateNodes(ids, { strokeWidth: Number(e.target.value) }, true)}
             />
           </div>
-          {mixedStroke && (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {nodes.map((n) => (
-                <button
-                  key={`stroke-${n.id}`}
-                  type="button"
-                  className="size-6 rounded-full border border-phosphor/50"
-                  style={{
-                    background: n.stroke === "transparent" ? "transparent" : n.stroke,
-                    boxShadow: n.stroke === "transparent" ? "inset 0 0 0 1px rgba(63,198,255,0.45)" : undefined,
-                  }}
-                  title={`Unify stroke with ${n.name || n.kind}`}
-                  aria-label={`Unify stroke with ${n.name || n.kind}`}
-                  onClick={() =>
-                    updateNodes(ids, { stroke: n.stroke, strokeWidth: Math.max(n.strokeWidth, firstWidth) }, true)
-                  }
-                />
-              ))}
-            </div>
-          )}
+          {mixedStroke && <MixedStrokeChips nodes={nodes} />}
         </label>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">
@@ -175,6 +139,7 @@ export function MixedInk({
             onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
             onPointerUp={() => useDesign.getState().commit()}
           />
+          {mixedOpacity && <MixedOpacityChips nodes={nodes} />}
         </label>
         <label className="block text-[11px] text-ink-dim">
           <span className="mb-1 block">{mixedBlend ? "Blend · mixed" : "Blend"}</span>
@@ -191,6 +156,7 @@ export function MixedInk({
               </option>
             ))}
           </select>
+          {mixedBlend && <MixedBlendChips nodes={nodes} />}
         </label>
         <div>
           <div className="flex items-center justify-between">
