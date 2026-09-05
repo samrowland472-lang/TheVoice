@@ -1,3 +1,4 @@
+import { dropHole, setHoleFillRule as stampHoleFillRule, type PathFillRule } from "./fill-rule";
 import { applyPathEdit, type PathEditHit } from "./path-edit";
 import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
 import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
@@ -80,6 +81,19 @@ function livePath(id: string): PathNode | null {
 
 export function selectPathPoint(index: number, hole?: number) {
   setPathEditHit({ index, arm: "anchor", hole });
+}
+
+export function selectPathHole(hole: number) {
+  setPathEditHit({ index: 0, arm: "anchor", hole });
+}
+
+export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
+  const n = livePath(id);
+  if (!n) return;
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, stampHoleFillRule(n, hole, rule), false);
+  selectPathHole(hole);
 }
 
 export function setPathClosed(id: string, closed: boolean) {
@@ -244,7 +258,7 @@ export function deletePathPoint(id: string, index: number, hole?: number) {
   if (!holeRing) return;
   s.commit();
   if (holeRing.length <= 2) {
-    s.replaceNode(id, { ...n, holes: (n.holes ?? []).filter((_, i) => i !== hole) }, false);
+    s.replaceNode(id, dropHole(n, hole), false);
     setPathEditHit(null);
     return;
   }
