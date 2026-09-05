@@ -16,3 +16,21 @@ export function shadowKey(shadow: Shadow | null): string {
   if (!shadow) return "off";
   return `on:${shadow.color}:${shadow.blur}:${shadow.ox}:${shadow.oy}`;
 }
+
+export function shadowOxKey(shadow: Shadow | null): string {
+  return shadow ? `ox:${shadow.ox}` : "off";
+}
+
+export function shadowOyKey(shadow: Shadow | null): string {
+  return shadow ? `oy:${shadow.oy}` : "off";
+}
+
+export function shadowOffsetChipLabel(axis: "ox" | "oy", shadow: Shadow | null): string {
+  if (!shadow) return `${axis} off`;
+  return `${axis} ${shadow[axis]}`;
+}
+
+export function stampShadowOffset(shadow: Shadow | null, axis: "ox" | "oy", value: number): Shadow {
+  const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
+  return { ...base, [axis]: value };
+}
