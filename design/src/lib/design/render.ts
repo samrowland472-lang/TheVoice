@@ -93,10 +93,12 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
     ctx.translate(-c.x, -c.y);
   }
   if (n.shadow) {
+    const spread = n.shadow.spread ?? 0;
     ctx.shadowColor = n.shadow.color;
-    ctx.shadowBlur = n.shadow.blur;
-    ctx.shadowOffsetX = n.shadow.ox;
-    ctx.shadowOffsetY = n.shadow.oy;
+    ctx.shadowBlur = n.shadow.blur + Math.max(0, spread);
+    const flip = n.shadow.inset ? -1 : 1;
+    ctx.shadowOffsetX = n.shadow.ox * flip;
+    ctx.shadowOffsetY = n.shadow.oy * flip;
   }
   if (isText(n)) {
     applyFontFace(ctx, n);
