@@ -97,15 +97,18 @@ export function stampShadowInset(shadow: Shadow | null, inset: boolean): Shadow 
   return { ...base, inset };
 }
 
-/** Same mapping the artboard and PNG export use: spread fattens blur; inset flips offset. */
+/**
+ * Shared mapping for the artboard, PNG, and SVG.
+ * Spread fattens blur. Inset keeps the authored offset — the renderer
+ * clips with destination-in instead of flipping the drop.
+ */
 export function canvasShadowParams(shadow: Shadow) {
   const spread = Math.max(0, shadowSpread(shadow));
-  const flip = shadowInset(shadow) ? -1 : 1;
   return {
     color: shadow.color,
     blur: shadow.blur + spread,
-    ox: shadow.ox * flip,
-    oy: shadow.oy * flip,
+    ox: shadow.ox,
+    oy: shadow.oy,
     spread,
     inset: shadowInset(shadow),
   };
