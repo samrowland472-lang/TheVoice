@@ -96,3 +96,17 @@ export function stampShadowInset(shadow: Shadow | null, inset: boolean): Shadow 
   const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
   return { ...base, inset };
 }
+
+/** Same mapping the artboard and PNG export use: spread fattens blur; inset flips offset. */
+export function canvasShadowParams(shadow: Shadow) {
+  const spread = Math.max(0, shadowSpread(shadow));
+  const flip = shadowInset(shadow) ? -1 : 1;
+  return {
+    color: shadow.color,
+    blur: shadow.blur + spread,
+    ox: shadow.ox * flip,
+    oy: shadow.oy * flip,
+    spread,
+    inset: shadowInset(shadow),
+  };
+}
