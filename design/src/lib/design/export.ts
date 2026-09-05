@@ -71,7 +71,11 @@ export function downloadPrintPdf(doc: DesignDocument) {
 }
 
 function esc(s: string) {
-  return s.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """);
+  return s
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """);
 }
 
 function nodeSvg(n: DesignNode): string {
