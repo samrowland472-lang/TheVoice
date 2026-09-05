@@ -5,6 +5,15 @@ import { test } from "node:test";
 const shadow = readFileSync(new URL("../src/lib/design/shadow.ts", import.meta.url), "utf8");
 const mixed = readFileSync(new URL("../src/components/studio/mixed-ink.tsx", import.meta.url), "utf8");
 const chips = readFileSync(new URL("../src/components/studio/mixed-ink-chips.tsx", import.meta.url), "utf8");
+const parts = readFileSync(new URL("../src/components/studio/inspector-parts.tsx", import.meta.url), "utf8");
+
+test("shadow preview css names inset vs drop from authored params", () => {
+  assert.match(shadow, /export function shadowPreviewCss/);
+  assert.match(shadow, /inset \? "inset "/);
+  assert.match(shadow, /\$\{inset\}\$\{shadow\.ox\}px/);
+  assert.match(parts, /data-shadow-preview/);
+  assert.match(parts, /shadowPreviewCss\(sh\)/);
+});
 
 test("shadow helpers clone colour, blur, and both offsets", () => {
   assert.match(shadow, /export function cloneShadow/);

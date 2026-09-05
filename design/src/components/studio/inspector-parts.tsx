@@ -4,6 +4,7 @@ import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contra
 import {
   DEFAULT_SHADOW,
   shadowInset,
+  shadowPreviewCss,
   shadowSpread,
   stampShadowBlur,
   stampShadowColor,
@@ -118,15 +119,26 @@ export function ShadowEditor({ node }: { node: DesignNode }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-ink-dim">{sh ? (inset ? "Shadow · inset" : "Shadow") : "Shadow off"}</span>
-        <button
-          type="button"
-          className="text-[10px] text-phosphor"
-          onClick={() => updateNodes([node.id], { shadow: sh ? null : { ...DEFAULT_SHADOW } }, true)}
-        >
-          {sh ? "Clear" : "Add"}
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] text-ink-dim">{sh ? (inset ? "Shadow · inset" : "Shadow · drop") : "Shadow off"}</span>
+        <div className="flex items-center gap-2">
+          {sh && (
+            <span
+              aria-hidden="true"
+              title={inset ? "Inset preview" : "Drop preview"}
+              className="inline-block size-7 shrink-0 rounded-[6px] border border-border bg-surface-alt"
+              data-shadow-preview={inset ? "inset" : "drop"}
+              style={{ boxShadow: shadowPreviewCss(sh) }}
+            />
+          )}
+          <button
+            type="button"
+            className="text-[10px] text-phosphor"
+            onClick={() => updateNodes([node.id], { shadow: sh ? null : { ...DEFAULT_SHADOW } }, true)}
+          >
+            {sh ? "Clear" : "Add"}
+          </button>
+        </div>
       </div>
       {sh && (
         <div className="mt-2 flex flex-col gap-2">
