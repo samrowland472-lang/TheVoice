@@ -55,6 +55,8 @@ export interface Shadow {
   blur: number;
   ox: number;
   oy: number;
+  spread?: number;
+  inset?: boolean;
 }
 
 export interface BaseNode {
