@@ -128,6 +128,8 @@ export interface PathNode extends BaseNode {
   closed: boolean;
   holes?: PathPoint[][];
   fillRule?: "evenodd" | "nonzero";
+  /** Per-hole rule. `evenodd` punches; `nonzero` keeps the ring as an island. */
+  holeFillRules?: ("evenodd" | "nonzero")[];
 }
 
 export interface PaintNode extends BaseNode {
