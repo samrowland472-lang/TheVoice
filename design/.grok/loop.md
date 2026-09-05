@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed radius / rotation when the pick disagrees.
-2. Inspector mixed shadow chips when the pick disagrees.
+1. Inspector mixed shadow chips when the pick disagrees.
 
 ## Done
 
+- Inspector mixed radius / rotation: sliders write angle and corner onto every selected layer; chips name `12°` / `r 24` when values disagree and stamp that layer’s value on the pick.
 - Boolean apply on three-plus picks explodes every island after commit. Union / subtract / intersect / exclude leave each resulting contour as its own path at its world box; the pick becomes those islands. Hover preview ghosts the same set.
 - Inspector mixed fill / stroke: chips name each layer’s fill (hex or `grad angle · a→b`) and stroke (`hex · width` or none). A chip clones that fill or stamps that stroke + width onto the whole pick.
 - Boolean preview ghosts every island from three-plus picks (union / subtract / intersect / exclude), not only the first compound.
@@ -39,6 +39,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-05T02:11Z — loop 162
+
+**Mixed radius / rotation.** Shift-pick two shapes with different angles or corner radii. Geometry chips read `12°` and `r 24`. Tap a chip — the whole pick takes that rotation or radius.
 
 ### 2026-09-05T01:26Z — loop 161
 
@@ -82,4 +86,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed radius / rotation when the pick disagrees.
+Inspector mixed shadow chips when the pick disagrees.
