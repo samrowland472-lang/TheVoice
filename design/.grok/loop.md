@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed fill / stroke when the pick is mixed ink.
-2. Boolean apply on three-plus picks: keep every island in place after commit.
+1. Boolean apply on three-plus picks: keep every island in place after commit.
+2. Inspector mixed radius / rotation when the pick disagrees.
 
 ## Done
 
+- Inspector mixed fill / stroke: chips name each layer’s fill (hex or `grad angle · a→b`) and stroke (`hex · width` or none). A chip clones that fill or stamps that stroke + width onto the whole pick.
 - Boolean preview ghosts every island from three-plus picks (union / subtract / intersect / exclude), not only the first compound.
 - Knife on primitives: rect, ellipse, polygon, star, arrow, and line convert in place when the knife stroke or click hits them. Preview marks the same converted contour. Existing path / figure-eight cuts stay as they were.
 - Inspector mixed wonk: Fraunces exposes Wonk (`WONK` 0–1); multi-select writes only onto faces that expose it; Unwonk clears the lock. Chips name `WONK` when values disagree. Variation settings ride the artboard, outline, and SVG export.
@@ -37,6 +38,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-05T01:15Z — loop 160
+
+**Mixed fill / stroke chips.** Shift-pick two shapes with different fills or strokes. Inspector chips read the hex (or gradient) and the stroke weight. Tap a chip to stamp that ink on every selected layer.
 
 ### 2026-09-04T23:25Z — loop 159
 
@@ -72,4 +77,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed fill / stroke when the pick is mixed ink.
+Boolean apply on three-plus picks: keep every island in place after commit.
