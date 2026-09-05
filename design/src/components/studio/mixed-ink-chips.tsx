@@ -1,6 +1,6 @@
 import { cloneFill, fillChipLabel, solidOf, strokeChipLabel } from "@/lib/design/ink";
 import { useDesign } from "@/lib/design/store";
-import type { DesignNode } from "@/lib/design/types";
+import type { BlendMode, DesignNode } from "@/lib/design/types";
 
 export function MixedFillChips({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -57,6 +57,51 @@ export function MixedStrokeChips({ nodes }: { nodes: DesignNode[] }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+export function MixedOpacityChips({ nodes }: { nodes: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = nodes.map((n) => n.id);
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {nodes.map((n) => {
+        const label = `${Math.round(n.opacity * 100)}%`;
+        return (
+          <button
+            key={`op-${n.id}`}
+            type="button"
+            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            title={`Unify opacity with ${n.name || n.kind}: ${label}`}
+            aria-label={`Unify opacity with ${n.name || n.kind}: ${label}`}
+            onClick={() => updateNodes(ids, { opacity: n.opacity }, true)}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MixedBlendChips({ nodes }: { nodes: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = nodes.map((n) => n.id);
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {nodes.map((n) => (
+        <button
+          key={`blend-${n.id}`}
+          type="button"
+          className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+          title={`Unify blend with ${n.name || n.kind}: ${n.blend}`}
+          aria-label={`Unify blend with ${n.name || n.kind}: ${n.blend}`}
+          onClick={() => updateNodes(ids, { blend: n.blend as BlendMode }, true)}
+        >
+          {n.blend}
+        </button>
+      ))}
     </div>
   );
 }

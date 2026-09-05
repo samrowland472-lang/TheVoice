@@ -24,4 +24,13 @@ test("mixed-ink chips stamp cloned fill and named stroke when ink disagrees", ()
   assert.match(mixed, /Stroke · mixed/);
   assert.match(mixed, /MixedFillChips/);
   assert.match(mixed, /MixedStrokeChips/);
+  assert.match(mixed, /MixedOpacityChips/);
+  assert.match(mixed, /MixedBlendChips/);
+});
+
+test("opacity and blend chips stamp the picked layer onto the selection", () => {
+  assert.match(chips, /Unify opacity with/);
+  assert.match(chips, /Unify blend with/);
+  assert.match(chips, /opacity: n\.opacity/);
+  assert.match(chips, /blend: n\.blend/);
 });
