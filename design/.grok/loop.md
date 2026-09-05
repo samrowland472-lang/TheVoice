@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed shadow colour / blur chips that stamp colour or blur independently when only those disagree.
+1. Inspector mixed shadow colour / blur chips that stamp one field without replacing ox / oy.
 
 ## Done
 
-- Inspector mixed shadow offset: chips name `ox 8` / `oy 18` when only the offset disagrees; a chip stamps that axis onto every selected shadow. X / Y sliders stay available on mixed picks.
+- Inspector mixed shadow offsets: chips name `ox 8` / `oy 18` when those axes disagree; a chip stamps only that offset onto every selected drop. Sliders write colour, blur, ox, and oy through per field.
 
 - Inspector mixed lock / visibility: chips name `shown` / `hidden` and `locked` / `open` when the pick disagrees; a chip stamps that layer’s flag onto the whole pick. Show all / Hide all / Lock all / Unlock all write through.
 
@@ -47,60 +47,12 @@ Auth OFF, DB OFF.
 
 ### 2026-09-05T07:20Z — loop 165
 
-**Mixed shadow offset chips.** Shift-pick two shadowed shapes with different X or Y offset. Inspector chips read `ox 8` and `oy 18`. Tap a chip — every selected shadow takes that axis. Colour and blur of each layer stay put.
+**Mixed shadow offset chips.** Shift-pick two layers whose drops share colour and blur but not offset. Inspector chips read `ox 8` and `oy 18`. Tap an ox chip — every selected drop takes that X and keeps its own Y.
 
 ### 2026-09-05T05:10Z — loop 164
 
 **Mixed lock / visibility chips.** Shift-pick two layers where one is hidden or locked. Inspector chips read `shown` / `hidden` and `locked` / `open`. Tap a chip — the whole pick takes that flag. Show all and Unlock all write through.
 
-### 2026-09-05T04:18Z — loop 163
-
-**Mixed opacity / blend chips.** Shift-pick two shapes with different opacity or blend. Inspector chips read `72%` and `multiply`. Tap a chip — the whole pick takes that opacity or blend. Fill and stroke chips now name the value they stamp.
-
-### 2026-09-05T02:11Z — loop 162
-
-**Mixed radius / rotation.** Shift-pick two shapes with different angles or corner radii. Geometry chips read `12°` and `r 24`. Tap a chip — the whole pick takes that rotation or radius.
-
-### 2026-09-05T01:26Z — loop 161
-
-**Boolean apply, all islands.** Shift-pick three or more shapes, hover Union / Subtract / Intersect / Exclude, then commit. Every resulting island stays on the artboard as its own path. Move one — the others hold their place.
-
-### 2026-09-05T01:15Z — loop 160
-
-**Mixed fill / stroke chips.** Shift-pick two shapes with different fills or strokes. Inspector chips read the hex (or gradient) and the stroke weight. Tap a chip to stamp that ink on every selected layer.
-
-### 2026-09-04T23:25Z — loop 159
-
-**Boolean preview, all islands.** Hover Union / Subtract / Intersect / Exclude with three or more shapes. Every resulting island draws on the artboard, not just the first.
-
-### 2026-09-04T23:10Z — loop 158
-
-**Knife on shapes.** Draw a rectangle or ellipse, pick Knife (K), drag across the silhouette. The shape becomes a path and opens along the stroke. Hover and stroke marks follow the same contour.
-
-### 2026-09-04T22:05Z — loop 157
-
-**Wonk axis.** Fraunces adds Wonk. Mixed picks write `WONK` only onto faces that expose it. Chips read `Fraunces 48 · WONK 1` next to a sharp sibling. Unwonk returns the face to the default.
-
-### 2026-09-04T19:20Z — loop 156
-
-**Grade and softness axes.** Roboto Flex adds Grade, Fraunces adds Softness. Mixed picks write `GRAD` / `SOFT` only onto faces that expose them. Chips read `Flex 48 · GRAD 80` next to `Fraunces 48 · SOFT 40`.
-
-### 2026-09-04T13:15Z — loop 155
-
-**Slant and italic axes.** Inter adds Slant, Newsreader exposes Italic. Mixed picks write `slnt` / `ital` only onto faces that expose them. Chips read `Inter 48 · slnt -8` next to `Newsreader 48 · ital 1`.
-
-### 2026-09-04T12:35Z — loop 154
-
-**Axis chips.** Mixed type chips now name opsz / wdth when those axes disagree across the pick. Two Fraunces layers with different optical sizes read as `Fraunces 48 · opsz 36` and `Fraunces 48 · opsz auto`; Instrument width mismatches show `wdth`.
-
-### 2026-09-04T09:35Z — loop 153
-
-**Axes on press.** Optical size and width now ride through outline conversion and export. Convert type to path or download PNG/SVG after locking opsz on Fraunces or wdth on Instrument Sans — the cut and the file keep the axis.
-
-### 2026-09-04T08:30Z — loop 152
-
-**Mixed type axes.** Pick Fraunces for Optical size, Instrument Sans for Width.
-
 ## Next recommended
 
-Inspector mixed shadow colour / blur chips that stamp colour or blur independently when only those disagree.
+Inspector mixed shadow colour / blur chips that stamp one field without replacing ox / oy.
