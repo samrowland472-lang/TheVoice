@@ -4,6 +4,10 @@ import {
   stampShadowBlur,
   stampShadowColor,
   stampShadowOffset,
+  stampShadowSpread,
+  stampShadowInset,
+  shadowSpreadLabel,
+  shadowInsetLabel,
 } from "@/lib/design/shadow";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode } from "@/lib/design/types";
@@ -106,6 +110,74 @@ export function MixedShadowOffsetChips({
                 (layer: DesignNode) => ({
                   ...layer,
                   shadow: stampShadowOffset(layer.shadow, axis, value),
+                }),
+                true,
+              );
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MixedShadowSpreadChips({ nodes }: { nodes: DesignNode[] }) {
+  const mapNodes = useDesign((s) => s.mapNodes);
+  const ids = nodes.map((n) => n.id);
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {nodes.map((n) => {
+        const spread = n.shadow?.spread ?? DEFAULT_SHADOW.spread ?? 0;
+        const label = shadowSpreadLabel(spread);
+        return (
+          <button
+            key={`sh-spread-${n.id}`}
+            type="button"
+            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            title={`Unify shadow spread with ${n.name || n.kind}: ${label}`}
+            aria-label={`Unify shadow spread with ${n.name || n.kind}: ${label}`}
+            onClick={() => {
+              mapNodes(
+                ids,
+                (layer: DesignNode) => ({
+                  ...layer,
+                  shadow: stampShadowSpread(layer.shadow, spread),
+                }),
+                true,
+              );
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function MixedShadowInsetChips({ nodes }: { nodes: DesignNode[] }) {
+  const mapNodes = useDesign((s) => s.mapNodes);
+  const ids = nodes.map((n) => n.id);
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {nodes.map((n) => {
+        const inset = Boolean(n.shadow?.inset);
+        const label = shadowInsetLabel(inset);
+        return (
+          <button
+            key={`sh-inset-${n.id}`}
+            type="button"
+            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            title={`Unify shadow inset with ${n.name || n.kind}: ${label}`}
+            aria-label={`Unify shadow inset with ${n.name || n.kind}: ${label}`}
+            onClick={() => {
+              mapNodes(
+                ids,
+                (layer: DesignNode) => ({
+                  ...layer,
+                  shadow: stampShadowInset(layer.shadow, inset),
                 }),
                 true,
               );
