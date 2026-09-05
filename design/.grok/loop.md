@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: expose per-hole fill-rule when a compound path is selected.
+1. Path inspector: pick a hole on the artboard and highlight its inspector row.
 
 ## Done
+
+- Path inspector per-hole fill-rule: compound paths list each hole with Even-odd (punch) vs Nonzero (island). `holeFillRules` persist with the node; canvas fill and SVG export partition cut rings into the outer evenodd path and draw island rings as separate nonzero fills. Deleting a hole drops its rule. Restored `esc()` entities in export.ts.
 
 - Inspector ShadowEditor live preview chip: a 7×7 surface next to Add/Clear uses `shadowPreviewCss` so drop vs inset, colour, blur, offset, and spread show as a real CSS `box-shadow` while sliders move. Header names Shadow · drop vs Shadow · inset. Restored `esc()` entities in export.ts so typecheck can parse.
 
@@ -35,12 +37,12 @@ Auth OFF, DB OFF.
 
 - Inspector mixed shadow sliders stay live while colour and offset disagree: the first drop is a ghost value only. Colour, blur, ox, and oy sliders stamp that field through `mapShadows` so the rest of each drop stays put.
 
-- Inspector ShadowEditor single-node spread / inset: colour, blur, X, Y, spread sliders and an Inset checkbox match the mixed panel. Writes go through stamp helpers so spread and inset persist with the rest of the drop. Restored SVG `esc()` entities in export.ts so typecheck passes.
+- Inspector ShadowEditor single-node spread / inset: colour, blur, X, Y, spread sliders and an Inset checkbox write through stamp helpers so spread and inset persist with the rest of the drop. Restored SVG `esc()` entities in export.ts so typecheck passes.
 
 ## Iteration
 
-2026-09-05 15:20 BST — Inspector ShadowEditor live inset vs drop preview chip.
+2026-09-05 23:10 BST — Path inspector per-hole fill-rule (punch vs island).
 
 ## Next recommended
 
-Path inspector: expose per-hole fill-rule when a compound path is selected.
+Path inspector: pick a hole on the artboard and highlight its inspector row.
