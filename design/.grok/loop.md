@@ -21,7 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector ShadowEditor single-node spread / inset sliders matching mixed panel.
+1. Inspector ShadowEditor live preview of inset vs drop on the selected node chip.
+2. Path inspector: expose per-hole fill-rule when a compound path is selected.
 
 ## Done
 
@@ -33,10 +34,12 @@ Auth OFF, DB OFF.
 
 - Inspector mixed shadow sliders stay live while colour and offset disagree: the first drop is a ghost value only. Colour, blur, ox, and oy sliders stamp that field through `mapShadows` so the rest of each drop stays put.
 
+- Inspector ShadowEditor single-node spread / inset: colour, blur, X, Y, spread sliders and an Inset checkbox match the mixed panel. Writes go through stamp helpers so spread and inset persist with the rest of the drop. Restored SVG `esc()` entities in export.ts so typecheck passes.
+
 ## Iteration
 
-2026-09-05 — True inner-shadow destination-in clip on the artboard (no flipped offsets).
+2026-09-05 — Single-node ShadowEditor spread slider and inset checkbox.
 
 ## Next recommended
 
-Inspector ShadowEditor single-node spread / inset sliders matching mixed panel.
+Inspector ShadowEditor live preview of inset vs drop on the selected node chip.
