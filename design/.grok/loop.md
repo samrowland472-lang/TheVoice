@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Boolean apply on three-plus picks: keep every island in place after commit.
-2. Inspector mixed radius / rotation when the pick disagrees.
+1. Inspector mixed radius / rotation when the pick disagrees.
+2. Inspector mixed shadow chips when the pick disagrees.
 
 ## Done
 
+- Boolean apply on three-plus picks explodes every island after commit. Union / subtract / intersect / exclude leave each resulting contour as its own path at its world box; the pick becomes those islands. Hover preview ghosts the same set.
 - Inspector mixed fill / stroke: chips name each layer’s fill (hex or `grad angle · a→b`) and stroke (`hex · width` or none). A chip clones that fill or stamps that stroke + width onto the whole pick.
 - Boolean preview ghosts every island from three-plus picks (union / subtract / intersect / exclude), not only the first compound.
 - Knife on primitives: rect, ellipse, polygon, star, arrow, and line convert in place when the knife stroke or click hits them. Preview marks the same converted contour. Existing path / figure-eight cuts stay as they were.
@@ -38,6 +39,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-05T01:26Z — loop 161
+
+**Boolean apply, all islands.** Shift-pick three or more shapes, hover Union / Subtract / Intersect / Exclude, then commit. Every resulting island stays on the artboard as its own path. Move one — the others hold their place.
 
 ### 2026-09-05T01:15Z — loop 160
 
@@ -77,4 +82,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Boolean apply on three-plus picks: keep every island in place after commit.
+Inspector mixed radius / rotation when the pick disagrees.
