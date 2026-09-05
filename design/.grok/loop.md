@@ -21,21 +21,22 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. True inner-shadow clip (destination-in) instead of flipped offsets.
-2. Inspector ShadowEditor single-node spread / inset sliders matching mixed panel.
+1. Inspector ShadowEditor single-node spread / inset sliders matching mixed panel.
 
 ## Done
 
-- SVG and PNG export honor shadow spread and inset the same way the artboard does. Shared `canvasShadowParams` fattens blur by spread and flips inset offsets; the canvas renderer and PNG rasterizer both use it. SVG export now emits per-layer filters: drop shadows dilate by spread then blur, inset shadows composite `out` of the source alpha. Rebuilt the truncated MixedInk panel so typecheck and mixed-shadow chips stay live.
+- True inner-shadow on the artboard: destination-out of an offset silhouette, then destination-in clip to the node. Drop shadows still use `canvasShadowParams`; inset no longer flips canvas offsets. Shared params keep authored ox/oy so SVG `operator="out"` and PNG raster match the board. Restored `esc()` entities in export.ts so typecheck passes.
 
-- Inspector mixed shadow spread / inset: a fifth field. Chips name `s8` and `inset` / `drop` when those disagree; sliders and the inset checkbox write only that field through `mapShadows` / `stampShadowSpread` / `stampShadowInset` so colour, blur, and offset stay put. Rebuilt the truncated mixed-ink panel so mixed sliders stay live.
+- SVG and PNG export honor shadow spread and inset the same way the artboard does. Shared `canvasShadowParams` fattens blur by spread; the canvas renderer and PNG rasterizer both use it. SVG export emits per-layer filters: drop shadows dilate by spread then blur, inset shadows composite `out` of the source alpha. Rebuilt the truncated MixedInk panel so typecheck and mixed-shadow chips stay live.
+
+- Inspector mixed shadow spread / inset: a fifth field. Chips name `s8` and `inset` / `drop` when those disagree; sliders and the inset checkbox write only that field through `mapShadows` / `stampShadowSpread` / `stampShadowInset` so colour, blur, and offset stay put. Rebuilt the truncated MixedInk panel so mixed sliders stay live.
 
 - Inspector mixed shadow sliders stay live while colour and offset disagree: the first drop is a ghost value only. Colour, blur, ox, and oy sliders stamp that field through `mapShadows` so the rest of each drop stays put.
 
 ## Iteration
 
-2026-09-05 — SVG/PNG export shadow spread + inset (artboard mapping). MixedInk restored.
+2026-09-05 — True inner-shadow destination-in clip on the artboard (no flipped offsets).
 
 ## Next recommended
 
-True inner-shadow on the artboard with destination-in clip instead of flipped canvas offsets.
+Inspector ShadowEditor single-node spread / inset sliders matching mixed panel.
