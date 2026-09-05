@@ -20,6 +20,14 @@ test("boolean apply traces evenodd compounds from grouped islands", () => {
   assert.match(ops, /export function computeBooleanParts/);
 });
 
+const actions = readFileSync(new URL("../src/lib/design/boolean-actions.ts", import.meta.url), "utf8");
+
+test("boolean apply explodes every island and keeps each frame", () => {
+  assert.match(actions, /splitCompoundIslands/);
+  assert.match(actions, /parts.flatMap\(\(part\) => splitCompoundIslands\(part\)\)/);
+  assert.match(actions, /selection: stamped.map\(\(n\) => n.id\)/);
+});
+
 const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
 
 test("boolean preview ghosts every island from three-plus picks", () => {
