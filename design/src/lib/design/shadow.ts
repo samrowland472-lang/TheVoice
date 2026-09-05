@@ -17,20 +17,30 @@ export function shadowKey(shadow: Shadow | null): string {
   return `on:${shadow.color}:${shadow.blur}:${shadow.ox}:${shadow.oy}`;
 }
 
-export function shadowOxKey(shadow: Shadow | null): string {
-  return shadow ? `ox:${shadow.ox}` : "off";
+export function shadowOxLabel(ox: number): string {
+  return `ox ${ox}`;
 }
 
-export function shadowOyKey(shadow: Shadow | null): string {
-  return shadow ? `oy:${shadow.oy}` : "off";
+export function shadowOyLabel(oy: number): string {
+  return `oy ${oy}`;
 }
 
-export function shadowOffsetChipLabel(axis: "ox" | "oy", shadow: Shadow | null): string {
-  if (!shadow) return `${axis} off`;
-  return `${axis} ${shadow[axis]}`;
-}
-
-export function stampShadowOffset(shadow: Shadow | null, axis: "ox" | "oy", value: number): Shadow {
+export function stampShadowOx(shadow: Shadow | null, ox: number): Shadow {
   const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
-  return { ...base, [axis]: value };
+  return { ...base, ox };
+}
+
+export function stampShadowOy(shadow: Shadow | null, oy: number): Shadow {
+  const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
+  return { ...base, oy };
+}
+
+export function stampShadowColor(shadow: Shadow | null, color: string): Shadow {
+  const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
+  return { ...base, color };
+}
+
+export function stampShadowBlur(shadow: Shadow | null, blur: number): Shadow {
+  const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
+  return { ...base, blur };
 }
