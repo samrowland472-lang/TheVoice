@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed shadow chips when the pick disagrees.
+1. Inspector mixed lock / visibility chips when the pick disagrees.
 
 ## Done
 
+- Inspector mixed opacity / blend: chips name `72%` and `multiply` when those values disagree; a chip stamps that layer’s opacity or blend onto the whole pick. Labeled fill / stroke chips now stamp cloned fill and named stroke.
 - Inspector mixed radius / rotation: sliders write angle and corner onto every selected layer; chips name `12°` / `r 24` when values disagree and stamp that layer’s value on the pick.
 - Boolean apply on three-plus picks explodes every island after commit. Union / subtract / intersect / exclude leave each resulting contour as its own path at its world box; the pick becomes those islands. Hover preview ghosts the same set.
 - Inspector mixed fill / stroke: chips name each layer’s fill (hex or `grad angle · a→b`) and stroke (`hex · width` or none). A chip clones that fill or stamps that stroke + width onto the whole pick.
@@ -39,6 +40,10 @@ Auth OFF, DB OFF.
 - Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
 
 ## Iterations
+
+### 2026-09-05T04:18Z — loop 163
+
+**Mixed opacity / blend chips.** Shift-pick two shapes with different opacity or blend. Inspector chips read `72%` and `multiply`. Tap a chip — the whole pick takes that opacity or blend. Fill and stroke chips now name the value they stamp.
 
 ### 2026-09-05T02:11Z — loop 162
 
@@ -70,7 +75,7 @@ Auth OFF, DB OFF.
 
 ### 2026-09-04T13:15Z — loop 155
 
-**Slant and italic axes.** Inter adds Slant, Newsreader adds Italic. Mixed picks write `slnt` / `ital` only onto faces that expose them. Chips read `Inter 48 · slnt -8` next to `Newsreader 48 · ital 1`.
+**Slant and italic axes.** Inter adds Slant, Newsreader exposes Italic. Mixed picks write `slnt` / `ital` only onto faces that expose them. Chips read `Inter 48 · slnt -8` next to `Newsreader 48 · ital 1`.
 
 ### 2026-09-04T12:35Z — loop 154
 
@@ -86,4 +91,4 @@ Auth OFF, DB OFF.
 
 ## Next recommended
 
-Inspector mixed shadow chips when the pick disagrees.
+Inspector mixed lock / visibility chips when the pick disagrees.
