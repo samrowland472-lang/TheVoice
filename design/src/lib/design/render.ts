@@ -2,8 +2,9 @@ import { applyFontFace } from "./fonts";
 import { degToRad, nodeCenter } from "./geometry";
 import { hitNode, nodeLocalPoint } from "./hit";
 import { tracePath } from "./path-curve";
+import { canvasShadowParams } from "./shadow";
 import { layoutTextLines } from "./text-layout";
-import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Viewport } from "./types";
+import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Shadow, type Viewport } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -81,6 +82,105 @@ function starPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number
   ctx.closePath();
 }
 
+function fillSilhouette(ctx: CanvasRenderingContext2D, n: DesignNode) {
+  ctx.fillStyle = "#000";
+  if (isText(n)) {
+    applyFontFace(ctx, n);
+    ctx.textAlign = n.align === "center" ? "center" : n.align === "right" ? "right" : "left";
+    ctx.textBaseline = "top";
+    const measure = (s: string) => ctx.measureText(s).width;
+    const { lines, lineHeight, startY } = layoutTextLines(n, measure);
+    ctx.beginPath();
+    ctx.rect(n.x, n.y, n.w, n.h);
+    ctx.clip();
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!;
+      let ax = n.x;
+      if (n.align === "center") ax = n.x + n.w / 2;
+      if (n.align === "right") ax = n.x + n.w;
+      const maxW = n.wrap === false ? n.w : undefined;
+      ctx.fillText(line, ax, n.y + startY + i * lineHeight, maxW);
+    }
+    return;
+  }
+  if (isImage(n) || isPaint(n)) {
+    ctx.fillRect(n.x, n.y, n.w, n.h);
+    return;
+  }
+  if (isPath(n) && n.points.length) {
+    ctx.beginPath();
+    tracePath(ctx, n.x, n.y, n.points, n.closed);
+    const holes = n.holes ?? [];
+    for (const hole of holes) {
+      if (hole.length < 3) continue;
+      tracePath(ctx, n.x, n.y, hole, true);
+    }
+    ctx.fill(n.fillRule ?? (holes.length ? "evenodd" : "nonzero"));
+    return;
+  }
+  switch (n.kind) {
+    case "rect":
+      roundRect(ctx, n.x, n.y, n.w, n.h, "radius" in n ? (n.radius as number) : 0);
+      break;
+    case "ellipse":
+      ctx.beginPath();
+      ctx.ellipse(n.x + n.w / 2, n.y + n.h / 2, Math.abs(n.w / 2), Math.abs(n.h / 2), 0, 0, Math.PI * 2);
+      break;
+    case "polygon":
+      polygonPath(ctx, n.x, n.y, n.w, n.h, "sides" in n ? (n.sides as number) ?? 6 : 6);
+      break;
+    case "star":
+      starPath(ctx, n.x, n.y, n.w, n.h, "sides" in n ? (n.sides as number) ?? 5 : 5);
+      break;
+    default:
+      roundRect(ctx, n.x, n.y, n.w, n.h, 0);
+  }
+  ctx.fill();
+}
+
+function paintInsetShadow(ctx: CanvasRenderingContext2D, n: DesignNode, shadow: Shadow) {
+  if (typeof document === "undefined") return;
+  const p = canvasShadowParams(shadow);
+  const pad = Math.ceil(p.blur * 2 + Math.abs(p.ox) + Math.abs(p.oy) + p.spread + 8);
+  const w = Math.max(2, Math.ceil(Math.abs(n.w) + pad * 2));
+  const h = Math.max(2, Math.ceil(Math.abs(n.h) + pad * 2));
+  const mask = document.createElement("canvas");
+  mask.width = w;
+  mask.height = h;
+  const m = mask.getContext("2d");
+  if (!m) return;
+  m.translate(pad - n.x, pad - n.y);
+  fillSilhouette(m, n);
+
+  const layer = document.createElement("canvas");
+  layer.width = w;
+  layer.height = h;
+  const s = layer.getContext("2d");
+  if (!s) return;
+  s.fillStyle = p.color;
+  s.fillRect(0, 0, w, h);
+  s.globalCompositeOperation = "destination-out";
+  s.shadowColor = "#000000";
+  s.shadowBlur = p.blur;
+  s.shadowOffsetX = p.ox;
+  s.shadowOffsetY = p.oy;
+  s.drawImage(mask, 0, 0);
+  s.globalCompositeOperation = "destination-in";
+  s.shadowColor = "transparent";
+  s.shadowBlur = 0;
+  s.shadowOffsetX = 0;
+  s.shadowOffsetY = 0;
+  s.drawImage(mask, 0, 0);
+
+  ctx.save();
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.drawImage(layer, n.x - pad, n.y - pad);
+  ctx.restore();
+}
+
 function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id: string; canvas: HTMLCanvasElement } | null) {
   if (!n.visible) return;
   ctx.save();
@@ -92,13 +192,17 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
     ctx.rotate(degToRad(n.rotation));
     ctx.translate(-c.x, -c.y);
   }
-  if (n.shadow) {
-    const spread = n.shadow.spread ?? 0;
-    ctx.shadowColor = n.shadow.color;
-    ctx.shadowBlur = n.shadow.blur + Math.max(0, spread);
-    const flip = n.shadow.inset ? -1 : 1;
-    ctx.shadowOffsetX = n.shadow.ox * flip;
-    ctx.shadowOffsetY = n.shadow.oy * flip;
+  const drop = n.shadow ? canvasShadowParams(n.shadow) : null;
+  if (drop && !drop.inset) {
+    ctx.shadowColor = drop.color;
+    ctx.shadowBlur = drop.blur;
+    ctx.shadowOffsetX = drop.ox;
+    ctx.shadowOffsetY = drop.oy;
+  } else {
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
   }
   if (isText(n)) {
     applyFontFace(ctx, n);
@@ -206,6 +310,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
       ctx.stroke();
     }
   }
+  if (drop?.inset && n.shadow) paintInsetShadow(ctx, n, n.shadow);
   ctx.restore();
 }
 
