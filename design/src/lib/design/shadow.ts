@@ -1,20 +1,37 @@
 import type { Shadow } from "./types";
 
-export const DEFAULT_SHADOW: Shadow = { color: "#000000", blur: 28, ox: 0, oy: 18 };
+export const DEFAULT_SHADOW: Shadow = { color: "#000000", blur: 28, ox: 0, oy: 18, spread: 0, inset: false };
+
+export function shadowSpread(shadow: Shadow | null | undefined): number {
+  return shadow?.spread ?? DEFAULT_SHADOW.spread ?? 0;
+}
+
+export function shadowInset(shadow: Shadow | null | undefined): boolean {
+  return Boolean(shadow?.inset);
+}
 
 export function cloneShadow(shadow: Shadow | null): Shadow | null {
   if (!shadow) return null;
-  return { color: shadow.color, blur: shadow.blur, ox: shadow.ox, oy: shadow.oy };
+  return {
+    color: shadow.color,
+    blur: shadow.blur,
+    ox: shadow.ox,
+    oy: shadow.oy,
+    spread: shadowSpread(shadow),
+    inset: shadowInset(shadow),
+  };
 }
 
 export function shadowChipLabel(shadow: Shadow | null): string {
   if (!shadow) return "off";
-  return `${shadow.color} · b${shadow.blur} · ${shadow.ox},${shadow.oy}`;
+  const spread = shadowSpread(shadow);
+  const inset = shadowInset(shadow) ? " · in" : "";
+  return `${shadow.color} · b${shadow.blur} · ${shadow.ox},${shadow.oy} · s${spread}${inset}`;
 }
 
 export function shadowKey(shadow: Shadow | null): string {
   if (!shadow) return "off";
-  return `on:${shadow.color}:${shadow.blur}:${shadow.ox}:${shadow.oy}`;
+  return `on:${shadow.color}:${shadow.blur}:${shadow.ox}:${shadow.oy}:${shadowSpread(shadow)}:${shadowInset(shadow) ? "in" : "out"}`;
 }
 
 export function shadowOxLabel(ox: number): string {
@@ -60,4 +77,22 @@ export function shadowOffsetChipLabel(axis: "ox" | "oy", shadow: Shadow | null):
 
 export function stampShadowOffset(shadow: Shadow | null, axis: "ox" | "oy", value: number): Shadow {
   return axis === "ox" ? stampShadowOx(shadow, value) : stampShadowOy(shadow, value);
+}
+
+export function shadowSpreadLabel(spread: number | null | undefined): string {
+  return `s${spread ?? 0}`;
+}
+
+export function shadowInsetLabel(inset: boolean | null | undefined): string {
+  return inset ? "inset" : "drop";
+}
+
+export function stampShadowSpread(shadow: Shadow | null, spread: number): Shadow {
+  const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
+  return { ...base, spread };
+}
+
+export function stampShadowInset(shadow: Shadow | null, inset: boolean): Shadow {
+  const base = shadow ? cloneShadow(shadow)! : { ...DEFAULT_SHADOW };
+  return { ...base, inset };
 }
