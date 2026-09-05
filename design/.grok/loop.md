@@ -21,50 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed shadow spread / inset — add a fifth field without collapsing colour / blur / offset write-through.
+1. SVG / PNG export honor shadow spread and inset the same way the artboard does.
+2. True inner-shadow clip (destination-in) instead of flipped offsets.
 
 ## Done
 
+- Inspector mixed shadow spread / inset: a fifth field. Chips name `s8` and `inset` / `drop` when those disagree; sliders and the inset checkbox write only that field through `mapShadows` / `stampShadowSpread` / `stampShadowInset` so colour, blur, and offset stay put. Rebuilt the truncated mixed-ink panel so mixed sliders stay live.
+
 - Inspector mixed shadow sliders stay live while colour and offset disagree: the first drop is a ghost value only. Colour, blur, ox, and oy sliders stamp that field through `mapShadows` so the rest of each drop stays put.
-
-- Inspector mixed shadow colour / blur: chips name hex and `b28` when those fields disagree; a chip stamps only colour or only blur onto every selected drop. Colour picker and blur slider write through per field so ox / oy stay put.
-
-- Inspector mixed shadow offsets: chips name `ox 8` / `oy 18` when those axes disagree; a chip stamps only that offset onto every selected drop. Sliders write colour, blur, ox, and oy through per field.
-
-- Inspector mixed lock / visibility: chips name `shown` / `hidden` and `locked` / `open` when the pick disagrees; a chip stamps that layer’s flag onto the whole pick. Show all / Hide all / Lock all / Unlock all write through.
-
-- Inspector mixed opacity / blend: chips name `72%` and `multiply` when those values disagree; a chip stamps that layer’s opacity or blend onto the whole pick. Labeled fill / stroke chips now stamp cloned fill and named stroke.
-- Inspector mixed radius / rotation: sliders write angle and corner onto every selected layer; chips name `12°` / `r 24` when values disagree and stamp that layer’s value on the pick.
-- Boolean apply on three-plus picks explodes every island after commit. Union / subtract / intersect / exclude leave each resulting contour as its own path at its world box; the pick becomes those islands. Hover preview ghosts the same set.
-- Inspector mixed fill / stroke: chips name each layer’s fill (hex or `grad angle · a→b`) and stroke (`hex · width` or none). A chip clones that fill or stamps that stroke + width onto the whole pick.
-- Boolean preview ghosts every island from three-plus picks (union / subtract / intersect / exclude), not only the first compound.
-- Knife on primitives: rect, ellipse, polygon, star, arrow, and line convert in place when the knife stroke or click hits them. Preview marks the same converted contour. Existing path / figure-eight cuts stay as they were.
-- Inspector mixed wonk: Fraunces exposes Wonk (`WONK` 0–1); multi-select writes only onto faces that expose it; Unwonk clears the lock. Chips name `WONK` when values disagree. Variation settings ride the artboard, outline, and SVG export.
-- Inspector mixed grade / softness: Roboto Flex exposes Grade (`GRAD`), Fraunces exposes Softness (`SOFT`); multi-select writes only onto faces that support the axis; Default grade / Sharp clear the lock. Chips name `GRAD` / `SOFT` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
-- Inspector mixed italic / slant: Inter exposes Slant (`slnt`), Newsreader exposes Italic (`ital`); multi-select writes only onto faces that support the axis; Upright / Roman clear the lock. Chips name `slnt` / `ital` when those axes disagree. Variation settings ride the artboard, outline, and SVG export.
-- Type chips label optical size / width when those axes differ across the selection (opsz auto vs locked, wdth values).
-- Type-to-path, PNG raster, and SVG export honor opsz / wdth via the same variation settings as the artboard. SVG writes `font-variation-settings`, weight, tracking, and anchor.
-- Inspector mixed type optical size / width: Fraunces shows Optical (auto from size or locked), Instrument Sans shows Width; multi-select writes only onto faces that support the axis; Auto from size clears the lock.
-- Inspector mixed type write-through: family, weight, tracking, leading, align, and uppercase write onto every selected text layer.
-
-## Iterations
-
-### 2026-09-05T09:30Z — loop 167
-
-**Mixed shadow sliders stay live.** Shift-pick two layers whose drops disagree on colour or offset. Inspector sliders still move — they ghost the first drop and write only the field you drag. Colour / blur / ox / oy chips still unify one axis.
-
-### 2026-09-05T09:15Z — loop 166
-
-**Mixed shadow colour / blur chips.** Shift-pick two layers whose drops share offset but not colour or blur. Inspector chips read the hex and `b28`. Tap a colour chip — every selected drop takes that colour and keeps its own ox / oy / blur.
-
-### 2026-09-05T07:20Z — loop 165
-
-**Mixed shadow offset chips.** Shift-pick two layers whose drops share colour and blur but not offset. Inspector chips read `ox 8` and `oy 18`. Tap an ox chip — every selected drop takes that X and keeps its own Y.
-
-### 2026-09-05T05:10Z — loop 164
-
-**Mixed lock / visibility chips.** Shift-pick two layers where one is hidden or locked. Inspector chips read `shown` / `hidden` and `locked` / `open`. Tap a chip — the whole pick takes that flag. Show all and Unlock all write through.
-
-## Next recommended
-
-Inspector mixed shadow spread / inset — add a fifth field without collapsing colour / blur / offset write-through.
