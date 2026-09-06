@@ -14,6 +14,11 @@ test("artboard hit picks a hole body, not only anchors", () => {
 test("selectPathHole and inspector hole rows share the hit", () => {
   assert.match(actions, /export function selectPathHole/);
   assert.match(pathUi, /selectPathHole\(h\)/);
-  assert.match(pathUi, /activeHole \? "border-phosphor\/60 bg-phosphor\/10"/);
+  assert.match(pathUi, /activeHole === h \? "border-phosphor\/60 bg-phosphor\/10"/);
   assert.match(pathUi, /data-hole=\{h\}/);
+});
+
+test("picked hole row scrolls into view", () => {
+  assert.match(pathUi, /scrollIntoView/);
+  assert.match(pathUi, /querySelector\(`\[data-hole="\$\{activeHole\}"\]`\)/);
 });

@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: scroll the highlighted hole row into view when picked from the board.
+1. Path inspector: delete-hole control on the highlighted hole row.
+2. Path inspector: keyboard ↑/↓ to walk holes when a hole is picked.
 
 ## Done
+
+- Path inspector hole scroll: picking a hole on the artboard (or tapping its row) scrolls that Holes · row into view (`scrollIntoView({ block: "nearest" })` on `[data-hole]`). Per-hole Even-odd / Nonzero rows remain in the inspector.
 
 - Path inspector hole pick: clicking inside a hole on the artboard selects that hole (`hitPathNode` body test after anchors). The matching Holes · row lights phosphor; Even-odd / Nonzero still stamp `holeFillRules`. The picked ring draws a cool stroke on the board. `fillPathCompound` + SVG `fill-rule="nonzero"` islands stay in render/export.
 
@@ -31,8 +34,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 00:10 BST — Pick a hole on the artboard; highlight its inspector row.
+2026-09-06 01:00 BST — Scroll the picked hole row into view in the path inspector.
 
 ## Next recommended
 
-Path inspector: scroll the highlighted hole row into view when picked from the board.
+Path inspector: delete-hole control on the highlighted hole row.
