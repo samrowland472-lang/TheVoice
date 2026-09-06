@@ -28,3 +28,11 @@ test("highlighted hole row can delete the hole", () => {
   assert.match(pathUi, /deletePathHole\(node\.id, h\)/);
   assert.match(pathUi, /aria-label=\{`delete hole \$\{h \+ 1\}`\}/);
 });
+
+test("arrow keys walk picked holes", () => {
+  const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
+  assert.match(actions, /export function stepPathHole/);
+  assert.match(actions, /selectPathHole\(next\)/);
+  assert.match(keys, /stepPathHole/);
+  assert.match(keys, /pathEditHit\?\.hole != null/);
+});

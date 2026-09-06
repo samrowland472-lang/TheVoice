@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keyboard ↑/↓ to walk holes when a hole is picked.
+1. Path inspector: Home / End jump to first / last hole.
+2. Path inspector: Left / Right walk points on the picked hole ring.
 
 ## Done
+
+- Path inspector hole walk: with a hole picked, ↑ / ↓ select the previous / next hole (`stepPathHole`) instead of nudging the node. The highlighted Holes · row still scrolls into view. Canvas `fillPathCompound` partitions even-odd punches vs nonzero islands again.
 
 - Path inspector delete-hole: highlighted Holes · row has a Delete hole control. `deletePathHole` drops the ring and its `holeFillRules` entry via `dropHole`. Remaining holes stay selected (or the pick clears when none remain). Even-odd / Nonzero still stamp per-hole rules.
 
@@ -35,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 02:17 BST — Delete hole control on the highlighted path-inspector hole row.
+2026-09-06 04:05 BST — Arrow ↑ / ↓ walk picked path holes.
 
 ## Next recommended
 
-Path inspector: keyboard ↑/↓ to walk holes when a hole is picked.
+Path inspector: Home / End jump to first / last hole.
