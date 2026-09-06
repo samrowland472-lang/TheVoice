@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { nextPathAxis, pathTabExitsAtEdge } from "@/lib/design/path-point-tab";
+import { nextPathAxis, pathTabExitsAtEdge, pickPathInspectorExitTarget } from "@/lib/design/path-point-tab";
 import {
   deletePathPoint,
   selectPathPoint,
@@ -24,29 +24,23 @@ function pathListRows(from: HTMLElement) {
   return { row, list, rows, index: i };
 }
 
+const FOCUSABLE =
+  'input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
+
+function isShown(el: HTMLElement) {
+  return el.offsetParent !== null || el === document.activeElement;
+}
+
 function focusOutsidePathList(from: HTMLElement, shift: boolean) {
   const ctx = pathListRows(from);
   if (!ctx) return false;
-  const focusables = [
-    ...document.querySelectorAll<HTMLElement>(
-      'input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])',
-    ),
-  ].filter((el) => el.offsetParent !== null || el === document.activeElement);
-  const outside = focusables.filter((el) => !ctx.list.contains(el));
-  if (outside.length === 0) {
-    from.blur();
-    return true;
-  }
-  const fromIdx = focusables.indexOf(from);
-  const target = shift
-    ? (outside.filter((el) => {
-        const i = focusables.indexOf(el);
-        return i >= 0 && (fromIdx < 0 || i < fromIdx);
-      }).at(-1) ?? outside.at(-1))
-    : (outside.find((el) => {
-        const i = focusables.indexOf(el);
-        return i >= 0 && (fromIdx < 0 || i > fromIdx);
-      }) ?? outside[0]);
+  const panel = from.closest("[data-path-inspector]");
+  const scope = panel instanceof HTMLElement ? panel : document.body;
+  const inspector = [...scope.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(isShown);
+  const listMembers = new Set(
+    inspector.filter((el) => ctx.list.contains(el)),
+  );
+  const target = pickPathInspectorExitTarget(inspector, listMembers, from, shift);
   if (!target || ctx.list.contains(target)) {
     from.blur();
     return true;
