@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: delete-hole control on the highlighted hole row.
-2. Path inspector: keyboard ↑/↓ to walk holes when a hole is picked.
+1. Path inspector: keyboard ↑/↓ to walk holes when a hole is picked.
 
 ## Done
+
+- Path inspector delete-hole: highlighted Holes · row has a Delete hole control. `deletePathHole` drops the ring and its `holeFillRules` entry via `dropHole`. Remaining holes stay selected (or the pick clears when none remain). Even-odd / Nonzero still stamp per-hole rules.
 
 - Path inspector hole scroll: picking a hole on the artboard (or tapping its row) scrolls that Holes · row into view (`scrollIntoView({ block: "nearest" })` on `[data-hole]`). Per-hole Even-odd / Nonzero rows remain in the inspector.
 
@@ -34,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 01:00 BST — Scroll the picked hole row into view in the path inspector.
+2026-09-06 02:17 BST — Delete hole control on the highlighted path-inspector hole row.
 
 ## Next recommended
 
-Path inspector: delete-hole control on the highlighted hole row.
+Path inspector: keyboard ↑/↓ to walk holes when a hole is picked.

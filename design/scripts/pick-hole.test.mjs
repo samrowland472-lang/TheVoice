@@ -22,3 +22,9 @@ test("picked hole row scrolls into view", () => {
   assert.match(pathUi, /scrollIntoView/);
   assert.match(pathUi, /querySelector\(`\[data-hole="\$\{activeHole\}"\]`\)/);
 });
+
+test("highlighted hole row can delete the hole", () => {
+  assert.match(actions, /export function deletePathHole/);
+  assert.match(pathUi, /deletePathHole\(node\.id, h\)/);
+  assert.match(pathUi, /aria-label=\{`delete hole \$\{h \+ 1\}`\}/);
+});
