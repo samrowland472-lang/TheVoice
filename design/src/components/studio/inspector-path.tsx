@@ -9,6 +9,7 @@ import {
 } from "@/lib/design/offset-actions";
 import { deletePathHole, selectPathHole, setHoleFillRule, setPathClosed } from "@/lib/design/path-actions";
 import { useDesign } from "@/lib/design/store";
+import { releaseStudioStatus } from "@/lib/design/studio-status";
 import type { PathNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
@@ -53,7 +54,14 @@ export function PathFields({ node }: { node: PathNode }) {
   }, [activeHole, activeIndex, node.id]);
 
   return (
-    <div className="space-y-2" data-path-inspector>
+    <div
+      className="space-y-2"
+      data-path-inspector
+      onClickCapture={(e) => {
+        const t = e.target;
+        if (t instanceof HTMLElement && t.closest("button")) releaseStudioStatus();
+      }}
+    >
       <Field label={`Path · ${node.points.length} pts${holes.length ? ` · ${holes.length} holes` : ""}`}>
         <div className="grid grid-cols-2 gap-1">
           <button
@@ -65,6 +73,7 @@ export function PathFields({ node }: { node: PathNode }) {
               node.points.length < 3 && !node.closed && "opacity-40",
             )}
             aria-label="close path"
+            data-path-exit="Closed"
             onClick={() => setPathClosed(node.id, !node.closed)}
           >
             {node.closed ? "Closed" : "Open"}
@@ -103,6 +112,7 @@ export function PathFields({ node }: { node: PathNode }) {
             type="button"
             className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
             aria-label="outline stroke"
+            data-path-exit="Offset"
             onClick={() => outlineSelectedStroke()}
           >
             Outline stroke
