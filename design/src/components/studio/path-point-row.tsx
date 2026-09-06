@@ -20,7 +20,11 @@ function focusPathCoord(from: HTMLElement, neighbor: -1 | 0 | 1, axis: "x" | "y"
   if (!(row instanceof HTMLElement) || !list) return false;
   const rows = [...list.querySelectorAll<HTMLElement>(":scope > [data-point]")];
   const i = rows.indexOf(row);
-  const target = neighbor === 0 ? row : rows[i + neighbor];
+  if (i < 0) return false;
+  const nextIndex = i + neighbor;
+  // Out of the list: let the browser move focus (no wrap to last/first).
+  if (neighbor !== 0 && (nextIndex < 0 || nextIndex >= rows.length)) return false;
+  const target = neighbor === 0 ? row : rows[nextIndex];
   const input = target?.querySelector(`input[data-path-axis="${axis}"]`);
   if (input instanceof HTMLInputElement) {
     input.focus();
