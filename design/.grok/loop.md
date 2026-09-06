@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: scroll the active hole-point row into view when ← / → walk the ring.
+1. Path inspector: keep the active Points row visible while editing x/y from the keyboard.
 
 ## Done
+
+- Path inspector hole-point scroll: walking a picked ring with ← / → (or tapping a point) scrolls the matching Points row into view (`scrollIntoView` on `[data-point]`). Holes · header still shows `pt n/m`. Outer path points use `path-n`; hole points use `hole-h-n`.
 
 - Path inspector hole-point header: with a hole picked, the Holes · label shows `pt n/m` for the active ring point. Key hints list ↑↓ ←→ Home End ⇧Home ⇧End. Restored `←→` in the unpicked-hole header.
 
@@ -45,8 +47,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 08:12 BST — Holes · header shows the active hole-point index (`pt n/m`) when a ring is picked.
+2026-09-06 11:05 BST — Points list scrolls the active hole-point row into view when ← / → walk the ring.
 
 ## Next recommended
 
-Path inspector: scroll the active hole-point row into view when walking the ring.
+Path inspector: keep the active Points row visible while editing x/y from the keyboard.
