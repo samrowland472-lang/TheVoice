@@ -44,3 +44,12 @@ test("home and end jump to first and last hole", () => {
   assert.match(keys, /jumpPathHole\(e\.key === "End"\)/);
   assert.match(keys, /e\.key === "Home" \|\| e\.key === "End"/);
 });
+
+test("left and right walk points on the picked hole ring", () => {
+  const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
+  assert.match(actions, /export function stepPathHolePoint/);
+  assert.match(actions, /selectPathPoint\(next, hit\.hole\)/);
+  assert.match(keys, /stepPathHolePoint/);
+  assert.match(keys, /e\.key === "ArrowLeft" \|\| e\.key === "ArrowRight"/);
+  assert.match(pathUi, /Holes · \$\{holes\.length\}  ↑↓ ←→ Home End/);
+});
