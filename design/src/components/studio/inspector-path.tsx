@@ -7,123 +7,12 @@ import {
   roundSelectedPathCorners,
   simplifySelectedPath,
 } from "@/lib/design/offset-actions";
-import {
-  deletePathHole,
-  deletePathPoint,
-  selectPathHole,
-  selectPathPoint,
-  setHoleFillRule,
-  setPathClosed,
-  setPathPointPosition,
-  setPathPointSmooth,
-} from "@/lib/design/path-actions";
+import { deletePathHole, selectPathHole, setHoleFillRule, setPathClosed } from "@/lib/design/path-actions";
 import { useDesign } from "@/lib/design/store";
-import type { PathNode, PathPoint } from "@/lib/design/types";
+import type { PathNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
-import { NumField } from "./num-field";
-
-function ringLabel(hole?: number) {
-  return hole == null ? "Path" : `Hole ${hole + 1}`;
-}
-
-function PointRow({
-  nodeId,
-  index,
-  point,
-  hole,
-  active,
-}: {
-  nodeId: string;
-  index: number;
-  point: PathPoint;
-  hole?: number;
-  active: boolean;
-}) {
-  const rowRef = useRef<HTMLDivElement | null>(null);
-
-  function revealAndSelect() {
-    selectPathPoint(index, hole);
-    rowRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }
-
-  return (
-    <div
-      ref={rowRef}
-      data-point={hole == null ? `path-${index}` : `hole-${hole}-${index}`}
-      className={cn(
-        "rounded-[8px] border px-2 py-1.5",
-        active ? "border-phosphor/60 bg-phosphor/10" : "border-border",
-      )}
-    >
-      <button
-        type="button"
-        className="mb-1 flex w-full items-center justify-between text-left"
-        aria-label={`select point ${index + 1}`}
-        onClick={() => revealAndSelect()}
-      >
-        <span className="font-mono text-[10px] text-ink-dim">
-          {ringLabel(hole)} · {index + 1}
-        </span>
-        <span className="text-[10px] text-ink-dim">{point.smooth === false ? "corner" : "smooth"}</span>
-      </button>
-      <div className="grid grid-cols-2 gap-1">
-        <NumField
-          className="field font-mono text-[11px]"
-          value={point.x}
-          aria-label={`point ${index + 1} x`}
-          onFocus={revealAndSelect}
-          onCommit={(n) => {
-            revealAndSelect();
-            setPathPointPosition(nodeId, index, n, point.y, hole);
-          }}
-        />
-        <NumField
-          className="field font-mono text-[11px]"
-          value={point.y}
-          aria-label={`point ${index + 1} y`}
-          onFocus={revealAndSelect}
-          onCommit={(n) => {
-            revealAndSelect();
-            setPathPointPosition(nodeId, index, point.x, n, hole);
-          }}
-        />
-      </div>
-      <div className="mt-1 flex gap-1">
-        <button
-          type="button"
-          className={cn(
-            "h-7 flex-1 rounded-[8px] text-[10px]",
-            point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
-          )}
-          aria-label={`smooth point ${index + 1}`}
-          onClick={() => setPathPointSmooth(nodeId, index, true, hole)}
-        >
-          Smooth
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "h-7 flex-1 rounded-[8px] text-[10px]",
-            point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
-          )}
-          aria-label={`corner point ${index + 1}`}
-          onClick={() => setPathPointSmooth(nodeId, index, false, hole)}
-        >
-          Corner
-        </button>
-        <button
-          type="button"
-          className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          aria-label={`delete point ${index + 1}`}
-          onClick={() => deletePathPoint(nodeId, index, hole)}
-        >
-          Del
-        </button>
-      </div>
-    </div>
-  );
-}
+import { PointRow } from "./path-point-row";
 
 export function PathFields({ node }: { node: PathNode }) {
   const hit = useDesign((s) => s.pathEditHit);
