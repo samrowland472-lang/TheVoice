@@ -53,7 +53,7 @@ export function PathFields({ node }: { node: PathNode }) {
   }, [activeHole, activeIndex, node.id]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-path-inspector>
       <Field label={`Path · ${node.points.length} pts${holes.length ? ` · ${holes.length} holes` : ""}`}>
         <div className="grid grid-cols-2 gap-1">
           <button
