@@ -1,5 +1,12 @@
 import { useRef } from "react";
-import { nextPathAxis, pathTabExitsAtEdge, pickPathInspectorExitTarget } from "@/lib/design/path-point-tab";
+import {
+  labelPathInspectorControl,
+  nextPathAxis,
+  pathInspectorExitStatus,
+  pathTabExitsAtEdge,
+  pickPathInspectorExitTarget,
+} from "@/lib/design/path-point-tab";
+import { useDesign } from "@/lib/design/store";
 import {
   deletePathPoint,
   selectPathPoint,
@@ -47,6 +54,8 @@ function focusOutsidePathList(from: HTMLElement, shift: boolean) {
   }
   target.focus();
   if (target instanceof HTMLInputElement) target.select();
+  const label = labelPathInspectorControl(target);
+  useDesign.getState().setStudioStatus(pathInspectorExitStatus(label));
   return true;
 }
 
