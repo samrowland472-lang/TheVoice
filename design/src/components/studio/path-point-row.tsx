@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { nextPathAxis } from "@/lib/design/path-point-tab";
+import { nextPathAxis, pathTabExitsAtEdge } from "@/lib/design/path-point-tab";
 import {
   deletePathPoint,
   selectPathPoint,
@@ -14,17 +14,54 @@ function ringLabel(hole?: number) {
   return hole == null ? "Path" : `Hole ${hole + 1}`;
 }
 
-function focusPathCoord(from: HTMLElement, neighbor: -1 | 0 | 1, axis: "x" | "y") {
+function pathListRows(from: HTMLElement) {
   const row = from.closest("[data-point]");
   const list = row?.parentElement;
-  if (!(row instanceof HTMLElement) || !list) return false;
+  if (!(row instanceof HTMLElement) || !list) return null;
   const rows = [...list.querySelectorAll<HTMLElement>(":scope > [data-point]")];
   const i = rows.indexOf(row);
-  if (i < 0) return false;
-  const nextIndex = i + neighbor;
-  // Out of the list: let the browser move focus (no wrap to last/first).
-  if (neighbor !== 0 && (nextIndex < 0 || nextIndex >= rows.length)) return false;
-  const target = neighbor === 0 ? row : rows[nextIndex];
+  if (i < 0) return null;
+  return { row, list, rows, index: i };
+}
+
+function focusOutsidePathList(from: HTMLElement, shift: boolean) {
+  const ctx = pathListRows(from);
+  if (!ctx) return false;
+  const focusables = [
+    ...document.querySelectorAll<HTMLElement>(
+      'input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ].filter((el) => el.offsetParent !== null || el === document.activeElement);
+  const outside = focusables.filter((el) => !ctx.list.contains(el));
+  if (outside.length === 0) {
+    from.blur();
+    return true;
+  }
+  const fromIdx = focusables.indexOf(from);
+  const target = shift
+    ? (outside.filter((el) => {
+        const i = focusables.indexOf(el);
+        return i >= 0 && (fromIdx < 0 || i < fromIdx);
+      }).at(-1) ?? outside.at(-1))
+    : (outside.find((el) => {
+        const i = focusables.indexOf(el);
+        return i >= 0 && (fromIdx < 0 || i > fromIdx);
+      }) ?? outside[0]);
+  if (!target || ctx.list.contains(target)) {
+    from.blur();
+    return true;
+  }
+  target.focus();
+  if (target instanceof HTMLInputElement) target.select();
+  return true;
+}
+
+function focusPathCoord(from: HTMLElement, neighbor: -1 | 0 | 1, axis: "x" | "y") {
+  const ctx = pathListRows(from);
+  if (!ctx) return false;
+  const nextIndex = ctx.index + neighbor;
+  if (neighbor !== 0 && (nextIndex < 0 || nextIndex >= ctx.rows.length)) return false;
+  const target = neighbor === 0 ? ctx.row : ctx.rows[nextIndex];
   const input = target?.querySelector(`input[data-path-axis="${axis}"]`);
   if (input instanceof HTMLInputElement) {
     input.focus();
@@ -84,6 +121,11 @@ function PointRow({
           onFocus={revealAndSelect}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;
+            const ctx = pathListRows(e.currentTarget);
+            if (ctx && pathTabExitsAtEdge(ctx.index, ctx.rows.length, "x", e.shiftKey)) {
+              if (focusOutsidePathList(e.currentTarget, e.shiftKey)) e.preventDefault();
+              return;
+            }
             const step = nextPathAxis("x", e.shiftKey);
             if (focusPathCoord(e.currentTarget, step.neighbor, step.axis)) e.preventDefault();
           }}
@@ -100,6 +142,11 @@ function PointRow({
           onFocus={revealAndSelect}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;
+            const ctx = pathListRows(e.currentTarget);
+            if (ctx && pathTabExitsAtEdge(ctx.index, ctx.rows.length, "y", e.shiftKey)) {
+              if (focusOutsidePathList(e.currentTarget, e.shiftKey)) e.preventDefault();
+              return;
+            }
             const step = nextPathAxis("y", e.shiftKey);
             if (focusPathCoord(e.currentTarget, step.neighbor, step.axis)) e.preventDefault();
           }}
