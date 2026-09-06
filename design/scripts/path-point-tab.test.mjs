@@ -96,3 +96,33 @@ describe("path tab exits at list edge", () => {
     assert.equal(pathTabExitsAtEdge(3, 4, "x", false), false);
   });
 });
+
+function pathInspectorExitStatus(control) {
+  const name = control.trim() || "control";
+  return `Left Points · ${name}`;
+}
+
+function isPathExitStatus(text) {
+  return Boolean(text && /^Left Points · /.test(text));
+}
+
+describe("path inspector exit status holds over tool hints", () => {
+  it("names Closed and Offset", () => {
+    assert.equal(pathInspectorExitStatus("Closed"), "Left Points · Closed");
+    assert.equal(pathInspectorExitStatus("Offset"), "Left Points · Offset");
+  });
+  it("recognizes held exit copy vs a tool hint", () => {
+    assert.equal(isPathExitStatus("Left Points · Closed"), true);
+    assert.equal(isPathExitStatus("Drag empty board to marquee · Shift add · click empty clears"), false);
+  });
+  it("stays until an inspector action releases it", () => {
+    let status = pathInspectorExitStatus("Closed");
+    let held = true;
+    const hint = "Drag empty board to marquee · Shift add · click empty clears";
+    const shown = () => (held && isPathExitStatus(status) ? status : hint);
+    assert.equal(shown(), "Left Points · Closed");
+    held = false;
+    status = null;
+    assert.equal(shown(), hint);
+  });
+});
