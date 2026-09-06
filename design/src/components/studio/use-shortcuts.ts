@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { imageNode } from "@/lib/design/node-factory";
 import { applyBoolean, requestFitSelection, smoothSelectedPath } from "@/lib/design/boolean-actions";
-import { cornerLastPenPoint, stepPathHole } from "@/lib/design/path-actions";
+import { cornerLastPenPoint, jumpPathHole, stepPathHole } from "@/lib/design/path-actions";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -181,6 +181,13 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       if (e.key === "]") {
         s.setBrush({ size: Math.min(120, s.brush.size + 4) });
         return;
+      }
+
+      if (!meta && s.pathEditHit?.hole != null && (e.key === "Home" || e.key === "End")) {
+        if (jumpPathHole(e.key === "End")) {
+          e.preventDefault();
+          return;
+        }
       }
 
       const nudge = e.altKey ? 0.5 : e.shiftKey ? 10 : 1;
