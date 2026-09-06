@@ -96,6 +96,22 @@ export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
   selectPathHole(hole);
 }
 
+export function deletePathHole(id: string, hole: number) {
+  const n = livePath(id);
+  if (!n) return;
+  if (hole < 0 || hole >= (n.holes?.length ?? 0)) return;
+  const s = useDesign.getState();
+  s.commit();
+  const next = dropHole(n, hole);
+  s.replaceNode(id, next, false);
+  const remaining = next.holes?.length ?? 0;
+  if (remaining === 0) {
+    setPathEditHit(null);
+    return;
+  }
+  selectPathHole(Math.min(hole, remaining - 1));
+}
+
 export function setPathClosed(id: string, closed: boolean) {
   const n = livePath(id);
   if (!n) return;
