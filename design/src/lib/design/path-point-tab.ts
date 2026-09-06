@@ -87,3 +87,8 @@ export function pathInspectorExitStatus(control: string): string {
   const name = control.trim() || "control";
   return `Left Points · ${name}`;
 }
+
+/** True while the strip should keep Left Points instead of the tool hint. */
+export function isPathExitStatus(text: string | null | undefined): boolean {
+  return Boolean(text && /^Left Points · /.test(text));
+}
