@@ -53,6 +53,38 @@ function pathTabExitsAtEdge(index, count, axis, shift) {
   return pathTabLeavesList(index, count, axis, shift);
 }
 
+function pickPathInspectorExitTarget(inspector, listMembers, from, shift) {
+  const outside = inspector.filter((el) => !listMembers.has(el));
+  if (outside.length === 0) return null;
+  const fromIdx = inspector.indexOf(from);
+  if (fromIdx < 0) return shift ? (outside.at(-1) ?? null) : (outside[0] ?? null);
+  if (!shift) {
+    for (let i = fromIdx + 1; i < inspector.length; i++) {
+      if (!listMembers.has(inspector[i])) return inspector[i];
+    }
+    return outside[0] ?? null;
+  }
+  for (let i = fromIdx - 1; i >= 0; i--) {
+    if (!listMembers.has(inspector[i])) return inspector[i];
+  }
+  return outside.at(-1) ?? null;
+}
+
+describe("path inspector exit lands on Closed / Offset", () => {
+  const inspector = ["closed", "offset", "px0", "py0", "px1", "py1"];
+  const list = new Set(["px0", "py0", "px1", "py1"]);
+
+  it("Tab from last y wraps to Closed", () => {
+    assert.equal(pickPathInspectorExitTarget(inspector, list, "py1", false), "closed");
+  });
+  it("Shift+Tab from first x lands on Offset", () => {
+    assert.equal(pickPathInspectorExitTarget(inspector, list, "px0", true), "offset");
+  });
+  it("does not jump past the inspector when list is last", () => {
+    assert.equal(pickPathInspectorExitTarget(inspector, list, "py1", false), "closed");
+  });
+});
+
 describe("path tab exits at list edge", () => {
   it("exits on last y with Tab", () => {
     assert.equal(pathTabExitsAtEdge(3, 4, "y", false), true);
