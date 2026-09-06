@@ -36,3 +36,11 @@ test("arrow keys walk picked holes", () => {
   assert.match(keys, /stepPathHole/);
   assert.match(keys, /pathEditHit\?\.hole != null/);
 });
+
+test("home and end jump to first and last hole", () => {
+  const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
+  assert.match(actions, /export function jumpPathHole/);
+  assert.match(actions, /const next = end \? count - 1 : 0/);
+  assert.match(keys, /jumpPathHole\(e\.key === "End"\)/);
+  assert.match(keys, /e\.key === "Home" \|\| e\.key === "End"/);
+});

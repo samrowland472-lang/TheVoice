@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Home / End jump to first / last hole.
-2. Path inspector: Left / Right walk points on the picked hole ring.
+1. Path inspector: Left / Right walk points on the picked hole ring.
 
 ## Done
+
+- Path inspector Home / End: with a hole picked, Home jumps to the first hole and End jumps to the last (`jumpPathHole`). ↑ / ↓ still walk one hole at a time. The Holes · header lists the keys. Highlighted row still scrolls into view.
 
 - Path inspector hole walk: with a hole picked, ↑ / ↓ select the previous / next hole (`stepPathHole`) instead of nudging the node. The highlighted Holes · row still scrolls into view. Canvas `fillPathCompound` partitions even-odd punches vs nonzero islands again.
 
@@ -38,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 04:05 BST — Arrow ↑ / ↓ walk picked path holes.
+2026-09-06 04:15 BST — Home / End jump to first / last picked path hole.
 
 ## Next recommended
 
-Path inspector: Home / End jump to first / last hole.
+Path inspector: Left / Right walk points on the picked hole ring.
