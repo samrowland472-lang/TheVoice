@@ -8,6 +8,7 @@ export function NumField({
   value,
   mixed = false,
   onCommit,
+  onFocus,
   min,
   max,
   className = "field font-mono",
@@ -16,6 +17,7 @@ export function NumField({
   value: number;
   mixed?: boolean;
   onCommit: (n: number) => void;
+  onFocus?: () => void;
   min?: number;
   max?: number;
   className?: string;
@@ -56,6 +58,7 @@ export function NumField({
       onFocus={(e) => {
         setFocused(true);
         e.currentTarget.select();
+        onFocus?.();
       }}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={(e) => {

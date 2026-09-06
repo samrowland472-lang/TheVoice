@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep the active Points row visible while editing x/y from the keyboard.
+1. Path inspector: after committing an x/y edit, keep the caret in the field so Tab can walk the next point.
 
 ## Done
+
+- Path inspector point-field scroll: focusing or committing an x/y NumField selects that point and scrolls its Points row into view (`revealAndSelect` + `onFocus` on NumField). Clicking the row header does the same. ← / → ring walk still uses `[data-point]` scrollIntoView.
 
 - Path inspector hole-point scroll: walking a picked ring with ← / → (or tapping a point) scrolls the matching Points row into view (`scrollIntoView` on `[data-point]`). Holes · header still shows `pt n/m`. Outer path points use `path-n`; hole points use `hole-h-n`.
 
@@ -47,8 +49,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 11:05 BST — Points list scrolls the active hole-point row into view when ← / → walk the ring.
+2026-09-06 12:10 BST — Points list stays on the active row while typing x/y.
 
 ## Next recommended
 
-Path inspector: keep the active Points row visible while editing x/y from the keyboard.
+Path inspector: after committing an x/y edit, keep the caret in the field so Tab can walk the next point.
