@@ -8,6 +8,13 @@ function nextPathAxis(axis, shift) {
   return { neighbor: -1, axis: "y" };
 }
 
+function pathTabLeavesList(index, count, axis, shift) {
+  if (count <= 0 || index < 0 || index >= count) return true;
+  const step = nextPathAxis(axis, shift);
+  const next = index + step.neighbor;
+  return next < 0 || next >= count;
+}
+
 describe("path point tab order", () => {
   it("tabs from x to that point's y", () => {
     assert.deepEqual(nextPathAxis("x", false), { neighbor: 0, axis: "y" });
@@ -20,5 +27,16 @@ describe("path point tab order", () => {
   });
   it("shift-tabs from x to the previous point's y", () => {
     assert.deepEqual(nextPathAxis("x", true), { neighbor: -1, axis: "y" });
+  });
+  it("shift-tab from the first point x leaves the list", () => {
+    assert.equal(pathTabLeavesList(0, 4, "x", true), true);
+  });
+  it("tab from the last point y leaves the list", () => {
+    assert.equal(pathTabLeavesList(3, 4, "y", false), true);
+  });
+  it("does not leave when walking inside the list", () => {
+    assert.equal(pathTabLeavesList(0, 4, "x", false), false);
+    assert.equal(pathTabLeavesList(0, 4, "y", false), false);
+    assert.equal(pathTabLeavesList(1, 4, "x", true), false);
   });
 });
