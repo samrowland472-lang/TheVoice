@@ -214,7 +214,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
       </Field>
       {holes.length > 0 ? (
-        <Field label={`Holes · ${holes.length}`}>
+        <Field label={`Holes · ${holes.length}  ↑↓ Home End`}>
           <div ref={holeListRef} className="max-h-40 space-y-1 overflow-auto scrollbar-thin">
             {holes.map((ring, h) => {
               const rule = holeFillRule(node, h);
