@@ -115,6 +115,16 @@ export function PathFields({ node }: { node: PathNode }) {
   const holes = node.holes ?? [];
   const holeListRef = useRef<HTMLDivElement | null>(null);
   const activeHole = hit?.hole;
+  const activeRing = activeHole != null ? holes[activeHole] : undefined;
+  const holePointCount = activeRing?.length ?? 0;
+  const holePointIndex =
+    activeHole != null && hit && holePointCount > 0
+      ? ((hit.index % holePointCount) + holePointCount) % holePointCount
+      : null;
+  const holesHeader =
+    holePointIndex != null
+      ? `Holes · ${holes.length} · pt ${holePointIndex + 1}/${holePointCount}  ↑↓ ←→ Home End ⇧Home ⇧End`
+      : `Holes · ${holes.length}  ↑↓ ←→ Home End`;
 
   useEffect(() => {
     if (activeHole == null) return;
@@ -214,7 +224,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
       </Field>
       {holes.length > 0 ? (
-        <Field label={`Holes · ${holes.length}  ↑↓ Home End`}>
+        <Field label={holesHeader}>
           <div ref={holeListRef} className="max-h-40 space-y-1 overflow-auto scrollbar-thin">
             {holes.map((ring, h) => {
               const rule = holeFillRule(node, h);
