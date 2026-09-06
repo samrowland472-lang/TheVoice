@@ -138,6 +138,24 @@ export function stepPathHolePoint(delta: number): boolean {
   return true;
 }
 
+/** Jump to the first (end=false) or last point on the picked hole ring. */
+export function jumpPathHolePoint(end: boolean): boolean {
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const ring = n?.holes?.[hit.hole];
+  const count = ring?.length ?? 0;
+  if (count < 1) return false;
+  const next = end ? count - 1 : 0;
+  const cur = ((hit.index % count) + count) % count;
+  if (cur === next) return false;
+  selectPathPoint(next, hit.hole);
+  return true;
+}
+
 export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
   const n = livePath(id);
   if (!n) return;
