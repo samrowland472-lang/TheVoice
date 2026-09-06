@@ -120,6 +120,24 @@ export function jumpPathHole(end: boolean): boolean {
   return true;
 }
 
+/** Walk points on the picked hole ring. Left/Right. Returns true when handled. */
+export function stepPathHolePoint(delta: number): boolean {
+  if (!delta) return false;
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const ring = n?.holes?.[hit.hole];
+  const count = ring?.length ?? 0;
+  if (count < 1) return false;
+  const cur = ((hit.index % count) + count) % count;
+  const next = ((cur + delta) % count + count) % count;
+  selectPathPoint(next, hit.hole);
+  return true;
+}
+
 export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
   const n = livePath(id);
   if (!n) return;
