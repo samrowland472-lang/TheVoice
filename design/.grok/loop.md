@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: after wrapping Tab onto Closed, announce the control in the status strip so keyboard users know they left Points.
+1. Path inspector: persist the Left Points status until the next inspector action so it does not vanish on tool-hint refresh.
 
 ## Done
+
+- Path inspector Tab onto Closed / Offset announces in the canvas status strip (`Left Points · Closed` / `Left Points · Offset`) via `pathInspectorExitStatus` + `aria-live`. Closed and Offset controls carry `data-path-exit`.
 
 - Path inspector Tab from last point y stays in the inspector: `pickPathInspectorExitTarget` wraps onto Closed / Offset (`data-path-inspector`) instead of page chrome. Shift+Tab from first x lands on Offset.
 
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 22:22 BST — Tab from last point y lands on Closed / Offset.
+2026-09-06 23:25 BST — Tab from last point y onto Closed announces Left Points · Closed in the status strip.
 
 ## Next recommended
 
-Path inspector: after wrapping Tab onto Closed, announce the control in the status strip so keyboard users know they left Points.
+Path inspector: persist the Left Points status until the next inspector action so it does not vanish on tool-hint refresh.

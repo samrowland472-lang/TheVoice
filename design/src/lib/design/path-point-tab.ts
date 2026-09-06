@@ -62,3 +62,28 @@ export function pickPathInspectorExitTarget<T>(
   }
   return outside.at(-1) ?? null;
 }
+
+/** Human name for the control Tab landed on after leaving Points. */
+export function labelPathInspectorControl(el: {
+  getAttribute?(name: string): string | null;
+  textContent?: string | null;
+}): string {
+  const tagged = el.getAttribute?.("data-path-exit")?.trim();
+  if (tagged) return tagged;
+  const aria = el.getAttribute?.("aria-label")?.trim();
+  if (aria) {
+    if (/close/i.test(aria)) return "Closed";
+    if (/offset|outline|round|simplify/i.test(aria)) return "Offset";
+    return aria;
+  }
+  const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+  if (/^closed$|^open$/i.test(text)) return "Closed";
+  if (/offset|outline|round|simplify/i.test(text)) return "Offset";
+  return text || "control";
+}
+
+/** Status-strip copy after Tab leaves the Points list. */
+export function pathInspectorExitStatus(control: string): string {
+  const name = control.trim() || "control";
+  return `Left Points · ${name}`;
+}
