@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: show the active hole-point index in the Holes · header.
+1. Path inspector: scroll the active hole-point row into view when ← / → walk the ring.
 
 ## Done
+
+- Path inspector hole-point header: with a hole picked, the Holes · label shows `pt n/m` for the active ring point. Key hints list ↑↓ ←→ Home End ⇧Home ⇧End. Restored `←→` in the unpicked-hole header.
 
 - Path inspector Shift+Home / Shift+End: with a hole picked, jump to the first or last *point* on that ring (`jumpPathHolePoint`). Home / End without Shift still jump holes. Header lists ⇧Home ⇧End. Restored `esc()` HTML entities in export.ts.
 
@@ -43,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 06:20 BST — Shift+Home / Shift+End jump to first / last point on the picked hole ring.
+2026-09-06 08:12 BST — Holes · header shows the active hole-point index (`pt n/m`) when a ring is picked.
 
 ## Next recommended
 
-Path inspector: show the active hole-point index in the Holes · header.
+Path inspector: scroll the active hole-point row into view when walking the ring.

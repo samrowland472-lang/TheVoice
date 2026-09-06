@@ -51,5 +51,7 @@ test("left and right walk points on the picked hole ring", () => {
   assert.match(actions, /selectPathPoint\(next, hit\.hole\)/);
   assert.match(keys, /stepPathHolePoint/);
   assert.match(keys, /e\.key === "ArrowLeft" \|\| e\.key === "ArrowRight"/);
+  assert.match(pathUi, /Holes · \$\{holes\.length\} · pt \$\{holePointIndex \+ 1\}\/\$\{holePointCount\}/);
+  assert.match(pathUi, /↑↓ ←→ Home End ⇧Home ⇧End/);
   assert.match(pathUi, /Holes · \$\{holes\.length\}  ↑↓ ←→ Home End/);
 });
