@@ -1,4 +1,6 @@
+import { useEffect, useRef } from "react";
 import { smoothSelectedPath } from "@/lib/design/boolean-actions";
+import { holeFillRule } from "@/lib/design/fill-rule";
 import {
   offsetSelectedPath,
   outlineSelectedStroke,
@@ -7,7 +9,9 @@ import {
 } from "@/lib/design/offset-actions";
 import {
   deletePathPoint,
+  selectPathHole,
   selectPathPoint,
+  setHoleFillRule,
   setPathClosed,
   setPathPointPosition,
   setPathPointSmooth,
@@ -108,6 +112,16 @@ export function PathFields({ node }: { node: PathNode }) {
   const closeSelectedPath = useDesign((s) => s.closeSelectedPath);
   const popLastPathPoint = useDesign((s) => s.popLastPathPoint);
   const holes = node.holes ?? [];
+  const holeListRef = useRef<HTMLDivElement | null>(null);
+  const activeHole = hit?.hole;
+
+  useEffect(() => {
+    if (activeHole == null) return;
+    const row = holeListRef.current?.querySelector(`[data-hole="${activeHole}"]`);
+    if (row instanceof HTMLElement) {
+      row.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+  }, [activeHole, node.id]);
 
   return (
     <div className="space-y-2">
@@ -198,6 +212,65 @@ export function PathFields({ node }: { node: PathNode }) {
           </button>
         </div>
       </Field>
+      {holes.length > 0 ? (
+        <Field label={`Holes · ${holes.length}`}>
+          <div ref={holeListRef} className="max-h-40 space-y-1 overflow-auto scrollbar-thin">
+            {holes.map((ring, h) => {
+              const rule = holeFillRule(node, h);
+              return (
+                <div
+                  key={`hole-${h}`}
+                  data-hole={h}
+                  className={cn(
+                    "rounded-[8px] border px-2 py-1.5",
+                    activeHole === h ? "border-phosphor/60 bg-phosphor/10" : "border-border",
+                  )}
+                >
+                  <button
+                    type="button"
+                    className="mb-1 flex w-full items-center justify-between text-left"
+                    aria-label={`select hole ${h + 1}`}
+                    onClick={() => selectPathHole(h)}
+                  >
+                    <span className="font-mono text-[10px] text-ink">Hole {h + 1}</span>
+                    <span className="text-[10px] text-ink-dim">{ring.length} pts</span>
+                  </button>
+                  <div className="grid grid-cols-2 gap-1">
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-7 rounded-[8px] text-[10px]",
+                        rule === "evenodd" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                      )}
+                      aria-label={`hole ${h + 1} fill rule evenodd`}
+                      onClick={() => {
+                        const rule = "evenodd" as const;
+                        setHoleFillRule(node.id, h, rule);
+                      }}
+                    >
+                      Even-odd
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-7 rounded-[8px] text-[10px]",
+                        rule === "nonzero" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                      )}
+                      aria-label={`hole ${h + 1} fill rule nonzero`}
+                      onClick={() => {
+                        const rule = "nonzero" as const;
+                        setHoleFillRule(node.id, h, rule);
+                      }}
+                    >
+                      Nonzero
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Field>
+      ) : null}
       <Field label="Points">
         <div className="max-h-64 space-y-1.5 overflow-auto scrollbar-thin">
           {node.points.map((pt, i) => (
