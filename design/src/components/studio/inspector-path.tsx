@@ -8,6 +8,7 @@ import {
   simplifySelectedPath,
 } from "@/lib/design/offset-actions";
 import {
+  deletePathHole,
   deletePathPoint,
   selectPathHole,
   selectPathPoint,
@@ -265,6 +266,14 @@ export function PathFields({ node }: { node: PathNode }) {
                       Nonzero
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    className="mt-1 h-7 w-full rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+                    aria-label={`delete hole ${h + 1}`}
+                    onClick={() => deletePathHole(node.id, h)}
+                  >
+                    Delete hole
+                  </button>
                 </div>
               );
             })}
