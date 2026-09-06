@@ -69,7 +69,7 @@ export function NumField({
         if (e.key === "Enter") {
           e.preventDefault();
           commit(draft);
-          e.currentTarget.blur();
+          // Keep the caret so Tab can walk the next field (path x/y and others).
         }
         if (e.key === "Escape") {
           setDraft(mixed ? "" : formatNum(value));

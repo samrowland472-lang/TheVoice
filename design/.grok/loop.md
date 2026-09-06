@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: after committing an x/y edit, keep the caret in the field so Tab can walk the next point.
+1. Path inspector: Tab from an x field should land on that point's y, then the next point's x.
 
 ## Done
+
+- Path inspector Enter-commit keeps focus: NumField Enter commits x/y without blur so Tab can walk the next field. Escape still cancels and blurs. Point rows still scroll on focus/commit.
 
 - Path inspector point-field scroll: focusing or committing an x/y NumField selects that point and scrolls its Points row into view (`revealAndSelect` + `onFocus` on NumField). Clicking the row header does the same. ← / → ring walk still uses `[data-point]` scrollIntoView.
 
@@ -49,8 +51,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 12:10 BST — Points list stays on the active row while typing x/y.
+2026-09-06 13:22 BST — Enter on path x/y commits and keeps the caret for Tab.
 
 ## Next recommended
 
-Path inspector: after committing an x/y edit, keep the caret in the field so Tab can walk the next point.
+Path inspector: Tab from an x field should land on that point's y, then the next point's x.
