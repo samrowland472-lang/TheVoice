@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: persist the Left Points status until the next inspector action so it does not vanish on tool-hint refresh.
+1. Path inspector: announce which point is selected when ← / → walks the ring.
+2. Path inspector: keep Points list scroll position when swapping Closed / Offset after Tab exit.
 
 ## Done
+
+- Path inspector Left Points status holds until the next inspector action. `holdStudioStatus` + `isHeldStudioStatus` keep `Left Points · Closed` / `Offset` on the canvas strip (`aria-live`, `data-studio-status=held`) so tool-hint refresh cannot wipe it. Point focus or an inspector button click calls `releaseStudioStatus`. Closed / Offset keep `data-path-exit`.
 
 - Path inspector Tab onto Closed / Offset announces in the canvas status strip (`Left Points · Closed` / `Left Points · Offset`) via `pathInspectorExitStatus` + `aria-live`. Closed and Offset controls carry `data-path-exit`.
 
@@ -41,8 +44,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 23:25 BST — Tab from last point y onto Closed announces Left Points · Closed in the status strip.
+2026-09-07 00:17 BST — Left Points status holds over tool-hint refresh until the next inspector action.
 
 ## Next recommended
 
-Path inspector: persist the Left Points status until the next inspector action so it does not vanish on tool-hint refresh.
+Path inspector: announce which point is selected when ← / → walks the ring.
