@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { imageNode } from "@/lib/design/node-factory";
 import { applyBoolean, requestFitSelection, smoothSelectedPath } from "@/lib/design/boolean-actions";
-import { cornerLastPenPoint, jumpPathHole, stepPathHole } from "@/lib/design/path-actions";
+import { cornerLastPenPoint, jumpPathHole, stepPathHole, stepPathHolePoint } from "@/lib/design/path-actions";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -197,6 +197,15 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
           (e.key === "ArrowUp" || e.key === "ArrowDown") &&
           s.pathEditHit?.hole != null &&
           stepPathHole(e.key === "ArrowDown" ? 1 : -1)
+        ) {
+          e.preventDefault();
+          return;
+        }
+        if (
+          !meta &&
+          (e.key === "ArrowLeft" || e.key === "ArrowRight") &&
+          s.pathEditHit?.hole != null &&
+          stepPathHolePoint(e.key === "ArrowRight" ? 1 : -1)
         ) {
           e.preventDefault();
           return;
