@@ -40,8 +40,16 @@ function PointRow({
   hole?: number;
   active: boolean;
 }) {
+  const rowRef = useRef<HTMLDivElement | null>(null);
+
+  function revealAndSelect() {
+    selectPathPoint(index, hole);
+    rowRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+
   return (
     <div
+      ref={rowRef}
       data-point={hole == null ? `path-${index}` : `hole-${hole}-${index}`}
       className={cn(
         "rounded-[8px] border px-2 py-1.5",
@@ -52,7 +60,7 @@ function PointRow({
         type="button"
         className="mb-1 flex w-full items-center justify-between text-left"
         aria-label={`select point ${index + 1}`}
-        onClick={() => selectPathPoint(index, hole)}
+        onClick={() => revealAndSelect()}
       >
         <span className="font-mono text-[10px] text-ink-dim">
           {ringLabel(hole)} · {index + 1}
@@ -64,13 +72,21 @@ function PointRow({
           className="field font-mono text-[11px]"
           value={point.x}
           aria-label={`point ${index + 1} x`}
-          onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)}
+          onFocus={revealAndSelect}
+          onCommit={(n) => {
+            revealAndSelect();
+            setPathPointPosition(nodeId, index, n, point.y, hole);
+          }}
         />
         <NumField
           className="field font-mono text-[11px]"
           value={point.y}
           aria-label={`point ${index + 1} y`}
-          onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)}
+          onFocus={revealAndSelect}
+          onCommit={(n) => {
+            revealAndSelect();
+            setPathPointPosition(nodeId, index, point.x, n, hole);
+          }}
         />
       </div>
       <div className="mt-1 flex gap-1">
