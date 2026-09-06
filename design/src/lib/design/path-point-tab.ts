@@ -9,3 +9,16 @@ export function nextPathAxis(
   if (shift && axis === "y") return { neighbor: 0, axis: "x" };
   return { neighbor: -1, axis: "y" };
 }
+
+/** True when Tab/Shift+Tab should leave the Points list (no wrap). */
+export function pathTabLeavesList(
+  index: number,
+  count: number,
+  axis: "x" | "y",
+  shift: boolean,
+): boolean {
+  if (count <= 0 || index < 0 || index >= count) return true;
+  const step = nextPathAxis(axis, shift);
+  const next = index + step.neighbor;
+  return next < 0 || next >= count;
+}

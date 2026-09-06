@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from the first point x should leave the list without trapping focus.
+1. Path inspector: Tab from the last point y should leave the list without wrapping to the first x.
 
 ## Done
+
+- Path inspector Shift+Tab from the first point x leaves the list: no wrap to the last y. `pathTabLeavesList` + `focusPathCoord` only `preventDefault` when a neighbor field exists. Points list now uses the shared `PointRow` (Tab x→y→next x, Smooth/Corner/Del `tabIndex={-1}`).
 
 - Path inspector Tab walks coordinates: Tab from a point x field lands on that point's y, then the next point's x (holes included). Shift+Tab reverses. Smooth / Corner / Del stay mouse-only (`tabIndex={-1}`). Enter still commits without blur.
 
@@ -33,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 14:20 BST — Tab walks path point x → y → next x.
+2026-09-06 15:14 BST — Shift+Tab from first point x leaves the Points list.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from the first point x should leave the list without trapping focus.
+Path inspector: Tab from the last point y should leave the list without wrapping to the first x.
