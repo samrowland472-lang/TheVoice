@@ -87,6 +87,23 @@ export function selectPathHole(hole: number) {
   setPathEditHit({ index: 0, arm: "anchor", hole });
 }
 
+/** Walk the selected compound path's holes. Returns true when the hit moved. */
+export function stepPathHole(delta: number): boolean {
+  if (!delta) return false;
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const count = n?.holes?.length ?? 0;
+  if (count < 1) return false;
+  const next = Math.max(0, Math.min(count - 1, hit.hole + delta));
+  if (next === hit.hole) return false;
+  selectPathHole(next);
+  return true;
+}
+
 export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
   const n = livePath(id);
   if (!n) return;
