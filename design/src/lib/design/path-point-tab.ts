@@ -35,3 +35,30 @@ export function pathTabExitsAtEdge(
   if (shift && axis === "x" && index === 0) return true;
   return pathTabLeavesList(index, count, axis, shift);
 }
+
+/**
+ * After leaving the Points list, stay in the path inspector.
+ * Tab from last y → first control outside the list (Closed / Offset).
+ * Shift+Tab from first x → last control outside the list.
+ */
+export function pickPathInspectorExitTarget<T>(
+  inspector: T[],
+  listMembers: Set<T>,
+  from: T,
+  shift: boolean,
+): T | null {
+  const outside = inspector.filter((el) => !listMembers.has(el));
+  if (outside.length === 0) return null;
+  const fromIdx = inspector.indexOf(from);
+  if (fromIdx < 0) return shift ? (outside.at(-1) ?? null) : (outside[0] ?? null);
+  if (!shift) {
+    for (let i = fromIdx + 1; i < inspector.length; i++) {
+      if (!listMembers.has(inspector[i]!)) return inspector[i]!;
+    }
+    return outside[0] ?? null;
+  }
+  for (let i = fromIdx - 1; i >= 0; i--) {
+    if (!listMembers.has(inspector[i]!)) return inspector[i]!;
+  }
+  return outside.at(-1) ?? null;
+}

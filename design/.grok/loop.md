@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: after leaving the Points list, land on the next inspector control (Closed / Offset) instead of the page chrome.
+1. Path inspector: after wrapping Tab onto Closed, announce the control in the status strip so keyboard users know they left Points.
 
 ## Done
+
+- Path inspector Tab from last point y stays in the inspector: `pickPathInspectorExitTarget` wraps onto Closed / Offset (`data-path-inspector`) instead of page chrome. Shift+Tab from first x lands on Offset.
 
 - Path inspector Tab from the last point y leaves the list: no wrap to the first x. `pathTabExitsAtEdge` + `focusOutsidePathList` move focus to the next control outside `[data-point]` rows. Shift+Tab from the first x still exits the other way. Single-point paths also exit on last y.
 
@@ -37,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 16:20 BST — Tab from last point y leaves the Points list.
+2026-09-06 22:22 BST — Tab from last point y lands on Closed / Offset.
 
 ## Next recommended
 
-Path inspector: after leaving the Points list, land on the next inspector control (Closed / Offset) instead of the page chrome.
+Path inspector: after wrapping Tab onto Closed, announce the control in the status strip so keyboard users know they left Points.
