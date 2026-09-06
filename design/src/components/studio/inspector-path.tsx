@@ -42,6 +42,7 @@ function PointRow({
 }) {
   return (
     <div
+      data-point={hole == null ? `path-${index}` : `hole-${hole}-${index}`}
       className={cn(
         "rounded-[8px] border px-2 py-1.5",
         active ? "border-phosphor/60 bg-phosphor/10" : "border-border",
@@ -114,7 +115,9 @@ export function PathFields({ node }: { node: PathNode }) {
   const popLastPathPoint = useDesign((s) => s.popLastPathPoint);
   const holes = node.holes ?? [];
   const holeListRef = useRef<HTMLDivElement | null>(null);
+  const pointListRef = useRef<HTMLDivElement | null>(null);
   const activeHole = hit?.hole;
+  const activeIndex = hit?.index;
   const activeRing = activeHole != null ? holes[activeHole] : undefined;
   const holePointCount = activeRing?.length ?? 0;
   const holePointIndex =
@@ -133,6 +136,16 @@ export function PathFields({ node }: { node: PathNode }) {
       row.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
   }, [activeHole, node.id]);
+
+  useEffect(() => {
+    if (activeIndex == null) return;
+    const key =
+      activeHole == null ? `path-${activeIndex}` : `hole-${activeHole}-${activeIndex}`;
+    const row = pointListRef.current?.querySelector(`[data-point="${key}"]`);
+    if (row instanceof HTMLElement) {
+      row.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+  }, [activeHole, activeIndex, node.id]);
 
   return (
     <div className="space-y-2">
@@ -291,7 +304,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </Field>
       ) : null}
       <Field label="Points">
-        <div className="max-h-64 space-y-1.5 overflow-auto scrollbar-thin">
+        <div ref={pointListRef} className="max-h-64 space-y-1.5 overflow-auto scrollbar-thin">
           {node.points.map((pt, i) => (
             <PointRow
               key={`p-${i}`}
