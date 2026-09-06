@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 
 function formatNum(n: number) {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
@@ -9,19 +9,23 @@ export function NumField({
   mixed = false,
   onCommit,
   onFocus,
+  onKeyDown,
   min,
   max,
   className = "field font-mono",
   "aria-label": ariaLabel = "numeric",
+  "data-path-axis": dataPathAxis,
 }: {
   value: number;
   mixed?: boolean;
   onCommit: (n: number) => void;
   onFocus?: () => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   min?: number;
   max?: number;
   className?: string;
   "aria-label"?: string;
+  "data-path-axis"?: "x" | "y";
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(mixed ? "" : formatNum(value));
@@ -53,6 +57,7 @@ export function NumField({
       type="text"
       inputMode="decimal"
       value={draft}
+      data-path-axis={dataPathAxis}
       placeholder={mixed && !focused ? "\u2014" : undefined}
       aria-label={mixed ? `${ariaLabel} mixed` : ariaLabel}
       onFocus={(e) => {
@@ -75,6 +80,7 @@ export function NumField({
           setDraft(mixed ? "" : formatNum(value));
           e.currentTarget.blur();
         }
+        onKeyDown?.(e);
       }}
     />
   );
