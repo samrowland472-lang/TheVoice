@@ -22,3 +22,16 @@ export function pathTabLeavesList(
   const next = index + step.neighbor;
   return next < 0 || next >= count;
 }
+
+/** Last point y + Tab, or first point x + Shift+Tab. */
+export function pathTabExitsAtEdge(
+  index: number,
+  count: number,
+  axis: "x" | "y",
+  shift: boolean,
+): boolean {
+  if (count <= 0) return true;
+  if (!shift && axis === "y" && index === count - 1) return true;
+  if (shift && axis === "x" && index === 0) return true;
+  return pathTabLeavesList(index, count, axis, shift);
+}

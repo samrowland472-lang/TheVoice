@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Tab from the last point y should leave the list without wrapping to the first x.
+1. Path inspector: after leaving the Points list, land on the next inspector control (Closed / Offset) instead of the page chrome.
 
 ## Done
+
+- Path inspector Tab from the last point y leaves the list: no wrap to the first x. `pathTabExitsAtEdge` + `focusOutsidePathList` move focus to the next control outside `[data-point]` rows. Shift+Tab from the first x still exits the other way. Single-point paths also exit on last y.
 
 - Path inspector Shift+Tab from the first point x leaves the list: no wrap to the last y. `pathTabLeavesList` + `focusPathCoord` only `preventDefault` when a neighbor field exists. Points list now uses the shared `PointRow` (Tab x→y→next x, Smooth/Corner/Del `tabIndex={-1}`).
 
@@ -35,8 +37,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-06 15:14 BST — Shift+Tab from first point x leaves the Points list.
+2026-09-06 16:20 BST — Tab from last point y leaves the Points list.
 
 ## Next recommended
 
-Path inspector: Tab from the last point y should leave the list without wrapping to the first x.
+Path inspector: after leaving the Points list, land on the next inspector control (Closed / Offset) instead of the page chrome.
