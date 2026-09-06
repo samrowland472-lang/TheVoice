@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { imageNode } from "@/lib/design/node-factory";
 import { applyBoolean, requestFitSelection, smoothSelectedPath } from "@/lib/design/boolean-actions";
-import { cornerLastPenPoint } from "@/lib/design/path-actions";
+import { cornerLastPenPoint, stepPathHole } from "@/lib/design/path-actions";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -185,6 +185,15 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
 
       const nudge = e.altKey ? 0.5 : e.shiftKey ? 10 : 1;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (
+          !meta &&
+          (e.key === "ArrowUp" || e.key === "ArrowDown") &&
+          s.pathEditHit?.hole != null &&
+          stepPathHole(e.key === "ArrowDown" ? 1 : -1)
+        ) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
         const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
