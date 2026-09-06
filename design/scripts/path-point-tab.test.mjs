@@ -34,9 +34,33 @@ describe("path point tab order", () => {
   it("tab from the last point y leaves the list", () => {
     assert.equal(pathTabLeavesList(3, 4, "y", false), true);
   });
+  it("tab from the only point y leaves the list", () => {
+    assert.equal(pathTabLeavesList(0, 1, "y", false), true);
+  });
   it("does not leave when walking inside the list", () => {
     assert.equal(pathTabLeavesList(0, 4, "x", false), false);
     assert.equal(pathTabLeavesList(0, 4, "y", false), false);
     assert.equal(pathTabLeavesList(1, 4, "x", true), false);
+    assert.equal(pathTabLeavesList(3, 4, "x", false), false);
+    assert.equal(pathTabLeavesList(3, 4, "y", true), false);
+  });
+});
+
+function pathTabExitsAtEdge(index, count, axis, shift) {
+  if (count <= 0) return true;
+  if (!shift && axis === "y" && index === count - 1) return true;
+  if (shift && axis === "x" && index === 0) return true;
+  return pathTabLeavesList(index, count, axis, shift);
+}
+
+describe("path tab exits at list edge", () => {
+  it("exits on last y with Tab", () => {
+    assert.equal(pathTabExitsAtEdge(3, 4, "y", false), true);
+  });
+  it("exits on first x with Shift+Tab", () => {
+    assert.equal(pathTabExitsAtEdge(0, 4, "x", true), true);
+  });
+  it("does not treat last x Tab as an exit", () => {
+    assert.equal(pathTabExitsAtEdge(3, 4, "x", false), false);
   });
 });
