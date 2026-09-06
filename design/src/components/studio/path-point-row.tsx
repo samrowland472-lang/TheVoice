@@ -6,7 +6,7 @@ import {
   pathTabExitsAtEdge,
   pickPathInspectorExitTarget,
 } from "@/lib/design/path-point-tab";
-import { setStudioStatus } from "@/lib/design/studio-status";
+import { holdStudioStatus, releaseStudioStatus } from "@/lib/design/studio-status";
 import {
   deletePathPoint,
   selectPathPoint,
@@ -55,7 +55,7 @@ function focusOutsidePathList(from: HTMLElement, shift: boolean) {
   target.focus();
   if (target instanceof HTMLInputElement) target.select();
   const label = labelPathInspectorControl(target);
-  setStudioStatus(pathInspectorExitStatus(label));
+  holdStudioStatus(pathInspectorExitStatus(label));
   return true;
 }
 
@@ -90,6 +90,7 @@ function PointRow({
   const rowRef = useRef<HTMLDivElement | null>(null);
 
   function revealAndSelect() {
+    releaseStudioStatus();
     selectPathPoint(index, hole);
     rowRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
