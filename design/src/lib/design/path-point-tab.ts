@@ -88,6 +88,23 @@ export function pathInspectorExitStatus(control: string): string {
   return `Left Points · ${name}`;
 }
 
+/** True when focus is on Closed / Offset — do not steal Points list scroll. */
+export function shouldHoldPointListScroll(active: Element | null | undefined): boolean {
+  if (!active || !(active instanceof Element)) return false;
+  return Boolean(active.closest("[data-path-exit]"));
+}
+
+/** Clamp and apply a saved Points list scrollTop. */
+export function restorePointListScroll(
+  list: { scrollTop: number; scrollHeight?: number; clientHeight?: number },
+  saved: number,
+): number {
+  const max = Math.max(0, (list.scrollHeight ?? 0) - (list.clientHeight ?? 0));
+  const next = Math.min(max, Math.max(0, saved));
+  list.scrollTop = next;
+  return list.scrollTop;
+}
+
 /** True while the strip should keep Left Points instead of the tool hint. */
 export function isPathExitStatus(text: string | null | undefined): boolean {
   return Boolean(text && /^Left Points · /.test(text));

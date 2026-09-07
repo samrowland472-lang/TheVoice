@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll position when swapping Closed / Offset after Tab exit.
+1. Path inspector: keep Holes list scroll when swapping Even-odd / Nonzero after a hole is selected.
 
 ## Done
+
+- Path inspector keeps Points list scroll when Tab lands on Closed / Offset. `shouldHoldPointListScroll` + `restorePointListScroll` skip `scrollIntoView` while `data-path-exit` is focused; Closed / Offset remember and restore `scrollTop`.
 
 - Path inspector ← / → walks the active ring and names the point on the canvas strip. `stepPathRingPoint` covers outer path and hole rings; `pathRingWalkStatus` holds `Point 3/12` or `Hole 1 · Point 2/8` (`aria-live`, `data-studio-status=held`). Shift+Home / Shift+End on a hole also announce. Arrow nudge still runs when no path point is picked.
 
@@ -45,8 +47,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-07 01:05 BST — ← / → names the selected path or hole point on the canvas status strip.
+2026-09-07 03:20 BST — Points list scroll holds while Closed / Offset are used after Tab exit.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll position when swapping Closed / Offset after Tab exit.
+Path inspector: keep Holes list scroll when swapping Even-odd / Nonzero after a hole is selected.
