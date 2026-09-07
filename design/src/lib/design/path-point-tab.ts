@@ -88,16 +88,16 @@ export function pathInspectorExitStatus(control: string): string {
   return `Left Points · ${name}`;
 }
 
-/** True when focus is on Closed / Offset or Even-odd / Nonzero — do not steal Points list scroll. */
+/** True when focus is on Closed / Offset, Even-odd / Nonzero, or Delete hole — do not steal Points list scroll. */
 export function shouldHoldPointListScroll(active: Element | null | undefined): boolean {
   if (!active || !(active instanceof Element)) return false;
-  return Boolean(active.closest("[data-path-exit], [data-hole-fill]"));
+  return Boolean(active.closest("[data-path-exit], [data-hole-fill], [data-delete-hole]"));
 }
 
-/** True when focus is on Even-odd / Nonzero — do not steal Holes list scroll. */
+/** True when focus is on Even-odd / Nonzero or Delete hole — do not steal Holes list scroll. */
 export function shouldHoldHoleListScroll(active: Element | null | undefined): boolean {
   if (!active || !(active instanceof Element)) return false;
-  return Boolean(active.closest("[data-hole-fill]"));
+  return Boolean(active.closest("[data-hole-fill], [data-delete-hole]"));
 }
 
 /** Clamp and apply a saved Points list scrollTop. */
