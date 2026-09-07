@@ -183,6 +183,20 @@ export function pickPreviousHoleTabTarget(from: Element | null | undefined): HTM
   return focusable.at(-1) ?? prev.querySelector("[data-select-hole]") ?? prev;
 }
 
+export function pickNextHoleTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const del = from.closest("[data-delete-hole]");
+  const list = from.closest("[data-hole-list]");
+  if (!del || !list) return null;
+  const cards = [...list.querySelectorAll<HTMLElement>(":scope > [data-hole]")];
+  const card = from.closest("[data-hole]");
+  const i = card instanceof HTMLElement ? cards.indexOf(card) : -1;
+  if (i < 0 || i >= cards.length - 1) return null;
+  const next = cards[i + 1];
+  if (!next) return null;
+  return next.querySelector<HTMLElement>("[data-select-hole]") ?? next;
+}
+
 export function shouldHoldHoleListScroll(active: Element | null | undefined): boolean {
   if (!active || !(active instanceof Element)) return false;
   return Boolean(
