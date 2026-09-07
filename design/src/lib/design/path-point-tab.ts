@@ -88,10 +88,10 @@ export function pathInspectorExitStatus(control: string): string {
   return `Left Points · ${name}`;
 }
 
-/** True when focus is on Closed / Offset — do not steal Points list scroll. */
+/** True when focus is on Closed / Offset or Even-odd / Nonzero — do not steal Points list scroll. */
 export function shouldHoldPointListScroll(active: Element | null | undefined): boolean {
   if (!active || !(active instanceof Element)) return false;
-  return Boolean(active.closest("[data-path-exit]"));
+  return Boolean(active.closest("[data-path-exit], [data-hole-fill]"));
 }
 
 /** True when focus is on Even-odd / Nonzero — do not steal Holes list scroll. */
