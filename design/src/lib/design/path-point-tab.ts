@@ -101,7 +101,23 @@ export function isCrossingHoleHeaderToPointTab(
   if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
   const a = holeIndexFromHoleControl(from);
   const b = holeIndexFromPointKey(to.closest("[data-point]")?.getAttribute("data-point"));
-  return a != null && b != null && a !== b;
+  return a != null && b != null;
+}
+
+export function pickSameHoleLastPointTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return null;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return null;
+  const rows = [...inspector.querySelectorAll<HTMLElement>(`[data-point^="hole-${h}-"]`)];
+  const row = rows.at(-1);
+  if (!row) return null;
+  return row.querySelector<HTMLElement>('input[data-path-axis="x"]') ?? row;
 }
 
 export function pickNextHolePointTabTarget(from: Element | null | undefined): HTMLElement | null {
