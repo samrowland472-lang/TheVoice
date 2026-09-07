@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when selecting a different hole row while scrolled mid-list.
+1. Path inspector: keep Points list scroll when Tab walks from a hole point into the next hole while the list is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Points list scroll when selecting a different hole row while scrolled mid-list. `shouldHoldPointListScroll` treats `[data-select-hole]` like Delete hole; the hole header remembers and restores Points `scrollTop` so picking another ring does not jump the list.
 
 - Path inspector keeps Points list scroll when Delete hole removes a ring below the viewport. `shouldHoldPointListScroll` / `shouldHoldHoleListScroll` treat `[data-delete-hole]` like fill-rule; Delete remembers and restores both lists so the remaining points do not jump.
 
@@ -53,8 +55,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-07 07:16 BST — Points list scroll holds when Delete hole drops a ring below the viewport.
+2026-09-07 08:22 BST — Points list scroll holds when selecting a different hole row mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when selecting a different hole row while scrolled mid-list.
+Path inspector: keep Points list scroll when Tab walks from a hole point into the next hole while the list is mid-scroll.
