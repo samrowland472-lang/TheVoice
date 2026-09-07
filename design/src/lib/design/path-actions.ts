@@ -162,7 +162,7 @@ export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
   const s = useDesign.getState();
   s.commit();
   s.replaceNode(id, stampHoleFillRule(n, hole, rule), false);
-  selectPathHole(hole);
+  if (s.pathEditHit?.hole !== hole) selectPathHole(hole);
 }
 
 export function deletePathHole(id: string, hole: number) {
