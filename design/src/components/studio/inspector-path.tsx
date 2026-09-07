@@ -9,10 +9,13 @@ import {
 } from "@/lib/design/offset-actions";
 import { deletePathHole, selectPathHole, setHoleFillRule, setPathClosed } from "@/lib/design/path-actions";
 import {
+  pickNextHoleTabTarget,
+  pickPreviousHoleTabTarget,
   restoreHoleListScroll,
   restorePointListScroll,
   shouldHoldHoleListScroll,
   shouldHoldPointListScroll,
+  tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
 import { useDesign } from "@/lib/design/store";
 import { releaseStudioStatus } from "@/lib/design/studio-status";
@@ -218,6 +221,24 @@ export function PathFields({ node }: { node: PathNode }) {
             data-hole-list
             className="max-h-40 space-y-1 overflow-auto scrollbar-thin"
             onScroll={rememberHoleListScroll}
+            onKeyDownCapture={(e) => {
+              if (e.key !== "Tab" || e.defaultPrevented) return;
+              const from = e.target instanceof Element ? e.target : null;
+              if (!from) return;
+              const next = e.shiftKey
+                ? pickPreviousHoleTabTarget(from)
+                : pickNextHoleTabTarget(from);
+              if (!next) return;
+              e.preventDefault();
+              rememberHoleListScroll();
+              rememberPointListScroll();
+              tagHoleHeaderTabCrossing(from, next, next);
+              next.focus();
+              requestAnimationFrame(() => {
+                holdHoleListScroll();
+                holdPointListScroll();
+              });
+            }}
           >
             {holes.map((ring, h) => {
               const rule = holeFillRule(node, h);
@@ -235,7 +256,10 @@ export function PathFields({ node }: { node: PathNode }) {
                     className="mb-1 flex w-full items-center justify-between text-left"
                     aria-label={`select hole ${h + 1}`}
                     data-select-hole={h}
-                    onFocus={holdPointListScroll}
+                    onFocus={() => {
+                      holdHoleListScroll();
+                      holdPointListScroll();
+                    }}
                     onClick={() => {
                       rememberPointListScroll();
                       selectPathHole(h);
