@@ -94,6 +94,12 @@ export function shouldHoldPointListScroll(active: Element | null | undefined): b
   return Boolean(active.closest("[data-path-exit]"));
 }
 
+/** True when focus is on Even-odd / Nonzero — do not steal Holes list scroll. */
+export function shouldHoldHoleListScroll(active: Element | null | undefined): boolean {
+  if (!active || !(active instanceof Element)) return false;
+  return Boolean(active.closest("[data-hole-fill]"));
+}
+
 /** Clamp and apply a saved Points list scrollTop. */
 export function restorePointListScroll(
   list: { scrollTop: number; scrollHeight?: number; clientHeight?: number },
@@ -104,6 +110,8 @@ export function restorePointListScroll(
   list.scrollTop = next;
   return list.scrollTop;
 }
+
+export const restoreHoleListScroll = restorePointListScroll;
 
 /** True while the strip should keep Left Points instead of the tool hint. */
 export function isPathExitStatus(text: string | null | undefined): boolean {

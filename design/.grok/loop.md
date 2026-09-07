@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Holes list scroll when swapping Even-odd / Nonzero after a hole is selected.
+1. Path inspector: keep hole-point scroll in the Points list when swapping Even-odd / Nonzero.
 
 ## Done
+
+- Path inspector keeps Holes list scroll when swapping Even-odd / Nonzero after a hole is selected. `shouldHoldHoleListScroll` + `restoreHoleListScroll` skip `scrollIntoView` while `[data-hole-fill]` is focused; Even-odd / Nonzero remember and restore `scrollTop`. Fill-rule swap no longer re-picks the hole if it is already active.
 
 - Path inspector keeps Points list scroll when Tab lands on Closed / Offset. `shouldHoldPointListScroll` + `restorePointListScroll` skip `scrollIntoView` while `data-path-exit` is focused; Closed / Offset remember and restore `scrollTop`.
 
@@ -47,8 +49,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-07 03:20 BST — Points list scroll holds while Closed / Offset are used after Tab exit.
+2026-09-07 05:15 BST — Holes list scroll holds while Even-odd / Nonzero are used after a hole is selected.
 
 ## Next recommended
 
-Path inspector: keep Holes list scroll when swapping Even-odd / Nonzero after a hole is selected.
+Path inspector: keep hole-point scroll in the Points list when swapping Even-odd / Nonzero.
