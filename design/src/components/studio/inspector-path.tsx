@@ -101,7 +101,7 @@ export function PathFields({ node }: { node: PathNode }) {
   useEffect(() => {
     if (!shouldHoldPointListScroll(document.activeElement)) return;
     holdPointListScroll();
-  }, [node.closed, node.points.length, node.holeFillRules]);
+  }, [node.closed, node.points.length, node.holeFillRules, holes.length]);
 
   return (
     <div
@@ -293,7 +293,20 @@ export function PathFields({ node }: { node: PathNode }) {
                     type="button"
                     className="mt-1 h-7 w-full rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
                     aria-label={`delete hole ${h + 1}`}
-                    onClick={() => deletePathHole(node.id, h)}
+                    data-delete-hole={h}
+                    onFocus={() => {
+                      holdHoleListScroll();
+                      holdPointListScroll();
+                    }}
+                    onClick={() => {
+                      rememberHoleListScroll();
+                      rememberPointListScroll();
+                      deletePathHole(node.id, h);
+                      requestAnimationFrame(() => {
+                        holdHoleListScroll();
+                        holdPointListScroll();
+                      });
+                    }}
                   >
                     Delete hole
                   </button>
