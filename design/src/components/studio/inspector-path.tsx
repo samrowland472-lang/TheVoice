@@ -9,7 +9,9 @@ import {
 } from "@/lib/design/offset-actions";
 import { deletePathHole, selectPathHole, setHoleFillRule, setPathClosed } from "@/lib/design/path-actions";
 import {
+  restoreHoleListScroll,
   restorePointListScroll,
+  shouldHoldHoleListScroll,
   shouldHoldPointListScroll,
 } from "@/lib/design/path-point-tab";
 import { useDesign } from "@/lib/design/store";
@@ -27,16 +29,28 @@ export function PathFields({ node }: { node: PathNode }) {
   const holeListRef = useRef<HTMLDivElement | null>(null);
   const pointListRef = useRef<HTMLDivElement | null>(null);
   const pointListScrollRef = useRef(0);
+  const holeListScrollRef = useRef(0);
 
   const rememberPointListScroll = () => {
     const list = pointListRef.current;
     if (list) pointListScrollRef.current = list.scrollTop;
   };
 
+  const rememberHoleListScroll = () => {
+    const list = holeListRef.current;
+    if (list) holeListScrollRef.current = list.scrollTop;
+  };
+
   const holdPointListScroll = () => {
     const list = pointListRef.current;
     if (!list) return;
     restorePointListScroll(list, pointListScrollRef.current);
+  };
+
+  const holdHoleListScroll = () => {
+    const list = holeListRef.current;
+    if (!list) return;
+    restoreHoleListScroll(list, holeListScrollRef.current);
   };
   const activeHole = hit?.hole;
   const activeIndex = hit?.index;
@@ -52,12 +66,22 @@ export function PathFields({ node }: { node: PathNode }) {
       : `Holes · ${holes.length}  ↑↓ ←→ Home End`;
 
   useEffect(() => {
+    if (shouldHoldHoleListScroll(document.activeElement)) {
+      holdHoleListScroll();
+      return;
+    }
     if (activeHole == null) return;
     const row = holeListRef.current?.querySelector(`[data-hole="${activeHole}"]`);
     if (row instanceof HTMLElement) {
       row.scrollIntoView({ block: "nearest", inline: "nearest" });
+      rememberHoleListScroll();
     }
-  }, [activeHole, node.id]);
+  }, [activeHole, node.id, node.holeFillRules]);
+
+  useEffect(() => {
+    if (!shouldHoldHoleListScroll(document.activeElement)) return;
+    holdHoleListScroll();
+  }, [node.holeFillRules, holes.length]);
 
   useEffect(() => {
     if (activeIndex == null) return;
@@ -189,7 +213,12 @@ export function PathFields({ node }: { node: PathNode }) {
       </Field>
       {holes.length > 0 ? (
         <Field label={holesHeader}>
-          <div ref={holeListRef} className="max-h-40 space-y-1 overflow-auto scrollbar-thin">
+          <div
+            ref={holeListRef}
+            data-hole-list
+            className="max-h-40 space-y-1 overflow-auto scrollbar-thin"
+            onScroll={rememberHoleListScroll}
+          >
             {holes.map((ring, h) => {
               const rule = holeFillRule(node, h);
               return (
@@ -218,9 +247,12 @@ export function PathFields({ node }: { node: PathNode }) {
                         rule === "evenodd" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
                       )}
                       aria-label={`hole ${h + 1} fill rule evenodd`}
+                      data-hole-fill="evenodd"
+                      onFocus={holdHoleListScroll}
                       onClick={() => {
-                        const rule = "evenodd" as const;
-                        setHoleFillRule(node.id, h, rule);
+                        rememberHoleListScroll();
+                        setHoleFillRule(node.id, h, "evenodd");
+                        requestAnimationFrame(holdHoleListScroll);
                       }}
                     >
                       Even-odd
@@ -232,9 +264,12 @@ export function PathFields({ node }: { node: PathNode }) {
                         rule === "nonzero" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
                       )}
                       aria-label={`hole ${h + 1} fill rule nonzero`}
+                      data-hole-fill="nonzero"
+                      onFocus={holdHoleListScroll}
                       onClick={() => {
-                        const rule = "nonzero" as const;
-                        setHoleFillRule(node.id, h, rule);
+                        rememberHoleListScroll();
+                        setHoleFillRule(node.id, h, "nonzero");
+                        requestAnimationFrame(holdHoleListScroll);
                       }}
                     >
                       Nonzero
