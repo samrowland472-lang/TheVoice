@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Shift+Tab walks from a hole point back into the previous hole while the list is mid-scroll.
+1. Path inspector: keep Holes list scroll when Shift+Tab walks from a hole header into the previous hole while the list is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Points list scroll when Shift+Tab walks from a hole point back into the previous hole. `tagHolePointTabCrossing` clears the stale `data-hole-point` mark, tags the previous-hole destination, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Tab walks from a hole point into the next hole. `isCrossingHolePointTab` tags the destination with `data-hole-point`; `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView` so mid-list focus does not jump.
 
@@ -57,8 +59,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-07 11:18 BST — Points list scroll holds when Tab walks from a hole point into the next hole mid-list.
+2026-09-07 12:12 BST — Points list scroll holds when Shift+Tab walks from a hole point back into the previous hole mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Shift+Tab walks from a hole point back into the previous hole while the list is mid-scroll.
+Path inspector: keep Holes list scroll when Shift+Tab walks from a hole header into the previous hole while the list is mid-scroll.
