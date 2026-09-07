@@ -88,11 +88,30 @@ export function pathInspectorExitStatus(control: string): string {
   return `Left Points · ${name}`;
 }
 
-/** True when focus is on Closed / Offset, Even-odd / Nonzero, Delete hole, or a hole row — do not steal Points list scroll. */
+/** Hole index from a Points row `data-point` key (`hole-1-3`), or null for the outer path. */
+export function holeIndexFromPointKey(key: string | null | undefined): number | null {
+  const m = /^hole-(\d+)-\d+$/.exec(key ?? "");
+  return m ? Number(m[1]) : null;
+}
+
+/** True when Tab is walking from one hole ring onto another hole ring. */
+export function isCrossingHolePointTab(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+): boolean {
+  if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
+  const a = holeIndexFromPointKey(from.closest("[data-point]")?.getAttribute("data-point"));
+  const b = holeIndexFromPointKey(to.closest("[data-point]")?.getAttribute("data-point"));
+  return a != null && b != null && a !== b;
+}
+
+/** True when focus is on Closed / Offset, Even-odd / Nonzero, Delete hole, a hole row, or a hole point after crossing rings. */
 export function shouldHoldPointListScroll(active: Element | null | undefined): boolean {
   if (!active || !(active instanceof Element)) return false;
   return Boolean(
-    active.closest("[data-path-exit], [data-hole-fill], [data-delete-hole], [data-select-hole]"),
+    active.closest(
+      "[data-path-exit], [data-hole-fill], [data-delete-hole], [data-select-hole], [data-hole-point]",
+    ),
   );
 }
 
