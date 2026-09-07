@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import {
-  isCrossingHolePointTab,
+  tagHolePointTabCrossing,
   labelPathInspectorControl,
   nextPathAxis,
   pathInspectorExitStatus,
@@ -70,11 +70,7 @@ function focusPathCoord(from: HTMLElement, neighbor: -1 | 0 | 1, axis: "x" | "y"
   if (input instanceof HTMLInputElement) {
     const list = from.closest("[data-point-list]");
     const saved = list instanceof HTMLElement ? list.scrollTop : 0;
-    const crossing = isCrossingHolePointTab(from, target);
-    if (crossing) {
-      target.setAttribute("data-hole-point", "");
-      input.setAttribute("data-hole-point", "");
-    }
+    const crossing = tagHolePointTabCrossing(from, target, input);
     input.focus();
     input.select();
     if (crossing && list instanceof HTMLElement) {
