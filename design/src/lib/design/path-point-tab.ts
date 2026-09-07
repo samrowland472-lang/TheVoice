@@ -94,12 +94,37 @@ export function isCrossingHolePointTab(
   return a != null && b != null && a !== b;
 }
 
+export function isCrossingHoleHeaderToPointTab(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+): boolean {
+  if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
+  const a = holeIndexFromHoleControl(from);
+  const b = holeIndexFromPointKey(to.closest("[data-point]")?.getAttribute("data-point"));
+  return a != null && b != null && a !== b;
+}
+
+export function pickNextHolePointTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return null;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return null;
+  const row = inspector.querySelector(`[data-point="hole-${h + 1}-0"]`);
+  if (!(row instanceof HTMLElement)) return null;
+  return row.querySelector<HTMLElement>('input[data-path-axis="x"]') ?? row;
+}
+
 export function tagHolePointTabCrossing(
   from: Element | null | undefined,
   to: Element | null | undefined,
   input?: Element | null,
 ): boolean {
-  if (!isCrossingHolePointTab(from, to) || !to) return false;
+  if ((!isCrossingHolePointTab(from, to) && !isCrossingHoleHeaderToPointTab(from, to)) || !to) {
+    return false;
+  }
   const list = to.closest("[data-point-list]");
   if (list) {
     for (const el of list.querySelectorAll("[data-hole-point]")) {
