@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: announce which point is selected when ← / → walks the ring.
-2. Path inspector: keep Points list scroll position when swapping Closed / Offset after Tab exit.
+1. Path inspector: keep Points list scroll position when swapping Closed / Offset after Tab exit.
 
 ## Done
+
+- Path inspector ← / → walks the active ring and names the point on the canvas strip. `stepPathRingPoint` covers outer path and hole rings; `pathRingWalkStatus` holds `Point 3/12` or `Hole 1 · Point 2/8` (`aria-live`, `data-studio-status=held`). Shift+Home / Shift+End on a hole also announce. Arrow nudge still runs when no path point is picked.
 
 - Path inspector Left Points status holds until the next inspector action. `holdStudioStatus` + `isHeldStudioStatus` keep `Left Points · Closed` / `Offset` on the canvas strip (`aria-live`, `data-studio-status=held`) so tool-hint refresh cannot wipe it. Point focus or an inspector button click calls `releaseStudioStatus`. Closed / Offset keep `data-path-exit`.
 
@@ -44,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-07 00:17 BST — Left Points status holds over tool-hint refresh until the next inspector action.
+2026-09-07 01:05 BST — ← / → names the selected path or hole point on the canvas status strip.
 
 ## Next recommended
 
-Path inspector: announce which point is selected when ← / → walks the ring.
+Path inspector: keep Points list scroll position when swapping Closed / Offset after Tab exit.
