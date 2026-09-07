@@ -94,7 +94,7 @@ export function holeIndexFromPointKey(key: string | null | undefined): number | 
   return m ? Number(m[1]) : null;
 }
 
-/** True when Tab is walking from one hole ring onto another hole ring. */
+/** True when Tab or Shift+Tab is walking from one hole ring onto another hole ring. */
 export function isCrossingHolePointTab(
   from: Element | null | undefined,
   to: Element | null | undefined,
@@ -103,6 +103,25 @@ export function isCrossingHolePointTab(
   const a = holeIndexFromPointKey(from.closest("[data-point]")?.getAttribute("data-point"));
   const b = holeIndexFromPointKey(to.closest("[data-point]")?.getAttribute("data-point"));
   return a != null && b != null && a !== b;
+}
+
+/** Tag the destination hole row so Points list scroll holds across Tab and Shift+Tab. */
+export function tagHolePointTabCrossing(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+  input?: Element | null,
+): boolean {
+  if (!isCrossingHolePointTab(from, to) || !to) return false;
+  const list = to.closest("[data-point-list]");
+  if (list) {
+    for (const el of list.querySelectorAll("[data-hole-point]")) {
+      el.removeAttribute("data-hole-point");
+    }
+  }
+  const row = to.closest("[data-point]") ?? to;
+  row.setAttribute("data-hole-point", "");
+  if (input && input instanceof Element) input.setAttribute("data-hole-point", "");
+  return true;
 }
 
 /** True when focus is on Closed / Offset, Even-odd / Nonzero, Delete hole, a hole row, or a hole point after crossing rings. */
