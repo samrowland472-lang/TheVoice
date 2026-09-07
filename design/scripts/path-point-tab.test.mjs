@@ -129,7 +129,22 @@ describe("path inspector exit status holds over tool hints", () => {
 
 function shouldHoldHoleListScroll(active) {
   if (!active || typeof active.closest !== "function") return false;
-  return Boolean(active.closest("[data-hole-fill]"));
+  return Boolean(
+    active.closest("[data-hole-fill], [data-delete-hole], [data-hole-header-tab]"),
+  );
+}
+
+function pickNextHoleTabTarget(from) {
+  if (!from || typeof from.closest !== "function") return null;
+  const del = from.closest("[data-delete-hole]");
+  const list = from.closest("[data-hole-list]");
+  if (!del || !list) return null;
+  const cards = [...list.querySelectorAll(":scope > [data-hole]")];
+  const card = from.closest("[data-hole]");
+  const i = cards.indexOf(card);
+  if (i < 0 || i >= cards.length - 1) return null;
+  const next = cards[i + 1];
+  return next.querySelector("[data-select-hole]") ?? next;
 }
 
 function restoreHoleListScroll(list, saved) {
@@ -157,10 +172,42 @@ describe("points list scroll holds when selecting a hole row", () => {
 
 describe("holes list scroll holds on fill-rule swap", () => {
   it("holds while Even-odd / Nonzero is focused", () => {
-    const btn = { closest: (sel) => (sel === "[data-hole-fill]" ? btn : null) };
+    const btn = { closest: (sel) => (sel.includes("[data-hole-fill]") ? btn : null) };
     assert.equal(shouldHoldHoleListScroll(btn), true);
     assert.equal(shouldHoldHoleListScroll({ closest: () => null }), false);
     assert.equal(shouldHoldHoleListScroll(null), false);
+  });
+  it("holds while Delete hole or a crossed hole header is focused", () => {
+    const del = { closest: (sel) => (sel.includes("[data-delete-hole]") ? del : null) };
+    const header = { closest: (sel) => (sel.includes("[data-hole-header-tab]") ? header : null) };
+    assert.equal(shouldHoldHoleListScroll(del), true);
+    assert.equal(shouldHoldHoleListScroll(header), true);
+  });
+  it("tabs from Delete hole onto the next hole header", () => {
+    const nextHeader = { id: "h2" };
+    const nextCard = { querySelector: () => nextHeader };
+    const thisCard = {};
+    const list = {
+      querySelectorAll: () => [thisCard, nextCard],
+    };
+    const del = {
+      closest(sel) {
+        if (sel === "[data-delete-hole]") return del;
+        if (sel === "[data-hole-list]") return list;
+        if (sel === "[data-hole]") return thisCard;
+        return null;
+      },
+    };
+    assert.equal(pickNextHoleTabTarget(del), nextHeader);
+    const last = {
+      closest(sel) {
+        if (sel === "[data-delete-hole]") return last;
+        if (sel === "[data-hole-list]") return list;
+        if (sel === "[data-hole]") return nextCard;
+        return null;
+      },
+    };
+    assert.equal(pickNextHoleTabTarget(last), null);
   });
   it("restores the saved Holes list scrollTop", () => {
     const list = { scrollTop: 0, scrollHeight: 400, clientHeight: 160 };
