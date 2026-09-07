@@ -92,3 +92,16 @@ export function pathInspectorExitStatus(control: string): string {
 export function isPathExitStatus(text: string | null | undefined): boolean {
   return Boolean(text && /^Left Points · /.test(text));
 }
+
+/** Status-strip copy when ← / → walks a path or hole ring. */
+export function pathRingWalkStatus(opts: {
+  hole?: number | null;
+  index: number;
+  count: number;
+}): string {
+  const count = Math.max(0, opts.count);
+  const index = count === 0 ? 0 : ((opts.index % count) + count) % count;
+  const n = count === 0 ? 0 : index + 1;
+  if (opts.hole == null) return `Point ${n}/${count}`;
+  return `Hole ${opts.hole + 1} · Point ${n}/${count}`;
+}
