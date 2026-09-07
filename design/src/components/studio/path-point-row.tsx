@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import {
+  isCrossingHolePointTab,
   labelPathInspectorControl,
   nextPathAxis,
   pathInspectorExitStatus,
@@ -67,8 +68,21 @@ function focusPathCoord(from: HTMLElement, neighbor: -1 | 0 | 1, axis: "x" | "y"
   const target = neighbor === 0 ? ctx.row : ctx.rows[nextIndex];
   const input = target?.querySelector(`input[data-path-axis="${axis}"]`);
   if (input instanceof HTMLInputElement) {
+    const list = from.closest("[data-point-list]");
+    const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+    const crossing = isCrossingHolePointTab(from, target);
+    if (crossing) {
+      target.setAttribute("data-hole-point", "");
+      input.setAttribute("data-hole-point", "");
+    }
     input.focus();
     input.select();
+    if (crossing && list instanceof HTMLElement) {
+      list.scrollTop = saved;
+      requestAnimationFrame(() => {
+        list.scrollTop = saved;
+      });
+    }
     return true;
   }
   return false;
@@ -92,7 +106,9 @@ function PointRow({
   function revealAndSelect() {
     releaseStudioStatus();
     selectPathPoint(index, hole);
-    rowRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const row = rowRef.current;
+    if (row?.hasAttribute("data-hole-point")) return;
+    row?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
   return (
