@@ -96,12 +96,12 @@ export function PathFields({ node }: { node: PathNode }) {
       row.scrollIntoView({ block: "nearest", inline: "nearest" });
       rememberPointListScroll();
     }
-  }, [activeHole, activeIndex, node.id, node.closed]);
+  }, [activeHole, activeIndex, node.id, node.closed, node.holeFillRules]);
 
   useEffect(() => {
     if (!shouldHoldPointListScroll(document.activeElement)) return;
     holdPointListScroll();
-  }, [node.closed, node.points.length]);
+  }, [node.closed, node.points.length, node.holeFillRules]);
 
   return (
     <div
@@ -248,11 +248,18 @@ export function PathFields({ node }: { node: PathNode }) {
                       )}
                       aria-label={`hole ${h + 1} fill rule evenodd`}
                       data-hole-fill="evenodd"
-                      onFocus={holdHoleListScroll}
+                      onFocus={() => {
+                        holdHoleListScroll();
+                        holdPointListScroll();
+                      }}
                       onClick={() => {
                         rememberHoleListScroll();
+                        rememberPointListScroll();
                         setHoleFillRule(node.id, h, "evenodd");
-                        requestAnimationFrame(holdHoleListScroll);
+                        requestAnimationFrame(() => {
+                          holdHoleListScroll();
+                          holdPointListScroll();
+                        });
                       }}
                     >
                       Even-odd
@@ -265,11 +272,18 @@ export function PathFields({ node }: { node: PathNode }) {
                       )}
                       aria-label={`hole ${h + 1} fill rule nonzero`}
                       data-hole-fill="nonzero"
-                      onFocus={holdHoleListScroll}
+                      onFocus={() => {
+                        holdHoleListScroll();
+                        holdPointListScroll();
+                      }}
                       onClick={() => {
                         rememberHoleListScroll();
+                        rememberPointListScroll();
                         setHoleFillRule(node.id, h, "nonzero");
-                        requestAnimationFrame(holdHoleListScroll);
+                        requestAnimationFrame(() => {
+                          holdHoleListScroll();
+                          holdPointListScroll();
+                        });
                       }}
                     >
                       Nonzero
