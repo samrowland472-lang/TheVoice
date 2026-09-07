@@ -8,6 +8,10 @@ import {
   simplifySelectedPath,
 } from "@/lib/design/offset-actions";
 import { deletePathHole, selectPathHole, setHoleFillRule, setPathClosed } from "@/lib/design/path-actions";
+import {
+  restorePointListScroll,
+  shouldHoldPointListScroll,
+} from "@/lib/design/path-point-tab";
 import { useDesign } from "@/lib/design/store";
 import { releaseStudioStatus } from "@/lib/design/studio-status";
 import type { PathNode } from "@/lib/design/types";
@@ -22,6 +26,18 @@ export function PathFields({ node }: { node: PathNode }) {
   const holes = node.holes ?? [];
   const holeListRef = useRef<HTMLDivElement | null>(null);
   const pointListRef = useRef<HTMLDivElement | null>(null);
+  const pointListScrollRef = useRef(0);
+
+  const rememberPointListScroll = () => {
+    const list = pointListRef.current;
+    if (list) pointListScrollRef.current = list.scrollTop;
+  };
+
+  const holdPointListScroll = () => {
+    const list = pointListRef.current;
+    if (!list) return;
+    restorePointListScroll(list, pointListScrollRef.current);
+  };
   const activeHole = hit?.hole;
   const activeIndex = hit?.index;
   const activeRing = activeHole != null ? holes[activeHole] : undefined;
@@ -45,13 +61,23 @@ export function PathFields({ node }: { node: PathNode }) {
 
   useEffect(() => {
     if (activeIndex == null) return;
+    if (shouldHoldPointListScroll(document.activeElement)) {
+      holdPointListScroll();
+      return;
+    }
     const key =
       activeHole == null ? `path-${activeIndex}` : `hole-${activeHole}-${activeIndex}`;
     const row = pointListRef.current?.querySelector(`[data-point="${key}"]`);
     if (row instanceof HTMLElement) {
       row.scrollIntoView({ block: "nearest", inline: "nearest" });
+      rememberPointListScroll();
     }
-  }, [activeHole, activeIndex, node.id]);
+  }, [activeHole, activeIndex, node.id, node.closed]);
+
+  useEffect(() => {
+    if (!shouldHoldPointListScroll(document.activeElement)) return;
+    holdPointListScroll();
+  }, [node.closed, node.points.length]);
 
   return (
     <div
@@ -74,7 +100,12 @@ export function PathFields({ node }: { node: PathNode }) {
             )}
             aria-label="close path"
             data-path-exit="Closed"
-            onClick={() => setPathClosed(node.id, !node.closed)}
+            onFocus={holdPointListScroll}
+            onClick={() => {
+              rememberPointListScroll();
+              setPathClosed(node.id, !node.closed);
+              requestAnimationFrame(holdPointListScroll);
+            }}
           >
             {node.closed ? "Closed" : "Open"}
           </button>
@@ -113,7 +144,12 @@ export function PathFields({ node }: { node: PathNode }) {
             className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
             aria-label="outline stroke"
             data-path-exit="Offset"
-            onClick={() => outlineSelectedStroke()}
+            onFocus={holdPointListScroll}
+            onClick={() => {
+              rememberPointListScroll();
+              outlineSelectedStroke();
+              requestAnimationFrame(holdPointListScroll);
+            }}
           >
             Outline stroke
           </button>
@@ -219,7 +255,12 @@ export function PathFields({ node }: { node: PathNode }) {
         </Field>
       ) : null}
       <Field label="Points">
-        <div ref={pointListRef} className="max-h-64 space-y-1.5 overflow-auto scrollbar-thin">
+        <div
+          ref={pointListRef}
+          data-point-list
+          className="max-h-64 space-y-1.5 overflow-auto scrollbar-thin"
+          onScroll={rememberPointListScroll}
+        >
           {node.points.map((pt, i) => (
             <PointRow
               key={`p-${i}`}
