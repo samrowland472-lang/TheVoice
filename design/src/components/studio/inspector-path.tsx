@@ -234,7 +234,13 @@ export function PathFields({ node }: { node: PathNode }) {
                     type="button"
                     className="mb-1 flex w-full items-center justify-between text-left"
                     aria-label={`select hole ${h + 1}`}
-                    onClick={() => selectPathHole(h)}
+                    data-select-hole={h}
+                    onFocus={holdPointListScroll}
+                    onClick={() => {
+                      rememberPointListScroll();
+                      selectPathHole(h);
+                      requestAnimationFrame(holdPointListScroll);
+                    }}
                   >
                     <span className="font-mono text-[10px] text-ink">Hole {h + 1}</span>
                     <span className="text-[10px] text-ink-dim">{ring.length} pts</span>

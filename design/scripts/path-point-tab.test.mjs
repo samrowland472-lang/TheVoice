@@ -139,6 +139,22 @@ function restoreHoleListScroll(list, saved) {
   return list.scrollTop;
 }
 
+function shouldHoldPointListScroll(active) {
+  if (!active || typeof active.closest !== "function") return false;
+  return Boolean(
+    active.closest("[data-path-exit], [data-hole-fill], [data-delete-hole], [data-select-hole]"),
+  );
+}
+
+describe("points list scroll holds when selecting a hole row", () => {
+  it("holds while the hole header is focused", () => {
+    const btn = { closest: (sel) => (sel.includes("[data-select-hole]") ? btn : null) };
+    assert.equal(shouldHoldPointListScroll(btn), true);
+    assert.equal(shouldHoldPointListScroll({ closest: () => null }), false);
+    assert.equal(shouldHoldPointListScroll(null), false);
+  });
+});
+
 describe("holes list scroll holds on fill-rule swap", () => {
   it("holds while Even-odd / Nonzero is focused", () => {
     const btn = { closest: (sel) => (sel === "[data-hole-fill]" ? btn : null) };
