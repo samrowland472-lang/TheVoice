@@ -9,6 +9,7 @@ import {
 } from "@/lib/design/offset-actions";
 import { deletePathHole, selectPathHole, setHoleFillRule, setPathClosed } from "@/lib/design/path-actions";
 import {
+  pickNextHolePointTabTarget,
   pickNextHoleTabTarget,
   pickPreviousHoleTabTarget,
   restoreHoleListScroll,
@@ -16,6 +17,7 @@ import {
   shouldHoldHoleListScroll,
   shouldHoldPointListScroll,
   tagHoleHeaderTabCrossing,
+  tagHolePointTabCrossing,
 } from "@/lib/design/path-point-tab";
 import { useDesign } from "@/lib/design/store";
 import { releaseStudioStatus } from "@/lib/design/studio-status";
@@ -228,12 +230,19 @@ export function PathFields({ node }: { node: PathNode }) {
               const next = e.shiftKey
                 ? pickPreviousHoleTabTarget(from)
                 : pickNextHoleTabTarget(from);
-              if (!next) return;
+              const point = !e.shiftKey && !next ? pickNextHolePointTabTarget(from) : null;
+              if (!next && !point) return;
               e.preventDefault();
               rememberHoleListScroll();
               rememberPointListScroll();
-              tagHoleHeaderTabCrossing(from, next, next);
-              next.focus();
+              if (next) {
+                tagHoleHeaderTabCrossing(from, next, next);
+                next.focus();
+              } else if (point) {
+                tagHolePointTabCrossing(from, point, point);
+                point.focus();
+                if (point instanceof HTMLInputElement) point.select();
+              }
               requestAnimationFrame(() => {
                 holdHoleListScroll();
                 holdPointListScroll();
