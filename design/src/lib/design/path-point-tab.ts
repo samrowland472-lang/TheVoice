@@ -142,3 +142,186 @@ export function pickSameHoleHeaderTabTarget(
   const header = inspector.querySelector(`[data-select-hole="${h}"]`);
   return header instanceof HTMLElement ? header : null;
 }
+
+export function pickSameHoleLastPointTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return null;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return null;
+  const rows = [...inspector.querySelectorAll<HTMLElement>(`[data-point^="hole-${h}-"]`)];
+  const row = rows.at(-1);
+  if (!row) return null;
+  return row.querySelector<HTMLElement>('input[data-path-axis="x"]') ?? row;
+}
+
+export function pickNextHolePointTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return null;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return null;
+  const row = inspector.querySelector(`[data-point="hole-${h + 1}-0"]`);
+  if (!(row instanceof HTMLElement)) return null;
+  return row.querySelector<HTMLElement>('input[data-path-axis="x"]') ?? row;
+}
+
+export function tagHolePointTabCrossing(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+  input?: Element | null,
+): boolean {
+  if (
+    (!isCrossingHolePointTab(from, to) &&
+      !isCrossingHoleHeaderToPointTab(from, to) &&
+      !isCrossingHolePointToHeaderTab(from, to)) ||
+    !to
+  ) {
+    return false;
+  }
+  const list =
+    to.closest("[data-point-list]") ??
+    from?.closest?.("[data-point-list]") ??
+    to.closest("[data-path-inspector]")?.querySelector("[data-point-list]");
+  if (list) {
+    for (const el of list.querySelectorAll("[data-hole-point]")) {
+      el.removeAttribute("data-hole-point");
+    }
+  }
+  const inspector = to.closest("[data-path-inspector]") ?? from?.closest?.("[data-path-inspector]");
+  if (inspector) {
+    for (const el of inspector.querySelectorAll("[data-hole-point]")) {
+      el.removeAttribute("data-hole-point");
+    }
+  }
+  const row = to.closest("[data-point]") ?? to.closest("[data-select-hole]") ?? to;
+  row.setAttribute("data-hole-point", "");
+  if (input && input instanceof Element) input.setAttribute("data-hole-point", "");
+  return true;
+}
+
+export function shouldHoldPointListScroll(active: Element | null | undefined): boolean {
+  if (!active || !(active instanceof Element)) return false;
+  return Boolean(
+    active.closest(
+      "[data-path-exit], [data-hole-fill], [data-delete-hole], [data-select-hole], [data-hole-point]",
+    ),
+  );
+}
+
+export function holeIndexFromHoleControl(el: Element | null | undefined): number | null {
+  if (!el || !(el instanceof Element)) return null;
+  const select = el.closest("[data-select-hole]")?.getAttribute("data-select-hole");
+  if (select != null && select !== "") {
+    const n = Number(select);
+    return Number.isFinite(n) ? n : null;
+  }
+  const hole = el.closest("[data-hole]")?.getAttribute("data-hole");
+  if (hole != null && hole !== "") {
+    const n = Number(hole);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+export function isCrossingHoleHeaderTab(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+): boolean {
+  if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
+  const a = holeIndexFromHoleControl(from);
+  const b = holeIndexFromHoleControl(to);
+  return a != null && b != null && a !== b;
+}
+
+export function tagHoleHeaderTabCrossing(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+  input?: Element | null,
+): boolean {
+  if (!isCrossingHoleHeaderTab(from, to) || !to) return false;
+  const list = to.closest("[data-hole-list]");
+  if (list) {
+    for (const el of list.querySelectorAll("[data-hole-header-tab]")) {
+      el.removeAttribute("data-hole-header-tab");
+    }
+  }
+  const row = to.closest("[data-hole]") ?? to;
+  row.setAttribute("data-hole-header-tab", "");
+  if (input && input instanceof Element) input.setAttribute("data-hole-header-tab", "");
+  return true;
+}
+
+export function pickPreviousHoleTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  const list = from.closest("[data-hole-list]");
+  if (!header || !list) return null;
+  const cards = [...list.querySelectorAll<HTMLElement>(":scope > [data-hole]")];
+  const card = from.closest("[data-hole]");
+  const i = card instanceof HTMLElement ? cards.indexOf(card) : -1;
+  if (i <= 0) return null;
+  const prev = cards[i - 1];
+  if (!prev) return null;
+  const focusable = [
+    ...prev.querySelectorAll<HTMLElement>(
+      'button:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])',
+    ),
+  ];
+  return focusable.at(-1) ?? prev.querySelector("[data-select-hole]") ?? prev;
+}
+
+export function pickNextHoleTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const del = from.closest("[data-delete-hole]");
+  const list = from.closest("[data-hole-list]");
+  if (!del || !list) return null;
+  const cards = [...list.querySelectorAll<HTMLElement>(":scope > [data-hole]")];
+  const card = from.closest("[data-hole]");
+  const i = card instanceof HTMLElement ? cards.indexOf(card) : -1;
+  if (i < 0 || i >= cards.length - 1) return null;
+  const next = cards[i + 1];
+  if (!next) return null;
+  return next.querySelector<HTMLElement>("[data-select-hole]") ?? next;
+}
+
+export function shouldHoldHoleListScroll(active: Element | null | undefined): boolean {
+  if (!active || !(active instanceof Element)) return false;
+  return Boolean(
+    active.closest("[data-hole-fill], [data-delete-hole], [data-hole-header-tab]"),
+  );
+}
+
+export function restorePointListScroll(
+  list: { scrollTop: number; scrollHeight?: number; clientHeight?: number },
+  saved: number,
+): number {
+  const max = Math.max(0, (list.scrollHeight ?? 0) - (list.clientHeight ?? 0));
+  const next = Math.min(max, Math.max(0, saved));
+  list.scrollTop = next;
+  return list.scrollTop;
+}
+
+export const restoreHoleListScroll = restorePointListScroll;
+
+export function isPathExitStatus(text: string | null | undefined): boolean {
+  return Boolean(text && /^Left Points · /.test(text));
+}
+
+export function pathRingWalkStatus(opts: {
+  hole?: number | null;
+  index: number;
+  count: number;
+}): string {
+  const count = Math.max(0, opts.count);
+  const index = count === 0 ? 0 : ((opts.index % count) + count) % count;
+  const n = count === 0 ? 0 : index + 1;
+  if (opts.hole == null) return `Point ${n}/${count}`;
+  return `Hole ${opts.hole + 1} · Point ${n}/${count}`;
+}
