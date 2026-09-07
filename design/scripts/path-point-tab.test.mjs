@@ -126,3 +126,30 @@ describe("path inspector exit status holds over tool hints", () => {
     assert.equal(shown(), hint);
   });
 });
+
+function shouldHoldHoleListScroll(active) {
+  if (!active || typeof active.closest !== "function") return false;
+  return Boolean(active.closest("[data-hole-fill]"));
+}
+
+function restoreHoleListScroll(list, saved) {
+  const max = Math.max(0, (list.scrollHeight ?? 0) - (list.clientHeight ?? 0));
+  const next = Math.min(max, Math.max(0, saved));
+  list.scrollTop = next;
+  return list.scrollTop;
+}
+
+describe("holes list scroll holds on fill-rule swap", () => {
+  it("holds while Even-odd / Nonzero is focused", () => {
+    const btn = { closest: (sel) => (sel === "[data-hole-fill]" ? btn : null) };
+    assert.equal(shouldHoldHoleListScroll(btn), true);
+    assert.equal(shouldHoldHoleListScroll({ closest: () => null }), false);
+    assert.equal(shouldHoldHoleListScroll(null), false);
+  });
+  it("restores the saved Holes list scrollTop", () => {
+    const list = { scrollTop: 0, scrollHeight: 400, clientHeight: 160 };
+    assert.equal(restoreHoleListScroll(list, 180), 180);
+    assert.equal(list.scrollTop, 180);
+    assert.equal(restoreHoleListScroll(list, 999), 240);
+  });
+});
