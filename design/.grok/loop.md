@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Holes list scroll when Tab walks from Delete hole onto the next hole header while the list is mid-scroll.
+1. Path inspector: keep Points list scroll when Tab walks from a hole header onto the first point of the next hole while the list is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Holes list scroll when Tab walks from Delete hole onto the next hole header. `pickNextHoleTabTarget` focuses the next card header, `tagHoleHeaderTabCrossing` marks `data-hole-header-tab`, and `shouldHoldHoleListScroll` restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Holes list scroll when Shift+Tab walks from a hole header into the previous hole. `pickPreviousHoleTabTarget` focuses the previous card's last control, `tagHoleHeaderTabCrossing` marks `data-hole-header-tab`, and `shouldHoldHoleListScroll` restores `scrollTop` instead of `scrollIntoView`.
 
@@ -31,8 +33,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-07 13:10 BST — Holes list scroll holds when Shift+Tab walks from a hole header into the previous hole mid-list.
+2026-09-07 14:07 BST — Holes list scroll holds when Tab walks from Delete hole onto the next hole header mid-list.
 
 ## Next recommended
 
-Path inspector: keep Holes list scroll when Tab walks from Delete hole onto the next hole header while the list is mid-scroll.
+Path inspector: keep Points list scroll when Tab walks from a hole header onto the first point of the next hole while the list is mid-scroll.
