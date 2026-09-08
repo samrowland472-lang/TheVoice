@@ -8,6 +8,8 @@ import {
   pickPathInspectorExitTarget,
   pickNextHoleHeaderTabTarget,
   pickSameHoleHeaderTabTarget,
+  pickSimplifyTabTarget,
+  shouldShiftTabFromFirstOuterToSimplify,
   shouldShiftTabToSameHoleHeader,
   shouldTabToNextHoleHeader,
 } from "@/lib/design/path-point-tab";
@@ -141,6 +143,23 @@ function PointRow({
           onFocus={revealAndSelect}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;
+            if (shouldShiftTabFromFirstOuterToSimplify(e.currentTarget, e.shiftKey)) {
+              const simplify = pickSimplifyTabTarget(e.currentTarget);
+              if (simplify) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, simplify, simplify);
+                simplify.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
             if (shouldShiftTabToSameHoleHeader(e.currentTarget, e.shiftKey)) {
               const header = pickSameHoleHeaderTabTarget(e.currentTarget);
               if (header) {
