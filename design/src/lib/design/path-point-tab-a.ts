@@ -186,6 +186,21 @@ export function pickOutlineTabTarget(from: Element | null | undefined): HTMLElem
   return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Outline"]') ?? null;
 }
 
+export function shouldTabFromOutlineToRound(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Outline") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Round"]') != null;
+}
+
+export function pickRoundTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Round"]') ?? null;
+}
+
 export function pickFirstOuterPointTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const inspector = inspectorOf(from);
