@@ -87,11 +87,13 @@ export function tagHolePointTabCrossing(
   const fromHeader = from instanceof Element ? from.closest("[data-select-hole]") : null;
   const toHeader = to instanceof Element ? to.closest("[data-select-hole]") : null;
   const fromExit = from instanceof Element ? from.closest("[data-path-exit]") : null;
+  const toExit = to instanceof Element ? to.closest("[data-path-exit]") : null;
   const crossing = Boolean(
     (fromPoint && toHeader) ||
       (fromHeader && toPoint) ||
       (fromPoint && toPoint && fromPoint !== toPoint) ||
-      (fromExit && toPoint),
+      (fromExit && toPoint) ||
+      (fromPoint && toExit),
   );
   from instanceof Element && from.closest("[data-hole-point]")?.removeAttribute("data-hole-point");
   if (!crossing) return false;

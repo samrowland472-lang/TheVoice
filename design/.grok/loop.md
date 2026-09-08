@@ -21,36 +21,18 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Offset while the list is mid-scroll.
+1. Path inspector: keep Points list scroll when Tab walks from Closed onto Offset while Points is mid-scroll.
 
 ## Done
 
+- Path inspector keeps Points list scroll when Shift+Tab walks from the first outer-path x onto Offset while the list is mid-scroll. `shouldShiftTabFromFirstOuterToOffset` / `pickOffsetTabTarget` focus Offset, `tagHolePointTabCrossing` treats point → `data-path-exit` as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
+
 - Path inspector keeps Points list scroll when Tab walks from Offset onto the first outer-path point mid-list. `shouldTabFromOffsetToFirstOuterPoint` / `pickFirstOuterPointTabTarget` focus that point's first x, `tagHolePointTabCrossing` treats `data-path-exit` → point as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Shift+Tab walks from the first hole header onto the last outer-path point mid-list. Missing `inspector-path-impl` / tab modules restored: `shouldShiftTabToPrevHoleLastPoint` / `pickPrevHoleLastPointTabTarget` focus that point's last y, `tagHolePointTabCrossing` marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Shift+Tab walks from a hole header onto the previous hole’s last point. `shouldShiftTabToPrevHoleLastPoint` / `pickPrevHoleLastPointTabTarget` focus that hole's last y field, `tagHolePointTabCrossing` marks `data-hole-point`, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Tab walks from a hole header onto the first point of the same hole. `shouldTabToSameHoleFirstPoint` / `pickSameHoleFirstPointTabTarget` focus that hole's first x field, `tagHolePointTabCrossing` marks `data-hole-point`, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Shift+Tab walks from a hole’s first x onto that hole’s header. `shouldShiftTabToSameHoleHeader` / `pickSameHoleHeaderTabTarget` focus the matching `[data-select-hole]`, `isCrossingHolePointToHeaderTab` + `tagHolePointTabCrossing` mark `data-hole-point` on the header, and the Points list restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Tab walks from a hole header onto the last point of the same hole. `pickSameHoleLastPointTabTarget` focuses that hole's last x field, `isCrossingHoleHeaderToPointTab` now treats same-hole header→point as a crossing, `tagHolePointTabCrossing` marks `data-hole-point`, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Tab walks from a hole header onto the first point of the next hole. `pickNextHolePointTabTarget` focuses that hole's first x field, `tagHolePointTabCrossing` now also marks header→point crossings with `data-hole-point`, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Holes list scroll when Tab walks from Delete hole onto the next hole header. `pickNextHoleTabTarget` focuses the next card header, `tagHoleHeaderTabCrossing` marks `data-hole-header-tab`, and `shouldHoldHoleListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Holes list scroll when Shift+Tab walks from a hole header into the previous hole. `pickPreviousHoleTabTarget` focuses the previous card's last control, `tagHoleHeaderTabCrossing` marks `data-hole-header-tab`, and `shouldHoldHoleListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Shift+Tab walks from a hole point back into the previous hole. `tagHolePointTabCrossing` clears the stale `data-hole-point` mark, tags the previous-hole destination, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
-
-- Path inspector keeps Points list scroll when Tab walks from a hole’s last y onto the next hole header. `shouldTabToNextHoleHeader` / `pickNextHoleHeaderTabTarget` focus the next `[data-select-hole]`, `isCrossingHolePointToHeaderTab` now treats point→header across holes as a crossing, `tagHolePointTabCrossing` marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 ## Iteration
 
-2026-09-08 07:17 BST — Points list scroll holds when Tab walks from Offset onto the first outer-path point mid-list.
+2026-09-08 07:36 BST — Points list scroll holds when Shift+Tab walks from the first outer-path x onto Offset mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Offset while the list is mid-scroll.
+Path inspector: keep Points list scroll when Tab walks from Closed onto Offset while Points is mid-scroll.
