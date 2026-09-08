@@ -246,6 +246,18 @@ export function shouldShiftTabFromFirstOuterToOffset(
   return inspectorOf(from)?.querySelector('[data-path-exit="Offset"]') != null;
 }
 
+export function shouldShiftTabFromFirstOuterToSimplify(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Simplify"]') != null;
+}
+
 export function pickOffsetTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Offset"]') ?? null;
