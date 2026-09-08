@@ -14,11 +14,13 @@ import {
 } from "@/lib/design/offset-actions";
 import {
   pickFirstOuterPointTabTarget,
+  pickOffsetTabTarget,
   pickNextHolePointTabTarget,
   pickSameHoleFirstPointTabTarget,
   pickSameHoleLastPointTabTarget,
   shouldHoldHoleListScroll,
   shouldHoldPointListScroll,
+  shouldTabFromClosedToOffset,
   shouldTabFromOffsetToFirstOuterPoint,
   shouldTabToSameHoleFirstPoint,
   tagHoleHeaderTabCrossing,
@@ -100,6 +102,19 @@ export function PathFields({ node }: { node: PathNode }) {
             )}
             aria-label="closed path"
             onClick={() => setPathClosed(node.id, !node.closed)}
+            onKeyDown={(e) => {
+              if (e.key !== "Tab" || e.shiftKey) return;
+              const from = e.currentTarget;
+              if (!shouldTabFromClosedToOffset(from, false)) return;
+              const offset = pickOffsetTabTarget(from);
+              if (!offset) return;
+              e.preventDefault();
+              tagHolePointTabCrossing(from, offset, offset);
+              const list = pointListRef.current;
+              const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+              offset.focus();
+              holdListScroll(list, saved);
+            }}
           >
             {node.closed ? "Open" : "Close"}
           </button>
