@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Simplify while the list is mid-scroll.
+1. Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Round while the list is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Points list scroll when Shift+Tab walks from the first outer-path x onto Simplify while the list is mid-scroll. `shouldShiftTabFromFirstOuterToSimplify` / `pickSimplifyTabTarget` focus Simplify, `tagHolePointTabCrossing` treats point → `data-path-exit` as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Tab walks from Simplify onto the first outer-path point mid-list. `shouldTabFromSimplifyToFirstOuterPoint` / `pickFirstOuterPointTabTarget` focus that point's first x, `tagHolePointTabCrossing` treats `data-path-exit` → point as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
@@ -41,8 +43,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-08 15:20 BST — Points list scroll holds when Tab walks from Simplify onto the first outer-path point mid-list.
+2026-09-08 16:20 BST — Points list scroll holds when Shift+Tab walks from the first outer-path x onto Simplify mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Simplify while the list is mid-scroll.
+Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Round while the list is mid-scroll.
