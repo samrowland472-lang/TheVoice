@@ -8,7 +8,9 @@ import {
   pickPathInspectorExitTarget,
   pickNextHoleHeaderTabTarget,
   pickSameHoleHeaderTabTarget,
+  pickRoundTabTarget,
   pickSimplifyTabTarget,
+  shouldShiftTabFromFirstOuterToRound,
   shouldShiftTabFromFirstOuterToSimplify,
   shouldShiftTabToSameHoleHeader,
   shouldTabToNextHoleHeader,
@@ -143,6 +145,23 @@ function PointRow({
           onFocus={revealAndSelect}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;
+            if (shouldShiftTabFromFirstOuterToRound(e.currentTarget, e.shiftKey)) {
+              const round = pickRoundTabTarget(e.currentTarget);
+              if (round) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, round, round);
+                round.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
             if (shouldShiftTabFromFirstOuterToSimplify(e.currentTarget, e.shiftKey)) {
               const simplify = pickSimplifyTabTarget(e.currentTarget);
               if (simplify) {
