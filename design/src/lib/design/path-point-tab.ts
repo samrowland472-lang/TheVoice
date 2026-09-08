@@ -143,6 +143,29 @@ export function pickSameHoleHeaderTabTarget(
   return header instanceof HTMLElement ? header : null;
 }
 
+export function shouldTabToSameHoleFirstPoint(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  return from.closest("[data-select-hole]") != null;
+}
+
+export function pickSameHoleFirstPointTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return null;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return null;
+  const row = inspector.querySelector(`[data-point="hole-${h}-0"]`);
+  if (!(row instanceof HTMLElement)) return null;
+  return row.querySelector<HTMLElement>('input[data-path-axis="x"]') ?? row;
+}
+
 export function pickSameHoleLastPointTabTarget(
   from: Element | null | undefined,
 ): HTMLElement | null {
