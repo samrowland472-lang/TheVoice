@@ -16,6 +16,7 @@ export {
   pickFirstOuterPointTabTarget,
   pickOffsetTabTarget,
   pickOutlineTabTarget,
+  pickRoundTabTarget,
   pickNextHoleHeaderTabTarget,
   pickNextHolePointTabTarget,
   pickSameHoleFirstPointTabTarget,
@@ -26,6 +27,7 @@ export {
   shouldTabFromClosedToOffset,
   shouldTabFromOffsetToFirstOuterPoint,
   shouldTabFromOffsetToOutline,
+  shouldTabFromOutlineToRound,
   shouldTabToNextHoleHeader,
   shouldTabToSameHoleFirstPoint,
 } from "./path-point-tab-a";

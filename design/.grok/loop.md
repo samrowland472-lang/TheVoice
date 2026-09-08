@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Tab walks from Outline onto Round while Points is mid-scroll.
+1. Path inspector: keep Points list scroll when Tab walks from Round onto Simplify while Points is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Points list scroll when Tab walks from Outline onto Round while Points is mid-scroll. `shouldTabFromOutlineToRound` / `pickRoundTabTarget` focus Round, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Tab walks from Offset onto Outline while Points is mid-scroll. `shouldTabFromOffsetToOutline` / `pickOutlineTabTarget` focus Outline, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
@@ -36,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-08 12:21 BST — Points list scroll holds when Tab walks from Offset onto Outline mid-list.
+2026-09-08 13:23 BST — Points list scroll holds when Tab walks from Outline onto Round mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Tab walks from Outline onto Round while Points is mid-scroll.
+Path inspector: keep Points list scroll when Tab walks from Round onto Simplify while Points is mid-scroll.
