@@ -12,6 +12,7 @@ import {
   pickNextHolePointTabTarget,
   pickNextHoleTabTarget,
   pickPreviousHoleTabTarget,
+  pickSameHoleFirstPointTabTarget,
   restoreHoleListScroll,
   restorePointListScroll,
   shouldHoldHoleListScroll,
@@ -230,7 +231,10 @@ export function PathFields({ node }: { node: PathNode }) {
               const next = e.shiftKey
                 ? pickPreviousHoleTabTarget(from)
                 : pickNextHoleTabTarget(from);
-              const point = !e.shiftKey && !next ? pickNextHolePointTabTarget(from) : null;
+              const point =
+                !e.shiftKey && !next
+                  ? (pickSameHoleFirstPointTabTarget(from) ?? pickNextHolePointTabTarget(from))
+                  : null;
               if (!next && !point) return;
               e.preventDefault();
               rememberHoleListScroll();
