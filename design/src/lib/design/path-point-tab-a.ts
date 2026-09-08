@@ -150,6 +150,16 @@ export function isCrossingHolePointToHeaderTab(
   return to.closest("[data-select-hole]") != null;
 }
 
+export function shouldTabFromClosedToOffset(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Closed") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Offset"]') != null;
+}
+
 export function shouldTabFromOffsetToFirstOuterPoint(
   from: Element | null | undefined,
   shift: boolean,
