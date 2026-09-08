@@ -149,3 +149,21 @@ export function isCrossingHolePointToHeaderTab(
   if (!from.closest("[data-point]")) return false;
   return to.closest("[data-select-hole]") != null;
 }
+
+export function shouldTabFromOffsetToFirstOuterPoint(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  if (from.closest("[data-path-exit]")?.getAttribute("data-path-exit") !== "Offset") return false;
+  const inspector = inspectorOf(from);
+  return Boolean(inspector?.querySelector(`[data-point^="path-"]`));
+}
+
+export function pickFirstOuterPointTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const row = inspector.querySelector<HTMLElement>(`[data-point^="path-"]`);
+  return firstAxisInput(row);
+}
