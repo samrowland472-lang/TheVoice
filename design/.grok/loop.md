@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Tab walks from Closed onto Offset while Points is mid-scroll.
+1. Path inspector: keep Points list scroll when Tab walks from Offset onto Outline while Points is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Points list scroll when Tab walks from Closed onto Offset while Points is mid-scroll. `shouldTabFromClosedToOffset` / `pickOffsetTabTarget` focus Offset, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Shift+Tab walks from the first outer-path x onto Offset while the list is mid-scroll. `shouldShiftTabFromFirstOuterToOffset` / `pickOffsetTabTarget` focus Offset, `tagHolePointTabCrossing` treats point → `data-path-exit` as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
@@ -31,8 +33,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-08 07:36 BST — Points list scroll holds when Shift+Tab walks from the first outer-path x onto Offset mid-list.
+2026-09-08 11:25 BST — Points list scroll holds when Tab walks from Closed onto Offset mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Tab walks from Closed onto Offset while Points is mid-scroll.
+Path inspector: keep Points list scroll when Tab walks from Offset onto Outline while Points is mid-scroll.
