@@ -21,17 +21,17 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Tab walks from Simplify onto the first outer-path point mid-list.
+1. Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Simplify while the list is mid-scroll.
 
 ## Done
 
-- Path inspector keeps Points list scroll when Tab walks from Round onto Simplify while Points is mid-scroll. `shouldTabFromRoundToSimplify` / `pickSimplifyTabTarget` focus Simplify, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
+- Path inspector keeps Points list scroll when Tab walks from Simplify onto the first outer-path point mid-list. `shouldTabFromSimplifyToFirstOuterPoint` / `pickFirstOuterPointTabTarget` focus that point's first x, `tagHolePointTabCrossing` treats `data-path-exit` → point as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
+- Path inspector keeps Points list scroll when Tab walks from Round onto Simplify while Points is mid-scroll. `shouldTabFromRoundToSimplify` / `pickSimplifyTabTarget` focus Simplify, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Tab walks from Outline onto Round while Points is mid-scroll. `shouldTabFromOutlineToRound` / `pickRoundTabTarget` focus Round, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Tab walks from Offset onto Outline while Points is mid-scroll. `shouldTabFromOffsetToOutline` / `pickOutlineTabTarget` focus Outline, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
-
 
 - Path inspector keeps Points list scroll when Tab walks from Closed onto Offset while Points is mid-scroll. `shouldTabFromClosedToOffset` / `pickOffsetTabTarget` focus Offset, `tagHolePointTabCrossing` treats exit → exit as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
@@ -41,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-08 14:34 BST — Points list scroll holds when Tab walks from Round onto Simplify mid-list.
+2026-09-08 15:20 BST — Points list scroll holds when Tab walks from Simplify onto the first outer-path point mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Tab walks from Simplify onto the first outer-path point mid-list.
+Path inspector: keep Points list scroll when Shift+Tab walks from the first outer-path x onto Simplify while the list is mid-scroll.
