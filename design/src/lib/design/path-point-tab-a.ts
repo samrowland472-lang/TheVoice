@@ -155,15 +155,33 @@ export function shouldTabFromOffsetToFirstOuterPoint(
   shift: boolean,
 ): boolean {
   if (shift || !from || !(from instanceof Element)) return false;
-  if (from.closest("[data-path-exit]")?.getAttribute("data-path-exit") !== "Offset") return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Offset") return false;
   const inspector = inspectorOf(from);
-  return Boolean(inspector?.querySelector(`[data-point^="path-"]`));
+  return inspector?.querySelector('[data-point^="path-"]') != null;
 }
 
 export function pickFirstOuterPointTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const inspector = inspectorOf(from);
   if (!inspector) return null;
-  const row = inspector.querySelector<HTMLElement>(`[data-point^="path-"]`);
+  const row = inspector.querySelector<HTMLElement>('[data-point^="path-"]');
   return firstAxisInput(row);
+}
+
+export function shouldShiftTabFromFirstOuterToOffset(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Offset"]') != null;
+}
+
+export function pickOffsetTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Offset"]') ?? null;
 }
