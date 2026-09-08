@@ -1,4 +1,5 @@
 export { holeIndexFromHoleControl, holeIndexFromPointKey } from "./path-point-key";
+// Point keys: /^path-\d+$/ outer ring, /^hole-(\d+)-(\d+)$/ holes.
 export {
   labelPathInspectorControl,
   nextPathAxis,

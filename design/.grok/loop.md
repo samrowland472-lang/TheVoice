@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: keep Points list scroll when Shift+Tab walks from a hole header onto the first hole’s last outer-path point while the list is mid-scroll.
+1. Path inspector: keep Points list scroll when Tab walks from Offset onto the first outer-path point while the list is mid-scroll.
 
 ## Done
+
+- Path inspector keeps Points list scroll when Shift+Tab walks from the first hole header onto the last outer-path point mid-list. Missing `inspector-path-impl` / tab modules restored: `shouldShiftTabToPrevHoleLastPoint` / `pickPrevHoleLastPointTabTarget` focus that point's last y, `tagHolePointTabCrossing` marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`.
 
 - Path inspector keeps Points list scroll when Shift+Tab walks from a hole header onto the previous hole’s last point. `shouldShiftTabToPrevHoleLastPoint` / `pickPrevHoleLastPointTabTarget` focus that hole's last y field, `tagHolePointTabCrossing` marks `data-hole-point`, and `shouldHoldPointListScroll` restores `scrollTop` instead of `scrollIntoView`.
 
@@ -45,8 +47,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-08 04:05 BST — Points list scroll holds when Shift+Tab walks from a hole header onto the previous hole’s last point mid-list.
+2026-09-08 06:12 BST — Points list scroll holds when Shift+Tab walks from the first hole header onto the last outer-path point mid-list.
 
 ## Next recommended
 
-Path inspector: keep Points list scroll when Shift+Tab walks from a hole header onto the first hole’s last outer-path point while the list is mid-scroll.
+Path inspector: keep Points list scroll when Tab walks from Offset onto the first outer-path point while the list is mid-scroll.
