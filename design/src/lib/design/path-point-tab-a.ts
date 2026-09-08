@@ -216,6 +216,16 @@ export function pickSimplifyTabTarget(from: Element | null | undefined): HTMLEle
   return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Simplify"]') ?? null;
 }
 
+export function shouldTabFromSimplifyToFirstOuterPoint(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Simplify") return false;
+  return inspectorOf(from)?.querySelector('[data-point^="path-"]') != null;
+}
+
 export function pickFirstOuterPointTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const inspector = inspectorOf(from);
