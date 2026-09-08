@@ -24,6 +24,7 @@ export {
   pickSameHoleHeaderTabTarget,
   pickSameHoleLastPointTabTarget,
   shouldShiftTabFromFirstOuterToOffset,
+  shouldShiftTabFromFirstOuterToSimplify,
   shouldShiftTabToSameHoleHeader,
   shouldTabFromClosedToOffset,
   shouldTabFromOffsetToFirstOuterPoint,
