@@ -16,6 +16,7 @@ import {
   pickFirstOuterPointTabTarget,
   pickOffsetTabTarget,
   pickOutlineTabTarget,
+  pickRoundTabTarget,
   pickNextHolePointTabTarget,
   pickSameHoleFirstPointTabTarget,
   pickSameHoleLastPointTabTarget,
@@ -24,6 +25,7 @@ import {
   shouldTabFromClosedToOffset,
   shouldTabFromOffsetToFirstOuterPoint,
   shouldTabFromOffsetToOutline,
+  shouldTabFromOutlineToRound,
   shouldTabToSameHoleFirstPoint,
   tagHoleHeaderTabCrossing,
   tagHolePointTabCrossing,
@@ -157,7 +159,26 @@ export function PathFields({ node }: { node: PathNode }) {
           </button>
         </div>
         <div className="grid grid-cols-3 gap-1">
-          <button type="button" data-path-exit="Outline" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim" aria-label="outline stroke" onClick={() => outlineSelectedStroke()}>
+          <button
+            type="button"
+            data-path-exit="Outline"
+            className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim"
+            aria-label="outline stroke"
+            onClick={() => outlineSelectedStroke()}
+            onKeyDown={(e) => {
+              if (e.key !== "Tab" || e.shiftKey) return;
+              const from = e.currentTarget;
+              if (!shouldTabFromOutlineToRound(from, false)) return;
+              const round = pickRoundTabTarget(from);
+              if (!round) return;
+              e.preventDefault();
+              tagHolePointTabCrossing(from, round, round);
+              const list = pointListRef.current;
+              const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+              round.focus();
+              holdListScroll(list, saved);
+            }}
+          >
             Outline
           </button>
           <button type="button" data-path-exit="Round" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim" aria-label="round corners" onClick={() => roundSelectedPathCorners()}>
