@@ -17,6 +17,7 @@ import {
   pickOffsetTabTarget,
   pickOutlineTabTarget,
   pickRoundTabTarget,
+  pickSimplifyTabTarget,
   pickNextHolePointTabTarget,
   pickSameHoleFirstPointTabTarget,
   pickSameHoleLastPointTabTarget,
@@ -26,6 +27,7 @@ import {
   shouldTabFromOffsetToFirstOuterPoint,
   shouldTabFromOffsetToOutline,
   shouldTabFromOutlineToRound,
+  shouldTabFromRoundToSimplify,
   shouldTabToSameHoleFirstPoint,
   tagHoleHeaderTabCrossing,
   tagHolePointTabCrossing,
@@ -181,7 +183,26 @@ export function PathFields({ node }: { node: PathNode }) {
           >
             Outline
           </button>
-          <button type="button" data-path-exit="Round" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim" aria-label="round corners" onClick={() => roundSelectedPathCorners()}>
+          <button
+            type="button"
+            data-path-exit="Round"
+            className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim"
+            aria-label="round corners"
+            onClick={() => roundSelectedPathCorners()}
+            onKeyDown={(e) => {
+              if (e.key !== "Tab" || e.shiftKey) return;
+              const from = e.currentTarget;
+              if (!shouldTabFromRoundToSimplify(from, false)) return;
+              const simplify = pickSimplifyTabTarget(from);
+              if (!simplify) return;
+              e.preventDefault();
+              tagHolePointTabCrossing(from, simplify, simplify);
+              const list = pointListRef.current;
+              const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+              simplify.focus();
+              holdListScroll(list, saved);
+            }}
+          >
             Round
           </button>
           <button type="button" data-path-exit="Simplify" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim" aria-label="simplify path" onClick={() => simplifySelectedPath()}>
