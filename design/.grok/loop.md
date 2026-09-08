@@ -21,16 +21,17 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: wire Shift+Tab from first outer-path x onto Offset in the point row so the list keeps scroll when Outline is not taken.
+1. Path inspector: Shift+Tab from first outer-path x onto Closed when Offset and Outline are both absent, holding Points list scroll.
 
 ## Done
 
 - Path inspector keeps Points list scroll when Shift+Tab walks from the first outer-path x onto Outline while the list is mid-scroll. `shouldShiftTabFromFirstOuterToOutline` / `pickOutlineTabTarget` focus Outline, `tagHolePointTabCrossing` treats point → `data-path-exit` as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`. Restored missing `shouldShiftTabFromFirstOuterToRound`.
+- Path inspector Shift+Tab from first outer-path x lands on Offset when Outline is not present. `shouldShiftTabFromFirstOuterToOffset` refuses the hop if Outline exists; `path-point-row` focuses Offset via `pickOffsetTabTarget`, tags the crossing, and restores Points `scrollTop`. Restored missing `shouldShiftTabFromFirstOuterToOutline` (typecheck export).
 
 ## Iteration
 
-2026-09-08 23:28 BST — Points list scroll holds when Shift+Tab walks from the first outer-path x onto Outline mid-list.
+2026-09-09 00:15 BST — Shift+Tab from first outer-path x focuses Offset when Outline is not taken; Points list scroll holds.
 
 ## Next recommended
 
-Path inspector: wire Shift+Tab from first outer-path x onto Offset in the point row so the list keeps scroll when Outline is not taken.
+Path inspector: Shift+Tab from first outer-path x onto Closed when Offset and Outline are both absent, holding Points list scroll.
