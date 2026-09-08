@@ -15,6 +15,7 @@ import {
 import {
   pickFirstOuterPointTabTarget,
   pickOffsetTabTarget,
+  pickOutlineTabTarget,
   pickNextHolePointTabTarget,
   pickSameHoleFirstPointTabTarget,
   pickSameHoleLastPointTabTarget,
@@ -22,6 +23,7 @@ import {
   shouldHoldPointListScroll,
   shouldTabFromClosedToOffset,
   shouldTabFromOffsetToFirstOuterPoint,
+  shouldTabFromOffsetToOutline,
   shouldTabToSameHoleFirstPoint,
   tagHoleHeaderTabCrossing,
   tagHolePointTabCrossing,
@@ -127,6 +129,18 @@ export function PathFields({ node }: { node: PathNode }) {
             onKeyDown={(e) => {
               if (e.key !== "Tab" || e.shiftKey) return;
               const from = e.currentTarget;
+              if (shouldTabFromOffsetToOutline(from, false)) {
+                const outline = pickOutlineTabTarget(from);
+                if (outline) {
+                  e.preventDefault();
+                  tagHolePointTabCrossing(from, outline, outline);
+                  const list = pointListRef.current;
+                  const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                  outline.focus();
+                  holdListScroll(list, saved);
+                  return;
+                }
+              }
               if (!shouldTabFromOffsetToFirstOuterPoint(from, false)) return;
               const first = pickFirstOuterPointTabTarget(from);
               if (!first) return;
