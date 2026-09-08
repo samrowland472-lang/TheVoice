@@ -243,7 +243,22 @@ export function shouldShiftTabFromFirstOuterToOffset(
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
   if (axis && axis !== "x") return false;
-  return inspectorOf(from)?.querySelector('[data-path-exit="Offset"]') != null;
+  const inspector = inspectorOf(from);
+  if (!inspector?.querySelector('[data-path-exit="Offset"]')) return false;
+  // Outline owns this hop when present; Offset is the fallback when it is not taken.
+  return inspector.querySelector('[data-path-exit="Outline"]') == null;
+}
+
+export function shouldShiftTabFromFirstOuterToOutline(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Outline"]') != null;
 }
 
 export function shouldShiftTabFromFirstOuterToSimplify(
