@@ -25,3 +25,17 @@ test("exit-to-point Tab is a hole-point crossing so the list keeps scroll", () =
   assert.match(b, /fromExit && toPoint/);
   assert.match(b, /data-path-exit/);
 });
+
+test("Shift+Tab from first outer-path x targets Offset", () => {
+  assert.match(a, /shouldShiftTabFromFirstOuterToOffset/);
+  assert.match(a, /pickOffsetTabTarget/);
+  assert.match(a, /path-0/);
+  assert.match(a, /data-path-exit="Offset"/);
+  assert.match(tab, /shouldShiftTabFromFirstOuterToOffset/);
+  assert.match(tab, /pickOffsetTabTarget/);
+  assert.match(ui, /shouldTabFromOffsetToFirstOuterPoint/);
+});
+
+test("point-to-exit Shift+Tab is a hole-point crossing so the list keeps scroll", () => {
+  assert.match(b, /fromPoint && toExit/);
+});
