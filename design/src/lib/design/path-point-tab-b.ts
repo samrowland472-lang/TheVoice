@@ -93,7 +93,8 @@ export function tagHolePointTabCrossing(
       (fromHeader && toPoint) ||
       (fromPoint && toPoint && fromPoint !== toPoint) ||
       (fromExit && toPoint) ||
-      (fromPoint && toExit),
+      (fromPoint && toExit) ||
+      (fromExit && toExit && fromExit !== toExit),
   );
   from instanceof Element && from.closest("[data-hole-point]")?.removeAttribute("data-hole-point");
   if (!crossing) return false;
