@@ -116,7 +116,39 @@ export function isCrossingHolePointToHeaderTab(
   if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
   const a = holeIndexFromPointKey(from.closest("[data-point]")?.getAttribute("data-point"));
   const b = holeIndexFromHoleControl(to);
-  return a != null && b != null && a === b;
+  return a != null && b != null;
+}
+
+export function shouldTabToNextHoleHeader(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const key = from.closest("[data-point]")?.getAttribute("data-point");
+  const h = holeIndexFromPointKey(key);
+  const idx = holePointIndexFromPointKey(key);
+  const axis =
+    from.getAttribute("data-path-axis") ??
+    from.closest("[data-path-axis]")?.getAttribute("data-path-axis");
+  if (h == null || idx == null || axis !== "y") return false;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return false;
+  const rows = inspector.querySelectorAll(`[data-point^="hole-${h}-"]`);
+  if (idx !== rows.length - 1) return false;
+  return inspector.querySelector(`[data-select-hole="${h + 1}"]`) != null;
+}
+
+export function pickNextHoleHeaderTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const key = from.closest("[data-point]")?.getAttribute("data-point");
+  const h = holeIndexFromPointKey(key);
+  if (h == null) return null;
+  const inspector = from.closest("[data-path-inspector]");
+  if (!inspector) return null;
+  const header = inspector.querySelector(`[data-select-hole="${h + 1}"]`);
+  return header instanceof HTMLElement ? header : null;
 }
 
 export function shouldShiftTabToSameHoleHeader(
