@@ -28,6 +28,7 @@ import {
   shouldTabFromOffsetToOutline,
   shouldTabFromOutlineToRound,
   shouldTabFromRoundToSimplify,
+  shouldTabFromSimplifyToFirstOuterPoint,
   shouldTabToSameHoleFirstPoint,
   tagHoleHeaderTabCrossing,
   tagHolePointTabCrossing,
@@ -205,7 +206,27 @@ export function PathFields({ node }: { node: PathNode }) {
           >
             Round
           </button>
-          <button type="button" data-path-exit="Simplify" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim" aria-label="simplify path" onClick={() => simplifySelectedPath()}>
+          <button
+            type="button"
+            data-path-exit="Simplify"
+            className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim"
+            aria-label="simplify path"
+            onClick={() => simplifySelectedPath()}
+            onKeyDown={(e) => {
+              if (e.key !== "Tab" || e.shiftKey) return;
+              const from = e.currentTarget;
+              if (!shouldTabFromSimplifyToFirstOuterPoint(from, false)) return;
+              const first = pickFirstOuterPointTabTarget(from);
+              if (!first) return;
+              e.preventDefault();
+              tagHolePointTabCrossing(from, first, first);
+              const list = pointListRef.current;
+              const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+              first.focus();
+              if (first instanceof HTMLInputElement) first.select();
+              holdListScroll(list, saved);
+            }}
+          >
             Simplify
           </button>
         </div>
