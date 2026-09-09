@@ -53,12 +53,20 @@ function holdListScroll(list: Element | null, saved: number) {
   });
 }
 
+function snapshotList(from: Element, to: Element, sel: string): { list: Element | null; saved: number } {
+  const list = from.closest(sel) ?? to.closest(sel);
+  return { list, saved: list instanceof HTMLElement ? list.scrollTop : 0 };
+}
+
 function focusHold(el: HTMLElement, listSel: string, from: Element) {
-  const list = from.closest(listSel);
-  const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+  const primary = snapshotList(from, el, listSel);
+  const holes = snapshotList(from, el, "[data-hole-list]");
+  const points = snapshotList(from, el, "[data-point-list]");
   el.focus();
   if (el instanceof HTMLInputElement) el.select();
-  holdListScroll(list, saved);
+  holdListScroll(primary.list, primary.saved);
+  if (holes.list && holes.list !== primary.list) holdListScroll(holes.list, holes.saved);
+  if (points.list && points.list !== primary.list) holdListScroll(points.list, points.saved);
 }
 
 export function PathFields({ node }: { node: PathNode }) {
