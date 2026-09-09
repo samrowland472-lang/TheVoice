@@ -18,8 +18,8 @@ export function shouldShiftTabToPrevHoleLastPoint(
 function lastAxisInput(row: HTMLElement | null | undefined): HTMLElement | null {
   if (!row) return null;
   return (
-    row.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
     row.querySelector<HTMLElement>('input[data-path-axis="x"]') ??
+    row.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
     row
   );
 }
