@@ -60,6 +60,31 @@ export function restorePointListScroll(list: { scrollTop: number; scrollHeight?:
   return restoreHoleListScroll(list, saved);
 }
 
+export function snapshotScroll(from: Element | null | undefined, to: Element | null | undefined, sel: string) {
+  const list =
+    (from instanceof Element ? from.closest(sel) : null) ??
+    (to instanceof Element ? to.closest(sel) : null);
+  return { list, saved: list instanceof HTMLElement ? list.scrollTop : 0 };
+}
+
+export function restoreListScroll(list: Element | null | undefined, saved: number) {
+  if (!(list instanceof HTMLElement)) return;
+  list.scrollTop = saved;
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => {
+      list.scrollTop = saved;
+    });
+  }
+}
+
+export function holdPointAndHoleLists(from: Element | null | undefined, to: Element | null | undefined) {
+  if (!from || !to) return;
+  const points = snapshotScroll(from, to, "[data-point-list]");
+  const holes = snapshotScroll(from, to, "[data-hole-list]");
+  restoreListScroll(points.list, points.saved);
+  if (holes.list && holes.list !== points.list) restoreListScroll(holes.list, holes.saved);
+}
+
 export function isCrossingHoleHeaderTab(from: Element | null | undefined, to: Element | null | undefined): boolean {
   if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
   const a = from.closest("[data-hole]");
