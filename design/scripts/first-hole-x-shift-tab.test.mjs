@@ -13,15 +13,11 @@ test("Shift+Tab from first hole-path x hops to that hole header", () => {
   assert.match(a, /data-select-hole="\$\{h\}"/);
   assert.match(ui, /shouldShiftTabToSameHoleHeader/);
   assert.match(ui, /pickSameHoleHeaderTabTarget/);
+  assert.match(ui, /tagHolePointTabCrossing\(e\.currentTarget, header, header\)/);
 });
 
-test("first hole x hop tags crossings and holds both list scrolls", () => {
+test("hole header hold includes select-hole so mid-scroll lists stay put", () => {
   assert.match(b, /data-select-hole/);
-  const xBlock = ui.split('data-path-axis="x"')[1] ?? "";
-  assert.match(xBlock, /shouldShiftTabToSameHoleHeader/);
-  assert.match(xBlock, /tagHolePointTabCrossing\(e\.currentTarget, header, header\)/);
-  assert.match(xBlock, /tagHoleHeaderTabCrossing/);
-  assert.match(xBlock, /data-hole-list/);
-  assert.match(xBlock, /savedHoles/);
-  assert.match(xBlock, /savedPoints/);
+  assert.match(b, /data-hole-header-tab/);
+  assert.match(ui, /scrollTop = saved/);
 });
