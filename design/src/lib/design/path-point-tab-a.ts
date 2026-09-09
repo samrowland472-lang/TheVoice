@@ -247,7 +247,7 @@ export function shouldShiftTabFromFirstOuterToOffset(
   const key = pointKey(from);
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== "x" && axis !== "y") return false;
   const inspector = inspectorOf(from);
   if (!inspector?.querySelector('[data-path-exit="Offset"]')) return false;
   // Outline owns this hop when present; Offset is the fallback when it is not taken.
@@ -262,7 +262,7 @@ export function shouldShiftTabFromFirstOuterToOutline(
   const key = pointKey(from);
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== "x" && axis !== "y") return false;
   return inspectorOf(from)?.querySelector('[data-path-exit="Outline"]') != null;
 }
 
@@ -274,10 +274,9 @@ export function shouldShiftTabFromFirstOuterToSimplify(
   const key = pointKey(from);
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== "x" && axis !== "y") return false;
   const inspector = inspectorOf(from);
   if (!inspector?.querySelector('[data-path-exit="Simplify"]')) return false;
-  // Closed, Offset, Outline, and Round own this hop when present; Simplify is last fallback.
   if (inspector.querySelector('[data-path-exit="Closed"]')) return false;
   if (inspector.querySelector('[data-path-exit="Offset"]')) return false;
   if (inspector.querySelector('[data-path-exit="Outline"]')) return false;
@@ -292,7 +291,7 @@ export function shouldShiftTabFromFirstOuterToRound(
   const key = pointKey(from);
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== "x" && axis !== "y") return false;
   const inspector = inspectorOf(from);
   if (!inspector?.querySelector('[data-path-exit="Round"]')) return false;
   // Closed, Offset, and Outline own this hop when present; Round is the fallback.
