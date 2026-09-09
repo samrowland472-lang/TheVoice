@@ -95,7 +95,7 @@ export function shouldShiftTabToSameHoleHeader(from: Element | null | undefined,
   const i = holePointIndexFromPointKey(key);
   if (i !== 0) return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== "x" && axis !== "y") return false;
   return inspectorOf(from)?.querySelector(`[data-select-hole="${h}"]`) != null;
 }
 
