@@ -1,5 +1,10 @@
 import { holeIndexFromHoleControl, holeIndexFromPointKey } from "./path-point-key";
 
+export {
+  pickClosedTabTarget,
+  shouldShiftTabFromFirstOuterToClosed,
+} from "./path-point-tab-closed";
+
 export function holePointIndexFromPointKey(key: string | null | undefined): number | null {
   const hole = /^hole-(\d+)-(\d+)$/.exec(key ?? "");
   if (hole) return Number(hole[2]);
@@ -282,7 +287,12 @@ export function shouldShiftTabFromFirstOuterToRound(
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
   if (axis && axis !== "x") return false;
-  return inspectorOf(from)?.querySelector('[data-path-exit="Round"]') != null;
+  const inspector = inspectorOf(from);
+  if (!inspector?.querySelector('[data-path-exit="Round"]')) return false;
+  // Closed, Offset, and Outline own this hop when present; Round is the fallback.
+  if (inspector.querySelector('[data-path-exit="Closed"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Offset"]')) return false;
+  return inspector.querySelector('[data-path-exit="Outline"]') == null;
 }
 
 export function pickOffsetTabTarget(from: Element | null | undefined): HTMLElement | null {
