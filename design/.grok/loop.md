@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first hole-path x of hole N+1 onto hole N header while both lists stay mid-scroll after growth.
+1. Path inspector: Shift+Tab from first hole-path y of hole N+1 onto hole N header while both lists stay mid-scroll after growth.
 
 ## Done
+
+- Path inspector Shift+Tab from first hole-path x of hole N+1 lands on hole N header without jumping scroll when Points and Holes lists grow. `shouldShiftTabToPrevHoleHeader` + `pickPrevHoleHeaderTabTarget`; `header.focus({ preventScroll: true })`; double-rAF restore; `holdPointAndHoleLists` snapshots both lists. Restored `shouldTabFromLastHoleXToNextHeader`.
 
 - Path inspector Tab from last hole-path y of hole N lands on hole N+1 header without jumping scroll when Points and Holes lists grow. `shouldTabToNextHoleHeader` + `header.focus({ preventScroll: true })`; `restoreListScroll` double-rAF + clamp; `holdPointAndHoleLists` still snapshots both lists.
 
@@ -35,8 +37,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-09 15:50 BST — Tab from last hole-path y of hole N lands on hole N+1 header and holds Points and Holes list scroll after list growth.
+2026-09-09 17:40 BST — Shift+Tab from first hole-path x of hole N+1 lands on hole N header and holds Points and Holes list scroll after list growth.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first hole-path x of hole N+1 onto hole N header while both lists stay mid-scroll after growth.
+Path inspector: Shift+Tab from first hole-path y of hole N+1 onto hole N header while both lists stay mid-scroll after growth.
