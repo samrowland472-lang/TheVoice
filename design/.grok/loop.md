@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first hole-path x onto the hole header when the list is mid-scroll.
+1. Path inspector: Shift+Tab from first hole-path y onto the hole header when the list is mid-scroll.
 
 ## Done
+
+- Path inspector Shift+Tab from first hole-path x lands on that hole header and holds both Points and Holes list scroll. `shouldShiftTabToSameHoleHeader` still requires point index 0 and axis x; the x field tags point and header crossings, restores both `scrollTop`s, and `shouldHoldHoleListScroll` treats a focused hole header as a hold.
 
 - Path inspector Shift+Tab from first outer-path y lands on the same previous control the x hop already left (Outline, then Offset, Closed, Round, Simplify). Axis checks accept `y`; `path-point-row` y field runs the same pickers, tags the crossing, and restores Points `scrollTop`.
 
@@ -36,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-09 05:28 BST — Shift+Tab from first outer-path y follows the same previous-control hop as x and holds Points list scroll.
+2026-09-09 07:15 BST — Shift+Tab from first hole-path x lands on the hole header and holds Points and Holes list scroll.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first hole-path x onto the hole header when the list is mid-scroll.
+Path inspector: Shift+Tab from first hole-path y onto the hole header when the list is mid-scroll.

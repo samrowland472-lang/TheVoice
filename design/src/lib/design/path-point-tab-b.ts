@@ -8,7 +8,9 @@ export function pathRingWalkStatus(label: string): string {
 
 export function shouldHoldHoleListScroll(active: { closest?: (sel: string) => unknown } | null | undefined): boolean {
   if (!active || typeof active.closest !== "function") return false;
-  return Boolean(active.closest("[data-hole-fill], [data-delete-hole], [data-hole-header-tab]"));
+  return Boolean(
+    active.closest("[data-hole-fill], [data-delete-hole], [data-hole-header-tab], [data-select-hole]"),
+  );
 }
 
 export function shouldHoldPointListScroll(active: { closest?: (sel: string) => unknown } | null | undefined): boolean {
