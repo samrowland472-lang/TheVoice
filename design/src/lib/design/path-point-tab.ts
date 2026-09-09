@@ -37,11 +37,13 @@ export {
   shouldTabFromRoundToSimplify,
   shouldTabFromSimplifyToFirstOuterPoint,
   shouldTabFromLastHoleXToNextHeader,
-  shouldTabFromLastHoleYToNextFirstX,
-  pickNextHoleFirstPointXTabTarget,
   shouldTabToNextHoleHeader,
   shouldTabToSameHoleFirstPoint,
 } from "./path-point-tab-a";
+export {
+  shouldTabFromLastHoleYToNextFirstX,
+  pickNextHoleFirstPointXTabTarget,
+} from "./path-point-tab-last-y";
 export {
   pickClosedTabTarget,
   shouldShiftTabFromFirstOuterToClosed,
