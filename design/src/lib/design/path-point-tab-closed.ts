@@ -16,7 +16,7 @@ export function shouldShiftTabFromFirstOuterToClosed(
   const key = pointKey(from);
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== "x" && axis !== "y") return false;
   const inspector = inspectorOf(from);
   if (!inspector?.querySelector('[data-path-exit="Closed"]')) return false;
   if (inspector.querySelector('[data-path-exit="Offset"]')) return false;

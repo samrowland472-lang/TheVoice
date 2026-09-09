@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first outer-path y onto the previous control when the x hop already left, holding Points list scroll.
+1. Path inspector: Shift+Tab from first hole-path x onto the hole header when the list is mid-scroll.
 
 ## Done
+
+- Path inspector Shift+Tab from first outer-path y lands on the same previous control the x hop already left (Outline, then Offset, Closed, Round, Simplify). Axis checks accept `y`; `path-point-row` y field runs the same pickers, tags the crossing, and restores Points `scrollTop`.
 
 - Path inspector Shift+Tab from first outer-path x lands on Simplify when Closed, Offset, Outline, and Round are not present. `shouldShiftTabFromFirstOuterToSimplify` refuses the hop if any of those four exists; `path-point-row` focuses Simplify via `pickSimplifyTabTarget`, tags the crossing, and restores Points `scrollTop`.
 
@@ -34,8 +36,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-09 05:13 BST — Shift+Tab from first outer-path x focuses Simplify when Closed, Offset, Outline, and Round are not taken; Points list scroll holds.
+2026-09-09 05:28 BST — Shift+Tab from first outer-path y follows the same previous-control hop as x and holds Points list scroll.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first outer-path y onto the previous control when the x hop already left, holding Points list scroll.
+Path inspector: Shift+Tab from first hole-path x onto the hole header when the list is mid-scroll.
