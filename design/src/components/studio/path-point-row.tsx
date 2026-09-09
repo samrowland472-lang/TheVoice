@@ -359,6 +359,23 @@ function PointRow({
                 return;
               }
             }
+            if (shouldShiftTabToSameHoleHeader(e.currentTarget, e.shiftKey)) {
+              const header = pickSameHoleHeaderTabTarget(e.currentTarget);
+              if (header) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, header, header);
+                header.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
             if (shouldTabToNextHoleHeader(e.currentTarget, e.shiftKey)) {
               const header = pickNextHoleHeaderTabTarget(e.currentTarget);
               if (header) {
