@@ -6,6 +6,7 @@ import {
   pathInspectorExitStatus,
   pathTabExitsAtEdge,
   pickPathInspectorExitTarget,
+  pickNextHoleFirstPointXTabTarget,
   pickNextHoleHeaderTabTarget,
   pickPrevHoleHeaderTabTarget,
   pickSameHoleHeaderTabTarget,
@@ -21,6 +22,7 @@ import {
   shouldShiftTabFromFirstOuterToSimplify,
   shouldShiftTabToPrevHoleHeader,
   shouldShiftTabToSameHoleHeader,
+  shouldTabFromLastHoleYToNextFirstX,
   shouldTabToNextHoleHeader,
 } from "@/lib/design/path-point-tab";
 import { holdStudioStatus, releaseStudioStatus } from "@/lib/design/studio-status";
@@ -98,6 +100,27 @@ function focusPathCoord(from: HTMLElement, neighbor: -1 | 0 | 1, axis: "x" | "y"
     return true;
   }
   return false;
+}
+
+function focusNextHoleFirstX(from: HTMLElement) {
+  if (!shouldTabFromLastHoleYToNextFirstX(from, false)) return false;
+  const nextX = pickNextHoleFirstPointXTabTarget(from);
+  if (!nextX) return false;
+  const list = from.closest("[data-point-list]");
+  const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+  tagHolePointTabCrossing(from, nextX, nextX);
+  nextX.focus({ preventScroll: true });
+  if (nextX instanceof HTMLInputElement) nextX.select();
+  if (list instanceof HTMLElement) {
+    list.scrollTop = saved;
+    requestAnimationFrame(() => {
+      list.scrollTop = saved;
+      requestAnimationFrame(() => {
+        list.scrollTop = saved;
+      });
+    });
+  }
+  return true;
 }
 
 function PointRow({
@@ -296,6 +319,10 @@ function PointRow({
           onFocus={revealAndSelect}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;
+            if (!e.shiftKey && focusNextHoleFirstX(e.currentTarget)) {
+              e.preventDefault();
+              return;
+            }
             if (shouldShiftTabFromFirstOuterToOutline(e.currentTarget, e.shiftKey)) {
               const outline = pickOutlineTabTarget(e.currentTarget);
               if (outline) {
@@ -425,11 +452,14 @@ function PointRow({
                 const saved = list instanceof HTMLElement ? list.scrollTop : 0;
                 e.preventDefault();
                 tagHolePointTabCrossing(e.currentTarget, header, header);
-                header.focus();
+                header.focus({ preventScroll: true });
                 if (list instanceof HTMLElement) {
                   list.scrollTop = saved;
                   requestAnimationFrame(() => {
                     list.scrollTop = saved;
+                    requestAnimationFrame(() => {
+                      list.scrollTop = saved;
+                    });
                   });
                 }
                 return;
