@@ -69,10 +69,12 @@ export function snapshotScroll(from: Element | null | undefined, to: Element | n
 
 export function restoreListScroll(list: Element | null | undefined, saved: number) {
   if (!(list instanceof HTMLElement)) return;
-  list.scrollTop = saved;
+  restoreHoleListScroll(list, saved);
+  const apply = () => restoreHoleListScroll(list, saved);
   if (typeof requestAnimationFrame === "function") {
     requestAnimationFrame(() => {
-      list.scrollTop = saved;
+      apply();
+      requestAnimationFrame(apply);
     });
   }
 }
