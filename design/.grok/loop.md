@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first outer-path x onto Simplify when Closed, Offset, Outline, and Round are absent, holding Points list scroll.
+1. Path inspector: Shift+Tab from first outer-path y onto the previous control when the x hop already left, holding Points list scroll.
 
 ## Done
+
+- Path inspector Shift+Tab from first outer-path x lands on Simplify when Closed, Offset, Outline, and Round are not present. `shouldShiftTabFromFirstOuterToSimplify` refuses the hop if any of those four exists; `path-point-row` focuses Simplify via `pickSimplifyTabTarget`, tags the crossing, and restores Points `scrollTop`.
 
 - Path inspector Shift+Tab from first outer-path x lands on Round when Closed, Offset, and Outline are not present. `shouldShiftTabFromFirstOuterToRound` refuses the hop if any of those three exists; `path-point-row` focuses Round via `pickRoundTabTarget`, tags the crossing, and restores Points `scrollTop`. Closed is wired ahead of Round via `shouldShiftTabFromFirstOuterToClosed` / `pickClosedTabTarget`.
 - Path inspector Shift+Tab from first outer-path x lands on Closed when Offset and Outline are not present. `shouldShiftTabFromFirstOuterToClosed` refuses the hop if either Offset or Outline exists; `path-point-row` focuses Closed via `pickClosedTabTarget`, tags the crossing, and restores Points `scrollTop`.
@@ -32,8 +34,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-09 03:20 BST — Shift+Tab from first outer-path x focuses Round when Closed, Offset, and Outline are not taken; Points list scroll holds.
+2026-09-09 05:13 BST — Shift+Tab from first outer-path x focuses Simplify when Closed, Offset, Outline, and Round are not taken; Points list scroll holds.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first outer-path x onto Simplify when Closed, Offset, Outline, and Round are absent, holding Points list scroll.
+Path inspector: Shift+Tab from first outer-path y onto the previous control when the x hop already left, holding Points list scroll.

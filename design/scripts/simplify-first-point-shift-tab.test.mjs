@@ -12,6 +12,10 @@ test("Shift+Tab from first outer-path x targets Simplify", () => {
   assert.match(a, /pickSimplifyTabTarget/);
   assert.match(a, /path-0/);
   assert.match(a, /data-path-exit="Simplify"/);
+  assert.match(a, /data-path-exit="Closed"/);
+  assert.match(a, /data-path-exit="Offset"/);
+  assert.match(a, /data-path-exit="Outline"/);
+  assert.match(a, /data-path-exit="Round"/);
   assert.match(tab, /shouldShiftTabFromFirstOuterToSimplify/);
   assert.match(tab, /pickSimplifyTabTarget/);
   assert.match(ui, /shouldShiftTabFromFirstOuterToSimplify/);
