@@ -274,6 +274,91 @@ function PointRow({
           onFocus={revealAndSelect}
           onKeyDown={(e) => {
             if (e.key !== "Tab") return;
+            if (shouldShiftTabFromFirstOuterToOutline(e.currentTarget, e.shiftKey)) {
+              const outline = pickOutlineTabTarget(e.currentTarget);
+              if (outline) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, outline, outline);
+                outline.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
+            if (shouldShiftTabFromFirstOuterToOffset(e.currentTarget, e.shiftKey)) {
+              const offset = pickOffsetTabTarget(e.currentTarget);
+              if (offset) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, offset, offset);
+                offset.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
+            if (shouldShiftTabFromFirstOuterToClosed(e.currentTarget, e.shiftKey)) {
+              const closed = pickClosedTabTarget(e.currentTarget);
+              if (closed) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, closed, closed);
+                closed.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
+            if (shouldShiftTabFromFirstOuterToRound(e.currentTarget, e.shiftKey)) {
+              const round = pickRoundTabTarget(e.currentTarget);
+              if (round) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, round, round);
+                round.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
+            if (shouldShiftTabFromFirstOuterToSimplify(e.currentTarget, e.shiftKey)) {
+              const simplify = pickSimplifyTabTarget(e.currentTarget);
+              if (simplify) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, simplify, simplify);
+                simplify.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
             if (shouldTabToNextHoleHeader(e.currentTarget, e.shiftKey)) {
               const header = pickNextHoleHeaderTabTarget(e.currentTarget);
               if (header) {
