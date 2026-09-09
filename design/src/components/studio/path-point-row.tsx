@@ -7,6 +7,7 @@ import {
   pathTabExitsAtEdge,
   pickPathInspectorExitTarget,
   pickNextHoleHeaderTabTarget,
+  pickPrevHoleHeaderTabTarget,
   pickSameHoleHeaderTabTarget,
   pickClosedTabTarget,
   pickOffsetTabTarget,
@@ -18,6 +19,7 @@ import {
   shouldShiftTabFromFirstOuterToOutline,
   shouldShiftTabFromFirstOuterToRound,
   shouldShiftTabFromFirstOuterToSimplify,
+  shouldShiftTabToPrevHoleHeader,
   shouldShiftTabToSameHoleHeader,
   shouldTabToNextHoleHeader,
 } from "@/lib/design/path-point-tab";
@@ -236,6 +238,26 @@ function PointRow({
                 return;
               }
             }
+            if (shouldShiftTabToPrevHoleHeader(e.currentTarget, e.shiftKey)) {
+              const header = pickPrevHoleHeaderTabTarget(e.currentTarget);
+              if (header) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, header, header);
+                header.focus({ preventScroll: true });
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                    requestAnimationFrame(() => {
+                      list.scrollTop = saved;
+                    });
+                  });
+                }
+                return;
+              }
+            }
             if (shouldShiftTabToSameHoleHeader(e.currentTarget, e.shiftKey)) {
               const header = pickSameHoleHeaderTabTarget(e.currentTarget);
               if (header) {
@@ -354,6 +376,26 @@ function PointRow({
                   list.scrollTop = saved;
                   requestAnimationFrame(() => {
                     list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
+            if (shouldShiftTabToPrevHoleHeader(e.currentTarget, e.shiftKey)) {
+              const header = pickPrevHoleHeaderTabTarget(e.currentTarget);
+              if (header) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, header, header);
+                header.focus({ preventScroll: true });
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                    requestAnimationFrame(() => {
+                      list.scrollTop = saved;
+                    });
                   });
                 }
                 return;
