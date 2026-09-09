@@ -28,6 +28,24 @@ export function shouldTabFromLastHoleYToNextFirstX(
   return inspector.querySelector(`[data-point^="hole-${h + 1}-"]`) != null;
 }
 
+export function shouldTabFromLastHoleXToNextFirstX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  const rows = [...inspector.querySelectorAll(`[data-point^="hole-${h}-"]`)];
+  const row = from.closest("[data-point]");
+  if (!row || rows.at(-1) !== row) return false;
+  return inspector.querySelector(`[data-point^="hole-${h + 1}-"]`) != null;
+}
+
 export function pickNextHoleFirstPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const h = holeIndexFromPointKey(pointKey(from));
