@@ -12,6 +12,9 @@ test("Shift+Tab from first outer-path x targets Round", () => {
   assert.match(a, /pickRoundTabTarget/);
   assert.match(a, /path-0/);
   assert.match(a, /data-path-exit="Round"/);
+  assert.match(a, /data-path-exit="Closed"/);
+  assert.match(a, /data-path-exit="Offset"/);
+  assert.match(a, /data-path-exit="Outline"/);
   assert.match(tab, /shouldShiftTabFromFirstOuterToRound/);
   assert.match(tab, /pickRoundTabTarget/);
   assert.match(ui, /shouldShiftTabFromFirstOuterToRound/);

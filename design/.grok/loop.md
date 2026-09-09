@@ -21,18 +21,19 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first outer-path x onto Round when Closed, Offset, and Outline are absent, holding Points list scroll.
+1. Path inspector: Shift+Tab from first outer-path x onto Simplify when Closed, Offset, Outline, and Round are absent, holding Points list scroll.
 
 ## Done
 
+- Path inspector Shift+Tab from first outer-path x lands on Round when Closed, Offset, and Outline are not present. `shouldShiftTabFromFirstOuterToRound` refuses the hop if any of those three exists; `path-point-row` focuses Round via `pickRoundTabTarget`, tags the crossing, and restores Points `scrollTop`. Closed is wired ahead of Round via `shouldShiftTabFromFirstOuterToClosed` / `pickClosedTabTarget`.
 - Path inspector Shift+Tab from first outer-path x lands on Closed when Offset and Outline are not present. `shouldShiftTabFromFirstOuterToClosed` refuses the hop if either Offset or Outline exists; `path-point-row` focuses Closed via `pickClosedTabTarget`, tags the crossing, and restores Points `scrollTop`.
 - Path inspector keeps Points list scroll when Shift+Tab walks from the first outer-path x onto Outline while the list is mid-scroll. `shouldShiftTabFromFirstOuterToOutline` / `pickOutlineTabTarget` focus Outline, `tagHolePointTabCrossing` treats point → `data-path-exit` as a crossing and marks `data-hole-point`, and the Points list restores `scrollTop` instead of `scrollIntoView`. Restored missing `shouldShiftTabFromFirstOuterToRound`.
 - Path inspector Shift+Tab from first outer-path x lands on Offset when Outline is not present. `shouldShiftTabFromFirstOuterToOffset` refuses the hop if Outline exists; `path-point-row` focuses Offset via `pickOffsetTabTarget`, tags the crossing, and restores Points `scrollTop`. Restored missing `shouldShiftTabFromFirstOuterToOutline` (typecheck export).
 
 ## Iteration
 
-2026-09-09 01:10 BST — Shift+Tab from first outer-path x focuses Closed when Offset and Outline are not taken; Points list scroll holds.
+2026-09-09 03:20 BST — Shift+Tab from first outer-path x focuses Round when Closed, Offset, and Outline are not taken; Points list scroll holds.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first outer-path x onto Round when Closed, Offset, and Outline are absent, holding Points list scroll.
+Path inspector: Shift+Tab from first outer-path x onto Simplify when Closed, Offset, Outline, and Round are absent, holding Points list scroll.
