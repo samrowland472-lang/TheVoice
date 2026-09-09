@@ -275,7 +275,13 @@ export function shouldShiftTabFromFirstOuterToSimplify(
   if (key !== "path-0") return false;
   const axis = from.getAttribute?.("data-path-axis");
   if (axis && axis !== "x") return false;
-  return inspectorOf(from)?.querySelector('[data-path-exit="Simplify"]') != null;
+  const inspector = inspectorOf(from);
+  if (!inspector?.querySelector('[data-path-exit="Simplify"]')) return false;
+  // Closed, Offset, Outline, and Round own this hop when present; Simplify is last fallback.
+  if (inspector.querySelector('[data-path-exit="Closed"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Offset"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Outline"]')) return false;
+  return inspector.querySelector('[data-path-exit="Round"]') == null;
 }
 
 export function shouldShiftTabFromFirstOuterToRound(
