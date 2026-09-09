@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from hole header N+1 onto last hole-path y of hole N when both lists are mid-scroll.
+1. Path inspector: Shift+Tab from hole header N+1 onto last hole-path x of hole N when both lists are mid-scroll.
 
 ## Done
+
+- Path inspector Shift+Tab from hole header N+1 lands on last hole-path y of hole N and holds both Points and Holes list scroll when mid-scroll. `shouldShiftTabToPrevHoleLastPoint` / `pickPrevHoleLastPointTabTarget` still own the target (y preferred); `tagHolePointTabCrossing` now treats header → point as a hold and calls `holdPointAndHoleLists` so both `scrollTop`s restore instead of `scrollIntoView`.
 
 - Path inspector Tab from last hole-path y lands on the next hole header and holds both Points and Holes list scroll when mid-scroll. `shouldTabToNextHoleHeader` / `pickNextHoleHeaderTabTarget` still own the target; `holdPointAndHoleLists` snapshots `[data-point-list]` and `[data-hole-list]` from either side of the hop and restores both `scrollTop`s instead of `scrollIntoView`.
 
@@ -44,8 +46,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-09 09:06 BST — Tab from last hole-path y lands on next hole header and holds Points and Holes list scroll.
+2026-09-09 10:12 BST — Shift+Tab from hole header N+1 lands on last hole-path y of hole N and holds Points and Holes list scroll.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from hole header N+1 onto last hole-path y of hole N when both lists are mid-scroll.
+Path inspector: Shift+Tab from hole header N+1 onto last hole-path x of hole N when both lists are mid-scroll.
