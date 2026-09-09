@@ -131,5 +131,6 @@ export function tagHolePointTabCrossing(
   row.setAttribute("data-hole-point", "");
   if (fromPoint && toHeader) holdPointAndHoleLists(from, to);
   if (fromHeader && toPoint) holdPointAndHoleLists(from, to);
+  if (fromPoint && toPoint && fromPoint !== toPoint) holdPointAndHoleLists(from, to);
   return true;
 }
