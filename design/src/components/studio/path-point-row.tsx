@@ -8,10 +8,12 @@ import {
   pickPathInspectorExitTarget,
   pickNextHoleHeaderTabTarget,
   pickSameHoleHeaderTabTarget,
+  pickClosedTabTarget,
   pickOffsetTabTarget,
   pickOutlineTabTarget,
   pickRoundTabTarget,
   pickSimplifyTabTarget,
+  shouldShiftTabFromFirstOuterToClosed,
   shouldShiftTabFromFirstOuterToOffset,
   shouldShiftTabFromFirstOuterToOutline,
   shouldShiftTabFromFirstOuterToRound,
@@ -174,6 +176,23 @@ function PointRow({
                 e.preventDefault();
                 tagHolePointTabCrossing(e.currentTarget, offset, offset);
                 offset.focus();
+                if (list instanceof HTMLElement) {
+                  list.scrollTop = saved;
+                  requestAnimationFrame(() => {
+                    list.scrollTop = saved;
+                  });
+                }
+                return;
+              }
+            }
+            if (shouldShiftTabFromFirstOuterToClosed(e.currentTarget, e.shiftKey)) {
+              const closed = pickClosedTabTarget(e.currentTarget);
+              if (closed) {
+                const list = e.currentTarget.closest("[data-point-list]");
+                const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+                e.preventDefault();
+                tagHolePointTabCrossing(e.currentTarget, closed, closed);
+                closed.focus();
                 if (list instanceof HTMLElement) {
                   list.scrollTop = saved;
                   requestAnimationFrame(() => {
