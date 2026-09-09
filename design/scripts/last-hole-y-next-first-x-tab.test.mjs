@@ -12,18 +12,21 @@ test("Tab from last hole-path y hops to next hole first-point x", () => {
   assert.match(a, /data-point\^="hole-\$\{h \+ 1\}-"/);
   assert.match(a, /function pickNextHoleFirstPointXTabTarget/);
   assert.match(a, /data-path-axis="x"/);
+  assert.match(ui, /function focusNextHoleFirstX/);
+  assert.match(ui, /shouldTabFromLastHoleYToNextFirstX/);
+  assert.match(ui, /pickNextHoleFirstPointXTabTarget/);
+  assert.match(ui, /tagHolePointTabCrossing\(from, nextX, nextX\)/);
   const yBlock = ui.split('data-path-axis="y"')[1] ?? "";
-  assert.match(yBlock, /shouldTabFromLastHoleYToNextFirstX/);
-  assert.match(yBlock, /pickNextHoleFirstPointXTabTarget/);
-  assert.match(yBlock, /tagHolePointTabCrossing\(e\.currentTarget, nextX, nextX\)/);
+  assert.match(yBlock, /focusNextHoleFirstX/);
 });
 
 test("last-hole y to next first x holds Points and Holes list scroll after growth", () => {
   assert.match(b, /fromPoint && toPoint && fromPoint !== toPoint\) holdPointAndHoleLists/);
   assert.match(b, /snapshotScroll\(from, to, "\[data-point-list\]"\)/);
   assert.match(b, /snapshotScroll\(from, to, "\[data-hole-list\]"\)/);
+  assert.match(ui, /function focusNextHoleFirstX/);
+  assert.match(ui, /focus\(\{ preventScroll: true \}\)/);
   const yBlock = ui.split('data-path-axis="y"')[1] ?? "";
-  assert.match(yBlock, /shouldTabFromLastHoleYToNextFirstX/);
-  assert.match(yBlock, /focus\(\{ preventScroll: true \}\)/);
-  assert.match(yBlock, /requestAnimationFrame\(\(\) => \{\s*list\.scrollTop = saved;\s*requestAnimationFrame/);
+  assert.match(yBlock, /focusNextHoleFirstX/);
+  assert.match(ui, /requestAnimationFrame\(\(\) => \{\s*list\.scrollTop = saved;\s*requestAnimationFrame/);
 });
