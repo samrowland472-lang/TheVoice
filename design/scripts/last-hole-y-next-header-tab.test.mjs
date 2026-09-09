@@ -9,18 +9,18 @@ const ui = readFileSync(new URL("../src/components/studio/path-point-row.tsx", i
 test("Tab from last hole-path y hops to the next hole header", () => {
   assert.match(a, /function shouldTabToNextHoleHeader/);
   assert.match(a, /axis !== "y"/);
-  assert.match(a, /data-select-hole="\\$\\{h \\+ 1\\}"/);
+  assert.match(a, /data-select-hole="\$\{h \+ 1\}"/);
   const yBlock = ui.split('data-path-axis="y"')[1] ?? "";
   assert.match(yBlock, /shouldTabToNextHoleHeader/);
   assert.match(yBlock, /pickNextHoleHeaderTabTarget/);
-  assert.match(yBlock, /tagHolePointTabCrossing\\(e\\.currentTarget, header, header\\)/);
+  assert.match(yBlock, /tagHolePointTabCrossing\(e\.currentTarget, header, header\)/);
 });
 
 test("last-hole y hop holds Points and Holes list scroll when both are mid-scroll", () => {
   assert.match(b, /fromPoint && toHeader/);
   assert.match(b, /data-select-hole/);
   const yBlock = ui.split('data-path-axis="y"')[1] ?? "";
-  assert.match(yBlock, /holdPointAndHoleLists\\(e\\.currentTarget, header\\)/);
-  assert.match(b, /snapshotScroll\\(from, to, "\\[data-point-list\\]"\\)/);
-  assert.match(b, /snapshotScroll\\(from, to, "\\[data-hole-list\\]"\\)/);
+  assert.match(yBlock, /holdPointAndHoleLists\(e\.currentTarget, header\)/);
+  assert.match(b, /snapshotScroll\(from, to, "\[data-point-list\]"\)/);
+  assert.match(b, /snapshotScroll\(from, to, "\[data-hole-list\]"\)/);
 });
