@@ -14,7 +14,6 @@ export {
   isCrossingHolePointTab,
   isCrossingHolePointToHeaderTab,
   pickFirstOuterPointTabTarget,
-  pickClosedTabTarget,
   pickOffsetTabTarget,
   pickOutlineTabTarget,
   pickRoundTabTarget,
@@ -24,7 +23,6 @@ export {
   pickSameHoleFirstPointTabTarget,
   pickSameHoleHeaderTabTarget,
   pickSameHoleLastPointTabTarget,
-  shouldShiftTabFromFirstOuterToClosed,
   shouldShiftTabFromFirstOuterToOffset,
   shouldShiftTabFromFirstOuterToOutline,
   shouldShiftTabFromFirstOuterToRound,
@@ -39,6 +37,10 @@ export {
   shouldTabToNextHoleHeader,
   shouldTabToSameHoleFirstPoint,
 } from "./path-point-tab-a";
+export {
+  pickClosedTabTarget,
+  shouldShiftTabFromFirstOuterToClosed,
+} from "./path-point-tab-closed";
 export {
   isCrossingHoleHeaderTab,
   isPathExitStatus,
