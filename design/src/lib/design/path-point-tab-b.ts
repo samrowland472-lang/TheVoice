@@ -127,5 +127,6 @@ export function tagHolePointTabCrossing(
   if (!crossing) return false;
   const row = mark.closest("[data-point]") ?? mark.closest("[data-select-hole]") ?? mark;
   row.setAttribute("data-hole-point", "");
+  if (fromPoint && toHeader) holdPointAndHoleLists(from, to);
   return true;
 }
