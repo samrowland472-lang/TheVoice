@@ -20,7 +20,9 @@ test("last-hole y hop holds Points and Holes list scroll when both are mid-scrol
   assert.match(b, /fromPoint && toHeader/);
   assert.match(b, /data-select-hole/);
   const yBlock = ui.split('data-path-axis="y"')[1] ?? "";
-  assert.match(yBlock, /holdPointAndHoleLists\(e\.currentTarget, header\)/);
+  assert.match(yBlock, /shouldTabToNextHoleHeader/);
+  assert.match(yBlock, /tagHolePointTabCrossing\(e\.currentTarget, header, header\)/);
+  assert.match(b, /fromPoint && toHeader\) holdPointAndHoleLists/);
   assert.match(b, /snapshotScroll\(from, to, "\[data-point-list\]"\)/);
   assert.match(b, /snapshotScroll\(from, to, "\[data-hole-list\]"\)/);
 });
