@@ -10,6 +10,7 @@ export { PointRow } from "./path-point-row-view";
 // pickPrevHoleLastPointXTabTarget
 // function focusNextHoleFirstY
 // shouldTabFromLastHoleYToNextFirstY
+// shouldTabFromLastHoleXToNextFirstY
 // pickNextHoleFirstPointYTabTarget
 // tagHolePointTabCrossing(from, nextY, nextY)
 // function focusNextHoleFirstX
