@@ -53,6 +53,8 @@ export {
   pickNextHoleFirstPointXTabTarget,
   pickPrevHoleLastPointXTabTarget,
   pickPrevHoleLastPointYTabTarget,
+  shouldTabFromLastOuterYToFirstHoleX,
+  pickFirstHoleFirstPointXTabTarget,
 } from "./path-point-tab-last-y";
 export {
   pickClosedTabTarget,
