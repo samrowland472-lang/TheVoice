@@ -121,11 +121,20 @@ function firstHoleToPrevLastX(from: Element, axisWanted: "x" | "y"): boolean {
   return firstHoleToPrevLastAxis(from, axisWanted, "x");
 }
 
+export function shouldShiftTabFromFirstHoleXToPrevLastY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  return firstHoleToPrevLastAxis(from, "x", "y");
+}
+
 export function shouldShiftTabFromFirstHoleXToPrevLastX(
   from: Element | null | undefined,
   shift: boolean,
 ): boolean {
   if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromFirstHoleXToPrevLastY(from, true)) return false;
   return firstHoleToPrevLastX(from, "x");
 }
 
