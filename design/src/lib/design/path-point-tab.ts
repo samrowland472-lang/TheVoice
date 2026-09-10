@@ -41,11 +41,13 @@ export {
   shouldTabToSameHoleFirstPoint,
 } from "./path-point-tab-a";
 export {
+  shouldTabFromLastHoleYToNextFirstY,
   shouldTabFromLastHoleYToNextFirstX,
   shouldTabFromLastHoleXToNextFirstX,
   shouldShiftTabFromFirstHoleXToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastY,
+  pickNextHoleFirstPointYTabTarget,
   pickNextHoleFirstPointXTabTarget,
   pickPrevHoleLastPointXTabTarget,
   pickPrevHoleLastPointYTabTarget,
