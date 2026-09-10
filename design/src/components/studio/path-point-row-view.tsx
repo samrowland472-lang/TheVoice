@@ -29,6 +29,8 @@ import {
   shouldTabFromLastHoleYToNextFirstX,
   shouldTabFromLastHoleYToNextFirstY,
   shouldTabFromLastOuterYToFirstHoleX,
+  shouldShiftTabFromFirstHoleXToLastOuterY,
+  pickLastOuterLastPointYTabTarget,
   pickFirstHoleFirstPointXTabTarget,
   shouldTabToNextHoleHeader,
   tagHolePointTabCrossing,
@@ -114,6 +116,15 @@ function focusFirstHoleFirstX(from: HTMLElement): boolean {
   return true;
 }
 
+function focusLastOuterLastY(from: HTMLElement): boolean {
+  if (!shouldShiftTabFromFirstHoleXToLastOuterY(from, true)) return false;
+  const lastY = pickLastOuterLastPointYTabTarget(from);
+  if (!lastY) return false;
+  tagHolePointTabCrossing(from, lastY, lastY);
+  focusHoldEl(lastY, from);
+  return true;
+}
+
 export function PointRow({
   nodeId, index, point, hole, active,
 }: {
@@ -125,6 +136,7 @@ export function PointRow({
     if (e.key !== "Tab") return;
     const from = e.currentTarget;
     if (e.shiftKey) {
+      if (focusLastOuterLastY(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastY(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastX(from)) { e.preventDefault(); return; }
       if (shouldShiftTabToSameHoleHeader(from, true)) {
@@ -177,7 +189,7 @@ export function PointRow({
       </button>
       <div className="grid grid-cols-2 gap-1">
         <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
-        {/* focusPrevHoleLastY focusPrevHoleLastX */}
+        {/* focusLastOuterLastY focusPrevHoleLastY focusPrevHoleLastX */}
         <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
         {/* focusFirstHoleFirstX */}
       </div>
