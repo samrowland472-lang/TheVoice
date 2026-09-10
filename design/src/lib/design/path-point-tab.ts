@@ -56,6 +56,7 @@ export {
   shouldTabFromLastOuterYToFirstHoleX,
   shouldShiftTabFromFirstHoleXToLastOuterY,
   shouldShiftTabFromFirstHoleXToLastOuterX,
+  shouldShiftTabFromFirstHoleYToLastOuterX,
   shouldShiftTabFromFirstHoleYToLastOuterY,
   pickLastOuterLastPointYTabTarget,
   pickLastOuterLastPointXTabTarget,
