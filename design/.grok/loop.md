@@ -21,18 +21,20 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first hole-path y of hole N+1 onto last hole-path y of hole N while both lists stay mid-scroll after growth.
+1. Path inspector: Tab from last hole-path y of hole N onto first hole-path y of hole N+1 while both lists stay mid-scroll after growth.
 
 ## Done
 
-- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToPrevLastX` + shared `focusPrevHoleLastX` / `pickPrevHoleLastPointXTabTarget`; first-y still falls through to same/prev header when no prev last x. Restored `PointRow` in `path-point-row.tsx` so axis Tab hops actually run.
+- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on last hole-path y of hole N and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToPrevLastY` + `focusPrevHoleLastY` / `pickPrevHoleLastPointYTabTarget`; first-y still falls through to prev last x when no last y, then same/prev header.
+
+- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth.
 
 - Path inspector Shift+Tab from first hole-path x of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth.
 
 ## Iteration
 
-2026-09-10 06:18 BST — Shift+Tab from first hole-path y of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after list growth.
+2026-09-10 07:20 BST — Shift+Tab from first hole-path y of hole N+1 lands on last hole-path y of hole N and holds Points and Holes list scroll after list growth.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first hole-path y of hole N+1 onto last hole-path y of hole N while both lists stay mid-scroll after growth.
+Path inspector: Tab from last hole-path y of hole N onto first hole-path y of hole N+1 while both lists stay mid-scroll after growth.
