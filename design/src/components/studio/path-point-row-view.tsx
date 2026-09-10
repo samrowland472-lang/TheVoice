@@ -30,7 +30,10 @@ import {
   shouldTabFromLastHoleYToNextFirstY,
   shouldTabFromLastOuterYToFirstHoleX,
   shouldShiftTabFromFirstHoleXToLastOuterY,
+  shouldShiftTabFromFirstHoleXToLastOuterX,
+  shouldShiftTabFromFirstHoleYToLastOuterY,
   pickLastOuterLastPointYTabTarget,
+  pickLastOuterLastPointXTabTarget,
   pickFirstHoleFirstPointXTabTarget,
   shouldTabToNextHoleHeader,
   tagHolePointTabCrossing,
@@ -117,11 +120,20 @@ function focusFirstHoleFirstX(from: HTMLElement): boolean {
 }
 
 function focusLastOuterLastY(from: HTMLElement): boolean {
-  if (!shouldShiftTabFromFirstHoleXToLastOuterY(from, true)) return false;
+  if (!shouldShiftTabFromFirstHoleXToLastOuterY(from, true) && !shouldShiftTabFromFirstHoleYToLastOuterY(from, true)) return false;
   const lastY = pickLastOuterLastPointYTabTarget(from);
   if (!lastY) return false;
   tagHolePointTabCrossing(from, lastY, lastY);
   focusHoldEl(lastY, from);
+  return true;
+}
+
+function focusLastOuterLastX(from: HTMLElement): boolean {
+  if (!shouldShiftTabFromFirstHoleXToLastOuterX(from, true)) return false;
+  const lastX = pickLastOuterLastPointXTabTarget(from);
+  if (!lastX) return false;
+  tagHolePointTabCrossing(from, lastX, lastX);
+  focusHoldEl(lastX, from);
   return true;
 }
 
@@ -137,6 +149,7 @@ export function PointRow({
     const from = e.currentTarget;
     if (e.shiftKey) {
       if (focusLastOuterLastY(from)) { e.preventDefault(); return; }
+      if (focusLastOuterLastX(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastY(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastX(from)) { e.preventDefault(); return; }
       if (shouldShiftTabToSameHoleHeader(from, true)) {
@@ -189,9 +202,9 @@ export function PointRow({
       </button>
       <div className="grid grid-cols-2 gap-1">
         <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
-        {/* focusLastOuterLastY focusPrevHoleLastY focusPrevHoleLastX */}
+        {/* focusLastOuterLastY focusLastOuterLastX focusPrevHoleLastY focusPrevHoleLastX */}
         <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
-        {/* focusFirstHoleFirstX */}
+        {/* focusLastOuterLastY focusFirstHoleFirstX */}
       </div>
     </div>
   );
