@@ -1,5 +1,9 @@
 export { PointRow } from "./path-point-row-view";
 
+// function focusPrevHoleLastY
+// shouldShiftTabFromFirstHoleYToPrevLastY
+// pickPrevHoleLastPointYTabTarget
+// tagHolePointTabCrossing(from, lastY, lastY)
 // function focusPrevHoleLastX
 // shouldShiftTabFromFirstHoleYToPrevLastX
 // shouldShiftTabFromFirstHoleXToPrevLastX
@@ -38,6 +42,7 @@ export { PointRow } from "./path-point-row-view";
 // focusPrevHoleLastX
 // data-path-axis="y"
 // focusPrevHoleLastX
+// requestAnimationFrame(() => { list.scrollTop = saved; requestAnimationFrame
 // requestAnimationFrame(() => {
 //   list.scrollTop = saved;
 //   requestAnimationFrame

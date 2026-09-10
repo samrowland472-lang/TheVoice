@@ -46,7 +46,7 @@ export function shouldTabFromLastHoleXToNextFirstX(
   return inspector.querySelector(`[data-point^="hole-${h + 1}-"]`) != null;
 }
 
-function firstHoleToPrevLastX(from: Element, axisWanted: "x" | "y"): boolean {
+function firstHoleToPrevLastAxis(from: Element, axisWanted: "x" | "y", targetAxis: "x" | "y"): boolean {
   const key = pointKey(from);
   const h = holeIndexFromPointKey(key);
   if (h == null || h < 1) return false;
@@ -60,7 +60,11 @@ function firstHoleToPrevLastX(from: Element, axisWanted: "x" | "y"): boolean {
   const prev = [...inspector.querySelectorAll<HTMLElement>(`[data-point^="hole-${h - 1}-"]`)];
   const last = prev.at(-1);
   if (!last) return false;
-  return last.querySelector('input[data-path-axis="x"]') != null;
+  return last.querySelector(`input[data-path-axis="${targetAxis}"]`) != null;
+}
+
+function firstHoleToPrevLastX(from: Element, axisWanted: "x" | "y"): boolean {
+  return firstHoleToPrevLastAxis(from, axisWanted, "x");
 }
 
 export function shouldShiftTabFromFirstHoleXToPrevLastX(
@@ -76,7 +80,32 @@ export function shouldShiftTabFromFirstHoleYToPrevLastX(
   shift: boolean,
 ): boolean {
   if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromFirstHoleYToPrevLastY(from, true)) return false;
   return firstHoleToPrevLastX(from, "y");
+}
+
+export function shouldShiftTabFromFirstHoleYToPrevLastY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  return firstHoleToPrevLastAxis(from, "y", "y");
+}
+
+export function pickPrevHoleLastPointYTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const h = holeIndexFromPointKey(pointKey(from));
+  if (h == null || h < 1) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const rows = [...inspector.querySelectorAll<HTMLElement>(`[data-point^="hole-${h - 1}-"]`)];
+  const last = rows.at(-1);
+  if (!last) return null;
+  return (
+    last.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
+    last.querySelector<HTMLElement>('input[data-path-axis="x"]') ??
+    last
+  );
 }
 
 export function pickPrevHoleLastPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
