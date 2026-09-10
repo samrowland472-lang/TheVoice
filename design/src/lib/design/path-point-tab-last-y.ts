@@ -46,16 +46,12 @@ export function shouldTabFromLastHoleXToNextFirstX(
   return inspector.querySelector(`[data-point^="hole-${h + 1}-"]`) != null;
 }
 
-export function shouldShiftTabFromFirstHoleXToPrevLastX(
-  from: Element | null | undefined,
-  shift: boolean,
-): boolean {
-  if (!shift || !from || !(from instanceof Element)) return false;
+function firstHoleToPrevLastX(from: Element, axisWanted: "x" | "y"): boolean {
   const key = pointKey(from);
   const h = holeIndexFromPointKey(key);
   if (h == null || h < 1) return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== axisWanted) return false;
   const inspector = inspectorOf(from);
   if (!inspector) return false;
   const rows = [...inspector.querySelectorAll(`[data-point^="hole-${h}-"]`)];
@@ -65,6 +61,22 @@ export function shouldShiftTabFromFirstHoleXToPrevLastX(
   const last = prev.at(-1);
   if (!last) return false;
   return last.querySelector('input[data-path-axis="x"]') != null;
+}
+
+export function shouldShiftTabFromFirstHoleXToPrevLastX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  return firstHoleToPrevLastX(from, "x");
+}
+
+export function shouldShiftTabFromFirstHoleYToPrevLastX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  return firstHoleToPrevLastX(from, "y");
 }
 
 export function pickPrevHoleLastPointXTabTarget(from: Element | null | undefined): HTMLElement | null {

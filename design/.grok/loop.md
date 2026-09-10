@@ -21,32 +21,18 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector: Shift+Tab from first hole-path y of hole N+1 onto last hole-path x of hole N while both lists stay mid-scroll after growth.
+1. Path inspector: Shift+Tab from first hole-path y of hole N+1 onto last hole-path y of hole N while both lists stay mid-scroll after growth.
 
 ## Done
 
-- Path inspector Shift+Tab from first hole-path x of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleXToPrevLastX` + `pickPrevHoleLastPointXTabTarget`; `focusPrevHoleLastX` + `focus({ preventScroll: true })` + double-rAF restore; last-x still falls through to prev header when no prev last x. Also wired Tab last-x → next first-x via `shouldTabFromLastHoleXToNextFirstX` in `focusNextHoleFirstX`.
+- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToPrevLastX` + shared `focusPrevHoleLastX` / `pickPrevHoleLastPointXTabTarget`; first-y still falls through to same/prev header when no prev last x. Restored `PointRow` in `path-point-row.tsx` so axis Tab hops actually run.
 
-- Path inspector Tab from last hole-path x of hole N lands on hole N+1 first-point x and holds Points and Holes list scroll after growth. `shouldTabFromLastHoleXToNextFirstX` + shared `focusNextHoleFirstX` / `pickNextHoleFirstPointXTabTarget`; last-x still falls through to next header when no next first point; `focus({ preventScroll: true })` + double-rAF restore.
-
-- Path inspector Tab from last hole-path y of hole N lands on hole N+1 first-point x and holds Points and Holes list scroll after growth. `shouldTabFromLastHoleYToNextFirstX` + `pickNextHoleFirstPointXTabTarget`; point-to-point `holdPointAndHoleLists`; `focus({ preventScroll: true })` + double-rAF restore.
-
-- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on hole N header without jumping scroll when Points and Holes lists grow. `shouldShiftTabToPrevHoleHeader` now accepts first-point x or y; `pickPrevHoleHeaderTabTarget`; `header.focus({ preventScroll: true })`; double-rAF restore; `holdPointAndHoleLists` snapshots both lists.
-
-- Path inspector Shift+Tab from first hole-path x of hole N+1 lands on hole N header without jumping scroll when Points and Holes lists grow. `shouldShiftTabToPrevHoleHeader` + `pickPrevHoleHeaderTabTarget`; `header.focus({ preventScroll: true })`; double-rAF restore; `holdPointAndHoleLists` snapshots both lists. Restored `shouldTabFromLastHoleXToNextHeader`.
-
-- Path inspector Tab from last hole-path y of hole N lands on hole N+1 header without jumping scroll when Points and Holes lists grow. `shouldTabToNextHoleHeader` + `header.focus({ preventScroll: true })`; `restoreListScroll` double-rAF + clamp; `holdPointAndHoleLists` still snapshots both lists.
-
-- Path inspector Tab from last hole-path x of hole N lands on the header of hole N+1 and holds both Points and Holes list scroll when mid-scroll. `shouldTabFromLastHoleXToNextHeader` + `pickNextHoleHeaderTabTarget`; `tagHolePointTabCrossing` + `holdPointAndHoleLists` restore both `scrollTop`s.
-
-- Path inspector Shift+Tab from hole header N+1 lands on last hole-path x of hole N and holds both Points and Holes list scroll when mid-scroll. `pickPrevHoleLastPointTabTarget` prefers `data-path-axis="x"` on the last row of hole N (y fallback); `tagHolePointTabCrossing` + `focusHold` restore Points and Holes `scrollTop`.
-
-- Path inspector Shift+Tab from hole header N+1 lands on last hole-path y of hole N and holds both Points and Holes list scroll when mid-scroll. `shouldShiftTabToPrevHoleLastPoint` / `pickPrevHoleLastPointTabTarget` still own the target (y preferred); `tagHolePointTabCrossing` now treats header → point as a hold and calls `holdPointAndHoleLists` so both `scrollTop`s restore instead of `scrollIntoView`.
+- Path inspector Shift+Tab from first hole-path x of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth.
 
 ## Iteration
 
-2026-09-10 06:10 BST — Shift+Tab from first hole-path x of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after list growth.
+2026-09-10 06:18 BST — Shift+Tab from first hole-path y of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after list growth.
 
 ## Next recommended
 
-Path inspector: Shift+Tab from first hole-path y of hole N+1 onto last hole-path x of hole N while both lists stay mid-scroll after growth.
+Path inspector: Shift+Tab from first hole-path y of hole N+1 onto last hole-path y of hole N while both lists stay mid-scroll after growth.
