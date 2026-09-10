@@ -57,11 +57,36 @@ function lastHoleYToNextFirstFallback(from: Element): boolean {
   return inspector.querySelector(`[data-point^="hole-${h + 1}-"]`) != null;
 }
 
+function lastHoleXToNextFirst(from: Element, targetAxis: "x" | "y"): boolean {
+  const key = pointKey(from);
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  const rows = [...inspector.querySelectorAll(`[data-point^="hole-${h}-"]`)];
+  const row = from.closest("[data-point]");
+  if (!row || rows.at(-1) !== row) return false;
+  const next = inspector.querySelector<HTMLElement>(`[data-point^="hole-${h + 1}-"]`);
+  if (!next) return false;
+  return next.querySelector(`input[data-path-axis="${targetAxis}"]`) != null;
+}
+
+export function shouldTabFromLastHoleXToNextFirstY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  return lastHoleXToNextFirst(from, "y");
+}
+
 export function shouldTabFromLastHoleXToNextFirstX(
   from: Element | null | undefined,
   shift: boolean,
 ): boolean {
   if (shift || !from || !(from instanceof Element)) return false;
+  if (shouldTabFromLastHoleXToNextFirstY(from, false)) return false;
   const key = pointKey(from);
   const h = holeIndexFromPointKey(key);
   if (h == null || h < 0) return false;
