@@ -54,6 +54,7 @@ export {
   pickPrevHoleLastPointXTabTarget,
   pickPrevHoleLastPointYTabTarget,
   shouldTabFromLastOuterYToFirstHoleX,
+  shouldTabFromLastOuterYToFirstHoleY,
   shouldTabFromLastOuterXToFirstHoleY,
   shouldTabFromLastOuterXToFirstHoleX,
   shouldShiftTabFromFirstHoleXToLastOuterY,
