@@ -45,6 +45,7 @@ export {
   shouldTabFromLastHoleYToNextFirstX,
   shouldTabFromLastHoleXToNextFirstY,
   shouldTabFromLastHoleXToNextFirstX,
+  shouldShiftTabFromFirstHoleXToPrevLastY,
   shouldShiftTabFromFirstHoleXToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastY,
