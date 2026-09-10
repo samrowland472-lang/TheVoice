@@ -239,12 +239,12 @@ function lastOuterYToFirstHoleFallback(from: Element): boolean {
   return inspector.querySelector('[data-point^="hole-0-"]') != null;
 }
 
-function firstHoleXToLastOuterY(from: Element): boolean {
+function firstHoleToLastOuterAxis(from: Element, axisWanted: "x" | "y", targetAxis: "x" | "y"): boolean {
   const key = pointKey(from);
   const h = holeIndexFromPointKey(key);
   if (h !== 0) return false;
   const axis = from.getAttribute?.("data-path-axis");
-  if (axis && axis !== "x") return false;
+  if (axis && axis !== axisWanted) return false;
   const inspector = inspectorOf(from);
   if (!inspector) return false;
   const holeRows = [...inspector.querySelectorAll('[data-point^="hole-0-"]')];
@@ -253,7 +253,19 @@ function firstHoleXToLastOuterY(from: Element): boolean {
   const outer = [...inspector.querySelectorAll<HTMLElement>('[data-point^="path-"]')];
   const last = outer.at(-1);
   if (!last) return false;
-  return last.querySelector('input[data-path-axis="y"]') != null || last.querySelector('input[data-path-axis="x"]') != null;
+  return last.querySelector(`input[data-path-axis="${targetAxis}"]`) != null;
+}
+
+function firstHoleXToLastOuterY(from: Element): boolean {
+  return firstHoleToLastOuterAxis(from, "x", "y");
+}
+
+function firstHoleYToLastOuterY(from: Element): boolean {
+  return firstHoleToLastOuterAxis(from, "y", "y");
+}
+
+function firstHoleXToLastOuterX(from: Element): boolean {
+  return firstHoleToLastOuterAxis(from, "x", "x");
 }
 
 export function shouldShiftTabFromFirstHoleXToLastOuterY(
@@ -262,6 +274,23 @@ export function shouldShiftTabFromFirstHoleXToLastOuterY(
 ): boolean {
   if (!shift || !from || !(from instanceof Element)) return false;
   return firstHoleXToLastOuterY(from);
+}
+
+export function shouldShiftTabFromFirstHoleYToLastOuterY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  return firstHoleYToLastOuterY(from);
+}
+
+export function shouldShiftTabFromFirstHoleXToLastOuterX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromFirstHoleXToLastOuterY(from, true)) return false;
+  return firstHoleXToLastOuterX(from);
 }
 
 export function pickLastOuterLastPointYTabTarget(from: Element | null | undefined): HTMLElement | null {
@@ -274,6 +303,20 @@ export function pickLastOuterLastPointYTabTarget(from: Element | null | undefine
   return (
     last.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
     last.querySelector<HTMLElement>('input[data-path-axis="x"]') ??
+    last
+  );
+}
+
+export function pickLastOuterLastPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const rows = [...inspector.querySelectorAll<HTMLElement>('[data-point^="path-"]')];
+  const last = rows.at(-1);
+  if (!last) return null;
+  return (
+    last.querySelector<HTMLElement>('input[data-path-axis="x"]') ??
+    last.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
     last
   );
 }
