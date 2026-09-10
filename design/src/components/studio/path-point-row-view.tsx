@@ -12,6 +12,7 @@ import {
   pickSameHoleHeaderTabTarget,
   pickSimplifyTabTarget,
   shouldShiftTabFromFirstHoleXToPrevLastX,
+  shouldShiftTabFromFirstHoleXToPrevLastY,
   shouldShiftTabFromFirstHoleYToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastY,
   shouldShiftTabFromFirstOuterToClosed,
@@ -67,7 +68,7 @@ function focusHoldEl(el: HTMLElement, from: Element) {
 }
 
 function focusPrevHoleLastY(from: HTMLElement): boolean {
-  if (!shouldShiftTabFromFirstHoleYToPrevLastY(from, true)) return false;
+  if (!shouldShiftTabFromFirstHoleYToPrevLastY(from, true) && !shouldShiftTabFromFirstHoleXToPrevLastY(from, true)) return false;
   const lastY = pickPrevHoleLastPointYTabTarget(from);
   if (!lastY) return false;
   tagHolePointTabCrossing(from, lastY, lastY);
@@ -164,6 +165,7 @@ export function PointRow({
       </button>
       <div className="grid grid-cols-2 gap-1">
         <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
+        {/* focusPrevHoleLastY focusPrevHoleLastX */}
         <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
       </div>
     </div>
