@@ -21,6 +21,9 @@ export { PointRow } from "./path-point-row-view";
 // function focusFirstHoleFirstX
 // shouldTabFromLastOuterYToFirstHoleX
 // pickFirstHoleFirstPointXTabTarget
+// function focusFirstHoleFirstY
+// shouldTabFromLastOuterXToFirstHoleY
+// pickFirstHoleFirstPointYTabTarget
 // function focusLastOuterLastY
 // shouldShiftTabFromFirstHoleXToLastOuterY
 // shouldShiftTabFromFirstHoleYToLastOuterY
@@ -61,6 +64,7 @@ export { PointRow } from "./path-point-row-view";
 // focusLastOuterLastY
 // focusLastOuterLastX
 // focusPrevHoleLastY
+// focusFirstHoleFirstY
 // focusNextHoleFirstX
 // data-path-axis="y"
 // focusLastOuterLastX
@@ -75,6 +79,7 @@ export { PointRow } from "./path-point-row-view";
 // focusLastOuterLastX
 // focusPrevHoleLastY
 // focusPrevHoleLastX
+// focusFirstHoleFirstY
 // data-path-axis="y"
 // focusLastOuterLastX
 // focusPrevHoleLastX
