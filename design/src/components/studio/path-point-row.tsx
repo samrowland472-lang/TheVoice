@@ -27,6 +27,7 @@ export { PointRow } from "./path-point-row-view";
 // pickLastOuterLastPointYTabTarget
 // function focusLastOuterLastX
 // shouldShiftTabFromFirstHoleXToLastOuterX
+// shouldShiftTabFromFirstHoleYToLastOuterX
 // pickLastOuterLastPointXTabTarget
 // tagHolePointTabCrossing(from, lastY, lastY)
 // tagHolePointTabCrossing(from, firstX, firstX)
@@ -62,6 +63,7 @@ export { PointRow } from "./path-point-row-view";
 // focusPrevHoleLastY
 // focusNextHoleFirstX
 // data-path-axis="y"
+// focusLastOuterLastX
 // focusNextHoleFirstY
 // focusNextHoleFirstX
 // focusFirstHoleFirstX
@@ -74,6 +76,7 @@ export { PointRow } from "./path-point-row-view";
 // focusPrevHoleLastY
 // focusPrevHoleLastX
 // data-path-axis="y"
+// focusLastOuterLastX
 // focusPrevHoleLastX
 // requestAnimationFrame(() => { list.scrollTop = saved; requestAnimationFrame
 // requestAnimationFrame(() => {
