@@ -21,9 +21,12 @@ import {
   shouldShiftTabFromFirstOuterToSimplify,
   shouldShiftTabToPrevHoleHeader,
   shouldShiftTabToSameHoleHeader,
+  pickNextHoleFirstPointYTabTarget,
   shouldTabFromLastHoleXToNextFirstX,
+  shouldTabFromLastHoleXToNextFirstY,
   shouldTabFromLastHoleXToNextHeader,
   shouldTabFromLastHoleYToNextFirstX,
+  shouldTabFromLastHoleYToNextFirstY,
   shouldTabToNextHoleHeader,
   tagHolePointTabCrossing,
 } from "@/lib/design/path-point-tab";
@@ -81,6 +84,15 @@ function focusPrevHoleLastX(from: HTMLElement): boolean {
   return true;
 }
 
+function focusNextHoleFirstY(from: HTMLElement): boolean {
+  if (!shouldTabFromLastHoleYToNextFirstY(from, false) && !shouldTabFromLastHoleXToNextFirstY(from, false)) return false;
+  const nextY = pickNextHoleFirstPointYTabTarget(from);
+  if (!nextY) return false;
+  tagHolePointTabCrossing(from, nextY, nextY);
+  focusHoldEl(nextY, from);
+  return true;
+}
+
 function focusNextHoleFirstX(from: HTMLElement): boolean {
   if (!shouldTabFromLastHoleXToNextFirstX(from, false) && !shouldTabFromLastHoleYToNextFirstX(from, false)) return false;
   const nextX = pickNextHoleFirstPointXTabTarget(from);
@@ -133,6 +145,7 @@ export function PointRow({
       }
       return;
     }
+    if (focusNextHoleFirstY(from)) { e.preventDefault(); return; }
     if (focusNextHoleFirstX(from)) { e.preventDefault(); return; }
     if (axis === "x" && shouldTabFromLastHoleXToNextHeader(from, false)) {
       const header = pickNextHoleHeaderTabTarget(from);
