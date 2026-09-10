@@ -1,14 +1,6 @@
 export { holeIndexFromHoleControl, holeIndexFromPointKey } from "./path-point-key";
 // Point keys: /^path-\d+$/ outer ring, /^hole-(\d+)-(\d+)$/ holes.
 export {
-  labelPathInspectorControl,
-  nextPathAxis,
-  pathInspectorExitStatus,
-  pathTabExitsAtEdge,
-  pathTabLeavesList,
-  pickPathInspectorExitTarget,
-} from "./path-point-tab-core";
-export {
   holePointIndexFromPointKey,
   isCrossingHoleHeaderToPointTab,
   isCrossingHolePointTab,
@@ -41,8 +33,17 @@ export {
   shouldTabToSameHoleFirstPoint,
 } from "./path-point-tab-a";
 export {
+  labelPathInspectorControl,
+  nextPathAxis,
+  pathInspectorExitStatus,
+  pathTabExitsAtEdge,
+  pathTabLeavesList,
+  pickPathInspectorExitTarget,
+} from "./path-point-tab-core";
+export {
   shouldTabFromLastHoleYToNextFirstY,
   shouldTabFromLastHoleYToNextFirstX,
+  shouldTabFromLastHoleXToNextFirstY,
   shouldTabFromLastHoleXToNextFirstX,
   shouldShiftTabFromFirstHoleXToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastX,
