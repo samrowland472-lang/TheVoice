@@ -31,6 +31,7 @@ import {
   shouldTabFromLastOuterYToFirstHoleX,
   shouldShiftTabFromFirstHoleXToLastOuterY,
   shouldShiftTabFromFirstHoleXToLastOuterX,
+  shouldShiftTabFromFirstHoleYToLastOuterX,
   shouldShiftTabFromFirstHoleYToLastOuterY,
   pickLastOuterLastPointYTabTarget,
   pickLastOuterLastPointXTabTarget,
@@ -129,7 +130,7 @@ function focusLastOuterLastY(from: HTMLElement): boolean {
 }
 
 function focusLastOuterLastX(from: HTMLElement): boolean {
-  if (!shouldShiftTabFromFirstHoleXToLastOuterX(from, true)) return false;
+  if (!shouldShiftTabFromFirstHoleXToLastOuterX(from, true) && !shouldShiftTabFromFirstHoleYToLastOuterX(from, true)) return false;
   const lastX = pickLastOuterLastPointXTabTarget(from);
   if (!lastX) return false;
   tagHolePointTabCrossing(from, lastX, lastX);
@@ -204,7 +205,7 @@ export function PointRow({
         <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
         {/* focusLastOuterLastY focusLastOuterLastX focusPrevHoleLastY focusPrevHoleLastX */}
         <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
-        {/* focusLastOuterLastY focusFirstHoleFirstX */}
+        {/* focusLastOuterLastY focusLastOuterLastX focusFirstHoleFirstX */}
       </div>
     </div>
   );
