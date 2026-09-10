@@ -268,6 +268,10 @@ function firstHoleXToLastOuterX(from: Element): boolean {
   return firstHoleToLastOuterAxis(from, "x", "x");
 }
 
+function firstHoleYToLastOuterX(from: Element): boolean {
+  return firstHoleToLastOuterAxis(from, "y", "x");
+}
+
 export function shouldShiftTabFromFirstHoleXToLastOuterY(
   from: Element | null | undefined,
   shift: boolean,
@@ -291,6 +295,15 @@ export function shouldShiftTabFromFirstHoleXToLastOuterX(
   if (!shift || !from || !(from instanceof Element)) return false;
   if (shouldShiftTabFromFirstHoleXToLastOuterY(from, true)) return false;
   return firstHoleXToLastOuterX(from);
+}
+
+export function shouldShiftTabFromFirstHoleYToLastOuterX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromFirstHoleYToLastOuterY(from, true)) return false;
+  return firstHoleYToLastOuterX(from);
 }
 
 export function pickLastOuterLastPointYTabTarget(from: Element | null | undefined): HTMLElement | null {
