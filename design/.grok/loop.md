@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector outer-ring wrap: Shift+Tab from first hole-path y onto last outer-path y while both lists stay mid-scroll.
-2. Path inspector outer-ring wrap: Shift+Tab from first hole-path x onto last outer-path x when last y is missing.
+1. Path inspector outer-ring wrap: Shift+Tab from first hole-path x onto last outer-path x when last y is missing.
 
 ## Done
+
+- Path inspector Shift+Tab from first hole-path y lands on last outer-path y and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToLastOuterY` + `focusLastOuterLastY` / `pickLastOuterLastPointYTabTarget`.
 
 - Path inspector Shift+Tab from first hole-path x lands on last outer-path y and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleXToLastOuterY` + `focusLastOuterLastY` / `pickLastOuterLastPointYTabTarget`.
 
@@ -44,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-10 12:16 BST — Shift+Tab from first hole-path x lands on last outer-path y and holds Points and Holes list scroll after list growth.
+2026-09-10 13:22 BST — Shift+Tab from first hole-path y lands on last outer-path y and holds Points and Holes list scroll after list growth.
 
 ## Next recommended
 
-Path inspector outer-ring wrap: Shift+Tab from first hole-path y onto last outer-path y while both lists stay mid-scroll.
+Path inspector outer-ring wrap: Shift+Tab from first hole-path x onto last outer-path x when last y is missing.
