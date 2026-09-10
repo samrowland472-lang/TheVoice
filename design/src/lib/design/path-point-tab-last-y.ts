@@ -202,6 +202,56 @@ export function pickNextHoleFirstPointYTabTarget(from: Element | null | undefine
   );
 }
 
+function lastOuterYToFirstHole(from: Element, targetAxis: "x" | "y"): boolean {
+  const key = pointKey(from);
+  if (!key || !/^path-\d+$/.test(key)) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "y") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  const rows = [...inspector.querySelectorAll('[data-point^="path-"]')];
+  const row = from.closest("[data-point]");
+  if (!row || rows.at(-1) !== row) return false;
+  const first = inspector.querySelector<HTMLElement>('[data-point^="hole-0-"]');
+  if (!first) return false;
+  return first.querySelector(`input[data-path-axis="${targetAxis}"]`) != null;
+}
+
+export function shouldTabFromLastOuterYToFirstHoleX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  if (lastOuterYToFirstHole(from, "y")) return false;
+  return lastOuterYToFirstHole(from, "x") || lastOuterYToFirstHoleFallback(from);
+}
+
+function lastOuterYToFirstHoleFallback(from: Element): boolean {
+  const key = pointKey(from);
+  if (!key || !/^path-\d+$/.test(key)) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "y") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  const rows = [...inspector.querySelectorAll('[data-point^="path-"]')];
+  const row = from.closest("[data-point]");
+  if (!row || rows.at(-1) !== row) return false;
+  return inspector.querySelector('[data-point^="hole-0-"]') != null;
+}
+
+export function pickFirstHoleFirstPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const row = inspector.querySelector<HTMLElement>('[data-point^="hole-0-"]');
+  if (!row) return null;
+  return (
+    row.querySelector<HTMLElement>('input[data-path-axis="x"]') ??
+    row.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
+    row
+  );
+}
+
 export function pickNextHoleFirstPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const h = holeIndexFromPointKey(pointKey(from));
