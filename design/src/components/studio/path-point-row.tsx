@@ -20,6 +20,7 @@ export { PointRow } from "./path-point-row-view";
 // pickNextHoleFirstPointXTabTarget
 // function focusFirstHoleFirstX
 // shouldTabFromLastOuterYToFirstHoleX
+// shouldTabFromLastOuterXToFirstHoleX
 // pickFirstHoleFirstPointXTabTarget
 // function focusFirstHoleFirstY
 // shouldTabFromLastOuterXToFirstHoleY
@@ -65,6 +66,7 @@ export { PointRow } from "./path-point-row-view";
 // focusLastOuterLastX
 // focusPrevHoleLastY
 // focusFirstHoleFirstY
+// focusFirstHoleFirstX
 // focusNextHoleFirstX
 // data-path-axis="y"
 // focusLastOuterLastX
