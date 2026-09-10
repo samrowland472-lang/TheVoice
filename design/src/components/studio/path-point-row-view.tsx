@@ -7,11 +7,13 @@ import {
   pickOutlineTabTarget,
   pickPrevHoleHeaderTabTarget,
   pickPrevHoleLastPointXTabTarget,
+  pickPrevHoleLastPointYTabTarget,
   pickRoundTabTarget,
   pickSameHoleHeaderTabTarget,
   pickSimplifyTabTarget,
   shouldShiftTabFromFirstHoleXToPrevLastX,
   shouldShiftTabFromFirstHoleYToPrevLastX,
+  shouldShiftTabFromFirstHoleYToPrevLastY,
   shouldShiftTabFromFirstOuterToClosed,
   shouldShiftTabFromFirstOuterToOffset,
   shouldShiftTabFromFirstOuterToOutline,
@@ -61,6 +63,15 @@ function focusHoldEl(el: HTMLElement, from: Element) {
   restoreListScroll(snap.holes, snap.hs);
 }
 
+function focusPrevHoleLastY(from: HTMLElement): boolean {
+  if (!shouldShiftTabFromFirstHoleYToPrevLastY(from, true)) return false;
+  const lastY = pickPrevHoleLastPointYTabTarget(from);
+  if (!lastY) return false;
+  tagHolePointTabCrossing(from, lastY, lastY);
+  focusHoldEl(lastY, from);
+  return true;
+}
+
 function focusPrevHoleLastX(from: HTMLElement): boolean {
   if (!shouldShiftTabFromFirstHoleXToPrevLastX(from, true) && !shouldShiftTabFromFirstHoleYToPrevLastX(from, true)) return false;
   const lastX = pickPrevHoleLastPointXTabTarget(from);
@@ -90,6 +101,7 @@ export function PointRow({
     if (e.key !== "Tab") return;
     const from = e.currentTarget;
     if (e.shiftKey) {
+      if (focusPrevHoleLastY(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastX(from)) { e.preventDefault(); return; }
       if (shouldShiftTabToSameHoleHeader(from, true)) {
         const header = pickSameHoleHeaderTabTarget(from);
