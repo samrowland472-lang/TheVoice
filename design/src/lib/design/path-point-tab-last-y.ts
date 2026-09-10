@@ -239,6 +239,45 @@ function lastOuterYToFirstHoleFallback(from: Element): boolean {
   return inspector.querySelector('[data-point^="hole-0-"]') != null;
 }
 
+function firstHoleXToLastOuterY(from: Element): boolean {
+  const key = pointKey(from);
+  const h = holeIndexFromPointKey(key);
+  if (h !== 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  const holeRows = [...inspector.querySelectorAll('[data-point^="hole-0-"]')];
+  const row = from.closest("[data-point]");
+  if (!row || holeRows[0] !== row) return false;
+  const outer = [...inspector.querySelectorAll<HTMLElement>('[data-point^="path-"]')];
+  const last = outer.at(-1);
+  if (!last) return false;
+  return last.querySelector('input[data-path-axis="y"]') != null || last.querySelector('input[data-path-axis="x"]') != null;
+}
+
+export function shouldShiftTabFromFirstHoleXToLastOuterY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  return firstHoleXToLastOuterY(from);
+}
+
+export function pickLastOuterLastPointYTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const rows = [...inspector.querySelectorAll<HTMLElement>('[data-point^="path-"]')];
+  const last = rows.at(-1);
+  if (!last) return null;
+  return (
+    last.querySelector<HTMLElement>('input[data-path-axis="y"]') ??
+    last.querySelector<HTMLElement>('input[data-path-axis="x"]') ??
+    last
+  );
+}
+
 export function pickFirstHoleFirstPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const inspector = inspectorOf(from);
