@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 const a = readFileSync(new URL("../src/lib/design/path-point-tab-last-y.ts", import.meta.url), "utf8");
 const b = readFileSync(new URL("../src/lib/design/path-point-tab-b.ts", import.meta.url), "utf8");
-const ui = readFileSync(new URL("../src/components/studio/path-point-row.tsx", import.meta.url), "utf8");
+const ui = readFileSync(new URL("../src/components/studio/path-point-row-view.tsx", import.meta.url), "utf8");
 
 test("Shift+Tab from first hole-path x hops to prev hole last-point x", () => {
   assert.match(a, /function shouldShiftTabFromFirstHoleXToPrevLastX/);
