@@ -60,6 +60,8 @@ export { PointRow } from "./path-point-row-view";
 // shouldTabFromLastHoleXToNextHeader
 // shouldShiftTabFromNextHoleHeaderToLastHoleX
 // pickLastHoleLastPointXTabTarget
+// shouldShiftTabFromNextHoleHeaderToLastHoleY
+// pickLastHoleLastPointYTabTarget
 // shouldTabToNextHoleHeader
 // pickNextHoleHeaderTabTarget
 // shouldShiftTabFromFirstOuterToClosed
