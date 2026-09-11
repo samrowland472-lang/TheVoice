@@ -29,6 +29,7 @@ export {
   shouldTabFromRoundToSimplify,
   shouldTabFromSimplifyToFirstOuterPoint,
   shouldTabFromLastHoleXToNextHeader,
+  shouldTabFromLastHoleYToNextHeader,
   shouldTabToNextHoleHeader,
   shouldTabToSameHoleFirstPoint,
 } from "./path-point-tab-a";
