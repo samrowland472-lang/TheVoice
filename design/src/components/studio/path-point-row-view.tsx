@@ -8,6 +8,8 @@ import {
   pickPrevHoleHeaderTabTarget,
   pickPrevHoleLastPointXTabTarget,
   pickPrevHoleLastPointYTabTarget,
+  pickLastHoleLastPointYTabTarget,
+  shouldShiftTabFromNextHoleFirstYToLastHoleY,
   pickRoundTabTarget,
   pickSameHoleHeaderTabTarget,
   pickSimplifyTabTarget,
@@ -83,8 +85,12 @@ function focusHoldEl(el: HTMLElement, from: Element) {
 }
 
 function focusPrevHoleLastY(from: HTMLElement): boolean {
-  if (!shouldShiftTabFromFirstHoleYToPrevLastY(from, true) && !shouldShiftTabFromFirstHoleXToPrevLastY(from, true)) return false;
-  const lastY = pickPrevHoleLastPointYTabTarget(from);
+  if (
+    !shouldShiftTabFromNextHoleFirstYToLastHoleY(from, true) &&
+    !shouldShiftTabFromFirstHoleYToPrevLastY(from, true) &&
+    !shouldShiftTabFromFirstHoleXToPrevLastY(from, true)
+  ) return false;
+  const lastY = pickLastHoleLastPointYTabTarget(from) ?? pickPrevHoleLastPointYTabTarget(from);
   if (!lastY) return false;
   tagHolePointTabCrossing(from, lastY, lastY);
   focusHoldEl(lastY, from);
