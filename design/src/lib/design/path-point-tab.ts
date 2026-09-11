@@ -57,6 +57,7 @@ export {
   shouldTabFromLastOuterYToFirstHoleY,
   shouldTabFromLastOuterYToFirstHoleHeader,
   shouldShiftTabFromFirstHoleHeaderToLastOuterY,
+  shouldShiftTabFromFirstHoleHeaderToLastOuterX,
   shouldTabFromLastOuterXToFirstHoleY,
   shouldTabFromLastOuterXToFirstHoleX,
   shouldShiftTabFromFirstHoleXToLastOuterY,

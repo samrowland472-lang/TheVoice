@@ -39,6 +39,8 @@ export { PointRow } from "./path-point-row-view";
 // function focusLastOuterLastX
 // shouldShiftTabFromFirstHoleXToLastOuterX
 // shouldShiftTabFromFirstHoleYToLastOuterX
+// shouldShiftTabFromFirstHoleHeaderToLastOuterX
+// firstHoleHeaderToLastOuterX
 // pickLastOuterLastPointXTabTarget
 // tagHolePointTabCrossing(from, lastY, lastY)
 // tagHolePointTabCrossing(from, firstX, firstX)
