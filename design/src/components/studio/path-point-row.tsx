@@ -32,7 +32,10 @@ export { PointRow } from "./path-point-row-view";
 // function focusLastOuterLastY
 // shouldShiftTabFromFirstHoleXToLastOuterY
 // shouldShiftTabFromFirstHoleYToLastOuterY
+// shouldShiftTabFromFirstHoleHeaderToLastOuterY
 // pickLastOuterLastPointYTabTarget
+// firstHoleHeaderToLastOuterY
+// data-select-hole="0"
 // function focusLastOuterLastX
 // shouldShiftTabFromFirstHoleXToLastOuterX
 // shouldShiftTabFromFirstHoleYToLastOuterX
