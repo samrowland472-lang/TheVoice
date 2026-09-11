@@ -8,11 +8,12 @@ import {
   pickPrevHoleHeaderTabTarget,
   pickPrevHoleLastPointXTabTarget,
   pickPrevHoleLastPointYTabTarget,
-  pickLastHoleLastPointXTabTarget,
   pickLastHoleLastPointYTabTarget,
+  pickLastHoleLastPointXTabTarget,
   shouldShiftTabFromNextHoleFirstYToLastHoleY,
   shouldShiftTabFromNextHoleFirstXToLastHoleY,
   shouldShiftTabFromNextHoleFirstXToLastHoleX,
+  shouldShiftTabFromNextHoleFirstYToLastHoleX,
   pickRoundTabTarget,
   pickSameHoleHeaderTabTarget,
   pickSimplifyTabTarget,
@@ -103,6 +104,7 @@ function focusPrevHoleLastY(from: HTMLElement): boolean {
 
 function focusPrevHoleLastX(from: HTMLElement): boolean {
   if (
+    !shouldShiftTabFromNextHoleFirstYToLastHoleX(from, true) &&
     !shouldShiftTabFromNextHoleFirstXToLastHoleX(from, true) &&
     !shouldShiftTabFromFirstHoleXToPrevLastX(from, true) &&
     !shouldShiftTabFromFirstHoleYToPrevLastX(from, true)
