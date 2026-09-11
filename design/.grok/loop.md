@@ -21,44 +21,20 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Tab from last outer-path y onto the first hole header when hole 0 has no point fields.
+1. Path inspector Shift+Tab from first hole header onto last outer-path y when hole 0 has no point fields.
 
 ## Done
+
+- Path inspector Tab from last outer-path y lands on the first hole header when hole 0 has no point fields. Restored `path-point-tab-last-y.ts`. `shouldTabFromLastOuterYToFirstHoleHeader` + `pickFirstHoleHeaderTabTarget` / `focusFirstHoleHeader`; first hole x/y still preferred when present. Holds Points and Holes list scroll.
 
 - Path inspector Shift+Tab from first hole-path y lands on last outer-path x when last outer y is missing and first hole x is missing. Restored `path-point-tab-last-y.ts` (`shouldShiftTabFromFirstHoleYToLastOuterX` prefers last y when present). `focusLastOuterLastX` holds Points and Holes list scroll.
 
 - Path inspector Tab from last outer-path y lands on first hole-path y when first hole x is missing and holds Points and Holes list scroll after growth. `shouldTabFromLastOuterYToFirstHoleY` + `focusFirstHoleFirstY` / `pickFirstHoleFirstPointYTabTarget`; first-x still preferred when present.
 
-- Path inspector Tab from last outer-path x lands on first hole-path x when first hole y is missing and holds Points and Holes list scroll after growth. `shouldTabFromLastOuterXToFirstHoleX` + `focusFirstHoleFirstX` / `pickFirstHoleFirstPointXTabTarget`; first-y still preferred when present.
-
-- Path inspector Tab from last outer-path x lands on first hole-path y when first hole x is missing and holds Points and Holes list scroll after growth. `shouldTabFromLastOuterXToFirstHoleY` + `focusFirstHoleFirstY` / `pickFirstHoleFirstPointYTabTarget`; first-x still preferred when present.
-
-- Path inspector outer-ring wrap: Shift+Tab from first hole-path y lands on last outer-path x when last y is missing and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToLastOuterX` + `focusLastOuterLastX` / `pickLastOuterLastPointXTabTarget`; last-y still preferred when present.
-
-- Path inspector Shift+Tab from first hole-path x lands on last outer-path x when last y is missing and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleXToLastOuterX` + `focusLastOuterLastX` / `pickLastOuterLastPointXTabTarget`; last-y still preferred when present.
-
-- Path inspector Shift+Tab from first hole-path y lands on last outer-path y and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToLastOuterY` + `focusLastOuterLastY` / `pickLastOuterLastPointYTabTarget`.
-
-- Path inspector Shift+Tab from first hole-path x lands on last outer-path y and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleXToLastOuterY` + `focusLastOuterLastY` / `pickLastOuterLastPointYTabTarget`.
-
-- Path inspector Tab from last outer-path y lands on first hole-path x and holds Points and Holes list scroll after growth. `shouldTabFromLastOuterYToFirstHoleX` + `focusFirstHoleFirstX` / `pickFirstHoleFirstPointXTabTarget`.
-
-- Path inspector Shift+Tab from first hole-path x of hole N+1 lands on last hole-path y of hole N and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleXToPrevLastY` + `focusPrevHoleLastY`; last-x only when no last y.
-
-- Path inspector Tab from last hole-path x of hole N lands on first hole-path y of hole N+1 and holds Points and Holes list scroll after growth. `shouldTabFromLastHoleXToNextFirstY` + `focusNextHoleFirstY`; last-x falls through to next first x when no first y.
-
-- Path inspector Tab from last hole-path y of hole N lands on first hole-path y of hole N+1 and holds Points and Holes list scroll after growth. `shouldTabFromLastHoleYToNextFirstY` + `focusNextHoleFirstY` / `pickNextHoleFirstPointYTabTarget`; last-y still falls through to next first x when no first y.
-
-- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on last hole-path y of hole N and holds Points and Holes list scroll after growth. `shouldShiftTabFromFirstHoleYToPrevLastY` + `focusPrevHoleLastY` / `pickPrevHoleLastPointYTabTarget`; first-y still falls through to prev last x when no last y, then same/prev header.
-
-- Path inspector Shift+Tab from first hole-path y of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth.
-
-- Path inspector Shift+Tab from first hole-path x of hole N+1 lands on last hole-path x of hole N and holds Points and Holes list scroll after growth.
-
 ## Iteration
 
-2026-09-11 03:10 BST — Restored path-point-tab-last-y and Shift+Tab from first hole-path y to last outer-path x when last outer y is missing (first hole x missing).
+2026-09-11 06:26 BST — Tab from last outer-path y to first hole header when hole 0 has no point fields. Restored last-y tab helpers.
 
 ## Next recommended
 
-Path inspector Tab from last outer-path y onto the first hole header when hole 0 has no point fields.
+Path inspector Shift+Tab from first hole header onto last outer-path y when hole 0 has no point fields.
