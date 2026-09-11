@@ -335,3 +335,20 @@ export function shouldShiftTabFromFirstHoleHeaderToLastOuterY(
   if (!last) return false;
   return last.querySelector(`input[data-path-axis="y"]`) != null;
 }
+
+export function shouldShiftTabFromFirstHoleHeaderToLastOuterX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shouldShiftTabFromFirstHoleHeaderToLastOuterY(from, shift)) return false;
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header || header.getAttribute("data-select-hole") !== "0") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!firstHoleHeaderHasNoPointFields(inspector)) return false;
+  const outers = [...inspector.querySelectorAll(`[data-point^="path-"]`)];
+  const last = outers.at(-1);
+  if (!last) return false;
+  return last.querySelector(`input[data-path-axis="x"]`) != null;
+}
