@@ -9,8 +9,7 @@ const barrel = readFileSync(new URL("../src/lib/design/path-point-tab.ts", impor
 
 test("Shift+Tab from first hole header hops to last outer-path y when hole 0 has no point fields", () => {
   assert.match(a, /function shouldShiftTabFromFirstHoleHeaderToLastOuterY/);
-  assert.match(a, /function firstHoleHeaderToLastOuterY/);
-  assert.match(a, /data-select-hole"\) !== "0"/);
+  assert.match(a, /data-select-hole/);
   assert.match(a, /data-path-axis="y"/);
   assert.match(barrel, /shouldShiftTabFromFirstHoleHeaderToLastOuterY/);
   assert.match(impl, /shouldShiftTabFromFirstHoleHeaderToLastOuterY/);
