@@ -177,3 +177,178 @@ export function pickNextHoleHeaderTabTarget(from: Element | null | undefined): H
   if (h == null || h < 0) return null;
   return inspectorOf(from)?.querySelector<HTMLElement>(`[data-select-hole="${h + 1}"]`) ?? null;
 }
+
+export function isCrossingHolePointTab(from: Element | null | undefined, to: Element | null | undefined): boolean {
+  if (!from || !to) return false;
+  const a = holeIndexFromPointKey(pointKey(from));
+  const b = holeIndexFromPointKey(pointKey(to));
+  if (a == null || b == null) return false;
+  return a !== b;
+}
+
+export function isCrossingHoleHeaderToPointTab(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+): boolean {
+  if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return false;
+  return to.closest("[data-point]") != null;
+}
+
+export function isCrossingHolePointToHeaderTab(
+  from: Element | null | undefined,
+  to: Element | null | undefined,
+): boolean {
+  if (!from || !to || !(from instanceof Element) || !(to instanceof Element)) return false;
+  if (!from.closest("[data-point]")) return false;
+  return to.closest("[data-select-hole]") != null;
+}
+
+export function shouldTabFromClosedToOffset(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Closed") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Offset"]') != null;
+}
+
+export function shouldTabFromOffsetToFirstOuterPoint(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Offset") return false;
+  const inspector = inspectorOf(from);
+  return inspector?.querySelector('[data-point^="path-"]') != null;
+}
+
+export function shouldTabFromOffsetToOutline(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Offset") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Outline"]') != null;
+}
+
+export function pickOutlineTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Outline"]') ?? null;
+}
+
+export function shouldTabFromOutlineToRound(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Outline") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Round"]') != null;
+}
+
+export function pickRoundTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Round"]') ?? null;
+}
+
+export function shouldTabFromRoundToSimplify(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Round") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Simplify"]') != null;
+}
+
+export function pickSimplifyTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Simplify"]') ?? null;
+}
+
+export function shouldTabFromSimplifyToFirstOuterPoint(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const exit = from.closest("[data-path-exit]");
+  if (!exit || exit.getAttribute("data-path-exit") !== "Simplify") return false;
+  return inspectorOf(from)?.querySelector('[data-point^="path-"]') != null;
+}
+
+export function pickFirstOuterPointTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const row = inspector.querySelector<HTMLElement>('[data-point^="path-"]');
+  return firstAxisInput(row);
+}
+
+export function shouldShiftTabFromFirstOuterToOffset(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x" && axis !== "y") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector?.querySelector('[data-path-exit="Offset"]')) return false;
+  return inspector.querySelector('[data-path-exit="Outline"]') == null;
+}
+
+export function shouldShiftTabFromFirstOuterToOutline(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x" && axis !== "y") return false;
+  return inspectorOf(from)?.querySelector('[data-path-exit="Outline"]') != null;
+}
+
+export function shouldShiftTabFromFirstOuterToSimplify(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x" && axis !== "y") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector?.querySelector('[data-path-exit="Simplify"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Closed"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Offset"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Outline"]')) return false;
+  return inspector.querySelector('[data-path-exit="Round"]') == null;
+}
+
+export function shouldShiftTabFromFirstOuterToRound(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const key = pointKey(from);
+  if (key !== "path-0") return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x" && axis !== "y") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector?.querySelector('[data-path-exit="Round"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Closed"]')) return false;
+  if (inspector.querySelector('[data-path-exit="Offset"]')) return false;
+  return inspector.querySelector('[data-path-exit="Outline"]') == null;
+}
+
+export function pickOffsetTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  return inspectorOf(from)?.querySelector<HTMLElement>('[data-path-exit="Offset"]') ?? null;
+}
