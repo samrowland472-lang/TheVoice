@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from first hole-path y onto last outer-path x when last outer y is missing and first hole x is missing.
+1. Path inspector Tab from last outer-path y onto the first hole header when hole 0 has no point fields.
 
 ## Done
+
+- Path inspector Shift+Tab from first hole-path y lands on last outer-path x when last outer y is missing and first hole x is missing. Restored `path-point-tab-last-y.ts` (`shouldShiftTabFromFirstHoleYToLastOuterX` prefers last y when present). `focusLastOuterLastX` holds Points and Holes list scroll.
 
 - Path inspector Tab from last outer-path y lands on first hole-path y when first hole x is missing and holds Points and Holes list scroll after growth. `shouldTabFromLastOuterYToFirstHoleY` + `focusFirstHoleFirstY` / `pickFirstHoleFirstPointYTabTarget`; first-x still preferred when present.
 
@@ -55,8 +57,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-11 00:21 BST — Tab from last outer-path y lands on first hole-path y when first hole x is missing and holds Points and Holes list scroll after list growth.
+2026-09-11 03:10 BST — Restored path-point-tab-last-y and Shift+Tab from first hole-path y to last outer-path x when last outer y is missing (first hole x missing).
 
 ## Next recommended
 
-Path inspector Shift+Tab from first hole-path y onto last outer-path x when last outer y is missing and first hole x is missing.
+Path inspector Tab from last outer-path y onto the first hole header when hole 0 has no point fields.
