@@ -28,6 +28,7 @@ export { PointRow } from "./path-point-row-view";
 // pickFirstHoleFirstPointYTabTarget
 // function focusFirstHoleHeader
 // shouldTabFromLastOuterYToFirstHoleHeader
+// shouldTabFromLastOuterXToFirstHoleHeader
 // pickFirstHoleHeaderTabTarget
 // function focusLastOuterLastY
 // shouldShiftTabFromFirstHoleXToLastOuterY
