@@ -36,6 +36,8 @@ import {
   pickPreviousHoleTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleX,
   pickLastHoleLastPointXTabTarget,
+  shouldShiftTabFromNextHoleHeaderToLastHoleY,
+  pickLastHoleLastPointYTabTarget,
 } from "@/lib/design/path-point-tab";
 import {
   pickPrevHoleLastPointTabTarget,
@@ -271,6 +273,15 @@ export function PathFields({ node }: { node: PathNode }) {
                     onKeyDown={(e) => {
                       if (e.key !== "Tab") return;
                       const from = e.currentTarget;
+                      if (e.shiftKey && shouldShiftTabFromNextHoleHeaderToLastHoleY(from, true)) {
+                        const lastY = pickLastHoleLastPointYTabTarget(from);
+                        if (lastY) {
+                          e.preventDefault();
+                          tagHolePointTabCrossing(from, lastY, lastY);
+                          focusHold(lastY, "[data-point-list]", from);
+                          return;
+                        }
+                      }
                       if (e.shiftKey && shouldShiftTabFromNextHoleHeaderToLastHoleX(from, true)) {
                         const lastX = pickLastHoleLastPointXTabTarget(from);
                         if (lastX) {
