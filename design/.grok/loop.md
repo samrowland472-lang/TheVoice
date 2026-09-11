@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Tab from last hole-path x lands on the next hole header when last hole y is missing and the next hole has no point fields.
+1. Path inspector Shift+Tab from the next hole header onto last hole-path x when last hole y is missing and the next hole has no point fields.
 
 ## Done
+
+- Path inspector Tab from last hole-path x lands on the next hole header when last hole y is missing and the next hole has no point fields. `shouldTabFromLastHoleXToNextHeader` skips when last y or next-hole x/y exist. `focusHoldEl` holds Points and Holes list scroll. Restored `shouldTabFromLastOuterXToFirstHoleHeader` + `lastOuterXToFirstHoleHeader`.
 
 - Path inspector Tab from last outer-path x lands on the first hole header when last y is missing and hole 0 has no point fields. `shouldTabFromLastOuterXToFirstHoleHeader` + `lastOuterXToFirstHoleHeader` skip when last y or first-hole x/y exist. `focusFirstHoleHeader` + `focusHoldEl` hold Points and Holes list scroll.
 
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-11 10:20 BST — Tab from last outer-path x to first hole header when last y is missing and hole 0 has no point fields.
+2026-09-11 10:28 BST — Tab from last hole-path x to next hole header when last y is missing and the next hole has no point fields.
 
 ## Next recommended
 
-Path inspector Tab from last hole-path x lands on the next hole header when last hole y is missing and the next hole has no point fields.
+Path inspector Shift+Tab from the next hole header onto last hole-path x when last hole y is missing and the next hole has no point fields.
