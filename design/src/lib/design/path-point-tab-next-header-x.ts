@@ -44,3 +44,33 @@ export function pickLastHoleLastPointXTabTarget(from: Element | null | undefined
   const last = rows.at(-1);
   return last?.querySelector<HTMLElement>('input[data-path-axis="x"]') ?? null;
 }
+
+export function shouldShiftTabFromNextHoleHeaderToLastHoleY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return false;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null || h < 1) return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h)) return false;
+  const rows = [...inspector.querySelectorAll(`[data-point^="hole-${h - 1}-"]`)];
+  const last = rows.at(-1);
+  if (!last) return false;
+  return last.querySelector(`input[data-path-axis="y"]`) != null;
+}
+
+export function pickLastHoleLastPointYTabTarget(from: Element | null | undefined): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  const h = header ? holeIndexFromHoleControl(header) : null;
+  if (h == null || h < 1) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const rows = [...inspector.querySelectorAll<HTMLElement>(`[data-point^="hole-${h - 1}-"]`)];
+  const last = rows.at(-1);
+  return last?.querySelector<HTMLElement>('input[data-path-axis="y"]') ?? null;
+}
