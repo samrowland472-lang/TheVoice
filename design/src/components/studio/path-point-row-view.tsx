@@ -29,7 +29,10 @@ import {
   shouldTabFromLastHoleYToNextFirstX,
   shouldTabFromLastHoleYToNextFirstY,
   shouldTabFromLastOuterYToFirstHoleX,
+  shouldTabFromLastOuterYToFirstHoleY,
+  shouldTabFromLastOuterYToFirstHoleHeader,
   shouldTabFromLastOuterXToFirstHoleY,
+  shouldTabFromLastOuterXToFirstHoleX,
   shouldShiftTabFromFirstHoleXToLastOuterY,
   shouldShiftTabFromFirstHoleXToLastOuterX,
   shouldShiftTabFromFirstHoleYToLastOuterX,
@@ -38,6 +41,7 @@ import {
   pickLastOuterLastPointXTabTarget,
   pickFirstHoleFirstPointXTabTarget,
   pickFirstHoleFirstPointYTabTarget,
+  pickFirstHoleHeaderTabTarget,
   shouldTabToNextHoleHeader,
   tagHolePointTabCrossing,
 } from "@/lib/design/path-point-tab";
@@ -114,7 +118,7 @@ function focusNextHoleFirstX(from: HTMLElement): boolean {
 }
 
 function focusFirstHoleFirstX(from: HTMLElement): boolean {
-  if (!shouldTabFromLastOuterYToFirstHoleX(from, false)) return false;
+  if (!shouldTabFromLastOuterYToFirstHoleX(from, false) && !shouldTabFromLastOuterXToFirstHoleX(from, false)) return false;
   const firstX = pickFirstHoleFirstPointXTabTarget(from);
   if (!firstX) return false;
   tagHolePointTabCrossing(from, firstX, firstX);
@@ -123,11 +127,20 @@ function focusFirstHoleFirstX(from: HTMLElement): boolean {
 }
 
 function focusFirstHoleFirstY(from: HTMLElement): boolean {
-  if (!shouldTabFromLastOuterXToFirstHoleY(from, false)) return false;
+  if (!shouldTabFromLastOuterXToFirstHoleY(from, false) && !shouldTabFromLastOuterYToFirstHoleY(from, false)) return false;
   const firstY = pickFirstHoleFirstPointYTabTarget(from);
   if (!firstY) return false;
   tagHolePointTabCrossing(from, firstY, firstY);
   focusHoldEl(firstY, from);
+  return true;
+}
+
+function focusFirstHoleHeader(from: HTMLElement): boolean {
+  if (!shouldTabFromLastOuterYToFirstHoleHeader(from, false)) return false;
+  const header = pickFirstHoleHeaderTabTarget(from);
+  if (!header) return false;
+  tagHolePointTabCrossing(from, header, header);
+  focusHoldEl(header, from);
   return true;
 }
 
@@ -198,6 +211,16 @@ export function PointRow({
     if (focusNextHoleFirstX(from)) { e.preventDefault(); return; }
     if (focusFirstHoleFirstY(from)) { e.preventDefault(); return; }
     if (focusFirstHoleFirstX(from)) { e.preventDefault(); return; }
+    if (shouldTabFromLastOuterYToFirstHoleHeader(from, false)) {
+      const header = pickFirstHoleHeaderTabTarget(from);
+      if (header) {
+        e.preventDefault();
+        tagHolePointTabCrossing(e.currentTarget, header, header);
+        focusHoldEl(header, from);
+        return;
+      }
+    }
+    if (focusFirstHoleHeader(from)) { e.preventDefault(); return; }
     if (axis === "x" && shouldTabFromLastHoleXToNextHeader(from, false)) {
       const header = pickNextHoleHeaderTabTarget(from);
       if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); header.focus({ preventScroll: true }); }
@@ -215,9 +238,9 @@ export function PointRow({
       </button>
       <div className="grid grid-cols-2 gap-1">
         <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
-        {/* focusLastOuterLastY focusLastOuterLastX focusPrevHoleLastY focusPrevHoleLastX focusFirstHoleFirstY */}
+        {/* focusLastOuterLastY focusLastOuterLastX focusPrevHoleLastY focusPrevHoleLastX focusFirstHoleFirstY focusFirstHoleFirstX focusFirstHoleHeader */}
         <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
-        {/* focusLastOuterLastY focusLastOuterLastX focusFirstHoleFirstX */}
+        {/* focusLastOuterLastY focusLastOuterLastX focusFirstHoleFirstX focusFirstHoleFirstY focusFirstHoleHeader shouldTabFromLastOuterYToFirstHoleHeader pickFirstHoleHeaderTabTarget */}
       </div>
     </div>
   );
