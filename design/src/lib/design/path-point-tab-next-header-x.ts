@@ -36,7 +36,11 @@ export function shouldShiftTabFromNextHoleHeaderToLastHoleX(
 export function pickLastHoleLastPointXTabTarget(from: Element | null | undefined): HTMLElement | null {
   if (!from || !(from instanceof Element)) return null;
   const header = from.closest("[data-select-hole]");
-  const h = header ? holeIndexFromHoleControl(header) : null;
+  const point = from.closest("[data-point]");
+  const pointKey = point?.getAttribute("data-point");
+  const h = header
+    ? holeIndexFromHoleControl(header)
+    : holeIndexFromPointKey(pointKey);
   if (h == null || h < 1) return null;
   const inspector = inspectorOf(from);
   if (!inspector) return null;
@@ -109,4 +113,21 @@ export function shouldShiftTabFromNextHoleFirstXToLastHoleY(
   const axis = from.getAttribute?.("data-path-axis");
   if (axis && axis !== "x") return false;
   return pickLastHoleLastPointYTabTarget(from) != null;
+}
+
+export function shouldShiftTabFromNextHoleFirstXToLastHoleX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shouldShiftTabFromNextHoleFirstXToLastHoleY(from, shift)) return false;
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const point = from.closest("[data-point]");
+  const key = point?.getAttribute("data-point") ?? null;
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 1) return false;
+  const i = /^hole-\d+-(\d+)$/.exec(key ?? "");
+  if (!i || Number(i[1]) !== 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  return pickLastHoleLastPointXTabTarget(from) != null;
 }
