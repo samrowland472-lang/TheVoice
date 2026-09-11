@@ -72,6 +72,9 @@ export { PointRow } from "./path-point-row-view";
 // pointListRef.current
 // focus({ preventScroll: true })
 // data-path-axis="x"
+// shouldTabFromLastHoleXToNextHeader
+// pickNextHoleHeaderTabTarget
+// tagHolePointTabCrossing(e.currentTarget, header, header)
 // focusLastOuterLastY
 // focusLastOuterLastX
 // focusPrevHoleLastY
