@@ -310,3 +310,28 @@ export function pickFirstHoleHeaderTabTarget(from: Element | null | undefined): 
   if (!from || !(from instanceof Element)) return null;
   return inspectorOf(from)?.querySelector<HTMLElement>(`[data-select-hole="0"]`) ?? null;
 }
+
+function firstHoleHeaderHasNoPointFields(inspector: Element): boolean {
+  const firstPoints = inspector.querySelector(`[data-point^="hole-0-"]`);
+  if (!firstPoints) return true;
+  const hasAxis =
+    firstPoints.querySelector('input[data-path-axis="x"]') != null ||
+    firstPoints.querySelector('input[data-path-axis="y"]') != null;
+  return !hasAxis;
+}
+
+export function shouldShiftTabFromFirstHoleHeaderToLastOuterY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header || header.getAttribute("data-select-hole") !== "0") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!firstHoleHeaderHasNoPointFields(inspector)) return false;
+  const outers = [...inspector.querySelectorAll(`[data-point^="path-"]`)];
+  const last = outers.at(-1);
+  if (!last) return false;
+  return last.querySelector(`input[data-path-axis="y"]`) != null;
+}
