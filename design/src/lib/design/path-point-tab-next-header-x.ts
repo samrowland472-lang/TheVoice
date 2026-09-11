@@ -131,3 +131,20 @@ export function shouldShiftTabFromNextHoleFirstXToLastHoleX(
   if (axis && axis !== "x") return false;
   return pickLastHoleLastPointXTabTarget(from) != null;
 }
+
+export function shouldShiftTabFromNextHoleFirstYToLastHoleX(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shouldShiftTabFromNextHoleFirstYToLastHoleY(from, shift)) return false;
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const point = from.closest("[data-point]");
+  const key = point?.getAttribute("data-point") ?? null;
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 1) return false;
+  const i = /^hole-\d+-(\d+)$/.exec(key ?? "");
+  if (!i || Number(i[1]) !== 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "y") return false;
+  return pickLastHoleLastPointXTabTarget(from) != null;
+}
