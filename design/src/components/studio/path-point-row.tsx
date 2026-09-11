@@ -9,6 +9,9 @@ export { PointRow } from "./path-point-row-view";
 // pickPrevHoleLastPointYTabTarget
 // tagHolePointTabCrossing(from, lastY, lastY)
 // function focusPrevHoleLastX
+// shouldShiftTabFromNextHoleFirstYToLastHoleX
+// shouldShiftTabFromNextHoleFirstXToLastHoleX
+// pickLastHoleLastPointXTabTarget
 // shouldShiftTabFromFirstHoleYToPrevLastX
 // shouldShiftTabFromFirstHoleXToPrevLastX
 // pickPrevHoleLastPointXTabTarget
