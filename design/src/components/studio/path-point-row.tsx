@@ -42,6 +42,7 @@ export { PointRow } from "./path-point-row-view";
 // shouldShiftTabFromFirstHoleYToLastOuterX
 // shouldShiftTabFromFirstHoleHeaderToLastOuterX
 // firstHoleHeaderToLastOuterX
+// pickLastHoleLastPointXTabTarget
 // pickLastOuterLastPointXTabTarget
 // tagHolePointTabCrossing(from, lastY, lastY)
 // tagHolePointTabCrossing(from, firstX, firstX)
@@ -57,6 +58,8 @@ export { PointRow } from "./path-point-row-view";
 // shouldShiftTabToPrevHoleHeader
 // pickPrevHoleHeaderTabTarget
 // shouldTabFromLastHoleXToNextHeader
+// shouldShiftTabFromNextHoleHeaderToLastHoleX
+// pickLastHoleLastPointXTabTarget
 // shouldTabToNextHoleHeader
 // pickNextHoleHeaderTabTarget
 // shouldShiftTabFromFirstOuterToClosed
