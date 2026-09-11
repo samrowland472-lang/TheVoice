@@ -28,8 +28,8 @@ test("Tab from last outer-path y hops to first hole header when hole 0 has no po
 
 test("last outer y to first hole header holds Points and Holes list scroll after growth", () => {
   assert.match(b, /fromPoint && toHeader\) holdPointAndHoleLists/);
-  assert.match(b, /snapshotScroll\(from, to, "\\[data-point-list\\]"\)/);
-  assert.match(b, /snapshotScroll\(from, to, "\\[data-hole-list\\]"\)/);
+  assert.match(b, /snapshotScroll\(from, to, "\[data-point-list\]"\)/);
+  assert.match(b, /snapshotScroll\(from, to, "\[data-hole-list\]"\)/);
   assert.match(view, /shouldTabFromLastOuterYToFirstHoleHeader/);
   assert.match(view, /focus\(\{ preventScroll: true \}\)/);
   const yBlock = ui.split('data-path-axis="y"')[1] ?? "";
