@@ -76,6 +76,7 @@ export {
   pickLastHoleLastPointXTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleY,
   pickLastHoleLastPointYTabTarget,
+  shouldShiftTabFromNextHoleFirstYToLastHoleY,
 } from "./path-point-tab-next-header-x";
 export {
   lastOuterXToFirstHoleHeader,
