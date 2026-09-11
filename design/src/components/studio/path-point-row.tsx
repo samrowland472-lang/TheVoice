@@ -24,7 +24,11 @@ export { PointRow } from "./path-point-row-view";
 // pickFirstHoleFirstPointXTabTarget
 // function focusFirstHoleFirstY
 // shouldTabFromLastOuterXToFirstHoleY
+// shouldTabFromLastOuterYToFirstHoleY
 // pickFirstHoleFirstPointYTabTarget
+// function focusFirstHoleHeader
+// shouldTabFromLastOuterYToFirstHoleHeader
+// pickFirstHoleHeaderTabTarget
 // function focusLastOuterLastY
 // shouldShiftTabFromFirstHoleXToLastOuterY
 // shouldShiftTabFromFirstHoleYToLastOuterY
@@ -67,12 +71,15 @@ export { PointRow } from "./path-point-row-view";
 // focusPrevHoleLastY
 // focusFirstHoleFirstY
 // focusFirstHoleFirstX
+// focusFirstHoleHeader
 // focusNextHoleFirstX
 // data-path-axis="y"
 // focusLastOuterLastX
 // focusNextHoleFirstY
 // focusNextHoleFirstX
 // focusFirstHoleFirstX
+// focusFirstHoleFirstY
+// focusFirstHoleHeader
 // requestAnimationFrame(() => {
 //   list.scrollTop = saved;
 //   requestAnimationFrame
@@ -82,6 +89,8 @@ export { PointRow } from "./path-point-row-view";
 // focusPrevHoleLastY
 // focusPrevHoleLastX
 // focusFirstHoleFirstY
+// focusFirstHoleFirstX
+// focusFirstHoleHeader
 // data-path-axis="y"
 // focusLastOuterLastX
 // focusPrevHoleLastX
