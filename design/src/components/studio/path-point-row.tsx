@@ -2,6 +2,7 @@ export { PointRow } from "./path-point-row-view";
 
 // function focusPrevHoleLastY
 // shouldShiftTabFromNextHoleFirstYToLastHoleY
+// shouldShiftTabFromNextHoleFirstXToLastHoleY
 // pickLastHoleLastPointYTabTarget
 // shouldShiftTabFromFirstHoleYToPrevLastY
 // shouldShiftTabFromFirstHoleXToPrevLastY
