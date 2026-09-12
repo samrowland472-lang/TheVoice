@@ -10,10 +10,13 @@ import {
   pickPrevHoleLastPointYTabTarget,
   pickLastHoleLastPointYTabTarget,
   pickLastHoleLastPointXTabTarget,
+  pickLastHoleHeaderTabTarget,
   shouldShiftTabFromNextHoleFirstYToLastHoleY,
   shouldShiftTabFromNextHoleFirstXToLastHoleY,
   shouldShiftTabFromNextHoleFirstXToLastHoleX,
   shouldShiftTabFromNextHoleFirstYToLastHoleX,
+  shouldShiftTabFromNextHoleFirstYToLastHoleHeader,
+  shouldShiftTabFromNextHoleFirstXToLastHoleHeader,
   pickRoundTabTarget,
   pickSameHoleHeaderTabTarget,
   pickSimplifyTabTarget,
@@ -116,6 +119,18 @@ function focusPrevHoleLastX(from: HTMLElement): boolean {
   return true;
 }
 
+function focusPrevHoleLastHeader(from: HTMLElement): boolean {
+  if (
+    !shouldShiftTabFromNextHoleFirstYToLastHoleHeader(from, true) &&
+    !shouldShiftTabFromNextHoleFirstXToLastHoleHeader(from, true)
+  ) return false;
+  const header = pickLastHoleHeaderTabTarget(from);
+  if (!header) return false;
+  tagHolePointTabCrossing(from, header, header);
+  focusHoldEl(header, from);
+  return true;
+}
+
 function focusNextHoleFirstY(from: HTMLElement): boolean {
   if (!shouldTabFromLastHoleYToNextFirstY(from, false) && !shouldTabFromLastHoleXToNextFirstY(from, false)) return false;
   const nextY = pickNextHoleFirstPointYTabTarget(from);
@@ -197,6 +212,7 @@ export function PointRow({
       if (focusLastOuterLastX(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastY(from)) { e.preventDefault(); return; }
       if (focusPrevHoleLastX(from)) { e.preventDefault(); return; }
+      if (focusPrevHoleLastHeader(from)) { e.preventDefault(); return; }
       if (shouldShiftTabToSameHoleHeader(from, true)) {
         const header = pickSameHoleHeaderTabTarget(from);
         if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); header.focus({ preventScroll: true }); return; }
