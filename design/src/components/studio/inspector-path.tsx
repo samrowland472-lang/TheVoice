@@ -5,12 +5,14 @@ import {
   pickLastHoleFillFromHeaderTabTarget,
   pickNextHoleFillFromDeleteTabTarget,
   pickNextHoleHeaderFromDeleteTabTarget,
+  pickNextHoleFirstPointXFromFillTabTarget,
   pickNextHoleHeaderFromFillTabTarget,
   shouldShiftTabFromNextHoleFillToLastHoleDelete,
   shouldShiftTabFromNextHoleHeaderToLastHoleDelete,
   shouldShiftTabFromNextHoleHeaderToLastHoleFill,
   shouldTabFromHoleDeleteToNextFill,
   shouldTabFromHoleDeleteToNextHeader,
+  shouldTabFromHoleFillToNextFirstX,
   shouldTabFromHoleFillToNextHeader,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
@@ -64,6 +66,22 @@ export function PathFields({ node }: { node: PathNode }) {
         const list = from.closest("[data-hole-list]");
         const saved = list instanceof HTMLElement ? list.scrollTop : 0;
         lastFill.focus();
+        if (list instanceof HTMLElement) {
+          list.scrollTop = saved;
+          requestAnimationFrame(() => {
+            list.scrollTop = saved;
+          });
+        }
+        return;
+      }
+      if (shouldTabFromHoleFillToNextFirstX(from, false)) {
+        const nextX = pickNextHoleFirstPointXFromFillTabTarget(from);
+        if (!nextX) return;
+        e.preventDefault();
+        tagHoleHeaderTabCrossing(from, nextX, nextX);
+        const list = from.closest("[data-hole-list]");
+        const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+        nextX.focus();
         if (list instanceof HTMLElement) {
           list.scrollTop = saved;
           requestAnimationFrame(() => {
