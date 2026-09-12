@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the next empty hole header onto the previous hole fill-rule chip when the current hole has no point fields, holding the Holes list mid-scroll after growth.
+1. Path inspector Tab from a hole delete control onto the next empty hole header when both holes have no point fields, holding the Holes list mid-scroll after growth.
 
 ## Done
+
+- Path inspector Shift+Tab from the next empty hole header onto the previous hole fill-rule chip when both holes have no point fields. `shouldShiftTabFromNextHoleHeaderToLastHoleFill` / `pickLastHoleFillFromHeaderTabTarget` skip last-y and last-x hops, require no point fields on either hole, and resolve the last `[data-hole-fill]` in the previous hole. Last-header Shift+Tab skips when this hop applies. Live header in `inspector-path-impl` hops with `tagHoleHeaderTabCrossing(from, lastFill, lastFill)` then `focusHold(lastFill, "[data-hole-list]", from)` holds Holes list scroll after growth.
 
 - Path inspector Tab from a hole fill-rule chip onto the next empty hole header when the current hole has no point fields. `shouldTabFromHoleFillToNextHeader` / `pickNextHoleHeaderFromFillTabTarget` require both holes to have no point fields and resolve the next header from `[data-hole-fill]`. Live fill chips in `inspector-path-impl` hop with `tagHoleHeaderTabCrossing(from, nextHeader, nextHeader)` then `focusHold(nextHeader, "[data-hole-list]", from)` holds Holes list scroll after growth.
 
@@ -45,8 +47,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 11:16 BST — Tab from hole fill-rule chip onto next empty hole header; hold Holes list scroll.
+2026-09-12 12:28 BST — Shift+Tab from next empty hole header onto previous hole fill-rule chip; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Shift+Tab from the next empty hole header onto the previous hole fill-rule chip when the current hole has no point fields, holding Holes list mid-scroll.
+Wire Tab from a hole delete control onto the next empty hole header when both holes have no point fields, holding Holes list mid-scroll.
