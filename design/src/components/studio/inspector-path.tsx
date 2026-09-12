@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import {
   pickLastHoleFillFromHeaderTabTarget,
+  pickNextHoleHeaderFromDeleteTabTarget,
   pickNextHoleHeaderFromFillTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleFill,
+  shouldTabFromHoleDeleteToNextHeader,
   shouldTabFromHoleFillToNextHeader,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
@@ -32,8 +34,24 @@ export function PathFields({ node }: { node: PathNode }) {
         }
         return;
       }
-      if (!shouldTabFromHoleFillToNextHeader(from, false)) return;
-      const nextHeader = pickNextHoleHeaderFromFillTabTarget(from);
+      if (shouldTabFromHoleFillToNextHeader(from, false)) {
+        const nextHeader = pickNextHoleHeaderFromFillTabTarget(from);
+        if (!nextHeader) return;
+        e.preventDefault();
+        tagHoleHeaderTabCrossing(from, nextHeader, nextHeader);
+        const list = from.closest("[data-hole-list]");
+        const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+        nextHeader.focus();
+        if (list instanceof HTMLElement) {
+          list.scrollTop = saved;
+          requestAnimationFrame(() => {
+            list.scrollTop = saved;
+          });
+        }
+        return;
+      }
+      if (!shouldTabFromHoleDeleteToNextHeader(from, false)) return;
+      const nextHeader = pickNextHoleHeaderFromDeleteTabTarget(from);
       if (!nextHeader) return;
       e.preventDefault();
       tagHoleHeaderTabCrossing(from, nextHeader, nextHeader);
