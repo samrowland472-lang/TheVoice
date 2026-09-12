@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Tab from an empty last-hole header onto the next hole header when the next hole also has no point fields, holding both lists mid-scroll after growth.
+1. Path inspector Shift+Tab from the next hole header onto the previous empty hole header when both holes have no point fields, holding the Holes list mid-scroll after growth.
 
 ## Done
+
+- Path inspector Tab from an empty last-hole header onto the next hole header when the next hole also has no point fields. `shouldTabFromLastHoleHeaderToNextHeader` / `pickNextHoleHeaderFromHeaderTabTarget` skip when next first x or y exists and run after those hops in `inspector-path-impl`. `tagHoleHeaderTabCrossing(from, nextHeader, nextHeader)` then `focusHold(nextHeader, "[data-hole-list]", from)` holds Holes list scroll after growth. Also wired live `shouldTabFromLastHoleHeaderToNextFirstY` / `pickNextHoleFirstPointYFromHeaderTabTarget`.
 
 - Path inspector Tab from an empty last-hole header onto the next hole first-point y on the live header control (`focusNextHoleFirstYFromHeader`). `shouldTabFromLastHoleHeaderToNextFirstY` / `pickNextHoleFirstPointYFromHeaderTabTarget` skip when next first x exists and run after the first-x hop in `inspector-path-impl`. `tagHolePointTabCrossing(from, nextY, nextY)` then `focusHold(nextY, "[data-point-list]", from)` holds Points and Holes list scroll after growth.
 
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 09:05 BST — Tab from empty last hole header onto next hole first-point y when first x is missing; hold Points and Holes list scroll.
+2026-09-12 09:16 BST — Tab from empty last hole header onto next hole header when both have no point fields; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Tab from an empty last hole header onto the next hole header when the next hole also has no point fields, holding both lists mid-scroll.
+Wire Shift+Tab from the next hole header onto the previous empty hole header when both have no point fields, holding Holes list mid-scroll.
