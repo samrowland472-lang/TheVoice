@@ -97,6 +97,8 @@ export {
 export {
   pickLastHoleFillFromHeaderTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleFill,
+  pickLastHoleDeleteFromFillTabTarget,
+  shouldShiftTabFromNextHoleFillToLastHoleDelete,
 } from "./path-point-tab-hole-fill-shift";
 export {
   pickNextHoleHeaderFromDeleteTabTarget,
