@@ -40,6 +40,12 @@ import {
   pickLastHoleLastPointYTabTarget,
   shouldTabFromLastHoleHeaderToNextFirstX,
   pickNextHoleFirstPointXFromHeaderTabTarget,
+  shouldTabFromLastHoleHeaderToNextFirstY,
+  pickNextHoleFirstPointYFromHeaderTabTarget,
+  shouldTabFromLastHoleHeaderToNextHeader,
+  pickNextHoleHeaderFromHeaderTabTarget,
+  shouldShiftTabFromNextHoleHeaderToLastHoleHeader,
+  pickLastHoleHeaderFromHeaderTabTarget,
 } from "@/lib/design/path-point-tab";
 import {
   pickPrevHoleLastPointTabTarget,
@@ -293,6 +299,15 @@ export function PathFields({ node }: { node: PathNode }) {
                           return;
                         }
                       }
+                      if (e.shiftKey && shouldShiftTabFromNextHoleHeaderToLastHoleHeader(from, true)) {
+                        const prevHeader = pickLastHoleHeaderFromHeaderTabTarget(from);
+                        if (prevHeader) {
+                          e.preventDefault();
+                          tagHoleHeaderTabCrossing(from, prevHeader, prevHeader);
+                          focusHold(prevHeader, "[data-hole-list]", from);
+                          return;
+                        }
+                      }
                       if (e.shiftKey && shouldShiftTabToPrevHoleLastPoint(from, true)) {
                         const last = pickPrevHoleLastPointTabTarget(from);
                         if (last) {
@@ -317,6 +332,24 @@ export function PathFields({ node }: { node: PathNode }) {
                           e.preventDefault();
                           tagHolePointTabCrossing(from, nextX, nextX);
                           focusHold(nextX, "[data-point-list]", from);
+                          return;
+                        }
+                      }
+                      if (!e.shiftKey && shouldTabFromLastHoleHeaderToNextFirstY(from, false)) {
+                        const nextY = pickNextHoleFirstPointYFromHeaderTabTarget(from);
+                        if (nextY) {
+                          e.preventDefault();
+                          tagHolePointTabCrossing(from, nextY, nextY);
+                          focusHold(nextY, "[data-point-list]", from);
+                          return;
+                        }
+                      }
+                      if (!e.shiftKey && shouldTabFromLastHoleHeaderToNextHeader(from, false)) {
+                        const nextHeader = pickNextHoleHeaderFromHeaderTabTarget(from);
+                        if (nextHeader) {
+                          e.preventDefault();
+                          tagHoleHeaderTabCrossing(from, nextHeader, nextHeader);
+                          focusHold(nextHeader, "[data-hole-list]", from);
                           return;
                         }
                       }
