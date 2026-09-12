@@ -210,6 +210,36 @@ export function shouldTabFromLastHoleHeaderToNextFirstX(
   return pickNextHoleFirstPointXFromHeaderTabTarget(from) != null;
 }
 
+export function pickNextHoleFirstPointYFromHeaderTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const next = inspector.querySelector<HTMLElement>(`[data-point^="hole-${h + 1}-"]`);
+  return next?.querySelector<HTMLElement>('input[data-path-axis="y"]') ?? null;
+}
+
+export function shouldTabFromLastHoleHeaderToNextFirstY(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  if (shouldTabFromLastHoleHeaderToNextFirstX(from, false)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return false;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null) return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h)) return false;
+  return pickNextHoleFirstPointYFromHeaderTabTarget(from) != null;
+}
+
 export function shouldShiftTabFromNextHoleFirstXToLastHoleHeader(
   from: Element | null | undefined,
   shift: boolean,
