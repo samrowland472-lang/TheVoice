@@ -302,6 +302,35 @@ export function shouldTabFromLastHoleHeaderToNextHeader(
   return pickNextHoleHeaderFromHeaderTabTarget(from) != null;
 }
 
+export function pickNextHoleHeaderFromFillTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const fill = from.closest("[data-hole-fill]");
+  if (!fill) return null;
+  const h = holeIndexFromHoleControl(fill);
+  if (h == null) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  return inspector.querySelector<HTMLElement>(`[data-select-hole="${h + 1}"]`);
+}
+
+export function shouldTabFromHoleFillToNextHeader(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shift || !from || !(from instanceof Element)) return false;
+  const fill = from.closest("[data-hole-fill]");
+  if (!fill) return false;
+  const h = holeIndexFromHoleControl(fill);
+  if (h == null) return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h)) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h + 1)) return false;
+  return pickNextHoleHeaderFromFillTabTarget(from) != null;
+}
+
 export function shouldShiftTabFromNextHoleFirstXToLastHoleHeader(
   from: Element | null | undefined,
   shift: boolean,
