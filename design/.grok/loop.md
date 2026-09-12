@@ -21,20 +21,22 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Tab from a hole delete control onto the next hole fill-rule chip when the current hole has no point fields.
+1. Path inspector Shift+Tab from the next hole fill-rule chip onto the previous hole delete control when the previous hole has no point fields.
 
 ## Done
 
-- Path inspector Shift+Tab from the next empty hole header onto the previous hole delete control when both holes have no point fields. `shouldShiftTabFromNextHoleHeaderToLastHoleDelete` / `pickLastHoleDeleteFromHeaderTabTarget` resolve `[data-hole="${h-1}"] [data-delete-hole]`. Fill-rule Shift+Tab yields when delete is present. Document-level Shift+Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, lastDelete, lastDelete)` and restores `[data-hole-list]` scroll after growth.
+- Path inspector Tab from a hole delete control onto the next hole fill-rule chip when the current hole has no point fields (and the next hole still has point fields, so the empty-header hop does not apply). `shouldTabFromHoleDeleteToNextFill` / `pickNextHoleFillFromDeleteTabTarget` resolve `[data-hole="${h+1}"] [data-hole-fill]`. Yields to `shouldTabFromHoleDeleteToNextHeader` when both holes are empty. Document-level Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, nextFill, nextFill)` and restores `[data-hole-list]` scroll after growth.
 
-- Path inspector Tab from a hole delete control onto the next empty hole header when both holes have no point fields. `shouldTabFromHoleDeleteToNextHeader` / `pickNextHoleHeaderFromDeleteTabTarget` require no point fields on either hole and resolve the next header from `[data-delete-hole]`. Document-level Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, nextHeader, nextHeader)` and restores `[data-hole-list]` scroll after growth.
+- Path inspector Shift+Tab from the next empty hole header onto the previous hole delete control when both holes have no point fields.
+
+- Path inspector Tab from a hole delete control onto the next empty hole header when both holes have no point fields.
 
 - Path inspector Shift+Tab from the next empty hole header onto the previous hole fill-rule chip when both holes have no point fields.
 
 ## Iteration
 
-2026-09-12 14:20 BST — Shift+Tab from next empty hole header onto previous hole delete; hold Holes list scroll.
+2026-09-12 15:25 BST — Tab from hole delete onto next hole fill-rule when current hole has no point fields; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Tab from a hole delete control onto the next hole fill-rule chip when the current hole has no point fields.
+Wire Shift+Tab from the next hole fill-rule chip onto the previous hole delete control when the previous hole has no point fields.
