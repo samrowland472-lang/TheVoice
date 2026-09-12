@@ -42,6 +42,18 @@ export { PointRow } from "./path-point-row-view";
 // pickNextHoleFillFromDeleteTabTarget
 // tagHoleHeaderTabCrossing(from, nextFill, nextFill)
 // focusHold(nextHeader, "[data-hole-list]", from)
+// function focusPrevHoleDeleteFromFill
+// shouldShiftTabFromNextHoleFillToLastHoleDelete
+// pickLastHoleDeleteFromFillTabTarget
+// tagHoleHeaderTabCrossing(from, lastDelete, lastDelete)
+// function focusPrevHoleDeleteFromHeader
+// shouldShiftTabFromNextHoleHeaderToLastHoleDelete
+// pickLastHoleDeleteFromHeaderTabTarget
+// tagHoleHeaderTabCrossing(from, lastDelete, lastDelete)
+// function focusPrevHoleFillFromHeader
+// shouldShiftTabFromNextHoleHeaderToLastHoleFill
+// pickLastHoleFillFromHeaderTabTarget
+// tagHoleHeaderTabCrossing(from, lastFill, lastFill)
 // function focusPrevHoleHeaderFromHeader
 // shouldShiftTabFromNextHoleHeaderToLastHoleHeader
 // pickLastHoleHeaderFromHeaderTabTarget
