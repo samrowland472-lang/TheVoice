@@ -160,6 +160,37 @@ export function pickLastHoleHeaderTabTarget(from: Element | null | undefined): H
   return inspector.querySelector<HTMLElement>(`[data-select-hole="${h - 1}"]`);
 }
 
+export function pickLastHoleHeaderFromHeaderTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null || h < 1) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  return inspector.querySelector<HTMLElement>(`[data-select-hole="${h - 1}"]`);
+}
+
+export function shouldShiftTabFromNextHoleHeaderToLastHoleHeader(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromNextHoleHeaderToLastHoleY(from, true)) return false;
+  if (shouldShiftTabFromNextHoleHeaderToLastHoleX(from, true)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return false;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null || h < 1) return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h)) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
+  return pickLastHoleHeaderFromHeaderTabTarget(from) != null;
+}
+
 export function shouldShiftTabFromNextHoleFirstYToLastHoleHeader(
   from: Element | null | undefined,
   shift: boolean,
