@@ -38,6 +38,8 @@ import {
   pickLastHoleLastPointXTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleY,
   pickLastHoleLastPointYTabTarget,
+  shouldTabFromLastHoleHeaderToNextFirstX,
+  pickNextHoleFirstPointXFromHeaderTabTarget,
 } from "@/lib/design/path-point-tab";
 import {
   pickPrevHoleLastPointTabTarget,
@@ -306,6 +308,15 @@ export function PathFields({ node }: { node: PathNode }) {
                           e.preventDefault();
                           tagHolePointTabCrossing(from, first, first);
                           focusHold(first, "[data-point-list]", from);
+                          return;
+                        }
+                      }
+                      if (!e.shiftKey && shouldTabFromLastHoleHeaderToNextFirstX(from, false)) {
+                        const nextX = pickNextHoleFirstPointXFromHeaderTabTarget(from);
+                        if (nextX) {
+                          e.preventDefault();
+                          tagHolePointTabCrossing(from, nextX, nextX);
+                          focusHold(nextX, "[data-point-list]", from);
                           return;
                         }
                       }
