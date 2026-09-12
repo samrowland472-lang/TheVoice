@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the next hole first-point x onto the last hole header when the last hole has no point fields while both lists stay mid-scroll after growth.
+1. Path inspector Tab from the last hole header onto the next hole first-point x when the last hole has no point fields while both lists stay mid-scroll after growth.
 
 ## Done
+
+- Path inspector Shift+Tab from the next hole first-point x onto the last hole header when the last hole has no point fields. `shouldShiftTabFromNextHoleFirstXToLastHoleHeader` skips when last hole y or x fields exist. `pickLastHoleHeaderTabTarget` resolves the previous hole header from the point key. `focusPrevHoleLastHeader` prefers that hop after last-y and last-x. `focusHoldEl` holds Points and Holes list scroll after growth.
 
 - Path inspector Shift+Tab from the next hole first-point y onto the last hole header when the last hole has no point fields. `shouldShiftTabFromNextHoleFirstYToLastHoleHeader` skips when last hole y or x fields exist. `pickLastHoleHeaderTabTarget` resolves the previous hole header from the point key. `focusPrevHoleLastHeader` prefers that hop before same-hole header. `focusHoldEl` holds Points and Holes list scroll after growth.
 
@@ -31,8 +33,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 00:10 BST — Shift+Tab from next hole first-point y to last hole header when last hole has no point fields; hold Points and Holes list scroll.
+2026-09-12 02:13 BST — Shift+Tab from next hole first-point x to last hole header when last hole has no point fields; hold Points and Holes list scroll.
 
 ## Next recommended
 
-Path inspector Shift+Tab from the next hole first-point x onto the last hole header when the last hole has no point fields while both lists stay mid-scroll after growth.
+Path inspector Tab from the last hole header onto the next hole first-point x when the last hole has no point fields while both lists stay mid-scroll after growth.
