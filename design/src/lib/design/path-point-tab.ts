@@ -101,6 +101,8 @@ export {
 export {
   pickNextHoleHeaderFromDeleteTabTarget,
   shouldTabFromHoleDeleteToNextHeader,
+  pickNextHoleFillFromDeleteTabTarget,
+  shouldTabFromHoleDeleteToNextFill,
   pickLastHoleDeleteFromHeaderTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleDelete,
 } from "./path-point-tab-hole-delete";
