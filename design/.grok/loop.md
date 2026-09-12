@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the next hole fill-rule chip onto the previous hole delete control when the previous hole has no point fields.
+1. Path inspector Tab from a hole fill-rule chip onto the next hole first X when the current hole has no point fields and the next hole still has point fields.
 
 ## Done
+
+- Path inspector Shift+Tab from the next hole fill-rule chip onto the previous hole delete control when the previous hole has no point fields. `shouldShiftTabFromNextHoleFillToLastHoleDelete` / `pickLastHoleDeleteFromFillTabTarget` resolve `[data-hole="${h-1}"] [data-delete-hole]`. Yields to header→delete and header→fill hops. Document-level Shift+Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, lastDelete, lastDelete)` and restores `[data-hole-list]` scroll after growth.
 
 - Path inspector Tab from a hole delete control onto the next hole fill-rule chip when the current hole has no point fields (and the next hole still has point fields, so the empty-header hop does not apply). `shouldTabFromHoleDeleteToNextFill` / `pickNextHoleFillFromDeleteTabTarget` resolve `[data-hole="${h+1}"] [data-hole-fill]`. Yields to `shouldTabFromHoleDeleteToNextHeader` when both holes are empty. Document-level Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, nextFill, nextFill)` and restores `[data-hole-list]` scroll after growth.
 
@@ -35,8 +37,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 15:25 BST — Tab from hole delete onto next hole fill-rule when current hole has no point fields; hold Holes list scroll.
+2026-09-12 19:12 BST — Shift+Tab from next hole fill-rule onto previous hole delete when previous hole has no point fields; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Shift+Tab from the next hole fill-rule chip onto the previous hole delete control when the previous hole has no point fields.
+Wire Tab from a hole fill-rule chip onto the next hole first X when the current hole has no point fields and the next hole still has point fields.
