@@ -53,3 +53,36 @@ export function shouldShiftTabFromNextHoleHeaderToLastHoleFill(
   if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
   return pickLastHoleFillFromHeaderTabTarget(from) != null;
 }
+
+export function pickLastHoleDeleteFromFillTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const fill = from.closest("[data-hole-fill]");
+  if (!fill) return null;
+  const h = holeIndexFromHoleControl(fill);
+  if (h == null || h < 1) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const dels = inspector.querySelectorAll<HTMLElement>(
+    `[data-hole="${h - 1}"] [data-delete-hole]`,
+  );
+  return dels.length ? dels[dels.length - 1] : null;
+}
+
+export function shouldShiftTabFromNextHoleFillToLastHoleDelete(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromNextHoleHeaderToLastHoleDelete(from, true)) return false;
+  if (shouldShiftTabFromNextHoleHeaderToLastHoleFill(from, true)) return false;
+  const fill = from.closest("[data-hole-fill]");
+  if (!fill) return false;
+  const h = holeIndexFromHoleControl(fill);
+  if (h == null || h < 1) return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
+  return pickLastHoleDeleteFromFillTabTarget(from) != null;
+}
