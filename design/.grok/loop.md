@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Tab from an empty last-hole header onto the next hole first-point y in the live header control (`focusNextHoleFirstYFromHeader`) while both lists stay mid-scroll after growth.
+1. Path inspector Tab from an empty last-hole header onto the next hole header when the next hole also has no point fields, holding both lists mid-scroll after growth.
 
 ## Done
+
+- Path inspector Tab from an empty last-hole header onto the next hole first-point y on the live header control (`focusNextHoleFirstYFromHeader`). `shouldTabFromLastHoleHeaderToNextFirstY` / `pickNextHoleFirstPointYFromHeaderTabTarget` skip when next first x exists and run after the first-x hop in `inspector-path-impl`. `tagHolePointTabCrossing(from, nextY, nextY)` then `focusHold(nextY, "[data-point-list]", from)` holds Points and Holes list scroll after growth.
 
 - Path inspector Tab from an empty last-hole header onto the next hole first-point x on the live header control. `shouldTabFromLastHoleHeaderToNextFirstX` / `pickNextHoleFirstPointXFromHeaderTabTarget` run after same-hole first-point in `inspector-path-impl`. `tagHolePointTabCrossing(from, nextX, nextX)` then `focusHold(nextX, "[data-point-list]", from)` holds Points and Holes list scroll after growth.
 
@@ -37,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 08:12 BST — Tab from empty last hole header onto next hole first-point x; hold Points and Holes list scroll.
+2026-09-12 09:05 BST — Tab from empty last hole header onto next hole first-point y when first x is missing; hold Points and Holes list scroll.
 
 ## Next recommended
 
-Wire `focusNextHoleFirstYFromHeader` on the live hole-header control so Tab from an empty last hole header lands on the next hole first-point y when first x is missing, while both lists stay mid-scroll.
+Wire Tab from an empty last hole header onto the next hole header when the next hole also has no point fields, holding both lists mid-scroll.
