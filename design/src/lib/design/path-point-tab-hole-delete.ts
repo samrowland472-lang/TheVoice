@@ -42,3 +42,35 @@ export function shouldTabFromHoleDeleteToNextHeader(
   if (!holeHeaderHasNoPointFields(inspector, h + 1)) return false;
   return pickNextHoleHeaderFromDeleteTabTarget(from) != null;
 }
+
+export function pickLastHoleDeleteFromHeaderTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return null;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null || h < 1) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const dels = inspector.querySelectorAll<HTMLElement>(
+    `[data-hole="${h - 1}"] [data-delete-hole]`,
+  );
+  return dels.length ? dels[dels.length - 1] : null;
+}
+
+export function shouldShiftTabFromNextHoleHeaderToLastHoleDelete(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const header = from.closest("[data-select-hole]");
+  if (!header) return false;
+  const h = holeIndexFromHoleControl(header);
+  if (h == null || h < 1) return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h)) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
+  return pickLastHoleDeleteFromHeaderTabTarget(from) != null;
+}

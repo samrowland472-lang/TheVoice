@@ -1,4 +1,5 @@
 import { holeIndexFromHoleControl } from "./path-point-key";
+import { shouldShiftTabFromNextHoleHeaderToLastHoleDelete } from "./path-point-tab-hole-delete";
 import {
   shouldShiftTabFromNextHoleHeaderToLastHoleX,
   shouldShiftTabFromNextHoleHeaderToLastHoleY,
@@ -41,6 +42,7 @@ export function shouldShiftTabFromNextHoleHeaderToLastHoleFill(
   if (!shift || !from || !(from instanceof Element)) return false;
   if (shouldShiftTabFromNextHoleHeaderToLastHoleY(from, true)) return false;
   if (shouldShiftTabFromNextHoleHeaderToLastHoleX(from, true)) return false;
+  if (shouldShiftTabFromNextHoleHeaderToLastHoleDelete(from, true)) return false;
   const header = from.closest("[data-select-hole]");
   if (!header) return false;
   const h = holeIndexFromHoleControl(header);

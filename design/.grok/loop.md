@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the next empty hole header onto the previous hole delete control when both holes have no point fields, holding the Holes list mid-scroll after growth.
+1. Path inspector Tab from a hole delete control onto the next hole fill-rule chip when the current hole has no point fields.
 
 ## Done
+
+- Path inspector Shift+Tab from the next empty hole header onto the previous hole delete control when both holes have no point fields. `shouldShiftTabFromNextHoleHeaderToLastHoleDelete` / `pickLastHoleDeleteFromHeaderTabTarget` resolve `[data-hole="${h-1}"] [data-delete-hole]`. Fill-rule Shift+Tab yields when delete is present. Document-level Shift+Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, lastDelete, lastDelete)` and restores `[data-hole-list]` scroll after growth.
 
 - Path inspector Tab from a hole delete control onto the next empty hole header when both holes have no point fields. `shouldTabFromHoleDeleteToNextHeader` / `pickNextHoleHeaderFromDeleteTabTarget` require no point fields on either hole and resolve the next header from `[data-delete-hole]`. Document-level Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, nextHeader, nextHeader)` and restores `[data-hole-list]` scroll after growth.
 
@@ -31,8 +33,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 12:42 BST — Tab from hole delete onto next empty hole header; hold Holes list scroll.
+2026-09-12 14:20 BST — Shift+Tab from next empty hole header onto previous hole delete; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Shift+Tab from the next empty hole header onto the previous hole delete control when both holes have no point fields, holding Holes list mid-scroll.
+Wire Tab from a hole delete control onto the next hole fill-rule chip when the current hole has no point fields.
