@@ -11,6 +11,7 @@ export { PointRow } from "./path-point-row-view";
 // function focusPrevHoleLastX
 // function focusPrevHoleLastHeader
 // shouldShiftTabFromNextHoleFirstYToLastHoleHeader
+// shouldShiftTabFromNextHoleFirstXToLastHoleHeader
 // pickLastHoleHeaderTabTarget
 // tagHolePointTabCrossing(from, header, header)
 // focusHoldEl(header, from)
