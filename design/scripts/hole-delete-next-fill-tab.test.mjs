@@ -10,8 +10,8 @@ const barrel = readFileSync(new URL("../src/lib/design/path-point-tab.ts", impor
 test("Tab from hole delete hops to next hole fill-rule chip when the current hole has no point fields", () => {
   assert.match(a, /function shouldTabFromHoleDeleteToNextFill/);
   assert.match(a, /function pickNextHoleFillFromDeleteTabTarget/);
-  assert.match(a, /closest\("\\[data-delete-hole\]"\)/);
-  assert.match(a, /\\[data-hole="\\$\\{h \\+ 1\\}"\\] \\[data-hole-fill\\]/);
+  assert.match(a, /closest\("\[data-delete-hole\]"\)/);
+  assert.match(a, /\[data-hole="\$\{h \+ 1\}"\] \[data-hole-fill\]/);
   assert.match(a, /holeHeaderHasNoPointFields\(inspector, h\)/);
   assert.match(a, /shouldTabFromHoleDeleteToNextHeader\(from, false\)\) return false/);
   assert.match(barrel, /shouldTabFromHoleDeleteToNextFill/);
@@ -25,6 +25,6 @@ test("Tab from hole delete hops to next hole fill-rule chip when the current hol
 
 test("hole delete to next fill holds Holes list scroll after growth", () => {
   assert.match(ui, /tagHoleHeaderTabCrossing\(from, nextFill, nextFill\)/);
-  assert.match(ui, /closest\("\\[data-hole-list\]"\)/);
+  assert.match(ui, /closest\("\[data-hole-list\]"\)/);
   assert.match(ui, /list\.scrollTop = saved/);
 });
