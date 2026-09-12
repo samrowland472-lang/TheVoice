@@ -180,3 +180,24 @@ export function shouldShiftTabFromNextHoleFirstYToLastHoleHeader(
   if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
   return pickLastHoleHeaderTabTarget(from) != null;
 }
+
+export function shouldShiftTabFromNextHoleFirstXToLastHoleHeader(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (shouldShiftTabFromNextHoleFirstXToLastHoleY(from, shift)) return false;
+  if (shouldShiftTabFromNextHoleFirstXToLastHoleX(from, shift)) return false;
+  if (!shift || !from || !(from instanceof Element)) return false;
+  const point = from.closest("[data-point]");
+  const key = point?.getAttribute("data-point") ?? null;
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 1) return false;
+  const i = /^hole-\d+-(\d+)$/.exec(key ?? "");
+  if (!i || Number(i[1]) !== 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "x") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
+  return pickLastHoleHeaderTabTarget(from) != null;
+}
