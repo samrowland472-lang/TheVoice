@@ -28,6 +28,11 @@ export { PointRow } from "./path-point-row-view";
 // pickNextHoleHeaderFromHeaderTabTarget
 // tagHoleHeaderTabCrossing(from, nextHeader, nextHeader)
 // focusHold(nextHeader, "[data-hole-list]", from)
+// function focusNextHoleHeaderFromFill
+// shouldTabFromHoleFillToNextHeader
+// pickNextHoleHeaderFromFillTabTarget
+// tagHoleHeaderTabCrossing(from, nextHeader, nextHeader)
+// focusHold(nextHeader, "[data-hole-list]", from)
 // function focusPrevHoleHeaderFromHeader
 // shouldShiftTabFromNextHoleHeaderToLastHoleHeader
 // pickLastHoleHeaderFromHeaderTabTarget
