@@ -83,6 +83,8 @@ export {
   shouldShiftTabFromNextHoleFirstYToLastHoleHeader,
   shouldShiftTabFromNextHoleFirstXToLastHoleHeader,
   pickLastHoleHeaderTabTarget,
+  pickNextHoleFirstPointXFromHeaderTabTarget,
+  shouldTabFromLastHoleHeaderToNextFirstX,
 } from "./path-point-tab-next-header-x";
 export {
   lastOuterXToFirstHoleHeader,
