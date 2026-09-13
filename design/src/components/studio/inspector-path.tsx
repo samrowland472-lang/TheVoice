@@ -18,6 +18,8 @@ import {
   shouldShiftTabFromNextHoleHeaderToLastHoleDelete,
   shouldShiftTabFromNextHoleHeaderToLastHoleFill,
   shouldShiftTabFromFirstHoleHeaderToLastOuterX,
+  shouldShiftTabFromFirstHoleHeaderToLastOuterY,
+  pickLastOuterLastPointYTabTarget,
   shouldTabFromHoleDeleteToNextFill,
   shouldTabFromHoleDeleteToNextHeader,
   shouldTabFromHoleFillToNextFirstX,
@@ -93,6 +95,23 @@ export function PathFields({ node }: { node: PathNode }) {
           const list = from.closest("[data-hole-list]");
           const saved = list instanceof HTMLElement ? list.scrollTop : 0;
           lastDelete.focus();
+          if (list instanceof HTMLElement) {
+            list.scrollTop = saved;
+            requestAnimationFrame(() => {
+              list.scrollTop = saved;
+            });
+          }
+          return;
+        }
+        if (shouldShiftTabFromFirstHoleHeaderToLastOuterY(from, true)) {
+          const lastY = pickLastOuterLastPointYTabTarget(from);
+          if (!lastY) return;
+          e.preventDefault();
+          tagHoleHeaderTabCrossing(from, lastY, lastY);
+          const list = from.closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
+            ?? from.closest("[data-hole-list]");
+          const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+          lastY.focus({ preventScroll: true });
           if (list instanceof HTMLElement) {
             list.scrollTop = saved;
             requestAnimationFrame(() => {
