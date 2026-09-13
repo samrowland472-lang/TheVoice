@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import {
   pickLastHoleDeleteFromFillTabTarget,
   pickLastHoleDeleteFromHeaderTabTarget,
+  pickLastHoleFillFromFirstXTabTarget,
   pickLastHoleFillFromFirstYTabTarget,
   pickLastHoleFillFromHeaderTabTarget,
   pickNextHoleFillFromDeleteTabTarget,
@@ -10,6 +11,7 @@ import {
   pickNextHoleFirstPointYFromFillTabTarget,
   pickNextHoleHeaderFromFillTabTarget,
   shouldShiftTabFromNextHoleFillToLastHoleDelete,
+  shouldShiftTabFromNextHoleFirstXToLastHoleFill,
   shouldShiftTabFromNextHoleFirstYToLastHoleFill,
   shouldShiftTabFromNextHoleHeaderToLastHoleDelete,
   shouldShiftTabFromNextHoleHeaderToLastHoleFill,
@@ -30,6 +32,22 @@ export function PathFields({ node }: { node: PathNode }) {
       const from = e.target;
       if (!(from instanceof Element)) return;
       if (e.shiftKey) {
+        if (shouldShiftTabFromNextHoleFirstXToLastHoleFill(from, true)) {
+          const lastFill = pickLastHoleFillFromFirstXTabTarget(from);
+          if (!lastFill) return;
+          e.preventDefault();
+          tagHoleHeaderTabCrossing(from, lastFill, lastFill);
+          const list = from.closest("[data-hole-list]");
+          const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+          lastFill.focus();
+          if (list instanceof HTMLElement) {
+            list.scrollTop = saved;
+            requestAnimationFrame(() => {
+              list.scrollTop = saved;
+            });
+          }
+          return;
+        }
         if (shouldShiftTabFromNextHoleFirstYToLastHoleFill(from, true)) {
           const lastFill = pickLastHoleFillFromFirstYTabTarget(from);
           if (!lastFill) return;
