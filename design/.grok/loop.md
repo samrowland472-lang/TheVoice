@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the next hole first X onto the previous hole fill-rule chip when the previous hole has no point fields and the current hole still has point fields.
+1. Path inspector Tab from the last outer path point Y onto the first hole header when wrap is off.
 
 ## Done
+
+- Path inspector Shift+Tab from the next hole first X onto the previous hole fill-rule chip when the previous hole has no point fields and the current hole still has point fields. `shouldShiftTabFromNextHoleFirstXToLastHoleFill` / `pickLastHoleFillFromFirstXTabTarget` resolve `[data-hole="${h-1}"] [data-hole-fill]`. Yields to last-hole Y/X/header hops and header→fill. Document-level Shift+Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, lastFill, lastFill)` and restores `[data-hole-list]` scroll after growth.
 
 - Path inspector Shift+Tab from the next hole first Y onto the previous hole fill-rule chip when the previous hole has no point fields, the current hole still has point fields, and the current first X is missing. `shouldShiftTabFromNextHoleFirstYToLastHoleFill` / `pickLastHoleFillFromFirstYTabTarget` resolve `[data-hole="${h-1}"] [data-hole-fill]`. Yields to last-hole Y/X hops and header→fill. Document-level Shift+Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, lastFill, lastFill)` and restores `[data-hole-list]` scroll after growth.
 
@@ -43,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-13 02:21 BST — Shift+Tab from next hole first Y onto previous hole fill-rule when previous hole has no point fields, current first X is missing; hold Holes list scroll.
+2026-09-13 03:08 BST — Shift+Tab from next hole first X onto previous hole fill-rule when previous hole has no point fields and current hole still has points; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Shift+Tab from the next hole first X onto the previous hole fill-rule chip when the previous hole has no point fields and the current hole still has point fields.
+Wire Tab from the last outer path point Y onto the first hole header when wrap is off, holding the Holes list scroll.
