@@ -26,4 +26,8 @@ test("Shift+Tab from next hole header hops to last hole-path x when last y is mi
 test("next hole header to last hole x holds Points and Holes list scroll after growth", () => {
   assert.match(impl, /focusHold\(lastX, "\[data-point-list\]", from\)/);
   assert.match(impl, /tagHolePointTabCrossing\(from, lastX, lastX\)/);
+  assert.match(impl, /focus\(\{ preventScroll: true \}\)/);
+  assert.match(impl, /restoreListScroll\(list, saved\)/);
+  assert.match(impl, /restoreHoleListScroll\(list, saved\)/);
+  assert.match(impl, /clampAfterGrowth/);
 });
