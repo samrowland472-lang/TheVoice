@@ -101,6 +101,8 @@ export {
 export {
   pickNextHoleFirstPointYFromFillTabTarget,
   shouldTabFromHoleFillToNextFirstY,
+  pickLastHoleFillFromFirstYTabTarget,
+  shouldShiftTabFromNextHoleFirstYToLastHoleFill,
 } from "./path-point-tab-hole-fill-y";
 export {
   pickLastHoleFillFromHeaderTabTarget,
