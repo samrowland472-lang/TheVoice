@@ -31,4 +31,6 @@ test("document-level Shift+Tab from first hole header hops to last outer Y when 
   assert.match(inspector, /closest\("\[data-path-inspector\]"\)\?\.querySelector\("\[data-hole-list\]"\)/);
   assert.match(inspector, /list\.scrollTop = saved/);
   assert.match(inspector, /focus\(\{ preventScroll: true \}\)/);
+  assert.match(inspector, /restoreHoleListScroll\(list, saved\)/);
+  assert.match(inspector, /clampAfterGrowth/);
 });
