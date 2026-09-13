@@ -26,6 +26,9 @@ test("Shift+Tab from next hole first Y hops to previous hole fill when previous 
 });
 
 test("next hole first Y to last hole fill holds Holes list scroll after growth", () => {
-  assert.match(ui, /closest\("\\[data-hole-list\\]"\)/);
+  assert.match(ui, /holdHoleListAcrossHop\(from, lastFill\)/);
+  assert.match(ui, /closest\("\[data-hole-list\]"\)/);
   assert.match(ui, /list\.scrollTop = saved/);
+  assert.match(ui, /clampAfterGrowth/);
+  assert.match(ui, /restoreHoleListScroll\(list, saved\)/);
 });

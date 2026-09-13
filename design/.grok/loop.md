@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector wrap-off: reuse `holdHoleListAcrossOuterHop` clamp-after-growth for hole-fill / hole-delete hops that still assign `scrollTop` without clamp.
+1. Path inspector wrap-off: apply the same clamp-after-growth hold to hole-header ↔ last-hole X/Y hops in `inspector-path-impl.tsx` (`holdListScroll` still assigns raw `scrollTop`).
 
 ## Done
+
+- Wrap-off hole-fill / hole-delete hops reuse `holdHoleListAcrossHop` (same clamp-after-growth as `holdHoleListAcrossOuterHop`): snapshot `[data-hole-list]` from `[data-path-inspector]`, `focus({ preventScroll: true })`, `restoreListScroll` plus triple rAF `restoreHoleListScroll` so a taller hole list cannot keep an out-of-range offset.
 
 - Wrap-off first-hole header ↔ last outer hops clamp hole-list scroll after list growth: snapshot `[data-hole-list]` from `[data-path-inspector]`, `focus({ preventScroll: true })`, assign `list.scrollTop = saved`, then `restoreListScroll` plus a third rAF `restoreHoleListScroll` (`clampAfterGrowth`) so a taller hole list cannot keep an out-of-range offset.
 
@@ -33,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-13 12:08 BST — Wrap-off first-hole header ↔ last outer hops clamp hole-list scroll after growth (triple rAF + restoreHoleListScroll).
+2026-09-13 13:20 BST — Wrap-off hole-fill / hole-delete hops clamp hole-list scroll after growth via `holdHoleListAcrossHop`.
 
 ## Next recommended
 
-Reuse `holdHoleListAcrossOuterHop` clamp-after-growth for hole-fill / hole-delete hops that still assign `scrollTop` without clamp.
+Apply the same clamp-after-growth hold to hole-header ↔ last-hole X/Y hops in `inspector-path-impl.tsx`.

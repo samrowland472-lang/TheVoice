@@ -24,6 +24,9 @@ test("Tab from hole fill-rule chip hops to next hole first Y when current hole h
 });
 
 test("hole fill-rule to next first Y holds Holes list scroll after growth", () => {
-  assert.match(ui, /closest\("\\[data-hole-list\\]"\)/);
+  assert.match(ui, /holdHoleListAcrossHop\(from, nextY\)/);
+  assert.match(ui, /closest\("\[data-hole-list\]"\)/);
   assert.match(ui, /list\.scrollTop = saved/);
+  assert.match(ui, /clampAfterGrowth/);
+  assert.match(ui, /restoreHoleListScroll\(list, saved\)/);
 });
