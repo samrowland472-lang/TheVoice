@@ -21,6 +21,7 @@ import {
   shouldTabFromHoleFillToNextFirstX,
   shouldTabFromHoleFillToNextFirstY,
   shouldTabFromHoleFillToNextHeader,
+  shouldTabFromLastOuterXToFirstHoleHeader,
   shouldTabFromLastOuterYToFirstHoleHeader,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
@@ -114,7 +115,10 @@ export function PathFields({ node }: { node: PathNode }) {
         }
         return;
       }
-      if (shouldTabFromLastOuterYToFirstHoleHeader(from, false)) {
+      if (
+        shouldTabFromLastOuterYToFirstHoleHeader(from, false) ||
+        shouldTabFromLastOuterXToFirstHoleHeader(from, false)
+      ) {
         const header = pickFirstHoleHeaderTabTarget(from);
         if (!header) return;
         e.preventDefault();
