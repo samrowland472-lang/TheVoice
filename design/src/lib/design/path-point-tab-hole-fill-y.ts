@@ -1,6 +1,11 @@
-import { holeIndexFromHoleControl } from "./path-point-key";
-import { shouldTabFromHoleFillToNextHeader } from "./path-point-tab-next-header-x";
+import { holeIndexFromHoleControl, holeIndexFromPointKey } from "./path-point-key";
+import {
+  shouldShiftTabFromNextHoleFirstYToLastHoleX,
+  shouldShiftTabFromNextHoleFirstYToLastHoleY,
+  shouldTabFromHoleFillToNextHeader,
+} from "./path-point-tab-next-header-x";
 import { shouldTabFromHoleFillToNextFirstX } from "./path-point-tab-hole-fill-x";
+import { shouldShiftTabFromNextHoleHeaderToLastHoleFill } from "./path-point-tab-hole-fill-shift";
 
 function inspectorOf(el: Element | null | undefined): Element | null {
   if (!el || !(el instanceof Element)) return null;
@@ -47,4 +52,45 @@ export function shouldTabFromHoleFillToNextFirstY(
   const next = inspector.querySelector<HTMLElement>(`[data-point^="hole-${h + 1}-"]`);
   if (next?.querySelector('input[data-path-axis="x"]')) return false;
   return pickNextHoleFirstPointYFromFillTabTarget(from) != null;
+}
+
+export function pickLastHoleFillFromFirstYTabTarget(
+  from: Element | null | undefined,
+): HTMLElement | null {
+  if (!from || !(from instanceof Element)) return null;
+  const point = from.closest("[data-point]");
+  const key = point?.getAttribute("data-point") ?? null;
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 1) return null;
+  const inspector = inspectorOf(from);
+  if (!inspector) return null;
+  const fills = inspector.querySelectorAll<HTMLElement>(
+    `[data-hole="${h - 1}"] [data-hole-fill]`,
+  );
+  return fills.length ? fills[fills.length - 1] : null;
+}
+
+export function shouldShiftTabFromNextHoleFirstYToLastHoleFill(
+  from: Element | null | undefined,
+  shift: boolean,
+): boolean {
+  if (!shift || !from || !(from instanceof Element)) return false;
+  if (shouldShiftTabFromNextHoleFirstYToLastHoleY(from, true)) return false;
+  if (shouldShiftTabFromNextHoleFirstYToLastHoleX(from, true)) return false;
+  if (shouldShiftTabFromNextHoleHeaderToLastHoleFill(from, true)) return false;
+  const point = from.closest("[data-point]");
+  const key = point?.getAttribute("data-point") ?? null;
+  const h = holeIndexFromPointKey(key);
+  if (h == null || h < 1) return false;
+  const i = /^hole-\d+-(\d+)$/.exec(key ?? "");
+  if (!i || Number(i[1]) !== 0) return false;
+  const axis = from.getAttribute?.("data-path-axis");
+  if (axis && axis !== "y") return false;
+  const inspector = inspectorOf(from);
+  if (!inspector) return false;
+  if (!holeHeaderHasNoPointFields(inspector, h - 1)) return false;
+  if (holeHeaderHasNoPointFields(inspector, h)) return false;
+  const first = inspector.querySelector(`[data-point^="hole-${h}-"]`);
+  if (first?.querySelector('input[data-path-axis="x"]')) return false;
+  return pickLastHoleFillFromFirstYTabTarget(from) != null;
 }
