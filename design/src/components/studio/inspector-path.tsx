@@ -27,6 +27,7 @@ import {
   shouldTabFromHoleFillToNextHeader,
   shouldTabFromLastOuterXToFirstHoleHeader,
   shouldTabFromLastOuterYToFirstHoleHeader,
+  restoreHoleListScroll,
   restoreListScroll,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
@@ -39,7 +40,18 @@ function holdHoleListAcrossOuterHop(from: Element, target: HTMLElement) {
     from.closest("[data-hole-list]");
   const saved = list instanceof HTMLElement ? list.scrollTop : 0;
   target.focus({ preventScroll: true });
-  restoreListScroll(list, saved);
+  if (list instanceof HTMLElement) {
+    list.scrollTop = saved;
+    restoreListScroll(list, saved);
+    const clampAfterGrowth = () => restoreHoleListScroll(list, saved);
+    requestAnimationFrame(() => {
+      clampAfterGrowth();
+      requestAnimationFrame(() => {
+        clampAfterGrowth();
+        requestAnimationFrame(clampAfterGrowth);
+      });
+    });
+  }
 }
 
 export function PathFields({ node }: { node: PathNode }) {
