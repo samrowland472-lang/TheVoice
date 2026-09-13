@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector wrap-off: apply clamp-after-growth to remaining raw `focus({ preventScroll: true })` hops in `inspector-path-impl.tsx` if any still exist outside `holdExitHop` / `focusHold`.
+1. Path inspector wrap-off: fold leftover `focus({ preventScroll: true })` in `inspector-path.tsx` `holdHoleListAcrossHop` into the same clamp-after-growth helper used by `focusHold` / `focusHoldEl` so hole-list hops cannot keep an out-of-range offset after list growth.
 
 ## Done
+
+- Path inspector wrap-off hops in `path-point-row-view.tsx` (`focusHoldEl`) and first-hole X → prev last-X in `path-point-row-fields.tsx` clamp list scroll after growth: snapshot Points + Holes, `focus({ preventScroll: true })`, assign `scrollTop = saved`, then clamp to `scrollHeight - clientHeight` across triple rAF so a taller list cannot keep an out-of-range offset.
 
 - Path inspector wrap-off same-hole / prev-hole header (Shift+Tab) and last-hole X/Y → next-header (Tab) hops in `path-point-row-view.tsx` use `focusHoldEl`: snapshot Points + hole lists, `focus({ preventScroll: true })`, then `restoreListScroll` with clamp-after-growth so the lists cannot keep an out-of-range offset after the hop.
 
@@ -43,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-13 18:15 BST — Same-hole / prev-hole header and last-hole → next-header hops clamp Points + hole-list scroll via `focusHoldEl` + clamp-after-growth.
+2026-09-13 19:16 BST — Wrap-off hops clamp Points + hole-list scroll after growth (`scrollHeight - clientHeight`) in `focusHoldEl` and first-hole X → prev last-X.
 
 ## Next recommended
 
-Scan `inspector-path-impl.tsx` for leftover raw `focus({ preventScroll: true })` hops and route them through clamp-after-growth.
+Fold `holdHoleListAcrossHop` in `inspector-path.tsx` into the shared clamp-after-growth helper.
