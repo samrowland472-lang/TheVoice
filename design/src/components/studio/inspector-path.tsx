@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import {
+  pickFirstHoleHeaderTabTarget,
   pickLastHoleDeleteFromFillTabTarget,
   pickLastHoleDeleteFromHeaderTabTarget,
   pickLastHoleFillFromFirstXTabTarget,
@@ -20,6 +21,7 @@ import {
   shouldTabFromHoleFillToNextFirstX,
   shouldTabFromHoleFillToNextFirstY,
   shouldTabFromHoleFillToNextHeader,
+  shouldTabFromLastOuterYToFirstHoleHeader,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
 import { PathFields as PathFieldsImpl } from "./inspector-path-impl";
@@ -104,6 +106,23 @@ export function PathFields({ node }: { node: PathNode }) {
         const list = from.closest("[data-hole-list]");
         const saved = list instanceof HTMLElement ? list.scrollTop : 0;
         lastFill.focus();
+        if (list instanceof HTMLElement) {
+          list.scrollTop = saved;
+          requestAnimationFrame(() => {
+            list.scrollTop = saved;
+          });
+        }
+        return;
+      }
+      if (shouldTabFromLastOuterYToFirstHoleHeader(from, false)) {
+        const header = pickFirstHoleHeaderTabTarget(from);
+        if (!header) return;
+        e.preventDefault();
+        tagHoleHeaderTabCrossing(from, header, header);
+        const list = from.closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
+          ?? from.closest("[data-hole-list]");
+        const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+        header.focus({ preventScroll: true });
         if (list instanceof HTMLElement) {
           list.scrollTop = saved;
           requestAnimationFrame(() => {
