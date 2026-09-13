@@ -219,11 +219,11 @@ export function PointRow({
       if (focusPrevHoleLastHeader(from)) { e.preventDefault(); return; }
       if (shouldShiftTabToSameHoleHeader(from, true)) {
         const header = pickSameHoleHeaderTabTarget(from);
-        if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); header.focus({ preventScroll: true }); return; }
+        if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); focusHoldEl(header, from); return; }
       }
       if (shouldShiftTabToPrevHoleHeader(from, true)) {
         const header = pickPrevHoleHeaderTabTarget(from);
-        if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); header.focus({ preventScroll: true }); return; }
+        if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); focusHoldEl(header, from); return; }
       }
       if (shouldShiftTabFromFirstOuterToOutline(from, true)) {
         const outline = pickOutlineTabTarget(from);
@@ -263,11 +263,11 @@ export function PointRow({
     if (focusFirstHoleHeader(from)) { e.preventDefault(); return; }
     if (axis === "x" && shouldTabFromLastHoleXToNextHeader(from, false)) {
       const header = pickNextHoleHeaderTabTarget(from);
-      if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); header.focus({ preventScroll: true }); }
+      if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); focusHoldEl(header, from); return; }
     }
     if (axis === "y" && shouldTabToNextHoleHeader(from, false)) {
       const header = pickNextHoleHeaderTabTarget(from);
-      if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); header.focus({ preventScroll: true }); }
+      if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); focusHoldEl(header, from); return; }
     }
   };
   return (
