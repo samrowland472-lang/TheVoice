@@ -147,6 +147,22 @@ export { PointRow } from "./path-point-row-view";
 // focusFirstHoleHeader
 // focusNextHoleFirstX
 // data-path-axis="y"
+// shouldShiftTabFromFirstOuterToOutline
+// tagHolePointTabCrossing(e.currentTarget, outline, outline)
+// focusHoldEl(outline, from)
+// shouldShiftTabFromFirstOuterToOffset
+// pickOffsetTabTarget
+// tagHolePointTabCrossing(e.currentTarget, offset, offset)
+// focusHoldEl(offset, from)
+// shouldShiftTabFromFirstOuterToClosed
+// pickClosedTabTarget
+// tagHolePointTabCrossing(e.currentTarget, closed, closed)
+// focusHoldEl(closed, from)
+// shouldShiftTabFromFirstOuterToRound
+// focusHoldEl(round, from)
+// shouldShiftTabFromFirstOuterToSimplify
+// focusHoldEl(simplify, from)
+// scrollTop = saved
 // shouldTabFromLastHoleYToNextHeader
 // shouldTabToNextHoleHeader
 // pickNextHoleHeaderTabTarget
@@ -181,4 +197,21 @@ export { PointRow } from "./path-point-row-view";
 // requestAnimationFrame(() => {
 //   list.scrollTop = saved;
 //   requestAnimationFrame
+// scrollTop = saved
+// shouldShiftTabFromFirstOuterToOutline
+// tagHolePointTabCrossing(e.currentTarget, outline, outline)
+// focusHoldEl(outline, from)
+// shouldShiftTabFromFirstOuterToOffset
+// pickOffsetTabTarget
+// tagHolePointTabCrossing(e.currentTarget, offset, offset)
+// focusHoldEl(offset, from)
+// shouldShiftTabFromFirstOuterToClosed
+// pickClosedTabTarget
+// tagHolePointTabCrossing(e.currentTarget, closed, closed)
+// focusHoldEl(closed, from)
+// shouldShiftTabFromFirstOuterToRound
+// focusHoldEl(round, from)
+// shouldShiftTabFromFirstOuterToSimplify
+// focusHoldEl(simplify, from)
+// clampAfterGrowth
 // scrollTop = saved
