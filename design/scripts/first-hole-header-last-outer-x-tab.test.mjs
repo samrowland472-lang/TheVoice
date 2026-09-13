@@ -4,6 +4,7 @@ import { test } from "node:test";
 
 const a = readFileSync(new URL("../src/lib/design/path-point-tab-last-y.ts", import.meta.url), "utf8");
 const impl = readFileSync(new URL("../src/components/studio/inspector-path-impl.tsx", import.meta.url), "utf8");
+const inspector = readFileSync(new URL("../src/components/studio/inspector-path.tsx", import.meta.url), "utf8");
 const ui = readFileSync(new URL("../src/components/studio/path-point-row.tsx", import.meta.url), "utf8");
 const barrel = readFileSync(new URL("../src/lib/design/path-point-tab.ts", import.meta.url), "utf8");
 
@@ -21,4 +22,14 @@ test("Shift+Tab from first hole header hops to last outer-path x when last y is 
 test("first hole header to last outer x holds Points and Holes list scroll after growth", () => {
   assert.match(impl, /focusHold\(lastX, "\[data-point-list\]", from\)/);
   assert.match(impl, /tagHolePointTabCrossing\(from, lastX, lastX\)/);
+});
+
+test("document-level Shift+Tab from first hole header hops to last outer X when wrap is off and last Y is missing", () => {
+  assert.match(inspector, /shouldShiftTabFromFirstHoleHeaderToLastOuterX/);
+  assert.match(inspector, /shouldShiftTabFromFirstHoleHeaderToLastOuterX\(from, true\)/);
+  assert.match(inspector, /pickLastOuterLastPointXTabTarget/);
+  assert.match(inspector, /tagHoleHeaderTabCrossing\(from, lastX, lastX\)/);
+  assert.match(inspector, /closest\("\[data-path-inspector\]"\)\?\.querySelector\("\[data-hole-list\]"\)/);
+  assert.match(inspector, /list\.scrollTop = saved/);
+  assert.match(inspector, /focus\(\{ preventScroll: true \}\)/);
 });

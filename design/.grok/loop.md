@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the first hole header onto the last outer path point X when wrap is off and last Y is missing.
+1. Path inspector Shift+Tab from the first hole header onto the last outer path point Y at document level when wrap is off.
 
 ## Done
+
+- Path inspector Shift+Tab from the first hole header onto the last outer path point X when wrap is off and last Y is missing. Document-level Shift+Tab in `inspector-path` hops with `shouldShiftTabFromFirstHoleHeaderToLastOuterX` / `pickLastOuterLastPointXTabTarget`, `tagHoleHeaderTabCrossing(from, lastX, lastX)`, `focus({ preventScroll: true })`, and restores `[data-hole-list]` scroll after growth. Yields to last-outer Y when that field exists (`shouldShiftTabFromFirstHoleHeaderToLastOuterY` returns first).
 
 - Path inspector Tab from the last outer path point X onto the first hole header when wrap is off and last Y is missing. Document-level Tab in `inspector-path` hops with `shouldTabFromLastOuterYToFirstHoleHeader` **or** `shouldTabFromLastOuterXToFirstHoleHeader` / `pickFirstHoleHeaderTabTarget`, `tagHoleHeaderTabCrossing(from, header, header)`, `focus({ preventScroll: true })`, and restores `[data-hole-list]` scroll after growth. Yields to last-outer Y and first-hole X/Y hops when those fields exist (`lastOuterXToFirstHoleHeader` returns false when the last outer row still has a Y input).
 
@@ -31,8 +33,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-13 08:15 BST — Tab from last outer path point X onto first hole header when wrap is off and last Y is missing; still yields to Y.
+2026-09-13 09:10 BST — Shift+Tab from first hole header onto last outer path point X when wrap is off and last Y is missing; still yields to Y.
 
 ## Next recommended
 
-Wire Shift+Tab from the first hole header onto the last outer path point X at document level when wrap is off and last Y is missing.
+Wire Shift+Tab from the first hole header onto the last outer path point Y at document level when wrap is off.
