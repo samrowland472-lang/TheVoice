@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Shift+Tab from the first hole header onto the last outer path point Y at document level when wrap is off.
+1. Path inspector wrap-off polish: keep hole-list scroll when hopping first-hole header ↔ last outer point on wrap.
 
 ## Done
+
+- Path inspector Shift+Tab from the first hole header onto the last outer path point Y at document level when wrap is off. Document-level Shift+Tab in `inspector-path` hops with `shouldShiftTabFromFirstHoleHeaderToLastOuterY` / `pickLastOuterLastPointYTabTarget`, `tagHoleHeaderTabCrossing(from, lastY, lastY)`, `focus({ preventScroll: true })`, and restores `[data-hole-list]` scroll after growth. Header `onKeyDown` in `inspector-path-impl` also hops with `focusHold(lastY, "[data-point-list]", from)` / `tagHolePointTabCrossing`. Yields last-outer X only when last Y is missing (`shouldShiftTabFromFirstHoleHeaderToLastOuterX` returns false when Y exists).
 
 - Path inspector Shift+Tab from the first hole header onto the last outer path point X when wrap is off and last Y is missing. Document-level Shift+Tab in `inspector-path` hops with `shouldShiftTabFromFirstHoleHeaderToLastOuterX` / `pickLastOuterLastPointXTabTarget`, `tagHoleHeaderTabCrossing(from, lastX, lastX)`, `focus({ preventScroll: true })`, and restores `[data-hole-list]` scroll after growth. Yields to last-outer Y when that field exists (`shouldShiftTabFromFirstHoleHeaderToLastOuterY` returns first).
 
@@ -33,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-13 09:10 BST — Shift+Tab from first hole header onto last outer path point X when wrap is off and last Y is missing; still yields to Y.
+2026-09-13 10:20 BST — Shift+Tab from first hole header onto last outer path point Y when wrap is off.
 
 ## Next recommended
 
-Wire Shift+Tab from the first hole header onto the last outer path point Y at document level when wrap is off.
+Keep hole-list scroll stable when hopping first-hole header ↔ last outer point with wrap off.
