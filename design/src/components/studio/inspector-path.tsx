@@ -27,10 +27,20 @@ import {
   shouldTabFromHoleFillToNextHeader,
   shouldTabFromLastOuterXToFirstHoleHeader,
   shouldTabFromLastOuterYToFirstHoleHeader,
+  restoreListScroll,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
 import { PathFields as PathFieldsImpl } from "./inspector-path-impl";
 import type { PathNode } from "@/lib/design/types";
+
+function holdHoleListAcrossOuterHop(from: Element, target: HTMLElement) {
+  const list =
+    from.closest("[data-path-inspector]")?.querySelector("[data-hole-list]") ??
+    from.closest("[data-hole-list]");
+  const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+  target.focus({ preventScroll: true });
+  restoreListScroll(list, saved);
+}
 
 export function PathFields({ node }: { node: PathNode }) {
   useEffect(() => {
@@ -108,16 +118,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastY) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastY, lastY);
-          const list = from.closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
-            ?? from.closest("[data-hole-list]");
-          const saved = list instanceof HTMLElement ? list.scrollTop : 0;
-          lastY.focus({ preventScroll: true });
-          if (list instanceof HTMLElement) {
-            list.scrollTop = saved;
-            requestAnimationFrame(() => {
-              list.scrollTop = saved;
-            });
-          }
+          holdHoleListAcrossOuterHop(from, lastY);
           return;
         }
         if (shouldShiftTabFromFirstHoleHeaderToLastOuterX(from, true)) {
@@ -125,16 +126,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastX) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastX, lastX);
-          const list = from.closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
-            ?? from.closest("[data-hole-list]");
-          const saved = list instanceof HTMLElement ? list.scrollTop : 0;
-          lastX.focus({ preventScroll: true });
-          if (list instanceof HTMLElement) {
-            list.scrollTop = saved;
-            requestAnimationFrame(() => {
-              list.scrollTop = saved;
-            });
-          }
+          holdHoleListAcrossOuterHop(from, lastX);
           return;
         }
         if (!shouldShiftTabFromNextHoleHeaderToLastHoleFill(from, true)) return;
@@ -161,16 +153,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!header) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, header, header);
-        const list = from.closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
-          ?? from.closest("[data-hole-list]");
-        const saved = list instanceof HTMLElement ? list.scrollTop : 0;
-        header.focus({ preventScroll: true });
-        if (list instanceof HTMLElement) {
-          list.scrollTop = saved;
-          requestAnimationFrame(() => {
-            list.scrollTop = saved;
-          });
-        }
+        holdHoleListAcrossOuterHop(from, header);
         return;
       }
       if (shouldTabFromHoleFillToNextFirstX(from, false)) {
