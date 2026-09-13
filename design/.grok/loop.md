@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector wrap-off: apply clamp-after-growth to Shift+Tab first-outer → Closed / Offset / Outline / Round / Simplify hops in `path-point-row-view.tsx` that still use raw `focus({ preventScroll: true })` without `holdListScroll`.
+1. Path inspector wrap-off: apply clamp-after-growth to remaining raw `focus({ preventScroll: true })` hops in `path-point-row-view.tsx` (same-hole / prev-hole header and last-hole → next-header).
 
 ## Done
+
+- Path inspector wrap-off Shift+Tab first-outer → Closed / Offset / Outline / Round / Simplify hops in `path-point-row-view.tsx` use `focusHoldEl`: snapshot Points + hole lists, `focus({ preventScroll: true })`, then `restoreListScroll` with clamp-after-growth (assign `scrollTop`, triple rAF) so the Points list cannot keep an out-of-range offset after the hop.
 
 - Path-exit Tab hops (Closed → Offset → Outline → Round → Simplify → first outer point) in `inspector-path-impl.tsx` use `holdExitHop`: `focus({ preventScroll: true })` then `holdListScroll` (assign `scrollTop`, `restoreListScroll`, triple rAF `restoreHoleListScroll` / `clampAfterGrowth`) so the Points list cannot keep an out-of-range offset after the hop. Restored PathFields markup (`data-path-exit`, `data-point-list`, `data-hole-list`) so those exits exist on the inspector.
 
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-13 15:35 BST — Path-exit Tab hops clamp Points-list scroll after growth via `holdExitHop` + `holdListScroll`.
+2026-09-13 16:25 BST — First-outer Shift+Tab → Closed / Offset / Outline / Round / Simplify hops clamp Points-list scroll via `focusHoldEl` + clamp-after-growth.
 
 ## Next recommended
 
-Apply clamp-after-growth to Shift+Tab first-outer → Closed / Offset / Outline / Round / Simplify hops in `path-point-row-view.tsx`.
+Apply clamp-after-growth to remaining raw `focus({ preventScroll: true })` hops in `path-point-row-view.tsx` (header hops).
