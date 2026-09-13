@@ -99,6 +99,10 @@ export {
   shouldTabFromHoleFillToNextFirstX,
 } from "./path-point-tab-hole-fill-x";
 export {
+  pickNextHoleFirstPointYFromFillTabTarget,
+  shouldTabFromHoleFillToNextFirstY,
+} from "./path-point-tab-hole-fill-y";
+export {
   pickLastHoleFillFromHeaderTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleFill,
   pickLastHoleDeleteFromFillTabTarget,

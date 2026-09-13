@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector Tab from a hole fill-rule chip onto the next hole first Y when the current hole has no point fields, the next hole still has point fields, and the next first X is missing.
+1. Path inspector Shift+Tab from the next hole first Y onto the previous hole fill-rule chip when the previous hole has no point fields, the current hole still has point fields, and the current first X is missing.
 
 ## Done
+
+- Path inspector Tab from a hole fill-rule chip onto the next hole first Y when the current hole has no point fields, the next hole still has point fields, and the next first X is missing. `shouldTabFromHoleFillToNextFirstY` / `pickNextHoleFirstPointYFromFillTabTarget` resolve `[data-point^="hole-${h+1}-"] input[data-path-axis="y"]`. Yields to `shouldTabFromHoleFillToNextFirstX` when the next first X exists, and to `shouldTabFromHoleFillToNextHeader` when both holes are empty. Document-level Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, nextY, nextY)` and restores `[data-hole-list]` scroll after growth.
 
 - Path inspector Tab from a hole fill-rule chip onto the next hole first-point X when the current hole has no point fields and the next hole still has an X field. `shouldTabFromHoleFillToNextFirstX` / `pickNextHoleFirstPointXFromFillTabTarget` resolve `[data-point^="hole-${h+1}-"] input[data-path-axis="x"]`. Yields to `shouldTabFromHoleFillToNextHeader` when both holes are empty. Document-level Tab in `inspector-path` hops with `tagHoleHeaderTabCrossing(from, nextX, nextX)` and restores `[data-hole-list]` scroll after growth.
 
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-12 20:06 BST — Tab from hole fill-rule onto next hole first X when current hole has no point fields; hold Holes list scroll.
+2026-09-13 01:20 BST — Tab from hole fill-rule onto next hole first Y when current hole has no point fields and next first X is missing; hold Holes list scroll.
 
 ## Next recommended
 
-Wire Tab from a hole fill-rule chip onto the next hole first Y when the current hole has no point fields, the next hole still has point fields, and the next first X is missing.
+Wire Shift+Tab from the next hole first Y onto the previous hole fill-rule chip when the previous hole has no point fields, the current hole still has point fields, and the current first X is missing.
