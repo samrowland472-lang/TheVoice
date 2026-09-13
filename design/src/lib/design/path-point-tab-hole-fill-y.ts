@@ -78,6 +78,7 @@ export function shouldShiftTabFromNextHoleFirstYToLastHoleFill(
   if (shouldShiftTabFromNextHoleFirstYToLastHoleY(from, true)) return false;
   if (shouldShiftTabFromNextHoleFirstYToLastHoleX(from, true)) return false;
   if (shouldShiftTabFromNextHoleHeaderToLastHoleFill(from, true)) return false;
+  // First X present: that hop owns Shift+Tab onto previous fill.
   const point = from.closest("[data-point]");
   const key = point?.getAttribute("data-point") ?? null;
   const h = holeIndexFromPointKey(key);
