@@ -137,6 +137,8 @@ export {
   restoreHoleListScroll,
   restoreListScroll,
   restorePointListScroll,
+  holdListScroll,
+  snapshotList,
   snapshotScroll,
   holdPointAndHoleLists,
   shouldHoldHoleListScroll,
