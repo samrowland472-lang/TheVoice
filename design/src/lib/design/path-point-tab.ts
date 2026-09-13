@@ -135,6 +135,7 @@ export {
   pickNextHoleTabTarget,
   pickPreviousHoleTabTarget,
   restoreHoleListScroll,
+  restoreListScroll,
   restorePointListScroll,
   snapshotScroll,
   holdPointAndHoleLists,
