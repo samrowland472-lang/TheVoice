@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Eye, EyeOff, GripVertical, Link2, Lock, Unlock } from "lucide-react";
+import { Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +16,17 @@ export function LayersPanel() {
   const [dropAt, setDropAt] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
+  const [query, setQuery] = useState("");
 
   if (!doc) return null;
-  const layers = [...doc.nodes].reverse();
+  const needle = query.trim().toLowerCase();
+  const filtering = needle.length > 0;
+  const layers = [...doc.nodes].reverse().filter((n) => {
+    if (!filtering) return true;
+    const name = (n.name || "").toLowerCase();
+    const kind = (n.kind || "").toLowerCase();
+    return name.includes(needle) || kind.includes(needle);
+  });
   const draggingSet = dragIds ? new Set(dragIds) : null;
 
   const indexFromY = (clientY: number) => {
@@ -54,6 +62,34 @@ export function LayersPanel() {
   return (
     <div className="flex min-h-0 flex-col">
       <div className="px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Layers</div>
+      <div className="px-2 pb-2">
+        <label className="relative flex h-8 items-center">
+          <Search className="pointer-events-none absolute left-2 size-3.5 text-ink-faint" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter layers"
+            aria-label="Filter layers"
+            className="field h-8 w-full pl-7 pr-7 text-xs"
+          />
+          {query && (
+            <button
+              type="button"
+              className="absolute right-1 grid size-6 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
+              aria-label="Clear filter"
+              onClick={() => setQuery("")}
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </label>
+        {filtering && (
+          <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
+            {layers.length} match{layers.length === 1 ? "" : "es"}
+          </p>
+        )}
+      </div>
       <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
         {layers.map((n, i) => {
           const active = selection.includes(n.id);
@@ -72,10 +108,13 @@ export function LayersPanel() {
                 )}
               >
                 <span
-                  className="grid size-7 shrink-0 cursor-grab place-items-center text-ink-faint touch-none select-none active:cursor-grabbing"
+                  className={cn(
+                    "grid size-7 shrink-0 place-items-center text-ink-faint touch-none select-none",
+                    filtering ? "cursor-default opacity-40" : "cursor-grab active:cursor-grabbing",
+                  )}
                   aria-label="Reorder layer"
                   onPointerDown={(e) => {
-                    if (e.button !== 0) return;
+                    if (e.button !== 0 || filtering) return;
                     e.currentTarget.setPointerCapture(e.pointerId);
                     const sel = useDesign.getState().selection;
                     const group = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
@@ -188,7 +227,11 @@ export function LayersPanel() {
             <span className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full bg-phosphor" />
           </li>
         )}
-        {layers.length === 0 && <li className="px-2 py-6 text-center text-xs text-ink-faint">Empty artboard</li>}
+        {layers.length === 0 && (
+          <li className="px-2 py-6 text-center text-xs text-ink-faint">
+            {filtering ? "No layers match" : "Empty artboard"}
+          </li>
+        )}
       </ul>
       <HistoryList />
     </div>

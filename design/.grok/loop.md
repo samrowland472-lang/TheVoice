@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Layer search / filter in the layers panel.
+1. Inspector: multi-select mixed values shown as a dash, with “Apply to all” on edit.
 
 ## Done
+
+- Layer filter field above the stack. Matches name or kind (case-insensitive). Count + clear. Drag-reorder disabled while filtered so drop indices stay honest.
 
 - History list labels: undo stack records action names (Delete, Move, Type, Add Rectangle, …) and the Layers History list shows them instead of “Step N / Redo N”. Clicking a named step restores that snapshot and rewinds/fast-forwards the stack.
 
@@ -33,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 14:50 BST — Named history steps in the Layers History list.
+2026-09-14 15:36 BST — Layer search / filter in the Layers panel.
 
 ## Next recommended
 
-Filter / search field above the layer stack.
+Inspector mixed-value treatment for multi-select.
