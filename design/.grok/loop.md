@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed-value treatment for remaining text colour when multi-select includes both type and shapes.
+1. Inspector mixed-value treatment for remaining type fields when multi-select includes both type and shapes (family / size / weight still live only under 2+ type layers).
 
 ## Done
+
+- Mixed type colour when the selection mixes type and shapes: dash hex if type fills disagree; picker, brand swatch, or Apply key type colour writes fill onto type layers only so shapes keep their own ink.
 
 - Mixed fill/stroke colour pickers: dash hex when the selection disagrees; picking a colour, a brand swatch, or Apply key … to all writes onto every selected layer. Stroke width uses the same mixed NumField.
 
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 20:05 BST — Mixed fill/stroke colour pickers (dash + apply-all).
+2026-09-14 21:20 BST — Mixed type colour for type+shape selections (type-only write).
 
 ## Next recommended
 
-Inspector mixed-value treatment for remaining text colour when multi-select includes both type and shapes.
+Inspector mixed-value treatment for remaining type fields when multi-select includes both type and shapes (family / size / weight still live only under 2+ type layers).
