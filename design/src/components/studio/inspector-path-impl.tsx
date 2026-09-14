@@ -46,8 +46,8 @@ import {
   pickNextHoleHeaderFromHeaderTabTarget,
   shouldShiftTabFromNextHoleHeaderToLastHoleHeader,
   pickLastHoleHeaderFromHeaderTabTarget,
-  restoreHoleListScroll,
-  restoreListScroll,
+  focusHold,
+  holdExitHop,
   shouldShiftTabFromFirstHoleHeaderToLastOuterX,
   shouldShiftTabFromFirstHoleHeaderToLastOuterY,
   pickLastOuterLastPointXTabTarget,
@@ -62,43 +62,6 @@ import type { PathNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { Section } from "./inspector-parts";
 import { PointRow } from "./path-point-row";
-
-function holdListScroll(list: Element | null, saved: number) {
-  if (!(list instanceof HTMLElement)) return;
-  list.scrollTop = saved;
-  restoreListScroll(list, saved);
-  const clampAfterGrowth = () => restoreHoleListScroll(list, saved);
-  requestAnimationFrame(() => {
-    clampAfterGrowth();
-    requestAnimationFrame(() => {
-      clampAfterGrowth();
-      requestAnimationFrame(clampAfterGrowth);
-    });
-  });
-}
-
-function snapshotList(from: Element, el: HTMLElement | null, sel: string) {
-  const root = from.closest("[data-path-inspector]") ?? from;
-  const list = (el?.closest(sel) ?? root.querySelector(sel)) as HTMLElement | null;
-  return { list, saved: list instanceof HTMLElement ? list.scrollTop : 0 };
-}
-
-function focusHold(el: HTMLElement, sel: string, from: Element) {
-  const points = snapshotList(from, el, "[data-point-list]");
-  const holes = snapshotList(from, el, "[data-hole-list]");
-  const primary = snapshotList(from, el, sel);
-  el.focus({ preventScroll: true });
-  if (el instanceof HTMLInputElement) el.select();
-  holdListScroll(primary.list, primary.saved);
-  if (sel !== "[data-point-list]") holdListScroll(points.list, points.saved);
-  if (sel !== "[data-hole-list]") holdListScroll(holes.list, holes.saved);
-}
-
-function holdExitHop(from: Element, target: HTMLElement, list: Element | null) {
-  const saved = list instanceof HTMLElement ? list.scrollTop : 0;
-  target.focus({ preventScroll: true });
-  holdListScroll(list, saved);
-}
 
 export function PathFields({ node }: { node: PathNode }) {
   const pointListRef = useRef<HTMLDivElement>(null);
