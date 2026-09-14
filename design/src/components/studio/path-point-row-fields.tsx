@@ -2,8 +2,7 @@ import { useRef } from "react";
 import {
   tagHolePointTabCrossing,
   pickPrevHoleLastPointXTabTarget,
-  snapshotList,
-  holdListScroll,
+  focusHoldEl,
   shouldShiftTabFromFirstHoleXToPrevLastX,
 } from "@/lib/design/path-point-tab";
 import { releaseStudioStatus } from "@/lib/design/studio-status";
@@ -16,15 +15,6 @@ import {
 import type { PathPoint } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
-
-function focusHoldEl(el: HTMLElement, from: Element) {
-  const points = snapshotList(from, el, "[data-point-list]");
-  const holes = snapshotList(from, el, "[data-hole-list]");
-  el.focus({ preventScroll: true });
-  if (el instanceof HTMLInputElement) el.select();
-  holdListScroll(points.list, points.saved);
-  holdListScroll(holes.list, holes.saved);
-}
 
 function focusPrevHoleLastX(from: HTMLElement) {
   if (!shouldShiftTabFromFirstHoleXToPrevLastX(from, true)) return false;

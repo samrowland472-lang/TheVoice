@@ -5,6 +5,7 @@ import { test } from "node:test";
 const a = readFileSync(new URL("../src/lib/design/path-point-tab-hole-fill-y.ts", import.meta.url), "utf8");
 const ui = readFileSync(new URL("../src/components/studio/inspector-path.tsx", import.meta.url), "utf8");
 const barrel = readFileSync(new URL("../src/lib/design/path-point-tab.ts", import.meta.url), "utf8");
+const hops = readFileSync(new URL("../src/lib/design/path-point-tab-b.ts", import.meta.url), "utf8");
 
 test("Tab from hole fill-rule chip hops to next hole first Y when current hole has no point fields and next first X is missing", () => {
   assert.match(a, /function shouldTabFromHoleFillToNextFirstY/);
@@ -24,9 +25,10 @@ test("Tab from hole fill-rule chip hops to next hole first Y when current hole h
 });
 
 test("hole fill-rule to next first Y holds Holes list scroll after growth", () => {
-  assert.match(ui, /holdHoleListAcrossHop\(from, nextY\)/);
-  assert.match(ui, /closest\("\[data-hole-list\]"\)/);
-  assert.match(ui, /list\.scrollTop = saved/);
-  assert.match(ui, /clampAfterGrowth/);
-  assert.match(ui, /restoreHoleListScroll\(list, saved\)/);
+  assert.match(ui, /focusHoldEl\(nextY, from\)/);
+  assert.match(hops, /function focusHoldEl/);
+  assert.match(hops, /closest\("\[data-hole-list\]"\)/);
+  assert.match(hops, /list\.scrollTop = saved/);
+  assert.match(hops, /clampAfterGrowth/);
+  assert.match(hops, /restoreHoleListScroll\(list, saved\)/);
 });
