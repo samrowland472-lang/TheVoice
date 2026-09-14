@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector wrap-off: fold leftover local hop wrappers in `inspector-path-impl.tsx` (`focusHold` / `holdExitHop` if still local) onto the shared `path-point-tab-b` exports so every inspector hop uses one entry.
+1. Path inspector wrap-off: audit `path-point-row-fields.tsx` and remaining hop files for leftover local `focusHold` / `holdExitHop` / `holdListScroll` wrappers and fold onto `path-point-tab-b`.
 
 ## Done
+
+- Folded leftover local `holdListScroll` / `snapshotList` / `focusHold` / `holdExitHop` in `inspector-path-impl.tsx` onto shared `path-point-tab-b` exports (re-exported from `path-point-tab`). PathFields hops now use one clamp-after-growth entry.
 
 - Dropped the leftover local `focusHoldEl` in `path-point-row-view.tsx` (duplicate snapshot + clamp-after-growth) and imported the shared `focusHoldEl` from `path-point-tab`. Every wrap-off hop in the point-row view now uses the same Points + Holes hold as `inspector-path.tsx`.
 
@@ -59,8 +61,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 11:20 BST — Folded leftover local `focusHoldEl` in `path-point-row-view.tsx` onto the shared export from `path-point-tab-b`.
+2026-09-14 12:15 BST — Folded leftover local `focusHold` / `holdExitHop` (and their `snapshotList` / `holdListScroll`) in `inspector-path-impl.tsx` onto shared `path-point-tab-b` exports.
 
 ## Next recommended
 
-Audit `inspector-path-impl.tsx` for any remaining local `focusHold` / `holdExitHop` and fold them onto the shared helpers.
+Audit `path-point-row-fields.tsx` and other hop files for leftover local wrap-off helpers.
