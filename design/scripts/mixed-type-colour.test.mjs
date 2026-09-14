@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const mixed = readFileSync(new URL("../src/components/studio/mixed-type.tsx", import.meta.url), "utf8");
+const mixed = readFileSync(new URL("../src/components/studio/mixed-type-colour.tsx", import.meta.url), "utf8");
 const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 
 test("mixed type colour writes fill onto type ids only", () => {
