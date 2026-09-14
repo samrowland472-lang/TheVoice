@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. History list labels — replace generic “Step N / Redo N” with action names when the store records them.
-2. Layer search / filter in the layers panel.
+1. Layer search / filter in the layers panel.
 
 ## Done
+
+- History list labels: undo stack records action names (Delete, Move, Type, Add Rectangle, …) and the Layers History list shows them instead of “Step N / Redo N”. Clicking a named step restores that snapshot and rewinds/fast-forwards the stack.
 
 - Double-click a layer name in the Layers panel to rename it. Enter commits, Escape cancels, blur commits a trimmed name. Empty names are ignored.
 
@@ -32,8 +33,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 13:15 BST — Layers panel: double-click rename with Enter / Escape / blur.
+2026-09-14 14:50 BST — Named history steps in the Layers History list.
 
 ## Next recommended
 
-Named history steps in the layers History list, or a filter field above the layer stack.
+Filter / search field above the layer stack.

@@ -19,7 +19,7 @@ export function applyBoolean(op: BooleanOp) {
   if (!parts.length) return;
   const islands = parts.flatMap((part) => splitCompoundIslands(part));
   if (!islands.length) return;
-  commit();
+  commit("Boolean");
   const keepId = order[0]!.id;
   const drop = new Set(order.map((n) => n.id));
   drop.delete(keepId);
@@ -53,7 +53,7 @@ export function smoothSelectedPath() {
   if (!doc || !selection.length) return;
   const n = doc.nodes.find((x) => x.id === selection[0]);
   if (!n || !isPath(n) || n.points.length < 2) return;
-  commit();
+  commit("Smooth path");
   replaceNode(
     n.id,
     {
