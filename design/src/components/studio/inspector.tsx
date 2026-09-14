@@ -47,6 +47,17 @@ export function Inspector() {
     .filter((n): n is NonNullable<typeof n> => Boolean(n));
   const node = selectedNodes[selectedNodes.length - 1] ?? null;
   const multi = selectedNodes.length > 1;
+  const ids = selectedNodes.map((n) => n.id);
+  const mixedName = multi && new Set(selectedNodes.map((n) => n.name)).size > 1;
+  const mixedGeom = {
+    x: multi && new Set(selectedNodes.map((n) => n.x)).size > 1,
+    y: multi && new Set(selectedNodes.map((n) => n.y)).size > 1,
+    w: multi && new Set(selectedNodes.map((n) => n.w)).size > 1,
+    h: multi && new Set(selectedNodes.map((n) => n.h)).size > 1,
+  };
+  const mixedRotation = multi && new Set(selectedNodes.map((n) => Math.round(n.rotation * 100) / 100)).size > 1;
+  const rects = selectedNodes.filter((n) => n.kind === "rect");
+  const mixedRadius = rects.length > 1 && new Set(rects.map((n) => Math.round(n.radius * 100) / 100)).size > 1;
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
 
   return (
@@ -84,36 +95,55 @@ export function Inspector() {
 
       {node && (
         <Section title={multi ? `Key · ${node.name || node.kind}` : node.name || node.kind}>
-          <Field label="Name">
-            <input className="field" value={node.name} onChange={(e) => updateNodes([node.id], { name: e.target.value }, true)} />
+          <Field label={mixedName ? "Name · mixed" : "Name"}>
+            <input
+              className="field"
+              value={mixedName ? "" : node.name}
+              placeholder={mixedName ? "\u2014" : undefined}
+              aria-label={mixedName ? "name mixed" : "name"}
+              onChange={(e) => updateNodes(multi ? ids : [node.id], { name: e.target.value }, true)}
+            />
           </Field>
+          {multi && (
+            <p className="mb-2 text-[10px] text-ink-dim">
+              A dash means the selection disagrees. Edit applies to all {selectedNodes.length} layers.
+            </p>
+          )}
           <LinkedRow nodeId={node.id} linkId={node.linkId} />
           <HotspotField node={node} />
           <div className="grid grid-cols-2 gap-2">
             {(["x", "y", "w", "h"] as const).map((k) => (
-              <Field key={k} label={k.toUpperCase()}>
-                <NumField value={node[k]} min={k === "w" || k === "h" ? 1 : undefined} aria-label={`geometry ${k}`} onCommit={(n) => updateNodes([node.id], { [k]: n }, true)} />
+              <Field key={k} label={mixedGeom[k] ? `${k.toUpperCase()} · mixed` : k.toUpperCase()}>
+                <NumField
+                  value={node[k]}
+                  mixed={mixedGeom[k]}
+                  min={k === "w" || k === "h" ? 1 : undefined}
+                  aria-label={`geometry ${k}`}
+                  onCommit={(n) => updateNodes(multi ? ids : [node.id], { [k]: n }, true)}
+                />
               </Field>
             ))}
           </div>
-          <Field label={`Rotate ${Math.round(node.rotation)}°`}>
+          <Field label={mixedRotation ? "Rotate · mixed" : `Rotate ${Math.round(node.rotation)}°`}>
             <div className="flex items-center gap-2">
               <input
                 type="range"
-                className="range-phosphor min-w-0 flex-1"
+                className={cn("range-phosphor min-w-0 flex-1", mixedRotation && "opacity-70")}
                 min={-180}
                 max={180}
-                aria-label="rotate"
-                value={node.rotation}
-                onChange={(e) => updateNodes([node.id], { rotation: Number(e.target.value) })}
+                aria-label={mixedRotation ? "rotate mixed" : "rotate"}
+                value={mixedRotation ? 0 : node.rotation}
+                onChange={(e) => updateNodes(multi ? ids : [node.id], { rotation: Number(e.target.value) })}
+                onPointerUp={() => useDesign.getState().commit()}
               />
               <NumField
                 className="field w-16 font-mono"
                 value={node.rotation}
+                mixed={mixedRotation}
                 min={-180}
                 max={180}
                 aria-label="rotate"
-                onCommit={(n) => updateNodes([node.id], { rotation: n }, true)}
+                onCommit={(n) => updateNodes(multi ? ids : [node.id], { rotation: n }, true)}
               />
             </div>
           </Field>
@@ -153,26 +183,34 @@ export function Inspector() {
               />
             </div>
           </Field>}
-          {node.kind === "rect" && (
-            <Field label={`Radius ${Math.round(node.radius)}`}>
+          {(node.kind === "rect" || rects.length > 0) && (
+            <Field label={mixedRadius ? "Radius · mixed" : `Radius ${Math.round(node.kind === "rect" ? node.radius : (rects[0]?.radius ?? 0))}`}>
               <div className="flex items-center gap-2">
                 <input
                   type="range"
-                  className="range-phosphor min-w-0 flex-1"
+                  className={cn("range-phosphor min-w-0 flex-1", mixedRadius && "opacity-70")}
                   min={0}
                   max={Math.max(0, Math.min(node.w, node.h) / 2)}
-                  aria-label="corner radius"
-                  value={node.radius}
-                  onChange={(e) => updateNodes([node.id], { radius: Number(e.target.value) })}
+                  aria-label={mixedRadius ? "corner radius mixed" : "corner radius"}
+                  value={mixedRadius ? 0 : node.kind === "rect" ? node.radius : (rects[0]?.radius ?? 0)}
+                  onChange={(e) =>
+                    updateNodes(
+                      multi ? rects.map((r) => r.id) : [node.id],
+                      { radius: Number(e.target.value) },
+                    )
+                  }
                   onPointerUp={() => useDesign.getState().commit()}
                 />
                 <NumField
                   className="field w-16 font-mono"
-                  value={node.radius}
+                  value={node.kind === "rect" ? node.radius : (rects[0]?.radius ?? 0)}
+                  mixed={mixedRadius}
                   min={0}
                   max={Math.max(0, Math.min(node.w, node.h) / 2)}
                   aria-label="corner radius"
-                  onCommit={(n) => updateNodes([node.id], { radius: n }, true)}
+                  onCommit={(n) =>
+                    updateNodes(multi ? rects.map((r) => r.id) : [node.id], { radius: n }, true)
+                  }
                 />
               </div>
             </Field>

@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector: multi-select mixed values shown as a dash, with “Apply to all” on edit.
+1. Inspector mixed-value treatment for remaining ink color pickers (fill/stroke as dash + apply-all).
 
 ## Done
+
+- Inspector Key fields (name, X/Y/W/H, rotate, radius): multi-select shows a dash when values disagree; editing applies to every selected layer.
 
 - Layer filter field above the stack. Matches name or kind (case-insensitive). Count + clear. Drag-reorder disabled while filtered so drop indices stay honest.
 
@@ -35,8 +37,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 15:36 BST — Layer search / filter in the Layers panel.
+2026-09-14 16:50 BST — Inspector mixed dashes + apply-all on Key geometry.
 
 ## Next recommended
 
-Inspector mixed-value treatment for multi-select.
+Inspector mixed-value treatment for remaining ink color pickers.
