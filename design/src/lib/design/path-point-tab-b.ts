@@ -79,6 +79,40 @@ export function restoreListScroll(list: Element | null | undefined, saved: numbe
   }
 }
 
+/** Snapshot Points or Holes from a path inspector hop. */
+export function snapshotList(from: Element, elOrSel: HTMLElement | string | null, sel?: string) {
+  const selector = typeof elOrSel === "string" ? elOrSel : (sel ?? "");
+  const el = typeof elOrSel === "string" ? null : elOrSel;
+  const root = from.closest("[data-path-inspector]") ?? from;
+  const preferred =
+    selector === "[data-hole-list]"
+      ? (el?.closest("[data-hole-list]") ?? from.closest("[data-hole-list]") ?? root.querySelector("[data-hole-list]"))
+      : selector === "[data-point-list]"
+        ? (el?.closest("[data-point-list]") ?? from.closest("[data-point-list]") ?? root.querySelector("[data-point-list]"))
+        : (el?.closest(selector) ?? from.closest(selector) ?? root.querySelector(selector));
+  const list = preferred as HTMLElement | null;
+  return { list, saved: list instanceof HTMLElement ? list.scrollTop : 0 };
+}
+
+/** Assign saved scroll, restoreListScroll(list, saved), then clampAfterGrowth. */
+export function holdListScroll(list: Element | null | undefined, saved: number) {
+  if (!(list instanceof HTMLElement)) return;
+  list.scrollTop = saved;
+  restoreListScroll(list, saved);
+  const clampAfterGrowth = () => restoreHoleListScroll(list, saved);
+  if (typeof requestAnimationFrame !== "function") {
+    clampAfterGrowth();
+    return;
+  }
+  requestAnimationFrame(() => {
+    clampAfterGrowth();
+    requestAnimationFrame(() => {
+      clampAfterGrowth();
+      requestAnimationFrame(clampAfterGrowth);
+    });
+  });
+}
+
 export function holdPointAndHoleLists(from: Element | null | undefined, to: Element | null | undefined) {
   if (!from || !to) return;
   const points = snapshotScroll(from, to, "[data-point-list]");
