@@ -54,47 +54,21 @@ import {
   pickFirstHoleHeaderTabTarget,
   shouldTabToNextHoleHeader,
   tagHolePointTabCrossing,
+  snapshotList,
+  holdListScroll,
 } from "@/lib/design/path-point-tab";
 import { pickClosedTabTarget } from "@/lib/design/path-point-tab-closed";
 import type { PathPoint } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 
-function restoreListScroll(list: Element | null | undefined, saved: number) {
-  if (!(list instanceof HTMLElement)) return;
-  const clampAfterGrowth = () => {
-    const max = Math.max(0, list.scrollHeight - list.clientHeight);
-    list.scrollTop = saved;
-    list.scrollTop = Math.min(max, Math.max(0, list.scrollTop));
-  };
-  clampAfterGrowth();
-  requestAnimationFrame(() => {
-    list.scrollTop = saved;
-    requestAnimationFrame(() => {
-      clampAfterGrowth();
-      requestAnimationFrame(clampAfterGrowth);
-    });
-  });
-}
-
-function snapshotLists(from: Element) {
-  const inspector = from.closest("[data-path-inspector]");
-  const points = from.closest("[data-point-list]") ?? inspector?.querySelector("[data-point-list]");
-  const holes = inspector?.querySelector("[data-hole-list]");
-  return {
-    points,
-    holes,
-    ps: points instanceof HTMLElement ? points.scrollTop : 0,
-    hs: holes instanceof HTMLElement ? holes.scrollTop : 0,
-  };
-}
-
 function focusHoldEl(el: HTMLElement, from: Element) {
-  const snap = snapshotLists(from);
+  const points = snapshotList(from, el, "[data-point-list]");
+  const holes = snapshotList(from, el, "[data-hole-list]");
   el.focus({ preventScroll: true });
   if (el instanceof HTMLInputElement) el.select();
-  restoreListScroll(snap.points, snap.ps);
-  restoreListScroll(snap.holes, snap.hs);
+  holdListScroll(points.list, points.saved);
+  holdListScroll(holes.list, holes.saved);
 }
 
 function focusPrevHoleLastY(from: HTMLElement): boolean {
