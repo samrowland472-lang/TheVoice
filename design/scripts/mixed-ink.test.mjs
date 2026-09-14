@@ -24,6 +24,11 @@ test("mixed-ink chips stamp cloned fill and named stroke when ink disagrees", ()
   assert.match(mixed, /Stroke · mixed/);
   assert.match(mixed, /MixedFillChips/);
   assert.match(mixed, /MixedStrokeChips/);
+  assert.match(mixed, /Apply key fill to all/);
+  assert.match(mixed, /Apply key stroke to all/);
+  assert.match(mixed, /selection fill/);
+  assert.match(mixed, /selection stroke/);
+  assert.match(mixed, /placeholder=\{mixed \? "\\u2014"/);
   assert.match(mixed, /MixedOpacityChips/);
   assert.match(mixed, /MixedBlendChips/);
 });

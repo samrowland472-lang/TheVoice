@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed-value treatment for remaining ink color pickers (fill/stroke as dash + apply-all).
+1. Inspector mixed-value treatment for remaining text colour when multi-select includes both type and shapes.
 
 ## Done
+
+- Mixed fill/stroke colour pickers: dash hex when the selection disagrees; picking a colour, a brand swatch, or Apply key … to all writes onto every selected layer. Stroke width uses the same mixed NumField.
 
 - Inspector Key fields (name, X/Y/W/H, rotate, radius): multi-select shows a dash when values disagree; editing applies to every selected layer.
 
@@ -37,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 16:50 BST — Inspector mixed dashes + apply-all on Key geometry.
+2026-09-14 20:05 BST — Mixed fill/stroke colour pickers (dash + apply-all).
 
 ## Next recommended
 
-Inspector mixed-value treatment for remaining ink color pickers.
+Inspector mixed-value treatment for remaining text colour when multi-select includes both type and shapes.
