@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector wrap-off: fold `path-point-row-view.tsx` `focusHoldEl` / `snapshotLists` onto the shared `snapshotList` + `holdListScroll` helpers so row hops and inspector hops use one clamp-after-growth path.
+1. Path inspector wrap-off: fold `path-point-row-fields.tsx` hops onto `focusHoldEl` / shared `snapshotList` + `holdListScroll` so first-hole X → prev last-X uses the same clamp-after-growth path as row-view.
 
 ## Done
+
+- Folded `path-point-row-view.tsx` `focusHoldEl` onto shared `snapshotList` + `holdListScroll` from `path-point-tab-b`. Dropped local `snapshotLists` / `restoreListScroll`. `inspector-path.tsx` `holdHoleListAcrossHop` and `inspector-path-impl.tsx` `focusHold` / `holdExitHop` now import the same helpers instead of redefining them.
 
 - Extracted `snapshotList` + `holdListScroll` into `path-point-tab-b` (re-exported from `path-point-tab`). `inspector-path.tsx` `holdHoleListAcrossHop` and `inspector-path-impl.tsx` `focusHold` / `holdExitHop` both call the shared helpers (snapshot Points + Holes, `focus({ preventScroll: true })`, assign `scrollTop`, `restoreListScroll` + triple rAF `restoreHoleListScroll` / `clampAfterGrowth`).
 
@@ -49,8 +51,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 01:20 BST — Extracted `holdListScroll` / `snapshotList` into `path-point-tab` so both path inspector files call one helper.
+2026-09-14 01:30 BST — Folded `focusHoldEl` onto shared `snapshotList` + `holdListScroll`; inspector files import the same helpers.
 
 ## Next recommended
 
-Fold `path-point-row-view.tsx` `focusHoldEl` onto the shared `snapshotList` + `holdListScroll` helpers.
+Fold `path-point-row-fields.tsx` first-hole X → prev last-X onto `focusHoldEl`.
