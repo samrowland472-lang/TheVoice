@@ -12,10 +12,12 @@ import {
   stampShadowOy,
   stampShadowSpread,
 } from "@/lib/design/shadow";
+import { cloneFill, solidOf } from "@/lib/design/ink";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode, Shadow } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
-import { Field } from "./inspector-parts";
+import { Field, Swatches } from "./inspector-parts";
+import { NumField } from "./num-field";
 import {
   MixedBlendChips,
   MixedFillChips,
@@ -37,15 +39,62 @@ function mapShadows(map: (sh: Shadow | null) => Shadow | null, commit = false) {
   state.mapNodes(state.selection, (layer) => ({ ...layer, shadow: map(layer.shadow) }), commit);
 }
 
+function MixedHexField({
+  value,
+  mixed,
+  ariaLabel,
+  onCommit,
+}: {
+  value: string;
+  mixed: boolean;
+  ariaLabel: string;
+  onCommit: (hex: string) => void;
+}) {
+  const hex = value.startsWith("#") ? value : "#000000";
+  return (
+    <div className="flex gap-2">
+      <input
+        type="color"
+        className={cn("h-8 w-12 shrink-0 rounded-[8px] border border-border", mixed && "opacity-60")}
+        value={hex === "transparent" ? "#3fc6ff" : hex}
+        aria-label={mixed ? `${ariaLabel} mixed` : ariaLabel}
+        onChange={(e) => onCommit(e.target.value)}
+      />
+      <input
+        className="field font-mono flex-1"
+        value={mixed ? "" : hex}
+        placeholder={mixed ? "\u2014" : undefined}
+        aria-label={mixed ? `${ariaLabel} hex mixed` : `${ariaLabel} hex`}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (/^#([0-9a-fA-F]{6})$/.test(raw)) onCommit(raw);
+        }}
+        onBlur={(e) => {
+          const raw = e.target.value.trim();
+          if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw)) {
+            const next =
+              raw.length === 4
+                ? `#${raw[1]}${raw[1]}${raw[2]}${raw[2]}${raw[3]}${raw[3]}`
+                : raw;
+            onCommit(next);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
 export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; brandColors: { name: string; hex: string }[]; ink: string }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   if (nodes.length < 2) return null;
-  void brandColors;
   const ids = nodes.map((n) => n.id);
   const first = nodes[0]!;
   const ghost = first.shadow ?? DEFAULT_SHADOW;
+  const fillHex = solidOf(first.fill, ink);
   const mixedFill = new Set(nodes.map((n) => JSON.stringify(n.fill))).size > 1;
-  const mixedStroke = new Set(nodes.map((n) => `${n.stroke}:${n.strokeWidth}`)).size > 1;
+  const mixedStrokeColor = new Set(nodes.map((n) => n.stroke)).size > 1;
+  const mixedStrokeWidth = new Set(nodes.map((n) => n.strokeWidth)).size > 1;
+  const mixedStroke = mixedStrokeColor || mixedStrokeWidth;
   const mixedOpacity = new Set(nodes.map((n) => n.opacity)).size > 1;
   const mixedBlend = new Set(nodes.map((n) => n.blend)).size > 1;
   const mixedVis = new Set(nodes.map((n) => n.visible)).size > 1;
@@ -61,8 +110,50 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
     <section className="border-b border-border py-3">
       <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Ink · {nodes.length}</div>
       <p className="mb-2 text-[10px] text-ink-dim">Mixed sliders stay live — they ghost the first drop and write only the field you drag.</p>
-      <Field label={mixedFill ? "Fill · mixed" : "Fill"}>{mixedFill && <MixedFillChips nodes={nodes} ink={ink} />}</Field>
-      <Field label={mixedStroke ? "Stroke · mixed" : "Stroke"}>{mixedStroke && <MixedStrokeChips nodes={nodes} />}</Field>
+      <Field label={mixedFill ? "Fill · mixed" : "Fill"}>
+        <MixedHexField
+          value={fillHex}
+          mixed={mixedFill}
+          ariaLabel="selection fill"
+          onCommit={(hex) => updateNodes(ids, { fill: hex }, true)}
+        />
+        <Swatches colors={brandColors} onPick={(hex) => updateNodes(ids, { fill: hex }, true)} />
+        <button
+          type="button"
+          className="mt-1 text-[10px] text-phosphor"
+          onClick={() => updateNodes(ids, { fill: cloneFill(first.fill) }, true)}
+        >
+          Apply key fill to all
+        </button>
+        {mixedFill && <MixedFillChips nodes={nodes} ink={ink} />}
+      </Field>
+      <Field label={mixedStroke ? "Stroke · mixed" : "Stroke"}>
+        <MixedHexField
+          value={first.stroke === "transparent" ? "#3fc6ff" : first.stroke}
+          mixed={mixedStrokeColor}
+          ariaLabel="selection stroke"
+          onCommit={(hex) => updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true)}
+        />
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="text-[10px] text-ink-dim">{mixedStrokeWidth ? "Width · mixed" : "Width"}</span>
+          <NumField
+            className="field w-16 font-mono"
+            value={first.strokeWidth}
+            mixed={mixedStrokeWidth}
+            min={0}
+            aria-label="selection stroke width"
+            onCommit={(n) => updateNodes(ids, { strokeWidth: n }, true)}
+          />
+        </div>
+        <button
+          type="button"
+          className="mt-1 text-[10px] text-phosphor"
+          onClick={() => updateNodes(ids, { stroke: first.stroke, strokeWidth: first.strokeWidth }, true)}
+        >
+          Apply key stroke to all
+        </button>
+        {mixedStroke && <MixedStrokeChips nodes={nodes} />}
+      </Field>
       <Field label={mixedOpacity ? "Opacity · mixed" : `Opacity ${Math.round(first.opacity * 100)}%`}>
         <input type="range" className={cn("range-phosphor w-full", mixedOpacity && "opacity-70")} min={0} max={1} step={0.01} value={first.opacity} onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })} onPointerUp={() => useDesign.getState().commit()} />
         {mixedOpacity && <MixedOpacityChips nodes={nodes} />}
