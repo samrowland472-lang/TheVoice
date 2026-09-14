@@ -8,6 +8,7 @@ import { FillEditor, Section, ShadowEditor, Swatches, Field } from "./inspector-
 import { MixedInk } from "./mixed-ink";
 import { MixedFilters } from "./mixed-filters";
 import { MixedType } from "./mixed-type";
+import { MixedTypeColour } from "./mixed-type-colour";
 import { PathFields } from "./inspector-path";
 import { HotspotField, ImageFields, LinkedRow, TextFields } from "./inspector-type";
 
@@ -57,6 +58,8 @@ export function Inspector() {
   };
   const mixedRotation = multi && new Set(selectedNodes.map((n) => Math.round(n.rotation * 100) / 100)).size > 1;
   const rects = selectedNodes.filter((n) => n.kind === "rect");
+  const texts = selectedNodes.filter((n): n is TextNode => n.kind === "text");
+  const mixedKinds = texts.length >= 1 && texts.length < selectedNodes.length;
   const mixedRadius = rects.length > 1 && new Set(rects.map((n) => Math.round(n.radius * 100) / 100)).size > 1;
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
 
@@ -89,9 +92,10 @@ export function Inspector() {
         <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
       )}
       {multi && <MixedFilters nodes={selectedNodes} />}
-      {selectedNodes.filter((n): n is TextNode => n.kind === "text").length >= 2 && (
-        <MixedType nodes={selectedNodes.filter((n): n is TextNode => n.kind === "text")} />
+      {mixedKinds && (
+        <MixedTypeColour nodes={texts} brandColors={brand.colors} ink={color} />
       )}
+      {texts.length >= 2 && <MixedType nodes={texts} />}
 
       {node && (
         <Section title={multi ? `Key · ${node.name || node.kind}` : node.name || node.kind}>
