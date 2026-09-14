@@ -54,22 +54,12 @@ import {
   pickFirstHoleHeaderTabTarget,
   shouldTabToNextHoleHeader,
   tagHolePointTabCrossing,
-  snapshotList,
-  holdListScroll,
+  focusHoldEl,
 } from "@/lib/design/path-point-tab";
 import { pickClosedTabTarget } from "@/lib/design/path-point-tab-closed";
 import type { PathPoint } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
-
-function focusHoldEl(el: HTMLElement, from: Element) {
-  const points = snapshotList(from, el, "[data-point-list]");
-  const holes = snapshotList(from, el, "[data-hole-list]");
-  el.focus({ preventScroll: true });
-  if (el instanceof HTMLInputElement) el.select();
-  holdListScroll(points.list, points.saved);
-  holdListScroll(holes.list, holes.saved);
-}
 
 function focusPrevHoleLastY(from: HTMLElement): boolean {
   if (
