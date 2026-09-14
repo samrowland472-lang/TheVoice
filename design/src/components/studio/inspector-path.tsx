@@ -27,34 +27,19 @@ import {
   shouldTabFromHoleFillToNextHeader,
   shouldTabFromLastOuterXToFirstHoleHeader,
   shouldTabFromLastOuterYToFirstHoleHeader,
-  restoreHoleListScroll,
-  restoreListScroll,
+  holdListScroll,
+  snapshotList,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
 import { PathFields as PathFieldsImpl } from "./inspector-path-impl";
 import type { PathNode } from "@/lib/design/types";
 
-function holdListScroll(list: Element | null | undefined, saved: number) {
-  if (!(list instanceof HTMLElement)) return;
-  list.scrollTop = saved;
-  restoreListScroll(list, saved);
-  const clampAfterGrowth = () => restoreHoleListScroll(list, saved);
-  requestAnimationFrame(() => {
-    clampAfterGrowth();
-    requestAnimationFrame(() => {
-      clampAfterGrowth();
-      requestAnimationFrame(clampAfterGrowth);
-    });
-  });
-}
-
-function snapshotList(from: Element, sel: string) {
-  const root = from.closest("[data-path-inspector]") ?? from;
-  const list = (from.closest(sel) ?? root.querySelector(sel)) as HTMLElement | null;
-  return { list, saved: list instanceof HTMLElement ? list.scrollTop : 0 };
-}
-
-/** Same clamp-after-growth helper as focusHold / focusHoldEl. */
+/** Same clamp-after-growth helper as focusHold / focusHoldEl (`clampAfterGrowth`).
+ * Lists: closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
+ * and closest("[data-hole-list]") / closest("[data-path-inspector]")?.querySelector("[data-point-list]").
+ * holdListScroll assigns list.scrollTop = saved then restoreHoleListScroll(list, saved)
+ * and restoreListScroll(list, saved).
+ */
 function holdHoleListAcrossHop(from: Element, target: HTMLElement) {
   const holes = snapshotList(from, "[data-hole-list]");
   const points = snapshotList(from, "[data-point-list]");
