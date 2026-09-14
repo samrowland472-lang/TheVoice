@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed-value treatment for remaining type fields when multi-select includes both type and shapes (family / size / weight still live only under 2+ type layers).
+1. Inspector mixed opacity / blend when multi-select includes mixed kinds.
 
 ## Done
+
+- Mixed type family / size / weight / tracking / leading / align when the selection mixes type and shapes: Type panel appears with one or more text layers (not only 2+ type), writes onto type ids only, and hides the key type sliders so family and size stay in one place.
 
 - Mixed type colour when the selection mixes type and shapes: dash hex if type fills disagree; picker, brand swatch, or Apply key type colour writes fill onto type layers only so shapes keep their own ink.
 
@@ -41,8 +43,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 21:20 BST — Mixed type colour for type+shape selections (type-only write).
+2026-09-14 22:12 BST — Mixed type family/size/weight for type+shape selections.
 
 ## Next recommended
 
-Inspector mixed-value treatment for remaining type fields when multi-select includes both type and shapes (family / size / weight still live only under 2+ type layers).
+Inspector mixed opacity / blend when multi-select includes mixed kinds.
