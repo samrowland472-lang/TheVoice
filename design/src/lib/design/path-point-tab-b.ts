@@ -113,6 +113,34 @@ export function holdListScroll(list: Element | null | undefined, saved: number) 
   });
 }
 
+/** Snapshot Points + Holes, focus without scroll, then clamp-after-growth. */
+export function focusHoldEl(el: HTMLElement, from: Element) {
+  const points = snapshotList(from, el, "[data-point-list]");
+  const holes = snapshotList(from, el, "[data-hole-list]");
+  el.focus({ preventScroll: true });
+  if (el instanceof HTMLInputElement) el.select();
+  holdListScroll(points.list, points.saved);
+  holdListScroll(holes.list, holes.saved);
+}
+
+/** Same as focusHoldEl, plus a primary list (point or hole) held first. */
+export function focusHold(el: HTMLElement, sel: string, from: Element) {
+  const points = snapshotList(from, el, "[data-point-list]");
+  const holes = snapshotList(from, el, "[data-hole-list]");
+  const primary = snapshotList(from, el, sel);
+  el.focus({ preventScroll: true });
+  if (el instanceof HTMLInputElement) el.select();
+  holdListScroll(primary.list, primary.saved);
+  if (sel !== "[data-point-list]") holdListScroll(points.list, points.saved);
+  if (sel !== "[data-hole-list]") holdListScroll(holes.list, holes.saved);
+}
+
+export function holdExitHop(from: Element, target: HTMLElement, list: Element | null) {
+  const saved = list instanceof HTMLElement ? list.scrollTop : 0;
+  target.focus({ preventScroll: true });
+  holdListScroll(list, saved);
+}
+
 export function holdPointAndHoleLists(from: Element | null | undefined, to: Element | null | undefined) {
   if (!from || !to) return;
   const points = snapshotScroll(from, to, "[data-point-list]");
