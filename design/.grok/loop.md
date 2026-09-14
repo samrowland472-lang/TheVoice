@@ -21,48 +21,19 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Path inspector wrap-off: audit `path-point-row-fields.tsx` and remaining hop files for leftover local `focusHold` / `holdExitHop` / `holdListScroll` wrappers and fold onto `path-point-tab-b`.
+1. History list labels — replace generic “Step N / Redo N” with action names when the store records them.
+2. Layer search / filter in the layers panel.
 
 ## Done
 
-- Folded leftover local `holdListScroll` / `snapshotList` / `focusHold` / `holdExitHop` in `inspector-path-impl.tsx` onto shared `path-point-tab-b` exports (re-exported from `path-point-tab`). PathFields hops now use one clamp-after-growth entry.
+- Double-click a layer name in the Layers panel to rename it. Enter commits, Escape cancels, blur commits a trimmed name. Empty names are ignored.
 
-- Dropped the leftover local `focusHoldEl` in `path-point-row-view.tsx` (duplicate snapshot + clamp-after-growth) and imported the shared `focusHoldEl` from `path-point-tab`. Every wrap-off hop in the point-row view now uses the same Points + Holes hold as `inspector-path.tsx`.
-
-- Folded leftover local `holdListScroll` / `snapshotList` / `focusHold` / `holdExitHop` in `inspector-path-impl.tsx` and duplicate `focusHoldEl` in `path-point-row-view.tsx` + `path-point-row-fields.tsx` onto shared helpers in `path-point-tab-b` (re-exported from `path-point-tab`). One clamp-after-growth path for wrap-off hops.
-
-- Folded leftover local `snapshotLists` / `restoreListScroll` in `path-point-row-view.tsx` onto shared `snapshotList` + `holdListScroll`. `focusHoldEl` now matches `path-point-row-fields.tsx`: snapshot Points + Holes, `focus({ preventScroll: true })`, then `holdListScroll` (assign + clamp-after-growth).
-
-- Folded `path-point-row-fields.tsx` first-hole X → prev last-X onto local `focusHoldEl` that calls shared `snapshotList` + `holdListScroll` (same clamp-after-growth as inspector hops). Dropped inline snapshot / `restoreListScroll` / triple rAF clamp.
-
-- Folded `path-point-row-view.tsx` `focusHoldEl` onto shared `snapshotList` + `holdListScroll` from `path-point-tab-b`. Dropped local `snapshotLists` / `restoreListScroll`. `inspector-path.tsx` `holdHoleListAcrossHop` and `inspector-path-impl.tsx` `focusHold` / `holdExitHop` now import the same helpers instead of redefining them.
-
-- Extracted `snapshotList` + `holdListScroll` into `path-point-tab-b` (re-exported from `path-point-tab`). `inspector-path.tsx` `holdHoleListAcrossHop` and `inspector-path-impl.tsx` `focusHold` / `holdExitHop` both call the shared helpers (snapshot Points + Holes, `focus({ preventScroll: true })`, assign `scrollTop`, `restoreListScroll` + triple rAF `restoreHoleListScroll` / `clampAfterGrowth`).
-
-- Path inspector wrap-off hole-fill / hole-delete hops in `inspector-path.tsx` `holdHoleListAcrossHop` now use the same clamp-after-growth helper as `focusHold` / `focusHoldEl`: snapshot Points + Holes, `focus({ preventScroll: true })`, then `holdListScroll` (`restoreListScroll` + triple rAF `restoreHoleListScroll`) so neither list can keep an out-of-range offset after growth.
-
-- Path inspector wrap-off hops in `path-point-row-view.tsx` (`focusHoldEl`) and first-hole X → prev last-X in `path-point-row-fields.tsx` clamp list scroll after growth: snapshot Points + Holes, `focus({ preventScroll: true })`, assign `scrollTop = saved`, then clamp to `scrollHeight - clientHeight` across triple rAF so a taller list cannot keep an out-of-range offset.
-
-- Path inspector wrap-off same-hole / prev-hole header (Shift+Tab) and last-hole X/Y → next-header (Tab) hops in `path-point-row-view.tsx` use `focusHoldEl`: snapshot Points + hole lists, `focus({ preventScroll: true })`, then `restoreListScroll` with clamp-after-growth so the lists cannot keep an out-of-range offset after the hop.
-
-- Path inspector wrap-off Shift+Tab first-outer → Closed / Offset / Outline / Round / Simplify hops in `path-point-row-view.tsx` use `focusHoldEl`: snapshot Points + hole lists, `focus({ preventScroll: true })`, then `restoreListScroll` with clamp-after-growth (assign `scrollTop`, triple rAF) so the Points list cannot keep an out-of-range offset after the hop.
-
-- Path-exit Tab hops (Closed → Offset → Outline → Round → Simplify → first outer point) in `inspector-path-impl.tsx` use `holdExitHop`: `focus({ preventScroll: true })` then `holdListScroll` (assign `scrollTop`, `restoreListScroll`, triple rAF `restoreHoleListScroll` / `clampAfterGrowth`) so the Points list cannot keep an out-of-range offset after the hop. Restored PathFields markup (`data-path-exit`, `data-point-list`, `data-hole-list`) so those exits exist on the inspector.
-
-- Hole-header ↔ last-hole X/Y hops in `inspector-path-impl.tsx` use clamp-after-growth: `focusHold` focuses with `preventScroll`, `holdListScroll` assigns saved `scrollTop`, then `restoreListScroll` plus triple rAF `restoreHoleListScroll` (`clampAfterGrowth`) so a taller list cannot keep an out-of-range offset.
-
-- Wrap-off hole-fill / hole-delete hops reuse `holdHoleListAcrossHop` (same clamp-after-growth as `holdHoleListAcrossOuterHop`): snapshot `[data-hole-list]` from `[data-path-inspector]`, `focus({ preventScroll: true })`, `restoreListScroll` plus triple rAF `restoreHoleListScroll` so a taller hole list cannot keep an out-of-range offset.
-
-- Wrap-off first-hole header ↔ last outer hops clamp hole-list scroll after list growth: snapshot `[data-hole-list]` from `[data-path-inspector]`, `focus({ preventScroll: true })`, assign `list.scrollTop = saved`, then `restoreListScroll` plus a third rAF `restoreHoleListScroll` (`clampAfterGrowth`) so a taller hole list cannot keep an out-of-range offset.
-
-- Path inspector wrap-off hops first-hole header ↔ last outer X/Y hold hole-list scroll through `holdHoleListAcrossOuterHop`.
-
-- Path inspector Shift+Tab from the first hole header onto the last outer path point Y at document level when wrap is off.
+- Path inspector wrap-off helpers folded onto shared `path-point-tab-b` (`snapshotList`, `holdListScroll`, `focusHoldEl`, `focusHold`, `holdExitHop`).
 
 ## Iteration
 
-2026-09-14 12:15 BST — Folded leftover local `focusHold` / `holdExitHop` (and their `snapshotList` / `holdListScroll`) in `inspector-path-impl.tsx` onto shared `path-point-tab-b` exports.
+2026-09-14 13:15 BST — Layers panel: double-click rename with Enter / Escape / blur.
 
 ## Next recommended
 
-Audit `path-point-row-fields.tsx` and other hop files for leftover local wrap-off helpers.
+Named history steps in the layers History list, or a filter field above the layer stack.

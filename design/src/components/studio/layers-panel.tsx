@@ -14,6 +14,8 @@ export function LayersPanel() {
   const dragIdsRef = useRef<string[] | null>(null);
   const [dragIds, setDragIds] = useState<string[] | null>(null);
   const [dropAt, setDropAt] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
 
   if (!doc) return null;
   const layers = [...doc.nodes].reverse();
@@ -99,19 +101,52 @@ export function LayersPanel() {
                 >
                   <GripVertical className="size-3.5" />
                 </span>
-                <button
-                  type="button"
-                  className="min-w-0 flex-1 truncate px-1 text-left"
-                  onClick={(e) => select([n.id], e.shiftKey)}
-                >
-                  {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
-                  {n.name || n.kind}
-                  {isKey && (
-                    <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
-                      Key
-                    </span>
-                  )}
-                </button>
+                {editingId === n.id ? (
+                  <input
+                    className="field mx-1 h-7 min-w-0 flex-1 px-1.5 font-sans text-xs"
+                    value={draftName}
+                    autoFocus
+                    aria-label="Layer name"
+                    onChange={(e) => setDraftName(e.target.value)}
+                    onBlur={() => {
+                      const next = draftName.trim();
+                      if (next && next !== n.name) updateNodes([n.id], { name: next }, true);
+                      setEditingId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        setDraftName(n.name);
+                        setEditingId(null);
+                      }
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 truncate px-1 text-left"
+                    onClick={(e) => select([n.id], e.shiftKey)}
+                    onDoubleClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      select([n.id]);
+                      setDraftName(n.name || n.kind);
+                      setEditingId(n.id);
+                    }}
+                  >
+                    {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
+                    {n.name || n.kind}
+                    {isKey && (
+                      <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
+                        Key
+                      </span>
+                    )}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="size-7 rounded-[6px] hover:bg-ground"
