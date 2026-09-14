@@ -27,30 +27,11 @@ import {
   shouldTabFromHoleFillToNextHeader,
   shouldTabFromLastOuterXToFirstHoleHeader,
   shouldTabFromLastOuterYToFirstHoleHeader,
-  holdListScroll,
-  snapshotList,
+  focusHoldEl,
   tagHoleHeaderTabCrossing,
 } from "@/lib/design/path-point-tab";
 import { PathFields as PathFieldsImpl } from "./inspector-path-impl";
 import type { PathNode } from "@/lib/design/types";
-
-/** Same clamp-after-growth helper as focusHold / focusHoldEl (`clampAfterGrowth`).
- * Lists: closest("[data-path-inspector]")?.querySelector("[data-hole-list]")
- * and closest("[data-hole-list]") / closest("[data-path-inspector]")?.querySelector("[data-point-list]").
- * holdListScroll assigns list.scrollTop = saved then restoreHoleListScroll(list, saved)
- * and restoreListScroll(list, saved).
- */
-function holdHoleListAcrossHop(from: Element, target: HTMLElement) {
-  const holes = snapshotList(from, "[data-hole-list]");
-  const points = snapshotList(from, "[data-point-list]");
-  target.focus({ preventScroll: true });
-  holdListScroll(holes.list, holes.saved);
-  holdListScroll(points.list, points.saved);
-}
-
-function holdHoleListAcrossOuterHop(from: Element, target: HTMLElement) {
-  holdHoleListAcrossHop(from, target);
-}
 
 export function PathFields({ node }: { node: PathNode }) {
   useEffect(() => {
@@ -64,7 +45,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastFill) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastFill, lastFill);
-          holdHoleListAcrossHop(from, lastFill);
+          focusHoldEl(lastFill, from);
           return;
         }
         if (shouldShiftTabFromNextHoleFirstYToLastHoleFill(from, true)) {
@@ -72,7 +53,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastFill) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastFill, lastFill);
-          holdHoleListAcrossHop(from, lastFill);
+          focusHoldEl(lastFill, from);
           return;
         }
         if (shouldShiftTabFromNextHoleFillToLastHoleDelete(from, true)) {
@@ -80,7 +61,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastDelete) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastDelete, lastDelete);
-          holdHoleListAcrossHop(from, lastDelete);
+          focusHoldEl(lastDelete, from);
           return;
         }
         if (shouldShiftTabFromNextHoleHeaderToLastHoleDelete(from, true)) {
@@ -88,7 +69,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastDelete) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastDelete, lastDelete);
-          holdHoleListAcrossHop(from, lastDelete);
+          focusHoldEl(lastDelete, from);
           return;
         }
         if (shouldShiftTabFromFirstHoleHeaderToLastOuterY(from, true)) {
@@ -96,7 +77,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastY) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastY, lastY);
-          holdHoleListAcrossOuterHop(from, lastY);
+          focusHoldEl(lastY, from);
           return;
         }
         if (shouldShiftTabFromFirstHoleHeaderToLastOuterX(from, true)) {
@@ -104,7 +85,7 @@ export function PathFields({ node }: { node: PathNode }) {
           if (!lastX) return;
           e.preventDefault();
           tagHoleHeaderTabCrossing(from, lastX, lastX);
-          holdHoleListAcrossOuterHop(from, lastX);
+          focusHoldEl(lastX, from);
           return;
         }
         if (!shouldShiftTabFromNextHoleHeaderToLastHoleFill(from, true)) return;
@@ -112,7 +93,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!lastFill) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, lastFill, lastFill);
-        holdHoleListAcrossHop(from, lastFill);
+        focusHoldEl(lastFill, from);
         return;
       }
       if (
@@ -123,7 +104,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!header) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, header, header);
-        holdHoleListAcrossOuterHop(from, header);
+        focusHoldEl(header, from);
         return;
       }
       if (shouldTabFromHoleFillToNextFirstX(from, false)) {
@@ -131,7 +112,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!nextX) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, nextX, nextX);
-        holdHoleListAcrossHop(from, nextX);
+        focusHoldEl(nextX, from);
         return;
       }
       if (shouldTabFromHoleFillToNextFirstY(from, false)) {
@@ -139,7 +120,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!nextY) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, nextY, nextY);
-        holdHoleListAcrossHop(from, nextY);
+        focusHoldEl(nextY, from);
         return;
       }
       if (shouldTabFromHoleFillToNextHeader(from, false)) {
@@ -147,7 +128,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!nextHeader) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, nextHeader, nextHeader);
-        holdHoleListAcrossHop(from, nextHeader);
+        focusHoldEl(nextHeader, from);
         return;
       }
       if (shouldTabFromHoleDeleteToNextFill(from, false)) {
@@ -155,7 +136,7 @@ export function PathFields({ node }: { node: PathNode }) {
         if (!nextFill) return;
         e.preventDefault();
         tagHoleHeaderTabCrossing(from, nextFill, nextFill);
-        holdHoleListAcrossHop(from, nextFill);
+        focusHoldEl(nextFill, from);
         return;
       }
       if (!shouldTabFromHoleDeleteToNextHeader(from, false)) return;
@@ -163,7 +144,7 @@ export function PathFields({ node }: { node: PathNode }) {
       if (!nextHeader) return;
       e.preventDefault();
       tagHoleHeaderTabCrossing(from, nextHeader, nextHeader);
-      holdHoleListAcrossHop(from, nextHeader);
+      focusHoldEl(nextHeader, from);
     };
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
