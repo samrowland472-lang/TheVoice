@@ -7,6 +7,27 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CanvasStage } from "./canvas-stage";
 
+const NOTES_PREF = "voice-design-present-notes";
+
+function readNotesPref(): boolean {
+  try {
+    const raw = localStorage.getItem(NOTES_PREF);
+    if (raw === "0") return false;
+    if (raw === "1") return true;
+  } catch {
+    /* blocked */
+  }
+  return true;
+}
+
+function writeNotesPref(open: boolean) {
+  try {
+    localStorage.setItem(NOTES_PREF, open ? "1" : "0");
+  } catch {
+    /* blocked */
+  }
+}
+
 export function PresentView() {
   const navigate = useNavigate();
   const doc = useDesign((s) => s.doc);
@@ -22,7 +43,7 @@ export function PresentView() {
     h: number;
     rotation: number;
   } | null>(null);
-  const [notesOpen, setNotesOpen] = useState(true);
+  const [notesOpen, setNotesOpen] = useState(readNotesPref);
   const viewport = useDesign((s) => s.viewport);
   if (!doc) return null;
   const live = doc;
@@ -91,6 +112,13 @@ export function PresentView() {
     setHot((cur) => (cur?.label === next?.label && cur?.x === next?.x && cur?.y === next?.y ? cur : next));
   }
 
+  function toggleNotes() {
+    setNotesOpen((open) => {
+      writeNotesPref(!open);
+      return !open;
+    });
+  }
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
@@ -104,7 +132,11 @@ export function PresentView() {
       }
       if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        setNotesOpen((open) => !open);
+        toggleNotes();
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setPresent(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -139,7 +171,7 @@ export function PresentView() {
             "ml-auto font-mono text-[10px] uppercase tracking-wide",
             notesOpen ? "text-phosphor" : "text-ink-faint hover:text-ink-dim",
           )}
-          onClick={() => setNotesOpen((open) => !open)}
+          onClick={toggleNotes}
           aria-pressed={notesOpen}
         >
           Notes {notesOpen ? "on" : "off"} · N
