@@ -77,6 +77,8 @@ export interface BaseNode {
   strokeWidth: number;
   /** On/off dash length in px. 0 is a solid stroke. */
   strokeDash: number;
+  lineCap: CanvasLineCap;
+  lineJoin: CanvasLineJoin;
   radius: number;
   shadow: Shadow | null;
   linkId?: string;

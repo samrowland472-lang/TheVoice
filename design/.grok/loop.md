@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed line-cap / join when dashed paths sit in a mixed-kind pick.
+1. Mixed miter limit when joins disagree on a dashed multi-path pick.
 
 ## Done
+
+- Mixed line-cap / join when dashed paths sit in a mixed-kind pick: cap and join menus dash when path values disagree, write onto path ids only, paint with canvas lineCap/lineJoin, and export stroke-linecap / stroke-linejoin with dasharray.
 
 - Present-mode speaker-note overlay: notes float over the artboard as a phosphor card, stay editable, toggle with N / Notes on (persisted in localStorage), Escape exits present, and Prev/Next live in the present bar so campaign paging no longer shares the notes strip.
 
@@ -51,8 +53,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 09:42 BST — Present-mode speaker-note overlay polish (persist notes visibility + Escape).
+2026-09-15 12:05 BST — Mixed path line-cap / join on mixed-kind picks.
 
 ## Next recommended
 
-Mixed line-cap / join when dashed paths sit in a mixed-kind pick.
+Mixed miter limit when joins disagree on a dashed multi-path pick.
