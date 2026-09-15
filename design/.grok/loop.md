@@ -25,7 +25,7 @@ Auth OFF, DB OFF.
 
 ## Done
 
-- Present-mode speaker-note overlay: notes float over the artboard as a phosphor card, stay editable, toggle with N / Notes on, and Prev/Next live in the present bar so campaign paging no longer shares the notes strip.
+- Present-mode speaker-note overlay: notes float over the artboard as a phosphor card, stay editable, toggle with N / Notes on (persisted in localStorage), Escape exits present, and Prev/Next live in the present bar so campaign paging no longer shares the notes strip.
 
 - Mixed radius + path stroke dash on mixed-kind multi-select: Radius writes onto rects only (dash when radii disagree); Dash slider writes onto paths only, renders and exports stroke-dasharray, and dashes when path dash lengths disagree.
 
@@ -51,7 +51,7 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 09:15 BST — Present-mode speaker-note overlay polish.
+2026-09-15 09:42 BST — Present-mode speaker-note overlay polish (persist notes visibility + Escape).
 
 ## Next recommended
 
