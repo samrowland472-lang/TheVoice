@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed shadow inspector when multi-select includes mixed kinds.
+1. Mixed radius + path stroke dash when multi-select includes mixed kinds.
+2. Present-mode speaker-note overlay polish.
 
 ## Done
+
+- Mixed shadow inspector on multi-select (including mixed kinds): Key Shadow editor stays visible, dashes / dim sliders when colour, blur, offset, spread, or inset disagree, and Add/Clear plus field drags write onto every selected id.
 
 - Mixed opacity / blend on multi-select: dash + dim slider when values disagree; range, percent field, and blend menu write onto every selected id, including mixed kinds.
 
@@ -45,8 +48,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 02:19 BST — Mixed opacity / blend on multi-select.
+2026-09-15 03:08 BST — Mixed shadow inspector on multi-select (mixed kinds).
 
 ## Next recommended
 
-Mixed shadow inspector when multi-select includes mixed kinds.
+Mixed radius + path stroke dash when multi-select includes mixed kinds.
