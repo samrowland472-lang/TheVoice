@@ -106,107 +106,140 @@ export function FillEditor({ node }: { node: DesignNode }) {
   );
 }
 
-export function ShadowEditor({ node }: { node: DesignNode }) {
+export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
+  const mapNodes = useDesign((s) => s.mapNodes);
   const commit = () => useDesign.getState().commit();
+  const node = nodes[nodes.length - 1];
+  if (!node) return null;
+  const ids = nodes.map((n) => n.id);
+  const multi = nodes.length > 1;
   const sh = node.shadow;
+  const ghost = sh ?? DEFAULT_SHADOW;
   const inset = shadowInset(sh);
   const spread = shadowSpread(sh);
+  const mixedOn = multi && new Set(nodes.map((n) => Boolean(n.shadow))).size > 1;
+  const mixedColor =
+    multi && new Set(nodes.map((n) => n.shadow?.color ?? DEFAULT_SHADOW.color)).size > 1;
+  const mixedBlur =
+    multi && new Set(nodes.map((n) => n.shadow?.blur ?? DEFAULT_SHADOW.blur)).size > 1;
+  const mixedOx =
+    multi && new Set(nodes.map((n) => n.shadow?.ox ?? DEFAULT_SHADOW.ox)).size > 1;
+  const mixedOy =
+    multi && new Set(nodes.map((n) => n.shadow?.oy ?? DEFAULT_SHADOW.oy)).size > 1;
+  const mixedSpread = multi && new Set(nodes.map((n) => shadowSpread(n.shadow))).size > 1;
+  const mixedInset = multi && new Set(nodes.map((n) => shadowInset(n.shadow))).size > 1;
+  const anyOn = nodes.some((n) => n.shadow);
 
-  function write(next: NonNullable<DesignNode["shadow"]>, commitNow = false) {
-    updateNodes([node.id], { shadow: next }, commitNow);
+  function stampAll(map: (shadow: DesignNode["shadow"]) => NonNullable<DesignNode["shadow"]>, commitNow = false) {
+    mapNodes(
+      ids,
+      (layer) => ({
+        ...layer,
+        shadow: map(layer.shadow),
+      }),
+      commitNow,
+    );
   }
 
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] text-ink-dim">{sh ? (inset ? "Shadow · inset" : "Shadow · drop") : "Shadow off"}</span>
+        <span className="text-[11px] text-ink-dim">
+          {mixedOn
+            ? "Shadow \u00b7 mixed"
+            : sh
+              ? inset
+                ? "Shadow \u00b7 inset"
+                : "Shadow \u00b7 drop"
+              : "Shadow off"}
+        </span>
         <div className="flex items-center gap-2">
-          {sh && (
+          {(sh || mixedOn) && (
             <span
               aria-hidden="true"
               title={inset ? "Inset preview" : "Drop preview"}
               className="inline-block size-7 shrink-0 rounded-[6px] border border-border bg-surface-alt"
               data-shadow-preview={inset ? "inset" : "drop"}
-              style={{ boxShadow: shadowPreviewCss(sh) }}
+              style={{ boxShadow: shadowPreviewCss(ghost) }}
             />
           )}
           <button
             type="button"
             className="text-[10px] text-phosphor"
-            onClick={() => updateNodes([node.id], { shadow: sh ? null : { ...DEFAULT_SHADOW } }, true)}
+            onClick={() => updateNodes(ids, { shadow: anyOn ? null : { ...DEFAULT_SHADOW } }, true)}
           >
-            {sh ? "Clear" : "Add"}
+            {anyOn ? "Clear" : "Add"}
           </button>
         </div>
       </div>
-      {sh && (
+      {(sh || multi) && (
         <div className="mt-2 flex flex-col gap-2">
-          <Field label="Colour">
+          <Field label={mixedColor ? "Colour \u00b7 mixed" : "Colour"}>
             <input
               type="color"
-              className="h-8 w-full rounded-[8px] border border-border"
-              value={sh.color}
-              aria-label="layer shadow colour"
-              onChange={(e) => write(stampShadowColor(sh, e.target.value))}
+              className={cn("h-8 w-full rounded-[8px] border border-border", mixedColor && "opacity-70")}
+              value={ghost.color}
+              aria-label={mixedColor ? "layer shadow colour mixed" : "layer shadow colour"}
+              onChange={(e) => stampAll((cur) => stampShadowColor(cur, e.target.value))}
               onPointerUp={commit}
             />
           </Field>
-          <Field label={`Blur ${sh.blur}`}>
+          <Field label={mixedBlur ? "Blur \u00b7 mixed" : `Blur ${ghost.blur}`}>
             <input
               type="range"
-              className="range-phosphor w-full"
+              className={cn("range-phosphor w-full", mixedBlur && "opacity-70")}
               min={0}
               max={80}
-              value={sh.blur}
-              aria-label="layer shadow blur"
-              onChange={(e) => write(stampShadowBlur(sh, Number(e.target.value)))}
+              value={mixedBlur ? 0 : ghost.blur}
+              aria-label={mixedBlur ? "layer shadow blur mixed" : "layer shadow blur"}
+              onChange={(e) => stampAll((cur) => stampShadowBlur(cur, Number(e.target.value)))}
               onPointerUp={commit}
             />
           </Field>
-          <Field label={`X ${sh.ox}`}>
+          <Field label={mixedOx ? "X \u00b7 mixed" : `X ${ghost.ox}`}>
             <input
               type="range"
-              className="range-phosphor w-full"
+              className={cn("range-phosphor w-full", mixedOx && "opacity-70")}
               min={-40}
               max={40}
-              value={sh.ox}
-              aria-label="layer shadow x"
-              onChange={(e) => write(stampShadowOx(sh, Number(e.target.value)))}
+              value={mixedOx ? 0 : ghost.ox}
+              aria-label={mixedOx ? "layer shadow x mixed" : "layer shadow x"}
+              onChange={(e) => stampAll((cur) => stampShadowOx(cur, Number(e.target.value)))}
               onPointerUp={commit}
             />
           </Field>
-          <Field label={`Y ${sh.oy}`}>
+          <Field label={mixedOy ? "Y \u00b7 mixed" : `Y ${ghost.oy}`}>
             <input
               type="range"
-              className="range-phosphor w-full"
+              className={cn("range-phosphor w-full", mixedOy && "opacity-70")}
               min={-40}
               max={40}
-              value={sh.oy}
-              aria-label="layer shadow y"
-              onChange={(e) => write(stampShadowOy(sh, Number(e.target.value)))}
+              value={mixedOy ? 0 : ghost.oy}
+              aria-label={mixedOy ? "layer shadow y mixed" : "layer shadow y"}
+              onChange={(e) => stampAll((cur) => stampShadowOy(cur, Number(e.target.value)))}
               onPointerUp={commit}
             />
           </Field>
-          <Field label={`Spread ${spread}`}>
+          <Field label={mixedSpread ? "Spread \u00b7 mixed" : `Spread ${spread}`}>
             <input
               type="range"
-              className="range-phosphor w-full"
+              className={cn("range-phosphor w-full", mixedSpread && "opacity-70")}
               min={0}
               max={40}
-              value={spread}
-              aria-label="layer shadow spread"
-              onChange={(e) => write(stampShadowSpread(sh, Number(e.target.value)))}
+              value={mixedSpread ? 0 : spread}
+              aria-label={mixedSpread ? "layer shadow spread mixed" : "layer shadow spread"}
+              onChange={(e) => stampAll((cur) => stampShadowSpread(cur, Number(e.target.value)))}
               onPointerUp={commit}
             />
           </Field>
-          <Field label={inset ? "Inset" : "Drop"}>
+          <Field label={mixedInset ? "Inset \u00b7 mixed" : inset ? "Inset" : "Drop"}>
             <label className="flex items-center gap-2 text-[11px] text-ink-dim">
               <input
                 type="checkbox"
-                checked={inset}
-                aria-label="layer shadow inset"
-                onChange={(e) => write(stampShadowInset(sh, e.target.checked), true)}
+                checked={mixedInset ? false : inset}
+                aria-label={mixedInset ? "layer shadow inset mixed" : "layer shadow inset"}
+                onChange={(e) => stampAll((cur) => stampShadowInset(cur, e.target.checked), true)}
               />
               Inset
             </label>
