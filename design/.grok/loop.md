@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector mixed opacity / blend when multi-select includes mixed kinds.
+1. Mixed shadow inspector when multi-select includes mixed kinds.
 
 ## Done
+
+- Mixed opacity / blend on multi-select: dash + dim slider when values disagree; range, percent field, and blend menu write onto every selected id, including mixed kinds.
 
 - Mixed type family / size / weight / tracking / leading / align when the selection mixes type and shapes: Type panel appears with one or more text layers (not only 2+ type), writes onto type ids only, and hides the key type sliders so family and size stay in one place.
 
@@ -43,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-14 22:12 BST — Mixed type family/size/weight for type+shape selections.
+2026-09-15 02:19 BST — Mixed opacity / blend on multi-select.
 
 ## Next recommended
 
-Inspector mixed opacity / blend when multi-select includes mixed kinds.
+Mixed shadow inspector when multi-select includes mixed kinds.

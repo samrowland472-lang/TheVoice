@@ -61,6 +61,9 @@ export function Inspector() {
   const texts = selectedNodes.filter((n): n is TextNode => n.kind === "text");
   const mixedKinds = texts.length >= 1 && texts.length < selectedNodes.length;
   const mixedRadius = rects.length > 1 && new Set(rects.map((n) => Math.round(n.radius * 100) / 100)).size > 1;
+  const mixedOpacity =
+    multi && new Set(selectedNodes.map((n) => Math.round(n.opacity * 1000) / 1000)).size > 1;
+  const mixedBlend = multi && new Set(selectedNodes.map((n) => n.blend)).size > 1;
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
 
   return (
@@ -151,29 +154,36 @@ export function Inspector() {
               />
             </div>
           </Field>
-          {!multi && <Field label={`Opacity ${Math.round(node.opacity * 100)}%`}>
+          <Field
+            label={
+              mixedOpacity
+                ? "Opacity · mixed"
+                : `Opacity ${Math.round(node.opacity * 100)}%`
+            }
+          >
             <div className="flex items-center gap-2">
               <input
                 type="range"
-                className="range-phosphor min-w-0 flex-1"
+                className={cn("range-phosphor min-w-0 flex-1", mixedOpacity && "opacity-70")}
                 min={0}
                 max={1}
                 step={0.01}
-                aria-label="opacity"
-                value={node.opacity}
-                onChange={(e) => updateNodes([node.id], { opacity: Number(e.target.value) })}
+                aria-label={mixedOpacity ? "opacity mixed" : "opacity"}
+                value={mixedOpacity ? 0 : node.opacity}
+                onChange={(e) => updateNodes(multi ? ids : [node.id], { opacity: Number(e.target.value) })}
                 onPointerUp={() => useDesign.getState().commit()}
               />
               <NumField
                 className="field w-16 font-mono"
                 value={Math.round(node.opacity * 100)}
+                mixed={mixedOpacity}
                 min={0}
                 max={100}
                 aria-label="opacity"
-                onCommit={(n) => updateNodes([node.id], { opacity: n / 100 }, true)}
+                onCommit={(n) => updateNodes(multi ? ids : [node.id], { opacity: n / 100 }, true)}
               />
             </div>
-          </Field>}
+          </Field>
           {!multi && <FillEditor node={node} />}
           {!multi && <Field label="Stroke">
             <div className="flex gap-2">
@@ -219,15 +229,27 @@ export function Inspector() {
               </div>
             </Field>
           )}
-          {!multi && (
-            <Field label="Blend">
-              <select className="field" value={node.blend} onChange={(e) => updateNodes([node.id], { blend: e.target.value as BlendMode }, true)}>
-                {BLENDS.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-            </Field>
-          )}
+          <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>
+            <select
+              className="field"
+              value={mixedBlend ? "" : node.blend}
+              aria-label={mixedBlend ? "blend mixed" : "blend"}
+              onChange={(e) =>
+                updateNodes(multi ? ids : [node.id], { blend: e.target.value as BlendMode }, true)
+              }
+            >
+              {mixedBlend && (
+                <option value="" disabled>
+                  —
+                </option>
+              )}
+              {BLENDS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </Field>
           {!multi && <ShadowEditor node={node} />}
           {node.kind === "text" && (
             <TextFields
