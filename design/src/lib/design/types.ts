@@ -75,6 +75,8 @@ export interface BaseNode {
   fill: Fill;
   stroke: string;
   strokeWidth: number;
+  /** On/off dash length in px. 0 is a solid stroke. */
+  strokeDash: number;
   radius: number;
   shadow: Shadow | null;
   linkId?: string;
