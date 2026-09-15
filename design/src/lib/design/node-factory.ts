@@ -20,6 +20,7 @@ const BASE = {
   fill: "#d9f5e3" as Fill,
   stroke: "transparent",
   strokeWidth: 0,
+  strokeDash: 0,
   radius: 0,
   shadow: null,
 };

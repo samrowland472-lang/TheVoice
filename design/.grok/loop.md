@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed radius + path stroke dash when multi-select includes mixed kinds.
-2. Present-mode speaker-note overlay polish.
+1. Present-mode speaker-note overlay polish.
+2. Mixed line-cap / join when dashed paths sit in a mixed-kind pick.
 
 ## Done
+
+- Mixed radius + path stroke dash on mixed-kind multi-select: Radius writes onto rects only (dash when radii disagree); Dash slider writes onto paths only, renders and exports stroke-dasharray, and dashes when path dash lengths disagree.
 
 - Mixed shadow inspector on multi-select (including mixed kinds): Key Shadow editor stays visible, dashes / dim sliders when colour, blur, offset, spread, or inset disagree, and Add/Clear plus field drags write onto every selected id.
 
@@ -34,13 +36,13 @@ Auth OFF, DB OFF.
 
 - Mixed type colour when the selection mixes type and shapes: dash hex if type fills disagree; picker, brand swatch, or Apply key type colour writes fill onto type layers only so shapes keep their own ink.
 
-- Mixed fill/stroke colour pickers: dash hex when the selection disagrees; picking a colour, a brand swatch, or Apply key … to all writes onto every selected layer. Stroke width uses the same mixed NumField.
+- Mixed fill/stroke colour pickers: dash hex when the selection disagrees; picking a colour, a brand swatch, or Apply key \u2026 to all writes onto every selected layer. Stroke width uses the same mixed NumField.
 
 - Inspector Key fields (name, X/Y/W/H, rotate, radius): multi-select shows a dash when values disagree; editing applies to every selected layer.
 
 - Layer filter field above the stack. Matches name or kind (case-insensitive). Count + clear. Drag-reorder disabled while filtered so drop indices stay honest.
 
-- History list labels: undo stack records action names (Delete, Move, Type, Add Rectangle, …) and the Layers History list shows them instead of “Step N / Redo N”. Clicking a named step restores that snapshot and rewinds/fast-forwards the stack.
+- History list labels: undo stack records action names (Delete, Move, Type, Add Rectangle, \u2026) and the Layers History list shows them instead of \u201cStep N / Redo N\u201d. Clicking a named step restores that snapshot and rewinds/fast-forwards the stack.
 
 - Double-click a layer name in the Layers panel to rename it. Enter commits, Escape cancels, blur commits a trimmed name. Empty names are ignored.
 
@@ -48,8 +50,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 03:08 BST — Mixed shadow inspector on multi-select (mixed kinds).
+2026-09-15 04:20 BST — Mixed radius + path stroke dash on mixed-kind multi-select.
 
 ## Next recommended
 
-Mixed radius + path stroke dash when multi-select includes mixed kinds.
+Present-mode speaker-note overlay polish.
