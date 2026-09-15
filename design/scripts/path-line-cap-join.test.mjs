@@ -25,9 +25,9 @@ test("render and export honour cap, join, and dash", () => {
   assert.match(exp, /stroke-linejoin=/);
 });
 
-test("mixed kind pick writes cap and join onto path ids only", () => {
+test("mixed kind pick writes cap and join onto outline ids", () => {
   assert.match(inspector, /MixedPathDash/);
-  assert.match(inspector, /paths\.map\(\(p\) => p\.id\)/);
+  assert.match(inspector, /MixedPathDash nodes=\{outlines\}/);
   assert.match(mixed, /path line cap mixed/);
   assert.match(mixed, /path line join mixed/);
   assert.match(mixed, /updateNodes\(ids, \{ lineCap:/);

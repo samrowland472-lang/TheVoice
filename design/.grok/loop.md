@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed dash offset + miter on mixed-kind outline picks (rect + path + line) so sliders dash when values disagree.
-2. Arrow / polygon / star specific stroke chips (arrowhead scale, side count) without dropping shared dash.
+1. Arrow / polygon / star specific stroke chips (arrowhead scale, side count) without dropping shared dash.
+2. Per-kind stroke preview chips that unify dash offset / miter from one outline onto the rest of a mixed pick.
 
 ## Done
+
+- Mixed dash offset + miter on mixed-kind outline picks: Stroke inspector now lists every selected path, rectangle, ellipse, line, polygon, star, and arrow. Offset and Miter sliders dash when values disagree, write onto all outline ids, paint via lineDashOffset + miterLimit, and export stroke-dashoffset / stroke-miterlimit with cap, join, and dasharray.
 
 - Mixed dash + cap + join on non-path strokes: rects, ellipses, and lines share the Stroke inspector with paths. Dash / cap / join / offset / miter write onto every selected outline, paint via setLineDash + lineCap/lineJoin/miterLimit, and export stroke-dasharray / stroke-linecap / stroke-linejoin / stroke-dashoffset / stroke-miterlimit.
 
@@ -60,8 +62,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 18:20 BST — Mixed dash + cap + join on non-path strokes (rects, ellipses, lines).
+2026-09-15 22:20 BST — Mixed dash offset + miter on mixed-kind outline picks (rect + path + line + ellipse).
 
 ## Next recommended
 
-Mixed dash offset + miter when a mixed-kind outline pick disagrees.
+Arrow / polygon / star specific stroke chips (arrowhead scale, side count) without dropping shared dash.
