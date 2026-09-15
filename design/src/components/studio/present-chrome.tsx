@@ -13,6 +13,7 @@ export function PresentView() {
   const index = useDesign((s) => s.index);
   const save = useDesign((s) => s.save);
   const setPresent = useDesign((s) => s.setPresent);
+  const setNotes = useDesign((s) => s.setNotes);
   const [hot, setHot] = useState<{
     label: string;
     x: number;
@@ -21,6 +22,7 @@ export function PresentView() {
     h: number;
     rotation: number;
   } | null>(null);
+  const [notesOpen, setNotesOpen] = useState(true);
   const viewport = useDesign((s) => s.viewport);
   if (!doc) return null;
   const live = doc;
@@ -100,6 +102,10 @@ export function PresentView() {
         e.preventDefault();
         go(-1);
       }
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setNotesOpen((open) => !open);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -117,8 +123,29 @@ export function PresentView() {
             {i + 1} / {pages.length}
           </span>
         )}
-        <span className={cn("ml-auto font-mono text-[10px] uppercase", hot ? "text-phosphor" : "text-ink-faint")}>
-          {hot ? hot.label : "Present \u00b7 click or \u2192"}
+        {pages.length > 1 && (
+          <div className="ml-2 flex gap-1">
+            <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>
+              Prev
+            </Button>
+            <Button size="sm" variant="ghost" disabled={i >= pages.length - 1} onClick={() => go(1)}>
+              Next
+            </Button>
+          </div>
+        )}
+        <button
+          type="button"
+          className={cn(
+            "ml-auto font-mono text-[10px] uppercase tracking-wide",
+            notesOpen ? "text-phosphor" : "text-ink-faint hover:text-ink-dim",
+          )}
+          onClick={() => setNotesOpen((open) => !open)}
+          aria-pressed={notesOpen}
+        >
+          Notes {notesOpen ? "on" : "off"} · N
+        </button>
+        <span className={cn("font-mono text-[10px] uppercase", hot ? "text-phosphor" : "text-ink-faint")}>
+          {hot ? hot.label : "Click or \u2192"}
         </span>
       </div>
       <div className="relative min-h-0 flex-1">
@@ -150,22 +177,27 @@ export function PresentView() {
             go(-1);
           }}
         />
-      </div>
-      {(doc.notes || pages.length > 1) && (
-        <div className="flex shrink-0 items-start gap-3 border-t border-border bg-surface px-4 py-3">
-          <p className="min-w-0 flex-1 text-sm text-ink-dim whitespace-pre-wrap">{doc.notes || "No notes"}</p>
-          {pages.length > 1 && (
-            <div className="flex gap-1">
-              <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>
-                Prev
-              </Button>
-              <Button size="sm" variant="ghost" disabled={i >= pages.length - 1} onClick={() => go(1)}>
-                Next
-              </Button>
+        {notesOpen && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center p-4">
+            <div className="pointer-events-auto w-full max-w-3xl rounded-[12px] border border-phosphor/40 bg-ground/92 shadow-[0_0_0_1px_rgba(63,198,255,0.12),0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-phosphor">Speaker notes</span>
+                <span className="font-mono text-[10px] text-ink-faint">
+                  {i + 1}/{Math.max(pages.length, 1)}
+                </span>
+              </div>
+              <textarea
+                className="field min-h-24 max-h-40 w-full resize-y rounded-none border-0 bg-transparent px-3 py-2 text-sm text-ink-dim placeholder:text-ink-faint"
+                placeholder="Talking points for this frame — saved with the artboard"
+                value={doc.notes ?? ""}
+                onChange={(e) => setNotes(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                aria-label="Speaker notes"
+              />
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
