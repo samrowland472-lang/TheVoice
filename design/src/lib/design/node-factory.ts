@@ -21,8 +21,10 @@ const BASE = {
   stroke: "transparent",
   strokeWidth: 0,
   strokeDash: 0,
+  strokeDashOffset: 0,
   lineCap: "round" as CanvasLineCap,
   lineJoin: "round" as CanvasLineJoin,
+  miterLimit: 4,
   radius: 0,
   shadow: null,
 };
