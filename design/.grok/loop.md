@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed dash + cap + join on non-path strokes (rects, ellipses, lines) so shape outlines share the path stroke inspector.
+1. Mixed dash offset + miter on mixed-kind outline picks (rect + path + line) so sliders dash when values disagree.
+2. Arrow / polygon / star specific stroke chips (arrowhead scale, side count) without dropping shared dash.
 
 ## Done
+
+- Mixed dash + cap + join on non-path strokes: rects, ellipses, and lines share the Stroke inspector with paths. Dash / cap / join / offset / miter write onto every selected outline, paint via setLineDash + lineCap/lineJoin/miterLimit, and export stroke-dasharray / stroke-linecap / stroke-linejoin / stroke-dashoffset / stroke-miterlimit.
 
 - Mixed stroke width + dash offset on dashed multi-path picks: Width and Offset sliders dash when path values disagree, write onto path ids only, paint lineWidth / setLineDash / lineDashOffset, and export stroke-width + stroke-dashoffset with cap/join/miter/dasharray.
 
@@ -43,13 +46,13 @@ Auth OFF, DB OFF.
 
 - Mixed type colour when the selection mixes type and shapes: dash hex if type fills disagree; picker, brand swatch, or Apply key type colour writes fill onto type layers only so shapes keep their own ink.
 
-- Mixed fill/stroke colour pickers: dash hex when the selection disagrees; picking a colour, a brand swatch, or Apply key \u2026 to all writes onto every selected layer. Stroke width uses the same mixed NumField.
+- Mixed fill/stroke colour pickers: dash hex when the selection disagrees; picking a colour, a brand swatch, or Apply key … to all writes onto every selected layer. Stroke width uses the same mixed NumField.
 
 - Inspector Key fields (name, X/Y/W/H, rotate, radius): multi-select shows a dash when values disagree; editing applies to every selected layer.
 
 - Layer filter field above the stack. Matches name or kind (case-insensitive). Count + clear. Drag-reorder disabled while filtered so drop indices stay honest.
 
-- History list labels: undo stack records action names (Delete, Move, Type, Add Rectangle, \u2026) and the Layers History list shows them instead of \u201cStep N / Redo N\u201d. Clicking a named step restores that snapshot and rewinds/fast-forwards the stack.
+- History list labels: undo stack records action names (Delete, Move, Type, Add Rectangle, …) and the Layers History list shows them instead of “Step N / Redo N”. Clicking a named step restores that snapshot and rewinds/fast-forwards the stack.
 
 - Double-click a layer name in the Layers panel to rename it. Enter commits, Escape cancels, blur commits a trimmed name. Empty names are ignored.
 
@@ -57,8 +60,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 14:20 BST \u2014 Mixed path stroke width + dash offset on dashed multi-path picks.
+2026-09-15 18:20 BST — Mixed dash + cap + join on non-path strokes (rects, ellipses, lines).
 
 ## Next recommended
 
-Mixed dash + cap + join on non-path strokes (rects, ellipses, lines).
+Mixed dash offset + miter when a mixed-kind outline pick disagrees.
