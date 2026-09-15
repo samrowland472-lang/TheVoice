@@ -250,7 +250,7 @@ export function Inspector() {
               ))}
             </select>
           </Field>
-          {!multi && <ShadowEditor node={node} />}
+          <ShadowEditor nodes={selectedNodes} />
           {node.kind === "text" && (
             <TextFields
               node={node}
