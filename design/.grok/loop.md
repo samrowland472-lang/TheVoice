@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed miter limit when joins disagree on a dashed multi-path pick.
+1. Mixed stroke width + dash offset on dashed multi-path picks.
 
 ## Done
+
+- Mixed miter limit on dashed multi-path picks: Miter slider appears when join is miter or joins disagree, dashes when limits disagree, writes onto path ids only, paints ctx.miterLimit, and exports stroke-miterlimit with cap/join/dasharray.
 
 - Mixed line-cap / join when dashed paths sit in a mixed-kind pick: cap and join menus dash when path values disagree, write onto path ids only, paint with canvas lineCap/lineJoin, and export stroke-linecap / stroke-linejoin with dasharray.
 
@@ -53,8 +55,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 12:05 BST — Mixed path line-cap / join on mixed-kind picks.
+2026-09-15 13:25 BST — Mixed path miter limit on dashed multi-path picks.
 
 ## Next recommended
 
-Mixed miter limit when joins disagree on a dashed multi-path pick.
+Mixed stroke width + dash offset on dashed multi-path picks.
