@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
 const dash = readFileSync(new URL("../src/components/studio/mixed-path-dash.tsx", import.meta.url), "utf8");
+const chips = readFileSync(new URL("../src/lib/design/geometry-chips.ts", import.meta.url), "utf8");
 const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 const types = readFileSync(new URL("../src/lib/design/types.ts", import.meta.url), "utf8");
 const render = readFileSync(new URL("../src/lib/design/render.ts", import.meta.url), "utf8");
@@ -29,4 +30,15 @@ test("mixed dash offset and miter chips stamp onto every outline", () => {
   assert.match(dash, /Unify miter/);
   assert.match(dash, /strokeDashOffset: off/);
   assert.match(dash, /miterLimit: m/);
+});
+
+test("per-kind dash cap join chips stamp rhythm onto every outline", () => {
+  assert.match(dash, /Unify dash \/ cap \/ join/);
+  assert.match(dash, /Unify dash with/);
+  assert.match(dash, /Unify cap with/);
+  assert.match(dash, /Unify join with/);
+  assert.match(dash, /strokeDash: d/);
+  assert.match(dash, /lineCap: c/);
+  assert.match(dash, /lineJoin: j/);
+  assert.match(chips, /strokeRhythmChipLabel/);
 });

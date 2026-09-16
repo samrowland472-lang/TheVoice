@@ -47,3 +47,29 @@ export function miterChipLabel(miter: number): string {
 export function miterChipKey(miter: number): string {
   return String(Math.round(miter * 100) / 100);
 }
+
+export function dashChipLabel(dash: number): string {
+  const d = Math.round((dash ?? 0) * 10) / 10;
+  return d === 0 ? "solid" : `dash ${d}`;
+}
+
+export function dashChipKey(dash: number): string {
+  return String(Math.round((dash ?? 0) * 100) / 100);
+}
+
+export function capChipLabel(cap: CanvasLineCap): string {
+  return cap;
+}
+
+export function joinChipLabel(join: CanvasLineJoin): string {
+  return join;
+}
+
+/** One-line preview of dash / cap / join for a mixed-kind unify chip. */
+export function strokeRhythmChipLabel(
+  dash: number,
+  cap: CanvasLineCap,
+  join: CanvasLineJoin,
+): string {
+  return `${dashChipLabel(dash)} · ${cap} · ${join}`;
+}
