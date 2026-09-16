@@ -146,6 +146,8 @@ export interface PaintNode extends BaseNode {
 export interface ShapeNode extends BaseNode {
   kind: "rect" | "ellipse" | "line" | "polygon" | "star" | "arrow";
   sides?: number;
+  /** Arrowhead length as a multiple of the default head (1 = stock). */
+  headScale?: number;
 }
 
 export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | ShapeNode;

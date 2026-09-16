@@ -39,6 +39,7 @@ export function shape(
     name: kind,
     kind,
     sides: kind === "polygon" ? 6 : kind === "star" ? 5 : undefined,
+    headScale: kind === "arrow" ? 1 : undefined,
     ...patch,
   };
 }
