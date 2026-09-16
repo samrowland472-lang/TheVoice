@@ -11,6 +11,7 @@ import { paletteName } from "./palette";
 import { blankDocument, instantiateTemplate } from "./templates";
 import type { BooleanOp } from "./boolean-ops";
 import type { PathEditHit } from "./path-edit";
+import type { StrokeGhost } from "./stroke-ghost";
 import type {
   BrandKit,
   BrushSettings,
@@ -50,7 +51,9 @@ export const useDesign = create<any>((set: any, get: any) => ({
   viewIntent: null,
   paletteOpen: false,
   booleanPreview: null,
+  strokeGhost: null as StrokeGhost,
   pathEditHit: null,
+  setStrokeGhost: (strokeGhost: StrokeGhost) => set({ strokeGhost }),
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id: string) => {
     const doc = loadDoc(id);
@@ -125,7 +128,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
         else cur.add(id);
       }
       set({ selection: [...cur] });
-    } else set({ selection: ids, pathEditHit: null });
+    } else set({ selection: ids, pathEditHit: null, strokeGhost: null });
   },
   updateNodes: (ids: string[], patch: Partial<DesignNode>, commit = false) => {
     const { doc } = get();
