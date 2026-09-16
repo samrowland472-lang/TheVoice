@@ -21,18 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed-kind dash preview on the canvas itself (ghost dash overlay while hovering a rhythm chip).
+1. Mixed-kind dash / cap / join also paint on SVG export (stroke-dasharray, stroke-linecap, stroke-linejoin).
+2. Per-kind width hover ghost on the canvas (same pattern as rhythm preview).
 
 ## Done
 
+- Mixed-kind dash preview on the canvas: hovering (or focusing) a rhythm chip paints a phosphor ghost stroke on every selected outline using that chip’s dash, cap, and join. Canvas and PNG render now honour strokeDash, dash offset, cap, join, and miter.
+
 - Per-kind width chips: when a mixed outline pick disagrees on stroke width, each selected path/rect/ellipse/line/polygon/star/arrow shows a width chip; clicking stamps that outline’s strokeWidth onto every outline in the pick. Hairline (0) labels as hair.
 
-- Per-kind dash / cap / join preview chips: when a mixed outline pick disagrees on dash, cap, or join, each selected path/rect/ellipse/line/polygon/star/arrow shows chips plus a combined rhythm chip. Clicking stamps that outline’s dash, cap, and/or join onto every outline in the pick. Offset and miter chips still stamp those fields. Sides write onto polygons/stars only; head scale onto arrows only. Arrows paint and export as heads (`headScale`).
+- Per-kind dash / cap / join preview chips: when a mixed outline pick disagrees on dash, cap, or join, each selected path/rect/ellipse/line/polygon/star/arrow shows chips plus a combined rhythm chip. Clicking stamps that outline’s dash, cap, or join onto every outline in the pick. Offset and miter chips still stamp those fields. Sides write onto polygons/stars only; head scale onto arrows only. Arrows paint and export as heads (`headScale`).
 
 ## Iteration
 
-2026-09-16 10:15 BST — Per-kind width unify chips on mixed outline picks.
+2026-09-16 11:20 BST — Ghost dash overlay while hovering a mixed rhythm chip; live canvas stroke style.
 
 ## Next recommended
 
-Mixed-kind dash preview on the canvas itself (ghost dash overlay while hovering a rhythm chip).
+Mixed-kind dash / cap / join on SVG export.
