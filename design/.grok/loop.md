@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed-kind dash / cap / join also paint on SVG export (stroke-dasharray, stroke-linecap, stroke-linejoin).
-2. Per-kind width hover ghost on the canvas (same pattern as rhythm preview).
+1. Per-kind width hover ghost on the canvas (same pattern as rhythm preview).
 
 ## Done
+
+- Mixed-kind dash / cap / join on SVG export: stroked nodes emit `stroke-dasharray`, `stroke-dashoffset`, `stroke-linecap`, `stroke-linejoin`, and `stroke-miterlimit`. Canvas / PNG use the same dash, cap, join, and miter instead of a hardcoded round stroke.
 
 - Mixed-kind dash preview on the canvas: hovering (or focusing) a rhythm chip paints a phosphor ghost stroke on every selected outline using that chip’s dash, cap, and join. Canvas and PNG render now honour strokeDash, dash offset, cap, join, and miter.
 
@@ -34,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 11:20 BST — Ghost dash overlay while hovering a mixed rhythm chip; live canvas stroke style.
+2026-09-16 12:20 BST — SVG export writes dash / cap / join / miter; canvas stroke style matches.
 
 ## Next recommended
 
-Mixed-kind dash / cap / join on SVG export.
+Per-kind width hover ghost on the canvas.
