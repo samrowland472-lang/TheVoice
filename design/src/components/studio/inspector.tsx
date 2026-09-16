@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 import { FillEditor, Section, ShadowEditor, Swatches, Field } from "./inspector-parts";
 import { MixedInk } from "./mixed-ink";
+import { MixedPathDash } from "./mixed-path-dash";
 import { MixedFilters } from "./mixed-filters";
 import { MixedType } from "./mixed-type";
 import { MixedTypeColour } from "./mixed-type-colour";
@@ -65,6 +66,15 @@ export function Inspector() {
     multi && new Set(selectedNodes.map((n) => Math.round(n.opacity * 1000) / 1000)).size > 1;
   const mixedBlend = multi && new Set(selectedNodes.map((n) => n.blend)).size > 1;
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
+  const outlines = selectedNodes.filter((n) =>
+    n.kind === "path" ||
+    n.kind === "rect" ||
+    n.kind === "ellipse" ||
+    n.kind === "line" ||
+    n.kind === "polygon" ||
+    n.kind === "star" ||
+    n.kind === "arrow",
+  );
 
   return (
     <div className="overflow-auto px-3 pb-4 scrollbar-thin">
@@ -94,6 +104,7 @@ export function Inspector() {
       {multi && (
         <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
       )}
+      {outlines.length > 0 && <MixedPathDash nodes={outlines} />}
       {multi && <MixedFilters nodes={selectedNodes} />}
       {mixedKinds && (
         <MixedTypeColour nodes={texts} brandColors={brand.colors} ink={color} />
