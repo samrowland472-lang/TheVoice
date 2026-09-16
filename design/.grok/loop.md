@@ -21,31 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Arrow head-scale hover ghost on the canvas.
-2. Mixed cap / join chip hover ghost (cap and join only, without dash).
+1. Mixed cap / join chip hover ghost (cap and join only, without dash).
+2. Sides hover ghost on mixed polygons / stars.
 
 ## Done
+
+- Arrow head-scale hover ghost: mixed head chips hover or focus a phosphor overlay on selected arrows using that chip’s `headScale`. Dragging the Head slider paints the same overlay. `strokeGhost.headScale` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-arrow outlines are skipped so only chevrons reshape.
 
 - Slider drag ghosts: width, dash, offset, and miter range sliders paint a phosphor overlay on selected outlines while dragging. Mixed width / offset / miter / dash chips hover the same overlay. `strokeGhost` is ephemeral (cleared on select change) and not written to localStorage.
 
 - Arrow heads as true paths on canvas: drawNode and fill silhouettes use `arrowPath` built from `arrowPoints(w, h, headScale)`. Export, boolean ops, and stroke ghosts share the same contour, so head scale changes the chevron instead of painting a rectangle.
 
-- Per-kind offset / miter hover ghost: mixed offset and miter chips hover or focus a phosphor overlay on every selected outline using that chip’s dash offset or miter limit. Width, dash, cap, join, and rhythm chips use the same overlay. Click still stamps the field.
-
-- Per-kind width hover ghost: mixed outline picks show width chips (`hair` or `w N`). Hover or focus paints a phosphor ghost stroke on every selected outline at that width. Click stamps `strokeWidth`. Rhythm chips already ghost dash / cap / join the same way.
-
-- Mixed-kind dash / cap / join on SVG export: stroked nodes emit `stroke-dasharray`, `stroke-dashoffset`, `stroke-linecap`, `stroke-linejoin`, and `stroke-miterlimit`. Canvas / PNG use the same dash, cap, join, and miter. Polygon, star, and arrow export as true paths so their rhythm survives SVG.
-
-- Mixed-kind dash preview on the canvas: hovering (or focusing) a rhythm chip paints a phosphor ghost stroke on every selected outline using that chip’s dash, cap, and join. Canvas and PNG render now honour strokeDash, dash offset, cap, join, and miter.
-
-- Per-kind width chips: when a mixed outline pick disagrees on stroke width, each selected path/rect/ellipse/line/polygon/star/arrow shows a width chip; clicking stamps that outline’s strokeWidth onto every outline in the pick. Hairline (0) labels as hair.
-
-- Per-kind dash / cap / join preview chips: when a mixed outline pick disagrees on dash, cap, or join, each selected path/rect/ellipse/line/polygon/star/arrow shows chips plus a combined rhythm chip. Clicking stamps that outline’s dash, cap, or join onto every outline in the pick. Offset and miter chips still stamp those fields. Sides write onto polygons/stars only; head scale onto arrows only. Arrows paint and export as heads (`headScale`).
-
 ## Iteration
 
-2026-09-16 14:30 BST — Ghost preview while dragging width / offset / miter sliders.
+2026-09-16 16:25 BST — Arrow head-scale hover ghost on the canvas.
 
 ## Next recommended
 
-Arrow head-scale hover ghost on the canvas.
+Mixed cap / join chip hover ghost (cap and join only, without dash).
