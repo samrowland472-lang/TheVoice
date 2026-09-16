@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Ghost preview while dragging width / offset / miter sliders.
-2. Arrow head-scale hover ghost on the canvas.
+1. Arrow head-scale hover ghost on the canvas.
+2. Mixed cap / join chip hover ghost (cap and join only, without dash).
 
 ## Done
+
+- Slider drag ghosts: width, dash, offset, and miter range sliders paint a phosphor overlay on selected outlines while dragging. Mixed width / offset / miter / dash chips hover the same overlay. `strokeGhost` is ephemeral (cleared on select change) and not written to localStorage.
 
 - Arrow heads as true paths on canvas: drawNode and fill silhouettes use `arrowPath` built from `arrowPoints(w, h, headScale)`. Export, boolean ops, and stroke ghosts share the same contour, so head scale changes the chevron instead of painting a rectangle.
 
@@ -42,8 +44,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 14:20 BST — Arrow heads as true paths on canvas.
+2026-09-16 14:30 BST — Ghost preview while dragging width / offset / miter sliders.
 
 ## Next recommended
 
-Ghost preview while dragging width / offset / miter sliders.
+Arrow head-scale hover ghost on the canvas.
