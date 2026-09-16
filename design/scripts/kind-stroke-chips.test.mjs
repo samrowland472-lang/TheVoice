@@ -32,6 +32,12 @@ test("mixed dash offset and miter chips stamp onto every outline", () => {
   assert.match(dash, /miterLimit: m/);
 });
 
+test("per-kind width chips stamp stroke width onto every outline", () => {
+  assert.match(dash, /Unify width with/);
+  assert.match(dash, /strokeWidth: w/);
+  assert.match(chips, /widthChipLabel/);
+});
+
 test("per-kind dash cap join chips stamp rhythm onto every outline", () => {
   assert.match(dash, /Unify dash \/ cap \/ join/);
   assert.match(dash, /Unify dash with/);

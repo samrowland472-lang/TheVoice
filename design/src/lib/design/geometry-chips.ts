@@ -48,6 +48,15 @@ export function miterChipKey(miter: number): string {
   return String(Math.round(miter * 100) / 100);
 }
 
+export function widthChipLabel(width: number): string {
+  const w = Math.round((width ?? 0) * 10) / 10;
+  return w === 0 ? "hair" : `w ${w}`;
+}
+
+export function widthChipKey(width: number): string {
+  return String(Math.round((width ?? 0) * 100) / 100);
+}
+
 export function dashChipLabel(dash: number): string {
   const d = Math.round((dash ?? 0) * 10) / 10;
   return d === 0 ? "solid" : `dash ${d}`;
