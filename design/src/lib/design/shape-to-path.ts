@@ -67,10 +67,11 @@ function starPoints(w: number, h: number, points: number): PathPoint[] {
   return pts;
 }
 
-function arrowPoints(w: number, h: number): PathPoint[] {
+export function arrowPoints(w: number, h: number, headScale = 1): PathPoint[] {
+  const scale = Math.max(0.35, Math.min(2.2, Number.isFinite(headScale) ? headScale : 1));
   const shaft = Math.max(2, h * 0.36);
   const mid = h / 2;
-  const head = Math.max(8, Math.min(w * 0.38, h));
+  const head = Math.max(8, Math.min(w * 0.38 * scale, w * 0.88, h * scale));
   const tip = w;
   const base = Math.max(0, w - head);
   return [
@@ -99,7 +100,7 @@ export function shapeContour(n: ShapeNode): { points: PathPoint[]; closed: boole
     case "star":
       return { points: starPoints(n.w, n.h, n.sides ?? 5), closed: true };
     case "arrow":
-      return { points: arrowPoints(n.w, n.h), closed: true };
+      return { points: arrowPoints(n.w, n.h, n.headScale ?? 1), closed: true };
     default:
       return { points: roundedRectPoints(n.w, n.h, n.radius ?? 0), closed: true };
   }
