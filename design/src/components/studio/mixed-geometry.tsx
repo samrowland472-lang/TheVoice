@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
 import { NumField } from "./num-field";
 
+function ghostRadius(radius: number | null) {
+  useDesign.getState().setStrokeGhost(radius == null ? null : { radius });
+}
+
 export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   if (nodes.length < 2) return null;
@@ -77,8 +81,18 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
             max={Math.max(1, maxRadius)}
             aria-label={mixedRadius ? "selection radius mixed" : "selection radius"}
             value={first.radius}
-            onChange={(e) => updateNodes(ids, { radius: Number(e.target.value) })}
-            onPointerUp={() => useDesign.getState().commit()}
+            onChange={(e) => {
+              const r = Number(e.target.value);
+              ghostRadius(r);
+              updateNodes(ids, { radius: r });
+            }}
+            onPointerDown={() => ghostRadius(first.radius)}
+            onPointerUp={() => {
+              ghostRadius(null);
+              useDesign.getState().commit();
+            }}
+            onPointerLeave={() => ghostRadius(null)}
+            onBlur={() => ghostRadius(null)}
           />
           <NumField
             className="field w-16 font-mono"
@@ -101,6 +115,10 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
                 className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
                 title={`Unify radius with ${n.name || n.kind}: ${label}`}
                 aria-label={`Unify radius with ${n.name || n.kind}: ${label}`}
+                onMouseEnter={() => ghostRadius(n.radius)}
+                onFocus={() => ghostRadius(n.radius)}
+                onMouseLeave={() => ghostRadius(null)}
+                onBlur={() => ghostRadius(null)}
                 onClick={() => updateNodes(ids, { radius: n.radius }, true)}
               >
                 {label}
