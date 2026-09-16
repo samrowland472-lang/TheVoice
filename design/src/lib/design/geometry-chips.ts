@@ -31,3 +31,19 @@ export function headScaleChipLabel(scale: number): string {
 export function headScaleKey(scale: number): string {
   return String(Math.round(scale * 100) / 100);
 }
+
+export function dashOffsetChipLabel(offset: number): string {
+  return `off ${Math.round(offset)}`;
+}
+
+export function dashOffsetKey(offset: number): string {
+  return String(Math.round(offset * 100) / 100);
+}
+
+export function miterChipLabel(miter: number): string {
+  return `mit ${Math.round(miter * 10) / 10}`;
+}
+
+export function miterChipKey(miter: number): string {
+  return String(Math.round(miter * 100) / 100);
+}
