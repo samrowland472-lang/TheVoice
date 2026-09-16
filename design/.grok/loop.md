@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Sides hover ghost on mixed polygons / stars.
+1. Corner-radius hover ghost on mixed rectangles.
+2. Mixed fill-rule chip hover ghost on paths with holes.
 
 ## Done
+
+- Sides hover ghost on mixed polygons / stars: mixed sides chips hover or focus a phosphor overlay that rebuilds each selected polygon or star with that chip’s `sides`. Dragging the Sides slider paints the same overlay. `strokeGhost.sides` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-polygon/star outlines are skipped so only those contours reshape.
 
 - Mixed cap / join chip hover ghost: cap chips set `strokeGhost` to `{ lineCap }` only and join chips set `{ lineJoin }` only — no dash piggyback. Hover, focus, and leave/blur clear the ephemeral overlay. Canvas draws `drawStrokeGhosts` for the current selection. Width / dash / offset / miter sliders and chips, plus arrow head-scale, use the same overlay. `strokeGhost` is not written to localStorage and clears on select change.
 
@@ -35,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 18:16 BST — Mixed cap / join chip hover ghost (cap and join only).
+2026-09-16 19:20 BST — Sides hover ghost on mixed polygons / stars.
 
 ## Next recommended
 
-Sides hover ghost on mixed polygons / stars.
+Corner-radius hover ghost on mixed rectangles.
