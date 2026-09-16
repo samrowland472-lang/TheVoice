@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed cap / join chip hover ghost (cap and join only, without dash).
-2. Sides hover ghost on mixed polygons / stars.
+1. Sides hover ghost on mixed polygons / stars.
 
 ## Done
+
+- Mixed cap / join chip hover ghost: cap chips set `strokeGhost` to `{ lineCap }` only and join chips set `{ lineJoin }` only — no dash piggyback. Hover, focus, and leave/blur clear the ephemeral overlay. Canvas draws `drawStrokeGhosts` for the current selection. Width / dash / offset / miter sliders and chips, plus arrow head-scale, use the same overlay. `strokeGhost` is not written to localStorage and clears on select change.
 
 - Arrow head-scale hover ghost: mixed head chips hover or focus a phosphor overlay on selected arrows using that chip’s `headScale`. Dragging the Head slider paints the same overlay. `strokeGhost.headScale` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-arrow outlines are skipped so only chevrons reshape.
 
@@ -34,8 +35,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 16:25 BST — Arrow head-scale hover ghost on the canvas.
+2026-09-16 18:16 BST — Mixed cap / join chip hover ghost (cap and join only).
 
 ## Next recommended
 
-Mixed cap / join chip hover ghost (cap and join only, without dash).
+Sides hover ghost on mixed polygons / stars.
