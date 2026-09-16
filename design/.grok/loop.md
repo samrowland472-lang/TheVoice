@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Corner-radius hover ghost on mixed rectangles.
-2. Mixed fill-rule chip hover ghost on paths with holes.
+1. Mixed fill-rule chip hover ghost on paths with holes.
 
 ## Done
+
+- Corner-radius hover ghost on mixed rectangles: mixed radius chips hover or focus a phosphor overlay that rebuilds each selected rectangle with that chip’s `radius`. Dragging the Radius slider paints the same overlay. `strokeGhost.radius` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-rect outlines are skipped so only those corners reshape.
 
 - Sides hover ghost on mixed polygons / stars: mixed sides chips hover or focus a phosphor overlay that rebuilds each selected polygon or star with that chip’s `sides`. Dragging the Sides slider paints the same overlay. `strokeGhost.sides` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-polygon/star outlines are skipped so only those contours reshape.
 
@@ -38,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 19:20 BST — Sides hover ghost on mixed polygons / stars.
+2026-09-16 23:20 BST — Corner-radius hover ghost on mixed rectangles.
 
 ## Next recommended
 
-Corner-radius hover ghost on mixed rectangles.
+Mixed fill-rule chip hover ghost on paths with holes.

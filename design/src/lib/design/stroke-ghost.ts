@@ -14,6 +14,7 @@ export type StrokeGhost = {
   miterLimit?: number;
   headScale?: number;
   sides?: number;
+  radius?: number;
 } | null;
 
 export function applyStrokeGhost(n: DesignNode, ghost: StrokeGhost): DesignNode {
@@ -58,6 +59,7 @@ export function drawStrokeGhosts(
     if (!raw.visible || !isOutlineNode(raw)) continue;
     if (ghost.headScale != null && raw.kind !== "arrow") continue;
     if (ghost.sides != null && raw.kind !== "polygon" && raw.kind !== "star") continue;
+    if (ghost.radius != null && raw.kind !== "rect") continue;
     const n = applyStrokeGhost(raw, ghost);
     ctx.save();
     const c = nodeCenter(n);
