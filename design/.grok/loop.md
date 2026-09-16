@@ -21,10 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Arrow / polygon / star specific stroke chips (arrowhead scale, side count) without dropping shared dash.
-2. Per-kind stroke preview chips that unify dash offset / miter from one outline onto the rest of a mixed pick.
+1. Per-kind stroke preview chips that unify dash offset / miter from one outline onto the rest of a mixed pick.
 
 ## Done
+
+- Arrow / polygon / star stroke chips: Sides sliders + chips write onto polygons and stars only; Head scale sliders + chips write onto arrows only. Shared dash / cap / join / offset / miter stay on the Stroke inspector. Arrows paint and export as heads (headScale), not rounded rects.
 
 - Mixed dash offset + miter on mixed-kind outline picks: Stroke inspector now lists every selected path, rectangle, ellipse, line, polygon, star, and arrow. Offset and Miter sliders dash when values disagree, write onto all outline ids, paint via lineDashOffset + miterLimit, and export stroke-dashoffset / stroke-miterlimit with cap, join, and dasharray.
 
@@ -62,8 +63,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-15 22:20 BST — Mixed dash offset + miter on mixed-kind outline picks (rect + path + line + ellipse).
+2026-09-16 02:20 BST — Arrow head scale + polygon/star side chips without dropping shared dash.
 
 ## Next recommended
 
-Arrow / polygon / star specific stroke chips (arrowhead scale, side count) without dropping shared dash.
+Per-kind stroke preview chips that unify dash offset / miter from one outline onto the rest of a mixed pick.
