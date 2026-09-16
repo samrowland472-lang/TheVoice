@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Per-kind width hover ghost on the canvas (same pattern as rhythm preview).
+1. Per-kind offset / miter hover ghost (same pattern as width).
+2. Arrow heads as true paths on canvas (not a mid-line stub).
 
 ## Done
+
+- Per-kind width hover ghost: mixed outline picks show width chips (`hair` or `w N`). Hover or focus paints a phosphor ghost stroke on every selected outline at that width. Click stamps `strokeWidth`. Rhythm chips already ghost dash / cap / join the same way.
 
 - Mixed-kind dash / cap / join on SVG export: stroked nodes emit `stroke-dasharray`, `stroke-dashoffset`, `stroke-linecap`, `stroke-linejoin`, and `stroke-miterlimit`. Canvas / PNG use the same dash, cap, join, and miter. Polygon, star, and arrow export as true paths so their rhythm survives SVG.
 
@@ -35,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 12:28 BST — SVG export writes dash / cap / join on polygons, stars, and arrows.
+2026-09-16 13:35 BST — Per-kind width hover ghost on the canvas.
 
 ## Next recommended
 
-Per-kind width hover ghost on the canvas.
+Per-kind offset / miter hover ghost.
