@@ -21,9 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Per-kind stroke preview chips that unify dash offset / miter from one outline onto the rest of a mixed pick.
+1. Per-kind stroke preview chips that unify dash / cap / join from one outline onto the rest of a mixed pick.
 
 ## Done
+
+- Mixed dash-offset + miter preview chips: when a mixed outline pick disagrees on offset or miter, each selected path/rect/ellipse/line/polygon/star/arrow shows a chip; clicking stamps that outline’s offset or miter onto the rest. Sides still write onto polygons/stars only; head scale onto arrows only. Arrows paint and export as heads.
 
 - Arrow / polygon / star stroke chips: Sides sliders + chips write onto polygons and stars only; Head scale sliders + chips write onto arrows only. Shared dash / cap / join / offset / miter stay on the Stroke inspector. Arrows paint and export as heads (headScale), not rounded rects.
 
@@ -63,8 +65,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 02:20 BST — Arrow head scale + polygon/star side chips without dropping shared dash.
+2026-09-16 04:25 BST — Offset / miter unify chips on mixed outline picks.
 
 ## Next recommended
 
-Per-kind stroke preview chips that unify dash offset / miter from one outline onto the rest of a mixed pick.
+Per-kind stroke preview chips that unify dash / cap / join from one outline onto the rest of a mixed pick.

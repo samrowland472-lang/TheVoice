@@ -23,3 +23,10 @@ test("mixed stroke keeps dash and adds sides / head chips", () => {
   assert.match(dash, /arrow head scale mixed/);
   assert.match(inspector, /MixedPathDash/);
 });
+
+test("mixed dash offset and miter chips stamp onto every outline", () => {
+  assert.match(dash, /Unify dash offset/);
+  assert.match(dash, /Unify miter/);
+  assert.match(dash, /strokeDashOffset: off/);
+  assert.match(dash, /miterLimit: m/);
+});
