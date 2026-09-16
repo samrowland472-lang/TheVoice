@@ -3,6 +3,7 @@ import { degToRad, nodeCenter } from "./geometry";
 import { hitNode, nodeLocalPoint } from "./hit";
 import { tracePath } from "./path-curve";
 import { canvasShadowParams } from "./shadow";
+import { arrowPoints } from "./shape-to-path";
 import { layoutTextLines } from "./text-layout";
 import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Shadow, type Viewport } from "./types";
 
@@ -61,6 +62,17 @@ function polygonPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
     const py = cy + ry * Math.sin(a);
     if (i === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function arrowPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, headScale = 1) {
+  const pts = arrowPoints(w, h, headScale);
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i]!;
+    if (i === 0) ctx.moveTo(x + p.x, y + p.y);
+    else ctx.lineTo(x + p.x, y + p.y);
   }
   ctx.closePath();
 }
@@ -145,6 +157,9 @@ function fillSilhouette(ctx: CanvasRenderingContext2D, n: DesignNode) {
       break;
     case "star":
       starPath(ctx, n.x, n.y, n.w, n.h, "sides" in n ? (n.sides as number) ?? 5 : 5);
+      break;
+    case "arrow":
+      arrowPath(ctx, n.x, n.y, n.w, n.h, "headScale" in n ? (n.headScale as number) ?? 1 : 1);
       break;
     default:
       roundRect(ctx, n.x, n.y, n.w, n.h, 0);
@@ -309,6 +324,9 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
         break;
       case "star":
         starPath(ctx, n.x, n.y, n.w, n.h, n.sides ?? 5);
+        break;
+      case "arrow":
+        arrowPath(ctx, n.x, n.y, n.w, n.h, n.headScale ?? 1);
         break;
       default:
         roundRect(ctx, n.x, n.y, n.w, n.h, 0);
