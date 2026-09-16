@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Per-kind offset / miter hover ghost (same pattern as width).
-2. Arrow heads as true paths on canvas (not a mid-line stub).
+1. Arrow heads as true paths on canvas (not a mid-line stub).
+2. Ghost preview while dragging width / offset / miter sliders.
 
 ## Done
+
+- Per-kind offset / miter hover ghost: mixed offset and miter chips hover or focus a phosphor overlay on every selected outline using that chip’s dash offset or miter limit. Width, dash, cap, join, and rhythm chips use the same overlay. Click still stamps the field.
 
 - Per-kind width hover ghost: mixed outline picks show width chips (`hair` or `w N`). Hover or focus paints a phosphor ghost stroke on every selected outline at that width. Click stamps `strokeWidth`. Rhythm chips already ghost dash / cap / join the same way.
 
@@ -38,8 +40,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 13:35 BST — Per-kind width hover ghost on the canvas.
+2026-09-16 13:55 BST — Per-kind offset / miter hover ghost on the canvas.
 
 ## Next recommended
 
-Per-kind offset / miter hover ghost.
+Arrow heads as true paths on canvas.
