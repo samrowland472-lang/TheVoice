@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Arrow heads as true paths on canvas (not a mid-line stub).
-2. Ghost preview while dragging width / offset / miter sliders.
+1. Ghost preview while dragging width / offset / miter sliders.
+2. Arrow head-scale hover ghost on the canvas.
 
 ## Done
+
+- Arrow heads as true paths on canvas: drawNode and fill silhouettes use `arrowPath` built from `arrowPoints(w, h, headScale)`. Export, boolean ops, and stroke ghosts share the same contour, so head scale changes the chevron instead of painting a rectangle.
 
 - Per-kind offset / miter hover ghost: mixed offset and miter chips hover or focus a phosphor overlay on every selected outline using that chip’s dash offset or miter limit. Width, dash, cap, join, and rhythm chips use the same overlay. Click still stamps the field.
 
@@ -40,8 +42,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 13:55 BST — Per-kind offset / miter hover ghost on the canvas.
+2026-09-16 14:20 BST — Arrow heads as true paths on canvas.
 
 ## Next recommended
 
-Arrow heads as true paths on canvas.
+Ghost preview while dragging width / offset / miter sliders.
