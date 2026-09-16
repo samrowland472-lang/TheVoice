@@ -2,6 +2,7 @@ import { partitionPathHoles, pathFillRule } from "./fill-rule";
 import { variationSettings } from "./fonts";
 import { aabb } from "./geometry";
 import { pathD } from "./path-curve";
+import { shapeContour } from "./shape-to-path";
 import { drawDocument } from "./render";
 import { canvasShadowParams } from "./shadow";
 import type { DesignDocument, DesignNode, PathNode, Shadow, TextNode } from "./types";
@@ -41,12 +42,12 @@ export function svgStrokeStyle(
     const off = n.strokeDashOffset ?? 0;
     if (off) parts.push(` stroke-dashoffset="${off}"`);
   }
-  const cap = n.lineCap ?? "butt";
-  if (cap !== "butt") parts.push(` stroke-linecap="${cap}"`);
-  const join = n.lineJoin ?? "miter";
-  if (join !== "miter") parts.push(` stroke-linejoin="${join}"`);
-  const miter = n.miterLimit ?? 10;
-  if (join === "miter" && miter !== 10) parts.push(` stroke-miterlimit="${miter}"`);
+  const cap = n.lineCap ?? "round";
+  parts.push(` stroke-linecap="${cap}"`);
+  const join = n.lineJoin ?? "round";
+  parts.push(` stroke-linejoin="${join}"`);
+  const miter = n.miterLimit ?? 4;
+  if (join === "miter") parts.push(` stroke-miterlimit="${miter}"`);
   return parts.join("");
 }
 
@@ -139,6 +140,11 @@ function nodeSvg(n: DesignNode): string {
   }
   if (n.kind === "line") {
     return `<line x1="${n.x}" y1="${n.y + n.h / 2}" x2="${n.x + n.w}" y2="${n.y + n.h / 2}" stroke="${esc(n.stroke === "transparent" ? fill : n.stroke)}" stroke-width="${Math.max(n.strokeWidth, 1)}"${svgStrokeStyle(n)}${opacity}${rot}${shadowAttr(n)}/>`;
+  }
+  if (n.kind === "polygon" || n.kind === "star" || n.kind === "arrow") {
+    const { points, closed } = shapeContour(n);
+    const d = pathD(n.x, n.y, points, closed);
+    return `<path d="${esc(d)}" fill="${esc(fill)}"${stroke}${opacity}${rot}${shadowAttr(n)}/>`;
   }
   return `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}"${stroke}${opacity}${rot}${shadowAttr(n)}/>`;
 }
