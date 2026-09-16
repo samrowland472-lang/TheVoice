@@ -82,6 +82,20 @@ function starPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number
   ctx.closePath();
 }
 
+export function applyStrokeStyle(ctx: CanvasRenderingContext2D, n: DesignNode) {
+  const dash = n.strokeDash ?? 0;
+  if (dash > 0) {
+    ctx.setLineDash([dash, dash]);
+    ctx.lineDashOffset = n.strokeDashOffset ?? 0;
+  } else {
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+  }
+  ctx.lineCap = n.lineCap ?? "butt";
+  ctx.lineJoin = n.lineJoin ?? "miter";
+  ctx.miterLimit = n.miterLimit ?? 10;
+}
+
 function fillSilhouette(ctx: CanvasRenderingContext2D, n: DesignNode) {
   ctx.fillStyle = "#000";
   if (isText(n)) {
@@ -272,8 +286,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
       if (n.strokeWidth > 0 && n.stroke !== "transparent") {
         ctx.strokeStyle = n.stroke;
         ctx.lineWidth = n.strokeWidth;
-        ctx.lineJoin = "round";
-        ctx.lineCap = "round";
+        applyStrokeStyle(ctx, n);
         ctx.stroke();
       }
     }
@@ -307,6 +320,7 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode, livePaint?: { id
     if (n.strokeWidth > 0 && n.stroke !== "transparent") {
       ctx.strokeStyle = n.stroke;
       ctx.lineWidth = n.strokeWidth;
+      applyStrokeStyle(ctx, n);
       ctx.stroke();
     }
   }
