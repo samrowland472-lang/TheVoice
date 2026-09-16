@@ -3,6 +3,7 @@ import { nodeCenter, rotatePoint } from "./geometry";
 import { hasHandle } from "./path-curve";
 import { clipMany, type ClipOp } from "./polygon-clip";
 import { groupIslandsNested as groupIslands } from "./island-group";
+import { arrowPoints } from "./shape-to-path";
 import { splitSelfOverlapping as splitFigureEight } from "./winding-pass";
 import type { DesignNode, PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
@@ -99,15 +100,7 @@ function starLocal(n: DesignNode, points = 5): PathPoint[] {
 }
 
 function arrowLocal(n: DesignNode): PathPoint[] {
-  return [
-    { x: 0, y: n.h * 0.35 },
-    { x: n.w * 0.62, y: n.h * 0.35 },
-    { x: n.w * 0.62, y: 0 },
-    { x: n.w, y: n.h / 2 },
-    { x: n.w * 0.62, y: n.h },
-    { x: n.w * 0.62, y: n.h * 0.65 },
-    { x: 0, y: n.h * 0.65 },
-  ];
+  return arrowPoints(n.w, n.h, "headScale" in n ? (n.headScale as number) ?? 1 : 1);
 }
 
 function flattenLocal(pts: PathPoint[], steps = 8): PathPoint[] {
