@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Per-kind stroke preview chips that unify dash / cap / join from one outline onto the rest of a mixed pick.
+1. Per-kind width chips that stamp one outline’s stroke width onto the rest of a mixed pick.
+2. Mixed-kind dash preview on the canvas itself (ghost dash overlay while hovering a rhythm chip).
 
 ## Done
+
+- Per-kind dash / cap / join preview chips: when a mixed outline pick disagrees on dash, cap, or join, each selected path/rect/ellipse/line/polygon/star/arrow shows chips plus a combined rhythm chip. Clicking stamps that outline’s dash, cap, and/or join onto every outline in the pick. Offset and miter chips still stamp those fields. Sides write onto polygons/stars only; head scale onto arrows only. Arrows paint and export as heads (`headScale`).
 
 - Mixed dash-offset + miter preview chips: when a mixed outline pick disagrees on offset or miter, each selected path/rect/ellipse/line/polygon/star/arrow shows a chip; clicking stamps that outline’s offset or miter onto the rest. Sides still write onto polygons/stars only; head scale onto arrows only. Arrows paint and export as heads.
 
@@ -65,8 +68,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 04:25 BST — Offset / miter unify chips on mixed outline picks.
+2026-09-16 09:10 BST — Per-kind dash / cap / join unify chips on mixed outline picks.
 
 ## Next recommended
 
-Per-kind stroke preview chips that unify dash / cap / join from one outline onto the rest of a mixed pick.
+Per-kind width chips that stamp one outline’s stroke width onto the rest of a mixed pick.
