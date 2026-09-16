@@ -31,6 +31,25 @@ function shadowAttr(n: DesignNode): string {
   return ` filter="url(#${svgFilterId(n.id)})"`;
 }
 
+export function svgStrokeStyle(
+  n: Pick<DesignNode, "strokeDash" | "strokeDashOffset" | "lineCap" | "lineJoin" | "miterLimit">,
+): string {
+  const parts: string[] = [];
+  const dash = n.strokeDash ?? 0;
+  if (dash > 0) {
+    parts.push(` stroke-dasharray="${dash} ${dash}"`);
+    const off = n.strokeDashOffset ?? 0;
+    if (off) parts.push(` stroke-dashoffset="${off}"`);
+  }
+  const cap = n.lineCap ?? "butt";
+  if (cap !== "butt") parts.push(` stroke-linecap="${cap}"`);
+  const join = n.lineJoin ?? "miter";
+  if (join !== "miter") parts.push(` stroke-linejoin="${join}"`);
+  const miter = n.miterLimit ?? 10;
+  if (join === "miter" && miter !== 10) parts.push(` stroke-miterlimit="${miter}"`);
+  return parts.join("");
+}
+
 export function rasterize(
   doc: DesignDocument,
   scale = 1,
@@ -73,10 +92,10 @@ export function downloadPrintPdf(doc: DesignDocument) {
 
 function esc(s: string) {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """);
 }
 
 function nodeSvg(n: DesignNode): string {
@@ -85,7 +104,7 @@ function nodeSvg(n: DesignNode): string {
   const rot = n.rotation ? ` transform="rotate(${n.rotation} ${n.x + n.w / 2} ${n.y + n.h / 2})"` : "";
   const stroke =
     n.strokeWidth > 0 && n.stroke !== "transparent"
-      ? ` stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"`
+      ? ` stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${svgStrokeStyle(n)}`
       : "";
   if (n.kind === "path") {
     const p = n as PathNode;
@@ -119,7 +138,7 @@ function nodeSvg(n: DesignNode): string {
     return `<text x="${tx}" y="${t.y + t.fontSize}" fill="${esc(fill)}" font-size="${t.fontSize}" font-weight="${t.fontWeight}" font-family="${esc(t.fontFamily)}" text-anchor="${anchor}"${track}${axes}${caseAttr}${opacity}${rot}${shadowAttr(n)}>${esc(copy)}</text>`;
   }
   if (n.kind === "line") {
-    return `<line x1="${n.x}" y1="${n.y + n.h / 2}" x2="${n.x + n.w}" y2="${n.y + n.h / 2}" stroke="${esc(n.stroke === "transparent" ? fill : n.stroke)}" stroke-width="${Math.max(n.strokeWidth, 1)}"${opacity}${rot}${shadowAttr(n)}/>`;
+    return `<line x1="${n.x}" y1="${n.y + n.h / 2}" x2="${n.x + n.w}" y2="${n.y + n.h / 2}" stroke="${esc(n.stroke === "transparent" ? fill : n.stroke)}" stroke-width="${Math.max(n.strokeWidth, 1)}"${svgStrokeStyle(n)}${opacity}${rot}${shadowAttr(n)}/>`;
   }
   return `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}"${stroke}${opacity}${rot}${shadowAttr(n)}/>`;
 }
