@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Drag rulers to place guides (canvas rulers still missing).
-2. Print-mark toggle in inspector / top bar drawing crop marks on canvas.
+1. Print-mark toggle in inspector / top bar drawing crop marks on canvas (verify live overlay).
+2. Guide inspector list polish if canvas rulers already suffice.
 
 ## Done
 
@@ -43,11 +43,12 @@ Auth OFF, DB OFF.
 - Arrow head-scale hover ghost.
 - Slider drag ghosts (partial; now wired on canvas).
 - Arrow heads as true paths on canvas.
+- Canvas rulers + drag-to-place guides: `drawRulers` / `drawDocGuides` wired on the artboard. Pull the top ruler for a horizontal guide, left ruler for a vertical. Drag a guide to move it; drop on the ruler or off the board to delete. SVG `esc()` and typecheck holes in export/render/ai-panel fixed.
 
 ## Iteration
 
-2026-09-17 15:35 BST — Inspector guide drag + T/R/B/L bleed on live canvas band.
+2026-09-17 18:10 BST — Wired canvas rulers and drag-from-ruler guides.
 
 ## Next recommended
 
-Drag rulers to place guides on the artboard.
+Confirm print-mark crop marks draw live on the artboard when the inspector / top-bar toggle is on.
