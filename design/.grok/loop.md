@@ -48,7 +48,7 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 19:20 BST — Live print-mark overlay + inspector / top-bar toggle.
+2026-09-17 19:35 BST — Print-mark toggle draws live crop marks on the artboard.
 
 ## Next recommended
 
