@@ -21,9 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed fill-rule chip hover ghost on paths with holes.
+1. Mixed width / dash / offset slider ghosts still missing hover wiring on some chips — polish if needed.
+2. Present-mode safe-area overlay contrast on dark grounds.
 
 ## Done
+
+- Mixed fill-rule chip hover ghost on paths with holes: two or more holed paths show a Fill rule inspector. Mixed chips hover or focus a phosphor fill overlay that rebuilds each selected path with that chip’s `fillRule` (even-odd punches holes, nonzero keeps islands). Non-path outlines and paths without holes are skipped. `strokeGhost.fillRule` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Canvas `drawStrokeGhosts` now paints the overlay for every ghost field.
 
 - Corner-radius hover ghost on mixed rectangles: mixed radius chips hover or focus a phosphor overlay that rebuilds each selected rectangle with that chip’s `radius`. Dragging the Radius slider paints the same overlay. `strokeGhost.radius` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-rect outlines are skipped so only those corners reshape.
 
@@ -39,8 +42,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-16 23:20 BST — Corner-radius hover ghost on mixed rectangles.
+2026-09-17 01:32 BST — Mixed fill-rule chip hover ghost on holed paths.
 
 ## Next recommended
 
-Mixed fill-rule chip hover ghost on paths with holes.
+Mixed width / dash / offset chip hover ghosts if still unwired; otherwise present-mode safe-area contrast.

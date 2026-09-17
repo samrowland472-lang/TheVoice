@@ -82,3 +82,7 @@ export function strokeRhythmChipLabel(
 ): string {
   return `${dashChipLabel(dash)} · ${cap} · ${join}`;
 }
+
+export function fillRuleChipLabel(rule: "evenodd" | "nonzero"): string {
+  return rule === "evenodd" ? "even-odd" : "nonzero";
+}
