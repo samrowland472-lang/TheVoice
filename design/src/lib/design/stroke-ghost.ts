@@ -15,6 +15,7 @@ export type StrokeGhost = {
   headScale?: number;
   sides?: number;
   radius?: number;
+  fillRule?: "evenodd" | "nonzero";
 } | null;
 
 export function applyStrokeGhost(n: DesignNode, ghost: StrokeGhost): DesignNode {
@@ -60,6 +61,7 @@ export function drawStrokeGhosts(
     if (ghost.headScale != null && raw.kind !== "arrow") continue;
     if (ghost.sides != null && raw.kind !== "polygon" && raw.kind !== "star") continue;
     if (ghost.radius != null && raw.kind !== "rect") continue;
+    if (ghost.fillRule != null && (raw.kind !== "path" || !(raw.holes && raw.holes.length))) continue;
     const n = applyStrokeGhost(raw, ghost);
     ctx.save();
     const c = nodeCenter(n);
@@ -73,6 +75,11 @@ export function drawStrokeGhosts(
       continue;
     }
     const width = Math.max(n.strokeWidth ?? 0, 1);
+    if (ghost.fillRule != null) {
+      ctx.fillStyle = "rgba(63,198,255,0.28)";
+      ctx.globalAlpha = 0.92;
+      ctx.fill(ghost.fillRule === "evenodd" ? "evenodd" : "nonzero");
+    }
     ctx.strokeStyle = "rgba(63,198,255,0.88)";
     ctx.lineWidth = width;
     applyStrokeStyle(ctx, n);
