@@ -21,12 +21,14 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector bleed / print-mark overlay.
+1. Inspector guides / custom bleed per edge.
+2. Command-palette print-mark and safe-area commands.
 
 ## Done
 
-- Mixed shadow chip hover ghosts: hovering a mixed color / blur / offset / spread / inset chip paints a phosphor canvas ghost with that field stamped onto every selected layer (`shadowColor`…`shadowInset` on `StrokeGhost`). Leaves the chip without writing. SVG escape in `export.ts` restored (`&amp;` / `&quot;`).
-- Present-mode and editor safe-area overlay: `drawSafeArea` paints title-safe insets from `safeInsets` after the document. Dark grounds get a dim even-odd veil plus a black then phosphor dual stroke and corner ticks; light grounds invert (white then ink). Present chrome exposes a Safe on/off control. Overlay is live-only (respects `safeArea` store flag).
+- Inspector bleed / print-mark overlay: live bleed band when bleed > 0, crop + registration marks when Print marks is on. Wired `drawSafeArea` onto the artboard (it was unused). Present chrome Safe / Marks toggles. Print PNG export now actually draws crop marks. Prefs persist in localStorage.
+- Mixed shadow chip hover ghosts.
+- Present-mode and editor safe-area overlay.
 - Mixed width / dash / offset slider and chip hover ghosts.
 - Mixed fill-rule chip hover ghost on paths with holes.
 - Corner-radius hover ghost on mixed rectangles.
@@ -38,8 +40,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 05:32 BST — Mixed shadow chip hover ghosts on the artboard.
+2026-09-17 09:20 BST — Inspector bleed / print-mark overlay on the artboard.
 
 ## Next recommended
 
-Inspector bleed / print-mark overlay.
+Inspector guides / custom bleed per edge.
