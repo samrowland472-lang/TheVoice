@@ -79,6 +79,9 @@ export function StudioApp({ id }: { id: string }) {
       { id: "round-corners", label: "Round path corners", group: "Path", run: () => roundSelectedPathCorners() },
       { id: "simplify", label: "Simplify path", group: "Path", run: () => simplifySelectedPath() },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
+      { id: "bleed-none", label: "Bleed none", group: "Print", run: () => s().setBleed(0) },
+      { id: "bleed-3mm", label: "Bleed 3 mm", group: "Print", run: () => s().setBleed(Math.round((3 * 96) / 25.4)) },
+      { id: "bleed-6mm", label: "Bleed 6 mm", group: "Print", run: () => s().setBleed(Math.round((6 * 96) / 25.4)) },
     ];
   }, [navigate]);
 
