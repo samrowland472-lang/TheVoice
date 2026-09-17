@@ -83,3 +83,21 @@ export function drawSafeArea(ctx: CanvasRenderingContext2D, doc: DesignDocument,
   ctx.stroke();
   ctx.restore();
 }
+
+const PREF = "voice-design-safe-area";
+
+export function readSafeAreaPref(): boolean {
+  try {
+    return localStorage.getItem(PREF) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function writeSafeAreaPref(on: boolean) {
+  try {
+    localStorage.setItem(PREF, on ? "1" : "0");
+  } catch {
+    /* blocked */
+  }
+}
