@@ -1,4 +1,4 @@
-import type { DesignDocument } from "./types";
+import type { DesignDocument, Viewport } from "./types";
 
 export type BleedEdges = {
   top: number;
@@ -165,6 +165,111 @@ export function drawDocGuides(ctx: CanvasRenderingContext2D, doc: DesignDocument
     ctx.stroke();
   }
   ctx.restore();
+}
+
+export const RULER_SIZE = 20;
+
+export function hitRulerBand(sx: number, sy: number): "x" | "y" | "corner" | null {
+  const r = RULER_SIZE;
+  if (sx < r && sy < r) return "corner";
+  if (sy < r) return "y";
+  if (sx < r) return "x";
+  return null;
+}
+
+export function hitPersistentGuide(
+  guides: { id: string; axis: "x" | "y"; pos: number }[],
+  docX: number,
+  docY: number,
+  zoom: number,
+): { id: string; axis: "x" | "y" } | null {
+  const slop = 5 / Math.max(zoom, 0.05);
+  let best: { id: string; axis: "x" | "y"; d: number } | null = null;
+  for (const g of guides) {
+    const d = g.axis === "x" ? Math.abs(docX - g.pos) : Math.abs(docY - g.pos);
+    if (d <= slop && (!best || d < best.d)) best = { id: g.id, axis: g.axis, d };
+  }
+  return best ? { id: best.id, axis: best.axis } : null;
+}
+
+/** Screen-space phosphor rulers along the pasteboard edge. */
+export function drawRulers(
+  ctx: CanvasRenderingContext2D,
+  viewport: Viewport,
+  artboard: { width: number; height: number },
+  viewW: number,
+  viewH: number,
+) {
+  const r = RULER_SIZE;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#0c100e";
+  ctx.fillRect(0, 0, viewW, r);
+  ctx.fillRect(0, 0, r, viewH);
+  ctx.strokeStyle = "rgba(63,198,255,0.28)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, r + 0.5);
+  ctx.lineTo(viewW, r + 0.5);
+  ctx.moveTo(r + 0.5, 0);
+  ctx.lineTo(r + 0.5, viewH);
+  ctx.stroke();
+
+  const zoom = Math.max(viewport.zoom, 0.05);
+  const step = niceStep(50 / zoom);
+  ctx.fillStyle = "rgba(63,198,255,0.55)";
+  ctx.strokeStyle = "rgba(63,198,255,0.38)";
+  ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.textBaseline = "middle";
+
+  const x0 = Math.floor(-viewport.x / zoom / step) * step;
+  const x1 = Math.ceil((viewW - viewport.x) / zoom / step) * step;
+  for (let x = x0; x <= x1; x += step) {
+    const sx = viewport.x + x * zoom;
+    if (sx < r - 1 || sx > viewW) continue;
+    ctx.beginPath();
+    ctx.moveTo(sx + 0.5, r);
+    ctx.lineTo(sx + 0.5, r - (x % (step * 2) === 0 ? 10 : 6));
+    ctx.stroke();
+    if (x % (step * 2) === 0) {
+      ctx.textAlign = "center";
+      ctx.fillText(String(Math.round(x)), sx, 7);
+    }
+  }
+
+  const y0 = Math.floor(-viewport.y / zoom / step) * step;
+  const y1 = Math.ceil((viewH - viewport.y) / zoom / step) * step;
+  ctx.textAlign = "center";
+  for (let y = y0; y <= y1; y += step) {
+    const sy = viewport.y + y * zoom;
+    if (sy < r - 1 || sy > viewH) continue;
+    ctx.beginPath();
+    ctx.moveTo(r, sy + 0.5);
+    ctx.lineTo(r - (y % (step * 2) === 0 ? 10 : 6), sy + 0.5);
+    ctx.stroke();
+    if (y % (step * 2) === 0) {
+      ctx.save();
+      ctx.translate(7, sy);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(String(Math.round(y)), 0, 0);
+      ctx.restore();
+    }
+  }
+
+  ctx.fillStyle = "#0c100e";
+  ctx.fillRect(0, 0, r, r);
+  ctx.strokeStyle = "rgba(63,198,255,0.28)";
+  ctx.strokeRect(0.5, 0.5, r - 1, r - 1);
+  ctx.restore();
+  void artboard;
+}
+
+function niceStep(raw: number) {
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1))));
+  const n = raw / mag;
+  if (n < 2) return mag;
+  if (n < 5) return 2 * mag;
+  return 5 * mag;
 }
 
 const PREF = "voice-design-print-marks";
