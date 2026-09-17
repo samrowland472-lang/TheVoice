@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Drag existing guides from the inspector list.
-2. Inspector T/R/B/L bleed fields wired to live asymmetric band.
+1. Drag rulers to place guides (canvas rulers still missing).
+2. Print-mark toggle in inspector / top bar drawing crop marks on canvas.
 
 ## Done
 
+- Inspector guide list: add V/H, drag the axis handle to move, numeric pos, clear. Live dashed guides on the artboard. T/R/B/L bleed fields + None/3 mm/6 mm chips; `setBleed` / `setBleedEdges` write per-edge pads; live bleed band drawn on canvas.
 - Bleed preset polish: inspector None / 3 mm / 6 mm chips highlight the live uniform bleed; `setBleed` writes matching `bleedEdges`; command palette uses `bleedMmToPx`.
 - Command-palette bleed presets (none / 3 mm / 6 mm). Inspector chips match. `setBleed` writes uniform `bleedEdges`. 96 CSS-dpi millimetre conversion in `print-marks.ts`.
 - Drag rulers to place guides. Top ruler pulls a horizontal guide; left ruler pulls a vertical guide. Drag a guide to move it; drop back on the ruler or off the board to delete. Persistent cyan dashed guides draw on the artboard. Phosphor tick rulers in screen space.
@@ -45,8 +46,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 15:20 BST — Inspector bleed chips + `setBleed` writes uniform `bleedEdges`.
+2026-09-17 15:35 BST — Inspector guide drag + T/R/B/L bleed on live canvas band.
 
 ## Next recommended
 
-Drag existing guides from the inspector list.
+Drag rulers to place guides on the artboard.
