@@ -26,6 +26,7 @@ Auth OFF, DB OFF.
 
 ## Done
 
+- Bleed preset polish: inspector None / 3 mm / 6 mm chips highlight the live uniform bleed; `setBleed` writes matching `bleedEdges`; command palette uses `bleedMmToPx`.
 - Command-palette bleed presets (none / 3 mm / 6 mm). Inspector chips match. `setBleed` writes uniform `bleedEdges`. 96 CSS-dpi millimetre conversion in `print-marks.ts`.
 - Drag rulers to place guides. Top ruler pulls a horizontal guide; left ruler pulls a vertical guide. Drag a guide to move it; drop back on the ruler or off the board to delete. Persistent cyan dashed guides draw on the artboard. Phosphor tick rulers in screen space.
 - Command palette print-mark and safe-area commands (show / hide / on / off). Prefs persist. Canvas and print PNG draw crop marks + safe area. Inspector T/R/B/L bleed fields and print-mark toggle. Broken SVG `esc()` literals and typecheck holes fixed.
@@ -44,7 +45,7 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 14:25 BST — Command-palette bleed presets (3 mm / 6 mm / none).
+2026-09-17 15:20 BST — Inspector bleed chips + `setBleed` writes uniform `bleedEdges`.
 
 ## Next recommended
 
