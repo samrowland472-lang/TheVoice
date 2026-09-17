@@ -21,29 +21,31 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed width / dash / offset slider ghosts still missing hover wiring on some chips — polish if needed.
-2. Present-mode safe-area overlay contrast on dark grounds.
+1. Present-mode safe-area overlay contrast on dark grounds.
+2. Mixed shadow chip hover ghosts.
 
 ## Done
 
-- Mixed fill-rule chip hover ghost on paths with holes: two or more holed paths show a Fill rule inspector. Mixed chips hover or focus a phosphor fill overlay that rebuilds each selected path with that chip’s `fillRule` (even-odd punches holes, nonzero keeps islands). Non-path outlines and paths without holes are skipped. `strokeGhost.fillRule` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Canvas `drawStrokeGhosts` now paints the overlay for every ghost field.
+- Mixed width / dash / offset slider and chip hover ghosts: Stroke inspector sliders (width, dash, offset, miter, sides, head) paint a phosphor overlay while dragging. Mixed chips for width, dash, offset, cap, join, miter, sides, and head hover or focus the same overlay with only that field. `strokeGhost` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Canvas `drawStrokeGhosts` now runs on the live selection after `drawDocument`.
 
-- Corner-radius hover ghost on mixed rectangles: mixed radius chips hover or focus a phosphor overlay that rebuilds each selected rectangle with that chip’s `radius`. Dragging the Radius slider paints the same overlay. `strokeGhost.radius` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-rect outlines are skipped so only those corners reshape.
+- Mixed fill-rule chip hover ghost on paths with holes.
 
-- Sides hover ghost on mixed polygons / stars: mixed sides chips hover or focus a phosphor overlay that rebuilds each selected polygon or star with that chip’s `sides`. Dragging the Sides slider paints the same overlay. `strokeGhost.sides` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-polygon/star outlines are skipped so only those contours reshape.
+- Corner-radius hover ghost on mixed rectangles.
 
-- Mixed cap / join chip hover ghost: cap chips set `strokeGhost` to `{ lineCap }` only and join chips set `{ lineJoin }` only — no dash piggyback. Hover, focus, and leave/blur clear the ephemeral overlay. Canvas draws `drawStrokeGhosts` for the current selection. Width / dash / offset / miter sliders and chips, plus arrow head-scale, use the same overlay. `strokeGhost` is not written to localStorage and clears on select change.
+- Sides hover ghost on mixed polygons / stars.
 
-- Arrow head-scale hover ghost: mixed head chips hover or focus a phosphor overlay on selected arrows using that chip’s `headScale`. Dragging the Head slider paints the same overlay. `strokeGhost.headScale` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Non-arrow outlines are skipped so only chevrons reshape.
+- Mixed cap / join chip hover ghost.
 
-- Slider drag ghosts: width, dash, offset, and miter range sliders paint a phosphor overlay on selected outlines while dragging. Mixed width / offset / miter / dash chips hover the same overlay. `strokeGhost` is ephemeral (cleared on select change) and not written to localStorage.
+- Arrow head-scale hover ghost.
 
-- Arrow heads as true paths on canvas: drawNode and fill silhouettes use `arrowPath` built from `arrowPoints(w, h, headScale)`. Export, boolean ops, and stroke ghosts share the same contour, so head scale changes the chevron instead of painting a rectangle.
+- Slider drag ghosts (partial; now wired on canvas).
+
+- Arrow heads as true paths on canvas.
 
 ## Iteration
 
-2026-09-17 01:32 BST — Mixed fill-rule chip hover ghost on holed paths.
+2026-09-17 04:14 BST — Mixed width / dash / offset / cap / join slider and chip hover ghosts wired to canvas.
 
 ## Next recommended
 
-Mixed width / dash / offset chip hover ghosts if still unwired; otherwise present-mode safe-area contrast.
+Present-mode safe-area overlay contrast on dark grounds.
