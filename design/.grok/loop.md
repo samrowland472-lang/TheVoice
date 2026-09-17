@@ -21,31 +21,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present-mode safe-area overlay contrast on dark grounds.
-2. Mixed shadow chip hover ghosts.
+1. Mixed shadow chip hover ghosts.
+2. Inspector bleed / print-mark overlay.
 
 ## Done
 
-- Mixed width / dash / offset slider and chip hover ghosts: Stroke inspector sliders (width, dash, offset, miter, sides, head) paint a phosphor overlay while dragging. Mixed chips for width, dash, offset, cap, join, miter, sides, and head hover or focus the same overlay with only that field. `strokeGhost` is ephemeral (cleared on select change, pointer leave, blur) and not written to localStorage. Canvas `drawStrokeGhosts` now runs on the live selection after `drawDocument`.
-
+- Present-mode and editor safe-area overlay: `drawSafeArea` paints title-safe insets from `safeInsets` after the document. Dark grounds get a dim even-odd veil plus a black then phosphor dual stroke and corner ticks; light grounds invert (white then ink). Present chrome exposes a Safe on/off control. Overlay is live-only (respects `safeArea` store flag).
+- Mixed width / dash / offset slider and chip hover ghosts.
 - Mixed fill-rule chip hover ghost on paths with holes.
-
 - Corner-radius hover ghost on mixed rectangles.
-
 - Sides hover ghost on mixed polygons / stars.
-
 - Mixed cap / join chip hover ghost.
-
 - Arrow head-scale hover ghost.
-
 - Slider drag ghosts (partial; now wired on canvas).
-
 - Arrow heads as true paths on canvas.
 
 ## Iteration
 
-2026-09-17 04:14 BST — Mixed width / dash / offset / cap / join slider and chip hover ghosts wired to canvas.
+2026-09-17 05:08 BST — Present-mode safe-area overlay contrast on dark grounds.
 
 ## Next recommended
 
-Present-mode safe-area overlay contrast on dark grounds.
+Mixed shadow chip hover ghosts.
