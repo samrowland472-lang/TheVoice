@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Mixed shadow chip hover ghosts.
-2. Inspector bleed / print-mark overlay.
+1. Inspector bleed / print-mark overlay.
 
 ## Done
 
+- Mixed shadow chip hover ghosts: hovering a mixed color / blur / offset / spread / inset chip paints a phosphor canvas ghost with that field stamped onto every selected layer (`shadowColor`…`shadowInset` on `StrokeGhost`). Leaves the chip without writing. SVG escape in `export.ts` restored (`&amp;` / `&quot;`).
 - Present-mode and editor safe-area overlay: `drawSafeArea` paints title-safe insets from `safeInsets` after the document. Dark grounds get a dim even-odd veil plus a black then phosphor dual stroke and corner ticks; light grounds invert (white then ink). Present chrome exposes a Safe on/off control. Overlay is live-only (respects `safeArea` store flag).
 - Mixed width / dash / offset slider and chip hover ghosts.
 - Mixed fill-rule chip hover ghost on paths with holes.
@@ -38,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 05:08 BST — Present-mode safe-area overlay contrast on dark grounds.
+2026-09-17 05:32 BST — Mixed shadow chip hover ghosts on the artboard.
 
 ## Next recommended
 
-Mixed shadow chip hover ghosts.
+Inspector bleed / print-mark overlay.
