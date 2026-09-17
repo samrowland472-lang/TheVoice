@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Print-mark toggle in inspector / top bar drawing crop marks on canvas (verify live overlay).
-2. Guide inspector list polish if canvas rulers already suffice.
+1. Guide inspector list polish if canvas rulers already suffice.
+2. Present-mode Safe / Marks chrome if live editor overlays already suffice.
 
 ## Done
 
+- Print-mark toggle in inspector + top bar (Crop) draws live crop / registration marks on the artboard. Bleed None/3 mm/6 mm chips and T/R/B/L fields write `bleedEdges`. Command palette Show/Hide print marks. Print PNG export draws crop marks on paper pad. Prefs persist. Safe-area overlay wired onto the live canvas.
 - Inspector guide list: add V/H, drag the axis handle to move, numeric pos, clear. Live dashed guides on the artboard. T/R/B/L bleed fields + None/3 mm/6 mm chips; `setBleed` / `setBleedEdges` write per-edge pads; live bleed band drawn on canvas.
 - Bleed preset polish: inspector None / 3 mm / 6 mm chips highlight the live uniform bleed; `setBleed` writes matching `bleedEdges`; command palette uses `bleedMmToPx`.
 - Command-palette bleed presets (none / 3 mm / 6 mm). Inspector chips match. `setBleed` writes uniform `bleedEdges`. 96 CSS-dpi millimetre conversion in `print-marks.ts`.
@@ -47,8 +48,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 18:10 BST — Wired canvas rulers and drag-from-ruler guides.
+2026-09-17 19:20 BST — Live print-mark overlay + inspector / top-bar toggle.
 
 ## Next recommended
 
-Confirm print-mark crop marks draw live on the artboard when the inspector / top-bar toggle is on.
+Guide inspector list polish if canvas rulers already suffice.
