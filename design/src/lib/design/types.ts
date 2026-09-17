@@ -152,6 +152,13 @@ export interface ShapeNode extends BaseNode {
 
 export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | ShapeNode;
 
+export interface BleedEdges {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
 export interface Artboard {
   width: number;
   height: number;
@@ -159,6 +166,7 @@ export interface Artboard {
   name: string;
   formatId: string;
   bleed?: number;
+  bleedEdges?: BleedEdges;
 }
 
 export interface DesignDocument {
