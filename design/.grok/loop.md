@@ -21,35 +21,18 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide inspector list polish if canvas rulers already suffice.
-2. Present-mode Safe / Marks chrome if live editor overlays already suffice.
+1. Present-mode Safe / Marks chrome if live editor overlays already suffice.
+2. Guide snap-to-object when dragging from the inspector list.
 
 ## Done
 
-- Print-mark toggle in inspector + top bar (Crop) draws live crop / registration marks on the artboard. Bleed None/3 mm/6 mm chips and T/R/B/L fields write `bleedEdges`. Command palette Show/Hide print marks. Print PNG export draws crop marks on paper pad. Prefs persist. Safe-area overlay wired onto the live canvas.
-- Inspector guide list: add V/H, drag the axis handle to move, numeric pos, clear. Live dashed guides on the artboard. T/R/B/L bleed fields + None/3 mm/6 mm chips; `setBleed` / `setBleedEdges` write per-edge pads; live bleed band drawn on canvas.
-- Bleed preset polish: inspector None / 3 mm / 6 mm chips highlight the live uniform bleed; `setBleed` writes matching `bleedEdges`; command palette uses `bleedMmToPx`.
-- Command-palette bleed presets (none / 3 mm / 6 mm). Inspector chips match. `setBleed` writes uniform `bleedEdges`. 96 CSS-dpi millimetre conversion in `print-marks.ts`.
-- Drag rulers to place guides. Top ruler pulls a horizontal guide; left ruler pulls a vertical guide. Drag a guide to move it; drop back on the ruler or off the board to delete. Persistent cyan dashed guides draw on the artboard. Phosphor tick rulers in screen space.
-- Command palette print-mark and safe-area commands (show / hide / on / off). Prefs persist. Canvas and print PNG draw crop marks + safe area. Inspector T/R/B/L bleed fields and print-mark toggle. Broken SVG `esc()` literals and typecheck holes fixed.
-- Inspector guides + custom bleed per edge: T/R/B/L fields, uniform slider, live asymmetric bleed band, persistent dashed guides, print-mark toggle in inspector and top bar. Print PNG uses per-edge paper pads and draws crop marks.
-- Inspector bleed / print-mark overlay: live bleed band when bleed > 0, crop + registration marks when Print marks is on. Wired `drawSafeArea` onto the artboard (it was unused). Present chrome Safe / Marks toggles. Print PNG export now actually draws crop marks. Prefs persist in localStorage.
-- Mixed shadow chip hover ghosts.
-- Present-mode and editor safe-area overlay.
-- Mixed width / dash / offset slider and chip hover ghosts.
-- Mixed fill-rule chip hover ghost on paths with holes.
-- Corner-radius hover ghost on mixed rectangles.
-- Sides hover ghost on mixed polygons / stars.
-- Mixed cap / join chip hover ghost.
-- Arrow head-scale hover ghost.
-- Slider drag ghosts (partial; now wired on canvas).
-- Arrow heads as true paths on canvas.
-- Canvas rulers + drag-to-place guides: `drawRulers` / `drawDocGuides` wired on the artboard. Pull the top ruler for a horizontal guide, left ruler for a vertical. Drag a guide to move it; drop on the ruler or off the board to delete. SVG `esc()` and typecheck holes in export/render/ai-panel fixed.
+- Inspector Print + Guides: None/3 mm/6 mm chips highlight uniform bleed; T/R/B/L fields write `bleedEdges`; Print marks checkbox + command palette Show/Hide. Live crop marks and bleed band on the artboard; safe-area inset when Safe area is on. Guide list Add V/H, numeric pos, Del, Clear. Prefs persist. `setBleed` writes matching `bleedEdges`.
+- Print-mark toggle in inspector + top bar (Crop) draws live crop / registration marks on the artboard.
 
 ## Iteration
 
-2026-09-17 19:35 BST — Print-mark toggle draws live crop marks on the artboard.
+2026-09-17 21:20 BST — Inspector Print + Guides wired to live crop marks, bleed band, and persistent guide list.
 
 ## Next recommended
 
-Guide inspector list polish if canvas rulers already suffice.
+Present-mode Safe / Marks chrome if live editor overlays already suffice.
