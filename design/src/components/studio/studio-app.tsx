@@ -9,6 +9,7 @@ import {
   roundSelectedPathCorners,
   simplifySelectedPath,
 } from "@/lib/design/offset-actions";
+import { bleedMmToPx } from "@/lib/design/print-marks";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { CommandPalette, type CommandItem } from "./command-palette";
@@ -80,8 +81,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "simplify", label: "Simplify path", group: "Path", run: () => simplifySelectedPath() },
       { id: "home", label: "Back to templates", group: "File", run: () => void navigate({ to: "/" }) },
       { id: "bleed-none", label: "Bleed none", group: "Print", run: () => s().setBleed(0) },
-      { id: "bleed-3mm", label: "Bleed 3 mm", group: "Print", run: () => s().setBleed(Math.round((3 * 96) / 25.4)) },
-      { id: "bleed-6mm", label: "Bleed 6 mm", group: "Print", run: () => s().setBleed(Math.round((6 * 96) / 25.4)) },
+      { id: "bleed-3mm", label: "Bleed 3 mm", group: "Print", run: () => s().setBleed(bleedMmToPx(3)) },
+      { id: "bleed-6mm", label: "Bleed 6 mm", group: "Print", run: () => s().setBleed(bleedMmToPx(6)) },
     ];
   }, [navigate]);
 
