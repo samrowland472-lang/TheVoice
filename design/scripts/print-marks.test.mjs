@@ -28,3 +28,11 @@ test("inspector exposes print-mark toggle next to bleed", () => {
   assert.match(inspector, /Print marks/);
   assert.match(inspector, /togglePrintMarks/);
 });
+
+test("print marks resolve per-edge bleed", () => {
+  assert.match(marks, /export function resolveBleed/);
+  assert.match(marks, /bleedEdges/);
+  assert.match(marks, /edges\.left/);
+  assert.match(inspector, /BleedFields/);
+  assert.match(inspector, /Add vertical/);
+});
