@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Command-palette print-mark and safe-area commands.
-2. Drag rulers to place guides.
+1. Drag rulers to place guides.
+2. Command-palette bleed presets (3mm / 6mm / none).
 
 ## Done
 
+- Command palette print-mark and safe-area commands (show / hide / on / off). Prefs persist. Canvas and print PNG draw crop marks + safe area. Inspector T/R/B/L bleed fields and print-mark toggle. Broken SVG `esc()` literals and typecheck holes fixed.
 - Inspector guides + custom bleed per edge: T/R/B/L fields, uniform slider, live asymmetric bleed band, persistent dashed guides, print-mark toggle in inspector and top bar. Print PNG uses per-edge paper pads and draws crop marks.
 - Inspector bleed / print-mark overlay: live bleed band when bleed > 0, crop + registration marks when Print marks is on. Wired `drawSafeArea` onto the artboard (it was unused). Present chrome Safe / Marks toggles. Print PNG export now actually draws crop marks. Prefs persist in localStorage.
 - Mixed shadow chip hover ghosts.
@@ -41,8 +42,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 11:20 BST — Inspector guides and per-edge bleed.
+2026-09-17 13:40 BST — Command-palette print marks and safe area.
 
 ## Next recommended
 
-Command-palette print-mark and safe-area commands.
+Drag rulers to place guides.
