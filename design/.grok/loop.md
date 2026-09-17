@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Command-palette bleed presets (3mm / 6mm / none).
-2. Drag existing guides from the inspector list.
+1. Drag existing guides from the inspector list.
+2. Inspector T/R/B/L bleed fields wired to live asymmetric band.
 
 ## Done
 
+- Command-palette bleed presets (none / 3 mm / 6 mm). Inspector chips match. `setBleed` writes uniform `bleedEdges`. 96 CSS-dpi millimetre conversion in `print-marks.ts`.
 - Drag rulers to place guides. Top ruler pulls a horizontal guide; left ruler pulls a vertical guide. Drag a guide to move it; drop back on the ruler or off the board to delete. Persistent cyan dashed guides draw on the artboard. Phosphor tick rulers in screen space.
 - Command palette print-mark and safe-area commands (show / hide / on / off). Prefs persist. Canvas and print PNG draw crop marks + safe area. Inspector T/R/B/L bleed fields and print-mark toggle. Broken SVG `esc()` literals and typecheck holes fixed.
 - Inspector guides + custom bleed per edge: T/R/B/L fields, uniform slider, live asymmetric bleed band, persistent dashed guides, print-mark toggle in inspector and top bar. Print PNG uses per-edge paper pads and draws crop marks.
@@ -43,8 +44,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-17 14:10 BST — Drag rulers to place guides.
+2026-09-17 14:25 BST — Command-palette bleed presets (3 mm / 6 mm / none).
 
 ## Next recommended
 
-Command-palette bleed presets (3mm / 6mm / none).
+Drag existing guides from the inspector list.
