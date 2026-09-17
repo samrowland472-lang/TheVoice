@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { CommandPalette, type CommandItem } from "./command-palette";
 import { AiPanel } from "./ai-panel";
 import { CanvasStage } from "./canvas-stage";
+import { RulerLayer } from "./ruler-layer";
 import { Inspector } from "./inspector";
 import { LayersPanel } from "./layers-panel";
 import { MixedInk } from "./mixed-ink";
@@ -108,7 +109,10 @@ export function StudioApp({ id }: { id: string }) {
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <ToolRail />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <CanvasStage />
+          <div className="relative min-h-0 flex-1">
+            <CanvasStage />
+            <RulerLayer />
+          </div>
           <PaintDock />
         </div>
         <aside className="hidden w-[280px] shrink-0 flex-col border-l border-border bg-surface md:flex">
