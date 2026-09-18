@@ -21,25 +21,19 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Click-active color/dash chip to clear per-guide override (fall back to axis look).
-2. Guide labels in the ruler ticks.
+1. Guide labels in the ruler ticks.
+2. Guide color tokens beyond cyan / ice / phosphor.
 
 ## Done
 
-- Per-guide color + dash in the Print list: cyan / ice / phosphor dots and dash / tight / solid chips write `guide.color` / `guide.dash`. Axis V/H look row still sets the default. Canvas strokes use the override; selected stay phosphor; locked use a tight dash; hidden stay off the board and skip hit-test. Names, L / H, and Del stay on the row. Command palette “Reset guide colors” and “Distribute selected guides evenly”.
-- Per-guide dash override: Print list D / T / S chips write `guide.dash` (dash / tight / solid).
-- Per-guide color override: Print list color dots write `guide.color`.
-- Guide labels / names: Print list name field next to position; empty falls back to V/H + pos. Names draw on the artboard.
-- Guide color / style per axis: Print inspector V/H color dots and dash chips. Looks persist in localStorage.
-- Distribute selected guides evenly: Print **Even** spaces 3+ selected (or all) same-axis guides between first and last.
-- Guide lock / hide: Print list L / H chips. Locked refuse drag, numeric move, Delete, and Clear. Hidden leave the artboard and hit-test.
-- Multi-guide select + nudge, pair spacing, distance readout, snap-to-object.
-- Present-mode Safe / Marks chrome and inspector Print bleed / crop marks.
+- Click-active per-guide color or dash chip clears the override (`color` / `dash` deleted) so the stroke falls back to the V/H axis look. Print list still writes overrides on first click. Axis look row, names, L / H, Del stay on the row. Command palette Reset guide colors / dashes / Clear guide names.
+- Per-guide color + dash in the Print list.
+- Guide labels / names, lock / hide, distribute evenly, pair spacing.
 
 ## Iteration
 
-2026-09-18 19:25 BST — Per-guide color dots and dash chips in Print; canvas draws look, lock dash, labels, skip hidden.
+2026-09-18 20:08 BST — Click an active color or dash chip to drop the per-guide override.
 
 ## Next recommended
 
-Click-active color/dash chip to clear the override and fall back to the axis look.
+Guide labels in the ruler ticks.
