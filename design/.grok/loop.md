@@ -21,19 +21,19 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide labels in the ruler ticks.
-2. Guide color tokens beyond cyan / ice / phosphor.
+1. Guide color tokens beyond cyan / ice / phosphor.
 
 ## Done
 
+- Guide labels in the ruler ticks — each visible guide paints its name (or V/H + pos) on the matching ruler band, with a cyan/ice tick; hidden guides stay off the rulers and the board.
 - Click-active per-guide color or dash chip clears the override (`color` / `dash` deleted) so the stroke falls back to the V/H axis look. Print list still writes overrides on first click. Axis look row, names, L / H, Del stay on the row. Command palette Reset guide colors / dashes / Clear guide names.
 - Per-guide color + dash in the Print list.
 - Guide labels / names, lock / hide, distribute evenly, pair spacing.
 
 ## Iteration
 
-2026-09-18 20:08 BST — Click an active color or dash chip to drop the per-guide override.
+2026-09-18 22:10 BST — Guide names on ruler ticks.
 
 ## Next recommended
 
-Guide labels in the ruler ticks.
+Guide color tokens beyond cyan / ice / phosphor.

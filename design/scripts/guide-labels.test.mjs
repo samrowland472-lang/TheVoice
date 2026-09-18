@@ -30,6 +30,11 @@ test("canvas draws guide names", () => {
   assert.match(rulers, /if \(g\.hidden\) continue/);
 });
 
+test("ruler ticks carry guide names", () => {
+  assert.match(rulers, /drawGuideRulerLabels/);
+  assert.match(rulers, /drawGuideRulerLabels\(ctx, doc\.guides/);
+});
+
 test("inspector exposes a name field", () => {
   assert.match(inspector, /guide name/);
   assert.match(inspector, /renameGuide/);
