@@ -4,7 +4,28 @@ export type Guide = {
   pos: number;
   locked?: boolean;
   hidden?: boolean;
+  label?: string;
 };
+
+export function sanitizeGuideLabel(raw: string): string {
+  return raw.replace(/\s+/g, " ").trim().slice(0, 32);
+}
+
+export function guideDisplayName(g: { axis: "x" | "y"; pos: number; label?: string }): string {
+  const named = sanitizeGuideLabel(g.label ?? "");
+  if (named) return named;
+  const axis = g.axis === "x" ? "V" : "H";
+  const pos = Number.isFinite(g.pos) ? String(Math.round(g.pos * 10) / 10) : "0";
+  return `${axis} ${pos}`;
+}
+
+export function clearGuideLabels(guides: Guide[]): Guide[] {
+  return guides.map((g) => {
+    if (!g.label) return g;
+    const { label: _drop, ...rest } = g;
+    return rest;
+  });
+}
 
 export function toggleGuideIds(current: string[], ids: string[]): string[] {
   const next = new Set(current);
