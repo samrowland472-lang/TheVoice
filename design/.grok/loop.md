@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide color tokens beyond cyan / ice / phosphor.
+1. Guide dash chips on the same Print row as color (solid / dash / tight).
+2. Named guide labels editable in the Print list.
 
 ## Done
 
+- Guide color tokens beyond cyan / ice / phosphor: mint, amber, magenta, violet, bone. Axis V/H look rows in Print. Per-guide swatch cycles tokens; right-click clears override. Command palette Reset guide colors / dashes.
 - Guide labels in the ruler ticks — each visible guide paints its name (or V/H + pos) on the matching ruler band, with a cyan/ice tick; hidden guides stay off the rulers and the board.
 - Click-active per-guide color or dash chip clears the override (`color` / `dash` deleted) so the stroke falls back to the V/H axis look. Print list still writes overrides on first click. Axis look row, names, L / H, Del stay on the row. Command palette Reset guide colors / dashes / Clear guide names.
 - Per-guide color + dash in the Print list.
@@ -32,8 +34,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 22:10 BST — Guide names on ruler ticks.
+2026-09-19 00:25 BST — Guide color tokens (mint / amber / magenta / violet / bone).
 
 ## Next recommended
 
-Guide color tokens beyond cyan / ice / phosphor.
+Guide dash chips on the Print row.
