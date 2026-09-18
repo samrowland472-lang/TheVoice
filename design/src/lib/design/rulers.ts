@@ -1,4 +1,5 @@
 import type { DesignDocument, Viewport } from "./types";
+import { formatGuideProbe, type GuideProbe } from "./snap-guide";
 
 export const RULER = 20;
 
@@ -53,6 +54,7 @@ export function drawDocGuides(
   w: number,
   h: number,
   live?: GuideDrag | null,
+  probe?: GuideProbe | null,
 ) {
   const guides = [...(doc.guides ?? [])];
   if (live) {
@@ -79,6 +81,32 @@ export function drawDocGuides(
       ctx.lineTo(w, y);
     }
     ctx.stroke();
+  }
+  if (live && probe) {
+    const label = formatGuideProbe(probe);
+    ctx.setLineDash([]);
+    ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.textBaseline = "middle";
+    const padX = 6;
+    const boxH = 16;
+    const tw = ctx.measureText(label).width;
+    if (live.axis === "x") {
+      const x = screenFromDoc(live.pos, viewport.x, viewport.zoom);
+      const y = Math.max(RULER + 18, Math.min(h - 24, h * 0.18));
+      ctx.fillStyle = "rgba(12,16,14,0.86)";
+      ctx.fillRect(x + 6, y - boxH / 2, tw + padX * 2, boxH);
+      ctx.fillStyle = "rgba(63,198,255,0.95)";
+      ctx.textAlign = "left";
+      ctx.fillText(label, x + 6 + padX, y);
+    } else {
+      const y = screenFromDoc(live.pos, viewport.y, viewport.zoom);
+      const x = Math.max(RULER + 18, Math.min(w - tw - 20, w * 0.18));
+      ctx.fillStyle = "rgba(12,16,14,0.86)";
+      ctx.fillRect(x, y - boxH - 6, tw + padX * 2, boxH);
+      ctx.fillStyle = "rgba(63,198,255,0.95)";
+      ctx.textAlign = "left";
+      ctx.fillText(label, x + padX, y - boxH / 2 - 6);
+    }
   }
   ctx.restore();
 }
