@@ -66,19 +66,32 @@ export function sanitizeGuideColor(raw: unknown): string | undefined {
   return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : undefined;
 }
 
+export function sanitizeGuideDash(raw: unknown): GuideDash | undefined {
+  return GUIDE_DASHES.includes(raw as GuideDash) ? (raw as GuideDash) : undefined;
+}
+
 export function resolveGuideStroke(
-  guide: { axis: "x" | "y"; color?: string },
+  guide: { axis: "x" | "y"; color?: string; dash?: string },
   looks?: GuideLooks,
 ): GuideAxisLook {
   const axis = resolveGuideLook(guide.axis, looks);
-  const override = sanitizeGuideColor(guide.color);
-  return override ? { ...axis, color: override } : axis;
+  const color = sanitizeGuideColor(guide.color) ?? axis.color;
+  const dash = sanitizeGuideDash(guide.dash) ?? axis.dash;
+  return { color, dash };
 }
 
 export function clearGuideColors<T extends { color?: string }>(guides: T[]): T[] {
   return guides.map((g) => {
     if (!g.color) return g;
     const { color: _drop, ...rest } = g;
+    return rest as T;
+  });
+}
+
+export function clearGuideDashes<T extends { dash?: string }>(guides: T[]): T[] {
+  return guides.map((g) => {
+    if (!g.dash) return g;
+    const { dash: _drop, ...rest } = g;
     return rest as T;
   });
 }
@@ -109,5 +122,31 @@ useDesign.setState({
     };
     saveGuideLooks(next);
     useDesign.setState({ guideLooks: next });
+  },
+  patchGuide: (id: string, patch: Record<string, unknown>) => {
+    const { doc } = useDesign.getState();
+    if (!doc) return;
+    useDesign.setState({
+      doc: {
+        ...doc,
+        guides: (doc.guides ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)),
+      },
+      dirty: true,
+    });
+  },
+  resetGuideDashes: () => {
+    const { doc } = useDesign.getState();
+    if (!doc) return;
+    useDesign.setState({
+      doc: {
+        ...doc,
+        guides: (doc.guides ?? []).map((g) => {
+          if (!g.dash) return g;
+          const { dash: _drop, ...rest } = g;
+          return rest;
+        }),
+      },
+      dirty: true,
+    });
   },
 });
