@@ -21,10 +21,13 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Multi-guide select + nudge with arrow keys.
+1. Guide lock / hide per guide.
+2. Distribute selected guides evenly.
+3. Guide color / style per axis.
 
 ## Done
 
+- Multi-guide select + nudge: click a guide on the board or in Print (Shift to add), phosphor highlight, arrow keys nudge (Shift 10 / Alt 0.5), Delete removes the selection. Adding a guide selects it. Object select clears guide select.
 - Guide pair spacing: consecutive parallel guides draw equal-gap ticks and a numeric gap on the artboard; Print inspector lists V/H pair gaps. Live drag highlights the pair that includes the moving guide.
 - Guide distance readout while dragging: nearest object / artboard / sibling-guide gap on each side, drawn on the artboard and in the Print inspector.
 - Guide snap-to-object: dragging a guide from the inspector V/H handle or on the artboard snaps to object edges/centers and artboard midlines when Snap is on (hold Alt to bypass). Numeric commit in the guide list also snaps.
@@ -34,8 +37,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 09:16 BST — Guide pair spacing ticks between parallel guides.
+2026-09-18 11:10 BST — Multi-guide select + arrow-key nudge.
 
 ## Next recommended
 
-Multi-guide select + nudge with arrow keys.
+Guide lock / hide per guide.
