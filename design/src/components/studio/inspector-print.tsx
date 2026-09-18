@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { BLEED_PRESETS, resolveBleed, uniformBleed } from "@/lib/design/print-marks";
-import { snapGuideToObjects } from "@/lib/design/snap";
+import { snapGuideToObjects } from "@/lib/design/snap-guide";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { Field, Section } from "./inspector-parts";

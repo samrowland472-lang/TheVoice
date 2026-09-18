@@ -8,7 +8,7 @@ import {
   hitRulerBand,
   type GuideDrag,
 } from "@/lib/design/rulers";
-import { snapGuideToObjects } from "@/lib/design/snap";
+import { snapGuideToObjects } from "@/lib/design/snap-guide";
 import { useDesign } from "@/lib/design/store";
 
 export function RulerLayer() {
