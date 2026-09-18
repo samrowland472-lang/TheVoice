@@ -7,8 +7,10 @@ import {
   guideProbe,
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
+import { canDistributeGuides } from "@/lib/design/guide-select";
 import { useDesign } from "@/lib/design/store";
 import "@/lib/design/guide-live";
+import "@/lib/design/guide-distribute";
 import { cn } from "@/lib/utils";
 import { Field, Section } from "./inspector-parts";
 import { NumField } from "./num-field";
@@ -23,6 +25,9 @@ export function InspectorPrint() {
   const moveGuide = useDesign((s) => s.moveGuide);
   const removeGuide = useDesign((s) => s.removeGuide);
   const clearGuides = useDesign((s) => s.clearGuides);
+  const guideSelection = useDesign((s) => s.guideSelection) as string[] | undefined;
+  const selectGuides = useDesign((s) => s.selectGuides);
+  const distributeSelectedGuides = useDesign((s) => s.distributeSelectedGuides);
   const probe = useDesign((s) => s.guideProbe);
 
   if (!doc) return null;
@@ -73,7 +78,7 @@ export function InspectorPrint() {
         </div>
       </Section>
       <Section title="Guides">
-        <div className="mb-2 grid grid-cols-3 gap-1">
+        <div className="mb-2 grid grid-cols-4 gap-1">
           <button
             type="button"
             className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
@@ -99,6 +104,18 @@ export function InspectorPrint() {
           >
             Clear
           </button>
+          <button
+            type="button"
+            disabled={!canDistributeGuides(guides, guideSelection ?? [])}
+            className={cn(
+              "h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !canDistributeGuides(guides, guideSelection ?? []) && "opacity-40",
+            )}
+            title="Space selected guides of the same axis evenly between the first and last"
+            onClick={() => distributeSelectedGuides()}
+          >
+            Even
+          </button>
         </div>
         {probe ? (
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
@@ -113,7 +130,14 @@ export function InspectorPrint() {
         ) : (
           <ul className="space-y-1">
             {guides.map((g) => (
-              <li key={g.id} className="flex items-center gap-1">
+              <li
+                key={g.id}
+                className={cn(
+                  "flex items-center gap-1 rounded-[6px] px-0.5",
+                  (guideSelection ?? []).includes(g.id) && "bg-phosphor/10",
+                )}
+                onClick={(e) => selectGuides?.([g.id], e.shiftKey)}
+              >
                 <GuideDragHandle guide={g} />
                 <NumField
                   className="field min-w-0 flex-1 font-mono"
