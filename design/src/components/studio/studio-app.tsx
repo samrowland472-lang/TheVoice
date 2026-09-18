@@ -70,6 +70,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "undo", label: "Undo", group: "Edit", hint: "Cmd+Z", run: () => s().undo() },
       { id: "fit", label: "Fit artboard", group: "View", hint: "0", run: () => s().requestFit() },
       { id: "present", label: "Present artboard", group: "View", run: () => s().togglePresent() },
+      { id: "safe-area", label: "Show / hide safe area", group: "View", run: () => s().toggleSafeArea() },
+      { id: "print-marks", label: "Show / hide print marks", group: "Print", run: () => s().togglePrintMarks() },
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
       { id: "pen", label: "Pen", group: "Tools", hint: "P", run: () => s().setTool("pen") },
       { id: "knife", label: "Knife — cut a path segment", group: "Tools", hint: "K", run: () => s().setTool("knife") },
