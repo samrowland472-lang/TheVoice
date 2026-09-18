@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const snapSrc = readFileSync(new URL("../src/lib/design/snap.ts", import.meta.url), "utf8");
+const snapSrc = readFileSync(new URL("../src/lib/design/snap-guide.ts", import.meta.url), "utf8");
 const inspector = readFileSync(new URL("../src/components/studio/inspector-print.tsx", import.meta.url), "utf8");
 const rulers = readFileSync(new URL("../src/components/studio/ruler-layer.tsx", import.meta.url), "utf8");
 
