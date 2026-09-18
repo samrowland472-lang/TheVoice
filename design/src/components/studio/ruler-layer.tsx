@@ -8,8 +8,9 @@ import {
   hitRulerBand,
   type GuideDrag,
 } from "@/lib/design/rulers";
-import { snapGuideToObjects } from "@/lib/design/snap-guide";
+import { guideProbe, snapGuideToObjects } from "@/lib/design/snap-guide";
 import { useDesign } from "@/lib/design/store";
+import "@/lib/design/guide-live";
 
 export function RulerLayer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -37,7 +38,7 @@ export function RulerLayer() {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current);
+    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe);
     if (s.rulers) drawRulers(ctx, s.doc, s.viewport, w, h);
   }
 
@@ -84,6 +85,12 @@ export function RulerLayer() {
         pos = snapGuideToObjects(live.axis, pos, s.doc.nodes, s.doc.artboard).pos;
       }
       live.pos = pos;
+      if (s.doc) {
+        const others = (s.doc.guides ?? [])
+          .filter((g) => g.axis === live.axis && (live.kind === "new" || g.id !== live.id))
+          .map((g) => g.pos);
+        s.setGuideProbe(guideProbe(live.axis, pos, s.doc.nodes, s.doc.artboard, others));
+      }
       paint();
     }
     function onUp(e: PointerEvent) {
@@ -100,6 +107,7 @@ export function RulerLayer() {
         s.moveGuide(live.id, Math.round(live.pos));
       }
       drag.current = null;
+      s.setGuideProbe(null);
       paint();
     }
     window.addEventListener("pointerdown", onDown, true);
