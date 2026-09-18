@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide name field in the Print list (already stored as `label`).
-2. Per-guide color dots next to the dash chips (write `guide.color`).
+1. Per-guide color dots next to the dash chips (write `guide.color`).
+2. Per-guide dash chips in the Print list (write `guide.dash`).
 
 ## Done
 
@@ -42,8 +42,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 16:22 BST — Per-guide dash override.
+2026-09-18 19:15 BST — Print list guide name field wired (renameGuide + canvas labels + Clear guide names). Lock/hide chips restored on the same row.
 
 ## Next recommended
 
-Guide name field in the Print list.
+Per-guide color dots next to the dash chips.
