@@ -20,6 +20,7 @@ export function RulerLayer() {
   const viewport = useDesign((s) => s.viewport);
   const rulers = useDesign((s) => s.rulers);
   const present = useDesign((s) => s.present);
+  useDesign((s) => s.guideSelection);
 
   function paint() {
     const wrap = wrapRef.current;
@@ -38,7 +39,7 @@ export function RulerLayer() {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe);
+    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe, s.guideSelection);
     if (s.rulers) drawRulers(ctx, s.doc, s.viewport, w, h);
   }
 
@@ -64,6 +65,7 @@ export function RulerLayer() {
       if (!existing && !band) return;
       e.preventDefault();
       if (existing) {
+        s.selectGuides([existing.id], e.shiftKey);
         drag.current = { kind: "move", id: existing.id, axis: existing.axis, pos: existing.pos };
       } else if (band === "top") {
         drag.current = { kind: "new", axis: "y", pos: docFromScreen(sc.y, s.viewport.y, s.viewport.zoom) };
