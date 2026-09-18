@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { BLEED_PRESETS, resolveBleed, uniformBleed } from "@/lib/design/print-marks";
+import { snapGuideToObjects } from "@/lib/design/snap";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { Field, Section } from "./inspector-parts";
@@ -96,12 +98,19 @@ export function InspectorPrint() {
           <ul className="space-y-1">
             {guides.map((g) => (
               <li key={g.id} className="flex items-center gap-1">
-                <span className="w-4 shrink-0 text-[10px] text-phosphor">{g.axis === "x" ? "V" : "H"}</span>
+                <GuideDragHandle guide={g} />
                 <NumField
                   className="field min-w-0 flex-1 font-mono"
                   value={g.pos}
                   aria-label={`${g.axis === "x" ? "vertical" : "horizontal"} guide`}
-                  onCommit={(n) => moveGuide(g.id, n)}
+                  onCommit={(n) => {
+                    const s = useDesign.getState();
+                    if (!s.doc) return;
+                    const next = s.snap
+                      ? snapGuideToObjects(g.axis, n, s.doc.nodes, s.doc.artboard).pos
+                      : n;
+                    moveGuide(g.id, next);
+                  }}
                 />
                 <button
                   type="button"
@@ -117,5 +126,47 @@ export function InspectorPrint() {
         )}
       </Section>
     </>
+  );
+}
+
+function GuideDragHandle({ guide }: { guide: { id: string; axis: "x" | "y"; pos: number } }) {
+  const drag = useRef<{ start: number; origin: number } | null>(null);
+
+  return (
+    <button
+      type="button"
+      className="w-5 shrink-0 cursor-grab rounded-[6px] text-[10px] text-phosphor active:cursor-grabbing"
+      aria-label={`drag ${guide.axis === "x" ? "vertical" : "horizontal"} guide`}
+      title="Drag to move — snaps to objects"
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        drag.current = {
+          start: guide.axis === "x" ? e.clientX : e.clientY,
+          origin: guide.pos,
+        };
+      }}
+      onPointerMove={(e) => {
+        const live = drag.current;
+        if (!live) return;
+        const s = useDesign.getState();
+        if (!s.doc) return;
+        const zoom = s.viewport.zoom || 1;
+        const raw =
+          live.origin + ((guide.axis === "x" ? e.clientX : e.clientY) - live.start) / zoom;
+        const next =
+          s.snap && !e.altKey
+            ? snapGuideToObjects(guide.axis, raw, s.doc.nodes, s.doc.artboard).pos
+            : raw;
+        s.moveGuide(guide.id, Math.round(next * 10) / 10);
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
+    >
+      {guide.axis === "x" ? "V" : "H"}
+    </button>
   );
 }
