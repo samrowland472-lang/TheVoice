@@ -175,6 +175,12 @@ export interface Guide {
   pos: number;
   locked?: boolean;
   hidden?: boolean;
+  /** Hex override; falls back to the axis look. */
+  color?: string;
+  /** Display name in Print and on the board. */
+  label?: string;
+  /** Stroke pattern override; falls back to the axis look. */
+  dash?: "solid" | "dash" | "tight";
 }
 
 export interface DesignDocument {
