@@ -21,12 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Distribute selected guides evenly.
-2. Guide color / style per axis.
-3. Guide labels / names.
+1. Guide color / style per axis.
+2. Guide labels / names.
 
 ## Done
 
+- Distribute selected guides evenly: Print **Even** spaces 3+ selected (or all) same-axis guides between first and last. Locked stay put; hidden skipped. Command palette “Distribute selected guides evenly”. Click a list row to select (Shift to add).
 - Guide lock / hide: Print list L / H chips. Locked guides refuse drag, numeric move, Delete, and Clear. Hidden guides leave the artboard and hit-test but stay listed. Locked stroke is a tighter dash; selected stay phosphor.
 - Multi-guide select + nudge: click a guide on the board or in Print (Shift to add), phosphor highlight, arrow keys nudge (Shift 10 / Alt 0.5), Delete removes the selection. Adding a guide selects it. Object select clears guide select.
 - Guide pair spacing: consecutive parallel guides draw equal-gap ticks and a numeric gap on the artboard; Print inspector lists V/H pair gaps. Live drag highlights the pair that includes the moving guide.
@@ -38,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 12:12 BST — Guide lock / hide per guide.
+2026-09-18 13:12 BST — Distribute selected guides evenly.
 
 ## Next recommended
 
-Distribute selected guides evenly.
+Guide color / style per axis.
