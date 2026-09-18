@@ -1,5 +1,5 @@
 import type { DesignDocument, Viewport } from "./types";
-import { formatGuideProbe, type GuideProbe } from "./snap-guide";
+import { formatGuideProbe, guidePairs, type GuideProbe } from "./snap-guide";
 
 export const RULER = 20;
 
@@ -82,6 +82,66 @@ export function drawDocGuides(
     }
     ctx.stroke();
   }
+  const pairs = guidePairs(guides);
+  ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(63,198,255,0.55)";
+  ctx.fillStyle = "rgba(63,198,255,0.88)";
+  ctx.lineWidth = 1;
+  ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const livePos = live ? live.pos : null;
+  const liveAxis = live ? live.axis : null;
+  for (const pair of pairs) {
+    const hot =
+      liveAxis === pair.axis &&
+      livePos != null &&
+      (Math.abs(livePos - pair.lo) < 0.2 || Math.abs(livePos - pair.hi) < 0.2);
+    ctx.strokeStyle = hot ? "rgba(196,255,77,0.7)" : "rgba(63,198,255,0.45)";
+    ctx.fillStyle = hot ? "rgba(196,255,77,0.95)" : "rgba(63,198,255,0.88)";
+    const mid = (pair.lo + pair.hi) / 2;
+    const tick = 6;
+    if (pair.axis === "x") {
+      const x0 = screenFromDoc(pair.lo, viewport.x, viewport.zoom);
+      const x1 = screenFromDoc(pair.hi, viewport.x, viewport.zoom);
+      const y = Math.max(RULER + 28, Math.min(h - 36, h * 0.12));
+      ctx.beginPath();
+      ctx.moveTo(x0, y - tick);
+      ctx.lineTo(x0, y + tick);
+      ctx.moveTo(x1, y - tick);
+      ctx.lineTo(x1, y + tick);
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x1, y);
+      ctx.stroke();
+      const label = String(pair.gap);
+      const tw = ctx.measureText(label).width;
+      const cx = screenFromDoc(mid, viewport.x, viewport.zoom);
+      ctx.fillStyle = "rgba(12,16,14,0.82)";
+      ctx.fillRect(cx - tw / 2 - 4, y - 8, tw + 8, 16);
+      ctx.fillStyle = hot ? "rgba(196,255,77,0.95)" : "rgba(63,198,255,0.92)";
+      ctx.fillText(label, cx, y);
+    } else {
+      const y0 = screenFromDoc(pair.lo, viewport.y, viewport.zoom);
+      const y1 = screenFromDoc(pair.hi, viewport.y, viewport.zoom);
+      const x = Math.max(RULER + 28, Math.min(w - 48, w * 0.12));
+      ctx.beginPath();
+      ctx.moveTo(x - tick, y0);
+      ctx.lineTo(x + tick, y0);
+      ctx.moveTo(x - tick, y1);
+      ctx.lineTo(x + tick, y1);
+      ctx.moveTo(x, y0);
+      ctx.lineTo(x, y1);
+      ctx.stroke();
+      const label = String(pair.gap);
+      const tw = ctx.measureText(label).width;
+      const cy = screenFromDoc(mid, viewport.y, viewport.zoom);
+      ctx.fillStyle = "rgba(12,16,14,0.82)";
+      ctx.fillRect(x - tw / 2 - 4, cy - 8, tw + 8, 16);
+      ctx.fillStyle = hot ? "rgba(196,255,77,0.95)" : "rgba(63,198,255,0.92)";
+      ctx.fillText(label, x, cy);
+    }
+  }
+
   if (live && probe) {
     const label = formatGuideProbe(probe);
     ctx.setLineDash([]);
