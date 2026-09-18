@@ -21,29 +21,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Per-guide color dots next to the dash chips (write `guide.color`).
-2. Per-guide dash chips in the Print list (write `guide.dash`).
+1. Click-active color/dash chip to clear per-guide override (fall back to axis look).
+2. Guide labels in the ruler ticks.
 
 ## Done
 
-- Per-guide dash override: Print list D / T / S chips write `guide.dash` (dash / tight / solid). Click the active chip to clear and fall back to the axis look. Canvas uses the override (locked stays a tight lock dash; selected stay phosphor; hidden stay off the board). Command palette “Reset guide dashes”. Persists with the document.
-- Per-guide color override: Print list color dots (cyan / ice / phosphor) write `guide.color` onto the document. Canvas / print-mark strokes use the override, else the axis look. Click the active dot again to clear. Command palette “Reset guide colors”. Hidden guides stay off the board; selected stay phosphor; locked use a tight dash.
-- Guide labels / names: Print list name field next to position; empty falls back to V/H + pos. Names draw on the artboard, persist with the document, command palette “Clear guide names”. Lock / hide chips stay on the same row.
-- Guide color / style per axis: Print inspector V/H color dots (cyan / ice / phosphor) and dash / tight / solid chips. Looks persist in localStorage. Canvas draws each axis in its look; selected stay phosphor; locked use a tight dash; hidden stay off the board. Command palette “Reset guide colors”.
-- Distribute selected guides evenly: Print **Even** spaces 3+ selected (or all) same-axis guides between first and last. Locked stay put; hidden skipped. Command palette “Distribute selected guides evenly”. Click a list row to select (Shift to add).
-- Guide lock / hide: Print list L / H chips. Locked guides refuse drag, numeric move, Delete, and Clear. Hidden guides leave the artboard and hit-test but stay listed. Locked stroke is a tighter dash; selected stay phosphor.
-- Multi-guide select + nudge: click a guide on the board or in Print (Shift to add), phosphor highlight, arrow keys nudge (Shift 10 / Alt 0.5), Delete removes the selection. Adding a guide selects it. Object select clears guide select.
-- Guide pair spacing: consecutive parallel guides draw equal-gap ticks and a numeric gap on the artboard; Print inspector lists V/H pair gaps. Live drag highlights the pair that includes the moving guide.
-- Guide distance readout while dragging: nearest object / artboard / sibling-guide gap on each side, drawn on the artboard and in the Print inspector.
-- Guide snap-to-object: dragging a guide from the inspector V/H handle or on the artboard snaps to object edges/centers and artboard midlines when Snap is on (hold Alt to bypass). Numeric commit in the guide list also snaps.
-- Present-mode Safe / Marks chrome: present bar chips plus S / M shortcuts toggle live safe-area inset and crop / bleed marks. Canvas draws those overlays in editor and present. Prefs persist. Command palette Show / hide.
-- Inspector Print + Guides: None/3 mm/6 mm chips highlight uniform bleed; T/R/B/L fields write `bleedEdges`; Print marks checkbox + command palette Show/Hide. Live crop marks and bleed band on the artboard; safe-area inset when Safe area is on. Guide list Add V/H, numeric pos, Del, Clear. Prefs persist. `setBleed` writes matching `bleedEdges`.
-- Print-mark toggle in inspector + top bar (Crop) draws live crop / registration marks on the artboard.
+- Per-guide color + dash in the Print list: cyan / ice / phosphor dots and dash / tight / solid chips write `guide.color` / `guide.dash`. Axis V/H look row still sets the default. Canvas strokes use the override; selected stay phosphor; locked use a tight dash; hidden stay off the board and skip hit-test. Names, L / H, and Del stay on the row. Command palette “Reset guide colors” and “Distribute selected guides evenly”.
+- Per-guide dash override: Print list D / T / S chips write `guide.dash` (dash / tight / solid).
+- Per-guide color override: Print list color dots write `guide.color`.
+- Guide labels / names: Print list name field next to position; empty falls back to V/H + pos. Names draw on the artboard.
+- Guide color / style per axis: Print inspector V/H color dots and dash chips. Looks persist in localStorage.
+- Distribute selected guides evenly: Print **Even** spaces 3+ selected (or all) same-axis guides between first and last.
+- Guide lock / hide: Print list L / H chips. Locked refuse drag, numeric move, Delete, and Clear. Hidden leave the artboard and hit-test.
+- Multi-guide select + nudge, pair spacing, distance readout, snap-to-object.
+- Present-mode Safe / Marks chrome and inspector Print bleed / crop marks.
 
 ## Iteration
 
-2026-09-18 19:15 BST — Print list guide name field wired (renameGuide + canvas labels + Clear guide names). Lock/hide chips restored on the same row.
+2026-09-18 19:25 BST — Per-guide color dots and dash chips in Print; canvas draws look, lock dash, labels, skip hidden.
 
 ## Next recommended
 
-Per-guide color dots next to the dash chips.
+Click-active color/dash chip to clear the override and fall back to the axis look.
