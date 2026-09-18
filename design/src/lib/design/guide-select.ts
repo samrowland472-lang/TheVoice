@@ -31,3 +31,38 @@ export function nudgeGuidePositions(guides: Guide[], ids: string[], dx: number, 
     return { ...g, pos: Math.round((g.pos + delta) * 10) / 10 };
   });
 }
+
+/**
+ * Space selected guides of the same axis evenly between the first and last.
+ * Hidden guides are ignored. Locked guides keep their position (ends still
+ * act as anchors). Each axis is handled independently. Needs 3+ guides.
+ */
+export function distributeGuidePositions(guides: Guide[], ids: string[]): Guide[] {
+  const pick = ids.length ? new Set(ids) : null;
+  const next = guides.map((g) => ({ ...g }));
+  for (const axis of ["x", "y"] as const) {
+    const group = next
+      .filter((g) => g.axis === axis && !g.hidden && (!pick || pick.has(g.id)))
+      .sort((a, b) => a.pos - b.pos);
+    if (group.length < 3) continue;
+    const lo = group[0].pos;
+    const hi = group[group.length - 1].pos;
+    if (hi === lo) continue;
+    const span = group.length - 1;
+    for (let i = 1; i < group.length - 1; i++) {
+      const g = group[i];
+      if (g.locked) continue;
+      g.pos = Math.round((lo + ((hi - lo) * i) / span) * 10) / 10;
+    }
+  }
+  return next;
+}
+
+export function canDistributeGuides(guides: Guide[], ids: string[]): boolean {
+  const pick = ids.length ? new Set(ids) : null;
+  for (const axis of ["x", "y"] as const) {
+    const n = guides.filter((g) => g.axis === axis && !g.hidden && (!pick || pick.has(g.id))).length;
+    if (n >= 3) return true;
+  }
+  return false;
+}
