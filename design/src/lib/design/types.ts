@@ -169,6 +169,14 @@ export interface Artboard {
   bleedEdges?: BleedEdges;
 }
 
+export interface Guide {
+  id: string;
+  axis: "x" | "y";
+  pos: number;
+  locked?: boolean;
+  hidden?: boolean;
+}
+
 export interface DesignDocument {
   id: string;
   name: string;
@@ -177,7 +185,7 @@ export interface DesignDocument {
   updatedAt: number;
   createdAt: number;
   thumbnail?: string;
-  guides?: { id: string; axis: "x" | "y"; pos: number }[];
+  guides?: Guide[];
   campaignId?: string;
   notes?: string;
 }
