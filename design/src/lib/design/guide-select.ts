@@ -1,4 +1,10 @@
-export type Guide = { id: string; axis: "x" | "y"; pos: number };
+export type Guide = {
+  id: string;
+  axis: "x" | "y";
+  pos: number;
+  locked?: boolean;
+  hidden?: boolean;
+};
 
 export function toggleGuideIds(current: string[], ids: string[]): string[] {
   const next = new Set(current);
@@ -19,7 +25,7 @@ export function nudgeGuidePositions(guides: Guide[], ids: string[], dx: number, 
   if (!ids.length || (!dx && !dy)) return guides;
   const set = new Set(ids);
   return guides.map((g) => {
-    if (!set.has(g.id)) return g;
+    if (!set.has(g.id) || g.locked || g.hidden) return g;
     const delta = g.axis === "x" ? dx : dy;
     if (!delta) return g;
     return { ...g, pos: Math.round((g.pos + delta) * 10) / 10 };
