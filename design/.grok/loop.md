@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide pair spacing (equal-gap ticks between two parallel guides).
-2. Multi-guide select + nudge with arrow keys.
+1. Multi-guide select + nudge with arrow keys.
 
 ## Done
 
+- Guide pair spacing: consecutive parallel guides draw equal-gap ticks and a numeric gap on the artboard; Print inspector lists V/H pair gaps. Live drag highlights the pair that includes the moving guide.
 - Guide distance readout while dragging: nearest object / artboard / sibling-guide gap on each side, drawn on the artboard and in the Print inspector.
 - Guide snap-to-object: dragging a guide from the inspector V/H handle or on the artboard snaps to object edges/centers and artboard midlines when Snap is on (hold Alt to bypass). Numeric commit in the guide list also snaps.
 - Present-mode Safe / Marks chrome: present bar chips plus S / M shortcuts toggle live safe-area inset and crop / bleed marks. Canvas draws those overlays in editor and present. Prefs persist. Command palette Show / hide.
@@ -34,8 +34,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 06:40 BST — Guide distance readout while dragging (canvas + inspector).
+2026-09-18 09:16 BST — Guide pair spacing ticks between parallel guides.
 
 ## Next recommended
 
-Guide pair spacing (equal-gap ticks between two parallel guides).
+Multi-guide select + nudge with arrow keys.
