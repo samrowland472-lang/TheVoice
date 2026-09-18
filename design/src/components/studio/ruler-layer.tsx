@@ -8,6 +8,7 @@ import {
   hitRulerBand,
   type GuideDrag,
 } from "@/lib/design/rulers";
+import { snapGuideToObjects } from "@/lib/design/snap";
 import { useDesign } from "@/lib/design/store";
 
 export function RulerLayer() {
@@ -75,8 +76,14 @@ export function RulerLayer() {
       if (!live) return;
       const sc = loc(e);
       const s = useDesign.getState();
-      if (live.axis === "x") live.pos = docFromScreen(sc.x, s.viewport.x, s.viewport.zoom);
-      else live.pos = docFromScreen(sc.y, s.viewport.y, s.viewport.zoom);
+      let pos =
+        live.axis === "x"
+          ? docFromScreen(sc.x, s.viewport.x, s.viewport.zoom)
+          : docFromScreen(sc.y, s.viewport.y, s.viewport.zoom);
+      if (s.snap && !e.altKey && s.doc) {
+        pos = snapGuideToObjects(live.axis, pos, s.doc.nodes, s.doc.artboard).pos;
+      }
+      live.pos = pos;
       paint();
     }
     function onUp(e: PointerEvent) {
