@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import { BLEED_PRESETS, resolveBleed, uniformBleed } from "@/lib/design/print-marks";
-import { snapGuideToObjects } from "@/lib/design/snap-guide";
+import { formatGuideProbe, guideProbe, snapGuideToObjects } from "@/lib/design/snap-guide";
 import { useDesign } from "@/lib/design/store";
+import "@/lib/design/guide-live";
 import { cn } from "@/lib/utils";
 import { Field, Section } from "./inspector-parts";
 import { NumField } from "./num-field";
@@ -16,6 +17,7 @@ export function InspectorPrint() {
   const moveGuide = useDesign((s) => s.moveGuide);
   const removeGuide = useDesign((s) => s.removeGuide);
   const clearGuides = useDesign((s) => s.clearGuides);
+  const probe = useDesign((s) => s.guideProbe);
 
   if (!doc) return null;
   const edges = resolveBleed(doc);
@@ -92,6 +94,9 @@ export function InspectorPrint() {
             Clear
           </button>
         </div>
+        {probe ? (
+          <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
+        ) : null}
         {guides.length === 0 ? (
           <p className="text-[10px] text-ink-dim">Drag a ruler onto the board, or add a guide here.</p>
         ) : (
@@ -158,12 +163,18 @@ function GuideDragHandle({ guide }: { guide: { id: string; axis: "x" | "y"; pos:
             ? snapGuideToObjects(guide.axis, raw, s.doc.nodes, s.doc.artboard).pos
             : raw;
         s.moveGuide(guide.id, Math.round(next * 10) / 10);
+        const others = (s.doc.guides ?? [])
+          .filter((g: { id: string; axis: "x" | "y"; pos: number }) => g.axis === guide.axis && g.id !== guide.id)
+          .map((g: { pos: number }) => g.pos);
+        s.setGuideProbe(guideProbe(guide.axis, next, s.doc.nodes, s.doc.artboard, others));
       }}
       onPointerUp={() => {
         drag.current = null;
+        useDesign.getState().setGuideProbe(null);
       }}
       onPointerCancel={() => {
         drag.current = null;
+        useDesign.getState().setGuideProbe(null);
       }}
     >
       {guide.axis === "x" ? "V" : "H"}
