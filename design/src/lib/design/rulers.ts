@@ -1,4 +1,5 @@
-import type { DesignDocument, Viewport } from "./types";
+import { guideDisplayName } from "./guide-select";
+import type { DesignDocument, Guide, Viewport } from "./types";
 import { formatGuideProbe, guidePairs, type GuideProbe } from "./snap-guide";
 
 export const RULER = 20;
@@ -70,6 +71,7 @@ export function drawDocGuides(
   ctx.lineWidth = 1;
   ctx.setLineDash([5, 4]);
   for (const g of guides) {
+    if (g.hidden) continue;
     ctx.beginPath();
     if (g.axis === "x") {
       const x = screenFromDoc(g.pos, viewport.x, viewport.zoom);
@@ -237,10 +239,67 @@ export function drawRulers(
     }
   }
 
+  drawGuideRulerLabels(ctx, doc.guides ?? [], viewport, w, h);
+
   ctx.fillStyle = "#0c100e";
   ctx.fillRect(0, 0, RULER, RULER);
   ctx.strokeStyle = "rgba(196,255,77,0.28)";
   ctx.strokeRect(0.5, 0.5, RULER - 1, RULER - 1);
+  ctx.restore();
+}
+
+/** Named (or V/H + pos) captions on the ruler ticks that own each guide. */
+export function drawGuideRulerLabels(
+  ctx: CanvasRenderingContext2D,
+  guides: Guide[],
+  viewport: Viewport,
+  w: number,
+  h: number,
+) {
+  ctx.save();
+  ctx.font = "8px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.textBaseline = "middle";
+  for (const g of guides) {
+    if (g.hidden) continue;
+    const name = guideDisplayName(g);
+    if (g.axis === "x") {
+      const sx = screenFromDoc(g.pos, viewport.x, viewport.zoom);
+      if (sx < RULER + 2 || sx > w - 2) continue;
+      ctx.fillStyle = "rgba(63,198,255,0.95)";
+      ctx.beginPath();
+      ctx.moveTo(sx + 0.5, 1);
+      ctx.lineTo(sx + 0.5, RULER);
+      ctx.strokeStyle = "rgba(63,198,255,0.85)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.textAlign = "left";
+      const tw = Math.min(ctx.measureText(name).width, 72);
+      const lx = Math.min(sx + 3, w - tw - 2);
+      ctx.fillStyle = "rgba(12,16,14,0.78)";
+      ctx.fillRect(lx - 1, 2, tw + 3, RULER - 4);
+      ctx.fillStyle = "rgba(63,198,255,0.95)";
+      ctx.fillText(name, lx, RULER / 2, 72);
+    } else {
+      const sy = screenFromDoc(g.pos, viewport.y, viewport.zoom);
+      if (sy < RULER + 2 || sy > h - 2) continue;
+      ctx.strokeStyle = "rgba(158,231,255,0.85)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(1, sy + 0.5);
+      ctx.lineTo(RULER, sy + 0.5);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(RULER / 2, sy - 3);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "left";
+      const tw = Math.min(ctx.measureText(name).width, 72);
+      ctx.fillStyle = "rgba(12,16,14,0.78)";
+      ctx.fillRect(-1, -6, tw + 3, 12);
+      ctx.fillStyle = "rgba(158,231,255,0.95)";
+      ctx.fillText(name, 0, 0, 72);
+      ctx.restore();
+    }
+  }
   ctx.restore();
 }
 
