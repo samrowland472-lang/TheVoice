@@ -16,7 +16,27 @@ export const GUIDE_COLORS = [
   { id: "cyan", hex: "#3fc6ff" },
   { id: "ice", hex: "#9ee7ff" },
   { id: "phosphor", hex: "#c4ff4d" },
+  { id: "mint", hex: "#7dffb3" },
+  { id: "amber", hex: "#ffc24d" },
+  { id: "magenta", hex: "#ff5ad5" },
+  { id: "violet", hex: "#b48cff" },
+  { id: "bone", hex: "#e8e0d0" },
 ] as const;
+
+export type GuideColorId = (typeof GUIDE_COLORS)[number]["id"];
+
+export function guideColorByHex(hex: string | undefined): (typeof GUIDE_COLORS)[number] | undefined {
+  if (!hex) return undefined;
+  const n = hex.toLowerCase();
+  return GUIDE_COLORS.find((c) => c.hex.toLowerCase() === n);
+}
+
+/** Cycle to the next token. Passing the current token again (active click) returns undefined — clear override. */
+export function cycleGuideColor(current: string | undefined, clickedHex: string): string | undefined {
+  const clicked = clickedHex.toLowerCase();
+  if (current && current.toLowerCase() === clicked) return undefined;
+  return GUIDE_COLORS.find((c) => c.hex.toLowerCase() === clicked)?.hex ?? clickedHex;
+}
 
 export const GUIDE_DASHES: GuideDash[] = ["dash", "tight", "solid"];
 
@@ -140,11 +160,18 @@ useDesign.setState({
     useDesign.setState({
       doc: {
         ...doc,
-        guides: (doc.guides ?? []).map((g) => {
-          if (!g.dash) return g;
-          const { dash: _drop, ...rest } = g;
-          return rest;
-        }),
+        guides: clearGuideDashes(doc.guides ?? []),
+      },
+      dirty: true,
+    });
+  },
+  resetGuideColors: () => {
+    const { doc } = useDesign.getState();
+    if (!doc) return;
+    useDesign.setState({
+      doc: {
+        ...doc,
+        guides: clearGuideColors(doc.guides ?? []),
       },
       dirty: true,
     });
