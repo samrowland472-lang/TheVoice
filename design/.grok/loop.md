@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Per-guide color override.
+1. Per-guide dash override (solid / dash / tight on a single guide).
+2. Guide name field in the Print list (already stored as `label`).
 
 ## Done
 
+- Per-guide color override: Print list color dots (cyan / ice / phosphor) write `guide.color` onto the document. Canvas / print-mark strokes use the override, else the axis look. Click the active dot again to clear. Command palette “Reset guide colors”. Hidden guides stay off the board; selected stay phosphor; locked use a tight dash.
 - Guide labels / names: Print list name field next to position; empty falls back to V/H + pos. Names draw on the artboard, persist with the document, command palette “Clear guide names”. Lock / hide chips stay on the same row.
 - Guide color / style per axis: Print inspector V/H color dots (cyan / ice / phosphor) and dash / tight / solid chips. Looks persist in localStorage. Canvas draws each axis in its look; selected stay phosphor; locked use a tight dash; hidden stay off the board. Command palette “Reset guide colors”.
 - Distribute selected guides evenly: Print **Even** spaces 3+ selected (or all) same-axis guides between first and last. Locked stay put; hidden skipped. Command palette “Distribute selected guides evenly”. Click a list row to select (Shift to add).
@@ -39,8 +41,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 15:40 BST — Guide labels / names.
+2026-09-18 15:50 BST — Per-guide color override.
 
 ## Next recommended
 
-Per-guide color override.
+Per-guide dash override.

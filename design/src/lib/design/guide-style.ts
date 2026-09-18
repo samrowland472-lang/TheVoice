@@ -61,6 +61,28 @@ export function resolveGuideLook(axis: "x" | "y", looks?: GuideLooks): GuideAxis
   return axis === "x" ? src.x : src.y;
 }
 
+export function sanitizeGuideColor(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  return /^#[0-9a-fA-F]{6}$/.test(raw) ? raw : undefined;
+}
+
+export function resolveGuideStroke(
+  guide: { axis: "x" | "y"; color?: string },
+  looks?: GuideLooks,
+): GuideAxisLook {
+  const axis = resolveGuideLook(guide.axis, looks);
+  const override = sanitizeGuideColor(guide.color);
+  return override ? { ...axis, color: override } : axis;
+}
+
+export function clearGuideColors<T extends { color?: string }>(guides: T[]): T[] {
+  return guides.map((g) => {
+    if (!g.color) return g;
+    const { color: _drop, ...rest } = g;
+    return rest as T;
+  });
+}
+
 export function dashArray(dash: GuideDash): number[] {
   if (dash === "solid") return [];
   if (dash === "tight") return [3, 3];

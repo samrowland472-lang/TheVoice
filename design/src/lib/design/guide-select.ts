@@ -5,6 +5,7 @@ export type Guide = {
   locked?: boolean;
   hidden?: boolean;
   label?: string;
+  color?: string;
 };
 
 export function sanitizeGuideLabel(raw: string): string {
