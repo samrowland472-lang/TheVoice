@@ -21,18 +21,19 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide snap-to-object when dragging from the inspector list.
+1. Guide distance readout while dragging (inspector + canvas).
 
 ## Done
 
+- Guide snap-to-object: dragging a guide from the inspector V/H handle or on the artboard snaps to object edges/centers and artboard midlines when Snap is on (hold Alt to bypass). Numeric commit in the guide list also snaps.
 - Present-mode Safe / Marks chrome: present bar chips plus S / M shortcuts toggle live safe-area inset and crop / bleed marks. Canvas draws those overlays in editor and present. Prefs persist. Command palette Show / hide.
 - Inspector Print + Guides: None/3 mm/6 mm chips highlight uniform bleed; T/R/B/L fields write `bleedEdges`; Print marks checkbox + command palette Show/Hide. Live crop marks and bleed band on the artboard; safe-area inset when Safe area is on. Guide list Add V/H, numeric pos, Del, Clear. Prefs persist. `setBleed` writes matching `bleedEdges`.
 - Print-mark toggle in inspector + top bar (Crop) draws live crop / registration marks on the artboard.
 
 ## Iteration
 
-2026-09-18 05:10 BST — Present Safe / Marks chrome; live overlays on the artboard.
+2026-09-18 06:20 BST — Guide snap-to-object from inspector list and ruler drag.
 
 ## Next recommended
 
-Guide snap-to-object when dragging from the inspector list.
+Guide distance readout while dragging (inspector + canvas).
