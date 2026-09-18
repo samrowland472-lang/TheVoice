@@ -102,3 +102,38 @@ export function formatGuideProbe(p: GuideProbe): string {
   const right = p.after == null ? `${b} —` : `${b} ${p.after}`;
   return `${p.pos}  ${left}  ${right}`;
 }
+
+export type GuidePair = {
+  axis: "x" | "y";
+  lo: number;
+  hi: number;
+  gap: number;
+};
+
+/** Consecutive parallel-guide gaps, nearest-neighbour on each axis. */
+export function guidePairs(
+  guides: { axis: "x" | "y"; pos: number }[],
+): GuidePair[] {
+  const out: GuidePair[] = [];
+  for (const axis of ["x", "y"] as const) {
+    const pos = guides
+      .filter((g) => g.axis === axis)
+      .map((g) => g.pos)
+      .sort((a, b) => a - b);
+    const uniq: number[] = [];
+    for (const p of pos) {
+      if (!uniq.length || Math.abs(p - uniq[uniq.length - 1]!) > 0.05) uniq.push(p);
+    }
+    for (let i = 0; i < uniq.length - 1; i++) {
+      const lo = uniq[i]!;
+      const hi = uniq[i + 1]!;
+      const gap = Math.round((hi - lo) * 10) / 10;
+      if (gap > 0.05) out.push({ axis, lo, hi, gap });
+    }
+  }
+  return out;
+}
+
+export function formatGuidePair(p: GuidePair): string {
+  return `${p.axis === "x" ? "V" : "H"} ${p.gap}`;
+}
