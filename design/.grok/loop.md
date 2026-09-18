@@ -21,11 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide color / style per axis.
-2. Guide labels / names.
+1. Guide labels / names.
+2. Per-guide color override.
 
 ## Done
 
+- Guide color / style per axis: Print inspector V/H color dots (cyan / ice / phosphor) and dash / tight / solid chips. Looks persist in localStorage. Canvas draws each axis in its look; selected stay phosphor; locked use a tight dash; hidden stay off the board. Command palette “Reset guide colors”.
 - Distribute selected guides evenly: Print **Even** spaces 3+ selected (or all) same-axis guides between first and last. Locked stay put; hidden skipped. Command palette “Distribute selected guides evenly”. Click a list row to select (Shift to add).
 - Guide lock / hide: Print list L / H chips. Locked guides refuse drag, numeric move, Delete, and Clear. Hidden guides leave the artboard and hit-test but stay listed. Locked stroke is a tighter dash; selected stay phosphor.
 - Multi-guide select + nudge: click a guide on the board or in Print (Shift to add), phosphor highlight, arrow keys nudge (Shift 10 / Alt 0.5), Delete removes the selection. Adding a guide selects it. Object select clears guide select.
@@ -38,8 +39,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-18 13:12 BST — Distribute selected guides evenly.
+2026-09-18 14:20 BST — Guide color / style per axis.
 
 ## Next recommended
 
-Guide color / style per axis.
+Guide labels / names.
