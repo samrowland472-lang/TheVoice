@@ -1,6 +1,12 @@
 import { useRef } from "react";
 import { BLEED_PRESETS, resolveBleed, uniformBleed } from "@/lib/design/print-marks";
-import { formatGuideProbe, guideProbe, snapGuideToObjects } from "@/lib/design/snap-guide";
+import {
+  formatGuidePair,
+  formatGuideProbe,
+  guidePairs,
+  guideProbe,
+  snapGuideToObjects,
+} from "@/lib/design/snap-guide";
 import { useDesign } from "@/lib/design/store";
 import "@/lib/design/guide-live";
 import { cn } from "@/lib/utils";
@@ -96,6 +102,11 @@ export function InspectorPrint() {
         </div>
         {probe ? (
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
+        ) : null}
+        {guidePairs(guides).length ? (
+          <p className="mb-1 font-mono text-[10px] text-ink-dim">
+            {guidePairs(guides).map(formatGuidePair).join("  ·  ")}
+          </p>
         ) : null}
         {guides.length === 0 ? (
           <p className="text-[10px] text-ink-dim">Drag a ruler onto the board, or add a guide here.</p>
