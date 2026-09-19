@@ -86,6 +86,9 @@ export function StudioApp({ id }: { id: string }) {
       { id: "bleed-none", label: "Bleed none", group: "Print", run: () => s().setBleed(0) },
       { id: "bleed-3mm", label: "Bleed 3 mm", group: "Print", run: () => s().setBleed(bleedMmToPx(3)) },
       { id: "bleed-6mm", label: "Bleed 6 mm", group: "Print", run: () => s().setBleed(bleedMmToPx(6)) },
+      { id: "reset-guide-colors", label: "Reset guide colors", group: "Print", run: () => s().resetGuideColors?.() },
+      { id: "reset-guide-dashes", label: "Reset guide dashes", group: "Print", run: () => s().resetGuideDashes?.() },
+      { id: "clear-guide-names", label: "Clear guide names", group: "Print", run: () => s().clearGuideLabels?.() },
     ];
   }, [navigate]);
 
