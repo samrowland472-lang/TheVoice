@@ -21,10 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Persist last-opened document id so a refresh returns to the same artboard.
+1. Campaign pages: jump between sibling artboards without returning to the hub.
 
 ## Done
 
+- Persist last-opened document id; a fresh tab on the hub resumes that artboard. Back to templates stays on the hub for this tab.
+- Opening a template, blank, or saved file writes `voice-design:last-opened:v1`. Deleting that file clears it.
 - Pair captions on the board take the axis look color, and Print V/H chips preview that color on hover.
 - Rail Print hides the guide name field behind a disclosure; click the caption to edit.
 - Restored Print guide rows: lock / hide / del, name, color + dash chips, V/H axis looks.
@@ -38,8 +40,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-19 18:10 BST — Pair captions pick up hovered V/H look color.
+2026-09-19 19:20 BST — Last-opened artboard resumes on a fresh hub visit.
 
 ## Next recommended
 
-Persist last-opened document id so a refresh returns to the same artboard.
+Campaign pages: jump between sibling artboards without returning to the hub.
