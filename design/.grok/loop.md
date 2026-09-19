@@ -21,27 +21,24 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector Print row: compact chip wrap when the panel is narrow.
-2. Bleed edge chips stay visible when the Print panel is collapsed to a rail.
+1. Bleed edge chips stay visible when the Print panel is collapsed to a rail.
+2. Inspector Print compact mode: hide name field under a disclosure when the panel is a rail.
 
 ## Done
 
+- Inspector Print rows wrap on a narrow panel: name + lock/hide/del on the first line, color and dash chips wrap on the second.
+- Axis look rows (V/H default color + dash) wrap the same way; hover previews the stroke on the board.
+- `patchGuide` drops undefined keys; locked guides refuse move/delete; hidden stay off the board and off hit-tests.
+- Board strokes use `resolveGuideStroke` + `dashArray` + `guideLookHover`; selected and locked read thicker; names paint on the stroke.
 - Axis look rows: V/H default color + dash chips with live board hover preview (`guideLookHover`).
 - Restored Print guide rows: name, lock/hide/del, per-guide color + dash chips, hover preview, wrap.
 - Store: `patchGuide` drops undefined keys; locked guides refuse move/delete; print marks toggle.
-- Board strokes use `resolveGuideStroke` + `dashArray`; selected and locked read thicker; names paint on the stroke.
-- Print guide rows wrap: name + lock/hide/del on the first line, color and dash chips wrap on the second so the inspector does not overflow.
-- Restored per-guide color + dash chips with hover preview on the board. Active click clears the override (`patchGuide` drops undefined keys).
-- Guide lock / hide / name field on each Print row. Locked guides refuse move/delete; hidden stay off the board.
-- Guide color hover preview on the board. Hover or focus a Print color swatch and the matching stroke adopts that token until the pointer leaves.
-- Guide dash preview on the board when a Print chip is hovered.
-- Named guide labels on the board stroke and ruler ticks.
 - Guide color tokens: mint, amber, magenta, violet, bone plus cyan / ice / phosphor.
 
 ## Iteration
 
-2026-09-19 11:20 BST — Axis look rows (V/H default color + dash) with live board preview.
+2026-09-19 15:45 BST — Inspector Print row compact chip wrap on a narrow panel.
 
 ## Next recommended
 
-Inspector Print row: compact chip wrap when the panel is narrow.
+Bleed edge chips stay visible when the Print panel is collapsed to a rail.
