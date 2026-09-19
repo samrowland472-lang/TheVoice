@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { BRUSHES } from "./brushes";
+import { campaignPageName, missingStarterFormats } from "./campaign";
 import { formatById } from "./formats";
 import { alignNodes, distributeNodes, explodeSelectedIslands, unionOrientedBox } from "./align";
 import { aabb } from "./geometry";
 import { uid } from "./id";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
-import { deleteDoc, loadBrand, loadDoc, loadIndex, patchIndex, saveBrand, saveDoc } from "./persist";
+import { deleteDoc, loadBrand, loadDoc, loadIndex, patchIndex, saveBrand, saveDoc, saveLastOpenedId } from "./persist";
 import { exportPng } from "./export";
 import { paletteName } from "./palette";
 import { blankDocument, instantiateTemplate } from "./templates";
@@ -58,11 +59,13 @@ export const useDesign = create<any>((set: any, get: any) => ({
   open: (id: string) => {
     const doc = loadDoc(id);
     if (!doc) return;
+    saveLastOpenedId(id);
     set({ doc, selection: [], past: [], future: [], dirty: false, editingText: null, present: false, pathEditHit: null });
   },
   fromTemplate: (templateId: string) => {
     const doc = instantiateTemplate(templateId);
     saveDoc(doc);
+    saveLastOpenedId(doc.id);
     set({ doc, selection: [], past: [], future: [], dirty: false, index: loadIndex() });
     return doc.id;
   },
@@ -70,6 +73,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const fmt = formatById(formatId);
     const doc = blankDocument(formatId, `Untitled ${fmt.label}`);
     saveDoc(doc);
+    saveLastOpenedId(doc.id);
     set({ doc, selection: [], past: [], future: [], dirty: false, index: loadIndex() });
     return doc.id;
   },
@@ -77,9 +81,48 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const { doc } = get();
     if (!doc) return [];
     get().save();
-    return [get().doc.id];
+    const live = get().doc;
+    if (!live) return [];
+    const campaignId = live.campaignId ?? uid("camp");
+    if (!live.campaignId) {
+      const next = { ...live, campaignId, updatedAt: Date.now() };
+      saveDoc(next);
+      set({ doc: next });
+    }
+    const index = loadIndex();
+    const siblings = index.filter((p: ProjectMeta) => p.campaignId === campaignId);
+    const missing = missingStarterFormats(siblings.map((p: ProjectMeta) => p.formatId));
+    const base = live.name;
+    for (const formatId of missing) {
+      const fmt = formatById(formatId);
+      const page = { ...blankDocument(formatId, campaignPageName(base, fmt.label)), campaignId };
+      saveDoc(page);
+    }
+    set({ index: loadIndex(), dirty: false });
+    return loadIndex()
+      .filter((p: ProjectMeta) => p.campaignId === campaignId)
+      .map((p: ProjectMeta) => p.id);
   },
-  addCampaignPage: (formatId: string) => get().fromBlank(formatId),
+  addCampaignPage: (formatId: string) => {
+    const { doc } = get();
+    if (!doc) return get().fromBlank(formatId);
+    get().save();
+    const campaignId = doc.campaignId ?? uid("camp");
+    if (!doc.campaignId) {
+      const tagged = { ...doc, campaignId, updatedAt: Date.now() };
+      saveDoc(tagged);
+      set({ doc: tagged });
+    }
+    const fmt = formatById(formatId);
+    const page = {
+      ...blankDocument(formatId, campaignPageName(get().doc?.name ?? fmt.label, fmt.label)),
+      campaignId,
+    };
+    saveDoc(page);
+    saveLastOpenedId(page.id);
+    set({ doc: page, selection: [], past: [], future: [], dirty: false, index: loadIndex() });
+    return page.id;
+  },
   save: () => {
     const { doc } = get();
     if (!doc) return;
