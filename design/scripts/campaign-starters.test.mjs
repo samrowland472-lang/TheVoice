@@ -10,6 +10,15 @@ test("campaign helpers assign story square banner slots", () => {
   assert.match(src, /x-post/);
   assert.match(src, /function campaignSlot/);
   assert.match(src, /function missingStarterFormats/);
+  assert.match(src, /function campaignPages/);
+});
+
+test("present dots use campaignPages order not hub recency", () => {
+  const chrome = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
+  assert.match(chrome, /campaignPages\(index, live.campaignId\)/);
+  assert.match(chrome, /campaignPages\(index, doc.campaignId\)/);
+  assert.match(chrome, /role="tablist"/);
+  assert.match(chrome, /aria-label="Campaign pages"/);
 });
 
 test("store binds a campaign id and fills missing starter pages", () => {

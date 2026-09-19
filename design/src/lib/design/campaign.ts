@@ -34,3 +34,25 @@ export function campaignPageName(base: string, formatLabel: string): string {
   const stem = base.replace(/\s+(Story|Square|Banner|Untitled)$/i, "").trim() || base;
   return `${stem} · ${formatLabel}`;
 }
+
+const SLOT_RANK: Record<CampaignSlot, number> = {
+  story: 0,
+  square: 1,
+  banner: 2,
+  other: 3,
+};
+
+/** Strip / present order: story → square → banner → other, then id. */
+export function campaignPages<T extends { id: string; campaignId?: string; formatId: string }>(
+  index: T[],
+  campaignId: string | undefined,
+): T[] {
+  if (!campaignId) return [];
+  return index
+    .filter((p) => p.campaignId === campaignId)
+    .sort((a, b) => {
+      const slot = SLOT_RANK[campaignSlot(a.formatId)] - SLOT_RANK[campaignSlot(b.formatId)];
+      if (slot !== 0) return slot;
+      return a.id.localeCompare(b.id);
+    });
+}
