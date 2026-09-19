@@ -143,17 +143,6 @@ useDesign.setState({
     saveGuideLooks(next);
     useDesign.setState({ guideLooks: next });
   },
-  patchGuide: (id: string, patch: Record<string, unknown>) => {
-    const { doc } = useDesign.getState();
-    if (!doc) return;
-    useDesign.setState({
-      doc: {
-        ...doc,
-        guides: (doc.guides ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)),
-      },
-      dirty: true,
-    });
-  },
   resetGuideDashes: () => {
     const { doc } = useDesign.getState();
     if (!doc) return;
