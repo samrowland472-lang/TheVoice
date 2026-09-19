@@ -4,6 +4,7 @@ import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan
 import { toast } from "sonner";
 import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
 import { FORMATS } from "@/lib/design/formats";
+import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
 import { Button } from "@/components/ui/button";
 
@@ -54,7 +55,15 @@ export function TopBar() {
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2 md:gap-2 md:px-3">
-      <Button variant="ghost" size="icon-sm" onClick={() => void navigate({ to: "/" })} aria-label="Back">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={() => {
+          markStayOnHub();
+          void navigate({ to: "/" });
+        }}
+        aria-label="Back"
+      >
         <ArrowLeft className="size-4" />
       </Button>
       <input
