@@ -1,5 +1,6 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { campaignPages } from "@/lib/design/campaign";
 import { FORMATS } from "@/lib/design/formats";
 import { screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
@@ -47,8 +48,16 @@ export function PresentView() {
   const viewport = useDesign((s) => s.viewport);
   if (!doc) return null;
   const live = doc;
-  const pages = live.campaignId ? index.filter((p) => p.campaignId === live.campaignId) : [{ id: live.id, name: live.name }];
+  const pages = live.campaignId
+    ? campaignPages(index, live.campaignId)
+    : [{ id: live.id, name: live.name, formatId: live.artboard.formatId }];
   const i = Math.max(0, pages.findIndex((p) => p.id === live.id));
+
+  function goTo(id: string) {
+    if (!id || id === live.id) return;
+    save();
+    void navigate({ to: "/studio/$id", params: { id } });
+  }
 
   function go(delta: number) {
     const next = pages[i + delta];
@@ -156,10 +165,29 @@ export function PresentView() {
           </span>
         )}
         {pages.length > 1 && (
-          <div className="ml-2 flex gap-1">
+          <div className="ml-2 flex items-center gap-1">
             <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>
               Prev
             </Button>
+            <div className="mx-1 flex items-center gap-1" role="tablist" aria-label="Campaign pages">
+              {pages.map((p, n) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={p.id === live.id}
+                  aria-label={`${p.name ?? shortFormat(p.formatId)} (${n + 1} of ${pages.length})`}
+                  title={p.name ?? shortFormat(p.formatId)}
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full border transition-colors",
+                    p.id === live.id
+                      ? "border-phosphor bg-phosphor"
+                      : "border-ink-faint bg-transparent hover:border-phosphor hover:bg-phosphor/40",
+                  )}
+                  onClick={() => goTo(p.id)}
+                />
+              ))}
+            </div>
             <Button size="sm" variant="ghost" disabled={i >= pages.length - 1} onClick={() => go(1)}>
               Next
             </Button>
@@ -240,9 +268,10 @@ export function CampaignStrip() {
   const index = useDesign((s) => s.index);
   const makeCampaign = useDesign((s) => s.makeCampaign);
   const addCampaignPage = useDesign((s) => s.addCampaignPage);
+  const duplicateCampaignPage = useDesign((s) => s.duplicateCampaignPage);
   const save = useDesign((s) => s.save);
   if (!doc) return null;
-  const pages = doc.campaignId ? index.filter((p) => p.campaignId === doc.campaignId) : [];
+  const pages = campaignPages(index, doc.campaignId);
   const used = new Set(pages.map((p) => p.formatId));
 
   function go(id: string) {
@@ -279,6 +308,17 @@ export function CampaignStrip() {
           {shortFormat(p.formatId)}
         </button>
       ))}
+      <button
+        type="button"
+        className="h-7 shrink-0 rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide text-ink-faint hover:text-phosphor"
+        onClick={() => {
+          const pageId = duplicateCampaignPage();
+          if (pageId) go(pageId);
+        }}
+        aria-label="Duplicate campaign page"
+      >
+        Duplicate
+      </button>
       <select
         className="h-7 rounded-[8px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-ink-dim"
         value=""
