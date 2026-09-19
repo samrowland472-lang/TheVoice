@@ -21,11 +21,11 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide pair captions on the board should pick up the hovered look color.
-2. Persist last-opened document id so a refresh returns to the same artboard.
+1. Persist last-opened document id so a refresh returns to the same artboard.
 
 ## Done
 
+- Pair captions on the board take the axis look color, and Print V/H chips preview that color on hover.
 - Rail Print hides the guide name field behind a disclosure; click the caption to edit.
 - Restored Print guide rows: lock / hide / del, name, color + dash chips, V/H axis looks.
 - Store owns printMarks, bleed edges, patchGuide, renameGuide, hover previews.
@@ -38,8 +38,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-19 17:10 BST — Print rail tucks guide names; look rows restored.
+2026-09-19 18:10 BST — Pair captions pick up hovered V/H look color.
 
 ## Next recommended
 
-Guide pair captions on the board should pick up the hovered look color.
+Persist last-opened document id so a refresh returns to the same artboard.
