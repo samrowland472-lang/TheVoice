@@ -21,6 +21,8 @@ export function RulerLayer() {
   const rulers = useDesign((s) => s.rulers);
   const present = useDesign((s) => s.present);
   useDesign((s) => s.guideSelection);
+  useDesign((s) => s.guideLooks);
+  useDesign((s) => s.guideDashPreview);
 
   function paint() {
     const wrap = wrapRef.current;
