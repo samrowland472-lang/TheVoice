@@ -21,10 +21,15 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Campaign pages: jump between sibling artboards without returning to the hub.
+1. Campaign pages: jump between sibling artboards without returning to the hub. *(shipped this pass)*
+2. Duplicate a campaign page into the same set.
+3. Present mode page dots that match the strip order.
 
 ## Done
 
+- Campaign strip actually tags a set: Campaign creates story + square + banner siblings that share `campaignId`.
+- Add page from the strip stays in the set; chips jump sibling artboards without the hub.
+- Last-opened id is written on open / new / template; hub resumes it unless Back marked stay-on-hub for the tab.
 - Persist last-opened document id; a fresh tab on the hub resumes that artboard. Back to templates stays on the hub for this tab.
 - Opening a template, blank, or saved file writes `voice-design:last-opened:v1`. Deleting that file clears it.
 - Pair captions on the board take the axis look color, and Print V/H chips preview that color on hover.
@@ -40,8 +45,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-19 19:20 BST — Last-opened artboard resumes on a fresh hub visit.
+2026-09-19 19:30 BST — Campaign sets: story + square + banner from the strip, sibling chips on the board.
 
 ## Next recommended
 
-Campaign pages: jump between sibling artboards without returning to the hub.
+Duplicate a campaign page into the same set.
