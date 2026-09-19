@@ -132,8 +132,28 @@ export function hexToRgba(hex: string, alpha: number) {
 
 const looks = loadGuideLooks();
 
+export type GuideLookPreview = { axis: "x" | "y"; color: string } | null;
+
+export function pairCaptionFill(
+  axis: "x" | "y",
+  looks: GuideLooks | undefined,
+  preview: GuideLookPreview,
+  hot: boolean,
+) {
+  const look = resolveGuideLook(axis, looks);
+  const hex =
+    preview && preview.axis === axis && sanitizeGuideColor(preview.color)
+      ? preview.color
+      : look.color;
+  return hexToRgba(hex, hot ? 0.95 : 0.92);
+}
+
 useDesign.setState({
   guideLooks: looks,
+  guideLookPreview: null as GuideLookPreview,
+  setGuideLookPreview: (guideLookPreview: GuideLookPreview) => {
+    useDesign.setState({ guideLookPreview });
+  },
   setGuideLook: (axis: "x" | "y", patch: Partial<GuideAxisLook>) => {
     const cur = ((useDesign.getState() as { guideLooks?: GuideLooks }).guideLooks ?? loadGuideLooks()) as GuideLooks;
     const next: GuideLooks = {
