@@ -21,25 +21,24 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Guide color hover preview on the board (mirror dash hover).
-2. Tighten the Print guide row wrap if chips crowd the inspector.
+1. Tighten the Print guide row wrap if chips crowd the inspector.
+2. Axis look rows (V/H default color + dash) with live board preview.
 
 ## Done
 
-- Guide dash preview on the board when a Print chip is hovered. Hover or focus a per-guide dash chip (solid / dash / tight) and the matching stroke on the artboard adopts that pattern until the pointer leaves. Commit still happens on click; active click / right-click clears the override.
-- Print list restored: V/H axis look rows, per-guide color + dash chips, inline name, lock, hide, Del. Store `patchGuide` drops undefined keys; `renameGuide` / `clearGuideLabels`; locked guides refuse move/delete.
+- Guide color hover preview on the board. Hover or focus a Print color swatch and the matching stroke adopts that token until the pointer leaves. Active click still clears the override.
+- Guide dash preview on the board when a Print chip is hovered.
+- Print list restored: per-guide color + dash chips, inline name, lock, hide, Del. Store `patchGuide` drops undefined keys; `renameGuide` / `clearGuideLabels`; locked guides refuse move/delete.
 - Board strokes use `resolveGuideStroke` + `dashArray`; selected and locked guides read thicker; names paint on the stroke; hidden guides stay off the board.
-- Named guide labels on the board stroke. Print list has an inline name field; blur/Enter commits (32 chars, empty clears).
-- Guide dash chips on the same Print row as color (solid / dash / tight).
+- Named guide labels on the board stroke and ruler ticks.
 - Guide color tokens: mint, amber, magenta, violet, bone plus cyan / ice / phosphor.
-- Guide labels in the ruler ticks.
 - Click-active per-guide color or dash chip clears the override.
 - Guide labels / names, lock / hide, distribute evenly, pair spacing.
 
 ## Iteration
 
-2026-09-19 07:31 BST — Guide dash hover preview on the board + Print chips restored.
+2026-09-19 08:20 BST — Guide color hover preview on the board + Print chips restored.
 
 ## Next recommended
 
-Guide color hover preview on the board when a Print swatch is hovered.
+Tighten the Print guide row wrap if chips crowd the inspector.
