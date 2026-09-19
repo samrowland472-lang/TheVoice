@@ -19,7 +19,14 @@ test("store binds a campaign id and fills missing starter pages", () => {
   assert.match(store, /missingStarterFormats/);
   assert.match(store, /campaignId/);
   assert.match(store, /addCampaignPage/);
+  assert.match(store, /duplicateCampaignPage/);
   assert.match(store, /saveLastOpenedId/);
+});
+
+test("strip can duplicate the open page into the same set", () => {
+  const strip = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
+  assert.match(strip, /duplicateCampaignPage/);
+  assert.match(strip, /Duplicate campaign page/);
 });
 
 test("strip jumps siblings and hub resumes last board unless stay-hub", () => {
