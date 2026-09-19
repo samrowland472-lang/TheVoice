@@ -39,7 +39,7 @@ export function RulerLayer() {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe, s.guideSelection);
+    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe);
     if (s.rulers) drawRulers(ctx, s.doc, s.viewport, w, h);
   }
 
