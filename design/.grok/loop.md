@@ -21,12 +21,13 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Campaign pages: jump between sibling artboards without returning to the hub. *(shipped this pass)*
-2. Duplicate a campaign page into the same set.
-3. Present mode page dots that match the strip order.
+1. Duplicate a campaign page into the same set. *(shipped this pass)*
+2. Present mode page dots that match the strip order.
+3. Rename a campaign page from the strip.
 
 ## Done
 
+- Duplicate on the campaign strip clones the open board into the same `campaignId` and jumps to it.
 - Campaign strip actually tags a set: Campaign creates story + square + banner siblings that share `campaignId`.
 - Add page from the strip stays in the set; chips jump sibling artboards without the hub.
 - Last-opened id is written on open / new / template; hub resumes it unless Back marked stay-on-hub for the tab.
@@ -45,8 +46,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-19 19:30 BST — Campaign sets: story + square + banner from the strip, sibling chips on the board.
+2026-09-19 20:28 BST — Duplicate campaign page stays in the set.
 
 ## Next recommended
 
-Duplicate a campaign page into the same set.
+Present mode page dots that match the strip order.
