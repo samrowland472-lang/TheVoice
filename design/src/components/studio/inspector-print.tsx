@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BLEED_PRESETS, resolveBleed, uniformBleed } from "@/lib/design/print-marks";
 import {
   formatGuidePair,
@@ -15,12 +15,47 @@ import { cn } from "@/lib/utils";
 import { Field, Section } from "./inspector-parts";
 import { NumField } from "./num-field";
 
+const PRINT_RAIL_KEY = "the-voice-design-print-rail";
+
+function loadPrintRail(): boolean {
+  try {
+    return window.localStorage.getItem(PRINT_RAIL_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function savePrintRail(rail: boolean) {
+  try {
+    window.localStorage.setItem(PRINT_RAIL_KEY, rail ? "1" : "0");
+  } catch {
+    /* blocked */
+  }
+}
+
+const EDGE_CHIPS = [
+  ["top", "T"],
+  ["right", "R"],
+  ["bottom", "B"],
+  ["left", "L"],
+] as const;
+
 export function InspectorPrint() {
   const doc = useDesign((s) => s.doc);
   const printMarks = useDesign((s) => s.printMarks);
   const togglePrintMarks = useDesign((s) => s.togglePrintMarks);
   const setBleed = useDesign((s) => s.setBleed);
   const setBleedEdges = useDesign((s) => s.setBleedEdges);
+  const [rail, setRail] = useState(false);
+
+  useEffect(() => {
+    setRail(loadPrintRail());
+  }, []);
+
+  function setRailMode(next: boolean) {
+    setRail(next);
+    savePrintRail(next);
+  }
   const addGuide = useDesign((s) => s.addGuide);
   const moveGuide = useDesign((s) => s.moveGuide);
   const removeGuide = useDesign((s) => s.removeGuide);
@@ -35,48 +70,106 @@ export function InspectorPrint() {
   const uniform = uniformBleed(edges);
   const guides = doc.guides ?? [];
 
+  const bleedChips = (
+    <div className="flex flex-wrap gap-1" data-testid="bleed-edge-chips">
+      {EDGE_CHIPS.map(([edge, label]) => (
+        <button
+          key={edge}
+          type="button"
+          className={cn(
+            "inline-flex h-7 min-w-0 items-center gap-1 rounded-[8px] border px-1.5 font-mono text-[10px]",
+            edges[edge] > 0
+              ? "border-phosphor/40 bg-phosphor/10 text-phosphor"
+              : "border-border text-ink-dim",
+          )}
+          aria-label={`bleed ${edge} ${edges[edge]}`}
+          title={`${label} bleed ${edges[edge]} px — click to cycle 0 / 3 mm / 6 mm`}
+          onClick={() => {
+            const cur = edges[edge];
+            const steps = BLEED_PRESETS.map((p) => p.px);
+            const i = steps.findIndex((px) => px === cur);
+            const next = steps[(i + 1) % steps.length] ?? 0;
+            setBleedEdges({ [edge]: next });
+          }}
+        >
+          <span>{label}</span>
+          <span>{edges[edge]}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <>
-      <Section title="Print">
-        <label className="flex items-center gap-2 text-[11px] text-ink-dim">
-          <input type="checkbox" checked={Boolean(printMarks)} onChange={togglePrintMarks} />
-          Print marks
-        </label>
-        <Field label="Bleed">
-          <div className="grid grid-cols-3 gap-1">
-            {BLEED_PRESETS.map((p) => (
+      <section className="border-b border-border py-3" data-print-rail={rail ? "1" : "0"}>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Print</div>
+          <button
+            type="button"
+            className="h-6 rounded-[6px] border border-border px-1.5 font-mono text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+            aria-pressed={rail}
+            aria-label={rail ? "expand print panel" : "collapse print panel to rail"}
+            onClick={() => setRailMode(!rail)}
+          >
+            {rail ? "Open" : "Rail"}
+          </button>
+        </div>
+        {rail ? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
               <button
-                key={p.id}
                 type="button"
                 className={cn(
-                  "h-7 rounded-[8px] text-[10px]",
-                  uniform === p.px ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                  "h-7 shrink-0 rounded-[8px] border px-2 text-[10px]",
+                  printMarks ? "border-phosphor/40 bg-phosphor/10 text-phosphor" : "border-border text-ink-dim",
                 )}
-                onClick={() => setBleed(p.px)}
+                aria-pressed={Boolean(printMarks)}
+                onClick={togglePrintMarks}
               >
-                {p.label}
+                Marks
               </button>
-            ))}
+              {bleedChips}
+            </div>
           </div>
-        </Field>
-        <div className="grid grid-cols-2 gap-2">
-          {([
-            ["top", "T"],
-            ["right", "R"],
-            ["bottom", "B"],
-            ["left", "L"],
-          ] as const).map(([edge, label]) => (
-            <Field key={edge} label={label}>
-              <NumField
-                value={edges[edge]}
-                min={0}
-                aria-label={`bleed ${edge}`}
-                onCommit={(n) => setBleedEdges({ [edge]: n })}
-              />
+        ) : (
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+              <input type="checkbox" checked={Boolean(printMarks)} onChange={togglePrintMarks} />
+              Print marks
+            </label>
+            <Field label="Bleed">
+              <div className="grid grid-cols-3 gap-1">
+                {BLEED_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={cn(
+                      "h-7 rounded-[8px] text-[10px]",
+                      uniform === p.px ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                    )}
+                    onClick={() => setBleed(p.px)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </Field>
-          ))}
-        </div>
-      </Section>
+            {bleedChips}
+            <div className="grid grid-cols-2 gap-2">
+              {EDGE_CHIPS.map(([edge, label]) => (
+                <Field key={edge} label={label}>
+                  <NumField
+                    value={edges[edge]}
+                    min={0}
+                    aria-label={`bleed ${edge}`}
+                    onCommit={(n) => setBleedEdges({ [edge]: n })}
+                  />
+                </Field>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
       <Section title="Guides">
         <div className="mb-2 grid grid-cols-4 gap-1">
           <button
