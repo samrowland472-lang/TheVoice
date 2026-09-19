@@ -21,24 +21,27 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Axis look rows (V/H default color + dash) with live board preview.
-2. Inspector Print row: compact chip wrap when the panel is narrow.
+1. Inspector Print row: compact chip wrap when the panel is narrow.
+2. Bleed edge chips stay visible when the Print panel is collapsed to a rail.
 
 ## Done
 
+- Axis look rows: V/H default color + dash chips with live board hover preview (`guideLookHover`).
+- Restored Print guide rows: name, lock/hide/del, per-guide color + dash chips, hover preview, wrap.
+- Store: `patchGuide` drops undefined keys; locked guides refuse move/delete; print marks toggle.
+- Board strokes use `resolveGuideStroke` + `dashArray`; selected and locked read thicker; names paint on the stroke.
 - Print guide rows wrap: name + lock/hide/del on the first line, color and dash chips wrap on the second so the inspector does not overflow.
 - Restored per-guide color + dash chips with hover preview on the board. Active click clears the override (`patchGuide` drops undefined keys).
 - Guide lock / hide / name field on each Print row. Locked guides refuse move/delete; hidden stay off the board.
 - Guide color hover preview on the board. Hover or focus a Print color swatch and the matching stroke adopts that token until the pointer leaves.
 - Guide dash preview on the board when a Print chip is hovered.
-- Board strokes use `resolveGuideStroke` + `dashArray`; selected and locked guides read thicker; names paint on the stroke; hidden guides stay off the board.
 - Named guide labels on the board stroke and ruler ticks.
 - Guide color tokens: mint, amber, magenta, violet, bone plus cyan / ice / phosphor.
 
 ## Iteration
 
-2026-09-19 09:22 BST — Print guide rows wrap; chips + lock/hide/name restored.
+2026-09-19 11:20 BST — Axis look rows (V/H default color + dash) with live board preview.
 
 ## Next recommended
 
-Axis look rows (V/H default color + dash) with live board preview.
+Inspector Print row: compact chip wrap when the panel is narrow.
