@@ -21,24 +21,24 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Tighten the Print guide row wrap if chips crowd the inspector.
-2. Axis look rows (V/H default color + dash) with live board preview.
+1. Axis look rows (V/H default color + dash) with live board preview.
+2. Inspector Print row: compact chip wrap when the panel is narrow.
 
 ## Done
 
-- Guide color hover preview on the board. Hover or focus a Print color swatch and the matching stroke adopts that token until the pointer leaves. Active click still clears the override.
+- Print guide rows wrap: name + lock/hide/del on the first line, color and dash chips wrap on the second so the inspector does not overflow.
+- Restored per-guide color + dash chips with hover preview on the board. Active click clears the override (`patchGuide` drops undefined keys).
+- Guide lock / hide / name field on each Print row. Locked guides refuse move/delete; hidden stay off the board.
+- Guide color hover preview on the board. Hover or focus a Print color swatch and the matching stroke adopts that token until the pointer leaves.
 - Guide dash preview on the board when a Print chip is hovered.
-- Print list restored: per-guide color + dash chips, inline name, lock, hide, Del. Store `patchGuide` drops undefined keys; `renameGuide` / `clearGuideLabels`; locked guides refuse move/delete.
 - Board strokes use `resolveGuideStroke` + `dashArray`; selected and locked guides read thicker; names paint on the stroke; hidden guides stay off the board.
 - Named guide labels on the board stroke and ruler ticks.
 - Guide color tokens: mint, amber, magenta, violet, bone plus cyan / ice / phosphor.
-- Click-active per-guide color or dash chip clears the override.
-- Guide labels / names, lock / hide, distribute evenly, pair spacing.
 
 ## Iteration
 
-2026-09-19 08:20 BST — Guide color hover preview on the board + Print chips restored.
+2026-09-19 09:22 BST — Print guide rows wrap; chips + lock/hide/name restored.
 
 ## Next recommended
 
-Tighten the Print guide row wrap if chips crowd the inspector.
+Axis look rows (V/H default color + dash) with live board preview.
