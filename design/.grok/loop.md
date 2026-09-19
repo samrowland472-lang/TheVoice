@@ -21,27 +21,25 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Inspector Print compact mode: hide name field under a disclosure when the panel is a rail.
-2. Guide look rows: restore lock / hide / name / color chips if they drift off the Print panel.
+1. Guide pair captions on the board should pick up the hovered look color.
+2. Persist last-opened document id so a refresh returns to the same artboard.
 
 ## Done
 
+- Rail Print hides the guide name field behind a disclosure; click the caption to edit.
+- Restored Print guide rows: lock / hide / del, name, color + dash chips, V/H axis looks.
+- Store owns printMarks, bleed edges, patchGuide, renameGuide, hover previews.
+- Locked guides refuse move/delete; hidden skip the board and hit-tests.
+- Board strokes use resolveGuideStroke + dashArray + color/dash hover preview.
 - Print section can collapse to a rail; T/R/B/L bleed edge chips stay on the rail with print-marks toggle.
 - Click a bleed chip to cycle that edge through None / 3 mm / 6 mm; rail choice persists in localStorage.
 - InspectorPrint is mounted under Artboard so print bleed is reachable without a selection.
-- Inspector Print rows wrap on a narrow panel: name + lock/hide/del on the first line, color and dash chips wrap on the second.
-- Axis look rows (V/H default color + dash) wrap the same way; hover previews the stroke on the board.
-- `patchGuide` drops undefined keys; locked guides refuse move/delete; hidden stay off the board and off hit-tests.
-- Board strokes use `resolveGuideStroke` + `dashArray` + `guideLookHover`; selected and locked read thicker; names paint on the stroke.
-- Axis look rows: V/H default color + dash chips with live board hover preview (`guideLookHover`).
-- Restored Print guide rows: name, lock/hide/del, per-guide color + dash chips, hover preview, wrap.
-- Store: `patchGuide` drops undefined keys; locked guides refuse move/delete; print marks toggle.
 - Guide color tokens: mint, amber, magenta, violet, bone plus cyan / ice / phosphor.
 
 ## Iteration
 
-2026-09-19 16:30 BST — Print rail keeps bleed edge chips visible.
+2026-09-19 17:10 BST — Print rail tucks guide names; look rows restored.
 
 ## Next recommended
 
-Inspector Print compact mode: hide name field under a disclosure when the panel is a rail.
+Guide pair captions on the board should pick up the hovered look color.
