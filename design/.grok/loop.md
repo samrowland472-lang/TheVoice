@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present-mode keyboard focus ring on the active page dot (done on focus-visible; tighten active-dot ring).
-2. Present-mode speaker-notes keyboard (N to toggle notes drawer).
+1. Present-mode notes drawer: persist caret / last-edited page hint.
+2. Present-mode fullscreen (F) without leaving the campaign rail.
 
 ## Done
 
@@ -41,11 +41,13 @@ Auth OFF, DB OFF.
 - Present chrome uses `PresentChipRail` instead of inert dots.
 - Typecheck: AI text nodes include stroke style fields; render default branch is typed.
 - Present-mode page dots: Tab-focusable; Alt+Left / Alt+Right on a focused dot calls `nudgeCampaignPage` (same as the campaign strip). Focus-visible phosphor ring.
+- Present chrome uses `PresentChipRail` again (drag / context / Alt-reorder + active-dot phosphor halo).
+- Present-mode speaker notes: N toggles the drawer and focuses the field; Escape closes notes first, then exits present.
 
 ## Iteration
 
-2026-09-20 21:08 BST — Present-mode Alt+Left / Alt+Right page-dot reorder.
+2026-09-20 22:22 BST — Present-mode notes keyboard + chip rail restore.
 
 ## Next recommended
 
-Present-mode speaker-notes keyboard (N to toggle notes drawer).
+Present-mode notes drawer: persist caret / last-edited page hint.
