@@ -193,7 +193,7 @@ export function makeShape(kind, x, y, w, h, color) {
   return shape(kind, { x, y, w, h, fill: kind === "line" ? "transparent" : color, stroke: kind === "line" ? color : "transparent", strokeWidth: kind === "line" ? 4 : 0 });
 }
 export function makeText(x, y, color) {
-  return text({ x, y, w: 420, h, h: 80, text: "Type here", fill: color, fontFamily: "Chakra Petch", fontSize: 56, fontWeight: 600 });
+  return text({ x, y, w: 420, h: 80, text: "Type here", fill: color, fontFamily: "Chakra Petch", fontSize: 56, fontWeight: 600 });
 }
 export function ensurePaintLayer(doc) {
   const existing = doc.nodes.find((n) => n.kind === "paint");
@@ -202,13 +202,6 @@ export function ensurePaintLayer(doc) {
   useDesign.getState().addNode(layer, true);
   return layer;
 }
-void campaignPageName;
-void deleteDoc;
-void patchIndex;
-void saveBrand;
-void uid;
-void formatById;
-void loadDoc;
 void BrandKit;
 void DesignDocument;
 void DesignNode;
