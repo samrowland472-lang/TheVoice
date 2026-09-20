@@ -86,7 +86,7 @@ export function PresentChipRail({
               className={cn(
                 "h-2.5 w-2.5 cursor-grab rounded-full border transition-colors active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground",
                 p.id === liveId
-                  ? "border-phosphor bg-phosphor"
+                  ? "border-phosphor bg-phosphor shadow-[0_0_0_2px_rgba(63,198,255,0.35)]"
                   : "border-ink-faint bg-transparent hover:border-phosphor hover:bg-phosphor/40",
                 dragging === p.id && "opacity-40",
                 overId === p.id && dragging && dragging !== p.id && "ring-2 ring-phosphor ring-offset-1 ring-offset-ground",
