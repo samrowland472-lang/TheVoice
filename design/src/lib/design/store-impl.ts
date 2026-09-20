@@ -95,14 +95,18 @@ export const useDesign = create((set, get) => ({
     get().save();
     const live = get().doc;
     const cid = live.campaignId ?? uid("camp");
+    if (!live.campaignId) {
+      const named = { ...live, campaignId: cid, updatedAt: Date.now() };
+      saveDoc(named);
+      set({ doc: named });
+    }
     const fmt = formatById(formatId);
     const page = blankDocument(formatId, campaignPageName(live.name, fmt.label));
     page.campaignId = cid;
     saveDoc(page);
     const after = campaignPages(loadIndex(), cid).map((p) => p.id);
     if (!after.includes(page.id)) after.push(page.id);
-    writeCampaignOrder(cid, after);
-    set({ index: loadIndex() });
+    set({ index: writeCampaignOrder(cid, after) });
     return page.id;
   },
   duplicateCampaignPage: () => {
@@ -114,16 +118,61 @@ export const useDesign = create((set, get) => ({
     const copy = structuredClone(live);
     copy.id = uid("doc");
     copy.campaignId = cid;
+    copy.name = `${live.name} copy`;
     copy.createdAt = Date.now();
     copy.updatedAt = Date.now();
     saveDoc(copy);
-    set({ index: loadIndex() });
+    const after = campaignPages(loadIndex(), cid).map((p) => p.id);
+    if (!after.includes(copy.id)) {
+      const at = after.indexOf(live.id);
+      after.splice(at >= 0 ? at + 1 : after.length, 0, copy.id);
+    }
+    set({ index: writeCampaignOrder(cid, after) });
     return copy.id;
   },
   reorderCampaignPages: (ids) => {
     const { doc } = get();
     if (!doc?.campaignId) return;
     set({ index: writeCampaignOrder(doc.campaignId, ids) });
+  },
+  renameCampaignPage: (id, name) => {
+    const trimmed = String(name || "").trim();
+    if (!trimmed) return;
+    const { doc } = get();
+    if (doc?.id === id) {
+      const next = { ...doc, name: trimmed, updatedAt: Date.now() };
+      saveDoc(next);
+      set({ doc: next, dirty: false, index: loadIndex() });
+      return;
+    }
+    const other = loadDoc(id);
+    if (!other) return;
+    saveDoc({ ...other, name: trimmed, updatedAt: Date.now() });
+    set({ index: loadIndex() });
+  },
+  unlinkCampaignPage: (id) => {
+    const { doc } = get();
+    const target = loadDoc(id);
+    if (!target) return;
+    const camp = target.campaignId ?? doc?.campaignId;
+    saveDoc({ ...target, campaignId: undefined, updatedAt: Date.now() });
+    if (doc?.id === id) set({ doc: { ...doc, campaignId: undefined }, dirty: false });
+    if (camp) {
+      const rest = campaignPages(loadIndex(), camp).map((p) => p.id).filter((pid) => pid !== id);
+      set({ index: writeCampaignOrder(camp, rest) });
+    } else {
+      set({ index: loadIndex() });
+    }
+  },
+  removeCampaignPage: (id) => {
+    const target = loadDoc(id);
+    const camp = target?.campaignId;
+    const rest = camp ? campaignPages(loadIndex(), camp).map((p) => p.id).filter((pid) => pid !== id) : [];
+    deleteDoc(id);
+    if (camp) writeCampaignOrder(camp, rest);
+    const { doc } = get();
+    set({ index: loadIndex(), doc: doc?.id === id ? null : doc });
+    return rest[0] ?? null;
   },
   remove: (id) => {
     deleteDoc(id);
@@ -144,7 +193,7 @@ export function makeShape(kind, x, y, w, h, color) {
   return shape(kind, { x, y, w, h, fill: kind === "line" ? "transparent" : color, stroke: kind === "line" ? color : "transparent", strokeWidth: kind === "line" ? 4 : 0 });
 }
 export function makeText(x, y, color) {
-  return text({ x, y, w: 420, h: 80, text: "Type here", fill: color, fontFamily: "Chakra Petch", fontSize: 56, fontWeight: 600 });
+  return text({ x, y, w: 420, h, h: 80, text: "Type here", fill: color, fontFamily: "Chakra Petch", fontSize: 56, fontWeight: 600 });
 }
 export function ensurePaintLayer(doc) {
   const existing = doc.nodes.find((n) => n.kind === "paint");
@@ -160,3 +209,8 @@ void saveBrand;
 void uid;
 void formatById;
 void loadDoc;
+void BrandKit;
+void DesignDocument;
+void DesignNode;
+void Tool;
+void Viewport;
