@@ -21,23 +21,24 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Chip menu: unlink / delete last page with confirm (if UI strip menu is missing on this build).
+1. Drag-reorder campaign chips with live `campaignOrder` write.
+2. Present-mode chip menu parity (unlink / delete last page).
 
 ## Done
 
-- Restored `store-impl.ts` so campaign, persist, and studio actions resolve.
-- Speaker notes persist immediately on edit (`setNotes` writes the artboard) so present-mode sibling jumps keep talking points without an extra Save.
+- Restored the Zustand store (`store-impl.ts`) so campaign, persist, and studio actions resolve.
+- Campaign chip context menu: rename, duplicate, unlink, delete page.
 - Confirm-before-delete when the last page of a campaign is removed (strip menu + hub trash).
-- Chip menu: duplicate, unlink, delete page.
 - `writeCampaignOrder` keeps remaining strip positions after unlink/delete.
 - `duplicateCampaignPage` clones the open board into the same set.
-- Drag-reorder campaign chips; `reorderCampaignPages` writes `campaignOrder` from the new strip sequence.
+- Speaker notes persist immediately on edit (`setNotes` writes the artboard).
+- Chip menu: duplicate, unlink, delete page.
 - Double-click a chip to rename the page.
 
 ## Iteration
 
-2026-09-20 11:15 BST — Present notes persist across sibling jumps without an extra Save.
+2026-09-20 11:28 BST — Campaign chip context menu (unlink / delete last page with confirm). Restored store-impl.
 
 ## Next recommended
 
-Chip menu: unlink / delete last page with confirm (if UI strip menu is missing on this build).
+Drag-reorder campaign chips with live `campaignOrder` write.
