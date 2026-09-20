@@ -38,6 +38,15 @@ test("strip can duplicate the open page into the same set", () => {
   assert.match(strip, /Duplicate campaign page/);
 });
 
+test("strip can rename a campaign page inline", () => {
+  const strip = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
+  assert.match(strip, /renameCampaignPage/);
+  assert.match(strip, /Rename campaign page/);
+  assert.match(strip, /onDoubleClick/);
+  const store = readFileSync(new URL("../src/lib/design/store-impl.ts", import.meta.url), "utf8");
+  assert.match(store, /renameCampaignPage:/);
+});
+
 test("strip jumps siblings and hub resumes last board unless stay-hub", () => {
   const strip = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
   assert.match(strip, /navigate\(\{ to: "\/studio\/\$id"/);

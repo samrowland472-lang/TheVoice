@@ -21,12 +21,13 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present mode page dots that match the strip order. *(shipped this pass)*
-2. Rename a campaign page from the strip.
-3. Reorder campaign pages on the strip.
+1. Rename a campaign page from the strip. *(shipped this pass)*
+2. Reorder campaign pages on the strip.
+3. Present mode page dots that match the strip order.
 
 ## Done
 
+- Double-click a campaign strip chip to rename that page; Enter or blur commits, Escape cancels. Sibling names persist in localStorage.
 - Present mode draws page dots in campaignPages order (story → square → banner → other); click a dot to jump. Strip uses the same helper so recency on the hub no longer reshuffles the deck.
 - Duplicate on the campaign strip clones the open board into the same `campaignId` and jumps to it.
 - Campaign strip actually tags a set: Campaign creates story + square + banner siblings that share `campaignId`.
@@ -47,8 +48,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-20 00:20 BST — Present dots follow strip campaign order.
+2026-09-20 05:25 BST — Rename campaign pages from the strip.
 
 ## Next recommended
 
-Rename a campaign page from the strip.
+Reorder campaign pages on the strip.
