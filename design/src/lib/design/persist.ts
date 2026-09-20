@@ -74,6 +74,18 @@ export function saveDoc(doc: DesignDocument) {
   saveIndex(index.slice(0, 40));
 }
 
+/** Persist explicit strip positions for every remaining page in a set. */
+export function writeCampaignOrder(campaignId: string, ids: string[]) {
+  const index = loadIndex().map((p) => {
+    if (p.campaignId !== campaignId) return p;
+    const i = ids.indexOf(p.id);
+    if (i < 0) return { ...p, campaignId: undefined, campaignOrder: undefined };
+    return { ...p, campaignOrder: i };
+  });
+  saveIndex(index);
+  return loadIndex();
+}
+
 export function patchIndex(id: string, patch: Partial<ProjectMeta>) {
   const index = loadIndex().map((p) => (p.id === id ? { ...p, ...patch } : p));
   saveIndex(index);
