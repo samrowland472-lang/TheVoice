@@ -21,21 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Confirm-before-delete on the last page of a set.
-2. Drag-reorder campaign chips and write campaignOrder from the new strip sequence.
-3. Present notes persist across sibling jumps without an extra Save.
+1. Drag-reorder campaign chips and write campaignOrder from the new strip sequence.
+2. Present notes persist across sibling jumps without an extra Save.
 
 ## Done
 
-- Restored `store-impl.ts` / `store-campaign.ts` so campaign, persist, and studio actions resolve.
-- `saveDoc` writes `campaignId` and `campaignOrder` as stored (unlink can clear membership).
-- Unlink / delete from the campaign chip ··· menu persist explicit order on remaining pages so chips keep strip positions.
-- Strip rename (double-click or menu), duplicate, add page.
+- Restored `store-impl.ts` so campaign, persist, and studio actions resolve.
+- Confirm-before-delete when the last page of a campaign is removed (strip menu + hub trash).
+- Chip menu: duplicate, unlink, delete page.
+- `writeCampaignOrder` keeps remaining strip positions after unlink/delete.
+- `duplicateCampaignPage` clones the open board into the same set.
 
 ## Iteration
 
-2026-09-20 08:40 BST — Persist campaignOrder on unlink/delete; restore store; chip overflow menu.
+2026-09-20 09:30 BST — Confirm before deleting the last remaining page of a campaign.
 
 ## Next recommended
 
-Confirm before deleting the last remaining page of a campaign.
+Drag-reorder campaign chips and persist campaignOrder from the new strip sequence.
