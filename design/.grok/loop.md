@@ -21,12 +21,12 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present notes persist across sibling jumps without an extra Save.
-2. Chip menu: unlink / delete last page with confirm (if UI strip menu is missing on this build).
+1. Chip menu: unlink / delete last page with confirm (if UI strip menu is missing on this build).
 
 ## Done
 
 - Restored `store-impl.ts` so campaign, persist, and studio actions resolve.
+- Speaker notes persist immediately on edit (`setNotes` writes the artboard) so present-mode sibling jumps keep talking points without an extra Save.
 - Confirm-before-delete when the last page of a campaign is removed (strip menu + hub trash).
 - Chip menu: duplicate, unlink, delete page.
 - `writeCampaignOrder` keeps remaining strip positions after unlink/delete.
@@ -36,8 +36,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-20 10:15 BST — Drag-reorder campaign chips and persist campaignOrder from the strip.
+2026-09-20 11:15 BST — Present notes persist across sibling jumps without an extra Save.
 
 ## Next recommended
 
-Present notes persist across sibling jumps without an extra Save.
+Chip menu: unlink / delete last page with confirm (if UI strip menu is missing on this build).
