@@ -67,6 +67,12 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
         return;
       }
 
+      if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight") && s.doc?.campaignId) {
+        e.preventDefault();
+        s.nudgeCampaignPage(s.doc.id, e.key === "ArrowLeft" ? -1 : 1);
+        return;
+      }
+
       if (s.present) return;
 
       if (meta && e.key.toLowerCase() === "z") {
