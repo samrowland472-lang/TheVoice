@@ -15,10 +15,12 @@ export function CampaignStrip() {
   const unlinkCampaignPage = useDesign((s) => s.unlinkCampaignPage);
   const removeCampaignPage = useDesign((s) => s.removeCampaignPage);
   const renameCampaignPage = useDesign((s) => s.renameCampaignPage);
+  const reorderCampaignPages = useDesign((s) => s.reorderCampaignPages);
   const save = useDesign((s) => s.save);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [dragging, setDragging] = useState<string | null>(null);
   if (!doc) return null;
   const pages = campaignPages(index, doc.campaignId);
   const used = new Set(pages.map((p) => p.formatId));
@@ -30,6 +32,17 @@ export function CampaignStrip() {
 
   function confirmDeleteLast() {
     return window.confirm("Delete the last page in this set? The board will be removed.");
+  }
+
+  function moveChip(fromId: string, toId: string) {
+    if (!fromId || !toId || fromId === toId) return;
+    const ids = pages.map((p) => p.id);
+    const from = ids.indexOf(fromId);
+    const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, fromId);
+    reorderCampaignPages(ids);
   }
 
   if (!doc.campaignId) {
@@ -72,6 +85,24 @@ export function CampaignStrip() {
           ) : (
             <button
               type="button"
+              draggable
+              onDragStart={(e) => {
+                setDragging(p.id);
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", p.id);
+                setMenuId(null);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const fromId = e.dataTransfer.getData("text/plain") || dragging;
+                moveChip(fromId, p.id);
+                setDragging(null);
+              }}
+              onDragEnd={() => setDragging(null)}
               onClick={() => go(p.id)}
               onDoubleClick={(e) => {
                 e.preventDefault();
@@ -84,8 +115,9 @@ export function CampaignStrip() {
                 setMenuId(menuId === p.id ? null : p.id);
               }}
               className={cn(
-                "h-7 shrink-0 rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide",
+                "h-7 shrink-0 cursor-grab rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide active:cursor-grabbing",
                 p.id === doc.id ? "bg-phosphor text-phosphor-ink" : "text-ink-dim hover:text-ink",
+                dragging === p.id && "opacity-50",
               )}
               aria-haspopup="menu"
               aria-expanded={menuId === p.id}
