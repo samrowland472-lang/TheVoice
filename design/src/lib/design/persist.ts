@@ -68,7 +68,8 @@ export function saveDoc(doc: DesignDocument) {
     pinned: prev?.pinned,
     folder: prev?.folder,
     tags: prev?.tags,
-    campaignId: doc.campaignId ?? prev?.campaignId,
+    campaignId: doc.campaignId,
+    campaignOrder: prev?.campaignOrder,
   });
   saveIndex(index.slice(0, 40));
 }
