@@ -29,9 +29,23 @@ export function PresentChipRail({
   const removeCampaignPage = useDesign((s) => s.removeCampaignPage);
   const duplicateCampaignPage = useDesign((s) => s.duplicateCampaignPage);
   const renameCampaignPage = useDesign((s) => s.renameCampaignPage);
+  const reorderCampaignPages = useDesign((s) => s.reorderCampaignPages);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  function moveChip(fromId: string, toId: string) {
+    if (!fromId || !toId || fromId === toId) return;
+    const ids = pages.map((p) => p.id);
+    const from = ids.indexOf(fromId);
+    const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, fromId);
+    reorderCampaignPages(ids);
+  }
 
   return (
     <div className="mx-1 flex items-center gap-1" role="tablist" aria-label="Campaign pages">
@@ -65,16 +79,44 @@ export function PresentChipRail({
               aria-haspopup="menu"
               aria-expanded={menuId === p.id}
               aria-label={`${p.name ?? shortFormat(p.formatId)} (${n + 1} of ${pages.length})`}
-              title={`${p.name ?? shortFormat(p.formatId)} — right-click for page actions`}
+              title={`${p.name ?? shortFormat(p.formatId)} — drag to reorder, right-click for page actions`}
+              draggable
               className={cn(
-                "h-2.5 w-2.5 rounded-full border transition-colors",
+                "h-2.5 w-2.5 cursor-grab rounded-full border transition-colors active:cursor-grabbing",
                 p.id === liveId
                   ? "border-phosphor bg-phosphor"
                   : "border-ink-faint bg-transparent hover:border-phosphor hover:bg-phosphor/40",
+                dragging === p.id && "opacity-40",
+                overId === p.id && dragging && dragging !== p.id && "ring-2 ring-phosphor ring-offset-1 ring-offset-ground",
               )}
               onClick={() => {
                 setMenuId(null);
                 onGo(p.id);
+              }}
+              onDragStart={(e) => {
+                setDragging(p.id);
+                setMenuId(null);
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", p.id);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setOverId(p.id);
+              }}
+              onDragLeave={() => {
+                setOverId((cur) => (cur === p.id ? null : cur));
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                const fromId = e.dataTransfer.getData("text/plain") || dragging;
+                if (fromId) moveChip(fromId, p.id);
+                setDragging(null);
+                setOverId(null);
+              }}
+              onDragEnd={() => {
+                setDragging(null);
+                setOverId(null);
               }}
               onContextMenu={(e) => {
                 e.preventDefault();
