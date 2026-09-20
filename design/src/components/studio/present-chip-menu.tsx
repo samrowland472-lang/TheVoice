@@ -30,6 +30,7 @@ export function PresentChipRail({
   const duplicateCampaignPage = useDesign((s) => s.duplicateCampaignPage);
   const renameCampaignPage = useDesign((s) => s.renameCampaignPage);
   const reorderCampaignPages = useDesign((s) => s.reorderCampaignPages);
+  const nudgeCampaignPage = useDesign((s) => s.nudgeCampaignPage);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -79,10 +80,11 @@ export function PresentChipRail({
               aria-haspopup="menu"
               aria-expanded={menuId === p.id}
               aria-label={`${p.name ?? shortFormat(p.formatId)} (${n + 1} of ${pages.length})`}
-              title={`${p.name ?? shortFormat(p.formatId)} — drag to reorder, right-click for page actions`}
+              title={`${p.name ?? shortFormat(p.formatId)} — drag or Alt+Left / Alt+Right to reorder`}
+              tabIndex={0}
               draggable
               className={cn(
-                "h-2.5 w-2.5 cursor-grab rounded-full border transition-colors active:cursor-grabbing",
+                "h-2.5 w-2.5 cursor-grab rounded-full border transition-colors active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground",
                 p.id === liveId
                   ? "border-phosphor bg-phosphor"
                   : "border-ink-faint bg-transparent hover:border-phosphor hover:bg-phosphor/40",
@@ -92,6 +94,13 @@ export function PresentChipRail({
               onClick={() => {
                 setMenuId(null);
                 onGo(p.id);
+              }}
+              onKeyDown={(e) => {
+                if (!e.altKey) return;
+                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                e.preventDefault();
+                e.stopPropagation();
+                nudgeCampaignPage(p.id, e.key === "ArrowLeft" ? -1 : 1);
               }}
               onDragStart={(e) => {
                 setDragging(p.id);
