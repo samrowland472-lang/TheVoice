@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present-mode Alt+Left / Alt+Right page-dot reorder.
-2. Present-mode keyboard focus ring on the active page dot.
+1. Present-mode keyboard focus ring on the active page dot (done on focus-visible; tighten active-dot ring).
+2. Present-mode speaker-notes keyboard (N to toggle notes drawer).
 
 ## Done
 
@@ -40,11 +40,12 @@ Auth OFF, DB OFF.
 - Present-mode page dots drag-reorder via `PresentChipRail` (`reorderCampaignPages` / `campaignOrder`).
 - Present chrome uses `PresentChipRail` instead of inert dots.
 - Typecheck: AI text nodes include stroke style fields; render default branch is typed.
+- Present-mode page dots: Tab-focusable; Alt+Left / Alt+Right on a focused dot calls `nudgeCampaignPage` (same as the campaign strip). Focus-visible phosphor ring.
 
 ## Iteration
 
-2026-09-20 20:20 BST — Present-mode chip drag-reorder.
+2026-09-20 21:08 BST — Present-mode Alt+Left / Alt+Right page-dot reorder.
 
 ## Next recommended
 
-Present-mode Alt+Left / Alt+Right page-dot reorder.
+Present-mode speaker-notes keyboard (N to toggle notes drawer).
