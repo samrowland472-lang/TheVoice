@@ -42,15 +42,17 @@ const SLOT_RANK: Record<CampaignSlot, number> = {
   other: 3,
 };
 
-/** Strip / present order: story → square → banner → other, then id. */
-export function campaignPages<T extends { id: string; campaignId?: string; formatId: string }>(
-  index: T[],
-  campaignId: string | undefined,
-): T[] {
+/** Strip / present order: explicit campaignOrder, then story → square → banner → other, then id. */
+export function campaignPages<
+  T extends { id: string; campaignId?: string; formatId: string; campaignOrder?: number; name?: string },
+>(index: T[], campaignId: string | undefined): T[] {
   if (!campaignId) return [];
   return index
     .filter((p) => p.campaignId === campaignId)
     .sort((a, b) => {
+      const ao = a.campaignOrder;
+      const bo = b.campaignOrder;
+      if (ao != null || bo != null) return (ao ?? 1e9) - (bo ?? 1e9);
       const slot = SLOT_RANK[campaignSlot(a.formatId)] - SLOT_RANK[campaignSlot(b.formatId)];
       if (slot !== 0) return slot;
       return a.id.localeCompare(b.id);

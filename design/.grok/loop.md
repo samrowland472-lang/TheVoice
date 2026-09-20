@@ -21,20 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Rename a campaign page from the strip. *(shipped this pass)*
-2. Reorder campaign pages on the strip.
-3. Present mode page dots that match the strip order.
+1. Reorder campaign pages on the strip. *(shipped this pass)*
+2. Present mode page dots that match the strip order after a manual reorder.
+3. Campaign page overflow menu (delete from set / unlink).
 
 ## Done
 
+- Restored `store-impl.ts` (was an 11-byte PLACEHOLDER) so campaign, persist, and studio actions resolve again.
+- Drag a campaign strip chip onto another chip to reorder the set; ‹ › nudge the open page. Order is `campaignOrder` in localStorage.
+- `campaignPages` prefers explicit order, then story → square → banner → other.
 - Double-click a campaign strip chip to rename that page; Enter or blur commits, Escape cancels. Sibling names persist in localStorage.
-- Present mode draws page dots in campaignPages order (story → square → banner → other); click a dot to jump. Strip uses the same helper so recency on the hub no longer reshuffles the deck.
+- Present mode draws page dots in campaignPages order; click a dot to jump.
 - Duplicate on the campaign strip clones the open board into the same `campaignId` and jumps to it.
 - Campaign strip actually tags a set: Campaign creates story + square + banner siblings that share `campaignId`.
 - Add page from the strip stays in the set; chips jump sibling artboards without the hub.
 - Last-opened id is written on open / new / template; hub resumes it unless Back marked stay-on-hub for the tab.
-- Persist last-opened document id; a fresh tab on the hub resumes that artboard. Back to templates stays on the hub for this tab.
-- Opening a template, blank, or saved file writes `voice-design:last-opened:v1`. Deleting that file clears it.
 - Pair captions on the board take the axis look color, and Print V/H chips preview that color on hover.
 - Rail Print hides the guide name field behind a disclosure; click the caption to edit.
 - Restored Print guide rows: lock / hide / del, name, color + dash chips, V/H axis looks.
@@ -48,8 +49,8 @@ Auth OFF, DB OFF.
 
 ## Iteration
 
-2026-09-20 05:25 BST — Rename campaign pages from the strip.
+2026-09-20 06:10 BST — Reorder campaign pages on the strip; restore store-impl.
 
 ## Next recommended
 
-Reorder campaign pages on the strip.
+Present dots already share `campaignPages`; next slice can add unlink / remove-from-set on the strip.
