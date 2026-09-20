@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present-mode chip drag-reorder.
-2. Present-mode Alt+Left / Alt+Right page-dot reorder.
+1. Present-mode Alt+Left / Alt+Right page-dot reorder.
+2. Present-mode keyboard focus ring on the active page dot.
 
 ## Done
 
@@ -37,11 +37,14 @@ Auth OFF, DB OFF.
 - Drag-reorder campaign chips; drop writes `campaignOrder` via `reorderCampaignPages` / `writeCampaignOrder`.
 - Present-mode page dots: right-click menu with rename, duplicate, unlink, delete last page (confirm).
 - Campaign strip keyboard reorder: Alt+Left / Alt+Right on a chip (or while the open page is in a set) calls `nudgeCampaignPage` and writes `campaignOrder`.
+- Present-mode page dots drag-reorder via `PresentChipRail` (`reorderCampaignPages` / `campaignOrder`).
+- Present chrome uses `PresentChipRail` instead of inert dots.
+- Typecheck: AI text nodes include stroke style fields; render default branch is typed.
 
 ## Iteration
 
-2026-09-20 18:10 BST — Campaign strip Alt+Left / Alt+Right reorder.
+2026-09-20 20:20 BST — Present-mode chip drag-reorder.
 
 ## Next recommended
 
-Present-mode chip drag-reorder.
+Present-mode Alt+Left / Alt+Right page-dot reorder.
