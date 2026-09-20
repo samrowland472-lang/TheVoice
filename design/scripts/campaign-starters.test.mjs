@@ -48,6 +48,11 @@ test("strip can rename a campaign page inline", () => {
 });
 
 test("strip drag-reorders chips through writeCampaignOrder", () => {
+  const live = readFileSync(new URL("../src/components/studio/campaign-strip.tsx", import.meta.url), "utf8");
+  assert.match(live, /reorderCampaignPages/);
+  assert.match(live, /onDragStart/);
+  assert.match(live, /onDrop/);
+  assert.match(live, /draggable/);
   const strip = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
   assert.match(strip, /reorderCampaignPages/);
   assert.match(strip, /onDragStart/);

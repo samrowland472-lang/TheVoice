@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Drag-reorder campaign chips with live `campaignOrder` write.
-2. Present-mode chip menu parity (unlink / delete last page).
+1. Present-mode chip menu parity (unlink / delete last page).
+2. Campaign strip keyboard reorder (Alt+Left / Alt+Right).
 
 ## Done
 
@@ -34,11 +34,12 @@ Auth OFF, DB OFF.
 - Speaker notes persist immediately on edit (`setNotes` writes the artboard).
 - Chip menu: duplicate, unlink, delete page.
 - Double-click a chip to rename the page.
+- Drag-reorder campaign chips; drop writes `campaignOrder` via `reorderCampaignPages` / `writeCampaignOrder`.
 
 ## Iteration
 
-2026-09-20 11:28 BST — Campaign chip context menu (unlink / delete last page with confirm). Restored store-impl.
+2026-09-20 15:45 BST — Drag-reorder campaign chips with live campaignOrder write.
 
 ## Next recommended
 
-Drag-reorder campaign chips with live `campaignOrder` write.
+Present-mode chip menu parity (unlink / delete last page).
