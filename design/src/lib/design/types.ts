@@ -208,6 +208,7 @@ export interface ProjectMeta {
   folder?: string;
   tags?: string[];
   campaignId?: string;
+  campaignOrder?: number;
 }
 
 export interface BrandColor {
