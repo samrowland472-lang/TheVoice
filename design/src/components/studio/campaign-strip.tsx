@@ -99,7 +99,7 @@ export function CampaignStrip() {
               onDrop={(e) => {
                 e.preventDefault();
                 const fromId = e.dataTransfer.getData("text/plain") || dragging;
-                moveChip(fromId, p.id);
+                if (fromId) moveChip(fromId, p.id);
                 setDragging(null);
               }}
               onDragEnd={() => setDragging(null)}
