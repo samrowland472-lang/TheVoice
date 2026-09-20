@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Campaign strip keyboard reorder (Alt+Left / Alt+Right).
-2. Present-mode chip drag-reorder.
+1. Present-mode chip drag-reorder.
+2. Present-mode Alt+Left / Alt+Right page-dot reorder.
 
 ## Done
 
@@ -36,11 +36,12 @@ Auth OFF, DB OFF.
 - Double-click a chip to rename the page.
 - Drag-reorder campaign chips; drop writes `campaignOrder` via `reorderCampaignPages` / `writeCampaignOrder`.
 - Present-mode page dots: right-click menu with rename, duplicate, unlink, delete last page (confirm).
+- Campaign strip keyboard reorder: Alt+Left / Alt+Right on a chip (or while the open page is in a set) calls `nudgeCampaignPage` and writes `campaignOrder`.
 
 ## Iteration
 
-2026-09-20 17:30 BST — Present-mode chip menu parity (unlink / delete last page).
+2026-09-20 18:10 BST — Campaign strip Alt+Left / Alt+Right reorder.
 
 ## Next recommended
 
-Campaign strip keyboard reorder (Alt+Left / Alt+Right).
+Present-mode chip drag-reorder.
