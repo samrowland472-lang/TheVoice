@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { campaignPages } from "@/lib/design/campaign";
 import { FORMATS } from "@/lib/design/formats";
@@ -7,6 +7,7 @@ import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { CanvasStage } from "./canvas-stage";
+import { PresentChipRail } from "./present-chip-menu";
 
 const NOTES_PREF = "voice-design-present-notes";
 
@@ -45,6 +46,7 @@ export function PresentView() {
     rotation: number;
   } | null>(null);
   const [notesOpen, setNotesOpen] = useState(readNotesPref);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const viewport = useDesign((s) => s.viewport);
   if (!doc) return null;
   const live = doc;
@@ -123,14 +125,34 @@ export function PresentView() {
 
   function toggleNotes() {
     setNotesOpen((open) => {
-      writeNotesPref(!open);
-      return !open;
+      const next = !open;
+      writeNotesPref(next);
+      if (next) {
+        requestAnimationFrame(() => notesRef.current?.focus());
+      } else {
+        notesRef.current?.blur();
+      }
+      return next;
     });
   }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+      const typing = e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (typing && notesOpen) {
+          toggleNotes();
+          return;
+        }
+        if (notesOpen) {
+          toggleNotes();
+          return;
+        }
+        setPresent(false);
+        return;
+      }
+      if (typing) return;
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
         go(1);
@@ -139,13 +161,9 @@ export function PresentView() {
         e.preventDefault();
         go(-1);
       }
-      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey) {
+      if (e.key.toLowerCase() === "n" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         toggleNotes();
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setPresent(false);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -169,25 +187,7 @@ export function PresentView() {
             <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>
               Prev
             </Button>
-            <div className="mx-1 flex items-center gap-1" role="tablist" aria-label="Campaign pages">
-              {pages.map((p, n) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={p.id === live.id}
-                  aria-label={`${p.name ?? shortFormat(p.formatId)} (${n + 1} of ${pages.length})`}
-                  title={p.name ?? shortFormat(p.formatId)}
-                  className={cn(
-                    "h-2.5 w-2.5 rounded-full border transition-colors",
-                    p.id === live.id
-                      ? "border-phosphor bg-phosphor"
-                      : "border-ink-faint bg-transparent hover:border-phosphor hover:bg-phosphor/40",
-                  )}
-                  onClick={() => goTo(p.id)}
-                />
-              ))}
-            </div>
+            <PresentChipRail pages={pages} liveId={live.id} onGo={goTo} />
             <Button size="sm" variant="ghost" disabled={i >= pages.length - 1} onClick={() => go(1)}>
               Next
             </Button>
@@ -196,11 +196,13 @@ export function PresentView() {
         <button
           type="button"
           className={cn(
-            "ml-auto font-mono text-[10px] uppercase tracking-wide",
+            "ml-auto font-mono text-[10px] uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground",
             notesOpen ? "text-phosphor" : "text-ink-faint hover:text-ink-dim",
           )}
           onClick={toggleNotes}
           aria-pressed={notesOpen}
+          aria-label={notesOpen ? "Hide speaker notes" : "Show speaker notes"}
+          title="Toggle speaker notes (N)"
         >
           Notes {notesOpen ? "on" : "off"} · N
         </button>
@@ -247,11 +249,20 @@ export function PresentView() {
                 </span>
               </div>
               <textarea
+                ref={notesRef}
                 className="field min-h-24 max-h-40 w-full resize-y rounded-none border-0 bg-transparent px-3 py-2 text-sm text-ink-dim placeholder:text-ink-faint"
                 placeholder="Talking points for this frame — saved with the artboard"
                 value={doc.notes ?? ""}
                 onChange={(e) => setNotes(e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleNotes();
+                    return;
+                  }
+                  e.stopPropagation();
+                }}
                 aria-label="Speaker notes"
               />
             </div>
