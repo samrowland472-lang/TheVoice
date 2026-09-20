@@ -21,20 +21,21 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Campaign page overflow menu (delete from set / unlink). *(shipped this pass)*
-2. Persist explicit campaignOrder when unlinking so remaining chips keep their strip positions.
-3. Confirm-before-delete on the last page of a set.
+1. Confirm-before-delete on the last page of a set.
+2. Drag-reorder campaign chips and write campaignOrder from the new strip sequence.
+3. Present notes persist across sibling jumps without an extra Save.
 
 ## Done
 
-- Restored the missing Zustand store (`store-campaign.ts`) so campaign / persist / studio actions resolve again.
-- Campaign strip ··· menu: Unlink from set keeps the artboard as a standalone page; Delete from set removes it and jumps to a sibling (or the hub).
-- `saveDoc` writes `campaignId` as stored (so unlink can actually clear it) and keeps `campaignOrder`.
+- Restored `store-impl.ts` / `store-campaign.ts` so campaign, persist, and studio actions resolve.
+- `saveDoc` writes `campaignId` and `campaignOrder` as stored (unlink can clear membership).
+- Unlink / delete from the campaign chip ··· menu persist explicit order on remaining pages so chips keep strip positions.
+- Strip rename (double-click or menu), duplicate, add page.
 
 ## Iteration
 
-2026-09-20 08:30 BST — Campaign strip overflow: unlink / delete from set; restore store-campaign.
+2026-09-20 08:40 BST — Persist campaignOrder on unlink/delete; restore store; chip overflow menu.
 
 ## Next recommended
 
-Keep strip order after unlink. Optional confirm when deleting the last remaining page of a campaign.
+Confirm before deleting the last remaining page of a campaign.
