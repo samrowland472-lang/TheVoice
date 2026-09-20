@@ -18,7 +18,7 @@ import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./typ
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | { type: "fit-sel" } | null;
 
-export const useDesign = create((set, get) => ({
+export const useDesign = create<any>((set: any, get: any) => ({
   index: [],
   doc: null,
   selection: [],
@@ -135,6 +135,19 @@ export const useDesign = create((set, get) => ({
     if (!doc?.campaignId) return;
     set({ index: writeCampaignOrder(doc.campaignId, ids) });
   },
+  nudgeCampaignPage: (id, dir) => {
+    const { doc } = get();
+    const cid = doc?.campaignId;
+    if (!cid) return;
+    const ids = campaignPages(get().index, cid).map((p) => p.id);
+    const from = ids.indexOf(id);
+    if (from < 0) return;
+    const to = from + (dir < 0 ? -1 : 1);
+    if (to < 0 || to >= ids.length) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, id);
+    set({ index: writeCampaignOrder(cid, ids) });
+  },
   renameCampaignPage: (id, name) => {
     const trimmed = String(name || "").trim();
     if (!trimmed) return;
@@ -202,8 +215,4 @@ export function ensurePaintLayer(doc) {
   useDesign.getState().addNode(layer, true);
   return layer;
 }
-void BrandKit;
-void DesignDocument;
-void DesignNode;
-void Tool;
-void Viewport;
+export type { BrandKit, DesignDocument, DesignNode, Tool, Viewport };
