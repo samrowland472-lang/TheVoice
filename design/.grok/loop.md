@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Drag-reorder campaign chips and write campaignOrder from the new strip sequence.
-2. Present notes persist across sibling jumps without an extra Save.
+1. Present notes persist across sibling jumps without an extra Save.
+2. Chip menu: unlink / delete last page with confirm (if UI strip menu is missing on this build).
 
 ## Done
 
@@ -31,11 +31,13 @@ Auth OFF, DB OFF.
 - Chip menu: duplicate, unlink, delete page.
 - `writeCampaignOrder` keeps remaining strip positions after unlink/delete.
 - `duplicateCampaignPage` clones the open board into the same set.
+- Drag-reorder campaign chips; `reorderCampaignPages` writes `campaignOrder` from the new strip sequence.
+- Double-click a chip to rename the page.
 
 ## Iteration
 
-2026-09-20 09:30 BST — Confirm before deleting the last remaining page of a campaign.
+2026-09-20 10:15 BST — Drag-reorder campaign chips and persist campaignOrder from the strip.
 
 ## Next recommended
 
-Drag-reorder campaign chips and persist campaignOrder from the new strip sequence.
+Present notes persist across sibling jumps without an extra Save.
