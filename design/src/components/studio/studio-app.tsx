@@ -25,7 +25,8 @@ import { PaintDock } from "./paint-dock";
 import { ToolRail } from "./tool-rail";
 import { TopBar } from "./top-bar";
 import { useShortcuts } from "./use-shortcuts";
-import { CampaignStrip, PresentView } from "./present-chrome";
+import { CampaignStrip } from "./campaign-strip";
+import { PresentView } from "./present-chrome";
 
 export function StudioApp({ id }: { id: string }) {
   const navigate = useNavigate();
