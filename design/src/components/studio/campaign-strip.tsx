@@ -16,6 +16,7 @@ export function CampaignStrip() {
   const removeCampaignPage = useDesign((s) => s.removeCampaignPage);
   const renameCampaignPage = useDesign((s) => s.renameCampaignPage);
   const reorderCampaignPages = useDesign((s) => s.reorderCampaignPages);
+  const nudgeCampaignPage = useDesign((s) => s.nudgeCampaignPage);
   const save = useDesign((s) => s.save);
   const [menuId, setMenuId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -114,6 +115,14 @@ export function CampaignStrip() {
                 e.preventDefault();
                 setMenuId(menuId === p.id ? null : p.id);
               }}
+              onKeyDown={(e) => {
+                if (!e.altKey) return;
+                if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+                e.preventDefault();
+                e.stopPropagation();
+                nudgeCampaignPage(p.id, e.key === "ArrowLeft" ? -1 : 1);
+              }}
+              title="Alt+Left / Alt+Right to reorder"
               className={cn(
                 "h-7 shrink-0 cursor-grab rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide active:cursor-grabbing",
                 p.id === doc.id ? "bg-phosphor text-phosphor-ink" : "text-ink-dim hover:text-ink",
