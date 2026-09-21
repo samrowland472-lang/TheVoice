@@ -2,6 +2,11 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { campaignPages } from "@/lib/design/campaign";
 import { FORMATS } from "@/lib/design/formats";
+import {
+  exitPresentFullscreen,
+  presentRootIsFullscreen,
+  togglePresentFullscreen,
+} from "@/lib/design/present-fullscreen";
 import { screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
@@ -47,6 +52,8 @@ export function PresentView() {
   } | null>(null);
   const [notesOpen, setNotesOpen] = useState(readNotesPref);
   const notesRef = useRef<HTMLTextAreaElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
   const viewport = useDesign((s) => s.viewport);
   if (!doc) return null;
   const live = doc;
@@ -149,10 +156,18 @@ export function PresentView() {
           toggleNotes();
           return;
         }
+        void exitPresentFullscreen();
         setPresent(false);
         return;
       }
       if (typing) return;
+      if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        void togglePresentFullscreen(rootRef.current).then(() => {
+          setFull(presentRootIsFullscreen(rootRef.current));
+        });
+        return;
+      }
       if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
         go(1);
@@ -170,10 +185,28 @@ export function PresentView() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  useEffect(() => {
+    const sync = () => setFull(presentRootIsFullscreen(rootRef.current));
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      void exitPresentFullscreen();
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-ground">
+    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col bg-ground">
       <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-3">
-        <Button size="sm" onClick={() => setPresent(false)}>
+        <Button
+          size="sm"
+          onClick={() => {
+            void exitPresentFullscreen();
+            setPresent(false);
+          }}
+        >
           Exit
         </Button>
         <span className="truncate text-sm text-ink">{doc.name}</span>
@@ -197,6 +230,23 @@ export function PresentView() {
           type="button"
           className={cn(
             "ml-auto font-mono text-[10px] uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground",
+            full ? "text-phosphor" : "text-ink-faint hover:text-ink",
+          )}
+          onClick={() => {
+            void togglePresentFullscreen(rootRef.current).then(() => {
+              setFull(presentRootIsFullscreen(rootRef.current));
+            });
+          }}
+          aria-pressed={full}
+          aria-label={full ? "Exit fullscreen" : "Enter fullscreen"}
+          title="Fullscreen present (F) — campaign rail stays"
+        >
+          Full {full ? "on" : "off"} · F
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "font-mono text-[10px] uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground",
             notesOpen ? "text-phosphor" : "text-ink-faint hover:text-ink-dim",
           )}
           onClick={toggleNotes}
