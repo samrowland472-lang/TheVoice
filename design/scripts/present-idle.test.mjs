@@ -38,3 +38,9 @@ test("peek dots jump frames while the rail is hidden", () => {
   assert.match(chrome, /flex-wrap/);
   assert.match(chrome, /overflow-x-auto/);
 });
+
+test("peek current-dot hover shows page index and hairline glow lifts off type", () => {
+  assert.match(chrome, /peekIndexHover/);
+  assert.match(chrome, /\{i \+ 1\}\/\{Math\.max\(pages\.length, 1\)\}/);
+  assert.match(chrome, /shadow-\[0_-3px_6px_rgba\(63,198,255,0\.35\)\]/);
+});

@@ -2,14 +2,17 @@
 
 ## Iteration
 
-2026-09-21 18:25 BST — Present peek dots name the frame on hover; long decks wrap and scroll.
+2026-09-21 21:20 BST — Present peek shows frame index on current-dot hover; hairline glow lifts off type.
 
 ## Next recommended
 
-Present peek: show a faint page index next to the strip on hover of the current dot; keep the hairline from eating the first row of type.
+Present peek: keyboard left/right still advance while peek is showing; add a tiny next-frame name after the index when Shift is held.
 
 ## Done
 
+- Peek current-dot hover/focus reveals a faint `n/total` index beside the strip.
+- Peek hairline glow is upward-only so it does not wash the first row of type.
+- Restored PresentView after a stub overwrite of present-chrome.tsx.
 - Peek dots carry `title={p.name}` so hover names the frame.
 - Peek strip wraps and scrolls (`max-w` + `flex-wrap` + `overflow-x-auto`) so long campaigns stay usable.
 - Peek dots are buttons with pointer-events; click jumps to that frame without hitting the stage next-click.
