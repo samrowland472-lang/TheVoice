@@ -27,6 +27,8 @@ export function isQuietPresentNavKey(key: string): boolean {
     key === " " ||
     key === "PageDown" ||
     key === "PageUp" ||
+    key === "Home" ||
+    key === "End" ||
     key === "Shift"
   );
 }

@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-21 22:20 BST — Peek stays through left/right; Shift names the next frame after the index.
+2026-09-21 22:33 BST — Peek next-frame names fade instead of shoving dots; Home/End jump quietly.
 
 ## Next recommended
 
-Present peek: long next-frame names wrap or fade instead of shoving the dots; Home/End jump first/last frame without waking the rail.
+Peek: Shift+hover on a non-current dot names that frame; click-drag on the peek strip scrubs frames without waking the rail.
 
 ## Done
 
+- Home / End jump first / last frame and stay on the quiet-nav list so peek does not wake the rail.
+- Long next-frame names truncate with a right-edge fade so they do not shove peek dots.
 - Peek left/right (and Space / Page keys) advance frames without waking the campaign rail.
 - Shift held while peek is showing appends the next-frame name after `n/total`.
 - Peek current-dot hover/focus reveals a faint `n/total` index beside the strip.
