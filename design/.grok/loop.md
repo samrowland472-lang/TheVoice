@@ -1,40 +1,18 @@
 # The Voice Design — 100-hour improvement loop
 
-Automated, recurring quality loop. Each run ships **one coherent slice**, verifies it, then stops.
-Do **not** scaffold a new app. Do **not** add auth or a database. Visual language stays phosphor-on-ground.
-
-## Cadence
-
-Every **5 minutes**. After each successful slice, **push to GitHub** `samrowland472-lang/TheVoice` on `main` under `design/`.
-If the previous iteration is < 4 minutes old, polish that slice or skip. Never push empty/placeholder files.
-
-## GitHub (required)
-
-Repo of record: **https://github.com/samrowland472-lang/TheVoice** — folder `design/`.
-Confirm file sizes after push (`types.ts` / `store.ts` / `render.ts` / `canvas-stage.tsx` / `export.ts` must be KB, not 11 bytes).
-
-## Product
-
-**The Voice Design** — local-first graphic studio (hub + artboard).
-TanStack Start, Zustand, canvas renderer, `localStorage` persistence.
-Auth OFF, DB OFF.
-
-## Backlog (priority order)
-
-1. Present-mode keyboard: Home / End jump to first / last page in the set.
-
-## Done
-
-- Present-mode active page-dot ring: the live frame keeps a tight phosphor ring on ground; focus-visible thickens it; inactive dots only ring when focused.
-- Inspector restored (board, geometry, ink, type) after a placeholder file broke typecheck.
-- Campaign page actions on the store: rename, duplicate, unlink, delete, reorder, Alt+arrow nudge.
-- Present-mode speaker notes drawer: **N** toggles notes; **Escape** closes the drawer first, then exits present.
-- Campaign chip context menu: rename, duplicate, unlink, delete page.
-
 ## Iteration
 
-2026-09-21 16:25 BST — Tight present-mode active page-dot phosphor ring; inspector restored.
+2026-09-21 16:27 BST — Present idle chrome: campaign rail fades after 2.8s.
 
 ## Next recommended
 
-Present-mode Home / End to jump the first / last campaign page.
+Present idle: keep a thin phosphor hairline or page-dot peek so the deck is still discoverable when the rail is hidden.
+
+## Done
+
+- Present-mode idle chrome: campaign rail fades after 2.8s of no pointer/key activity.
+- Rail stays fully visible while speaker notes are open or a chip menu / rename is active.
+- Restored canvas `drawDocument` / viewport helpers so the artboard paints again.
+- Present-mode page dots: current frame gets a phosphor ring + glow; Tab focus-visible ring tightened.
+- Restored present chrome (PresentView) so Shift+P is not a blank screen.
+- Present-mode speaker notes drawer: N toggles notes; Escape closes the drawer first, then exits present.
