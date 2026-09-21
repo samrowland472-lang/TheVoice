@@ -21,8 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present-mode fullscreen (F) without leaving the campaign rail.
-2. Present-mode notes: restore last-edited page when opening notes from another frame.
+1. Present-mode notes: restore last-edited page when opening notes from another frame.
+2. Present-mode hide chrome after idle while keeping F to reveal the campaign rail.
 
 ## Done
 
@@ -44,11 +44,12 @@ Auth OFF, DB OFF.
 - Present chrome uses `PresentChipRail` again (drag / context / Alt-reorder + active-dot phosphor halo).
 - Present-mode speaker notes: N toggles the drawer and focuses the field; Escape closes notes first, then exits present.
 - Present-mode notes drawer persists caret per page and shows a last-edited page hint.
+- Present-mode fullscreen (F): requestFullscreen on the present root so the campaign chip rail stays on screen. Exit present also leaves fullscreen.
 
 ## Iteration
 
-2026-09-21 01:20 BST — Present notes caret + last-edited hint.
+2026-09-21 03:20 BST — Present fullscreen keeps the campaign rail.
 
 ## Next recommended
 
-Present-mode fullscreen (F) without leaving the campaign rail.
+Present-mode notes: restore last-edited page when opening notes from another frame.
