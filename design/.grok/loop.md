@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-21 18:20 BST — Present peek dots jump frames while the campaign rail is hidden.
+2026-09-21 18:25 BST — Present peek dots name the frame on hover; long decks wrap and scroll.
 
 ## Next recommended
 
-Present peek: hover title on a peek dot should name the frame; long decks wrap or scroll the strip.
+Present peek: show a faint page index next to the strip on hover of the current dot; keep the hairline from eating the first row of type.
 
 ## Done
 
+- Peek dots carry `title={p.name}` so hover names the frame.
+- Peek strip wraps and scrolls (`max-w` + `flex-wrap` + `overflow-x-auto`) so long campaigns stay usable.
 - Peek dots are buttons with pointer-events; click jumps to that frame without hitting the stage next-click.
 - Present idle peek: thin phosphor hairline and current-frame page dots remain after the rail fades (2.8s).
 - Peek is suppressed when speaker notes or a chip menu / rename keeps the rail locked open.

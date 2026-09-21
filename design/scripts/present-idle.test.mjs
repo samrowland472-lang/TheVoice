@@ -31,7 +31,10 @@ test("peek stays when chrome is hidden", () => {
 });
 
 test("peek dots jump frames while the rail is hidden", () => {
-  assert.match(chrome, /pointer-events-auto mt-2 flex items-center gap-1.5/);
+  assert.match(chrome, /pointer-events-auto mt-2 flex max-w-\[min\(90vw,40rem\)\]/);
   assert.match(chrome, /onClick=\{\(e\) => \{\s*e\.stopPropagation\(\);\s*goTo\(p\.id\);/);
   assert.match(chrome, /aria-label=\{`Go to \$\{p\.name\}`\}/);
+  assert.match(chrome, /title=\{p\.name\}/);
+  assert.match(chrome, /flex-wrap/);
+  assert.match(chrome, /overflow-x-auto/);
 });
