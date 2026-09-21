@@ -210,6 +210,18 @@ export function PresentView() {
         return;
       }
       if (typing) return;
+      if (e.key === "Home") {
+        e.preventDefault();
+        const first = pages[0];
+        if (first) goTo(first.id);
+        return;
+      }
+      if (e.key === "End") {
+        e.preventDefault();
+        const last = pages[pages.length - 1];
+        if (last) goTo(last.id);
+        return;
+      }
       if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         bumpIdle();
@@ -234,11 +246,14 @@ export function PresentView() {
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift") setShiftHeld(false);
     };
+    const onWinBlur = () => setShiftHeld(false);
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onWinBlur);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onWinBlur);
     };
   });
 
@@ -424,9 +439,15 @@ export function PresentView() {
                 />
               ))}
               {(peekIndexHover || shiftHeld) && (
-                <span className="ml-1 max-w-[14rem] truncate text-[10px] font-medium tracking-wide text-ink-faint/80">
-                  {i + 1}/{Math.max(pages.length, 1)}
-                  {shiftHeld && pages[i + 1] ? ` \u00b7 ${pages[i + 1]!.name}` : ""}
+                <span className="ml-1 flex min-w-0 max-w-[min(40vw,14rem)] items-baseline gap-1 text-[10px] font-medium tracking-wide text-ink-faint/80">
+                  <span className="shrink-0">
+                    {i + 1}/{Math.max(pages.length, 1)}
+                  </span>
+                  {shiftHeld && pages[i + 1] && (
+                    <span className="min-w-0 truncate [mask-image:linear-gradient(90deg,#000_70%,transparent)]">
+                      {pages[i + 1].name}
+                    </span>
+                  )}
                 </span>
               )}
             </div>
