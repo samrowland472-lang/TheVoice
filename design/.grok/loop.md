@@ -21,7 +21,8 @@ Auth OFF, DB OFF.
 
 ## Backlog (priority order)
 
-1. Present-mode notes: jump-to-last control if restore is unwanted on the current frame.
+1. Present-mode idle chrome: pointer activity or F reveals the campaign rail (notes keep it visible).
+2. Wire caret restore in the notes textarea from NOTES_CARET.
 
 ## Done
 
@@ -46,11 +47,12 @@ Auth OFF, DB OFF.
 - Present-mode fullscreen (F): requestFullscreen on the present root so the campaign chip rail stays on screen. Exit present also leaves fullscreen.
 - Present-mode notes: opening notes (N) from another campaign frame restores the last-edited page; caret and last-edit hint persist.
 - Present-mode chrome hides after idle; pointer activity or F reveals the campaign rail. Notes keep the bar visible. F while hidden only reveals; F while visible still toggles fullscreen.
+- Present-mode notes stay on the current frame; Jump to last opens the page whose notes were last edited.
 
 ## Iteration
 
-2026-09-21 09:24 BST — Present idle-hide chrome; F reveals the rail.
+2026-09-21 09:37 BST — Present notes jump-to-last control (no forced restore).
 
 ## Next recommended
 
-Present-mode notes: jump-to-last control if restore is unwanted on the current frame.
+Present-mode idle chrome: pointer activity or F reveals the campaign rail (notes keep it visible).
