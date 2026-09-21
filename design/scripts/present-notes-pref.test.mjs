@@ -53,3 +53,17 @@ test("last notes edit requires page id", () => {
   const last = parseLastNotesEdit(JSON.stringify({ pageId: "p1", name: "Story", at: 12 }));
   assert.deepEqual(last, { pageId: "p1", name: "Story", at: 12 });
 });
+
+function restoreNotesPageId(last, liveId, pageIds) {
+  if (!last?.pageId || last.pageId === liveId) return null;
+  if (!pageIds.includes(last.pageId)) return null;
+  return last.pageId;
+}
+
+test("opening notes from another frame restores last-edited page", () => {
+  const last = { pageId: "story", name: "Story", at: 1 };
+  assert.equal(restoreNotesPageId(last, "square", ["story", "square", "banner"]), "story");
+  assert.equal(restoreNotesPageId(last, "story", ["story", "square"]), null);
+  assert.equal(restoreNotesPageId(last, "square", ["square"]), null);
+  assert.equal(restoreNotesPageId(null, "square", ["story"]), null);
+});
