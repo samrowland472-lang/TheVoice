@@ -1,3 +1,8 @@
+export function campaignPageName(base: string, formatLabel: string) {
+  const stem = base.replace(/\s+·\s+.+$/, "").trim() || base;
+  return `${stem} · ${formatLabel}`;
+}
+
 export function campaignPages<
   T extends { id: string; campaignId?: string; formatId?: string; campaignOrder?: number },
 >(index: T[], campaignId: string | undefined): T[] {

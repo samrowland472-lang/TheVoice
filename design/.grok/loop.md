@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-21 17:35 BST — Present idle peek: phosphor hairline + page-dot strip stay when the campaign rail fades.
+2026-09-21 18:20 BST — Present peek dots jump frames while the campaign rail is hidden.
 
 ## Next recommended
 
-Present peek: clicking a peek dot should jump frames even while the rail is hidden.
+Present peek: hover title on a peek dot should name the frame; long decks wrap or scroll the strip.
 
 ## Done
 
+- Peek dots are buttons with pointer-events; click jumps to that frame without hitting the stage next-click.
 - Present idle peek: thin phosphor hairline and current-frame page dots remain after the rail fades (2.8s).
 - Peek is suppressed when speaker notes or a chip menu / rename keeps the rail locked open.
 - Present-mode idle chrome: campaign rail fades after 2.8s of no pointer/key activity.

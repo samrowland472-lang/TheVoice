@@ -29,3 +29,9 @@ test("peek stays when chrome is hidden", () => {
   assert.equal(shouldShowPresentPeek({ hideChrome: true, pageCount: 3 }), true);
   assert.equal(shouldShowPresentPeek({ hideChrome: false, pageCount: 3 }), false);
 });
+
+test("peek dots jump frames while the rail is hidden", () => {
+  assert.match(chrome, /pointer-events-auto mt-2 flex items-center gap-1.5/);
+  assert.match(chrome, /onClick=\{\(e\) => \{\s*e\.stopPropagation\(\);\s*goTo\(p\.id\);/);
+  assert.match(chrome, /aria-label=\{`Go to \$\{p\.name\}`\}/);
+});
