@@ -47,3 +47,46 @@ export function parseLastNotesEdit(raw: string | null): LastNotesEdit | null {
     return null;
   }
 }
+
+/** When opening notes on a different campaign frame, jump back to the last page that was edited. */
+export function restoreNotesPageId(
+  last: LastNotesEdit | null,
+  liveId: string,
+  pageIds: string[],
+): string | null {
+  if (!last?.pageId || last.pageId === liveId) return null;
+  if (!pageIds.includes(last.pageId)) return null;
+  return last.pageId;
+}
+
+export function writeLastNotesEdit(edit: LastNotesEdit) {
+  try {
+    localStorage.setItem(NOTES_LAST, JSON.stringify(edit));
+  } catch {
+    /* blocked */
+  }
+}
+
+export function readLastNotesEdit(): LastNotesEdit | null {
+  try {
+    return parseLastNotesEdit(localStorage.getItem(NOTES_LAST));
+  } catch {
+    return null;
+  }
+}
+
+export function writeCaretMap(map: CaretMap) {
+  try {
+    localStorage.setItem(NOTES_CARET, JSON.stringify(map));
+  } catch {
+    /* blocked */
+  }
+}
+
+export function readCaretMap(): CaretMap {
+  try {
+    return parseCaretMap(localStorage.getItem(NOTES_CARET));
+  } catch {
+    return {};
+  }
+}
