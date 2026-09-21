@@ -83,9 +83,15 @@ export function PresentView() {
   }, [bumpIdle]);
   if (!doc) return null;
   const live = doc;
-  const pages = live.campaignId
-    ? campaignPages(index, live.campaignId)
-    : [{ id: live.id, name: live.name, formatId: live.artboard.formatId }];
+  const pages = (
+    live.campaignId
+      ? campaignPages(index as { id: string; name?: string; formatId?: string; campaignId?: string; campaignOrder?: number }[], live.campaignId)
+      : [{ id: live.id, name: live.name, formatId: live.artboard.formatId }]
+  ).map((p) => ({
+    id: p.id,
+    name: p.name ?? live.name,
+    formatId: p.formatId ?? live.artboard.formatId,
+  }));
   const i = Math.max(0, pages.findIndex((p) => p.id === live.id));
   const hideChrome = shouldHidePresentChrome({ idle, notesOpen, menuOpen });
   const showPeek = shouldShowPresentPeek({ hideChrome, pageCount: pages.length });
@@ -360,16 +366,27 @@ export function PresentView() {
         {showPeek && (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col items-center">
             <div className="h-px w-full bg-phosphor/55 shadow-[0_0_8px_rgba(63,198,255,0.45)]" aria-hidden />
-            <div className="mt-2 flex items-center gap-1.5" role="status" aria-label={`Frame ${i + 1} of ${pages.length}`}>
+            <div
+              className="pointer-events-auto mt-2 flex items-center gap-1.5"
+              role="navigation"
+              aria-label={`Frame ${i + 1} of ${pages.length}`}
+            >
               {pages.map((p, n) => (
-                <span
+                <button
                   key={p.id}
+                  type="button"
                   className={cn(
-                    "block h-1.5 w-1.5 rounded-full border",
+                    "block h-2 w-2 rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground",
                     n === i
                       ? "border-phosphor bg-phosphor shadow-[0_0_8px_rgba(63,198,255,0.7)]"
-                      : "border-ink-faint/70 bg-transparent",
+                      : "border-ink-faint/70 bg-transparent hover:border-phosphor/80",
                   )}
+                  aria-label={`Go to ${p.name}`}
+                  aria-current={n === i ? "page" : undefined}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goTo(p.id);
+                  }}
                 />
               ))}
             </div>
