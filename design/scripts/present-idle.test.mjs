@@ -52,6 +52,8 @@ function isQuietPresentNavKey(key) {
     key === " " ||
     key === "PageDown" ||
     key === "PageUp" ||
+    key === "Home" ||
+    key === "End" ||
     key === "Shift"
   );
 }
@@ -62,11 +64,18 @@ test("arrow keys stay quiet so peek does not wake the rail", () => {
   assert.equal(isQuietPresentNavKey("ArrowRight"), true);
   assert.equal(isQuietPresentNavKey("ArrowLeft"), true);
   assert.equal(isQuietPresentNavKey("Shift"), true);
+  assert.equal(isQuietPresentNavKey("Home"), true);
+  assert.equal(isQuietPresentNavKey("End"), true);
   assert.equal(isQuietPresentNavKey("n"), false);
+  assert.match(src, /key === "Home"/);
+  assert.match(chrome, /e\.key === "Home"/);
+  assert.match(chrome, /e\.key === "End"/);
 });
 
 test("shift peek names the next frame after the index", () => {
   assert.match(chrome, /shiftHeld/);
   assert.match(chrome, /peekIndexHover \|\| shiftHeld/);
   assert.match(chrome, /pages\[i \+ 1\]/);
+  assert.match(chrome, /truncate/);
+  assert.match(chrome, /mask-image:linear-gradient/);
 });
