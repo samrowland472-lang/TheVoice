@@ -6,7 +6,12 @@ import {
   presentRootIsFullscreen,
   togglePresentFullscreen,
 } from "@/lib/design/present-fullscreen";
-import { PRESENT_IDLE_MS, shouldHidePresentChrome, shouldShowPresentPeek } from "@/lib/design/present-idle";
+import {
+  PRESENT_IDLE_MS,
+  isQuietPresentNavKey,
+  shouldHidePresentChrome,
+  shouldShowPresentPeek,
+} from "@/lib/design/present-idle";
 import { screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
@@ -58,6 +63,7 @@ export function PresentView() {
   const [idle, setIdle] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [peekIndexHover, setPeekIndexHover] = useState(false);
+  const [shiftHeld, setShiftHeld] = useState(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viewport = useDesign((s) => s.viewport);
 
@@ -70,15 +76,19 @@ export function PresentView() {
   useEffect(() => {
     bumpIdle();
     const onActivity = () => bumpIdle();
+    const onKeyActivity = (e: KeyboardEvent) => {
+      if (isQuietPresentNavKey(e.key)) return;
+      bumpIdle();
+    };
     window.addEventListener("pointermove", onActivity);
     window.addEventListener("pointerdown", onActivity);
-    window.addEventListener("keydown", onActivity);
+    window.addEventListener("keydown", onKeyActivity);
     window.addEventListener("wheel", onActivity, { passive: true });
     return () => {
       if (idleTimer.current) clearTimeout(idleTimer.current);
       window.removeEventListener("pointermove", onActivity);
       window.removeEventListener("pointerdown", onActivity);
-      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("keydown", onKeyActivity);
       window.removeEventListener("wheel", onActivity);
     };
   }, [bumpIdle]);
@@ -195,6 +205,10 @@ export function PresentView() {
         setPresent(false);
         return;
       }
+      if (e.key === "Shift") {
+        setShiftHeld(true);
+        return;
+      }
       if (typing) return;
       if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
@@ -217,8 +231,15 @@ export function PresentView() {
         toggleNotes();
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftHeld(false);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+    };
   });
 
   useEffect(() => {
@@ -402,9 +423,10 @@ export function PresentView() {
                   }}
                 />
               ))}
-              {peekIndexHover && (
-                <span className="ml-1 text-[10px] font-medium tracking-wide text-ink-faint/80">
+              {(peekIndexHover || shiftHeld) && (
+                <span className="ml-1 max-w-[14rem] truncate text-[10px] font-medium tracking-wide text-ink-faint/80">
                   {i + 1}/{Math.max(pages.length, 1)}
+                  {shiftHeld && pages[i + 1] ? ` \u00b7 ${pages[i + 1]!.name}` : ""}
                 </span>
               )}
             </div>
