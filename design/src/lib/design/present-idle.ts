@@ -10,3 +10,11 @@ export function shouldHidePresentChrome(opts: {
   if (opts.notesOpen || opts.menuOpen) return false;
   return opts.idle;
 }
+
+/** Thin hairline + page-dot peek stay when the rail is hidden so the deck is findable. */
+export function shouldShowPresentPeek(opts: {
+  hideChrome: boolean;
+  pageCount: number;
+}): boolean {
+  return opts.hideChrome && opts.pageCount > 0;
+}
