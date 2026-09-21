@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { campaignPages } from "@/lib/design/campaign";
 import {
@@ -6,6 +6,7 @@ import {
   presentRootIsFullscreen,
   togglePresentFullscreen,
 } from "@/lib/design/present-fullscreen";
+import { PRESENT_IDLE_MS, shouldHidePresentChrome, shouldShowPresentPeek } from "@/lib/design/present-idle";
 import { screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
@@ -54,13 +55,40 @@ export function PresentView() {
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [full, setFull] = useState(false);
+  const [idle, setIdle] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viewport = useDesign((s) => s.viewport);
+
+  const bumpIdle = useCallback(() => {
+    setIdle(false);
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    idleTimer.current = setTimeout(() => setIdle(true), PRESENT_IDLE_MS);
+  }, []);
+
+  useEffect(() => {
+    bumpIdle();
+    const onActivity = () => bumpIdle();
+    window.addEventListener("pointermove", onActivity);
+    window.addEventListener("pointerdown", onActivity);
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("wheel", onActivity, { passive: true });
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      window.removeEventListener("pointermove", onActivity);
+      window.removeEventListener("pointerdown", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("wheel", onActivity);
+    };
+  }, [bumpIdle]);
   if (!doc) return null;
   const live = doc;
   const pages = live.campaignId
     ? campaignPages(index, live.campaignId)
     : [{ id: live.id, name: live.name, formatId: live.artboard.formatId }];
   const i = Math.max(0, pages.findIndex((p) => p.id === live.id));
+  const hideChrome = shouldHidePresentChrome({ idle, notesOpen, menuOpen });
+  const showPeek = shouldShowPresentPeek({ hideChrome, pageCount: pages.length });
 
   function goTo(id: string) {
     if (!id || id === live.id) return;
@@ -163,6 +191,7 @@ export function PresentView() {
       if (typing) return;
       if (e.key.toLowerCase() === "f" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
+        bumpIdle();
         void togglePresentFullscreen(rootRef.current).then(() => {
           setFull(presentRootIsFullscreen(rootRef.current));
         });
@@ -198,8 +227,14 @@ export function PresentView() {
   }, []);
 
   return (
-    <div ref={rootRef} className="flex min-h-0 flex-1 flex-col bg-ground">
-      <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border px-3">
+    <div ref={rootRef} className="relative flex min-h-0 flex-1 flex-col bg-ground">
+      <div
+        className={cn(
+          "flex h-12 shrink-0 items-center gap-3 border-b border-border px-3 transition-opacity duration-500",
+          hideChrome ? "pointer-events-none opacity-0" : "opacity-100",
+        )}
+        aria-hidden={hideChrome}
+      >
         <Button
           size="sm"
           onClick={() => {
@@ -220,7 +255,7 @@ export function PresentView() {
             <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>
               Prev
             </Button>
-            <PresentChipRail pages={pages} liveId={live.id} onGo={goTo} />
+            <PresentChipRail pages={pages} liveId={live.id} onGo={goTo} onMenuOpenChange={setMenuOpen} />
             <Button size="sm" variant="ghost" disabled={i >= pages.length - 1} onClick={() => go(1)}>
               Next
             </Button>
@@ -319,6 +354,24 @@ export function PresentView() {
                 }}
                 aria-label="Speaker notes"
               />
+            </div>
+          </div>
+        )}
+        {showPeek && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col items-center">
+            <div className="h-px w-full bg-phosphor/55 shadow-[0_0_8px_rgba(63,198,255,0.45)]" aria-hidden />
+            <div className="mt-2 flex items-center gap-1.5" role="status" aria-label={`Frame ${i + 1} of ${pages.length}`}>
+              {pages.map((p, n) => (
+                <span
+                  key={p.id}
+                  className={cn(
+                    "block h-1.5 w-1.5 rounded-full border",
+                    n === i
+                      ? "border-phosphor bg-phosphor shadow-[0_0_8px_rgba(63,198,255,0.7)]"
+                      : "border-ink-faint/70 bg-transparent",
+                  )}
+                />
+              ))}
             </div>
           </div>
         )}
