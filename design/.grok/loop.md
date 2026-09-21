@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-21 21:20 BST — Present peek shows frame index on current-dot hover; hairline glow lifts off type.
+2026-09-21 22:20 BST — Peek stays through left/right; Shift names the next frame after the index.
 
 ## Next recommended
 
-Present peek: keyboard left/right still advance while peek is showing; add a tiny next-frame name after the index when Shift is held.
+Present peek: long next-frame names wrap or fade instead of shoving the dots; Home/End jump first/last frame without waking the rail.
 
 ## Done
 
+- Peek left/right (and Space / Page keys) advance frames without waking the campaign rail.
+- Shift held while peek is showing appends the next-frame name after `n/total`.
 - Peek current-dot hover/focus reveals a faint `n/total` index beside the strip.
 - Peek hairline glow is upward-only so it does not wash the first row of type.
 - Restored PresentView after a stub overwrite of present-chrome.tsx.

@@ -18,3 +18,15 @@ export function shouldShowPresentPeek(opts: {
 }): boolean {
   return opts.hideChrome && opts.pageCount > 0;
 }
+
+/** Frame-advance keys keep peek visible — they must not wake the campaign rail. */
+export function isQuietPresentNavKey(key: string): boolean {
+  return (
+    key === "ArrowRight" ||
+    key === "ArrowLeft" ||
+    key === " " ||
+    key === "PageDown" ||
+    key === "PageUp" ||
+    key === "Shift"
+  );
+}

@@ -44,3 +44,29 @@ test("peek current-dot hover shows page index and hairline glow lifts off type",
   assert.match(chrome, /\{i \+ 1\}\/\{Math\.max\(pages\.length, 1\)\}/);
   assert.match(chrome, /shadow-\[0_-3px_6px_rgba\(63,198,255,0\.35\)\]/);
 });
+
+function isQuietPresentNavKey(key) {
+  return (
+    key === "ArrowRight" ||
+    key === "ArrowLeft" ||
+    key === " " ||
+    key === "PageDown" ||
+    key === "PageUp" ||
+    key === "Shift"
+  );
+}
+
+test("arrow keys stay quiet so peek does not wake the rail", () => {
+  assert.match(src, /isQuietPresentNavKey/);
+  assert.match(chrome, /isQuietPresentNavKey/);
+  assert.equal(isQuietPresentNavKey("ArrowRight"), true);
+  assert.equal(isQuietPresentNavKey("ArrowLeft"), true);
+  assert.equal(isQuietPresentNavKey("Shift"), true);
+  assert.equal(isQuietPresentNavKey("n"), false);
+});
+
+test("shift peek names the next frame after the index", () => {
+  assert.match(chrome, /shiftHeld/);
+  assert.match(chrome, /peekIndexHover \|\| shiftHeld/);
+  assert.match(chrome, /pages\[i \+ 1\]/);
+});
