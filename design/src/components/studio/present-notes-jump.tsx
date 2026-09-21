@@ -19,7 +19,7 @@ export function PresentNotesJump(props: {
         "font-mono text-[10px] uppercase tracking-wide text-ink-dim hover:text-phosphor",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor",
       )}
-      onClick={() => onJump(props.last!.pageId)}
+      onClick={() => props.onJump(props.last!.pageId)}
       title="Open the frame whose notes you last edited"
     >
       Jump to last · {props.last.name}
