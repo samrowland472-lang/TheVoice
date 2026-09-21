@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { FORMATS } from "@/lib/design/formats";
 import { useDesign } from "@/lib/design/store";
@@ -17,10 +17,12 @@ export function PresentChipRail({
   pages,
   liveId,
   onGo,
+  onMenuOpenChange,
 }: {
   pages: Page[];
   liveId: string;
   onGo: (id: string) => void;
+  onMenuOpenChange?: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
   const save = useDesign((s) => s.save);
@@ -36,6 +38,10 @@ export function PresentChipRail({
   const [draft, setDraft] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+
+  useEffect(() => {
+    onMenuOpenChange?.(Boolean(menuId || renaming));
+  }, [menuId, renaming, onMenuOpenChange]);
 
   function moveChip(fromId: string, toId: string) {
     if (!fromId || !toId || fromId === toId) return;
