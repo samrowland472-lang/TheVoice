@@ -70,7 +70,16 @@ export function StudioApp({ id }: { id: string }) {
       { id: "save", label: "Save", group: "File", hint: "Cmd+S", run: () => s().save() },
       { id: "undo", label: "Undo", group: "Edit", hint: "Cmd+Z", run: () => s().undo() },
       { id: "fit", label: "Fit artboard", group: "View", hint: "0", run: () => s().requestFit() },
-      { id: "present", label: "Present artboard", group: "View", run: () => s().togglePresent() },
+      { id: "present", label: "Present artboard", group: "View", hint: "Shift+P", run: () => s().togglePresent() },
+      {
+        id: "present-full",
+        label: "Fullscreen present (keep campaign rail)",
+        group: "View",
+        hint: "F in present",
+        run: () => {
+          s().setPresent(true);
+        },
+      },
       { id: "safe-area", label: "Show / hide safe area", group: "View", run: () => s().toggleSafeArea() },
       { id: "print-marks", label: "Show / hide print marks", group: "Print", run: () => s().togglePrintMarks() },
       { id: "select", label: "Select tool", group: "Tools", hint: "V", run: () => s().setTool("select") },
