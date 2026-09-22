@@ -96,3 +96,25 @@ test("click-drag on peek strip scrubs frames without waking the rail", () => {
   assert.match(chrome, /peekScrubbing/);
   assert.match(chrome, /setPointerCapture/);
 });
+
+function peekScrubTickId(startId, endId) {
+  if (!endId || !startId || startId === endId) return null;
+  return endId;
+}
+
+test("scrub leaves a tick on the last dragged frame", () => {
+  assert.match(src, /peekScrubTickId/);
+  assert.match(chrome, /peekTickId/);
+  assert.match(chrome, /data-peek-tick/);
+  assert.equal(peekScrubTickId("a", "a"), null);
+  assert.equal(peekScrubTickId("a", "b"), "b");
+  assert.equal(peekScrubTickId(null, "b"), null);
+});
+
+test("double-click peek opens notes without waking the rail", () => {
+  assert.match(chrome, /peekNotesOpen/);
+  assert.match(chrome, /onDoubleClick/);
+  assert.match(chrome, /setPeekNotesOpen\(true\)/);
+  assert.match(chrome, /notesVisible/);
+  assert.match(chrome, /shouldHidePresentChrome\(\{ idle, notesOpen, menuOpen \}\)/);
+});
