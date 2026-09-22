@@ -53,6 +53,19 @@ export function peekScrubTickId(startId: string | null, endId: string | null): s
   return endId;
 }
 
+/** Last-frame tick fades if you stay on the landed frame. */
+export const PEEK_TICK_FADE_MS = 3200;
+
+export function peekTickAfterDwell(
+  tickId: string | null,
+  dwellMs: number,
+  fadeMs: number = PEEK_TICK_FADE_MS,
+): string | null {
+  if (!tickId) return null;
+  if (dwellMs >= fadeMs) return null;
+  return tickId;
+}
+
 /** Quiet frame-advance keys drop the last-frame tick so it is not a second current-dot. */
 export function peekTickAfterQuietAdvance(tickId: string | null, key: string): string | null {
   if (!tickId) return null;

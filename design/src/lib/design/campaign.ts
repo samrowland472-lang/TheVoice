@@ -4,7 +4,7 @@ export function campaignPageName(base: string, formatLabel: string) {
 }
 
 export function campaignPages<
-  T extends { id: string; campaignId?: string; formatId?: string; campaignOrder?: number },
+  T extends { id: string; name?: string; campaignId?: string; formatId?: string; campaignOrder?: number },
 >(index: T[], campaignId: string | undefined): T[] {
   if (!campaignId) return [];
   return index

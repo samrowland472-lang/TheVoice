@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-22 10:30 BST — Quiet peek-dot click clears the last-frame tick.
+2026-09-22 12:15 BST — Peek last-frame tick fades after a 3.2s dwell.
 
 ## Next recommended
 
-Peek tick should fade after a few seconds on its own if you stay on the landed frame.
+Peek tick fade should restart only when a new scrub lands, not when quiet keys already cleared it.
 
 ## Done
 
+- Peek last-frame tick fades on its own after 3.2s if you stay on the landed frame.
 - Quiet click of a different peek dot clears the last-frame tick so it is not a second current-dot.
 - Quiet frame-advance keys (arrows, Space, Page, Home, End) clear the last-frame peek tick so it does not linger as a second current-dot.
 - After a peek drag-scrub that actually changes frames, a faint phosphor tick marks the last frame you dragged through.
