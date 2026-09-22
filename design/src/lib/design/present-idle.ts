@@ -110,15 +110,25 @@ export function peekTickShown(tickId: string | null, currentId: string | null): 
   return tickId;
 }
 
+/** Remaining fade dwell in 0..1 — 1 at land, 0 when the clock expires. */
+export function peekTickRemaining(dwellMs: number, fadeMs: number = PEEK_TICK_FADE_MS): number {
+  if (!Number.isFinite(dwellMs) || dwellMs <= 0) return 1;
+  if (dwellMs >= fadeMs) return 0;
+  return 1 - dwellMs / fadeMs;
+}
+
 /**
- * Trail ticks fall off with page-index distance from the current-dot:
- * a neighbour stays readable; a far frame is a quiet ghost.
+ * Trail ticks fall off with page-index distance from the current-dot,
+ * then dim further with remaining fade dwell so a far neighbour does
+ * not sit at a hard step until it vanishes.
  */
-export function peekTickOpacity(distance: number): number {
+export function peekTickOpacity(distance: number, remaining: number = 1): number {
   if (!Number.isFinite(distance) || distance <= 0) return 0;
   const d = Math.abs(Math.round(distance));
-  if (d === 1) return 0.7;
-  if (d === 2) return 0.42;
-  if (d === 3) return 0.26;
-  return 0.14;
+  let step = 0.14;
+  if (d === 1) step = 0.7;
+  else if (d === 2) step = 0.42;
+  else if (d === 3) step = 0.26;
+  const t = Number.isFinite(remaining) ? Math.max(0, Math.min(1, remaining)) : 1;
+  return step * t;
 }
