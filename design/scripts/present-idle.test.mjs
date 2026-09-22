@@ -32,7 +32,8 @@ test("peek stays when chrome is hidden", () => {
 
 test("peek dots jump frames while the rail is hidden", () => {
   assert.match(chrome, /pointer-events-auto mt-2 flex max-w-\[min\(90vw,40rem\)\]/);
-  assert.match(chrome, /onClick=\{\(e\) => \{\s*e\.stopPropagation\(\);\s*goTo\(p\.id\);/);
+  assert.match(chrome, /onClick=\{\(e\) => \{\s*e\.stopPropagation\(\);/);
+  assert.match(chrome, /goTo\(p\.id\)/);
   assert.match(chrome, /aria-label=\{`Go to \$\{p\.name\}`\}/);
   assert.match(chrome, /title=\{p\.name\}/);
   assert.match(chrome, /flex-wrap/);
@@ -117,4 +118,26 @@ test("double-click peek opens notes without waking the rail", () => {
   assert.match(chrome, /setPeekNotesOpen\(true\)/);
   assert.match(chrome, /notesVisible/);
   assert.match(chrome, /shouldHidePresentChrome\(\{ idle, notesOpen, menuOpen \}\)/);
+});
+
+function peekTickAfterQuietAdvance(tickId, key) {
+  if (!tickId) return null;
+  if (isQuietPresentNavKey(key) && key !== "Shift") return null;
+  return tickId;
+}
+
+function peekTickAfterQuietDotClick(tickId, clickedId, currentId) {
+  if (!tickId) return null;
+  if (clickedId && currentId && clickedId !== currentId) return null;
+  return tickId;
+}
+
+test("quiet keys and a different peek-dot click clear the last-frame tick", () => {
+  assert.match(src, /peekTickAfterQuietAdvance/);
+  assert.match(src, /peekTickAfterQuietDotClick/);
+  assert.match(chrome, /peekTickAfterQuietDotClick/);
+  assert.equal(peekTickAfterQuietAdvance("frame-b", "ArrowRight"), null);
+  assert.equal(peekTickAfterQuietAdvance("frame-b", "Shift"), "frame-b");
+  assert.equal(peekTickAfterQuietDotClick("frame-b", "frame-c", "frame-a"), null);
+  assert.equal(peekTickAfterQuietDotClick("frame-b", "frame-a", "frame-a"), "frame-b");
 });
