@@ -66,6 +66,15 @@ export function peekTickAfterDwell(
   return tickId;
 }
 
+/** Fade clock restarts only when a new scrub lands a tick — not when keys already cleared it. */
+export function peekTickFadeShouldRestart(
+  prevTickId: string | null,
+  nextTickId: string | null,
+): boolean {
+  if (!nextTickId) return false;
+  return prevTickId !== nextTickId;
+}
+
 /** Quiet frame-advance keys drop the last-frame tick so it is not a second current-dot. */
 export function peekTickAfterQuietAdvance(tickId: string | null, key: string): string | null {
   if (!tickId) return null;
