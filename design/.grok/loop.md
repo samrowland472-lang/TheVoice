@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-22 10:17 BST — Peek last-frame tick fades on the next quiet arrow-key advance.
+2026-09-22 10:30 BST — Quiet peek-dot click clears the last-frame tick.
 
 ## Next recommended
 
-Peek tick should also clear on a quiet click of a different peek dot (not only keys).
+Peek tick should fade after a few seconds on its own if you stay on the landed frame.
 
 ## Done
 
+- Quiet click of a different peek dot clears the last-frame tick so it is not a second current-dot.
 - Quiet frame-advance keys (arrows, Space, Page, Home, End) clear the last-frame peek tick so it does not linger as a second current-dot.
 - After a peek drag-scrub that actually changes frames, a faint phosphor tick marks the last frame you dragged through.
 - Double-click a peek dot jumps to that frame and opens speaker notes without waking the campaign rail.

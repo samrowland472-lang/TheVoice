@@ -59,3 +59,14 @@ export function peekTickAfterQuietAdvance(tickId: string | null, key: string): s
   if (isQuietPresentNavKey(key) && key !== "Shift") return null;
   return tickId;
 }
+
+/** Quiet click of a different peek dot also drops the last-frame tick. */
+export function peekTickAfterQuietDotClick(
+  tickId: string | null,
+  clickedId: string | null,
+  currentId: string | null,
+): string | null {
+  if (!tickId) return null;
+  if (clickedId && currentId && clickedId !== currentId) return null;
+  return tickId;
+}
