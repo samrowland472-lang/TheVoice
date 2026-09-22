@@ -141,3 +141,18 @@ test("quiet keys and a different peek-dot click clear the last-frame tick", () =
   assert.equal(peekTickAfterQuietDotClick("frame-b", "frame-c", "frame-a"), null);
   assert.equal(peekTickAfterQuietDotClick("frame-b", "frame-a", "frame-a"), "frame-b");
 });
+
+function peekTickFadeShouldRestart(prevTickId, nextTickId) {
+  if (!nextTickId) return false;
+  return prevTickId !== nextTickId;
+}
+
+test("peek tick fade restarts only when a new scrub lands", () => {
+  assert.match(src, /peekTickFadeShouldRestart/);
+  assert.match(chrome, /peekTickFadeShouldRestart/);
+  assert.match(chrome, /PEEK_TICK_FADE_MS/);
+  assert.equal(peekTickFadeShouldRestart(null, "frame-b"), true);
+  assert.equal(peekTickFadeShouldRestart("frame-a", "frame-b"), true);
+  assert.equal(peekTickFadeShouldRestart("frame-b", "frame-b"), false);
+  assert.equal(peekTickFadeShouldRestart("frame-b", null), false);
+});
