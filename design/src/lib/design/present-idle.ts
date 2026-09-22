@@ -109,3 +109,16 @@ export function peekTickShown(tickId: string | null, currentId: string | null): 
   if (currentId && tickId === currentId) return null;
   return tickId;
 }
+
+/**
+ * Trail ticks fall off with page-index distance from the current-dot:
+ * a neighbour stays readable; a far frame is a quiet ghost.
+ */
+export function peekTickOpacity(distance: number): number {
+  if (!Number.isFinite(distance) || distance <= 0) return 0;
+  const d = Math.abs(Math.round(distance));
+  if (d === 1) return 0.7;
+  if (d === 2) return 0.42;
+  if (d === 3) return 0.26;
+  return 0.14;
+}
