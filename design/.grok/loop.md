@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-22 07:10 BST — Peek scrub leaves a last-frame tick; double-click a peek dot opens quiet notes.
+2026-09-22 10:17 BST — Peek last-frame tick fades on the next quiet arrow-key advance.
 
 ## Next recommended
 
-Peek tick fades after the next quiet arrow-key advance so it does not linger as a second current-dot.
+Peek tick should also clear on a quiet click of a different peek dot (not only keys).
 
 ## Done
 
+- Quiet frame-advance keys (arrows, Space, Page, Home, End) clear the last-frame peek tick so it does not linger as a second current-dot.
 - After a peek drag-scrub that actually changes frames, a faint phosphor tick marks the last frame you dragged through.
 - Double-click a peek dot jumps to that frame and opens speaker notes without waking the campaign rail.
 - Escape closes peek-opened notes first, then rail notes, then present.

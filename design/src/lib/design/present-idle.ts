@@ -52,3 +52,10 @@ export function peekScrubTickId(startId: string | null, endId: string | null): s
   if (!endId || !startId || startId === endId) return null;
   return endId;
 }
+
+/** Quiet frame-advance keys drop the last-frame tick so it is not a second current-dot. */
+export function peekTickAfterQuietAdvance(tickId: string | null, key: string): string | null {
+  if (!tickId) return null;
+  if (isQuietPresentNavKey(key) && key !== "Shift") return null;
+  return tickId;
+}
