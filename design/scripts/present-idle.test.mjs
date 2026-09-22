@@ -198,3 +198,34 @@ test("peek tick opacity falls off with distance and remaining dwell", () => {
   assert.equal(peekTickOpacity(1, 0.5), 0.35);
   assert.equal(peekTickOpacity(4, 0.5), 0.07);
 });
+
+function isQuietPeekNotesEscape(key, peekNotesOpen) {
+  return peekNotesOpen && key === "Escape";
+}
+
+function peekTickFadePaused(notesVisible) {
+  return notesVisible;
+}
+
+function peekTickDwellDelta(elapsedMs, paused) {
+  if (paused) return 0;
+  if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
+  return elapsedMs;
+}
+
+test("peek notes Escape stays quiet and holds the tick fade clock", () => {
+  assert.match(src, /isQuietPeekNotesEscape/);
+  assert.match(src, /peekTickFadePaused/);
+  assert.match(src, /peekTickDwellDelta/);
+  assert.match(chrome, /isQuietPeekNotesEscape/);
+  assert.match(chrome, /closePeekNotesQuiet/);
+  assert.match(chrome, /peekTickDwellDelta/);
+  assert.match(chrome, /peekTickFadePaused\(notesVisible\)/);
+  assert.equal(isQuietPeekNotesEscape("Escape", true), true);
+  assert.equal(isQuietPeekNotesEscape("Escape", false), false);
+  assert.equal(isQuietPeekNotesEscape("n", true), false);
+  assert.equal(peekTickFadePaused(true), true);
+  assert.equal(peekTickFadePaused(false), false);
+  assert.equal(peekTickDwellDelta(16, true), 0);
+  assert.equal(peekTickDwellDelta(16, false), 16);
+});
