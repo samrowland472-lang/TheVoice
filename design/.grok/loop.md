@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-22 16:50 BST — Peek last-frame tick hides when it coincides with the current-dot.
+2026-09-22 17:48 BST — Peek scrub that lands back on the current frame keeps a ghost tick on the previous frame in the trail.
 
 ## Next recommended
 
-Peek tick: after a scrub that lands on the current frame, keep a ghost on the *previous* frame instead of dropping the trail entirely.
+Peek tick: after a scrub that lands on the current frame, keep a ghost on the *previous* frame instead of dropping the trail entirely. (shipped) — next: peek tick opacity should fall off with distance from the current-dot so a far trail is quieter than a neighbour.
 
 ## Done
 
+- Scrub that returns to the start frame leaves a phosphor ghost on the last other frame instead of clearing the trail.
 - Peek last-frame tick is suppressed when it would sit on the current-dot so present never shows a doubled phosphor bead.
 - Peek tick fade clock restarts only when a new scrub lands a different frame — quiet keys that already cleared the tick do not restart it.
 - Peek last-frame tick fades on its own after a 3.2s dwell.

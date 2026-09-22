@@ -47,10 +47,20 @@ export function peekScrubIndex(clientX: number, stripLeft: number, stripWidth: n
   return Math.max(0, Math.min(pageCount - 1, i));
 }
 
-/** After a drag-scrub, keep a tick on the last frame only if the pointer actually moved. */
-export function peekScrubTickId(startId: string | null, endId: string | null): string | null {
-  if (!endId || !startId || startId === endId) return null;
-  return endId;
+/**
+ * After a drag-scrub, keep a tick on the last distinct frame.
+ * Landing back on the start frame still leaves a ghost on the previous frame
+ * in the trail instead of dropping it.
+ */
+export function peekScrubTickId(
+  startId: string | null,
+  endId: string | null,
+  lastOtherId: string | null = null,
+): string | null {
+  if (!endId || !startId) return null;
+  if (startId !== endId) return endId;
+  if (lastOtherId && lastOtherId !== endId) return lastOtherId;
+  return null;
 }
 
 /** Last-frame tick fades if you stay on the landed frame. */
