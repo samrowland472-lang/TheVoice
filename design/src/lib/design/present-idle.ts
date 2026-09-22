@@ -132,3 +132,20 @@ export function peekTickOpacity(distance: number, remaining: number = 1): number
   const t = Number.isFinite(remaining) ? Math.max(0, Math.min(1, remaining)) : 1;
   return step * t;
 }
+
+/** Peek double-click notes stay off the campaign rail — Escape must stay quiet too. */
+export function isQuietPeekNotesEscape(key: string, peekNotesOpen: boolean): boolean {
+  return peekNotesOpen && key === "Escape";
+}
+
+/** Fade clock holds while speaker notes are on screen. */
+export function peekTickFadePaused(notesVisible: boolean): boolean {
+  return notesVisible;
+}
+
+/** Elapsed fade time this frame — zero while notes hold the clock. */
+export function peekTickDwellDelta(elapsedMs: number, paused: boolean): number {
+  if (paused) return 0;
+  if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
+  return elapsedMs;
+}
