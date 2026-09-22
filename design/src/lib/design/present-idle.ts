@@ -149,3 +149,19 @@ export function peekTickDwellDelta(elapsedMs: number, paused: boolean): number {
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
   return elapsedMs;
 }
+
+/**
+ * Shift-hover names a parked (non-current) dot.
+ * Shift-drag names the frame under the pointer even after that frame becomes current,
+ * so the caption tracks the scrub instead of snapping back to “next page”.
+ */
+export function peekNamedIdForPointer(opts: {
+  shiftHeld: boolean;
+  scrubbing: boolean;
+  underPointerId: string | null;
+  currentId: string | null;
+}): string | null {
+  if (!opts.shiftHeld || !opts.underPointerId) return null;
+  if (!opts.scrubbing && opts.currentId && opts.underPointerId === opts.currentId) return null;
+  return opts.underPointerId;
+}
