@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-22 15:55 BST — Peek tick fade restarts only on a new scrub land.
+2026-09-22 16:50 BST — Peek last-frame tick hides when it coincides with the current-dot.
 
 ## Next recommended
 
-Present peek: keep last-frame tick visible under the current-dot when they coincide, or suppress it so current never looks doubled.
+Peek tick: after a scrub that lands on the current frame, keep a ghost on the *previous* frame instead of dropping the trail entirely.
 
 ## Done
 
+- Peek last-frame tick is suppressed when it would sit on the current-dot so present never shows a doubled phosphor bead.
 - Peek tick fade clock restarts only when a new scrub lands a different frame — quiet keys that already cleared the tick do not restart it.
 - Peek last-frame tick fades on its own after a 3.2s dwell.
 - Quiet click of a different peek dot clears the last-frame tick so it is not a second current-dot.

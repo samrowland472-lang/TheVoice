@@ -92,3 +92,10 @@ export function peekTickAfterQuietDotClick(
   if (clickedId && currentId && clickedId !== currentId) return null;
   return tickId;
 }
+
+/** Never draw the last-frame tick on the current-dot — it would look doubled. */
+export function peekTickShown(tickId: string | null, currentId: string | null): string | null {
+  if (!tickId) return null;
+  if (currentId && tickId === currentId) return null;
+  return tickId;
+}
