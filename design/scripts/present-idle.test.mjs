@@ -166,3 +166,35 @@ test("peek tick fade restarts only when a new scrub lands", () => {
   assert.equal(peekTickFadeShouldRestart("frame-b", "frame-b"), false);
   assert.equal(peekTickFadeShouldRestart("frame-b", null), false);
 });
+
+function peekTickRemaining(dwellMs, fadeMs = 3200) {
+  if (!Number.isFinite(dwellMs) || dwellMs <= 0) return 1;
+  if (dwellMs >= fadeMs) return 0;
+  return 1 - dwellMs / fadeMs;
+}
+
+function peekTickOpacity(distance, remaining = 1) {
+  if (!Number.isFinite(distance) || distance <= 0) return 0;
+  const d = Math.abs(Math.round(distance));
+  let step = 0.14;
+  if (d === 1) step = 0.7;
+  else if (d === 2) step = 0.42;
+  else if (d === 3) step = 0.26;
+  const t = Number.isFinite(remaining) ? Math.max(0, Math.min(1, remaining)) : 1;
+  return step * t;
+}
+
+test("peek tick opacity falls off with distance and remaining dwell", () => {
+  assert.match(src, /peekTickRemaining/);
+  assert.match(src, /peekTickOpacity/);
+  assert.match(chrome, /peekTickOpacity\(Math\.abs\(n - i\), tickRemaining\)/);
+  assert.equal(peekTickOpacity(1), 0.7);
+  assert.equal(peekTickOpacity(2), 0.42);
+  assert.equal(peekTickOpacity(3), 0.26);
+  assert.equal(peekTickOpacity(8), 0.14);
+  assert.equal(peekTickRemaining(0), 1);
+  assert.equal(peekTickRemaining(1600), 0.5);
+  assert.equal(peekTickRemaining(3200), 0);
+  assert.equal(peekTickOpacity(1, 0.5), 0.35);
+  assert.equal(peekTickOpacity(4, 0.5), 0.07);
+});
