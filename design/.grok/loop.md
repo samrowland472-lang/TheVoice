@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-21 22:33 BST — Peek next-frame names fade instead of shoving dots; Home/End jump quietly.
+2026-09-22 04:10 BST — Peek Shift+hover names that frame; drag-scrub stays quiet.
 
 ## Next recommended
 
-Peek: Shift+hover on a non-current dot names that frame; click-drag on the peek strip scrubs frames without waking the rail.
+Peek: after scrub, a faint tick marks the last frame you dragged through; double-click a peek dot opens notes on that frame without waking the rail.
 
 ## Done
 
+- Shift+hover (or focus) on a non-current peek dot names that frame instead of only the next one.
+- Click-drag on the peek strip scrubs frames; peek pointer work is quiet so the campaign rail stays hidden.
 - Home / End jump first / last frame and stay on the quiet-nav list so peek does not wake the rail.
 - Long next-frame names truncate with a right-edge fade so they do not shove peek dots.
 - Peek left/right (and Space / Page keys) advance frames without waking the campaign rail.
