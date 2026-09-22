@@ -2,14 +2,17 @@
 
 ## Iteration
 
-2026-09-22 04:10 BST — Peek Shift+hover names that frame; drag-scrub stays quiet.
+2026-09-22 07:10 BST — Peek scrub leaves a last-frame tick; double-click a peek dot opens quiet notes.
 
 ## Next recommended
 
-Peek: after scrub, a faint tick marks the last frame you dragged through; double-click a peek dot opens notes on that frame without waking the rail.
+Peek tick fades after the next quiet arrow-key advance so it does not linger as a second current-dot.
 
 ## Done
 
+- After a peek drag-scrub that actually changes frames, a faint phosphor tick marks the last frame you dragged through.
+- Double-click a peek dot jumps to that frame and opens speaker notes without waking the campaign rail.
+- Escape closes peek-opened notes first, then rail notes, then present.
 - Shift+hover (or focus) on a non-current peek dot names that frame instead of only the next one.
 - Click-drag on the peek strip scrubs frames; peek pointer work is quiet so the campaign rail stays hidden.
 - Home / End jump first / last frame and stay on the quiet-nav list so peek does not wake the rail.

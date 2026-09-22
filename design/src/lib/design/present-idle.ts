@@ -46,3 +46,9 @@ export function peekScrubIndex(clientX: number, stripLeft: number, stripWidth: n
   const i = Math.floor(t * pageCount);
   return Math.max(0, Math.min(pageCount - 1, i));
 }
+
+/** After a drag-scrub, keep a tick on the last frame only if the pointer actually moved. */
+export function peekScrubTickId(startId: string | null, endId: string | null): string | null {
+  if (!endId || !startId || startId === endId) return null;
+  return endId;
+}
