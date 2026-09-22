@@ -98,9 +98,11 @@ test("click-drag on peek strip scrubs frames without waking the rail", () => {
   assert.match(chrome, /setPointerCapture/);
 });
 
-function peekScrubTickId(startId, endId) {
-  if (!endId || !startId || startId === endId) return null;
-  return endId;
+function peekScrubTickId(startId, endId, lastOtherId = null) {
+  if (!endId || !startId) return null;
+  if (startId !== endId) return endId;
+  if (lastOtherId && lastOtherId !== endId) return lastOtherId;
+  return null;
 }
 
 test("scrub leaves a tick on the last dragged frame", () => {
@@ -110,6 +112,14 @@ test("scrub leaves a tick on the last dragged frame", () => {
   assert.equal(peekScrubTickId("a", "a"), null);
   assert.equal(peekScrubTickId("a", "b"), "b");
   assert.equal(peekScrubTickId(null, "b"), null);
+  assert.equal(peekScrubTickId("a", "a", "b"), "b");
+  assert.equal(peekScrubTickId("a", "a", "a"), null);
+});
+
+test("scrub that lands on the current frame keeps a ghost on the previous frame", () => {
+  assert.match(src, /lastOtherId/);
+  assert.match(chrome, /peekScrubLastOther/);
+  assert.equal(peekScrubTickId("frame-a", "frame-a", "frame-c"), "frame-c");
 });
 
 test("double-click peek opens notes without waking the rail", () => {
