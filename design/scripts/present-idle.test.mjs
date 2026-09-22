@@ -79,3 +79,20 @@ test("shift peek names the next frame after the index", () => {
   assert.match(chrome, /truncate/);
   assert.match(chrome, /mask-image:linear-gradient/);
 });
+
+test("shift hover on a non-current peek dot names that frame", () => {
+  assert.match(chrome, /peekNamedId/);
+  assert.match(chrome, /shiftHeld && n !== i/);
+  assert.match(chrome, /pages\.find\(\(p\) => p\.id === peekNamedId\)/);
+});
+
+test("click-drag on peek strip scrubs frames without waking the rail", () => {
+  assert.match(src, /isQuietPresentPeekTarget/);
+  assert.match(src, /peekScrubIndex/);
+  assert.match(src, /data-present-peek/);
+  assert.match(chrome, /data-present-peek/);
+  assert.match(chrome, /isQuietPresentPeekTarget/);
+  assert.match(chrome, /peekScrubIndex/);
+  assert.match(chrome, /peekScrubbing/);
+  assert.match(chrome, /setPointerCapture/);
+});
