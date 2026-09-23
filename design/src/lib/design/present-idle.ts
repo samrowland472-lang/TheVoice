@@ -221,18 +221,43 @@ export function peekCaptionAfterCurrentDotHover(opts: {
   hoveringCurrent: boolean;
   namedId: string | null;
   scrubbing?: boolean;
+  mutedPointerUpKeep?: boolean;
 }): { muted: boolean; namedId: string | null } {
   if (opts.scrubbing) return { muted: opts.muted, namedId: opts.namedId };
   if (!opts.hoveringCurrent) return { muted: opts.muted, namedId: opts.namedId };
-  return { muted: opts.muted, namedId: null };
+  const keep = Boolean(opts.mutedPointerUpKeep) || opts.muted;
+  return { muted: keep, namedId: null };
 }
 
 export function peekCaptionAfterLeaveCurrentDot(opts: {
   muted: boolean;
   namedId: string | null;
+  mutedPointerUpKeep?: boolean;
 }): { muted: boolean; namedId: string | null } {
+  if (opts.mutedPointerUpKeep || opts.muted) {
+    return { muted: true, namedId: opts.namedId && !opts.mutedPointerUpKeep ? opts.namedId : null };
+  }
   if (opts.namedId) return { muted: false, namedId: opts.namedId };
   return { muted: false, namedId: null };
+}
+
+/** Current-page peek hover after a muted pointer-up keep stays muted until an off-current tick is named. */
+export function peekCaptionAfterMutedPointerUpCurrentHover(opts: {
+  hoveringCurrent: boolean;
+  muted: boolean;
+  namedId: string | null;
+  offCurrentNamedId?: string | null;
+  mutedPointerUpKeep?: boolean;
+}): { muted: boolean; namedId: string | null; showCaption: boolean } {
+  const off = opts.offCurrentNamedId ?? null;
+  if (off) {
+    return { muted: false, namedId: off, showCaption: true };
+  }
+  const keep = Boolean(opts.mutedPointerUpKeep) || opts.muted;
+  if (opts.hoveringCurrent || keep) {
+    return { muted: true, namedId: null, showCaption: false };
+  }
+  return { muted: opts.muted, namedId: opts.namedId, showCaption: Boolean(opts.namedId) && !opts.muted };
 }
 
 export function peekCaptionAfterMutedScrub(opts: {
@@ -251,15 +276,17 @@ export function peekCaptionAfterShiftRelease(opts: {
   namedId: string | null;
   muted: boolean;
   quietEscapeKeep?: boolean;
+  mutedPointerUpKeep?: boolean;
 }): { namedId: string | null; muted: boolean; showCaption: boolean } {
+  const keepMute = Boolean(opts.quietEscapeKeep || opts.mutedPointerUpKeep);
   if (opts.shiftHeld) {
     return {
       namedId: opts.namedId,
-      muted: opts.muted || Boolean(opts.quietEscapeKeep),
-      showCaption: Boolean(opts.namedId) || (!opts.muted && !opts.quietEscapeKeep),
+      muted: opts.muted || keepMute,
+      showCaption: Boolean(opts.namedId) || (!opts.muted && !keepMute),
     };
   }
-  if (opts.scrubbing || opts.namedId || opts.muted || opts.quietEscapeKeep) {
+  if (opts.scrubbing || opts.namedId || opts.muted || keepMute) {
     return { namedId: null, muted: true, showCaption: false };
   }
   return { namedId: null, muted: false, showCaption: false };
@@ -303,6 +330,32 @@ export function peekCaptionAfterMutedPointerUp(opts: {
     muted: false,
     namedId: opts.namedId,
     showCaption: Boolean(opts.namedId),
+  };
+}
+
+/** Shift tap after a muted pointer-up keep hides the next-frame fallback name. */
+export function peekCaptionAfterMutedPointerUpShiftRelease(opts: {
+  shiftHeld: boolean;
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+}): { muted: boolean; namedId: string | null; showCaption: boolean; captionId: string | null } {
+  const next = peekCaptionAfterShiftRelease({
+    shiftHeld: opts.shiftHeld,
+    scrubbing: false,
+    namedId: opts.namedId,
+    muted: opts.muted,
+    mutedPointerUpKeep: true,
+  });
+  return {
+    muted: next.muted,
+    namedId: next.namedId,
+    showCaption: next.showCaption,
+    captionId: peekCaptionNameId({
+      muted: next.muted,
+      namedId: next.namedId,
+      fallbackId: opts.fallbackId,
+    }),
   };
 }
 
