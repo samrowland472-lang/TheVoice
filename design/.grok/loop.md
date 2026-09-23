@@ -2,14 +2,17 @@
 
 ## Iteration
 
-2026-09-23 18:58 BST — Escape after a muted Home/End keep stays in present and does not restore the next-frame fallback name while Shift is still held.
+2026-09-23 22:20 BST — Shift-release after a quiet Escape keep stays muted so the fallback name does not flash on the peek strip.
 
 ## Next recommended
 
-Shift-release after a quiet Escape keep should stay muted so the fallback name does not flash on the peek strip.
+Shift-release after a muted pointer-up keep should not revive the next-frame fallback name if Shift is tapped again without hovering a named tick.
 
 ## Done
 
+- peekCaptionAfterQuietEscapeShiftRelease keeps mute + hides fallback even when mute state had not flushed.
+- peekCaptionAfterShiftRelease accepts quietEscapeKeep so a keep from Escape cannot unmute on Shift-up.
+- Present chrome tracks quietEscapeKeep + mute/name refs so keyup Shift in the same tick as Escape stays dead.
 - peekCaptionAfterQuietEscape clears namedId, keeps mute, and stays in present when Shift is held.
 - Present chrome applies that helper on Escape before exit; muted Home/End still go through peekCaptionAfterQuietHomeEnd / peekTickAfterQuietHomeEnd.
 - applyLostCapture + peekAfterLostCapture share pointer-cancel and window-blur mid-scrub.
