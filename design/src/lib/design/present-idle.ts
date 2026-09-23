@@ -47,11 +47,6 @@ export function peekScrubIndex(clientX: number, stripLeft: number, stripWidth: n
   return Math.max(0, Math.min(pageCount - 1, i));
 }
 
-/**
- * After a drag-scrub, keep a tick on the last distinct frame.
- * Landing back on the start frame still leaves a ghost on the previous frame
- * in the trail instead of dropping it.
- */
 export function peekScrubTickId(
   startId: string | null,
   endId: string | null,
@@ -63,7 +58,6 @@ export function peekScrubTickId(
   return null;
 }
 
-/** Last-frame tick fades if you stay on the landed frame. */
 export const PEEK_TICK_FADE_MS = 3200;
 
 export function peekTickAfterDwell(
@@ -76,7 +70,6 @@ export function peekTickAfterDwell(
   return tickId;
 }
 
-/** Fade clock restarts only when a new scrub lands a tick — not when keys already cleared it. */
 export function peekTickFadeShouldRestart(
   prevTickId: string | null,
   nextTickId: string | null,
@@ -85,14 +78,12 @@ export function peekTickFadeShouldRestart(
   return prevTickId !== nextTickId;
 }
 
-/** Quiet frame-advance keys drop the last-frame tick so it is not a second current-dot. */
 export function peekTickAfterQuietAdvance(tickId: string | null, key: string): string | null {
   if (!tickId) return null;
   if (isQuietPresentNavKey(key) && key !== "Shift") return null;
   return tickId;
 }
 
-/** Quiet click of a different peek dot also drops the last-frame tick. */
 export function peekTickAfterQuietDotClick(
   tickId: string | null,
   clickedId: string | null,
@@ -103,25 +94,18 @@ export function peekTickAfterQuietDotClick(
   return tickId;
 }
 
-/** Never draw the last-frame tick on the current-dot — it would look doubled. */
 export function peekTickShown(tickId: string | null, currentId: string | null): string | null {
   if (!tickId) return null;
   if (currentId && tickId === currentId) return null;
   return tickId;
 }
 
-/** Remaining fade dwell in 0..1 — 1 at land, 0 when the clock expires. */
 export function peekTickRemaining(dwellMs: number, fadeMs: number = PEEK_TICK_FADE_MS): number {
   if (!Number.isFinite(dwellMs) || dwellMs <= 0) return 1;
   if (dwellMs >= fadeMs) return 0;
   return 1 - dwellMs / fadeMs;
 }
 
-/**
- * Trail ticks fall off with page-index distance from the current-dot,
- * then dim further with remaining fade dwell so a far neighbour does
- * not sit at a hard step until it vanishes.
- */
 export function peekTickOpacity(distance: number, remaining: number = 1): number {
   if (!Number.isFinite(distance) || distance <= 0) return 0;
   const d = Math.abs(Math.round(distance));
@@ -133,28 +117,20 @@ export function peekTickOpacity(distance: number, remaining: number = 1): number
   return step * t;
 }
 
-/** Peek double-click notes stay off the campaign rail — Escape must stay quiet too. */
 export function isQuietPeekNotesEscape(key: string, peekNotesOpen: boolean): boolean {
   return peekNotesOpen && key === "Escape";
 }
 
-/** Fade clock holds while speaker notes are on screen. */
 export function peekTickFadePaused(notesVisible: boolean): boolean {
   return notesVisible;
 }
 
-/** Elapsed fade time this frame — zero while notes hold the clock. */
 export function peekTickDwellDelta(elapsedMs: number, paused: boolean): number {
   if (paused) return 0;
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
   return elapsedMs;
 }
 
-/**
- * Shift-hover names a parked (non-current) dot.
- * Shift-drag names the frame under the pointer even after that frame becomes current,
- * so the caption tracks the scrub instead of snapping back to “next page”.
- */
 export function peekNamedIdForPointer(opts: {
   shiftHeld: boolean;
   scrubbing: boolean;
@@ -166,11 +142,6 @@ export function peekNamedIdForPointer(opts: {
   return opts.underPointerId;
 }
 
-/**
- * Home/End jump the deck while Shift may still be down.
- * Drop the named (or fallback next-frame) caption the same way
- * quiet keys drop the last-frame tick — rail stays asleep.
- */
 export function peekCaptionAfterQuietHomeEnd(opts: {
   namedId: string | null;
   key: string;
@@ -182,11 +153,6 @@ export function peekCaptionAfterQuietHomeEnd(opts: {
   return { namedId: null, showCaption: false, muted: true };
 }
 
-/**
- * After Home/End mute the named caption while Shift is still down.
- * A later Shift-hover (or Shift-scrub) on a parked peek dot names that
- * frame again without requiring Shift to be released first.
- */
 export function peekCaptionAfterShiftHover(opts: {
   muted: boolean;
   namedId: string | null;
@@ -195,7 +161,6 @@ export function peekCaptionAfterShiftHover(opts: {
   return { muted: false, namedId: opts.namedId };
 }
 
-/** Named line after mute: only a live named id, never the next-frame fallback. */
 export function peekCaptionNameId(opts: {
   muted: boolean;
   namedId: string | null;
@@ -206,11 +171,6 @@ export function peekCaptionNameId(opts: {
   return opts.fallbackId;
 }
 
-/**
- * Shift-hover the current peek dot after a muted Home/End.
- * Keep the index chip only — do not name the current frame and
- * do not revive the next-frame fallback while the pointer is on that dot.
- */
 export function peekCaptionAfterCurrentDotHover(opts: {
   muted: boolean;
   hoveringCurrent: boolean;
@@ -222,10 +182,6 @@ export function peekCaptionAfterCurrentDotHover(opts: {
   return { muted: opts.muted, namedId: null };
 }
 
-/**
- * Leaving the current peek dot after mute lifts mute so the
- * next-frame fallback may return. A live parked name stays named.
- */
 export function peekCaptionAfterLeaveCurrentDot(opts: {
   muted: boolean;
   namedId: string | null;
@@ -234,13 +190,6 @@ export function peekCaptionAfterLeaveCurrentDot(opts: {
   return { muted: false, namedId: null };
 }
 
-/**
- * Shift-scrub after a muted Home/End.
- * Name the frame under the pointer (including the current peek dot)
- * and lift mute so the caption is that landing name.
- * Mid-scrub without a pointer id keeps mute so the next-frame
- * fallback stays dead until a frame is named.
- */
 export function peekCaptionAfterMutedScrub(opts: {
   muted: boolean;
   scrubbing: boolean;
@@ -249,4 +198,23 @@ export function peekCaptionAfterMutedScrub(opts: {
   if (!opts.scrubbing) return { muted: opts.muted, namedId: null };
   if (!opts.underPointerId) return { muted: true, namedId: null };
   return { muted: false, namedId: opts.underPointerId };
+}
+
+export function peekCaptionAfterShiftRelease(opts: {
+  shiftHeld: boolean;
+  scrubbing: boolean;
+  namedId: string | null;
+  muted: boolean;
+}): { namedId: string | null; muted: boolean; showCaption: boolean } {
+  if (opts.shiftHeld) {
+    return {
+      namedId: opts.namedId,
+      muted: opts.muted,
+      showCaption: Boolean(opts.namedId) || !opts.muted,
+    };
+  }
+  if (opts.scrubbing || opts.namedId || opts.muted) {
+    return { namedId: null, muted: true, showCaption: false };
+  }
+  return { namedId: null, muted: false, showCaption: false };
 }
