@@ -2,14 +2,18 @@
 
 ## Iteration
 
-2026-09-23 22:20 BST — Shift-release after a quiet Escape keep stays muted so the fallback name does not flash on the peek strip.
+2026-09-23 23:26 BST — Shift tap after a muted pointer-up keep stays muted so the next-frame fallback name does not flash.
 
 ## Next recommended
 
-Shift-release after a muted pointer-up keep should not revive the next-frame fallback name if Shift is tapped again without hovering a named tick.
+Hovering the current-page peek tick after a muted pointer-up keep should not unmute the fallback name until a named off-current tick is hovered.
 
 ## Done
 
+- peekCaptionAfterMutedPointerUpShiftRelease keeps mute + hides fallback even when mute state had not flushed.
+- peekCaptionAfterShiftRelease accepts mutedPointerUpKeep so a keep from pointer-up cannot unmute on Shift-up or a later Shift tap.
+- Present chrome tracks mutedPointerUpKeep + quietEscapeKeep + mute/name refs so keyup Shift after a muted pointer-up stays dead.
+- Named off-current tick hover still clears both keep flags and names the tick.
 - peekCaptionAfterQuietEscapeShiftRelease keeps mute + hides fallback even when mute state had not flushed.
 - peekCaptionAfterShiftRelease accepts quietEscapeKeep so a keep from Escape cannot unmute on Shift-up.
 - Present chrome tracks quietEscapeKeep + mute/name refs so keyup Shift in the same tick as Escape stays dead.
