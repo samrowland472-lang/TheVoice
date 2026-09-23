@@ -205,3 +205,29 @@ export function peekCaptionNameId(opts: {
   if (opts.muted) return null;
   return opts.fallbackId;
 }
+
+/**
+ * Shift-hover the current peek dot after a muted Home/End.
+ * Keep the index chip only — do not name the current frame and
+ * do not revive the next-frame fallback while the pointer is on that dot.
+ */
+export function peekCaptionAfterCurrentDotHover(opts: {
+  muted: boolean;
+  hoveringCurrent: boolean;
+  namedId: string | null;
+}): { muted: boolean; namedId: string | null } {
+  if (!opts.hoveringCurrent) return { muted: opts.muted, namedId: opts.namedId };
+  return { muted: opts.muted, namedId: null };
+}
+
+/**
+ * Leaving the current peek dot after mute lifts mute so the
+ * next-frame fallback may return. A live parked name stays named.
+ */
+export function peekCaptionAfterLeaveCurrentDot(opts: {
+  muted: boolean;
+  namedId: string | null;
+}): { muted: boolean; namedId: string | null } {
+  if (opts.namedId) return { muted: false, namedId: opts.namedId };
+  return { muted: false, namedId: null };
+}
