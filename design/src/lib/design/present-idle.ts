@@ -215,7 +215,9 @@ export function peekCaptionAfterCurrentDotHover(opts: {
   muted: boolean;
   hoveringCurrent: boolean;
   namedId: string | null;
+  scrubbing?: boolean;
 }): { muted: boolean; namedId: string | null } {
+  if (opts.scrubbing) return { muted: opts.muted, namedId: opts.namedId };
   if (!opts.hoveringCurrent) return { muted: opts.muted, namedId: opts.namedId };
   return { muted: opts.muted, namedId: null };
 }
@@ -230,4 +232,21 @@ export function peekCaptionAfterLeaveCurrentDot(opts: {
 }): { muted: boolean; namedId: string | null } {
   if (opts.namedId) return { muted: false, namedId: opts.namedId };
   return { muted: false, namedId: null };
+}
+
+/**
+ * Shift-scrub after a muted Home/End.
+ * Name the frame under the pointer (including the current peek dot)
+ * and lift mute so the caption is that landing name.
+ * Mid-scrub without a pointer id keeps mute so the next-frame
+ * fallback stays dead until a frame is named.
+ */
+export function peekCaptionAfterMutedScrub(opts: {
+  muted: boolean;
+  scrubbing: boolean;
+  underPointerId: string | null;
+}): { muted: boolean; namedId: string | null } {
+  if (!opts.scrubbing) return { muted: opts.muted, namedId: null };
+  if (!opts.underPointerId) return { muted: true, namedId: null };
+  return { muted: false, namedId: opts.underPointerId };
 }
