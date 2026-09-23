@@ -245,3 +245,23 @@ export function peekTickAfterMutedPointerUp(opts: {
   if (opts.muted) return keep;
   return opts.tickId;
 }
+
+/** Pointer-cancel / window blur mid-capture share the muted pointer-up path. */
+export function peekAfterLostCapture(opts: {
+  muted: boolean;
+  namedId: string | null;
+  tickId: string | null;
+  landedId: string | null;
+}): { muted: boolean; namedId: string | null; showCaption: boolean; tickId: string | null } {
+  const cap = peekCaptionAfterMutedPointerUp({ muted: opts.muted, namedId: opts.namedId });
+  return {
+    muted: cap.muted,
+    namedId: cap.namedId,
+    showCaption: cap.showCaption,
+    tickId: peekTickAfterMutedPointerUp({
+      tickId: opts.tickId,
+      landedId: opts.landedId,
+      muted: opts.muted || cap.muted,
+    }),
+  };
+}
