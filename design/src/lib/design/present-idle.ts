@@ -78,6 +78,14 @@ export function peekTickFadeShouldRestart(
   return prevTickId !== nextTickId;
 }
 
+/** Lost-capture keep restarts the fade only when the landed frame id changes. Mute is not a cause. */
+export function peekTickFadeShouldRestartAfterLostCapture(
+  prevTickId: string | null,
+  nextTickId: string | null,
+): boolean {
+  return peekTickFadeShouldRestart(prevTickId, nextTickId);
+}
+
 export function peekTickAfterQuietAdvance(tickId: string | null, key: string): string | null {
   if (!tickId) return null;
   if (isQuietPresentNavKey(key) && key !== "Shift") return null;
@@ -146,11 +154,27 @@ export function peekCaptionAfterQuietHomeEnd(opts: {
   namedId: string | null;
   key: string;
   shiftHeld: boolean;
+  muted?: boolean;
 }): { namedId: string | null; showCaption: boolean; muted: boolean } {
   if (opts.key !== "Home" && opts.key !== "End") {
-    return { namedId: opts.namedId, showCaption: opts.shiftHeld, muted: false };
+    return {
+      namedId: opts.namedId,
+      showCaption: opts.shiftHeld && !opts.muted,
+      muted: Boolean(opts.muted),
+    };
   }
   return { namedId: null, showCaption: false, muted: true };
+}
+
+/** Home/End keep a muted faded tick; they never revive a dead named caption. */
+export function peekTickAfterQuietHomeEnd(opts: {
+  tickId: string | null;
+  key: string;
+  muted: boolean;
+}): string | null {
+  if (opts.key !== "Home" && opts.key !== "End") return opts.tickId;
+  if (opts.muted) return opts.tickId;
+  return peekTickAfterQuietAdvance(opts.tickId, opts.key);
 }
 
 export function peekCaptionAfterShiftHover(opts: {
