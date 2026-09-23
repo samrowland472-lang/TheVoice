@@ -175,9 +175,33 @@ export function peekCaptionAfterQuietHomeEnd(opts: {
   namedId: string | null;
   key: string;
   shiftHeld: boolean;
-}): { namedId: string | null; showCaption: boolean } {
+}): { namedId: string | null; showCaption: boolean; muted: boolean } {
   if (opts.key !== "Home" && opts.key !== "End") {
-    return { namedId: opts.namedId, showCaption: opts.shiftHeld };
+    return { namedId: opts.namedId, showCaption: opts.shiftHeld, muted: false };
   }
-  return { namedId: null, showCaption: false };
+  return { namedId: null, showCaption: false, muted: true };
+}
+
+/**
+ * After Home/End mute the named caption while Shift is still down.
+ * A later Shift-hover (or Shift-scrub) on a parked peek dot names that
+ * frame again without requiring Shift to be released first.
+ */
+export function peekCaptionAfterShiftHover(opts: {
+  muted: boolean;
+  namedId: string | null;
+}): { muted: boolean; namedId: string | null } {
+  if (!opts.namedId) return { muted: opts.muted, namedId: null };
+  return { muted: false, namedId: opts.namedId };
+}
+
+/** Named line after mute: only a live named id, never the next-frame fallback. */
+export function peekCaptionNameId(opts: {
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+}): string | null {
+  if (opts.namedId) return opts.namedId;
+  if (opts.muted) return null;
+  return opts.fallbackId;
 }
