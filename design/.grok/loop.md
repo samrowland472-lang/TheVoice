@@ -2,14 +2,20 @@
 
 ## Iteration
 
-2026-09-23 23:26 BST — Shift tap after a muted pointer-up keep stays muted so the next-frame fallback name does not flash.
+2026-09-24 00:06 BST — Hovering the current-page peek tick after a muted pointer-up keep stays muted so the next-frame fallback name does not flash.
 
 ## Next recommended
 
-Hovering the current-page peek tick after a muted pointer-up keep should not unmute the fallback name until a named off-current tick is hovered.
+A named off-current tick hover after that keep should clear mutedPointerUpKeep so a later current-dot hover can show a real name, not revive the fallback.
 
 ## Done
 
+- peekCaptionAfterMutedPointerUpCurrentHover keeps mute + hides fallback on current-page hover after muted pointer-up keep.
+- Off-current named hover unmutes and names that tick.
+- peekCaptionAfterCurrentDotHover / peekCaptionAfterLeaveCurrentDot honor mutedPointerUpKeep.
+- Present chrome wires hover/focus through the helper and tracks mutedPointerUpKeep + mute/name refs.
+- peekCaptionAfterMutedPointerUpShiftRelease + mutedPointerUpKeep on Shift tap after pointer-up keep.
+- peekCaptionAfterShiftRelease accepts mutedPointerUpKeep.
 - peekCaptionAfterMutedPointerUpShiftRelease keeps mute + hides fallback even when mute state had not flushed.
 - peekCaptionAfterShiftRelease accepts mutedPointerUpKeep so a keep from pointer-up cannot unmute on Shift-up or a later Shift tap.
 - Present chrome tracks mutedPointerUpKeep + quietEscapeKeep + mute/name refs so keyup Shift after a muted pointer-up stays dead.
