@@ -2,14 +2,18 @@
 
 ## Iteration
 
-2026-09-23 01:20 BST — Quiet Home/End clear a named peek caption without waking the campaign rail.
+2026-09-23 07:27 BST — Shift-hover after quiet Home/End names a parked peek frame again without releasing Shift.
 
 ## Next recommended
 
-Shift-hover a parked peek dot after Home/End should name that frame again without needing to release Shift first.
+Shift-hover the current-dot after a muted Home/End should keep the index only — never revive the next-frame fallback until the pointer leaves that dot.
 
 ## Done
 
+- Quiet Home/End mute the named peek caption (and the fallback next-frame name) even while Shift is still held.
+- Shift-hover or Shift-scrub a parked peek dot after that mute names the frame under the pointer without releasing Shift first.
+- Releasing Shift, or blurring the window, clears mute and the named id.
+- Campaign rail stays asleep — Home/End remain quiet present-nav keys.
 - Quiet Home/End drop the named peek caption (and the fallback next-frame name) even while Shift is still held.
 - Campaign rail stays asleep — Home/End remain quiet present-nav keys.
 - Releasing Shift, or blurring the window, also clears the caption.
