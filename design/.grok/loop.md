@@ -2,14 +2,18 @@
 
 ## Iteration
 
-2026-09-23 14:52 BST — Pointer-cancel and window blur mid-capture use the muted pointer-up path so the landed tick survives a lost capture.
+2026-09-23 18:10 BST — Peek tick fade restarts only when the landed frame id changes after a lost-capture keep; mute flipping keeps the fade clock.
 
 ## Next recommended
 
-Peek tick fade should restart only when the landed id changes after a lost-capture keep, not when mute flips.
+Quiet Home/End after a kept faded tick should not revive a dead named caption when mute is still on.
 
 ## Done
 
+- Peek tick fade restarts only when the landed id changes after a lost-capture keep, not when mute flips.
+- peekTickFadeShouldRestartAfterLostCapture gates the dwell reset on pointer-cancel and window blur.
+- Fade clock in present chrome uses peekTickFadeShouldRestart + PEEK_TICK_FADE_MS; mute is not a restart cause.
+- Distant peek dots use peekTickOpacity(..., tickRemaining).
 - Pointer-cancel mid-scrub applies peekAfterLostCapture (same mute + tick keep as pointer-up).
 - Window blur mid-capture ends the scrub through that path before Shift-release mute.
 - Muted lost capture with no stored tick still lands the live frame tick.
