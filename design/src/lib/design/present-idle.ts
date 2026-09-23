@@ -177,6 +177,27 @@ export function peekTickAfterQuietHomeEnd(opts: {
   return peekTickAfterQuietAdvance(opts.tickId, opts.key);
 }
 
+/** Escape after a muted Home/End keep must not restore the next-frame fallback name. */
+export function peekCaptionAfterQuietEscape(opts: {
+  key: string;
+  shiftHeld: boolean;
+  muted: boolean;
+  namedId: string | null;
+}): { namedId: string | null; muted: boolean; showCaption: boolean; stayInPresent: boolean } {
+  if (opts.key !== "Escape") {
+    return {
+      namedId: opts.namedId,
+      muted: opts.muted,
+      showCaption: Boolean(opts.namedId) || (opts.shiftHeld && !opts.muted),
+      stayInPresent: false,
+    };
+  }
+  if (opts.shiftHeld) {
+    return { namedId: null, muted: true, showCaption: false, stayInPresent: true };
+  }
+  return { namedId: null, muted: true, showCaption: false, stayInPresent: false };
+}
+
 export function peekCaptionAfterShiftHover(opts: {
   muted: boolean;
   namedId: string | null;
