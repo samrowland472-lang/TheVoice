@@ -2,27 +2,18 @@
 
 ## Iteration
 
-2026-09-23 07:27 BST — Shift-hover after quiet Home/End names a parked peek frame again without releasing Shift.
+2026-09-23 08:32 BST — Shift-hover the current peek dot after a muted Home/End keeps the index only; next-frame fallback stays dead until the pointer leaves that dot.
 
 ## Next recommended
 
-Shift-hover the current-dot after a muted Home/End should keep the index only — never revive the next-frame fallback until the pointer leaves that dot.
+Shift-scrub across the current peek dot after mute should name the landing frame without reviving the next-frame fallback mid-scrub.
 
 ## Done
 
+- After muted Home/End, Shift-hover on the current peek dot keeps the index chip only.
+- Next-frame fallback does not return while the pointer is still on that current dot.
+- Leaving the current dot lifts mute so the next-frame name may return, or a parked Shift-hover may name that frame.
+- Releasing Shift, or blurring the window, still clears mute and the named id.
 - Quiet Home/End mute the named peek caption (and the fallback next-frame name) even while Shift is still held.
 - Shift-hover or Shift-scrub a parked peek dot after that mute names the frame under the pointer without releasing Shift first.
-- Releasing Shift, or blurring the window, clears mute and the named id.
 - Campaign rail stays asleep — Home/End remain quiet present-nav keys.
-- Quiet Home/End drop the named peek caption (and the fallback next-frame name) even while Shift is still held.
-- Campaign rail stays asleep — Home/End remain quiet present-nav keys.
-- Releasing Shift, or blurring the window, also clears the caption.
-- Shift-hover on a parked peek dot can name a frame again after the caption was cleared.
-- Shift-drag (or Shift+pointer) on the peek strip names the frame under the pointer, even after that frame becomes current.
-- Shift-hover on a parked peek dot still names only the non-current frame.
-- Peek pointer work stays on `[data-present-peek]` so scrub naming does not wake the campaign rail.
-- Escape on a peek double-click notes panel closes notes only — campaign rail stays asleep.
-- Peek tick fade clock holds while notes are visible (N or peek), then resumes the remaining dwell.
-- Peek last-frame tick opacity is distance step × remaining dwell (neighbour 0.7 fading to 0; far ghost 0.14 fading to 0).
-- Restored peek-tick wiring on the present strip (scrub trail, quiet-key / quiet-dot clear, fade clock, current-dot suppression, double-click notes).
-- Peek last-frame tick opacity falls off with page-index distance: neighbour ~0.7, two away ~0.42, three ~0.26, farther a quiet 0.14 ghost.
