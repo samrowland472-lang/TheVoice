@@ -2,14 +2,18 @@
 
 ## Iteration
 
-2026-09-23 12:35 BST — Pointer-up after a muted Shift-scrub keeps the landed tick and does not revive the named peek caption.
+2026-09-23 14:52 BST — Pointer-cancel and window blur mid-capture use the muted pointer-up path so the landed tick survives a lost capture.
 
 ## Next recommended
 
-Pointer-cancel and window blur mid-capture should use the same muted pointer-up path so the landed tick survives a lost capture.
+Peek tick fade should restart only when the landed id changes after a lost-capture keep, not when mute flips.
 
 ## Done
 
+- Pointer-cancel mid-scrub applies peekAfterLostCapture (same mute + tick keep as pointer-up).
+- Window blur mid-capture ends the scrub through that path before Shift-release mute.
+- Muted lost capture with no stored tick still lands the live frame tick.
+- Named caption stays dead when mute was already on.
 - Pointer-up after muted Shift-scrub keeps the landed tick.
 - That pointer-up keeps mute so the named caption (and next-frame fallback) stay dead.
 - Shift-release (and window blur) mid-scrub after a named mute-land drops the caption.
