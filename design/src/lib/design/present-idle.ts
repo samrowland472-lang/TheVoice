@@ -218,3 +218,30 @@ export function peekCaptionAfterShiftRelease(opts: {
   }
   return { namedId: null, muted: false, showCaption: false };
 }
+
+/** Pointer-up after a muted Shift-scrub keeps mute — the named caption stays dead. */
+export function peekCaptionAfterMutedPointerUp(opts: {
+  muted: boolean;
+  namedId: string | null;
+}): { muted: boolean; namedId: string | null; showCaption: boolean } {
+  if (opts.muted) {
+    return { muted: true, namedId: null, showCaption: false };
+  }
+  return {
+    muted: false,
+    namedId: opts.namedId,
+    showCaption: Boolean(opts.namedId),
+  };
+}
+
+/** Pointer-up after a muted scrub keeps the landed tick (not the current-page hide). */
+export function peekTickAfterMutedPointerUp(opts: {
+  tickId: string | null;
+  landedId: string | null;
+  muted: boolean;
+}): string | null {
+  const keep = opts.tickId ?? opts.landedId;
+  if (!keep) return null;
+  if (opts.muted) return keep;
+  return opts.tickId;
+}
