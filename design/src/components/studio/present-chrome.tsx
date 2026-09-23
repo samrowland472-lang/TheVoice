@@ -10,10 +10,15 @@ import {
   PRESENT_IDLE_MS,
   isQuietPresentNavKey,
   isQuietPresentPeekTarget,
+  peekAfterLostCapture,
+  peekCaptionAfterQuietEscape,
+  peekCaptionAfterQuietHomeEnd,
   peekCaptionAfterMutedPointerUp,
   peekCaptionAfterShiftRelease,
   peekCaptionNameId,
   peekTickAfterMutedPointerUp,
+  peekTickAfterQuietHomeEnd,
+  peekTickFadeShouldRestartAfterLostCapture,
   peekScrubIndex,
   shouldHidePresentChrome,
   shouldShowPresentPeek,
@@ -170,6 +175,21 @@ export function PresentView() {
       return next;
     });
   }
+  function applyLostCapture() {
+    if (!peekScrubbing.current) return;
+    peekScrubbing.current = false;
+    const prevTick = peekTickId;
+    const lost = peekAfterLostCapture({
+      muted: peekMuted,
+      namedId: peekNamedId,
+      tickId: peekTickId,
+      landedId: live.id,
+    });
+    setPeekMuted(lost.muted);
+    setPeekNamedId(lost.namedId);
+    setPeekTickId(lost.tickId);
+    void peekTickFadeShouldRestartAfterLostCapture(prevTick, lost.tickId);
+  }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing = e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement;
@@ -179,6 +199,15 @@ export function PresentView() {
           toggleNotes();
           return;
         }
+        const quiet = peekCaptionAfterQuietEscape({
+          key: e.key,
+          shiftHeld,
+          muted: peekMuted,
+          namedId: peekNamedId,
+        });
+        setPeekNamedId(quiet.namedId);
+        setPeekMuted(quiet.muted);
+        if (quiet.stayInPresent) return;
         void exitPresentFullscreen();
         setPresent(false);
         return;
@@ -190,11 +219,29 @@ export function PresentView() {
       if (typing) return;
       if (e.key === "Home") {
         e.preventDefault();
+        const cap = peekCaptionAfterQuietHomeEnd({
+          namedId: peekNamedId,
+          key: "Home",
+          shiftHeld,
+          muted: peekMuted,
+        });
+        setPeekNamedId(cap.namedId);
+        setPeekMuted(cap.muted);
+        setPeekTickId(peekTickAfterQuietHomeEnd({ tickId: peekTickId, key: "Home", muted: peekMuted || cap.muted }));
         if (pages[0]) goTo(pages[0].id);
         return;
       }
       if (e.key === "End") {
         e.preventDefault();
+        const cap = peekCaptionAfterQuietHomeEnd({
+          namedId: peekNamedId,
+          key: "End",
+          shiftHeld,
+          muted: peekMuted,
+        });
+        setPeekNamedId(cap.namedId);
+        setPeekMuted(cap.muted);
+        setPeekTickId(peekTickAfterQuietHomeEnd({ tickId: peekTickId, key: "End", muted: peekMuted || cap.muted }));
         const last = pages[pages.length - 1];
         if (last) goTo(last.id);
         return;
@@ -219,6 +266,7 @@ export function PresentView() {
       }
     };
     const applyShiftRelease = () => {
+      applyLostCapture();
       setShiftHeld(false);
       const next = peekCaptionAfterShiftRelease({
         shiftHeld: false,
@@ -287,7 +335,7 @@ export function PresentView() {
         {showPeek && (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col items-center">
             <div className="h-px w-full bg-phosphor/55 shadow-[0_-3px_6px_rgba(63,198,255,0.35)]" aria-hidden />
-            <div ref={peekStripRef} data-present-peek className="pointer-events-auto mt-2 flex max-w-[min(90vw,40rem)] flex-wrap items-center justify-center gap-1.5 overflow-x-auto" role="navigation" aria-label={`Frame ${i + 1} of ${pages.length}`} onPointerDown={(e) => { e.stopPropagation(); peekScrubbing.current = true; e.currentTarget.setPointerCapture(e.pointerId); const rect = e.currentTarget.getBoundingClientRect(); const next = pages[peekScrubIndex(e.clientX, rect.left, rect.width, pages.length)]; if (next) { setPeekTickId(next.id); goTo(next.id); } }} onPointerMove={(e) => { e.stopPropagation(); if (!peekScrubbing.current) return; const rect = e.currentTarget.getBoundingClientRect(); const next = pages[peekScrubIndex(e.clientX, rect.left, rect.width, pages.length)]; if (next) { setPeekTickId(next.id); goTo(next.id); } }} onPointerUp={(e) => { peekScrubbing.current = false; const cap = peekCaptionAfterMutedPointerUp({ muted: peekMuted, namedId: peekNamedId }); setPeekMuted(cap.muted); setPeekNamedId(cap.namedId); setPeekTickId(peekTickAfterMutedPointerUp({ tickId: peekTickId, landedId: live.id, muted: peekMuted || cap.muted })); if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }} onPointerCancel={() => { peekScrubbing.current = false; }}>
+            <div ref={peekStripRef} data-present-peek className="pointer-events-auto mt-2 flex max-w-[min(90vw,40rem)] flex-wrap items-center justify-center gap-1.5 overflow-x-auto" role="navigation" aria-label={`Frame ${i + 1} of ${pages.length}`} onPointerDown={(e) => { e.stopPropagation(); peekScrubbing.current = true; e.currentTarget.setPointerCapture(e.pointerId); const rect = e.currentTarget.getBoundingClientRect(); const next = pages[peekScrubIndex(e.clientX, rect.left, rect.width, pages.length)]; if (next) { setPeekTickId(next.id); goTo(next.id); } }} onPointerMove={(e) => { e.stopPropagation(); if (!peekScrubbing.current) return; const rect = e.currentTarget.getBoundingClientRect(); const next = pages[peekScrubIndex(e.clientX, rect.left, rect.width, pages.length)]; if (next) { setPeekTickId(next.id); goTo(next.id); } }} onPointerUp={(e) => { peekScrubbing.current = false; const cap = peekCaptionAfterMutedPointerUp({ muted: peekMuted, namedId: peekNamedId }); setPeekMuted(cap.muted); setPeekNamedId(cap.namedId); setPeekTickId(peekTickAfterMutedPointerUp({ tickId: peekTickId, landedId: live.id, muted: peekMuted || cap.muted })); if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }} onPointerCancel={() => { applyLostCapture(); }}>
               {pages.map((p, n) => (
                 <button key={p.id} type="button" className={cn("block h-2 w-2 rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground", n === i ? "border-phosphor bg-phosphor shadow-[0_0_8px_rgba(63,198,255,0.7)]" : p.id === peekTickId ? "border-phosphor/80 bg-phosphor/40 shadow-[0_0_6px_rgba(63,198,255,0.45)]" : "border-ink-faint/70 bg-transparent hover:border-phosphor/80")} title={p.name} aria-label={`Go to ${p.name}`} aria-current={n === i ? "page" : undefined} onMouseEnter={() => { if (n === i) setPeekIndexHover(true); if (shiftHeld && n !== i) setPeekNamedId(p.id); }} onMouseLeave={() => { setPeekIndexHover(false); setPeekNamedId((cur) => (cur === p.id ? null : cur)); }} onFocus={() => { if (n === i) setPeekIndexHover(true); if (shiftHeld && n !== i) setPeekNamedId(p.id); }} onBlur={() => { setPeekIndexHover(false); setPeekNamedId((cur) => (cur === p.id ? null : cur)); }} onClick={(e) => { e.stopPropagation(); goTo(p.id); }} />
               ))}
