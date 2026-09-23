@@ -250,18 +250,45 @@ export function peekCaptionAfterShiftRelease(opts: {
   scrubbing: boolean;
   namedId: string | null;
   muted: boolean;
+  quietEscapeKeep?: boolean;
 }): { namedId: string | null; muted: boolean; showCaption: boolean } {
   if (opts.shiftHeld) {
     return {
       namedId: opts.namedId,
-      muted: opts.muted,
-      showCaption: Boolean(opts.namedId) || !opts.muted,
+      muted: opts.muted || Boolean(opts.quietEscapeKeep),
+      showCaption: Boolean(opts.namedId) || (!opts.muted && !opts.quietEscapeKeep),
     };
   }
-  if (opts.scrubbing || opts.namedId || opts.muted) {
+  if (opts.scrubbing || opts.namedId || opts.muted || opts.quietEscapeKeep) {
     return { namedId: null, muted: true, showCaption: false };
   }
   return { namedId: null, muted: false, showCaption: false };
+}
+
+/** Shift-release after a quiet Escape keep must stay muted so the fallback name does not flash. */
+export function peekCaptionAfterQuietEscapeShiftRelease(opts: {
+  shiftHeld: boolean;
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+}): { muted: boolean; namedId: string | null; showCaption: boolean; captionId: string | null } {
+  const next = peekCaptionAfterShiftRelease({
+    shiftHeld: opts.shiftHeld,
+    scrubbing: false,
+    namedId: opts.namedId,
+    muted: opts.muted,
+    quietEscapeKeep: true,
+  });
+  return {
+    muted: next.muted,
+    namedId: next.namedId,
+    showCaption: next.showCaption,
+    captionId: peekCaptionNameId({
+      muted: next.muted,
+      namedId: next.namedId,
+      fallbackId: opts.fallbackId,
+    }),
+  };
 }
 
 /** Pointer-up after a muted Shift-scrub keeps mute — the named caption stays dead. */
