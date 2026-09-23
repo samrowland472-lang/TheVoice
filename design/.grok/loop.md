@@ -2,14 +2,18 @@
 
 ## Iteration
 
-2026-09-22 23:26 BST — Shift-drag on the peek strip names the scrubbed frame.
+2026-09-23 01:20 BST — Quiet Home/End clear a named peek caption without waking the campaign rail.
 
 ## Next recommended
 
-Quiet-key Home/End from a named peek caption should clear the name the same way they already clear the last-frame tick, without waking the campaign rail.
+Shift-hover a parked peek dot after Home/End should name that frame again without needing to release Shift first.
 
 ## Done
 
+- Quiet Home/End drop the named peek caption (and the fallback next-frame name) even while Shift is still held.
+- Campaign rail stays asleep — Home/End remain quiet present-nav keys.
+- Releasing Shift, or blurring the window, also clears the caption.
+- Shift-hover on a parked peek dot can name a frame again after the caption was cleared.
 - Shift-drag (or Shift+pointer) on the peek strip names the frame under the pointer, even after that frame becomes current.
 - Shift-hover on a parked peek dot still names only the non-current frame.
 - Peek pointer work stays on `[data-present-peek]` so scrub naming does not wake the campaign rail.

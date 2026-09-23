@@ -165,3 +165,19 @@ export function peekNamedIdForPointer(opts: {
   if (!opts.scrubbing && opts.currentId && opts.underPointerId === opts.currentId) return null;
   return opts.underPointerId;
 }
+
+/**
+ * Home/End jump the deck while Shift may still be down.
+ * Drop the named (or fallback next-frame) caption the same way
+ * quiet keys drop the last-frame tick — rail stays asleep.
+ */
+export function peekCaptionAfterQuietHomeEnd(opts: {
+  namedId: string | null;
+  key: string;
+  shiftHeld: boolean;
+}): { namedId: string | null; showCaption: boolean } {
+  if (opts.key !== "Home" && opts.key !== "End") {
+    return { namedId: opts.namedId, showCaption: opts.shiftHeld };
+  }
+  return { namedId: null, showCaption: false };
+}
