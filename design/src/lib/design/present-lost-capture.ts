@@ -196,3 +196,19 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftRelease(o
     mutedPointerUpKeep: false,
   };
 }
+
+/** Window-blur mid Shift-release after that quiet Escape reuses the same mute helper. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseWindowBlur(opts: {
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+  offCurrentNamedId?: string | null;
+}): {
+  muted: boolean;
+  namedId: string | null;
+  showCaption: boolean;
+  captionId: string | null;
+  mutedPointerUpKeep: boolean;
+} {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftRelease(opts);
+}
