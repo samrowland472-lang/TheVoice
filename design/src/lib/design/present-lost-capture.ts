@@ -43,6 +43,11 @@ export function peekCaptionAfterLeaveOffCurrentNamedTick(opts: {
   };
 }
 
+/** Window blur mid-scrub after keep-clear shares this helper so the current-dot name stays live. */
+export function applyWindowBlur(opts: { scrubbing: boolean }) {
+  return { endScrub: opts.scrubbing, nameCurrentDot: true };
+}
+
 export function peekCaptionAfterLostCaptureCurrentHover(opts: {
   muted: boolean;
   namedId: string | null;

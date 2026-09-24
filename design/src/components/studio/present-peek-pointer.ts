@@ -2,8 +2,6 @@ export {
   peekAfterLostCapture,
   peekCaptionAfterMutedPointerUp,
   peekCaptionAfterMutedPointerUpCurrentHover,
-  peekCaptionAfterLeaveOffCurrentNamedTick,
-  peekCaptionAfterLostCaptureCurrentHover,
   peekCaptionAfterMutedPointerUpShiftRelease,
   peekCaptionAfterQuietEscape,
   peekCaptionAfterQuietEscapeShiftRelease,
@@ -15,3 +13,8 @@ export {
   peekTickFadeShouldRestart,
   peekTickFadeShouldRestartAfterLostCapture,
 } from "@/lib/design/present-idle";
+export {
+  peekCaptionAfterLeaveOffCurrentNamedTick,
+  peekCaptionAfterLostCaptureCurrentHover,
+  peekAfterLostCaptureKeep,
+} from "@/lib/design/present-lost-capture";
