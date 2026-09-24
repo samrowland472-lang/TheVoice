@@ -2,15 +2,16 @@
 
 ## Iteration
 
-2026-09-24 18:16 BST — Lost pointer capture mid muted keep-clear Shift-held path reuses the pointer-cancel mute helper so a stolen pointer cannot flash the next-frame name.
+2026-09-24 19:06 BST — Present chrome treats a pointer-up after the muted keep-clear Shift-held path through the lost-capture mute helper so a late up cannot flash the next-frame name.
 
 ## Next recommended
 
-Present chrome should treat a pointer-up after that same muted keep-clear Shift-held path through the lost-capture mute helper so a late up cannot flash the next-frame name.
+Present chrome should treat a pointer-leave after that same muted keep-clear Shift-held path through the pointer-up mute helper so a leave cannot flash the next-frame name.
 
 ## Done
 
-- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseLostPointerCapture delegates to the pointer-cancel helper.
-- Present chrome routes lostpointercapture through applyQuietKeepClearLostPointerCapture after the pointer-cancel mute path.
+- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerUp delegates to the lost-capture helper.
+- Present chrome routes pointerup through applyQuietKeepClearPointerUp after the lost-capture mute path.
+- lostpointercapture is wired through applyQuietKeepClearLostPointerCapture after the pointer-cancel mute path.
 - pointercancel is also wired through applyQuietKeepClearPointerCancel so a cancelled scrub stays muted.
-- Naming an off-current tick on the lost-capture path still lifts mute and shows that frame.
+- Naming an off-current tick on the pointer-up path still lifts mute and shows that frame.
