@@ -14,13 +14,30 @@ function peekCaptionNameId(opts) {
 function peekCaptionAfterMutedPointerUpCurrentHover(opts) {
   const off = opts.offCurrentNamedId ?? null;
   if (off) {
-    return { muted: false, namedId: off, showCaption: true };
+    return { muted: false, namedId: off, showCaption: true, mutedPointerUpKeep: false };
   }
-  const keep = Boolean(opts.mutedPointerUpKeep) || opts.muted;
-  if (opts.hoveringCurrent || keep) {
-    return { muted: true, namedId: null, showCaption: false };
+  const keep = Boolean(opts.mutedPointerUpKeep);
+  if (opts.hoveringCurrent && keep) {
+    return { muted: true, namedId: null, showCaption: false, mutedPointerUpKeep: true };
   }
-  return { muted: opts.muted, namedId: opts.namedId, showCaption: Boolean(opts.namedId) && !opts.muted };
+  if (opts.hoveringCurrent && !keep) {
+    const current = opts.currentId ?? null;
+    return {
+      muted: false,
+      namedId: current,
+      showCaption: Boolean(current),
+      mutedPointerUpKeep: false,
+    };
+  }
+  if (keep || opts.muted) {
+    return { muted: true, namedId: null, showCaption: false, mutedPointerUpKeep: keep };
+  }
+  return {
+    muted: opts.muted,
+    namedId: opts.namedId,
+    showCaption: Boolean(opts.namedId) && !opts.muted,
+    mutedPointerUpKeep: false,
+  };
 }
 
 test("current-page peek hover after muted pointer-up keep hides fallback until off-current name", () => {
@@ -60,5 +77,18 @@ test("current-page peek hover after muted pointer-up keep hides fallback until o
   assert.equal(named.muted, false);
   assert.equal(named.namedId, "frame-other");
   assert.equal(named.showCaption, true);
+  assert.equal(named.mutedPointerUpKeep, false);
   assert.equal(peekCaptionNameId({ muted: named.muted, namedId: named.namedId, fallbackId: "frame-next" }), "frame-other");
+
+  const laterCurrent = peekCaptionAfterMutedPointerUpCurrentHover({
+    hoveringCurrent: true,
+    muted: named.muted,
+    namedId: named.namedId,
+    currentId: "frame-now",
+    mutedPointerUpKeep: named.mutedPointerUpKeep,
+  });
+  assert.equal(laterCurrent.mutedPointerUpKeep, false);
+  assert.equal(laterCurrent.muted, false);
+  assert.equal(laterCurrent.namedId, "frame-now");
+  assert.equal(peekCaptionNameId({ muted: laterCurrent.muted, namedId: laterCurrent.namedId, fallbackId: "frame-next" }), "frame-now");
 });
