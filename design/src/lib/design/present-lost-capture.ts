@@ -276,3 +276,19 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePo
 } {
   return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerUp(opts);
 }
+
+/** Document pointer-out after that same muted keep-clear Shift-held path reuses the pointer-leave mute helper. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOut(opts: {
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+  offCurrentNamedId?: string | null;
+}): {
+  muted: boolean;
+  namedId: string | null;
+  showCaption: boolean;
+  captionId: string | null;
+  mutedPointerUpKeep: boolean;
+} {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerLeave(opts);
+}
