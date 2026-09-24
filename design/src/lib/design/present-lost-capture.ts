@@ -212,3 +212,19 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseWi
 } {
   return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftRelease(opts);
 }
+
+/** Pointer-cancel mid that muted keep-clear Shift-held path reuses the window-blur mute helper. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerCancel(opts: {
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+  offCurrentNamedId?: string | null;
+}): {
+  muted: boolean;
+  namedId: string | null;
+  showCaption: boolean;
+  captionId: string | null;
+  mutedPointerUpKeep: boolean;
+} {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseWindowBlur(opts);
+}
