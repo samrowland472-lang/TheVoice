@@ -11,7 +11,6 @@ import {
   isQuietPresentNavKey,
   isQuietPresentPeekTarget,
   peekAfterLostCapture,
-  peekCaptionAfterQuietEscape,
   peekCaptionAfterQuietHomeEnd,
   peekCaptionAfterMutedPointerUp,
   peekCaptionAfterShiftRelease,
@@ -30,6 +29,11 @@ import { Button } from "@/components/ui/button";
 import { CanvasStage } from "./canvas-stage";
 import { PresentChipRail } from "./present-chip-menu";
 import { PresentNotesJump } from "./present-notes-jump";
+import {
+  applyWindowBlur,
+  peekCaptionAfterLostCaptureCurrentHover,
+  peekCaptionAfterQuietEscapeAfterKeepClear,
+} from "@/lib/design/present-lost-capture";
 
 const NOTES_PREF = "voice-design-present-notes";
 function readNotesPref(): boolean {
@@ -71,6 +75,7 @@ export function PresentView() {
   const [peekTickId, setPeekTickId] = useState<string | null>(null);
   const peekStripRef = useRef<HTMLDivElement>(null);
   const peekScrubbing = useRef(false);
+  const mutedPointerUpKeep = useRef(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viewport = useDesign((s) => s.viewport);
   const bumpIdle = useCallback(() => {
@@ -189,6 +194,7 @@ export function PresentView() {
     setPeekNamedId(lost.namedId);
     setPeekTickId(lost.tickId);
     void peekTickFadeShouldRestartAfterLostCapture(prevTick, lost.tickId);
+    void applyWindowBlur({ scrubbing: true });
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -199,12 +205,14 @@ export function PresentView() {
           toggleNotes();
           return;
         }
-        const quiet = peekCaptionAfterQuietEscape({
+        const quiet = peekCaptionAfterQuietEscapeAfterKeepClear({
           key: e.key,
           shiftHeld,
           muted: peekMuted,
           namedId: peekNamedId,
+          mutedPointerUpKeep: mutedPointerUpKeep.current,
         });
+        mutedPointerUpKeep.current = quiet.mutedPointerUpKeep;
         setPeekNamedId(quiet.namedId);
         setPeekMuted(quiet.muted);
         if (quiet.stayInPresent) return;
@@ -337,7 +345,7 @@ export function PresentView() {
             <div className="h-px w-full bg-phosphor/55 shadow-[0_-3px_6px_rgba(63,198,255,0.35)]" aria-hidden />
             <div ref={peekStripRef} data-present-peek className="pointer-events-auto mt-2 flex max-w-[min(90vw,40rem)] flex-wrap items-center justify-center gap-1.5 overflow-x-auto" role="navigation" aria-label={`Frame ${i + 1} of ${pages.length}`} onPointerDown={(e) => { e.stopPropagation(); peekScrubbing.current = true; e.currentTarget.setPointerCapture(e.pointerId); const rect = e.currentTarget.getBoundingClientRect(); const next = pages[peekScrubIndex(e.clientX, rect.left, rect.width, pages.length)]; if (next) { setPeekTickId(next.id); goTo(next.id); } }} onPointerMove={(e) => { e.stopPropagation(); if (!peekScrubbing.current) return; const rect = e.currentTarget.getBoundingClientRect(); const next = pages[peekScrubIndex(e.clientX, rect.left, rect.width, pages.length)]; if (next) { setPeekTickId(next.id); goTo(next.id); } }} onPointerUp={(e) => { peekScrubbing.current = false; const cap = peekCaptionAfterMutedPointerUp({ muted: peekMuted, namedId: peekNamedId }); setPeekMuted(cap.muted); setPeekNamedId(cap.namedId); setPeekTickId(peekTickAfterMutedPointerUp({ tickId: peekTickId, landedId: live.id, muted: peekMuted || cap.muted })); if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }} onPointerCancel={() => { applyLostCapture(); }}>
               {pages.map((p, n) => (
-                <button key={p.id} type="button" className={cn("block h-2 w-2 rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground", n === i ? "border-phosphor bg-phosphor shadow-[0_0_8px_rgba(63,198,255,0.7)]" : p.id === peekTickId ? "border-phosphor/80 bg-phosphor/40 shadow-[0_0_6px_rgba(63,198,255,0.45)]" : "border-ink-faint/70 bg-transparent hover:border-phosphor/80")} title={p.name} aria-label={`Go to ${p.name}`} aria-current={n === i ? "page" : undefined} onMouseEnter={() => { if (n === i) setPeekIndexHover(true); if (shiftHeld && n !== i) setPeekNamedId(p.id); }} onMouseLeave={() => { setPeekIndexHover(false); setPeekNamedId((cur) => (cur === p.id ? null : cur)); }} onFocus={() => { if (n === i) setPeekIndexHover(true); if (shiftHeld && n !== i) setPeekNamedId(p.id); }} onBlur={() => { setPeekIndexHover(false); setPeekNamedId((cur) => (cur === p.id ? null : cur)); }} onClick={(e) => { e.stopPropagation(); goTo(p.id); }} />
+                <button key={p.id} type="button" className={cn("block h-2 w-2 rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-phosphor focus-visible:ring-offset-2 focus-visible:ring-offset-ground", n === i ? "border-phosphor bg-phosphor shadow-[0_0_8px_rgba(63,198,255,0.7)]" : p.id === peekTickId ? "border-phosphor/80 bg-phosphor/40 shadow-[0_0_6px_rgba(63,198,255,0.45)]" : "border-ink-faint/70 bg-transparent hover:border-phosphor/80")} title={p.name} aria-label={`Go to ${p.name}`} aria-current={n === i ? "page" : undefined} onMouseEnter={() => { if (n === i) { setPeekIndexHover(true); const next = peekCaptionAfterLostCaptureCurrentHover({ muted: peekMuted, namedId: peekNamedId, hoveringCurrent: true, currentId: live.id, mutedPointerUpKeep: mutedPointerUpKeep.current }); mutedPointerUpKeep.current = next.mutedPointerUpKeep; setPeekMuted(next.muted); setPeekNamedId(next.namedId); } if (shiftHeld && n !== i) { mutedPointerUpKeep.current = false; setPeekNamedId(p.id); setPeekMuted(false); } }} onMouseLeave={() => { setPeekIndexHover(false); setPeekNamedId((cur) => (cur === p.id ? null : cur)); }} onFocus={() => { if (n === i) setPeekIndexHover(true); if (shiftHeld && n !== i) setPeekNamedId(p.id); }} onBlur={() => { setPeekIndexHover(false); setPeekNamedId((cur) => (cur === p.id ? null : cur)); }} onClick={(e) => { e.stopPropagation(); goTo(p.id); }} />
               ))}
               {(peekIndexHover || shiftHeld) && (
                 <span className="ml-1 flex min-w-0 max-w-[min(40vw,14rem)] items-baseline gap-1 text-[10px] font-medium tracking-wide text-ink-faint/80">
