@@ -116,11 +116,46 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld(opts: {
     shiftHeld: true,
     muted: opts.muted,
     namedId: opts.namedId,
-    mutedPointerUpKeep: opts.mutedPointerUpKeep,
+    mutedPointerUpKeep: false,
   });
   return {
     ...quiet,
     stayInPresent: opts.key === "Escape" ? true : quiet.stayInPresent,
-    mutedPointerUpKeep: Boolean(opts.mutedPointerUpKeep),
+    mutedPointerUpKeep: false,
+  };
+}
+
+/** Later current-dot hover after that quiet Escape names the live frame; keep stays dead. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldCurrentHover(opts: {
+  key: string;
+  muted: boolean;
+  namedId: string | null;
+  hoveringCurrent: boolean;
+  currentId: string | null;
+}): {
+  namedId: string | null;
+  muted: boolean;
+  showCaption: boolean;
+  stayInPresent: boolean;
+  mutedPointerUpKeep: boolean;
+} {
+  const quiet = peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld({
+    key: opts.key,
+    muted: opts.muted,
+    namedId: opts.namedId,
+  });
+  const hover = peekCaptionAfterMutedPointerUpCurrentHover({
+    hoveringCurrent: opts.hoveringCurrent,
+    muted: quiet.muted,
+    namedId: quiet.namedId,
+    currentId: opts.currentId,
+    mutedPointerUpKeep: quiet.mutedPointerUpKeep,
+  });
+  return {
+    namedId: hover.namedId,
+    muted: hover.muted,
+    showCaption: hover.showCaption,
+    stayInPresent: quiet.stayInPresent,
+    mutedPointerUpKeep: hover.mutedPointerUpKeep,
   };
 }
