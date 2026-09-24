@@ -36,6 +36,9 @@ import {
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld,
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftRelease,
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseWindowBlur,
+  peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerCancel,
+  peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseLostPointerCapture,
+  peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerUp,
 } from "@/lib/design/present-lost-capture";
 
 const NOTES_PREF = "voice-design-present-notes";
@@ -322,16 +325,46 @@ export function PresentView() {
       }
       applyShiftRelease();
     };
+    const applyQuietKeepClearPointerCancel = () => {
+      applyLostCapture();
+      if (quietKeepClearShiftHeld.current) {
+        applyMutedKeepClearRelease(peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerCancel);
+      }
+    };
+    const applyQuietKeepClearLostPointerCapture = () => {
+      applyQuietKeepClearPointerCancel();
+      if (quietKeepClearShiftHeld.current) {
+        applyMutedKeepClearRelease(peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseLostPointerCapture);
+      }
+    };
+    const applyQuietKeepClearPointerUp = () => {
+      applyQuietKeepClearLostPointerCapture();
+      if (quietKeepClearShiftHeld.current) {
+        applyMutedKeepClearRelease(peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerUp);
+      }
+    };
+    const onPointerUp = () => {
+      applyQuietKeepClearPointerUp();
+    };
+    const onPointerCancel = () => {
+      applyQuietKeepClearPointerCancel();
+    };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift") applyShiftRelease();
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", applyQuietKeepClearWindowBlur);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerCancel);
+    window.addEventListener("lostpointercapture", applyQuietKeepClearLostPointerCapture);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", applyQuietKeepClearWindowBlur);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerCancel);
+      window.removeEventListener("lostpointercapture", applyQuietKeepClearLostPointerCapture);
     };
   });
   useEffect(() => {
