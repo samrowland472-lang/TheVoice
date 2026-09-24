@@ -2,14 +2,15 @@
 
 ## Iteration
 
-2026-09-24 08:10 BST — Window blur mid-scrub after keep-clear shares peekCaptionAfterLostCaptureCurrentHover so the current-dot name stays live.
+2026-09-24 09:04 BST — Quiet Escape after window-blur keep-clear keeps mutedPointerUpKeep dead so later current-dot hover names the live frame.
 
 ## Next recommended
 
-Quiet Escape after window-blur keep-clear should still name the current frame on later current-dot hover, without reviving mutedPointerUpKeep.
+Quiet Escape after keep-clear while Shift is held should stay in present and still name the current frame on later current-dot hover.
 
 ## Done
 
+- Quiet Escape after window-blur keep-clear uses peekCaptionAfterQuietEscapeAfterKeepClear; current-dot hover names the live frame without reviving mutedPointerUpKeep.
 - Window blur mid-scrub after keep-clear uses applyWindowBlur + peekCaptionAfterLostCaptureCurrentHover; current-dot hover names the live frame.
 - Pointer-cancel mid-scrub after keep-clear does not restore mutedPointerUpKeep; later current-dot hover names the live frame.
 - peekCaptionAfterLostCaptureCurrentHover + peekAfterLostCapture pass mutedPointerUpKeep through without revival.

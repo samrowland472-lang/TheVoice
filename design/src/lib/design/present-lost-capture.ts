@@ -1,6 +1,7 @@
 import {
   peekAfterLostCapture as peekAfterLostCaptureBase,
   peekCaptionAfterMutedPointerUpCurrentHover,
+  peekCaptionAfterQuietEscape,
 } from "./present-idle";
 
 export function peekAfterLostCaptureKeep(opts: {
@@ -69,4 +70,30 @@ export function peekCaptionAfterLostCaptureCurrentHover(opts: {
     currentId: opts.currentId,
     mutedPointerUpKeep: lost.mutedPointerUpKeep,
   });
+}
+
+/** Quiet Escape after window-blur keep-clear must not revive mutedPointerUpKeep. */
+export function peekCaptionAfterQuietEscapeAfterKeepClear(opts: {
+  key: string;
+  shiftHeld: boolean;
+  muted: boolean;
+  namedId: string | null;
+  mutedPointerUpKeep?: boolean;
+}): {
+  namedId: string | null;
+  muted: boolean;
+  showCaption: boolean;
+  stayInPresent: boolean;
+  mutedPointerUpKeep: boolean;
+} {
+  const quiet = peekCaptionAfterQuietEscape({
+    key: opts.key,
+    shiftHeld: opts.shiftHeld,
+    muted: opts.muted,
+    namedId: opts.namedId,
+  });
+  return {
+    ...quiet,
+    mutedPointerUpKeep: Boolean(opts.mutedPointerUpKeep),
+  };
 }
