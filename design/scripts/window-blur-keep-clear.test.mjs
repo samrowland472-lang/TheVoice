@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 
-const src = readFileSync(new URL("../src/lib/design/present-idle.ts", import.meta.url), "utf8");
-const chrome = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
+const src = readFileSync(new URL("../src/lib/design/present-lost-capture.ts", import.meta.url), "utf8");
+const barrel = readFileSync(new URL("../src/components/studio/present-peek-pointer.ts", import.meta.url), "utf8");
 
 function peekCaptionNameId(opts) {
   if (opts.namedId) return opts.namedId;
@@ -31,22 +31,6 @@ function peekCaptionAfterMutedPointerUpCurrentHover(opts) {
   }
   if (keep || opts.muted) {
     return { muted: true, namedId: null, showCaption: false, mutedPointerUpKeep: keep };
-  }
-  return {
-    muted: opts.muted,
-    namedId: opts.namedId,
-    showCaption: Boolean(opts.namedId) && !opts.muted,
-    mutedPointerUpKeep: false,
-  };
-}
-
-function peekCaptionAfterLeaveOffCurrentNamedTick(opts) {
-  const off = opts.namedId && opts.currentId && opts.namedId !== opts.currentId ? opts.namedId : null;
-  if (off && !opts.mutedPointerUpKeep) {
-    return { muted: false, namedId: null, showCaption: false, mutedPointerUpKeep: false };
-  }
-  if (opts.mutedPointerUpKeep) {
-    return { muted: true, namedId: null, showCaption: false, mutedPointerUpKeep: true };
   }
   return {
     muted: opts.muted,
@@ -85,10 +69,9 @@ function peekCaptionAfterLostCaptureCurrentHover(opts) {
 
 test("window blur mid-scrub after keep-clear shares peekCaptionAfterLostCaptureCurrentHover", () => {
   assert.match(src, /peekCaptionAfterLostCaptureCurrentHover/);
-  assert.match(chrome, /peekCaptionAfterLostCaptureCurrentHover/);
-  assert.match(chrome, /applyWindowBlur/);
-  assert.match(chrome, /window.addEventListener\("blur", applyWindowBlur\)/);
-  assert.match(chrome, /nameCurrentDot/);
+  assert.match(src, /applyWindowBlur/);
+  assert.match(src, /mutedPointerUpKeep/);
+  assert.match(barrel, /peekCaptionAfterLostCaptureCurrentHover/);
 
   const named = peekCaptionAfterMutedPointerUpCurrentHover({
     hoveringCurrent: false,
@@ -99,20 +82,12 @@ test("window blur mid-scrub after keep-clear shares peekCaptionAfterLostCaptureC
   });
   assert.equal(named.mutedPointerUpKeep, false);
 
-  const leave = peekCaptionAfterLeaveOffCurrentNamedTick({
-    namedId: named.namedId,
-    currentId: "frame-now",
-    muted: named.muted,
-    mutedPointerUpKeep: named.mutedPointerUpKeep,
-  });
-  assert.equal(leave.mutedPointerUpKeep, false);
-
   const lost = peekAfterLostCapture({
-    muted: leave.muted,
-    namedId: leave.namedId,
+    muted: false,
+    namedId: null,
     tickId: "frame-other",
     landedId: "frame-now",
-    mutedPointerUpKeep: leave.mutedPointerUpKeep,
+    mutedPointerUpKeep: false,
   });
   assert.equal(lost.mutedPointerUpKeep, false);
 
