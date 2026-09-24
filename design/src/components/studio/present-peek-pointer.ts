@@ -2,6 +2,7 @@ export {
   peekAfterLostCapture,
   peekCaptionAfterMutedPointerUp,
   peekCaptionAfterMutedPointerUpCurrentHover,
+  peekCaptionAfterLeaveOffCurrentNamedTick,
   peekCaptionAfterMutedPointerUpShiftRelease,
   peekCaptionAfterQuietEscape,
   peekCaptionAfterQuietEscapeShiftRelease,
