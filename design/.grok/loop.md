@@ -2,15 +2,15 @@
 
 ## Iteration
 
-2026-09-24 13:05 BST — Shift-release after quiet Escape + keep-clear + Shift-held stays muted until an off-current tick is named; next-frame fallback does not flash.
+2026-09-24 15:09 BST — Window-blur mid Shift-release after quiet Escape + keep-clear + Shift-held reuses the same mute helper so a stale caption cannot revive on focus return.
 
 ## Next recommended
 
-Window-blur mid Shift-release after that quiet Escape path should reuse the same mute helper so a stale caption cannot revive on focus return.
+Pointer-cancel mid that same muted keep-clear Shift-held path should reuse the window-blur mute helper so a cancelled scrub cannot flash the next-frame name.
 
 ## Done
 
-- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftRelease stays muted with a null captionId when no off-current tick is named.
-- Naming an off-current tick on that path lifts mute and shows that frame.
-- Present chrome routes Shift-held Escape through the ShiftHeld helper and Shift-release while muted through the ShiftRelease helper.
-- Quiet Escape after keep-clear while Shift is held uses peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld; keep is forced dead so later current-dot hover names the live frame.
+- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseWindowBlur delegates to the Shift-release helper.
+- Present chrome routes window blur through applyQuietKeepClearWindowBlur; Shift keyup still uses the Shift-release helper.
+- Quiet Escape while Shift is held uses peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld and marks the keep-clear path.
+- Naming an off-current tick on the blur path still lifts mute and shows that frame.
