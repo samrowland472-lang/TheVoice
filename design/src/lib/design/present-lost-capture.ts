@@ -1,0 +1,67 @@
+import {
+  peekAfterLostCapture as peekAfterLostCaptureBase,
+  peekCaptionAfterMutedPointerUpCurrentHover,
+} from "./present-idle";
+
+export function peekAfterLostCaptureKeep(opts: {
+  muted: boolean;
+  namedId: string | null;
+  tickId: string | null;
+  landedId: string | null;
+  mutedPointerUpKeep?: boolean;
+}) {
+  const lost = peekAfterLostCaptureBase({
+    muted: opts.muted,
+    namedId: opts.namedId,
+    tickId: opts.tickId,
+    landedId: opts.landedId,
+  });
+  return {
+    ...lost,
+    mutedPointerUpKeep: Boolean(opts.mutedPointerUpKeep),
+  };
+}
+
+export function peekCaptionAfterLeaveOffCurrentNamedTick(opts: {
+  namedId: string | null;
+  currentId: string | null;
+  muted: boolean;
+  mutedPointerUpKeep?: boolean;
+}): { muted: boolean; namedId: string | null; showCaption: boolean; mutedPointerUpKeep: boolean } {
+  const off = opts.namedId && opts.currentId && opts.namedId !== opts.currentId ? opts.namedId : null;
+  if (off && !opts.mutedPointerUpKeep) {
+    return { muted: false, namedId: null, showCaption: false, mutedPointerUpKeep: false };
+  }
+  if (opts.mutedPointerUpKeep) {
+    return { muted: true, namedId: null, showCaption: false, mutedPointerUpKeep: true };
+  }
+  return {
+    muted: opts.muted,
+    namedId: opts.namedId,
+    showCaption: Boolean(opts.namedId) && !opts.muted,
+    mutedPointerUpKeep: false,
+  };
+}
+
+export function peekCaptionAfterLostCaptureCurrentHover(opts: {
+  muted: boolean;
+  namedId: string | null;
+  hoveringCurrent: boolean;
+  currentId: string | null;
+  mutedPointerUpKeep?: boolean;
+}): { muted: boolean; namedId: string | null; showCaption: boolean; mutedPointerUpKeep: boolean } {
+  const lost = peekAfterLostCaptureKeep({
+    muted: opts.muted,
+    namedId: opts.namedId,
+    tickId: null,
+    landedId: opts.currentId,
+    mutedPointerUpKeep: opts.mutedPointerUpKeep,
+  });
+  return peekCaptionAfterMutedPointerUpCurrentHover({
+    hoveringCurrent: opts.hoveringCurrent,
+    muted: lost.muted,
+    namedId: lost.namedId,
+    currentId: opts.currentId,
+    mutedPointerUpKeep: lost.mutedPointerUpKeep,
+  });
+}
