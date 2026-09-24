@@ -244,3 +244,19 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseLo
 } {
   return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerCancel(opts);
 }
+
+/** Pointer-up after that same muted keep-clear Shift-held path reuses the lost-capture mute helper. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerUp(opts: {
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+  offCurrentNamedId?: string | null;
+}): {
+  muted: boolean;
+  namedId: string | null;
+  showCaption: boolean;
+  captionId: string | null;
+  mutedPointerUpKeep: boolean;
+} {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseLostPointerCapture(opts);
+}
