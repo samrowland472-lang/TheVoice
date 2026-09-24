@@ -2,6 +2,7 @@ import {
   peekAfterLostCapture as peekAfterLostCaptureBase,
   peekCaptionAfterMutedPointerUpCurrentHover,
   peekCaptionAfterQuietEscape,
+  peekCaptionNameId,
 } from "./present-idle";
 
 export function peekAfterLostCaptureKeep(opts: {
@@ -157,5 +158,41 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldCurrentHover(o
     showCaption: hover.showCaption,
     stayInPresent: quiet.stayInPresent,
     mutedPointerUpKeep: hover.mutedPointerUpKeep,
+  };
+}
+
+/** Shift-release after that quiet Escape stays muted until an off-current tick is named. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftRelease(opts: {
+  muted: boolean;
+  namedId: string | null;
+  fallbackId: string | null;
+  offCurrentNamedId?: string | null;
+}): {
+  muted: boolean;
+  namedId: string | null;
+  showCaption: boolean;
+  captionId: string | null;
+  mutedPointerUpKeep: boolean;
+} {
+  const off = opts.offCurrentNamedId ?? null;
+  if (off) {
+    return {
+      muted: false,
+      namedId: off,
+      showCaption: true,
+      captionId: off,
+      mutedPointerUpKeep: false,
+    };
+  }
+  return {
+    muted: true,
+    namedId: null,
+    showCaption: false,
+    captionId: peekCaptionNameId({
+      muted: true,
+      namedId: null,
+      fallbackId: opts.fallbackId,
+    }),
+    mutedPointerUpKeep: false,
   };
 }
