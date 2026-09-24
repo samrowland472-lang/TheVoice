@@ -17,6 +17,7 @@ export {
   peekCaptionAfterLeaveOffCurrentNamedTick,
   peekCaptionAfterLostCaptureCurrentHover,
   peekCaptionAfterQuietEscapeAfterKeepClear,
+  peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld,
   peekAfterLostCaptureKeep,
   applyWindowBlur,
 } from "@/lib/design/present-lost-capture";

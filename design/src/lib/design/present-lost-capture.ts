@@ -97,3 +97,30 @@ export function peekCaptionAfterQuietEscapeAfterKeepClear(opts: {
     mutedPointerUpKeep: Boolean(opts.mutedPointerUpKeep),
   };
 }
+
+/** Quiet Escape after keep-clear while Shift is held stays in present; keep stays dead. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeld(opts: {
+  key: string;
+  muted: boolean;
+  namedId: string | null;
+  mutedPointerUpKeep?: boolean;
+}): {
+  namedId: string | null;
+  muted: boolean;
+  showCaption: boolean;
+  stayInPresent: boolean;
+  mutedPointerUpKeep: boolean;
+} {
+  const quiet = peekCaptionAfterQuietEscapeAfterKeepClear({
+    key: opts.key,
+    shiftHeld: true,
+    muted: opts.muted,
+    namedId: opts.namedId,
+    mutedPointerUpKeep: opts.mutedPointerUpKeep,
+  });
+  return {
+    ...quiet,
+    stayInPresent: opts.key === "Escape" ? true : quiet.stayInPresent,
+    mutedPointerUpKeep: Boolean(opts.mutedPointerUpKeep),
+  };
+}
