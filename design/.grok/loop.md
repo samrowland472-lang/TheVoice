@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-24 00:06 BST — Hovering the current-page peek tick after a muted pointer-up keep stays muted so the next-frame fallback name does not flash.
+2026-09-24 01:20 BST — A named off-current peek tick after a muted pointer-up keep clears mutedPointerUpKeep so a later current-dot hover names the live frame instead of the next-frame fallback.
 
 ## Next recommended
 
-A named off-current tick hover after that keep should clear mutedPointerUpKeep so a later current-dot hover can show a real name, not revive the fallback.
+Leaving an off-current named tick after that keep-clear should not restore mutedPointerUpKeep if the pointer returns to the current dot.
 
 ## Done
 
+- Named off-current hover after muted pointer-up keep clears mutedPointerUpKeep; later current-dot hover names the live frame, not the next-frame fallback.
+- peekCaptionAfterMutedPointerUpCurrentHover returns mutedPointerUpKeep; present chrome writes the ref on hover/focus.
 - peekCaptionAfterMutedPointerUpCurrentHover keeps mute + hides fallback on current-page hover after muted pointer-up keep.
 - Off-current named hover unmutes and names that tick.
 - peekCaptionAfterCurrentDotHover / peekCaptionAfterLeaveCurrentDot honor mutedPointerUpKeep.
