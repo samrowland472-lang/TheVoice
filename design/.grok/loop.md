@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-25 12:14 BST — Present chrome treats a document-level pointerup after the muted keep-clear Shift-held path through the document lostpointercapture mute helper so a document pointer-up cannot flash the next-frame name.
+2026-09-25 13:02 BST — Present chrome treats a second document-level pointerdown after the muted keep-clear Shift-held path through the document pointer-up mute helper so a second document pointer-down cannot flash the next-frame name.
 
 ## Next recommended
 
-Present chrome should treat a document-level pointerdown after that same muted keep-clear Shift-held path through the document pointer-up mute helper so a second document pointer-down cannot flash the next-frame name.
+Present chrome should treat a document-level pointermove after that same muted keep-clear Shift-held path through the document pointer-down mute helper so a second document pointer-move cannot flash the next-frame name.
 
 ## Done
 
+- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerDown delegates to the document pointer-up helper.
+- Present chrome routes a second document pointerdown through applyQuietKeepClearDocPointerDown after the document pointer-up mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerUp delegates to the document lostpointercapture helper.
 - Present chrome routes document pointerup through applyQuietKeepClearDocPointerUp after the document lostpointercapture mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocLostPointerCapture delegates to the document pointer-cancel helper.
