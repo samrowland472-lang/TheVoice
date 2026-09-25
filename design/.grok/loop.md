@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-25 09:04 BST — Present chrome treats a document-level lostpointercapture after the muted keep-clear Shift-held path through the document pointer-cancel mute helper so a lost capture cannot flash the next-frame name.
+2026-09-25 12:14 BST — Present chrome treats a document-level pointerup after the muted keep-clear Shift-held path through the document lostpointercapture mute helper so a document pointer-up cannot flash the next-frame name.
 
 ## Next recommended
 
-Present chrome should treat a document-level pointerup after that same muted keep-clear Shift-held path through the document lostpointercapture mute helper so a document pointer-up cannot flash the next-frame name.
+Present chrome should treat a document-level pointerdown after that same muted keep-clear Shift-held path through the document pointer-up mute helper so a second document pointer-down cannot flash the next-frame name.
 
 ## Done
 
+- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerUp delegates to the document lostpointercapture helper.
+- Present chrome routes document pointerup through applyQuietKeepClearDocPointerUp after the document lostpointercapture mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocLostPointerCapture delegates to the document pointer-cancel helper.
 - Present chrome routes document lostpointercapture through applyQuietKeepClearDocLostPointerCapture after the document pointer-cancel mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerCancel delegates to the pointer-down helper.
@@ -19,7 +21,7 @@ Present chrome should treat a document-level pointerup after that same muted kee
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerMove delegates to the pointer-over helper.
 - Present chrome routes document pointermove through applyQuietKeepClearPointerMove after the pointer-over mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOver delegates to the pointer-enter helper.
-- Present chrome routes document pointerover through applyQuietKeepClearPointerOver after the pointer-enter mute path.
+- Present chrome routes document pointerover through applyQuietKeepClearPointerOver after the pointer-over mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerEnter delegates to the pointer-out helper.
 - Present chrome routes document pointerenter through applyQuietKeepClearPointerEnter after the pointer-enter mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOut delegates to the pointer-leave helper.
