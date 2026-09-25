@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-25 22:16 BST — Present chrome treats a document-level pointermove after the muted keep-clear Shift-held path through the document pointer-over mute helper so a second document pointer-move cannot flash the next-frame name.
+2026-09-25 23:08 BST — Present chrome treats a document-level pointerdown after the muted keep-clear Shift-held path through the document pointer-move mute helper so a second document pointer-down cannot flash the next-frame name.
 
 ## Next recommended
 
-Present chrome should treat a document-level pointerdown after that same muted keep-clear Shift-held path through the document pointer-move mute helper so a second document pointer-down cannot flash the next-frame name.
+Present chrome should treat a document-level pointerup after that same muted keep-clear Shift-held path through the document pointer-down mute helper so a second document pointer-up cannot flash the next-frame name.
 
 ## Done
 
+- applyQuietKeepClearDocPointerDown calls applyQuietKeepClearDocPointerMove then the document pointer-down peek helper so a second document pointer-down cannot flash the next-frame name.
+- Document pointerdown is wired through onDocPointerDown.
 - applyQuietKeepClearDocPointerMove calls applyQuietKeepClearDocPointerOver then the document pointer-move peek helper so a second document pointer-move cannot flash the next-frame name.
 - Document pointermove is wired through onDocPointerMove.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerOver delegates to the document pointer-enter helper.
