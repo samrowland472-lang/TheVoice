@@ -30,6 +30,7 @@ export {
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOver,
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerMove,
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerDown,
+  peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerCancel,
   peekAfterLostCaptureKeep,
   applyWindowBlur,
 } from "@/lib/design/present-lost-capture";
