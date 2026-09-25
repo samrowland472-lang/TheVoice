@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-25 15:10 BST — Present chrome treats a second document-level pointerleave after the muted keep-clear Shift-held path through the document pointer-move mute helper so a second document pointer-leave cannot flash the next-frame name.
+2026-09-25 19:15 BST — Present chrome treats a second document-level pointerout after the muted keep-clear Shift-held path through the document pointer-leave mute helper so a second document pointer-out cannot flash the next-frame name.
 
 ## Next recommended
 
-Present chrome should treat a document-level pointerout after that same muted keep-clear Shift-held path through the document pointer-leave mute helper so a second document pointer-out cannot flash the next-frame name.
+Present chrome should treat a document-level pointerenter after that same muted keep-clear Shift-held path through the document pointer-out mute helper so a second document pointer-enter cannot flash the next-frame name.
 
 ## Done
 
+- peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerOut delegates to the document pointer-leave helper.
+- Present chrome routes a second document pointerout through applyQuietKeepClearDocPointerOut after the document pointer-leave mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerLeave delegates to the document pointer-move helper.
 - Present chrome routes a second document pointerleave through applyQuietKeepClearDocPointerLeave after the document pointer-move mute path.
 - peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerMove delegates to the document pointer-down helper.
