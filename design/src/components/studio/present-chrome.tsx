@@ -43,6 +43,7 @@ import {
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOut,
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerEnter,
   peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOver,
+  peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerMove,
 } from "@/lib/design/present-lost-capture";
 
 const NOTES_PREF = "voice-design-present-notes";
@@ -371,6 +372,12 @@ export function PresentView() {
         applyMutedKeepClearRelease(peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerOver);
       }
     };
+    const applyQuietKeepClearPointerMove = () => {
+      applyQuietKeepClearPointerOver();
+      if (quietKeepClearShiftHeld.current) {
+        applyMutedKeepClearRelease(peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleasePointerMove);
+      }
+    };
     const onPointerUp = () => {
       applyQuietKeepClearPointerUp();
     };
@@ -389,6 +396,9 @@ export function PresentView() {
     const onPointerOver = () => {
       applyQuietKeepClearPointerOver();
     };
+    const onPointerMove = () => {
+      applyQuietKeepClearPointerMove();
+    };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift") applyShiftRelease();
     };
@@ -402,6 +412,7 @@ export function PresentView() {
     document.addEventListener("pointerout", onPointerOut);
     document.addEventListener("pointerenter", onPointerEnter);
     document.addEventListener("pointerover", onPointerOver);
+    document.addEventListener("pointermove", onPointerMove);
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("keyup", onKeyUp);
@@ -413,6 +424,7 @@ export function PresentView() {
       document.removeEventListener("pointerout", onPointerOut);
       document.removeEventListener("pointerenter", onPointerEnter);
       document.removeEventListener("pointerover", onPointerOver);
+      document.removeEventListener("pointermove", onPointerMove);
     };
   });
   useEffect(() => {
