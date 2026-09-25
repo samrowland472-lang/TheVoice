@@ -307,3 +307,10 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDo
 ): KeepClearReleaseResult {
   return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerMove(opts);
 }
+
+/** Second document pointer-out after the muted document pointer-leave path stays muted. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerOut(
+  opts: KeepClearReleaseOpts,
+): KeepClearReleaseResult {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerLeave(opts);
+}
