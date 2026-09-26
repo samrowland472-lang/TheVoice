@@ -1,11 +1,11 @@
 import { partitionPathHoles, pathFillRule } from "./fill-rule";
 import { variationSettings } from "./fonts";
-import { aabb } from "./geometry";
 import { pathD } from "./path-curve";
 import { isConvertibleShape, shapeContour } from "./shape-to-path";
 import { drawPrintMarks, resolveBleed } from "./print-marks";
 import { drawDocument } from "./render";
 import { canvasShadowParams } from "./shadow";
+import { layoutTextLines } from "./text-layout";
 import type { DesignDocument, DesignNode, PathNode, Shadow, ShapeNode, TextNode } from "./types";
 
 export { canvasShadowParams } from "./shadow";
@@ -116,6 +116,37 @@ export function downloadPrintPdf(doc: DesignDocument) {
   downloadDataUrl(exportPrintPng(doc), `${slug(doc.name)}-print.png`);
 }
 
+function estimateWidth(text: string, fontSize: number, letterSpacing: number) {
+  if (!text) return 0;
+  return text.length * fontSize * 0.52 + Math.max(0, text.length - 1) * letterSpacing;
+}
+
+export function svgTextMarkup(t: TextNode, fill: string): string {
+  const measure = (s: string) => estimateWidth(s, t.fontSize, t.letterSpacing ?? 0);
+  const { lines, lineHeight, startY } = layoutTextLines(t, measure);
+  const anchor = t.align === "center" ? "middle" : t.align === "right" ? "end" : "start";
+  let ax = t.x;
+  if (t.align === "center") ax = t.x + t.w / 2;
+  if (t.align === "right") ax = t.x + t.w;
+  const family = esc(t.fontFamily || "sans-serif");
+  const weight = t.fontWeight || 400;
+  const tracking = t.letterSpacing ? ` letter-spacing="${t.letterSpacing}"` : "";
+  const axes = variationSettings(t);
+  const blend = blendAttr(t);
+  const styles: string[] = [];
+  if (axes) styles.push(`font-variation-settings:${axes}`);
+  const blendMatch = blend.match(/mix-blend-mode:([^"]+)/);
+  if (blendMatch) styles.push(`mix-blend-mode:${blendMatch[1]}`);
+  const styleAttr = styles.length ? ` style="${esc(styles.join(";"))}"` : "";
+  const tspans = lines
+    .map((line, i) => {
+      const y = t.y + startY + i * lineHeight;
+      return `<tspan x="${ax}" y="${y}">${esc(line)}</tspan>`;
+    })
+    .join("");
+  return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${shadowAttr(t)}>${tspans}</text>`;
+}
+
 export function exportSvg(doc: DesignDocument): string {
   const { width, height, background } = doc.artboard;
   const bg = typeof background === "string" ? background : "#ffffff";
@@ -126,12 +157,21 @@ export function exportSvg(doc: DesignDocument): string {
       const extra = svgStrokeStyle(n);
       const shadow = n.shadow ? svgShadowFilter(n.id, n.shadow) : "";
       if (n.kind === "text") {
-        const t = n as TextNode;
-        return `${shadow}<text x="${n.x}" y="${n.y + n.h * 0.8}" fill="${esc(fill)}" font-size="${t.fontSize}"${shadowAttr(n)}${blendAttr(n)}>${esc(t.text)}</text>`;
+        return `${shadow}${svgTextMarkup(n as TextNode, fill)}`;
       }
       if (n.kind === "path") {
         const p = n as PathNode;
-        return `${shadow}<path d="${esc(pathD(p.x, p.y, p.points, p.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
+        const { cut, islands } = partitionPathHoles(p);
+        const parts = [pathD(p.x, p.y, p.points, p.closed), ...cut.map((ring) => pathD(p.x, p.y, ring, true))];
+        const rule = pathFillRule(p);
+        const ruleAttr = cut.length || rule === "evenodd" ? ` fill-rule="${rule}"` : "";
+        const holeIslands = islands
+          .map(
+            (ring) =>
+              `<path d="${esc(pathD(p.x, p.y, ring, true))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${blendAttr(n)}/>`,
+          )
+          .join("");
+        return `${shadow}<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${shadowAttr(n)}${blendAttr(n)}/>${holeIslands}`;
       }
       if (isConvertibleShape(n) && (n.kind !== "rect" || (n.radius ?? 0) > 0.5)) {
         const s = n as ShapeNode;

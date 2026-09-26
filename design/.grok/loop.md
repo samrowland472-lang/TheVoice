@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-26 19:05 BST — SVG export draws ellipse, star, polygon, arrow, line, and rounded-rect as path outlines via shapeContour + pathD. Sharp rects stay `<rect>`. Mixed type shows CopyMeter on joined copy and per-layer character/word counts when the texts differ.
+2026-09-26 20:10 BST — SVG text uses hanging tspans per wrapped line (align, startY, font axes). Paths emit fill-rule plus cut hole rings; island holes stay sibling paths.
 
 ## Next recommended
 
-SVG text still sits on a baseline hack; emit tspans per line. Path holes and fill-rule are unused in export.ts. Align outline paths with rotation.
+Align outline paths with rotation. SVG clip to text box. Letter-spacing on wrap measure vs canvas. Compound path islands as groups.
 
 ## Done
 
@@ -22,3 +22,5 @@ SVG text still sits on a baseline hack; emit tspans per line. Path holes and fil
 - SVG export bakes convertible shapes as `<path d>` outlines (except sharp rects).
 - PNG / JPEG / print PNG rasterize through drawDocument so canvas blend is baked.
 - AI normalizeNode includes strokeDash, strokeDashOffset, lineCap, lineJoin, miterLimit.
+- SVG text emits tspans per line with hanging baseline (no y + h * 0.8 hack).
+- SVG path export uses pathFillRule and partitionPathHoles.
