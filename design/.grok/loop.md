@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-26 21:10 BST — SVG export wraps every layer (outline paths, text, rects) in rotate(deg cx cy) around nodeCenter so rotation matches the canvas.
+2026-09-26 21:20 BST — SVG export wraps rotated nodes in `rotate(deg cx cy)` about the box center (text, paths, outlines, rects). Compound path islands live in a sibling `<g data-islands>`.
 
 ## Next recommended
 
-SVG clip to text box. Letter-spacing on wrap measure vs canvas. Compound path islands as groups.
+SVG clip to text box. Letter-spacing on wrap measure vs canvas. Bake rotated cubic handles into path d when groups are flattened.
 
 ## Done
 
@@ -24,4 +24,5 @@ SVG clip to text box. Letter-spacing on wrap measure vs canvas. Compound path is
 - AI normalizeNode includes strokeDash, strokeDashOffset, lineCap, lineJoin, miterLimit.
 - SVG text emits tspans per line with hanging baseline (no y + h * 0.8 hack).
 - SVG path export uses pathFillRule and partitionPathHoles.
-- SVG export svgRotateWrap applies canvas-matching rotation to outlines, paths, text, and rects.
+- SVG export rotates layers about the node center to match canvas.
+- Compound path islands wrap in `<g data-islands="1">`.

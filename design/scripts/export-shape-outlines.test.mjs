@@ -12,10 +12,14 @@ test("SVG export bakes ellipse star polygon arrow and rounded rect as path outli
   assert.match(exp, /n\.kind !== "rect" \|\| \(n\.radius \?\? 0\) > 0\.5/);
 });
 
-test("SVG outline paths wrap rotation around node center", () => {
-  assert.match(exp, /svgRotateWrap/);
-  assert.match(exp, /nodeCenter/);
-  assert.match(exp, /transform="rotate\(\$\{deg\} \$\{c\.x\} \$\{c\.y\}\)"/);
+test("SVG outlines wrap rotated nodes about the box center", () => {
+  assert.match(exp, /svgRotateTransform/);
+  assert.match(exp, /rotate\(\$\{rot\} \$\{cx\} \$\{cy\}\)/);
+  assert.match(exp, /rotateWrap/);
+});
+
+test("SVG compound path islands sit in a sibling group", () => {
+  assert.match(exp, /data-islands="1"/);
 });
 
 test("mixed type lists per-layer copy counts when texts differ", () => {
