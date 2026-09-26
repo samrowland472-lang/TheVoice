@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-26 16:02 BST — SVG layers emit mix-blend-mode (multiply through color-burn). JPEG, PNG, and print PNG all go through rasterize → drawDocument so canvas blend is baked. Mixed text selection shows the same CopyMeter totals as a single type field.
+2026-09-26 19:05 BST — SVG export draws ellipse, star, polygon, arrow, line, and rounded-rect as path outlines via shapeContour + pathD. Sharp rects stay `<rect>`. Mixed type shows CopyMeter on joined copy and per-layer character/word counts when the texts differ.
 
 ## Next recommended
 
-SVG export still draws most shapes as rects; bake path/ellipse/star outlines. Mixed copy could list per-layer counts when texts differ.
+SVG text still sits on a baseline hack; emit tspans per line. Path holes and fill-rule are unused in export.ts. Align outline paths with rotation.
 
 ## Done
 
@@ -16,7 +16,9 @@ SVG export still draws most shapes as rects; bake path/ellipse/star outlines. Mi
 - Path inspector defers dash UI to MixedPathDash (hideDash).
 - CopyMeter under Inspector Type copy (characters / words / lines).
 - MixedType shares CopyMeter across the selected stack.
+- MixedType lists per-layer copy counts when texts differ.
 - TypeAxes optical slider always on with 6–144 fallback.
 - SVG export emits mix-blend-mode via blendAttr for non-normal layers.
+- SVG export bakes convertible shapes as `<path d>` outlines (except sharp rects).
 - PNG / JPEG / print PNG rasterize through drawDocument so canvas blend is baked.
 - AI normalizeNode includes strokeDash, strokeDashOffset, lineCap, lineJoin, miterLimit.

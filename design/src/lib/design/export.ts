@@ -2,11 +2,11 @@ import { partitionPathHoles, pathFillRule } from "./fill-rule";
 import { variationSettings } from "./fonts";
 import { aabb } from "./geometry";
 import { pathD } from "./path-curve";
-import { shapeContour } from "./shape-to-path";
+import { isConvertibleShape, shapeContour } from "./shape-to-path";
 import { drawPrintMarks, resolveBleed } from "./print-marks";
 import { drawDocument } from "./render";
 import { canvasShadowParams } from "./shadow";
-import type { DesignDocument, DesignNode, PathNode, Shadow, TextNode } from "./types";
+import type { DesignDocument, DesignNode, PathNode, Shadow, ShapeNode, TextNode } from "./types";
 
 export { canvasShadowParams } from "./shadow";
 
@@ -133,6 +133,11 @@ export function exportSvg(doc: DesignDocument): string {
         const p = n as PathNode;
         return `${shadow}<path d="${esc(pathD(p.x, p.y, p.points, p.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
       }
+      if (isConvertibleShape(n) && (n.kind !== "rect" || (n.radius ?? 0) > 0.5)) {
+        const s = n as ShapeNode;
+        const contour = shapeContour(s);
+        return `${shadow}<path d="${esc(pathD(s.x, s.y, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
+      }
       return `${shadow}<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
     })
     .join("");
@@ -148,8 +153,8 @@ export function downloadSvg(doc: DesignDocument) {
 
 function esc(s: string) {
   return s
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """);
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
