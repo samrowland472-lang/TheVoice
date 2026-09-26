@@ -161,7 +161,8 @@ export function CampaignStrip() {
   );
 }
 
-function shortFormat(id: string) {
+function shortFormat(id?: string) {
+  if (!id) return "Page";
   if (id === "ig-story" || id === "tiktok") return "Story";
   if (id === "ig-post" || id === "square" || id === "album") return "Square";
   if (id === "x-post" || id === "linkedin" || id === "wide") return "Banner";
