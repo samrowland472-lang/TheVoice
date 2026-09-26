@@ -136,6 +136,16 @@ function estimateWidth(text: string, fontSize: number, letterSpacing: number) {
   return text.length * fontSize * 0.52 + Math.max(0, text.length - 1) * letterSpacing;
 }
 
+function svgTextClipId(id: string) {
+  return `tb-${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+}
+
+/** Clip overflowing glyphs to the text box, matching canvas ctx.clip() on the node rect. */
+export function svgTextBoxClip(t: Pick<TextNode, "id" | "x" | "y" | "w" | "h">): string {
+  const cid = svgTextClipId(t.id);
+  return `<clipPath id="${cid}"><rect x="${t.x}" y="${t.y}" width="${t.w}" height="${t.h}"/></clipPath>`;
+}
+
 export function svgTextMarkup(t: TextNode, fill: string): string {
   const measure = (s: string) => estimateWidth(s, t.fontSize, t.letterSpacing ?? 0);
   const { lines, lineHeight, startY } = layoutTextLines(t, measure);
@@ -159,7 +169,8 @@ export function svgTextMarkup(t: TextNode, fill: string): string {
       return `<tspan x="${ax}" y="${y}">${esc(line)}</tspan>`;
     })
     .join("");
-  return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${shadowAttr(t)}>${tspans}</text>`;
+  const clip = ` clip-path="url(#${svgTextClipId(t.id)})"`;
+  return `${svgTextBoxClip(t)}<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${shadowAttr(t)}${clip}>${tspans}</text>`;
 }
 
 export function exportSvg(doc: DesignDocument): string {

@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-26 21:20 BST — SVG export wraps rotated nodes in `rotate(deg cx cy)` about the box center (text, paths, outlines, rects). Compound path islands live in a sibling `<g data-islands>`.
+2026-09-27 00:05 BST — SVG text export clips glyphs to the node box (`clipPath` + `clip-path`) so overflow matches canvas `ctx.clip()` on the text rect.
 
 ## Next recommended
 
-SVG clip to text box. Letter-spacing on wrap measure vs canvas. Bake rotated cubic handles into path d when groups are flattened.
+Letter-spacing on wrap measure vs canvas. Bake rotated cubic handles into path d when groups are flattened. SVG clip-path lives inside the rotate group so rotation and clip stay in the same space.
 
 ## Done
 
@@ -26,3 +26,4 @@ SVG clip to text box. Letter-spacing on wrap measure vs canvas. Bake rotated cub
 - SVG path export uses pathFillRule and partitionPathHoles.
 - SVG export rotates layers about the node center to match canvas.
 - Compound path islands wrap in `<g data-islands="1">`.
+- SVG text export wraps overflow with clipPath on the node box.
