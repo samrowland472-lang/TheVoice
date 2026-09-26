@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-26 09:07 BST — Present chrome treats a second document-level pointerup after the muted keep-clear Shift-held path through the document lostpointercapture mute helper so a second document pointer-up cannot flash the next-frame name.
+2026-09-26 11:05 BST — Present chrome treats a second document-level pointercancel after the muted keep-clear Shift-held path through the second document pointer-up mute helper so a second document pointer-cancel cannot flash the next-frame name.
 
 ## Next recommended
 
-Present chrome should treat a second document-level pointercancel after that same muted keep-clear Shift-held path through the second document pointer-up mute helper so a second document pointer-cancel cannot flash the next-frame name.
+Present chrome should treat a second document-level lostpointercapture after that same muted keep-clear Shift-held path through the second document pointer-cancel mute helper so a second document lostpointercapture cannot flash the next-frame name.
 
 ## Done
 
+- applyQuietKeepClearDocSecondPointerCancel calls applyQuietKeepClearDocSecondPointerUp then the second document pointer-cancel peek helper so a second document pointer-cancel cannot flash the next-frame name.
+- Document pointercancel also runs applyQuietKeepClearDocSecondPointerCancel after applyQuietKeepClearDocPointerCancel.
 - applyQuietKeepClearDocSecondPointerUp calls applyQuietKeepClearDocLostPointerCapture then the second document pointer-up peek helper so a second document pointer-up cannot flash the next-frame name.
 - Document pointerup also runs applyQuietKeepClearDocSecondPointerUp after applyQuietKeepClearDocPointerUp.
 - applyQuietKeepClearDocLostPointerCapture calls applyQuietKeepClearDocPointerCancel then the document lostpointercapture peek helper so a second document lostpointercapture cannot flash the next-frame name.
