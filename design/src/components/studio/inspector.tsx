@@ -4,6 +4,7 @@ import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
 import { MixedType } from "./mixed-type";
 import { FillEditor, Field, ShadowEditor } from "./inspector-parts";
+import { TextFields } from "./inspector-type";
 
 const BLENDS: { id: BlendMode; label: string }[] = [
   { id: "source-over", label: "Normal" },
@@ -133,7 +134,13 @@ export function Inspector() {
               <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
             </section>
           )}
-          {texts.length > 0 && (
+          {texts.length === 1 && (
+            <section className="space-y-2 border-b border-border px-3 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Type</div>
+              <TextFields node={texts[0]!} />
+            </section>
+          )}
+          {texts.length > 1 && (
             <section className="border-b border-border px-3 py-3">
               <MixedType nodes={texts} />
             </section>
