@@ -125,3 +125,64 @@ export function TypeAxes({ node }: { node: TextNode }) {
     </>
   );
 }
+
+export function ContrastMeter({ node }: { node: TextNode }) {
+  const doc = useDesign((s) => s.doc);
+  const brand = useDesign((s) => s.brand);
+  if (!doc) return null;
+  const ink = solidHex(node.fill, "#d9f5e3");
+  const ground = solidHex(doc.artboard.background, "#0a0d0c");
+  const ratio = contrastRatio(ink, ground);
+  const large = node.fontSize >= 24 || (node.fontSize >= 18 && node.fontWeight >= 700);
+  const level = ratio == null ? "fail" : wcagLevel(ratio, large);
+  const suggested = bestInk(ground, brand.colors.map((c) => c.hex));
+  return (
+    <div className="flex items-center justify-between gap-2 text-[10px] text-ink-dim">
+      <span>Contrast {ratio == null ? "\u2014" : ratio.toFixed(1)} \u00b7 {level.toUpperCase()}</span>
+      {level === "fail" && (
+        <button type="button" className="text-phosphor" onClick={() => useDesign.getState().updateNodes([node.id], { fill: suggested } as Partial<DesignNode>, true)}>Fix ink</button>
+      )}
+    </div>
+  );
+}
+
+export function LinkedRow({ nodeId, linkId }: { nodeId: string; linkId?: string }) {
+  const unlinkSelected = useDesign((s) => s.unlinkSelected);
+  const duplicateLinked = useDesign((s) => s.duplicateLinked);
+  const select = useDesign((s) => s.select);
+  const doc = useDesign((s) => s.doc);
+  const siblings = (doc?.nodes ?? []).filter((n) => linkId && n.linkId === linkId);
+  return (
+    <div className="flex items-center justify-between gap-2 text-[11px] text-ink-dim">
+      <span>{linkId ? `Linked \u00b7 ${siblings.length}` : "Standalone"}</span>
+      <div className="flex gap-1">
+        {linkId && siblings.length > 1 && (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => select(siblings.map((n) => n.id))}>Select all</button>
+        )}
+        {linkId ? (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => { select([nodeId]); unlinkSelected(); }}>Unlink</button>
+        ) : (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => { select([nodeId]); duplicateLinked(); }}>Instance</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function HotspotField({ node }: { node: DesignNode }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const index = useDesign((s) => s.index);
+  const doc = useDesign((s) => s.doc);
+  const pages = index.filter((p) => p.id !== doc?.id);
+  return (
+    <Field label="Hotspot">
+      <input className="field" placeholder="https:// or pick a page" value={node.href ?? ""} onChange={(e) => updateNodes([node.id], { href: e.target.value || undefined }, true)} />
+      {pages.length > 0 && (
+        <select className="field mt-1" value={node.href?.startsWith("doc:") ? node.href : ""} onChange={(e) => updateNodes([node.id], { href: e.target.value || undefined }, true)}>
+          <option value="">Page link</option>
+          {pages.map((p) => (<option key={p.id} value={`doc:${p.id}`}>{p.name}</option>))}
+        </select>
+      )}
+    </Field>
+  );
+}
