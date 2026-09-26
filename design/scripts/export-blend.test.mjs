@@ -13,11 +13,23 @@ test("PNG rasterize draws through drawDocument so blend is baked", () => {
   assert.match(render, /ctx.globalCompositeOperation = n.blend/);
 });
 
+test("JPEG and print PNG reuse rasterize so blend stays baked", () => {
+  assert.match(exp, /export function exportJpeg[\s\S]*rasterize\(doc, scale\)/);
+  assert.match(exp, /export function exportPrintPng[\s\S]*rasterize\(doc, 4/);
+  assert.match(exp, /export function exportPng[\s\S]*rasterize\(doc, scale\)/);
+});
+
 test("SVG export writes mix-blend-mode for non-normal layers", () => {
   assert.match(exp, /function blendAttr/);
   assert.match(exp, /mix-blend-mode/);
   assert.match(exp, /hard-light/);
   assert.match(exp, /\$\{blendAttr\(n\)\}/);
+});
+
+test("mixed type inspector shares CopyMeter", () => {
+  const mixed = readFileSync(new URL("../src/components/studio/mixed-type.tsx", import.meta.url), "utf8");
+  assert.match(mixed, /CopyMeter/);
+  assert.match(typeFields, /export function CopyMeter/);
 });
 
 test("single text inspector always shows tracking leading and optical sliders", () => {
