@@ -33,6 +33,15 @@ function shadowAttr(n: DesignNode): string {
   return ` filter="url(#${svgFilterId(n.id)})"`;
 }
 
+const SVG_BLENDS = "multiply,screen,overlay,darken,lighten,soft-light,hard-light,color-dodge,color-burn";
+
+function blendAttr(n: DesignNode): string {
+  const blend = n.blend;
+  if (!blend || blend === "source-over") return "";
+  if (!SVG_BLENDS.split(",").includes(blend)) return "";
+  return ` style="mix-blend-mode:${blend}"`;
+}
+
 export function svgStrokeStyle(
   n: Pick<DesignNode, "strokeDash" | "strokeDashOffset" | "lineCap" | "lineJoin" | "miterLimit">,
 ): string {
@@ -118,13 +127,13 @@ export function exportSvg(doc: DesignDocument): string {
       const shadow = n.shadow ? svgShadowFilter(n.id, n.shadow) : "";
       if (n.kind === "text") {
         const t = n as TextNode;
-        return `${shadow}<text x="${n.x}" y="${n.y + n.h * 0.8}" fill="${esc(fill)}" font-size="${t.fontSize}"${shadowAttr(n)}>${esc(t.text)}</text>`;
+        return `${shadow}<text x="${n.x}" y="${n.y + n.h * 0.8}" fill="${esc(fill)}" font-size="${t.fontSize}"${shadowAttr(n)}${blendAttr(n)}>${esc(t.text)}</text>`;
       }
       if (n.kind === "path") {
         const p = n as PathNode;
-        return `${shadow}<path d="${esc(pathD(p.x, p.y, p.points, p.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}/>`;
+        return `${shadow}<path d="${esc(pathD(p.x, p.y, p.points, p.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
       }
-      return `${shadow}<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}/>`;
+      return `${shadow}<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
     })
     .join("");
   return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="${esc(bg)}"/>${body}</svg>`;
@@ -139,8 +148,8 @@ export function downloadSvg(doc: DesignDocument) {
 
 function esc(s: string) {
   return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, """);
 }
