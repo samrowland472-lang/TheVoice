@@ -1,5 +1,6 @@
 import { partitionPathHoles, pathFillRule } from "./fill-rule";
 import { variationSettings } from "./fonts";
+import { nodeCenter } from "./geometry";
 import { pathD } from "./path-curve";
 import { isConvertibleShape, shapeContour } from "./shape-to-path";
 import { drawPrintMarks, resolveBleed } from "./print-marks";
@@ -40,6 +41,14 @@ function blendAttr(n: DesignNode): string {
   if (!blend || blend === "source-over") return "";
   if (!SVG_BLENDS.split(",").includes(blend)) return "";
   return ` style="mix-blend-mode:${blend}"`;
+}
+
+/** Match canvas: rotate around node center so outline paths stay aligned. */
+export function svgRotateWrap(n: DesignNode, inner: string): string {
+  const deg = n.rotation ?? 0;
+  if (!deg) return inner;
+  const c = nodeCenter(n);
+  return `<g transform="rotate(${deg} ${c.x} ${c.y})">${inner}</g>`;
 }
 
 export function svgStrokeStyle(
@@ -157,7 +166,7 @@ export function exportSvg(doc: DesignDocument): string {
       const extra = svgStrokeStyle(n);
       const shadow = n.shadow ? svgShadowFilter(n.id, n.shadow) : "";
       if (n.kind === "text") {
-        return `${shadow}${svgTextMarkup(n as TextNode, fill)}`;
+        return svgRotateWrap(n, `${shadow}${svgTextMarkup(n as TextNode, fill)}`);
       }
       if (n.kind === "path") {
         const p = n as PathNode;
@@ -171,14 +180,23 @@ export function exportSvg(doc: DesignDocument): string {
               `<path d="${esc(pathD(p.x, p.y, ring, true))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${blendAttr(n)}/>`,
           )
           .join("");
-        return `${shadow}<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${shadowAttr(n)}${blendAttr(n)}/>${holeIslands}`;
+        return svgRotateWrap(
+          n,
+          `${shadow}<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${shadowAttr(n)}${blendAttr(n)}/>${holeIslands}`,
+        );
       }
       if (isConvertibleShape(n) && (n.kind !== "rect" || (n.radius ?? 0) > 0.5)) {
         const s = n as ShapeNode;
         const contour = shapeContour(s);
-        return `${shadow}<path d="${esc(pathD(s.x, s.y, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
+        return svgRotateWrap(
+          n,
+          `${shadow}<path d="${esc(pathD(s.x, s.y, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`,
+        );
       }
-      return `${shadow}<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
+      return svgRotateWrap(
+        n,
+        `${shadow}<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`,
+      );
     })
     .join("");
   return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="${esc(bg)}"/>${body}</svg>`;

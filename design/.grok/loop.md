@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-26 20:10 BST — SVG text uses hanging tspans per wrapped line (align, startY, font axes). Paths emit fill-rule plus cut hole rings; island holes stay sibling paths.
+2026-09-26 21:10 BST — SVG export wraps every layer (outline paths, text, rects) in rotate(deg cx cy) around nodeCenter so rotation matches the canvas.
 
 ## Next recommended
 
-Align outline paths with rotation. SVG clip to text box. Letter-spacing on wrap measure vs canvas. Compound path islands as groups.
+SVG clip to text box. Letter-spacing on wrap measure vs canvas. Compound path islands as groups.
 
 ## Done
 
@@ -24,3 +24,4 @@ Align outline paths with rotation. SVG clip to text box. Letter-spacing on wrap 
 - AI normalizeNode includes strokeDash, strokeDashOffset, lineCap, lineJoin, miterLimit.
 - SVG text emits tspans per line with hanging baseline (no y + h * 0.8 hack).
 - SVG path export uses pathFillRule and partitionPathHoles.
+- SVG export svgRotateWrap applies canvas-matching rotation to outlines, paths, text, and rects.
