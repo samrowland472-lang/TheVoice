@@ -287,6 +287,13 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDo
   return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocLostPointerCapture(opts);
 }
 
+/** Second document pointer-up after the muted lostpointercapture path stays muted. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocSecondPointerUp(
+  opts: KeepClearReleaseOpts,
+): KeepClearReleaseResult {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocLostPointerCapture(opts);
+}
+
 /** Second document pointer-down after that muted path stays muted. */
 export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerDown(
   opts: KeepClearReleaseOpts,
