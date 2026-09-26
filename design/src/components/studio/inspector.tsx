@@ -3,15 +3,19 @@ import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
 import { MixedType } from "./mixed-type";
+import { FillEditor, Field, ShadowEditor } from "./inspector-parts";
 
-const BLENDS: BlendMode[] = [
-  "source-over",
-  "multiply",
-  "screen",
-  "overlay",
-  "darken",
-  "lighten",
-  "soft-light",
+const BLENDS: { id: BlendMode; label: string }[] = [
+  { id: "source-over", label: "Normal" },
+  { id: "multiply", label: "Multiply" },
+  { id: "screen", label: "Screen" },
+  { id: "overlay", label: "Overlay" },
+  { id: "darken", label: "Darken" },
+  { id: "lighten", label: "Lighten" },
+  { id: "soft-light", label: "Soft light" },
+  { id: "hard-light", label: "Hard light" },
+  { id: "color-dodge", label: "Color dodge" },
+  { id: "color-burn", label: "Color burn" },
 ];
 
 export function Inspector() {
@@ -21,9 +25,6 @@ export function Inspector() {
   const setArtboardBg = useDesign((s) => s.setArtboardBg);
   const brand = useDesign((s) => s.brand);
   const color = useDesign((s) => s.color);
-  const flipSelected = useDesign((s) => s.flipSelected);
-  const rotateSelected = useDesign((s) => s.rotateSelected);
-  const alignSelected = useDesign((s) => s.alignSelected);
 
   if (!doc) return null;
 
@@ -34,6 +35,8 @@ export function Inspector() {
   const ids = selectedNodes.map((n) => n.id);
   const texts = selectedNodes.filter((n): n is TextNode => n.kind === "text");
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
+  const mixedOpacity = new Set(selectedNodes.map((n) => n.opacity)).size > 1;
+  const mixedBlend = new Set(selectedNodes.map((n) => n.blend)).size > 1;
 
   return (
     <aside className="flex h-full w-[260px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface">
@@ -68,9 +71,68 @@ export function Inspector() {
               <NumField aria-label="Radius" value={node.radius} onCommit={(radius) => updateNodes(ids, { radius })} />
             </div>
           </section>
-          <section className="border-b border-border px-3 py-3">
-            <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
+          <section className="space-y-2 border-b border-border px-3 py-3">
+            <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Layer</div>
+            <Field label={mixedOpacity ? "Opacity · mixed" : `Opacity ${Math.round(node.opacity * 100)}%`}>
+              <input
+                type="range"
+                className="range-phosphor w-full"
+                min={0}
+                max={1}
+                step={0.01}
+                value={node.opacity}
+                aria-label="Layer opacity"
+                onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
+                onPointerUp={() => useDesign.getState().commit()}
+              />
+            </Field>
+            <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>
+              <select
+                className="field w-full font-mono text-[11px]"
+                aria-label="Layer blend mode"
+                value={mixedBlend ? "" : node.blend}
+                onChange={(e) => {
+                  const next = e.target.value as BlendMode;
+                  if (BLENDS.some((b) => b.id === next)) updateNodes(ids, { blend: next }, true);
+                }}
+              >
+                {mixedBlend && <option value="">Mixed</option>}
+                {BLENDS.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                className="h-7 flex-1 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim"
+                onClick={() => updateNodes(ids, { visible: !node.visible }, true)}
+              >
+                {node.visible ? "Hide" : "Show"}
+              </button>
+              <button
+                type="button"
+                className="h-7 flex-1 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim"
+                onClick={() => updateNodes(ids, { locked: !node.locked }, true)}
+              >
+                {node.locked ? "Unlock" : "Lock"}
+              </button>
+            </div>
           </section>
+          {selectedNodes.length === 1 && (
+            <section className="space-y-2 border-b border-border px-3 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Ink</div>
+              <FillEditor node={node} />
+              <ShadowEditor nodes={selectedNodes} />
+            </section>
+          )}
+          {selectedNodes.length > 1 && (
+            <section className="border-b border-border px-3 py-3">
+              <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
+            </section>
+          )}
           {texts.length > 0 && (
             <section className="border-b border-border px-3 py-3">
               <MixedType nodes={texts} />
