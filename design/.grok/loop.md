@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-26 13:20 BST — Single text Inspector Type section always shows tracking, leading, and optical-size sliders (optical uses a 6–144 fallback when the face has no opsz axis). Multi-select still uses MixedType. PNG export already bakes `n.blend` through `drawDocument`; SVG now writes `mix-blend-mode`. AI text nodes carry stroke dash/cap fields for typecheck.
+2026-09-26 14:10 BST — Single-select Type copy field now shows a live character, word, and line count. Optical-size slider always appears for a single text layer, using a 6–144 fallback when the face has no opsz axis. Copy commits on blur.
 
 ## Next recommended
 
-Export JPEG/print PNG should keep the same blend bake. Inspector type copy field for a single text layer could grow a live character count. Path/shape ink stroke dash on single-select.
+Path/shape ink stroke dash on single-select. Export JPEG/print PNG should keep the same blend bake. Mixed-select copy field could share the same meter.
 
 ## Done
 
+- CopyMeter under Inspector Type copy (characters / words / lines).
+- TypeAxes optical slider always on with 6–144 fallback.
 - Single-select text uses TextFields (copy, tracking, leading, optical always on).
 - Mixed axis sliders always expose Optical even when no selected face advertises opsz.
 - SVG export emits mix-blend-mode for multiply through color-burn.
