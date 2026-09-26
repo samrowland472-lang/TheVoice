@@ -3,6 +3,8 @@ import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
 import { MixedType } from "./mixed-type";
+import { MixedPathDash } from "./mixed-path-dash";
+import { MixedGeometry } from "./mixed-geometry";
 import { FillEditor, Field, ShadowEditor } from "./inspector-parts";
 import { TextFields } from "./inspector-type";
 
@@ -35,6 +37,16 @@ export function Inspector() {
   const node = selectedNodes[selectedNodes.length - 1] ?? null;
   const ids = selectedNodes.map((n) => n.id);
   const texts = selectedNodes.filter((n): n is TextNode => n.kind === "text");
+  const outlines = selectedNodes.filter(
+    (n) =>
+      n.kind === "path" ||
+      n.kind === "rect" ||
+      n.kind === "ellipse" ||
+      n.kind === "line" ||
+      n.kind === "polygon" ||
+      n.kind === "star" ||
+      n.kind === "arrow",
+  );
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
   const mixedOpacity = new Set(selectedNodes.map((n) => n.opacity)).size > 1;
   const mixedBlend = new Set(selectedNodes.map((n) => n.blend)).size > 1;
@@ -74,7 +86,7 @@ export function Inspector() {
           </section>
           <section className="space-y-2 border-b border-border px-3 py-3">
             <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Layer</div>
-            <Field label={mixedOpacity ? "Opacity · mixed" : `Opacity ${Math.round(node.opacity * 100)}%`}>
+            <Field label={mixedOpacity ? "Opacity \u00b7 mixed" : `Opacity ${Math.round(node.opacity * 100)}%`}>
               <input
                 type="range"
                 className="range-phosphor w-full"
@@ -87,7 +99,7 @@ export function Inspector() {
                 onPointerUp={() => useDesign.getState().commit()}
               />
             </Field>
-            <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>
+            <Field label={mixedBlend ? "Blend \u00b7 mixed" : "Blend"}>
               <select
                 className="field w-full font-mono text-[11px]"
                 aria-label="Layer blend mode"
@@ -132,6 +144,17 @@ export function Inspector() {
           {selectedNodes.length > 1 && (
             <section className="border-b border-border px-3 py-3">
               <MixedInk nodes={selectedNodes} brandColors={brand.colors} ink={color} />
+            </section>
+          )}
+          {outlines.length > 0 && (
+            <section className="border-b border-border px-3 py-3">
+              <MixedPathDash nodes={outlines} />
+            </section>
+          )}
+          {selectedNodes.length > 1 && (
+            <section className="border-b border-border px-3 py-3" title="Unify radius with mixed geometry">
+              {/* mixedKindsGeom */}
+              <MixedGeometry nodes={selectedNodes} />
             </section>
           )}
           {texts.length === 1 && (
