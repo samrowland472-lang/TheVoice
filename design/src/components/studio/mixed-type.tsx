@@ -11,6 +11,7 @@ import {
 import type { Align, DesignNode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedAxisSliders } from "./mixed-type-axes";
+import { CopyMeter } from "./inspector-type";
 
 const ALIGNS: Align[] = ["left", "center", "right"];
 
@@ -46,6 +47,8 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
   const mixedAlign = aligns.length > 1;
   const mixedCase = unique(nodes.map((n) => Boolean(n.uppercase))).length > 1;
   const mixedStack = new Set(nodes.map((n) => typeKey(n))).size > 1;
+  const mixedCopy = unique(nodes.map((n) => n.text)).length > 1;
+  const joinedCopy = nodes.map((n) => n.text).join("\n");
   const keyNode = nodes[nodes.length - 1]!;
   const display = brand.displayFont || "Chakra Petch";
   const body = brand.bodyFont || "Outfit";
@@ -122,6 +125,17 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
     <section className="border-b border-border py-3">
       <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Type · {nodes.length} layers</div>
       <p className="mb-2 text-[10px] text-ink-dim">Family, weight, tracking, leading and align write onto every selected text layer. A mixed size slider scales from the key so the stack keeps its steps; type a size to flatten.</p>
+      <CopyMeter text={joinedCopy} />
+      {mixedCopy && (
+        <ul className="mt-1 space-y-0.5" aria-label="per-layer copy counts">
+          {nodes.map((n) => (
+            <li key={n.id} className="flex justify-between gap-2 font-mono text-[10px] text-ink-faint">
+              <span className="truncate">{n.name || "text"}</span>
+              <span>{[...n.text].length}c · {n.text.trim() ? n.text.trim().split(/\s+/).length : 0}w</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="mb-2 flex gap-1">
         <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: display, fontWeight: 600, fontSize: Math.max(...nodes.map((n) => n.fontSize), 40) })}>Display</button>
         <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => patch({ fontFamily: body, fontWeight: 400, fontSize: Math.min(...nodes.map((n) => n.fontSize), 28) })}>Body</button>
