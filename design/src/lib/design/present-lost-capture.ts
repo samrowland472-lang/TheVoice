@@ -335,3 +335,10 @@ export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDo
 ): KeepClearReleaseResult {
   return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocPointerEnter(opts);
 }
+
+/** Second document pointer-cancel after the muted second document pointer-up path stays muted. */
+export function peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocSecondPointerCancel(
+  opts: KeepClearReleaseOpts,
+): KeepClearReleaseResult {
+  return peekCaptionAfterQuietEscapeAfterKeepClearShiftHeldShiftReleaseDocSecondPointerUp(opts);
+}
