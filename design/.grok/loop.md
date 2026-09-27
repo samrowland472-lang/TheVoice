@@ -2,14 +2,20 @@
 
 ## Iteration
 
-2026-09-27 17:05 BST — SVG wrap measure reuses one OffscreenCanvas (or tiny HTML canvas) for the whole export pass. applyFontFace runs only when wrapFaceCacheKey (family/weight/size/opsz + axes) changes, so long copy and many text layers no longer allocate a canvas per node.
+2026-09-27 19:05 BST — SVG image and paint layers export as `<image href>` with rotation baked into a matrix on the element (no rotate group). After document.fonts load, wrap measure cache resets so measureText does not keep a stale face.
 
 ## Next recommended
 
-Images still use a rotate group — bake those boxes only if RIP work requires it. After fonts reload, call resetWrapMeasureCache so measureText does not keep a stale face.
+Image crop still is unused on canvas and SVG. Bake crop into a clipPath on export, and draw the cropped source in render. Filters on canvas still skip CSS filter; apply the same brightness/contrast/saturate/blur used in SVG.
 
 ## Done
 
+- bakedBoxTransform writes matrix(a b c d e f) about the node center.
+- svgPlacedImage emits href + preserveAspectRatio="none" + baked matrix.
+- Image nodes include svgImageFilterStyle from normalizeFilters.
+- Paint nodes use bitmap as href.
+- watchFontsForWrapCache listens for loadingdone and fonts.ready, then resetWrapMeasureCache.
+- StudioApp mounts the font watch once.
 - wrapMeasureForText caches wrapCtxCache; wrapFaceCacheKey gates applyFontFace.
 - resetWrapMeasureCache clears the wrap canvas and last face key.
 - wrapMeasureForText prefers OffscreenCanvas measureText after applyFontFace when document.fonts.status === "loaded".
