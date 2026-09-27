@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-27 03:15 BST — Flatten and SVG path export bake rotation into cubic handles: `bakeRingRotation` rotates anchors about the box center and handle offsets about the origin, then `pathDBaked` writes world-space `C` commands. Text clipPath stays inside `rotateWrap` so clip and type share the same rotate space.
+2026-09-27 03:15 BST — SVG path/shape export bakes rotation into path `d`: anchors around the box center and cubic handles as rotated relative offsets (`bakeRotatedPoints` / `bakedPathD`). Flattened groups no longer wrap geometry in a rotate transform. Text clip-path stays inside the rotate group so clip and glyphs share the same space.
 
 ## Next recommended
 
-Optical-size wrap vs canvas (measure with opsz applied, not just font-size). Bake sharp-rect rotation into transform-free markup if flatten should drop `<g rotate>` entirely.
+Optical-size wrap vs canvas. Sharp-rect rotation still uses a transform group — bake those corners too if print RIP strips groups. Present-mode export of baked paths.
 
 ## Done
 
@@ -28,6 +28,4 @@ Optical-size wrap vs canvas (measure with opsz applied, not just font-size). Bak
 - Compound path islands wrap in `<g data-islands="1">`.
 - SVG text export wraps overflow with clipPath on the node box.
 - Wrap width uses measureTracked so tracking matches canvas fillText and SVG letter-spacing.
-- bakeRingRotation / rotateOffset live in geometry; bakePathRotation and SVG pathDBaked share them.
-- Rotated path and convertible-shape SVG outlines emit baked cubics (no double rotate group).
-- SVG text clipPath remains a child of the rotate group.
+- SVG path/shape export bakes rotation into anchors and cubic handles (no rotate group on flattened geometry).
