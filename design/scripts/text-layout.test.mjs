@@ -11,8 +11,15 @@ const fields = readFileSync(new URL("../src/components/studio/inspector-type.tsx
 test("layout helpers wrap and valign", () => {
   assert.match(layout, /export function wrapParagraph/);
   assert.match(layout, /export function layoutTextLines/);
+  assert.match(layout, /export function measureTracked/);
   assert.match(layout, /normalizeWrap/);
   assert.match(layout, /normalizeValign/);
+});
+
+test("measureTracked adds tracking between glyphs only", () => {
+  const src = layout;
+  assert.match(src, /letterSpacing \* \(text.length - 1\)/);
+  assert.match(src, /if \(!text\) return 0/);
 });
 
 test("types carry wrap and valign", () => {

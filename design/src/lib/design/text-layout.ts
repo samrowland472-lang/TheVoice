@@ -2,6 +2,18 @@ import type { TextNode, Valign } from "./types";
 
 export type MeasureFn = (text: string) => number;
 
+/**
+ * Width of `text` with tracking applied between glyphs.
+ * `glyphWidth` must measure with letter-spacing off so we do not double-count
+ * when the canvas context also sets `ctx.letterSpacing`.
+ */
+export function measureTracked(text: string, glyphWidth: MeasureFn, letterSpacing = 0): number {
+  if (!text) return 0;
+  const base = glyphWidth(text);
+  if (text.length < 2 || !letterSpacing) return base;
+  return base + letterSpacing * (text.length - 1);
+}
+
 export function normalizeWrap(node: Pick<TextNode, "wrap"> | { wrap?: boolean }): boolean {
   return node.wrap !== false;
 }

@@ -12,6 +12,11 @@ test("SVG text emits tspans per line instead of a baseline hack", () => {
   assert.doesNotMatch(exp, /n\.y \+ n\.h \* 0\.8/);
 });
 
+test("SVG wrap measure uses shared tracking helper", () => {
+  assert.match(exp, /measureTracked/);
+  assert.match(exp, /estimateGlyphWidth/);
+});
+
 test("SVG text respects align via text-anchor and hanging startY", () => {
   assert.match(exp, /text-anchor="\$\{anchor\}"/);
   assert.match(exp, /t\.align === "center"/);

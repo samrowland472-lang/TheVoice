@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-27 00:05 BST — SVG text export clips glyphs to the node box (`clipPath` + `clip-path`) so overflow matches canvas `ctx.clip()` on the text rect.
+2026-09-27 02:05 BST — Wrap measure includes letter-spacing the same way canvas and SVG do: glyph width with tracking off, then `spacing * (n-1)` via `measureTracked`. Canvas zeros `ctx.letterSpacing` during measure so it does not double-count.
 
 ## Next recommended
 
-Letter-spacing on wrap measure vs canvas. Bake rotated cubic handles into path d when groups are flattened. SVG clip-path lives inside the rotate group so rotation and clip stay in the same space.
+Bake rotated cubic handles into path d when groups are flattened. SVG clip-path lives inside the rotate group so rotation and clip stay in the same space. Optical-size wrap vs canvas.
 
 ## Done
 
@@ -27,3 +27,4 @@ Letter-spacing on wrap measure vs canvas. Bake rotated cubic handles into path d
 - SVG export rotates layers about the node center to match canvas.
 - Compound path islands wrap in `<g data-islands="1">`.
 - SVG text export wraps overflow with clipPath on the node box.
+- Wrap width uses measureTracked so tracking matches canvas fillText and SVG letter-spacing.
