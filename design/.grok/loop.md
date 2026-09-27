@@ -2,14 +2,22 @@
 
 ## Iteration
 
-2026-09-27 19:05 BST — SVG image and paint layers export as `<image href>` with rotation baked into a matrix on the element (no rotate group). After document.fonts load, wrap measure cache resets so measureText does not keep a stale face.
+2026-09-27 21:10 BST — Image crop is live on canvas and SVG. Crop windows are source-normalized; canvas `drawImage` samples the crop rect, SVG places a scaled `<image href>` and clips it to the node box. Brightness, contrast, saturate, and blur now apply as the same CSS `filter` on canvas and as an attribute on the SVG image. Photo inspector sliders write crop + filters; mixed multi-select still uses MixedFilters.
 
 ## Next recommended
 
-Image crop still is unused on canvas and SVG. Bake crop into a clipPath on export, and draw the cropped source in render. Filters on canvas still skip CSS filter; apply the same brightness/contrast/saturate/blur used in SVG.
+Paint layers still skip crop/filters. Inspector crop is sliders only — add on-canvas crop handles. Export JPEG of cropped photos still rasterizes the full bitmap through drawDocument (correct) but SVG clipPaths are not reused across pages.
 
 ## Done
 
+- normalizeCrop / cropSourceBox / cropSourceRect in image-filters.
+- cssFilterStyle + svgImageFilterStyle share brightness/contrast/saturate/blur.
+- render.ts applyCanvasFilters then draw cropped source.
+- svgPlacedImage + bakedBoxTransform + svgImageCropClip.
+- exportSvg emits image and paint as placed `<image href>`.
+- watchFontsForWrapCache lives on export.ts (loadingdone + fonts.ready).
+- ImageAdjust inspector: filter sliders, crop x/y/w/h, reset / full frame.
+- MixedFilters mounted for multi photo selection.
 - bakedBoxTransform writes matrix(a b c d e f) about the node center.
 - svgPlacedImage emits href + preserveAspectRatio="none" + baked matrix.
 - Image nodes include svgImageFilterStyle from normalizeFilters.
