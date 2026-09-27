@@ -5,7 +5,7 @@ import { isConvertibleShape, shapeContour } from "./shape-to-path";
 import { drawPrintMarks, resolveBleed } from "./print-marks";
 import { drawDocument } from "./render";
 import { canvasShadowParams } from "./shadow";
-import { layoutTextLines } from "./text-layout";
+import { layoutTextLines, measureTracked } from "./text-layout";
 import type { DesignDocument, DesignNode, PathNode, Shadow, ShapeNode, TextNode } from "./types";
 
 export { canvasShadowParams } from "./shadow";
@@ -131,9 +131,13 @@ export function downloadPrintPdf(doc: DesignDocument) {
   downloadDataUrl(exportPrintPng(doc), `${slug(doc.name)}-print.png`);
 }
 
-function estimateWidth(text: string, fontSize: number, letterSpacing: number) {
+function estimateGlyphWidth(text: string, fontSize: number) {
   if (!text) return 0;
-  return text.length * fontSize * 0.52 + Math.max(0, text.length - 1) * letterSpacing;
+  return text.length * fontSize * 0.52;
+}
+
+function estimateWidth(text: string, fontSize: number, letterSpacing: number) {
+  return measureTracked(text, (s) => estimateGlyphWidth(s, fontSize), letterSpacing);
 }
 
 function svgTextClipId(id: string) {
