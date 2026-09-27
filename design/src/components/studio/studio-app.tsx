@@ -9,7 +9,7 @@ import {
   roundSelectedPathCorners,
   simplifySelectedPath,
 } from "@/lib/design/offset-actions";
-import { watchFontsForWrapCache } from "@/lib/design/export";
+import { watchFontsForWrapCache } from "@/lib/design/watch-fonts";
 import { bleedMmToPx } from "@/lib/design/print-marks";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
