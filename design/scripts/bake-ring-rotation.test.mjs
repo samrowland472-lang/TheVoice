@@ -10,11 +10,10 @@ test("geometry bakes anchors and cubic handle offsets under rotation", () => {
   assert.match(geo, /rotateOffset\(p\.out, deg\)/);
 });
 
-test("flatten path rotation uses bakeRingRotation for points and holes", () => {
-  const align = readFileSync(new URL("../src/lib/design/align.ts", import.meta.url), "utf8");
-  assert.match(align, /bakeRingRotation\(n\.x, n\.y, n\.points/);
-  assert.match(align, /holes: n\.holes\?\.map/);
-  assert.match(align, /rotation: 0/);
+test("pathDBaked writes world-space cubics after rotate", () => {
+  const baked = readFileSync(new URL("../src/lib/design/path-d-baked.ts", import.meta.url), "utf8");
+  assert.match(baked, /export function pathDBaked/);
+  assert.match(baked, /bakeRingRotation\(n\.x, n\.y, pts/);
 });
 
 test("SVG text clip lives inside the rotate group", () => {
