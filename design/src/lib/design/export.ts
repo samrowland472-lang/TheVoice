@@ -185,13 +185,50 @@ export function documentFontsReady(): boolean {
 
 type MeasureCtx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
+/** One 8×8 wrap canvas for the whole export pass — not one per text node. */
+let wrapCtxCache: MeasureCtx | null | undefined;
+/** Last applyFontFace key so opsz/face swaps re-apply, identical faces reuse. */
+let wrapFaceKey = "";
+
+export function wrapFaceCacheKey(
+  t: Pick<
+    TextNode,
+    | "fontFamily"
+    | "fontWeight"
+    | "fontSize"
+    | "opticalSize"
+    | "fontWidth"
+    | "fontSlant"
+    | "fontItalic"
+    | "fontGrade"
+    | "fontSoft"
+    | "fontWonk"
+  >,
+): string {
+  const face = canvasFont(t.fontFamily);
+  const opsz = face?.opsz ? clampAxis(face.opsz, t.opticalSize, t.fontSize) : t.fontSize;
+  return [
+    t.fontFamily,
+    t.fontWeight,
+    t.fontSize,
+    opsz,
+    t.fontWidth ?? "",
+    t.fontSlant ?? "",
+    t.fontItalic ?? "",
+    t.fontGrade ?? "",
+    t.fontSoft ?? "",
+    t.fontWonk ?? "",
+  ].join("|");
+}
+
 function acquireWrapContext(): MeasureCtx | null {
   if (!documentFontsReady()) return null;
+  if (wrapCtxCache) return wrapCtxCache;
   try {
     if (typeof OffscreenCanvas === "function") {
       const off = new OffscreenCanvas(8, 8);
-      const ctx = off.getContext("2d");
-      return ctx;
+      wrapCtxCache = off.getContext("2d");
+      if (wrapCtxCache) return wrapCtxCache;
     }
   } catch {
     /* fall through */
@@ -200,7 +237,14 @@ function acquireWrapContext(): MeasureCtx | null {
   const canvas = document.createElement("canvas");
   canvas.width = 8;
   canvas.height = 8;
-  return canvas.getContext("2d");
+  wrapCtxCache = canvas.getContext("2d");
+  return wrapCtxCache;
+}
+
+/** Drop the cached wrap canvas (fonts reload / tests). */
+export function resetWrapMeasureCache() {
+  wrapCtxCache = undefined;
+  wrapFaceKey = "";
 }
 
 /**
@@ -225,19 +269,23 @@ export function wrapMeasureForText(
 ): (s: string) => number {
   const ctx = acquireWrapContext();
   if (ctx) {
-    applyFontFace(ctx, {
-      fontFamily: t.fontFamily,
-      fontWeight: t.fontWeight,
-      fontSize: t.fontSize,
-      letterSpacing: 0,
-      opticalSize: t.opticalSize,
-      fontWidth: t.fontWidth,
-      fontSlant: t.fontSlant,
-      fontItalic: t.fontItalic,
-      fontGrade: t.fontGrade,
-      fontSoft: t.fontSoft,
-      fontWonk: t.fontWonk,
-    });
+    const key = wrapFaceCacheKey(t);
+    if (key !== wrapFaceKey) {
+      applyFontFace(ctx, {
+        fontFamily: t.fontFamily,
+        fontWeight: t.fontWeight,
+        fontSize: t.fontSize,
+        letterSpacing: 0,
+        opticalSize: t.opticalSize,
+        fontWidth: t.fontWidth,
+        fontSlant: t.fontSlant,
+        fontItalic: t.fontItalic,
+        fontGrade: t.fontGrade,
+        fontSoft: t.fontSoft,
+        fontWonk: t.fontWonk,
+      });
+      wrapFaceKey = key;
+    }
     return (s: string) =>
       measureTracked(s, (chunk) => ctx.measureText(chunk).width, t.letterSpacing ?? 0);
   }
