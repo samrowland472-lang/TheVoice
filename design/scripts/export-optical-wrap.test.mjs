@@ -13,6 +13,9 @@ test("SVG wrap measure scales with optical size", () => {
   assert.match(exp, /OffscreenCanvas/);
   assert.match(exp, /documentFontsReady/);
   assert.match(exp, /applyFontFace\(ctx/);
+  assert.match(exp, /wrapFaceCacheKey/);
+  assert.match(exp, /wrapCtxCache/);
+  assert.match(exp, /resetWrapMeasureCache/);
 });
 
 test("baked SVG download is the present and studio export path", () => {

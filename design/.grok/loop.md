@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-27 16:08 BST — SVG wrap measure uses OffscreenCanvas + applyFontFace (opsz baked) when `document.fonts` is loaded, so line breaks match canvas `measureText`. Falls back to opticalWrapScale glyph estimates when fonts are not ready.
+2026-09-27 17:05 BST — SVG wrap measure reuses one OffscreenCanvas (or tiny HTML canvas) for the whole export pass. applyFontFace runs only when wrapFaceCacheKey (family/weight/size/opsz + axes) changes, so long copy and many text layers no longer allocate a canvas per node.
 
 ## Next recommended
 
-Images still use a rotate group — bake those boxes only if RIP work requires it. Cache the wrap OffscreenCanvas context per face/opsz so export of long copy does not allocate a canvas per text node.
+Images still use a rotate group — bake those boxes only if RIP work requires it. After fonts reload, call resetWrapMeasureCache so measureText does not keep a stale face.
 
 ## Done
 
+- wrapMeasureForText caches wrapCtxCache; wrapFaceCacheKey gates applyFontFace.
+- resetWrapMeasureCache clears the wrap canvas and last face key.
 - wrapMeasureForText prefers OffscreenCanvas measureText after applyFontFace when document.fonts.status === "loaded".
 - acquireWrapContext falls back to a tiny HTML canvas, then to optical-scaled glyph estimates.
 - applyFontFace accepts Canvas and OffscreenCanvas 2d contexts.
