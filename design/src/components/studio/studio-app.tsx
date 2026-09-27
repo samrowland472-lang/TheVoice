@@ -9,6 +9,7 @@ import {
   roundSelectedPathCorners,
   simplifySelectedPath,
 } from "@/lib/design/offset-actions";
+import { watchFontsForWrapCache } from "@/lib/design/export";
 import { bleedMmToPx } from "@/lib/design/print-marks";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,10 @@ export function StudioApp({ id }: { id: string }) {
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
   const [sheet, setSheet] = useState<"layers" | "inspect" | "ai" | null>(null);
   useShortcuts();
+
+  useEffect(() => {
+    watchFontsForWrapCache();
+  }, []);
 
   useEffect(() => {
     open(id);
