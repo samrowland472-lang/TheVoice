@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-27 02:05 BST — Wrap measure includes letter-spacing the same way canvas and SVG do: glyph width with tracking off, then `spacing * (n-1)` via `measureTracked`. Canvas zeros `ctx.letterSpacing` during measure so it does not double-count.
+2026-09-27 03:15 BST — Flatten and SVG path export bake rotation into cubic handles: `bakeRingRotation` rotates anchors about the box center and handle offsets about the origin, then `pathDBaked` writes world-space `C` commands. Text clipPath stays inside `rotateWrap` so clip and type share the same rotate space.
 
 ## Next recommended
 
-Bake rotated cubic handles into path d when groups are flattened. SVG clip-path lives inside the rotate group so rotation and clip stay in the same space. Optical-size wrap vs canvas.
+Optical-size wrap vs canvas (measure with opsz applied, not just font-size). Bake sharp-rect rotation into transform-free markup if flatten should drop `<g rotate>` entirely.
 
 ## Done
 
@@ -28,3 +28,6 @@ Bake rotated cubic handles into path d when groups are flattened. SVG clip-path 
 - Compound path islands wrap in `<g data-islands="1">`.
 - SVG text export wraps overflow with clipPath on the node box.
 - Wrap width uses measureTracked so tracking matches canvas fillText and SVG letter-spacing.
+- bakeRingRotation / rotateOffset live in geometry; bakePathRotation and SVG pathDBaked share them.
+- Rotated path and convertible-shape SVG outlines emit baked cubics (no double rotate group).
+- SVG text clipPath remains a child of the rotate group.
