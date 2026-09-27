@@ -2,14 +2,16 @@
 
 ## Iteration
 
-2026-09-27 10:10 BST — Sharp rectangles now export as baked `<path d>` outlines the same way rounded rects and other convertible shapes do. Rotation lives in the corners (and any cubic handles) instead of an SVG rotate group, so a print RIP that strips groups still gets the turned box.
+2026-09-27 15:05 BST — SVG text wrap now scales glyph estimates with optical size (opsz), so caption vs display optical settings break lines in the same direction as canvas `fontVariationSettings`. Present mode exports the same baked-path SVG as the studio (toolbar SVG · E).
 
 ## Next recommended
 
-Optical-size wrap vs canvas. Present-mode export of baked paths. Images still use a rotate group — bake those boxes only if RIP work requires it.
+Images still use a rotate group — bake those boxes only if RIP work requires it. OffscreenCanvas wrap measure when fonts are loaded so opsz wrap matches measureText exactly.
 
 ## Done
 
+- SVG wrap measure uses opticalWrapScale from the face opsz axis (1.08 caption → 0.96 display).
+- Present chrome downloads baked-path SVG (E).
 - SVG export bakes sharp rects as path outlines (no rotate group on geometry).
 - Inspector mounts MixedPathDash for path, rect, ellipse, line, polygon, star, and arrow (single and mixed).
 - MixedGeometry chips on multi-select for radius and rotation.

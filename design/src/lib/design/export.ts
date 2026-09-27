@@ -1,5 +1,5 @@
 import { partitionPathHoles, pathFillRule } from "./fill-rule";
-import { variationSettings } from "./fonts";
+import { canvasFont, clampAxis, variationSettings } from "./fonts";
 import { bakeRotatedPoints, pathD } from "./path-curve";
 import { isConvertibleShape, shapeContour } from "./shape-to-path";
 import { drawPrintMarks, resolveBleed } from "./print-marks";
@@ -146,13 +146,34 @@ export function downloadPrintPdf(doc: DesignDocument) {
   downloadDataUrl(exportPrintPng(doc), `${slug(doc.name)}-print.png`);
 }
 
-function estimateGlyphWidth(text: string, fontSize: number) {
+function estimateGlyphWidth(text: string, fontSize: number, opticalScale = 1) {
   if (!text) return 0;
-  return text.length * fontSize * 0.52;
+  return text.length * fontSize * 0.52 * opticalScale;
 }
 
-function estimateWidth(text: string, fontSize: number, letterSpacing: number) {
-  return measureTracked(text, (s) => estimateGlyphWidth(s, fontSize), letterSpacing);
+/**
+ * Caption optical size (low opsz) runs wider per em than display optical size.
+ * Canvas wrap uses measureText after applyFontFace — SVG wrap must follow the
+ * same direction so line breaks do not drift when opsz moves off fontSize.
+ */
+export function opticalWrapScale(
+  t: Pick<TextNode, "fontFamily" | "fontSize" | "opticalSize">,
+): number {
+  const axis = canvasFont(t.fontFamily)?.opsz;
+  if (!axis) return 1;
+  const opsz = clampAxis(axis, t.opticalSize, t.fontSize);
+  const span = Math.max(1, axis.max - axis.min);
+  const tnorm = (opsz - axis.min) / span;
+  return 1.08 - 0.12 * tnorm;
+}
+
+function estimateWidth(
+  text: string,
+  fontSize: number,
+  letterSpacing: number,
+  opticalScale = 1,
+) {
+  return measureTracked(text, (s) => estimateGlyphWidth(s, fontSize, opticalScale), letterSpacing);
 }
 
 function svgTextClipId(id: string) {
@@ -166,7 +187,8 @@ export function svgTextBoxClip(t: Pick<TextNode, "id" | "x" | "y" | "w" | "h">):
 }
 
 export function svgTextMarkup(t: TextNode, fill: string): string {
-  const measure = (s: string) => estimateWidth(s, t.fontSize, t.letterSpacing ?? 0);
+  const opszScale = opticalWrapScale(t);
+  const measure = (s: string) => estimateWidth(s, t.fontSize, t.letterSpacing ?? 0, opszScale);
   const { lines, lineHeight, startY } = layoutTextLines(t, measure);
   const anchor = t.align === "center" ? "middle" : t.align === "right" ? "end" : "start";
   let ax = t.x;
