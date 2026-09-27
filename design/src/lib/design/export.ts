@@ -1,5 +1,5 @@
 import { partitionPathHoles, pathFillRule } from "./fill-rule";
-import { canvasFont, clampAxis, variationSettings } from "./fonts";
+import { applyFontFace, canvasFont, clampAxis, variationSettings } from "./fonts";
 import { bakeRotatedPoints, pathD } from "./path-curve";
 import { isConvertibleShape, shapeContour } from "./shape-to-path";
 import { drawPrintMarks, resolveBleed } from "./print-marks";
@@ -176,6 +176,75 @@ function estimateWidth(
   return measureTracked(text, (s) => estimateGlyphWidth(s, fontSize, opticalScale), letterSpacing);
 }
 
+/** True when document fonts have finished loading so measureText matches paint. */
+export function documentFontsReady(): boolean {
+  if (typeof document === "undefined") return false;
+  const fonts = document.fonts;
+  return !!fonts && fonts.status === "loaded";
+}
+
+type MeasureCtx = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+function acquireWrapContext(): MeasureCtx | null {
+  if (!documentFontsReady()) return null;
+  try {
+    if (typeof OffscreenCanvas === "function") {
+      const off = new OffscreenCanvas(8, 8);
+      const ctx = off.getContext("2d");
+      return ctx;
+    }
+  } catch {
+    /* fall through */
+  }
+  if (typeof document === "undefined") return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = 8;
+  canvas.height = 8;
+  return canvas.getContext("2d");
+}
+
+/**
+ * Prefer OffscreenCanvas measureText (opsz baked by applyFontFace) when fonts
+ * are loaded. Otherwise estimate glyph width scaled by opticalWrapScale.
+ */
+export function wrapMeasureForText(
+  t: Pick<
+    TextNode,
+    | "fontFamily"
+    | "fontWeight"
+    | "fontSize"
+    | "letterSpacing"
+    | "opticalSize"
+    | "fontWidth"
+    | "fontSlant"
+    | "fontItalic"
+    | "fontGrade"
+    | "fontSoft"
+    | "fontWonk"
+  >,
+): (s: string) => number {
+  const ctx = acquireWrapContext();
+  if (ctx) {
+    applyFontFace(ctx, {
+      fontFamily: t.fontFamily,
+      fontWeight: t.fontWeight,
+      fontSize: t.fontSize,
+      letterSpacing: 0,
+      opticalSize: t.opticalSize,
+      fontWidth: t.fontWidth,
+      fontSlant: t.fontSlant,
+      fontItalic: t.fontItalic,
+      fontGrade: t.fontGrade,
+      fontSoft: t.fontSoft,
+      fontWonk: t.fontWonk,
+    });
+    return (s: string) =>
+      measureTracked(s, (chunk) => ctx.measureText(chunk).width, t.letterSpacing ?? 0);
+  }
+  const opszScale = opticalWrapScale(t);
+  return (s: string) => estimateWidth(s, t.fontSize, t.letterSpacing ?? 0, opszScale);
+}
+
 function svgTextClipId(id: string) {
   return `tb-${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 }
@@ -187,8 +256,7 @@ export function svgTextBoxClip(t: Pick<TextNode, "id" | "x" | "y" | "w" | "h">):
 }
 
 export function svgTextMarkup(t: TextNode, fill: string): string {
-  const opszScale = opticalWrapScale(t);
-  const measure = (s: string) => estimateWidth(s, t.fontSize, t.letterSpacing ?? 0, opszScale);
+  const measure = wrapMeasureForText(t);
   const { lines, lineHeight, startY } = layoutTextLines(t, measure);
   const anchor = t.align === "center" ? "middle" : t.align === "right" ? "end" : "start";
   let ax = t.x;
@@ -224,7 +292,6 @@ export function exportSvg(doc: DesignDocument): string {
       const extra = svgStrokeStyle(n);
       const shadow = n.shadow ? svgShadowFilter(n.id, n.shadow) : "";
       if (n.kind === "text") {
-        // Clip-path lives inside the rotate group so clip and glyphs share space.
         return `${shadow}${rotateWrap(n, svgTextMarkup(n as TextNode, fill))}`;
       }
       if (n.kind === "path") {
@@ -249,7 +316,6 @@ export function exportSvg(doc: DesignDocument): string {
         const markup = `<path d="${esc(bakedPathD(s, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`;
         return `${shadow}${markup}`;
       }
-      // Images and leftover kinds keep a rotate group — print RIP still sees the bitmap box.
       return `${shadow}${rotateWrap(n, `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n)}${blendAttr(n)}/>`)}`;
     })
     .join("");
