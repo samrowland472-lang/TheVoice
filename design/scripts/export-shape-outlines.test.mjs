@@ -5,11 +5,11 @@ import { test } from "node:test";
 const exp = readFileSync(new URL("../src/lib/design/export.ts", import.meta.url), "utf8");
 const mixed = readFileSync(new URL("../src/components/studio/mixed-type.tsx", import.meta.url), "utf8");
 
-test("SVG export bakes ellipse star polygon arrow and rounded rect as path outlines", () => {
+test("SVG export bakes ellipse star polygon arrow and every rect as path outlines", () => {
   assert.match(exp, /isConvertibleShape/);
   assert.match(exp, /shapeContour/);
   assert.match(exp, /bakedPathD\(s, contour\.points, contour\.closed\)/);
-  assert.match(exp, /n\.kind !== "rect" \|\| \(n\.radius \?\? 0\) > 0\.5/);
+  assert.doesNotMatch(exp, /n\.kind !== "rect" \|\| \(n\.radius \?\? 0\) > 0\.5/);
 });
 
 test("SVG outlines bake rotation into path d instead of a transform group", () => {
