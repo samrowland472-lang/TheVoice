@@ -2,7 +2,7 @@
 
 ## Iteration
 
-2026-09-27 22:15 BST — On-canvas crop handles for a single selected photo. Select tool draws the full-source ghost and eight phosphor handles on the crop window. Dragging an edge/corner resizes the node inside a frozen source box and rewrites source-normalized `crop`. Inspector sliders remain; Photo panel now points at the board handles. Also shipped `watchFontsForWrapCache` on export.ts so typecheck matches the re-export.
+2026-09-27 22:25 BST — Select tool crop handles are live: source ghost, eight phosphor pins, drag resizes the frame against a frozen source box and writes source-normalized crop. placeNodes + commit stamp the node. Photo inspector already points at the board. watchFontsForWrapCache lives on export.ts.
 
 ## Next recommended
 
