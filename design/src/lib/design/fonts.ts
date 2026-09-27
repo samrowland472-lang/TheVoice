@@ -123,8 +123,10 @@ export function variationSettings(node: {
   return parts.join(", ");
 }
 
+export type FontFaceContext = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
 export function applyFontFace(
-  ctx: CanvasRenderingContext2D,
+  ctx: FontFaceContext,
   node: {
     fontFamily: string;
     fontWeight: number;
@@ -141,7 +143,7 @@ export function applyFontFace(
 ) {
   ctx.font = node.fontWeight + " " + node.fontSize + "px " + fontStack(node.fontFamily);
   const settings = variationSettings(node);
-  const varied = ctx as CanvasRenderingContext2D & {
+  const varied = ctx as FontFaceContext & {
     fontVariationSettings?: string;
     letterSpacing?: string;
   };
