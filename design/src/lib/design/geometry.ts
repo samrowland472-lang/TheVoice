@@ -19,6 +19,37 @@ export function rotatePoint(x: number, y: number, cx: number, cy: number, deg: n
   };
 }
 
+/** Rotate a cubic handle offset about the origin (handles are relative to their anchor). */
+export function rotateOffset(h: { x: number; y: number } | null | undefined, deg: number) {
+  if (!h) return h;
+  const r = rotatePoint(h.x, h.y, 0, 0, deg);
+  return { x: r.x, y: r.y };
+}
+
+/** Flatten rotation into path points and cubic handles in world space (origin 0,0). */
+export function bakeRingRotation(
+  ox: number,
+  oy: number,
+  ring: PathPoint[],
+  cx: number,
+  cy: number,
+  deg: number,
+): PathPoint[] {
+  if (!deg) {
+    return ring.map((p) => ({ ...p, x: ox + p.x, y: oy + p.y }));
+  }
+  return ring.map((p) => {
+    const w = rotatePoint(ox + p.x, oy + p.y, cx, cy, deg);
+    return {
+      ...p,
+      x: w.x,
+      y: w.y,
+      in: rotateOffset(p.in, deg) ?? p.in,
+      out: rotateOffset(p.out, deg) ?? p.out,
+    };
+  });
+}
+
 export function nodeCenter(n: DesignNode) {
   return { x: n.x + n.w / 2, y: n.y + n.h / 2 };
 }
