@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan, Search, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import { campaignDocsFromIndex, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
 import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
 import { FORMATS } from "@/lib/design/formats";
 import { markStayOnHub } from "@/lib/design/persist";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 export function TopBar() {
   const navigate = useNavigate();
   const doc = useDesign((s) => s.doc);
+  const index = useDesign((s) => s.index);
   const dirty = useDesign((s) => s.dirty);
   const save = useDesign((s) => s.save);
   const undo = useDesign((s) => s.undo);
@@ -33,9 +35,10 @@ export function TopBar() {
 
   if (!doc) return null;
 
-  function exportFile(kind: "png" | "jpg" | "svg" | "print" | "pdf") {
+  function exportFile(kind: "png" | "jpg" | "svg" | "print" | "pdf" | "campaign-svg" | "campaign-pdf") {
     if (!doc) return;
     save();
+    const campaign = campaignDocsFromIndex(index, doc);
     if (kind === "svg") {
       downloadSvg(doc);
     } else if (kind === "jpg") {
@@ -44,11 +47,23 @@ export function TopBar() {
       downloadDataUrl(exportPrintPng(doc), `${slug(doc.name)}-print.png`);
     } else if (kind === "pdf") {
       downloadPrintPdf(doc);
+    } else if (kind === "campaign-svg") {
+      downloadCampaignSvg(campaign, doc.name);
+    } else if (kind === "campaign-pdf") {
+      downloadCampaignPdf(campaign, doc.name, scale);
     } else {
       downloadDataUrl(exportPng(doc, scale), `${slug(doc.name)}.png`);
     }
     toast.success(
-      kind === "pdf" ? "Exported print PDF" : kind === "print" ? "Exported print PNG @4×" : `Exported ${kind.toUpperCase()}${kind === "svg" ? "" : ` @${scale}×`}`,
+      kind === "campaign-pdf"
+        ? `Exported campaign PDF · ${campaign.length} boards`
+        : kind === "campaign-svg"
+          ? `Exported campaign SVG · ${campaign.length} boards`
+          : kind === "pdf"
+            ? "Exported print PDF"
+            : kind === "print"
+              ? "Exported print PNG @4×"
+              : `Exported ${kind.toUpperCase()}${kind === "svg" ? "" : ` @${scale}×`}`,
     );
     setExportOpen(false);
   }
@@ -146,6 +161,16 @@ export function TopBar() {
             <Button size="sm" className="w-full" variant="primary" onClick={() => exportFile("pdf")}>
               Print PDF
             </Button>
+            {doc.campaignId && (
+              <>
+                <Button size="sm" className="mt-1 w-full" onClick={() => exportFile("campaign-svg")}>
+                  Campaign SVG
+                </Button>
+                <Button size="sm" className="mt-1 w-full" variant="primary" onClick={() => exportFile("campaign-pdf")}>
+                  Campaign PDF
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
