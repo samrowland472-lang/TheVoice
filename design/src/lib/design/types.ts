@@ -75,7 +75,6 @@ export interface BaseNode {
   fill: Fill;
   stroke: string;
   strokeWidth: number;
-  /** On/off dash length in px. 0 is a solid stroke. */
   strokeDash: number;
   strokeDashOffset: number;
   lineCap: CanvasLineCap;
@@ -108,9 +107,7 @@ export interface TextNode extends BaseNode {
   fontWonk?: number;
 }
 
-export interface ImageNode extends BaseNode {
-  kind: "image";
-  src: string;
+export interface BitmapAdjust {
   crop: { x: number; y: number; w: number; h: number } | null;
   filters: {
     brightness: number;
@@ -118,6 +115,11 @@ export interface ImageNode extends BaseNode {
     saturate: number;
     blur: number;
   };
+}
+
+export interface ImageNode extends BaseNode, BitmapAdjust {
+  kind: "image";
+  src: string;
 }
 
 export interface PathPoint {
@@ -134,11 +136,10 @@ export interface PathNode extends BaseNode {
   closed: boolean;
   holes?: PathPoint[][];
   fillRule?: "evenodd" | "nonzero";
-  /** Per-hole rule. `evenodd` punches; `nonzero` keeps the ring as an island. */
   holeFillRules?: ("evenodd" | "nonzero")[];
 }
 
-export interface PaintNode extends BaseNode {
+export interface PaintNode extends BaseNode, BitmapAdjust {
   kind: "paint";
   bitmap: string;
 }
@@ -146,7 +147,6 @@ export interface PaintNode extends BaseNode {
 export interface ShapeNode extends BaseNode {
   kind: "rect" | "ellipse" | "line" | "polygon" | "star" | "arrow";
   sides?: number;
-  /** Arrowhead length as a multiple of the default head (1 = stock). */
   headScale?: number;
 }
 
@@ -175,11 +175,8 @@ export interface Guide {
   pos: number;
   locked?: boolean;
   hidden?: boolean;
-  /** Hex override; falls back to the axis look. */
   color?: string;
-  /** Display name in Print and on the board. */
   label?: string;
-  /** Stroke pattern override; falls back to the axis look. */
   dash?: "solid" | "dash" | "tight";
 }
 
@@ -258,4 +255,8 @@ export function isPath(n: DesignNode): n is PathNode {
 
 export function isPaint(n: DesignNode): n is PaintNode {
   return n.kind === "paint";
+}
+
+export function isBitmap(n: DesignNode): n is ImageNode | PaintNode {
+  return n.kind === "image" || n.kind === "paint";
 }

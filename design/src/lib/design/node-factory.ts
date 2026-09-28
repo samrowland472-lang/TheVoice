@@ -113,6 +113,8 @@ export function paintLayer(
     h,
     fill: "transparent",
     bitmap,
+    crop: null,
+    filters: { brightness: 1, contrast: 1, saturate: 1, blur: 0 },
   };
 }
 
