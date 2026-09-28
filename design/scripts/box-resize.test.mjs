@@ -11,6 +11,7 @@ test("box-resize exposes hit and map helpers", () => {
   assert.match(resize, /export function resizeBox/);
   assert.match(resize, /export function mapNodeToBox/);
   assert.match(resize, /lockAspect/);
+  assert.match(resize, /kind === "path"/);
 });
 
 test("canvas select tool hits resize handles before move", () => {
