@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { campaignPageName, campaignPages } from "./campaign";
 import { formatById } from "./formats";
 import { uid } from "./id";
-import { paintLayer, shape, text } from "./node-factory";
+import { cloneNode, paintLayer, shape, text } from "./node-factory";
+import { bakePaintIfSized, bakePaintNode, paintNeedsBake } from "./paint-bake";
 import {
   deleteDoc,
   loadBrand,
@@ -15,6 +16,8 @@ import {
 } from "./persist";
 import { blankDocument, instantiateTemplate } from "./templates";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
+
+const MAX_HISTORY = 60;
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | { type: "fit-sel" } | null;
 
@@ -35,6 +38,8 @@ export const useDesign = create<any>((set: any, get: any) => ({
   color: "#0a0d0c",
   editingText: null,
   dirty: false,
+  clipboard: [],
+  pasteCount: 1,
   present: false,
   viewIntent: null,
   paletteOpen: false,
@@ -192,13 +197,168 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const { doc } = get();
     set({ index: loadIndex(), doc: doc?.id === id ? null : doc });
   },
-  setTool: (tool) => set({ tool }),
+  setTool: (tool) => set({ tool, editingText: null }),
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
-  select: (ids) => set({ selection: ids }),
-  addNode: (node) => {
+  select: (ids, additive) => {
+    if (additive) {
+      const cur = new Set(get().selection);
+      for (const id of ids) {
+        if (cur.has(id)) cur.delete(id);
+        else cur.add(id);
+      }
+      set({ selection: [...cur] });
+    } else set({ selection: ids, pathEditHit: null });
+  },
+  commit: () => {
+    const { doc, past } = get();
+    if (!doc) return;
+    set({ past: [...past.slice(-MAX_HISTORY), structuredClone(doc)], future: [] });
+  },
+  undo: () => {
+    const { doc, past, future } = get();
+    const prev = past[past.length - 1];
+    if (!prev || !doc) return;
+    set({ doc: prev, past: past.slice(0, -1), future: [structuredClone(doc), ...future], dirty: true });
+  },
+  redo: () => {
+    const { doc, past, future } = get();
+    const next = future[0];
+    if (!next || !doc) return;
+    set({ doc: next, future: future.slice(1), past: [...past, structuredClone(doc)], dirty: true });
+  },
+  restoreHistory: (slot, index) => {
+    const { past, future, doc } = get();
+    if (!doc) return;
+    const stack = slot === "past" ? past : future;
+    const chosen = stack[index];
+    if (!chosen) return;
+    get().commit();
+    set({ doc: structuredClone(chosen), dirty: true });
+  },
+  updateNodes: (ids, patch, commit = false) => {
     const { doc } = get();
     if (!doc) return;
+    if (commit) get().commit();
+    const idset = new Set(ids);
+    set({
+      doc: {
+        ...doc,
+        nodes: doc.nodes.map((n) => {
+          if (!idset.has(n.id)) return n;
+          if (n.kind === "paint") return bakePaintIfSized(n, patch);
+          return { ...n, ...patch };
+        }),
+      },
+      dirty: true,
+    });
+  },
+  mapNodes: (ids, map, commit = false) => {
+    const { doc } = get();
+    if (!doc) return;
+    if (commit) get().commit();
+    const idset = new Set(ids);
+    set({
+      doc: {
+        ...doc,
+        nodes: doc.nodes.map((n) => {
+          if (!idset.has(n.id)) return n;
+          const next = map(n);
+          if (n.kind === "paint" && next.kind === "paint" && paintNeedsBake(n, next.w, next.h)) {
+            return bakePaintNode(next, next.w, next.h);
+          }
+          return next;
+        }),
+      },
+      dirty: true,
+    });
+  },
+  replaceNode: (id, node, commit = false) => {
+    const { doc } = get();
+    if (!doc) return;
+    if (commit) get().commit();
+    set({
+      doc: {
+        ...doc,
+        nodes: doc.nodes.map((n) => {
+          if (n.id !== id) return n;
+          if (n.kind === "paint" && node.kind === "paint" && paintNeedsBake(n, node.w, node.h)) {
+            return bakePaintNode(node, node.w, node.h);
+          }
+          return node;
+        }),
+      },
+      dirty: true,
+    });
+  },
+  addNode: (node, commit = true) => {
+    const { doc } = get();
+    if (!doc) return;
+    if (commit) get().commit();
     set({ doc: { ...doc, nodes: [...doc.nodes, node] }, selection: [node.id], dirty: true });
+  },
+  resizeArtboard: (formatId, magic) => {
+    const { doc } = get();
+    if (!doc) return;
+    get().commit();
+    const fmt = formatById(formatId);
+    const sx = fmt.width / doc.artboard.width;
+    const sy = fmt.height / doc.artboard.height;
+    const nodes = magic
+      ? doc.nodes.map((n) => {
+          const next = { ...n, x: n.x * sx, y: n.y * sy, w: n.w * sx, h: n.kind === "text" ? n.h : n.h * sy };
+          if (n.kind === "paint") return bakePaintNode(next, next.w, next.h);
+          return next;
+        })
+      : doc.nodes;
+    set({
+      doc: {
+        ...doc,
+        artboard: { ...doc.artboard, width: fmt.width, height: fmt.height, formatId: fmt.id, name: fmt.label },
+        nodes,
+      },
+      dirty: true,
+    });
+  },
+  placeNodes: (places) => {
+    const { doc } = get();
+    if (!doc) return;
+    const map = new Map(places.map((p) => [p.id, p]));
+    set({
+      doc: {
+        ...doc,
+        nodes: doc.nodes.map((n) => {
+          const p = map.get(n.id);
+          return p ? { ...n, x: p.x, y: p.y } : n;
+        }),
+      },
+      dirty: true,
+    });
+  },
+  copySelected: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    set({ clipboard: doc.nodes.filter((n) => selection.includes(n.id)).map((n) => cloneNode(n, 0, 0)), pasteCount: 1 });
+  },
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
+  togglePrintMarks: () => set({ printMarks: !get().printMarks }),
+  setBleed: (px) => {
+    const { doc } = get();
+    if (!doc) return;
+    get().commit();
+    set({ doc: { ...doc, artboard: { ...doc.artboard, bleed: px } }, dirty: true });
+  },
+  setBleedEdges: (patch) => {
+    const { doc } = get();
+    if (!doc) return;
+    get().commit();
+    const prev = doc.artboard.bleedEdges ?? { top: 0, right: 0, bottom: 0, left: 0 };
+    set({ doc: { ...doc, artboard: { ...doc.artboard, bleedEdges: { ...prev, ...patch } } }, dirty: true });
+  },
+  rename: (name) => {
+    const { doc } = get();
+    if (!doc) return;
+    get().commit();
+    set({ doc: { ...doc, name }, dirty: true });
   },
 }));
 
