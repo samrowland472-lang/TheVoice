@@ -1,6 +1,6 @@
 import type { DesignDocument, ProjectMeta } from "./types";
 import { campaignPages } from "./campaign";
-import { collectSvgDefs, downloadDataUrl, exportJpeg, exportSvg, exportSvgBody, slug } from "./export";
+import { downloadDataUrl, exportJpeg, exportSvg, slug } from "./export";
 import { loadDoc } from "./persist";
 
 export const CAMPAIGN_GAP = 48;
@@ -38,15 +38,14 @@ export function exportCampaignSvg(docs: DesignDocument[]): string {
   }
   if (docs.length === 1) return exportSvg(docs[0]!);
   const { width, height, offsets } = campaignStackLayout(docs);
-  const defs = docs.map((d, i) => collectSvgDefs(d, `p${i}-`)).join("");
   const boards = docs
     .map((d, i) => {
-      const bg = typeof d.artboard.background === "string" ? d.artboard.background : "#ffffff";
+      const inner = exportSvg(d).replace(/^<\?xml[^>]*>/, "");
       const y = offsets[i] ?? 0;
-      return `<g id="${esc(slug(d.name) || d.id)}" data-page="${i + 1}" transform="translate(0 ${y})"><rect width="${d.artboard.width}" height="${d.artboard.height}" fill="${esc(bg)}"/>${exportSvgBody(d, `p${i}-`)}</g>`;
+      return `<g id="${esc(slug(d.name) || d.id)}" data-page="${i + 1}" transform="translate(0 ${y})">${inner}</g>`;
     })
     .join("");
-  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs>${defs}</defs>${boards}</svg>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${boards}</svg>`;
 }
 
 export function downloadCampaignSvg(docs: DesignDocument[], name?: string) {
