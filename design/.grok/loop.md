@@ -2,17 +2,18 @@
 
 ## Iteration
 
-2026-09-28 01:10 BST — Select/image tools draw phosphor crop pins on a selected photo. Drag a pin resizes the frame against a frozen source box and writes source-normalized crop. Alt+arrows nudge the facing edge. Store now has commit / placeNodes / translateSelected so the drag and keys actually stick.
+2026-09-28 03:02 BST — Paint layers now carry crop + filters like photos. Canvas select draws phosphor crop pins on every selected photo or paint layer; drag a pin writes a source-normalized crop. Alt+arrows nudge the facing edge. Inspector sliders work on paint. SVG export clips the bitmap and applies the same CSS filter string. Store gained commit / placeNodes / replaceNode / translateSelected so the drag actually sticks.
 
 ## Next recommended
 
-Paint layers still skip crop/filters. Multi-photo crop handles. SVG clipPaths reused across pages.
+SVG clipPaths reused across pages. Paint bitmap baking when the layer is resized. Multi-page campaign crop presets.
 
 ## Done
 
-- crop-handles: nudgeCropHandle, cropHandleForArrow.
-- CanvasStage cropRef drag + drawCropHandles on select/image.
-- Shortcuts: Alt+arrows crop an edge instead of moving the node.
-- store-impl: commit, placeNodes, translateSelected, undo/redo.
-- watchFontsForWrapCache on export.ts.
-- ImageAdjust hint for board crop + Alt+arrows.
+- PaintNode crop + filters; isBitmap helper.
+- drawBitmapNode uses cropSourceRect + cssFilterStyle.
+- exportSvg image/paint via clipped image tag.
+- Canvas cropRef + multi-selection crop handles.
+- Alt+arrows crop selected bitmaps.
+- ImageAdjust + MixedFilters include paint.
+- store-impl: commit, undo/redo, replaceNode, updateNodes, placeNodes, translateSelected.
