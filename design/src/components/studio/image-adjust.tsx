@@ -61,7 +61,7 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
         );
       })}
       <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Crop</div>
-      <p className="font-mono text-[9px] text-ink-faint">Drag the photo corners on the board to crop the frame.</p>
+      <p className="font-mono text-[9px] text-ink-faint">Drag the photo corners on the board to crop the frame. Alt+arrows nudge an edge.</p>
       {(
         [
           ["x", crop.x],
