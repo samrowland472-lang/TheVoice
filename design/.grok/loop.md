@@ -2,16 +2,17 @@
 
 ## Iteration
 
-2026-09-27 22:25 BST — Select tool crop handles are live: source ghost, eight phosphor pins, drag resizes the frame against a frozen source box and writes source-normalized crop. placeNodes + commit stamp the node. Photo inspector already points at the board. watchFontsForWrapCache lives on export.ts.
+2026-09-28 01:10 BST — Select/image tools draw phosphor crop pins on a selected photo. Drag a pin resizes the frame against a frozen source box and writes source-normalized crop. Alt+arrows nudge the facing edge. Store now has commit / placeNodes / translateSelected so the drag and keys actually stick.
 
 ## Next recommended
 
-Paint layers still skip crop/filters. Multi-photo crop handles. Keyboard nudge of crop edges. SVG clipPaths reused across pages.
+Paint layers still skip crop/filters. Multi-photo crop handles. SVG clipPaths reused across pages.
 
 ## Done
 
-- crop-handles: cropFromBoxes, clampNodeToSource, applyCropHandle, drawCropHandles, hitCropHandle.
-- CanvasStage cropRef drag on select + image.
-- ImageAdjust hint for board crop handles.
-- watchFontsForWrapCache exported from export.ts.
-- normalizeCrop / cropSourceBox / cropSourceRect in image-filters.
+- crop-handles: nudgeCropHandle, cropHandleForArrow.
+- CanvasStage cropRef drag + drawCropHandles on select/image.
+- Shortcuts: Alt+arrows crop an edge instead of moving the node.
+- store-impl: commit, placeNodes, translateSelected, undo/redo.
+- watchFontsForWrapCache on export.ts.
+- ImageAdjust hint for board crop + Alt+arrows.
