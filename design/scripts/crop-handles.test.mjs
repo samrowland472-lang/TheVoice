@@ -12,6 +12,8 @@ test("crop-handles pins source box while resizing the window", () => {
   assert.match(lib, /export function drawCropHandles/);
   assert.match(lib, /export function hitCropHandle/);
   assert.match(lib, /clampNodeToSource/);
+  assert.match(lib, /export function nudgeCropHandle/);
+  assert.match(lib, /export function cropHandleForArrow/);
 });
 
 test("canvas select tool draws and drags photo crop handles", () => {
@@ -24,4 +26,5 @@ test("canvas select tool draws and drags photo crop handles", () => {
 
 test("photo inspector points at on-canvas crop", () => {
   assert.match(adjust, /Drag the photo corners on the board/);
+  assert.match(adjust, /Alt\+arrows/);
 });
