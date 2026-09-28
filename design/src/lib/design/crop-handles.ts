@@ -117,3 +117,21 @@ export function patchImageCrop(
 ): DesignNode[] {
   return nodes.map((n) => (n.id === id && n.kind === "image" ? { ...n, ...patch } : n));
 }
+
+/** Arrow-key crop: move the edge named by `handle` by dx/dy, source frozen. */
+export function nudgeCropHandle(
+  n: ImageNode,
+  handle: CropHandle,
+  dx: number,
+  dy: number,
+): Pick<ImageNode, "x" | "y" | "w" | "h" | "crop"> {
+  return applyCropHandle(n, handle, dx, dy, sourceBoxFor(n));
+}
+
+export function cropHandleForArrow(key: string): CropHandle | null {
+  if (key === "ArrowLeft") return "w";
+  if (key === "ArrowRight") return "e";
+  if (key === "ArrowUp") return "n";
+  if (key === "ArrowDown") return "s";
+  return null;
+}
