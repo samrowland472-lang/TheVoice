@@ -84,6 +84,20 @@ export function resizeBox(box: Box, handle: ResizeHandle, x: number, y: number, 
   return { x: nx, y: ny, w: nw, h: nh };
 }
 
+function scalePathPoint<T extends { x: number; y: number; in?: { x: number; y: number } | null; out?: { x: number; y: number } | null }>(
+  p: T,
+  sx: number,
+  sy: number,
+): T {
+  return {
+    ...p,
+    x: p.x * sx,
+    y: p.y * sy,
+    in: p.in ? { x: p.in.x * sx, y: p.in.y * sy } : p.in,
+    out: p.out ? { x: p.out.x * sx, y: p.out.y * sy } : p.out,
+  };
+}
+
 export function mapNodeToBox(n: DesignNode, from: Box, to: Box): DesignNode {
   if (from.w < 1e-6 || from.h < 1e-6) return n;
   const sx = to.w / from.w;
@@ -92,5 +106,16 @@ export function mapNodeToBox(n: DesignNode, from: Box, to: Box): DesignNode {
   const y = to.y + (n.y - from.y) * sy;
   const w = Math.max(1, n.w * sx);
   const h = n.kind === "text" ? n.h : Math.max(1, n.h * sy);
+  if (n.kind === "path") {
+    return {
+      ...n,
+      x,
+      y,
+      w,
+      h,
+      points: n.points.map((p) => scalePathPoint(p, sx, sy)),
+      holes: n.holes?.map((ring) => ring.map((p) => scalePathPoint(p, sx, sy))),
+    };
+  }
   return { ...n, x, y, w, h };
 }
