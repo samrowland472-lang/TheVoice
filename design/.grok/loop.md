@@ -2,18 +2,14 @@
 
 ## Iteration
 
-2026-09-28 10:01 BST — On-canvas phosphor crop pins for photos and paint. Select a bitmap and drag the cyan corner/edge pins to crop against a frozen source box. Inspector crop sliders cover paint as well as photos. Alt+arrows nudge the facing crop edge. Store commit / replaceNode / placeNodes / updateNodes / translateSelected so inspector and drag stick.
+2026-09-28 10:14 BST — Store actions restored (commit, undo/redo, updateNodes, replaceNode, placeNodes, translateSelected, guides, clipboard). Phosphor crop pins draw on a selected photo or paint layer. Drag a pin to crop against the frozen source box. Alt+arrows nudge a crop edge; campaign page swap still uses Alt+left/right when no bitmap is selected.
 
 ## Next recommended
 
-Paint bitmap baking when the layer is resized. Campaign multi-page SVG that shares the same clip def set across boards.
+Paint bitmap baking when the layer is resized. Campaign multi-page SVG that shares the same clip def set across boards. Inspector Photo section for paint as well as images.
 
 ## Done
 
-- PaintNode crop + filters; isBitmap helper.
-- drawNode clips bitmaps via cropSourceBox + cssFilterStyle.
-- exportSvg image/paint via clipped `<image>` and shared clipPath defs.
-- ImageAdjust + MixedFilters include paint.
-- Alt+arrows crop selected bitmaps.
-- store-impl: commit, undo/redo, replaceNode, updateNodes, placeNodes, translateSelected, setArtboardBg, closeSelectedPath.
-- Canvas select tool draws and drags phosphor crop pins on image and paint layers.
+- Store-impl: history, node edits, campaign pages, placeNodes, crop-safe replaceNode.
+- Canvas select tool draws crop pins and drags applyCropHandle on image + paint.
+- Alt+arrows crop selected bitmaps; otherwise campaign nudge.
