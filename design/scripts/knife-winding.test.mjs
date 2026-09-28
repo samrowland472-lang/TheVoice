@@ -20,7 +20,9 @@ test("knife planarizes figure-eight traces before cut", () => {
 
 test("knife apply cuts only the crossed figure-eight lobe", () => {
   assert.match(apply, /export function applyKnifeStrokeToPath/);
-  assert.match(apply, /explodeTwistedPath\(n\)/);
+  assert.match(apply, /explodeTwistedPath\(source\)/);
+  assert.match(apply, /snapshotPathNode/);
+  assert.match(apply, /Frozen outer \+ hole rings/);
   assert.match(apply, /Untouched lobes stay closed siblings/);
   assert.match(actions, /applyKnifeStrokeToPath\(n, ax, ay, bx, by\)/);
   assert.match(actions, /applyKnifePointToPath\(n, wx, wy, zoom\)/);
