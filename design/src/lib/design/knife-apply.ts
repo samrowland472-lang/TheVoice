@@ -1,8 +1,12 @@
-import { pathWorldToLocal } from "./path-edit";
+import { pathWorldToLocal, snapshotPathNode, clonePathPoint } from "./path-edit";
 import { cutContourMany, hitCompoundSegment, strokeHitsCompound, type SegmentHit } from "./path-cut";
 import { pathNode } from "./node-factory";
 import type { PathNode, PathPoint } from "./types";
 import { explodeTwistedPath } from "./winding-pass";
+
+function cloneRing(ring: PathPoint[]): PathPoint[] {
+  return ring.map(clonePathPoint);
+}
 
 function clonePathStyle(n: PathNode, points: PathPoint[], closed: boolean, holes?: PathPoint[][]): PathNode {
   const extra = pathNode({
@@ -10,9 +14,9 @@ function clonePathStyle(n: PathNode, points: PathPoint[], closed: boolean, holes
     y: n.y,
     w: n.w,
     h: n.h,
-    points,
+    points: cloneRing(points),
     closed,
-    holes: holes && holes.length ? holes : undefined,
+    holes: holes && holes.length ? holes.map(cloneRing) : undefined,
     fill: n.fill,
     stroke: n.stroke,
     strokeWidth: n.strokeWidth,
@@ -29,7 +33,9 @@ function applyCutsToPath(
   groups: { hole: number | null; hits: SegmentHit[] }[],
 ): { keep: PathNode; extras: PathNode[] } | null {
   if (!groups.length) return null;
-  let keep: PathNode = { ...n, holes: n.holes ? n.holes.map((h) => h.map((p) => ({ ...p }))) : n.holes };
+  // Frozen outer + hole rings so Undo can restore both contours.
+  const frozen = snapshotPathNode(n);
+  let keep: PathNode = frozen;
   const extras: PathNode[] = [];
   const outerGroup = groups.find((g) => g.hole == null);
   const holeGroups = groups.filter((g) => g.hole != null);
@@ -41,12 +47,12 @@ function applyCutsToPath(
       if (piece.length >= 2) extras.push(clonePathStyle(n, piece, false));
     }
     if (released) {
-      for (const hole of n.holes ?? []) {
+      for (const hole of frozen.holes ?? []) {
         if (hole.length >= 3) extras.push(clonePathStyle(n, hole, true));
       }
     }
   }
-  const survivingHoles = [...(keep.holes ?? [])];
+  const survivingHoles = (keep.holes ?? []).map(cloneRing);
   const removed = new Set<number>();
   for (const g of holeGroups.sort((a, b) => (b.hole ?? 0) - (a.hole ?? 0))) {
     const idx = g.hole!;
@@ -87,29 +93,30 @@ export function applyKnifeStrokeToPath(
   bx: number,
   by: number,
 ): { keep: PathNode; extras: PathNode[] } | null {
-  const a = { x: ax - n.x, y: ay - n.y };
-  const b = { x: bx - n.x, y: by - n.y };
-  const lobes = explodeTwistedPath(n);
+  const source = snapshotPathNode(n);
+  const a = { x: ax - source.x, y: ay - source.y };
+  const b = { x: bx - source.x, y: by - source.y };
+  const lobes = explodeTwistedPath(source);
   const extras: PathNode[] = [];
   let keep: PathNode | null = null;
   let any = false;
   lobes.forEach((lobe, i) => {
     const hits = strokeHitsCompound(lobe, a, b);
     if (!hits.length) {
-      const intact = i === 0 ? { ...lobe, id: n.id, name: n.name } : closedSibling(n, lobe);
+      const intact = i === 0 ? { ...lobe, id: source.id, name: source.name } : closedSibling(source, lobe);
       if (!keep) keep = intact;
       else extras.push(intact);
       return;
     }
     const applied = applyCutsToPath(lobe, groupCompoundHits(hits));
     if (!applied) {
-      const intact = i === 0 ? { ...lobe, id: n.id, name: n.name } : closedSibling(n, lobe);
+      const intact = i === 0 ? { ...lobe, id: source.id, name: source.name } : closedSibling(source, lobe);
       if (!keep) keep = intact;
       else extras.push(intact);
       return;
     }
     any = true;
-    const first = i === 0 ? { ...applied.keep, id: n.id, name: n.name } : applied.keep;
+    const first = i === 0 ? { ...applied.keep, id: source.id, name: source.name } : applied.keep;
     if (!keep) keep = first;
     else extras.push(first);
     extras.push(...applied.extras);
@@ -124,8 +131,9 @@ export function applyKnifePointToPath(
   wy: number,
   zoom: number,
 ): { keep: PathNode; extras: PathNode[] } | null {
-  const local = pathWorldToLocal(n, wx, wy);
-  const lobes = explodeTwistedPath(n);
+  const source = snapshotPathNode(n);
+  const local = pathWorldToLocal(source, wx, wy);
+  const lobes = explodeTwistedPath(source);
   let bestLobe: PathNode | null = null;
   let bestIndex = -1;
   let bestHole: number | null = null;
@@ -147,12 +155,12 @@ export function applyKnifePointToPath(
   const nodes: PathNode[] = [];
   lobes.forEach((lobe, i) => {
     if (i === bestIndex) {
-      const cut = i === 0 ? { ...applied.keep, id: n.id, name: n.name } : applied.keep;
+      const cut = i === 0 ? { ...applied.keep, id: source.id, name: source.name } : applied.keep;
       nodes.push(cut, ...applied.extras);
       return;
     }
-    nodes.push(i === 0 ? { ...lobe, id: n.id, name: n.name } : closedSibling(n, lobe));
+    nodes.push(i === 0 ? { ...lobe, id: source.id, name: source.name } : closedSibling(source, lobe));
   });
-  const keep = nodes.find((p) => p.id === n.id) ?? nodes[0]!;
+  const keep = nodes.find((p) => p.id === source.id) ?? nodes[0]!;
   return { keep, extras: nodes.filter((p) => p !== keep) };
 }
