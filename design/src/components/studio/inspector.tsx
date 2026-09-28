@@ -7,6 +7,8 @@ import { MixedPathDash } from "./mixed-path-dash";
 import { MixedGeometry } from "./mixed-geometry";
 import { FillEditor, Field, ShadowEditor } from "./inspector-parts";
 import { TextFields } from "./inspector-type";
+import { ImageAdjust } from "./image-adjust";
+import { MixedFilters } from "./mixed-filters";
 
 const BLENDS: { id: BlendMode; label: string }[] = [
   { id: "source-over", label: "Normal" },
@@ -153,10 +155,11 @@ export function Inspector() {
           )}
           {selectedNodes.length > 1 && (
             <section className="border-b border-border px-3 py-3" title="Unify radius with mixed geometry">
-              {/* mixedKindsGeom */}
               <MixedGeometry nodes={selectedNodes} />
             </section>
           )}
+          {selectedNodes.length === 1 && <ImageAdjust node={node} />}
+          {selectedNodes.length > 1 && <MixedFilters nodes={selectedNodes} />}
           {texts.length === 1 && (
             <section className="space-y-2 border-b border-border px-3 py-3">
               <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Type</div>
