@@ -1,6 +1,9 @@
 import { applyHandle, hitHandle, type Handle } from "./hit";
 import { cropSourceBox, normalizeCrop, type ImageCrop } from "./image-filters";
-import type { DesignNode, ImageNode } from "./types";
+import type { DesignNode, ImageNode, PaintNode } from "./types";
+import { isBitmap } from "./types";
+
+export type BitmapNode = ImageNode | PaintNode;
 
 export type CropHandle = Exclude<Handle, "move" | "rotate">;
 
@@ -10,7 +13,7 @@ export function isCropHandle(h: Handle | null): h is CropHandle {
   return h != null && h !== "move" && h !== "rotate";
 }
 
-export function sourceBoxFor(n: Pick<ImageNode, "x" | "y" | "w" | "h" | "crop">) {
+export function sourceBoxFor(n: Pick<BitmapNode, "x" | "y" | "w" | "h" | "crop">) {
   return cropSourceBox(n, n.crop);
 }
 
@@ -41,18 +44,18 @@ export function clampNodeToSource(
   return { x, y, w, h };
 }
 
-export function hitCropHandle(n: ImageNode, sx: number, sy: number, zoom: number): CropHandle | null {
+export function hitCropHandle(n: BitmapNode, sx: number, sy: number, zoom: number): CropHandle | null {
   const hit = hitHandle(n, sx, sy, zoom);
   return isCropHandle(hit) ? hit : null;
 }
 
 export function applyCropHandle(
-  n: ImageNode,
+  n: BitmapNode,
   handle: CropHandle,
   dx: number,
   dy: number,
   source: { x: number; y: number; w: number; h: number },
-): Pick<ImageNode, "x" | "y" | "w" | "h" | "crop"> {
+): Pick<BitmapNode, "x" | "y" | "w" | "h" | "crop"> {
   const geo = applyHandle(n, handle, dx, dy);
   const boxed = clampNodeToSource(
     { x: geo.x ?? n.x, y: geo.y ?? n.y, w: geo.w ?? n.w, h: geo.h ?? n.h },
@@ -63,7 +66,7 @@ export function applyCropHandle(
 
 export function drawCropHandles(
   ctx: CanvasRenderingContext2D,
-  n: ImageNode,
+  n: BitmapNode,
   zoom: number,
 ) {
   const src = sourceBoxFor(n);
@@ -113,18 +116,24 @@ export function drawCropHandles(
 export function patchImageCrop(
   nodes: DesignNode[],
   id: string,
-  patch: Partial<ImageNode>,
+  patch: Partial<BitmapNode>,
 ): DesignNode[] {
-  return nodes.map((n) => (n.id === id && n.kind === "image" ? { ...n, ...patch } : n));
+  return nodes.map((n) => {
+    if (n.id !== id || !isBitmap(n)) return n;
+    if (n.kind === "image") return { ...n, ...(patch as Partial<ImageNode>) };
+    return { ...n, ...(patch as Partial<PaintNode>) };
+  });
 }
+
+export const patchBitmapCrop = patchImageCrop;
 
 /** Arrow-key crop: move the edge named by `handle` by dx/dy, source frozen. */
 export function nudgeCropHandle(
-  n: ImageNode,
+  n: BitmapNode,
   handle: CropHandle,
   dx: number,
   dy: number,
-): Pick<ImageNode, "x" | "y" | "w" | "h" | "crop"> {
+): Pick<BitmapNode, "x" | "y" | "w" | "h" | "crop"> {
   return applyCropHandle(n, handle, dx, dy, sourceBoxFor(n));
 }
 

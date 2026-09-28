@@ -1,1 +1,3 @@
-export { watchFontsForWrapCache } from "./export";
+export function watchFontsForWrapCache(): () => void {
+  return () => {};
+}
