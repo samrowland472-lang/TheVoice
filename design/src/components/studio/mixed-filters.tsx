@@ -1,7 +1,7 @@
 import { cloneFilters, DEFAULT_FILTERS, filterChipLabel, filterKey, normalizeFilters } from "@/lib/design/image-filters";
 import { useDesign } from "@/lib/design/store";
-import type { DesignNode, ImageNode } from "@/lib/design/types";
-import { isImage } from "@/lib/design/types";
+import type { DesignNode, ImageNode, PaintNode } from "@/lib/design/types";
+import { isBitmap } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
 
@@ -26,7 +26,7 @@ function patchImageFilters(
     doc: {
       ...doc,
       nodes: doc.nodes.map((n: DesignNode) => {
-        if (!idset.has(n.id) || n.kind !== "image") return n;
+        if (!idset.has(n.id) || (n.kind !== "image" && n.kind !== "paint")) return n;
         return { ...n, filters: { ...normalizeFilters(n.filters), ...patch } };
       }),
     },
@@ -35,7 +35,7 @@ function patchImageFilters(
 }
 
 export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
-  const photos = nodes.filter(isImage);
+  const photos = nodes.filter(isBitmap);
   if (photos.length < 2) return null;
 
   const ids = photos.map((n) => n.id);
@@ -76,7 +76,7 @@ export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
       })}
       {mixedAll && (
         <div className="mt-1.5 flex flex-wrap gap-1.5">
-          {photos.map((n: ImageNode) => (
+          {photos.map((n: ImageNode | PaintNode) => (
             <button
               key={n.id}
               type="button"

@@ -5,7 +5,7 @@ import {
   normalizeFilters,
 } from "@/lib/design/image-filters";
 import { useDesign } from "@/lib/design/store";
-import type { DesignNode, ImageNode } from "@/lib/design/types";
+import type { BitmapAdjust, DesignNode, ImageNode, PaintNode } from "@/lib/design/types";
 import { Field } from "./inspector-parts";
 
 const FILTERS = [
@@ -15,7 +15,7 @@ const FILTERS = [
   { key: "blur" as const, label: "Blur", min: 0, max: 24, step: 0.25 },
 ];
 
-function patchImage(id: string, patch: Partial<ImageNode>, commit = false) {
+function patchImage(id: string, patch: Partial<BitmapAdjust>, commit = false) {
   const state = useDesign.getState();
   const doc = state.doc;
   if (!doc) return;
@@ -23,15 +23,17 @@ function patchImage(id: string, patch: Partial<ImageNode>, commit = false) {
   useDesign.setState({
     doc: {
       ...doc,
-      nodes: doc.nodes.map((n: DesignNode) => (n.id === id && n.kind === "image" ? { ...n, ...patch } : n)),
+      nodes: doc.nodes.map((n: DesignNode) =>
+        n.id === id && (n.kind === "image" || n.kind === "paint") ? { ...n, ...patch } : n,
+      ),
     },
     dirty: true,
   });
 }
 
 export function ImageAdjust({ node }: { node: DesignNode }) {
-  if (node.kind !== "image") return null;
-  const img = node as ImageNode;
+  if (node.kind !== "image" && node.kind !== "paint") return null;
+  const img = node as ImageNode | PaintNode;
   const filters = normalizeFilters(img.filters);
   const crop = normalizeCrop(img.crop) ?? { x: 0, y: 0, w: 1, h: 1 };
   const css = cssFilterStyle(filters);
