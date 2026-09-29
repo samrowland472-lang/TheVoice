@@ -2,16 +2,15 @@
 
 ## Iteration
 
-2026-09-29 16:10 BST — Present notes drawer is mounted again. Jump to last-edited frame restores the caret while the field stays focused. Peek strip ticks, scrub, and double-click notes are back on the artboard.
+2026-09-29 17:05 BST — Present stack wraps like Campaign PDF (ArrowUp/Down). Peek strip ticks fade with PEEK_TICK_FADE_MS remaining, not a hard 1. Double-click peek opens notes; Escape stays quiet.
 
 ## Next recommended
 
-Campaign PDF stack smoke in Present. Fade peek ticks with PEEK_TICK_FADE_MS instead of a constant remaining of 1.
+Campaign PDF JPEG page smoke from Present (download campaign PDF while the peek rail is hidden). Named caption fade locked to tickRemaining.
 
 ## Done
 
-- PresentNotesPanel wired into PresentView; notes persist per frame.
-- restoreCaretIfFocused runs on live frame change without a second focus tick.
-- Peek strip `data-present-peek` with phosphor tick, scrub, named caption, double-click notes.
-- export.ts esc() writes amp/lt/gt/quot entities.
-- Jump chip still reads last-edited page from localStorage.
+- campaignStackNeighbor drives Present go(); wrap last→first.
+- Peek strip remounted: data-present-peek, scrub, data-peek-tick, phosphor ticks.
+- peekTickOpacity(Math.abs(n - i), tickRemaining) + dwell clock paused while notes visible.
+- PresentNotesPanel on notesVisible (rail or peek double-click).
