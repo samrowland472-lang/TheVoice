@@ -15,6 +15,7 @@ import {
   writeCampaignOrder,
 } from "./persist";
 import { blankDocument, instantiateTemplate } from "./templates";
+import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
 
 const MAX_HISTORY = 60;
@@ -48,23 +49,24 @@ export const useDesign = create<any>((set: any, get: any) => ({
   booleanPreview: null,
   guideSelection: [],
   guideLooks: { x: {}, y: {} },
+  isolateSnapshot: null as Record<string, boolean> | null,
   alignTarget: "selection",
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id) => {
     const doc = loadDoc(id);
-    if (doc) set({ doc, selection: [], dirty: false, present: get().present });
+    if (doc) set({ doc, selection: [], dirty: false, present: get().present, isolateSnapshot: null });
   },
   fromTemplate: (templateId) => {
     const doc = instantiateTemplate(templateId);
     saveDoc(doc);
-    set({ doc, dirty: false, index: loadIndex() });
+    set({ doc, dirty: false, index: loadIndex(), isolateSnapshot: null });
     return doc.id;
   },
   fromBlank: (formatId) => {
     const fmt = formatById(formatId);
     const doc = blankDocument(formatId, `Untitled ${fmt.label}`);
     saveDoc(doc);
-    set({ doc, dirty: false, index: loadIndex() });
+    set({ doc, dirty: false, index: loadIndex(), isolateSnapshot: null });
     return doc.id;
   },
   save: () => {
@@ -234,6 +236,17 @@ export const useDesign = create<any>((set: any, get: any) => ({
     if (!chosen) return;
     get().commit();
     set({ doc: structuredClone(chosen), dirty: true });
+  },
+  toggleIsolate: (keepIds: string[]) => {
+    const { doc, isolateSnapshot } = get();
+    if (!doc) return;
+    const next = applyIsolate(doc.nodes, keepIds, isolateSnapshot);
+    get().commit();
+    set({
+      doc: { ...doc, nodes: next.nodes },
+      isolateSnapshot: next.isolateSnapshot,
+      dirty: true,
+    });
   },
   updateNodes: (ids, patch, commit = false) => {
     const { doc } = get();
