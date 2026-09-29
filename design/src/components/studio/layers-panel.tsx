@@ -8,6 +8,8 @@ export function LayersPanel() {
   const selection = useDesign((s) => s.selection);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
+  const toggleIsolate = useDesign((s) => s.toggleIsolate);
+  const isolateSnapshot = useDesign((s) => s.isolateSnapshot);
   const reorder = useDesign((s) => s.reorder);
   const reorderInsert = useDesign((s) => s.reorderInsert);
   const listRef = useRef<HTMLUListElement>(null);
@@ -84,6 +86,15 @@ export function LayersPanel() {
             </button>
           )}
         </label>
+        {isolateSnapshot ? (
+          <button
+            type="button"
+            className="mt-1.5 h-7 w-full rounded-[6px] bg-phosphor/10 px-2 font-mono text-[10px] tracking-[0.16em] text-phosphor uppercase hover:bg-phosphor/20"
+            onClick={() => toggleIsolate(selection.length ? selection : doc.nodes.map((n) => n.id))}
+          >
+            Show all
+          </button>
+        ) : null}
         {filtering && (
           <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
             {layers.length} match{layers.length === 1 ? "" : "es"}
@@ -189,7 +200,16 @@ export function LayersPanel() {
                 <button
                   type="button"
                   className="size-7 rounded-[6px] hover:bg-ground"
-                  onClick={() => updateNodes([n.id], { visible: !n.visible }, true)}
+                  title="Alt-click isolates this layer"
+                  onClick={(e) => {
+                    if (e.altKey) {
+                      const sel = useDesign.getState().selection;
+                      const keep = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
+                      toggleIsolate(keep);
+                      return;
+                    }
+                    updateNodes([n.id], { visible: !n.visible }, true);
+                  }}
                   aria-label={n.visible ? "Hide" : "Show"}
                 >
                   {n.visible ? <Eye className="mx-auto size-3.5" /> : <EyeOff className="mx-auto size-3.5" />}
