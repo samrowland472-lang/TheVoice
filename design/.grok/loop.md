@@ -2,7 +2,7 @@
 
 ## Iteration
 
-2026-09-29 01:10 BST — Present flips campaign boards in the same stack order as Campaign PDF. Arrow Down/Right and click wrap last → first; Arrow Up/Left wrap first → last. Restored JPEG Print PDF + shared SVG defs after a truncated export.ts.
+2026-09-29 02:20 BST — Layers isolate. Alt-click the eye to hide every other layer (multi-select keeps the whole set). Show all restores the previous visibility map. Restored truncated export.ts so PNG/JPEG/SVG/Print PDF and campaign stack export typecheck again.
 
 ## Next recommended
 
@@ -10,8 +10,7 @@ Path-edit mid-drag still uses the pointer-down snapshot — keep that contract i
 
 ## Done
 
-- campaign.ts: campaignStackIndex + campaignStackNeighbor wrap the campaignPages order used by PDF.
-- present-chrome: Prev/Next and arrows walk that stack and wrap.
-- present-idle: ArrowUp/ArrowDown stay quiet like Left/Right.
-- export.ts restored: collectSvgDefs, exportSvgBody, printJpegPage, downloadPrintPdf (real .pdf).
+- layers-isolate.ts + store toggleIsolate + Layers Show all / Alt-click eye.
+- export.ts: collectSvgDefs, exportSvgBody, printJpegPage, downloadPrintPdf, rasterize, optical wrap, baked images.
+- downloadCampaignPdf accepts unused scale from the top bar.
 - store-impl.placeNodes typed.
