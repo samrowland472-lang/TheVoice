@@ -2,17 +2,16 @@
 
 ## Iteration
 
-2026-09-29 15:10 BST — Present speaker notes drawer is back. Caret and last-edit jump persist in localStorage when you flip frames. Peek strip ticks return when chrome idles. SVG esc() entities and placeNodes typing stay fixed.
+2026-09-29 16:10 BST — Present notes drawer is mounted again. Jump to last-edited frame restores the caret while the field stays focused. Peek strip ticks, scrub, and double-click notes are back on the artboard.
 
 ## Next recommended
 
-Campaign PDF stack smoke in Present. Restore selection after jump lands on the last-edited frame without a second focus tick.
+Campaign PDF stack smoke in Present. Fade peek ticks with PEEK_TICK_FADE_MS instead of a constant remaining of 1.
 
 ## Done
 
-- Notes drawer textarea + PresentNotesJump chip in Present.
-- Caret map written on select/change; clamp + restore on focus and frame change.
-- Peek strip `data-present-peek` with phosphor live tick and double-click notes.
+- PresentNotesPanel wired into PresentView; notes persist per frame.
+- restoreCaretIfFocused runs on live frame change without a second focus tick.
+- Peek strip `data-present-peek` with phosphor tick, scrub, named caption, double-click notes.
 - export.ts esc() writes amp/lt/gt/quot entities.
-- store-impl.placeNodes typed as { id, x, y }[].
-- PresentNotesJump reads last-edited page from localStorage and jumps without leaving Present.
+- Jump chip still reads last-edited page from localStorage.

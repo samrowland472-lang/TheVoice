@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const panel = readFileSync(new URL("../src/components/studio/present-notes-panel.tsx", import.meta.url), "utf8");
+const chrome = readFileSync(new URL("../src/components/studio/present-chrome.tsx", import.meta.url), "utf8");
+assert.match(panel, /restoreCaretIfFocused/);
+assert.match(chrome, /PresentNotesPanel/);
+assert.match(chrome, /restoreCaretIfFocused\(live\.id/);
+assert.match(chrome, /notesVisible/);
+assert.match(chrome, /setPeekNotesOpen\(true\)/);
+assert.match(chrome, /data-present-peek/);
+assert.match(chrome, /PEEK_TICK_FADE_MS/);
+assert.match(chrome, /closePeekNotesQuiet/);
+console.log("present-notes-caret ok");
