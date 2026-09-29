@@ -157,3 +157,15 @@ export function peekTickDwellAcrossWrap(
   if (wrapped) return 0;
   return dwellMs;
 }
+
+/** Notes closing after a wrap must start the clock again from remaining dwell. */
+export function peekTickResumeAfterNotesClose(
+  dwellMs: number,
+  notesWereVisible: boolean,
+  notesNowVisible: boolean,
+): { dwellMs: number; paused: boolean } {
+  const safe = !Number.isFinite(dwellMs) || dwellMs < 0 ? 0 : dwellMs;
+  if (notesNowVisible) return { dwellMs: safe, paused: true };
+  if (notesWereVisible && !notesNowVisible) return { dwellMs: safe, paused: false };
+  return { dwellMs: safe, paused: false };
+}
