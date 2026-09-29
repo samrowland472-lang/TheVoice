@@ -125,3 +125,23 @@ export function peekCaptionOpacity(remaining: number): number {
   if (!Number.isFinite(remaining)) return 1;
   return Math.max(0, Math.min(1, remaining));
 }
+
+/** Hide the named caption entirely at 0 so no ghost name stays on the strip. */
+export function peekCaptionVisible(remaining: number, name: string | null | undefined): boolean {
+  if (!name) return false;
+  return peekCaptionOpacity(remaining) > 0;
+}
+
+export function isQuietPeekNotesEscape(key: string, peekNotesOpen: boolean): boolean {
+  return peekNotesOpen && key === "Escape";
+}
+
+export function peekTickFadePaused(notesVisible: boolean): boolean {
+  return notesVisible;
+}
+
+export function peekTickDwellDelta(elapsedMs: number, paused: boolean): number {
+  if (paused) return 0;
+  if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
+  return elapsedMs;
+}
