@@ -64,7 +64,7 @@ export function campaignPdfPages(docs: DesignDocument[]) {
 }
 
 export function campaignPdfPageCount(docs: DesignDocument[]): number {
-  return campaignPdfPages(docs).length;
+  return docs.length;
 }
 
 /** One PDF page per board. JPEG /Filter /DCTDecode, same order as Campaign SVG. */
