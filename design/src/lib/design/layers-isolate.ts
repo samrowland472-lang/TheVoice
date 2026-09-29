@@ -32,7 +32,10 @@ export function applyIsolate<T extends IsolateNode>(
   keepIds: string[],
   snapshot: Record<string, boolean> | null,
 ): { nodes: T[]; isolateSnapshot: Record<string, boolean> | null } {
-  if (keepIds.length === 0) {
+  const allIds = new Set(nodes.map((n) => n.id));
+  const askingShowAll =
+    keepIds.length === 0 || (snapshot != null && keepIds.length === allIds.size && keepIds.every((id) => allIds.has(id)));
+  if (askingShowAll) {
     if (!snapshot) return { nodes, isolateSnapshot: null };
     return {
       isolateSnapshot: null,
