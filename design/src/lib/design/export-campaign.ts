@@ -58,9 +58,18 @@ export function exportCampaignSvg(docs: DesignDocument[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs>${defs}</defs>${boards}</svg>`;
 }
 
+/** JPEG pages in campaign stack order — same sequence Present walks. */
+export function campaignPdfPages(docs: DesignDocument[]) {
+  return (docs.length ? docs : []).map((d) => printJpegPage(d));
+}
+
+export function campaignPdfPageCount(docs: DesignDocument[]): number {
+  return campaignPdfPages(docs).length;
+}
+
 /** One PDF page per board. JPEG /Filter /DCTDecode, same order as Campaign SVG. */
 export function exportCampaignPdf(docs: DesignDocument[]): Uint8Array {
-  const pages = (docs.length ? docs : []).map((d) => printJpegPage(d));
+  const pages = campaignPdfPages(docs);
   return buildJpegPdf(pages, docs[0]?.name ?? "Campaign");
 }
 
