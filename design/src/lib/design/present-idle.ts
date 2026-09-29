@@ -145,3 +145,15 @@ export function peekTickDwellDelta(elapsedMs: number, paused: boolean): number {
   if (!Number.isFinite(elapsedMs) || elapsedMs <= 0) return 0;
   return elapsedMs;
 }
+
+/** Wrapping the stack must not burn remaining while speaker notes stay open. */
+export function peekTickDwellAcrossWrap(
+  dwellMs: number,
+  notesVisible: boolean,
+  wrapped: boolean,
+): number {
+  if (!Number.isFinite(dwellMs) || dwellMs < 0) return 0;
+  if (wrapped && notesVisible) return dwellMs;
+  if (wrapped) return 0;
+  return dwellMs;
+}
