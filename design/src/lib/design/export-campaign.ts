@@ -71,6 +71,7 @@ export function downloadCampaignSvg(docs: DesignDocument[], name?: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function downloadCampaignPdf(docs: DesignDocument[], name?: string) {
+export function downloadCampaignPdf(docs: DesignDocument[], name?: string, _scale = 2) {
+  void _scale;
   downloadBytes(exportCampaignPdf(docs), `${slug(name || docs[0]?.name || "campaign")}-campaign.pdf`, "application/pdf");
 }
