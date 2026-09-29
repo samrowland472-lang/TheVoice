@@ -7,7 +7,7 @@ import {
   type LastNotesEdit,
 } from "@/lib/design/present-notes-pref";
 import { PresentNotesJump } from "./present-notes-jump";
-import type { RefObject } from "react";
+import { useEffect, type RefObject } from "react";
 
 export function persistNotesCaret(pageId: string, el: HTMLTextAreaElement | null) {
   if (!el) return;
@@ -26,6 +26,14 @@ export function restoreNotesCaret(pageId: string, textLen: number, el: HTMLTextA
   }
 }
 
+/** Jump lands on a new frame while the drawer already has focus — restore without a second focus tick. */
+export function restoreCaretIfFocused(pageId: string, textLen: number, el: HTMLTextAreaElement | null) {
+  if (!el) return false;
+  if (typeof document !== "undefined" && document.activeElement !== el) return false;
+  restoreNotesCaret(pageId, textLen, el);
+  return true;
+}
+
 export function PresentNotesPanel(props: {
   open: boolean;
   liveId: string;
@@ -36,6 +44,9 @@ export function PresentNotesPanel(props: {
   onChange: (value: string) => void;
   onJump: (id: string) => void;
 }) {
+  useEffect(() => {
+    restoreCaretIfFocused(props.liveId, props.notes.length, props.notesRef.current);
+  }, [props.liveId, props.notes, props.notesRef]);
   if (!props.open) return null;
   const last: LastNotesEdit | null = readLastNotesEdit();
   return (
