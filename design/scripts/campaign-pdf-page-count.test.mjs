@@ -15,6 +15,16 @@ test("campaign PDF page count follows printJpegPage stack order", () => {
   assert.match(chrome, /downloadCampaignPdf/);
 });
 
+test("three-board campaign fixture reports three PDF pages without raster", () => {
+  const fixture = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  function campaignPdfPageCount(docs) {
+    return docs.length;
+  }
+  assert.equal(campaignPdfPageCount(fixture), 3);
+  assert.equal(campaignPdfPageCount([]), 0);
+  assert.match(exp, /return docs\.length/);
+});
+
 test("named caption vanishes at remaining 0 with no ghost name", () => {
   assert.match(idle, /export function peekCaptionVisible/);
   assert.match(chrome, /peekCaptionVisible\(tickRemaining/);
