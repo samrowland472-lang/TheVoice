@@ -90,6 +90,7 @@ export interface BaseNode {
 
 export interface GroupNode extends BaseNode {
   kind: "group";
+  collapsed?: boolean;
 }
 
 export interface TextNode extends BaseNode {
