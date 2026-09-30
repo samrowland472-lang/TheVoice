@@ -1,6 +1,7 @@
 import { campaignPages } from "./campaign";
 import type { DesignDocument, ProjectMeta } from "./types";
 import { loadDoc } from "./persist";
+import { blankDocument } from "./templates";
 import {
   buildJpegPdf,
   collectSvgDefs,
@@ -8,6 +9,8 @@ import {
   downloadDataUrl,
   exportSvg,
   exportSvgBody,
+  pdfPagesCountField,
+  pdfTypePageCount,
   printJpegPage,
   slug,
 } from "./export";
@@ -59,23 +62,17 @@ export function exportCampaignSvg(docs: DesignDocument[]): string {
 }
 
 /** JPEG pages in campaign stack order — same sequence Present walks. */
-export function campaignPdfPages(docs: DesignDocument[], scale = 2) {
-  return (docs.length ? docs : []).map((d) => printJpegPage(d, scale));
+export function campaignPdfPages(docs: DesignDocument[]) {
+  return (docs.length ? docs : []).map((d) => printJpegPage(d));
 }
 
 export function campaignPdfPageCount(docs: DesignDocument[]): number {
   return docs.length;
 }
 
-/** `/Type /Page` objects only — not the `/Type /Pages` parent. */
-export function countPdfTypePageObjects(bytes: Uint8Array): number {
-  const text = new TextDecoder("latin1").decode(bytes);
-  return (text.match(/\/Type \/Page(?!s)\b/g) ?? []).length;
-}
-
 /** One PDF page per board. JPEG /Filter /DCTDecode, same order as Campaign SVG. */
-export function exportCampaignPdf(docs: DesignDocument[], scale = 2): Uint8Array {
-  const pages = campaignPdfPages(docs, scale);
+export function exportCampaignPdf(docs: DesignDocument[]): Uint8Array {
+  const pages = campaignPdfPages(docs);
   return buildJpegPdf(pages, docs[0]?.name ?? "Campaign");
 }
 
@@ -86,6 +83,53 @@ export function downloadCampaignSvg(docs: DesignDocument[], name?: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function downloadCampaignPdf(docs: DesignDocument[], name?: string, scale = 2) {
-  downloadBytes(exportCampaignPdf(docs, scale), `${slug(name || docs[0]?.name || "campaign")}-campaign.pdf`, "application/pdf");
+export function downloadCampaignPdf(docs: DesignDocument[], name?: string, _scale = 2) {
+  void _scale;
+  downloadBytes(exportCampaignPdf(docs), `${slug(name || docs[0]?.name || "campaign")}-campaign.pdf`, "application/pdf");
+}
+
+export function threeBoardCampaignFixture(): DesignDocument[] {
+  return [
+    { ...blankDocument("poster", "Board A"), campaignId: "smoke-campaign" },
+    { ...blankDocument("square", "Board B"), campaignId: "smoke-campaign" },
+    { ...blankDocument("ig-story", "Board C"), campaignId: "smoke-campaign" },
+  ];
+}
+
+export type CampaignPdfProbe = {
+  boards: number;
+  typePage: number;
+  countField: number;
+  header: string;
+  bytes: number;
+};
+
+/** Raster each board to JPEG and pack a multi-page PDF. Browser-only (needs canvas). */
+export function probeRasterCampaignPdf(docs: DesignDocument[] = threeBoardCampaignFixture()): CampaignPdfProbe {
+  const bytes = exportCampaignPdf(docs);
+  const latin = new TextDecoder("latin1").decode(bytes);
+  return {
+    boards: docs.length,
+    typePage: pdfTypePageCount(bytes),
+    countField: pdfPagesCountField(bytes),
+    header: latin.slice(0, 8),
+    bytes: bytes.length,
+  };
+}
+
+declare global {
+  interface Window {
+    __voiceDesignCampaignPdf?: {
+      probeRaster: typeof probeRasterCampaignPdf;
+      threeBoard: typeof threeBoardCampaignFixture;
+    };
+  }
+}
+
+export function installCampaignPdfSmokeHook() {
+  if (typeof window === "undefined") return;
+  window.__voiceDesignCampaignPdf = {
+    probeRaster: probeRasterCampaignPdf,
+    threeBoard: threeBoardCampaignFixture,
+  };
 }
