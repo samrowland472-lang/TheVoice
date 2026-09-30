@@ -2,7 +2,7 @@
 
 ## Iteration
 
-2026-10-01 00:20 BST — Layers tree. Groups indent under their parent with a phosphor twist to collapse the nest. Cmd+G / Cmd+Shift+G group and ungroup; the panel grows matching buttons when the selection allows it. Hide/lock on a group still walks descendants.
+2026-10-01 00:29 BST — Layers tree indent + twist. Groups nest under their parent with a phosphor chevron; collapse hides children. Group / Ungroup sit above the list (also Cmd+G / Cmd+Shift+G). Store now wires groupSelection, ungroupSelection, and cascade patches.
 
 ## Next recommended
 
@@ -18,9 +18,9 @@ Multi-select rotate around shared centre.
 - Nested groups + reorder as a unit in the Layers list
 - Group transform handles (one AABB, resize + move descendants)
 - Group rotate handle (one angle for the nest)
-- Layers tree indent + collapse twist
+- Layers tree indent + collapse twist + Group/Ungroup chrome
 
 ## Backlog
 
 - Multi-select rotate around shared centre
-- Reparent by dropping onto a group row
+- Layers drag-drop that keeps parentId when dropping onto a group
