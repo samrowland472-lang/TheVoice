@@ -15,6 +15,7 @@ import {
   writeCampaignOrder,
 } from "./persist";
 import { blankDocument, instantiateTemplate } from "./templates";
+import { expandMovePlaces } from "./group-transform";
 import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
 
@@ -335,7 +336,8 @@ export const useDesign = create<any>((set: any, get: any) => ({
   placeNodes: (places) => {
     const { doc } = get();
     if (!doc) return;
-    const map = new Map(places.map((p) => [p.id, p]));
+    const expanded = expandMovePlaces(doc.nodes, places);
+    const map = new Map(expanded.map((p) => [p.id, p]));
     set({
       doc: {
         ...doc,
