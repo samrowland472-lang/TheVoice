@@ -2,26 +2,23 @@
 
 ## Iteration
 
-2026-09-30 11:05 BST — Layers Alt-click lock now locks every other layer (same keep-set toggle as isolate). Unlock all restores the lock snapshot. `applyLockOthers` reuses isolate by treating unlocked as visible.
+2026-09-30 11:20 BST — Selection export: PNG and SVG of the current selection on the same artboard. `selectionDocument` filters nodes by id. Typecheck helpers restored for present peek + PDF page counts.
 
 ## Next recommended
 
-Alt-click a layer lock in a multi-layer board, drag the unlocked piece, then Unlock all and confirm the other locks restore.
+Select one headline on a board, Export → Selection PNG, and confirm the file keeps the artboard size with only that layer.
 
 ## Done
 
-- applyLockOthers + lockSnapshot on the design store.
-- Layers lock button: Alt-click lock-others; Unlock all rail.
-- Isolate Show all unchanged.
-- pdfTypePageCount / pdfPagesCountField on JPEG PDFs.
-- threeBoardCampaignFixture + probeRasterCampaignPdf.
-- installCampaignPdfSmokeHook on PreviewHostBridge (dynamic import).
-- browser-smoke desktop evaluate: typePage === 3, countField === 3, %PDF header.
-- esc() SVG entities restored; present-idle peek helpers typed for typecheck.
-- placeNodes place records typed.
-- shouldRestoreNotesCaretAfterFrameJump after wrap / frame change.
-- persistNotesCaret before go/goTo; restoreNotesCaret + restoreCaretIfFocused on land.
-- PresentNotesPanel mounted; N / Escape still toggle and close.
-- campaignStackAdvance + peekWrapPendingAfterAdvance in PresentView.go.
-- Peek dots: data-present-peek, double-click opens peek notes, wrap keys ArrowUp/Down.
-- peekTickDwellAfterNotesClose exported from present-idle.
+- selectionDocument(doc, ids)
+- Export menu: Selection PNG / Selection SVG (disabled with empty selection)
+- pdfTypePageCount / pdfPagesCountField + countPdfTypePageObjects
+- present-idle peek caption/tick helpers exported for typecheck
+- placeNodes places typed
+- esc() SVG entities
+
+## Backlog
+
+- Tight crop selection export (bbox instead of full artboard)
+- Isolate + export current isolate set
+- Layer groups
