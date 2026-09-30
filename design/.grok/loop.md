@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-30 22:10 BST — Nested groups and group-as-unit reorder. Layers panel shows the tree. Drag a group to move its children together; drop onto a group to nest. Group two groups with Group or Cmd+G.
+2026-09-30 23:10 BST — Group transform handles. Select a group to get one box for the whole nest. Corner and edge handles scale children together; dragging the group moves descendants.
 
 ## Next recommended
 
-Group transform handles on the canvas (one box for the whole nest).
+Rotate handle on the group box (one angle for the nest).
 
 ## Done
 
@@ -16,7 +16,9 @@ Group transform handles on the canvas (one box for the whole nest).
 - shadow-crop-pad tests
 - Layer groups: parentId + group kind, group/ungroup store actions, layers tree, Cmd+G
 - Nested groups + reorder as a unit in the Layers list
+- Group transform handles (one AABB, resize + move descendants)
 
 ## Backlog
 
-- Group transform handles
+- Group rotate handle
+- Layers tree polish if the panel is still flat
