@@ -114,6 +114,29 @@ export function canvasShadowParams(shadow: Shadow) {
   };
 }
 
+/** Extra crop pad (left/top/right/bottom) so drop shadows stay on the artboard. Inset is ignored. */
+export function shadowCropExtents(nodes: { shadow: Shadow | null }[]): {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+} {
+  let left = 0;
+  let top = 0;
+  let right = 0;
+  let bottom = 0;
+  for (const n of nodes) {
+    if (!n.shadow || shadowInset(n.shadow)) continue;
+    const p = canvasShadowParams(n.shadow);
+    const halo = Math.max(0, p.blur);
+    left = Math.max(left, halo + Math.max(0, -p.ox));
+    right = Math.max(right, halo + Math.max(0, p.ox));
+    top = Math.max(top, halo + Math.max(0, -p.oy));
+    bottom = Math.max(bottom, halo + Math.max(0, p.oy));
+  }
+  return { left, top, right, bottom };
+}
+
 /** CSS box-shadow string that mirrors drop vs inset on the inspector chip. */
 export function shadowPreviewCss(shadow: Shadow | null | undefined): string {
   if (!shadow) return "none";
