@@ -2,20 +2,18 @@
 
 ## Iteration
 
-2026-09-30 00:20 BST — Peek tick clock resumes when speaker notes close after a campaign wrap (`peekTickDwellAfterNotesClose`). Present `go()` wraps with `campaignStackNeighbor` (ArrowUp/Down too). Campaign PDF page count is board count (three-board fixture, no raster). Peek strip remounted with phosphor ticks, named caption on `tickRemaining`, double-click notes, PDF chip.
+2026-09-30 02:05 BST — Present stack wrap-pending lasts only until the next non-wrap advance. `campaignStackAdvance` drives `go()` (ArrowUp/Down wrap last→first). Peek tick dwell uses `peekTickDwellAcrossWrap` / `peekTickDwellAfterNotesClose` so notes-open wrap keeps remaining, then a mid-stack step drops wrap-pending. Fixed broken `esc()` in export.ts.
 
 ## Next recommended
 
-Raster a three-board campaign PDF in the browser smoke and assert `/Type /Page` count. Keep wrap-pending only until the next non-wrap advance.
+Raster a three-board campaign PDF in the browser smoke and assert `/Type /Page` count. Restore notes caret when jumping frames after wrap.
 
 ## Done
 
+- peekWrapPendingAfterAdvance(wrapped) → true; next non-wrap → false.
+- campaignStackAdvance reports wrapped for last→first / first→last.
+- Present go() uses campaignStackAdvance; ArrowUp/Down flip the stack.
 - peekTickDwellAfterNotesClose resumes remaining when notes close after wrap.
-- peekTickDwellAcrossWrap keeps dwell when notesVisible && wrapped.
-- campaignStackNeighbor drives Present go(); ArrowUp/Down flip the stack.
-- Peek strip: data-present-peek, scrub, data-peek-tick, phosphor ticks.
-- peekTickOpacity(Math.abs(n - i), tickRemaining) + dwell clock paused while notes visible.
-- peekCaptionVisible / peekCaptionOpacity(tickRemaining).
-- PresentNotesPanel on notesVisible (rail or peek double-click).
-- exportPeekCampaignPdf → downloadCampaignPdf while showPeek.
-- Fixed broken esc() in export.ts.
+- peekTickDwellAcrossWrap keeps dwell when notesVisible && wrap-pending.
+- Fixed esc() HTML entities in export.ts.
+- placeNodes typed so typecheck is clean.

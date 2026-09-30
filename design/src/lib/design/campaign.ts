@@ -23,8 +23,27 @@ export function campaignStackNeighbor(
   liveId: string,
   delta: number,
 ): string | null {
-  if (pages.length === 0) return null;
+  return campaignStackAdvance(pages, liveId, delta).id;
+}
+
+/** Wrap is last→first or first→last. A later non-wrap step should drop wrap-pending. */
+export function campaignStackAdvance(
+  pages: { id: string }[],
+  liveId: string,
+  delta: number,
+): { id: string | null; wrapped: boolean } {
+  if (pages.length === 0) return { id: null, wrapped: false };
   const i = campaignStackIndex(pages, liveId);
-  const next = pages[(i + delta + pages.length * 8) % pages.length];
-  return next && next.id !== liveId ? next.id : null;
+  const step = Number.isFinite(delta) ? Math.trunc(delta) : 0;
+  if (step === 0) return { id: null, wrapped: false };
+  const raw = i + step;
+  const wrapped = raw < 0 || raw >= pages.length;
+  const next = pages[(raw + pages.length * 8) % pages.length];
+  if (!next || next.id === liveId) return { id: null, wrapped: false };
+  return { id: next.id, wrapped };
+}
+
+export function peekWrapPendingAfterAdvance(prevPending: boolean, wrapped: boolean): boolean {
+  if (wrapped) return true;
+  return false;
 }
