@@ -65,3 +65,27 @@ export function applyIsolate<T extends IsolateNode>(
     nodes: base.map((n) => ({ ...n, visible: keep.has(n.id) })),
   };
 }
+
+export type LockNode = { id: string; locked: boolean };
+
+/**
+ * Lock everything except `keepIds`.
+ * Empty keep restores the lock snapshot.
+ * A second call with the same unlocked set restores.
+ */
+export function applyLockOthers<T extends LockNode>(
+  nodes: T[],
+  keepIds: string[],
+  snapshot: Record<string, boolean> | null,
+): { nodes: T[]; lockSnapshot: Record<string, boolean> | null } {
+  const asVis: IsolateNode[] = nodes.map((n) => ({ id: n.id, visible: !n.locked }));
+  const next = applyIsolate(asVis, keepIds, snapshot);
+  const unlocked = new Map(next.nodes.map((n) => [n.id, n.visible] as const));
+  return {
+    lockSnapshot: next.isolateSnapshot,
+    nodes: nodes.map((n) => ({
+      ...n,
+      locked: !(unlocked.get(n.id) ?? !n.locked),
+    })),
+  };
+}

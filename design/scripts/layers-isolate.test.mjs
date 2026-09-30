@@ -28,3 +28,22 @@ test("layers eye Alt-click isolates; Show all exits isolate", () => {
   assert.match(panel, /Show all/);
   assert.match(panel, /Alt-click isolates this layer/);
 });
+
+test("applyLockOthers maps locked as inverted isolate visibility", () => {
+  assert.match(isolate, /export function applyLockOthers/);
+  assert.match(isolate, /visible: !n\.locked/);
+  assert.match(isolate, /lockSnapshot: next\.isolateSnapshot/);
+  assert.match(isolate, /locked: !\(unlocked\.get\(n\.id\)/);
+});
+
+test("store toggleLockOthers writes lockSnapshot through applyLockOthers", () => {
+  assert.match(store, /lockSnapshot: null as Record<string, boolean> \| null/);
+  assert.match(store, /toggleLockOthers: \(keepIds: string\[\]\)/);
+  assert.match(store, /applyLockOthers\(doc\.nodes, keepIds, lockSnapshot\)/);
+});
+
+test("layers lock Alt-click locks others; Unlock all restores", () => {
+  assert.match(panel, /toggleLockOthers\(keep\)/);
+  assert.match(panel, /Unlock all/);
+  assert.match(panel, /Alt-click locks every other layer/);
+});

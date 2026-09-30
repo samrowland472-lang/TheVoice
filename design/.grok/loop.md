@@ -2,14 +2,17 @@
 
 ## Iteration
 
-2026-09-30 05:20 BST — Browser smoke rasters a three-board campaign PDF and asserts `/Type /Page` plus `/Count`. `pdfTypePageCount` ignores the `/Pages` tree. Hub installs the probe hook lazily so canvas export stays off SSR.
+2026-09-30 11:05 BST — Layers Alt-click lock now locks every other layer (same keep-set toggle as isolate). Unlock all restores the lock snapshot. `applyLockOthers` reuses isolate by treating unlocked as visible.
 
 ## Next recommended
 
-Export Campaign PDF from the top bar for a live three-board campaign and confirm the downloaded file opens as three pages.
+Alt-click a layer lock in a multi-layer board, drag the unlocked piece, then Unlock all and confirm the other locks restore.
 
 ## Done
 
+- applyLockOthers + lockSnapshot on the design store.
+- Layers lock button: Alt-click lock-others; Unlock all rail.
+- Isolate Show all unchanged.
 - pdfTypePageCount / pdfPagesCountField on JPEG PDFs.
 - threeBoardCampaignFixture + probeRasterCampaignPdf.
 - installCampaignPdfSmokeHook on PreviewHostBridge (dynamic import).
