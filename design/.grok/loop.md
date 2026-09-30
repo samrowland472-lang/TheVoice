@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-10-01 00:05 BST — Group rotate handle. Select a group: the nest box now has a phosphor knob above the top edge. Drag it to spin every descendant around the group centre (Shift snaps 15°). Corner handles still scale the nest.
+2026-10-01 00:20 BST — Layers tree. Groups indent under their parent with a phosphor twist to collapse the nest. Cmd+G / Cmd+Shift+G group and ungroup; the panel grows matching buttons when the selection allows it. Hide/lock on a group still walks descendants.
 
 ## Next recommended
 
-Layers tree polish if the panel is still flat (indent + twist for nested groups).
+Multi-select rotate around shared centre.
 
 ## Done
 
@@ -18,8 +18,9 @@ Layers tree polish if the panel is still flat (indent + twist for nested groups)
 - Nested groups + reorder as a unit in the Layers list
 - Group transform handles (one AABB, resize + move descendants)
 - Group rotate handle (one angle for the nest)
+- Layers tree indent + collapse twist
 
 ## Backlog
 
-- Layers tree polish if the panel is still flat
 - Multi-select rotate around shared centre
+- Reparent by dropping onto a group row
