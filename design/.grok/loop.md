@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-30 19:20 BST — Layer groups. Select two or more ungrouped layers, Group (Cmd+G). Nested rows in the Layers panel, hide/lock/move cascade to children. Ungroup (Cmd+Shift+G) releases them.
+2026-09-30 22:10 BST — Nested groups and group-as-unit reorder. Layers panel shows the tree. Drag a group to move its children together; drop onto a group to nest. Group two groups with Group or Cmd+G.
 
 ## Next recommended
 
-Drag a group in the layers list as a unit, or nest a group inside another group.
+Group transform handles on the canvas (one box for the whole nest).
 
 ## Done
 
@@ -15,7 +15,8 @@ Drag a group in the layers list as a unit, or nest a group inside another group.
 - shadowCropExtents + cropSelectionDocument pad
 - shadow-crop-pad tests
 - Layer groups: parentId + group kind, group/ungroup store actions, layers tree, Cmd+G
+- Nested groups + reorder as a unit in the Layers list
 
 ## Backlog
 
-- Layer groups (reorder as unit, nested groups, group transform handles)
+- Group transform handles
