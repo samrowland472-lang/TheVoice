@@ -30,6 +30,7 @@ test("wrap keeps tick remaining when peek notes stay open", () => {
 test("closing notes after a wrap resumes the same remaining clock", () => {
   assert.match(src, /export function peekTickDwellAfterNotesClose/);
   assert.match(chrome, /peekTickDwellAfterNotesClose/);
+  assert.match(chrome, /wrapPending/);
   assert.equal(peekTickDwellAfterNotesClose(1600, true, false, true), 1600);
   assert.equal(peekTickDwellAfterNotesClose(400, true, false, true), 400);
   assert.equal(peekTickDwellAfterNotesClose(1600, false, false, true), 0);

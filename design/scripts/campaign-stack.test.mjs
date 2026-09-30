@@ -36,9 +36,39 @@ test("present stack order matches campaign PDF page order", () => {
   assert.deepEqual(pages.map((p) => p.id), ["a", "b", "c"]);
   assert.match(exportCamp, /campaignPages\(index, current\.campaignId\)/);
   assert.match(chrome, /campaignPages\(/);
-  assert.match(chrome, /campaignStackNeighbor/);
+  assert.match(chrome, /campaignStackAdvance/);
+  assert.match(chrome, /peekWrapPendingAfterAdvance/);
   assert.match(chrome, /ArrowDown/);
   assert.match(chrome, /ArrowUp/);
+});
+
+function campaignStackAdvance(pages, liveId, delta) {
+  if (pages.length === 0) return { id: null, wrapped: false };
+  const i = campaignStackIndex(pages, liveId);
+  const step = Number.isFinite(delta) ? Math.trunc(delta) : 0;
+  if (step === 0) return { id: null, wrapped: false };
+  const raw = i + step;
+  const wrapped = raw < 0 || raw >= pages.length;
+  const next = pages[(raw + pages.length * 8) % pages.length];
+  if (!next || next.id === liveId) return { id: null, wrapped: false };
+  return { id: next.id, wrapped };
+}
+
+function peekWrapPendingAfterAdvance(prevPending, wrapped) {
+  if (wrapped) return true;
+  return false;
+}
+
+test("wrap-pending lasts only until the next non-wrap advance", () => {
+  const pages = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  const wrap = campaignStackAdvance(pages, "c", 1);
+  assert.deepEqual(wrap, { id: "a", wrapped: true });
+  let pending = peekWrapPendingAfterAdvance(false, wrap.wrapped);
+  assert.equal(pending, true);
+  const mid = campaignStackAdvance(pages, "a", 1);
+  assert.deepEqual(mid, { id: "b", wrapped: false });
+  pending = peekWrapPendingAfterAdvance(pending, mid.wrapped);
+  assert.equal(pending, false);
 });
 
 test("present wrap flips last board to first like a looping stack", () => {
