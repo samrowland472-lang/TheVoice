@@ -107,6 +107,12 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
         applyBoolean(e.shiftKey ? "exclude" : "intersect");
         return;
       }
+      if (meta && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        if (e.shiftKey) s.ungroupSelection();
+        else s.groupSelection();
+        return;
+      }
       if (meta && e.key.toLowerCase() === "c") {
         e.preventDefault();
         s.copySelected();
