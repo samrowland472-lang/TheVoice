@@ -2,18 +2,18 @@
 
 ## Iteration
 
-2026-09-30 02:05 BST — Present stack wrap-pending lasts only until the next non-wrap advance. `campaignStackAdvance` drives `go()` (ArrowUp/Down wrap last→first). Peek tick dwell uses `peekTickDwellAcrossWrap` / `peekTickDwellAfterNotesClose` so notes-open wrap keeps remaining, then a mid-stack step drops wrap-pending. Fixed broken `esc()` in export.ts.
+2026-09-30 04:05 BST — Present wrap now drives `go()` via `campaignStackAdvance` (ArrowUp/Down last→first). Speaker notes persist the caret before a jump and restore it on the landed frame when notes stay open. Peek dwell keeps remaining across a notes-open wrap. Notes drawer is back on the present stage. `esc()` writes safe SVG entities again.
 
 ## Next recommended
 
-Raster a three-board campaign PDF in the browser smoke and assert `/Type /Page` count. Restore notes caret when jumping frames after wrap.
+Raster a three-board campaign PDF in the browser smoke and assert `/Type /Page` count.
 
 ## Done
 
-- peekWrapPendingAfterAdvance(wrapped) → true; next non-wrap → false.
-- campaignStackAdvance reports wrapped for last→first / first→last.
-- Present go() uses campaignStackAdvance; ArrowUp/Down flip the stack.
-- peekTickDwellAfterNotesClose resumes remaining when notes close after wrap.
-- peekTickDwellAcrossWrap keeps dwell when notesVisible && wrap-pending.
-- Fixed esc() HTML entities in export.ts.
-- placeNodes typed so typecheck is clean.
+- shouldRestoreNotesCaretAfterFrameJump after wrap / frame change.
+- persistNotesCaret before go/goTo; restoreNotesCaret + restoreCaretIfFocused on land.
+- PresentNotesPanel mounted; N / Escape still toggle and close.
+- campaignStackAdvance + peekWrapPendingAfterAdvance in PresentView.go.
+- Peek dots: data-present-peek, double-click opens peek notes, wrap keys ArrowUp/Down.
+- peekTickDwellAfterNotesClose exported from present-idle.
+- placeNodes typed; esc() entities in export.ts.
