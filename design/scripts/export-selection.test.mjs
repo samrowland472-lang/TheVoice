@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const exp = readFileSync(new URL("../src/lib/design/export.ts", import.meta.url), "utf8");
+const exp = readFileSync(new URL("../src/lib/design/selection-document.ts", import.meta.url), "utf8");
 const bar = readFileSync(new URL("../src/components/studio/top-bar.tsx", import.meta.url), "utf8");
 
 test("selectionDocument keeps named nodes on the same artboard", () => {
