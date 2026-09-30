@@ -4,6 +4,7 @@ import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan
 import { toast } from "sonner";
 import { campaignDocsFromIndex, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
 import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
+import { selectionDocument } from "@/lib/design/selection-document";
 import { FORMATS } from "@/lib/design/formats";
 import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
@@ -30,15 +31,34 @@ export function TopBar() {
   const zoom = useDesign((s) => s.viewport.zoom);
   const togglePresent = useDesign((s) => s.togglePresent);
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
+  const selection = useDesign((s) => s.selection);
   const [scale, setScale] = useState(2);
   const [exportOpen, setExportOpen] = useState(false);
 
   if (!doc) return null;
 
-  function exportFile(kind: "png" | "jpg" | "svg" | "print" | "pdf" | "campaign-svg" | "campaign-pdf") {
+  function exportFile(
+    kind: "png" | "jpg" | "svg" | "print" | "pdf" | "campaign-svg" | "campaign-pdf" | "sel-png" | "sel-svg",
+  ) {
     if (!doc) return;
     save();
     const campaign = campaignDocsFromIndex(index, doc);
+    if (kind === "sel-png" || kind === "sel-svg") {
+      const slice = selectionDocument(doc, selection);
+      if (!slice) {
+        toast.error("Select a layer first");
+        return;
+      }
+      if (kind === "sel-svg") downloadSvg(slice);
+      else downloadDataUrl(exportPng(slice, scale), `${slug(slice.name)}.png`);
+      toast.success(
+        kind === "sel-svg"
+          ? `Exported selection SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`
+          : `Exported selection PNG @${scale}× · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`,
+      );
+      setExportOpen(false);
+      return;
+    }
     if (kind === "svg") {
       downloadSvg(doc);
     } else if (kind === "jpg") {
@@ -154,6 +174,22 @@ export function TopBar() {
             </Button>
             <Button size="sm" className="mb-1 w-full" onClick={() => exportFile("svg")}>
               SVG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={selection.length === 0}
+              onClick={() => exportFile("sel-png")}
+            >
+              Selection PNG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={selection.length === 0}
+              onClick={() => exportFile("sel-svg")}
+            >
+              Selection SVG
             </Button>
             <Button size="sm" className="mb-1 w-full" variant="primary" onClick={() => exportFile("print")}>
               Print PNG
