@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-30 23:10 BST — Group transform handles. Select a group to get one box for the whole nest. Corner and edge handles scale children together; dragging the group moves descendants.
+2026-10-01 00:05 BST — Group rotate handle. Select a group: the nest box now has a phosphor knob above the top edge. Drag it to spin every descendant around the group centre (Shift snaps 15°). Corner handles still scale the nest.
 
 ## Next recommended
 
-Rotate handle on the group box (one angle for the nest).
+Layers tree polish if the panel is still flat (indent + twist for nested groups).
 
 ## Done
 
@@ -17,8 +17,9 @@ Rotate handle on the group box (one angle for the nest).
 - Layer groups: parentId + group kind, group/ungroup store actions, layers tree, Cmd+G
 - Nested groups + reorder as a unit in the Layers list
 - Group transform handles (one AABB, resize + move descendants)
+- Group rotate handle (one angle for the nest)
 
 ## Backlog
 
-- Group rotate handle
 - Layers tree polish if the panel is still flat
+- Multi-select rotate around shared centre

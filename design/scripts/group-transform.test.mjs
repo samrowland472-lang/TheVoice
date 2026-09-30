@@ -11,6 +11,8 @@ test("group-transform scales nest from one box", () => {
   assert.match(src, /export function groupBox/);
   assert.match(src, /export function scaleGroupNodes/);
   assert.match(src, /export function expandMovePlaces/);
+  assert.match(src, /export function rotateGroupNodes/);
+  assert.match(src, /export function hitRotateHandle/);
   assert.match(src, /mapNodeToBox/);
   assert.match(src, /descendantIds/);
 });
@@ -21,6 +23,8 @@ test("canvas draws one handle box for a selected group", () => {
   assert.match(stage, /scaleGroupNodes/);
   assert.match(stage, /kind: "resize"/);
   assert.match(stage, /drawTransformHandles/);
+  assert.match(stage, /rotateGroupNodes/);
+  assert.match(stage, /kind: "rotate"/);
 });
 
 test("moving a group placeNodes expands descendants", () => {
