@@ -25,7 +25,7 @@ export function nodeLocalPoint(n: DesignNode, x: number, y: number) {
 }
 
 export function hitNode(n: DesignNode, x: number, y: number, opts?: { ignoreLock?: boolean }): boolean {
-  if (!n.visible || (n.locked && !opts?.ignoreLock)) return false;
+  if (!n.visible || n.kind === "group" || (n.locked && !opts?.ignoreLock)) return false;
   const p = nodeLocalPoint(n, x, y);
   if (n.kind === "ellipse") {
     const cx = n.x + n.w / 2;
