@@ -4,7 +4,7 @@ import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan
 import { toast } from "sonner";
 import { campaignDocsFromIndex, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
 import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
-import { selectionDocument } from "@/lib/design/selection-document";
+import { cropSelectionDocument, selectionDocument } from "@/lib/design/selection-document";
 import { FORMATS } from "@/lib/design/formats";
 import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
@@ -38,23 +38,38 @@ export function TopBar() {
   if (!doc) return null;
 
   function exportFile(
-    kind: "png" | "jpg" | "svg" | "print" | "pdf" | "campaign-svg" | "campaign-pdf" | "sel-png" | "sel-svg",
+    kind:
+      | "png"
+      | "jpg"
+      | "svg"
+      | "print"
+      | "pdf"
+      | "campaign-svg"
+      | "campaign-pdf"
+      | "sel-png"
+      | "sel-svg"
+      | "crop-png"
+      | "crop-svg",
   ) {
     if (!doc) return;
     save();
     const campaign = campaignDocsFromIndex(index, doc);
-    if (kind === "sel-png" || kind === "sel-svg") {
-      const slice = selectionDocument(doc, selection);
+    if (kind === "sel-png" || kind === "sel-svg" || kind === "crop-png" || kind === "crop-svg") {
+      const slice =
+        kind === "crop-png" || kind === "crop-svg"
+          ? cropSelectionDocument(doc, selection)
+          : selectionDocument(doc, selection);
       if (!slice) {
         toast.error("Select a layer first");
         return;
       }
-      if (kind === "sel-svg") downloadSvg(slice);
+      if (kind === "sel-svg" || kind === "crop-svg") downloadSvg(slice);
       else downloadDataUrl(exportPng(slice, scale), `${slug(slice.name)}.png`);
+      const cropped = kind.startsWith("crop");
       toast.success(
-        kind === "sel-svg"
-          ? `Exported selection SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`
-          : `Exported selection PNG @${scale}× · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`,
+        kind.endsWith("svg")
+          ? `Exported ${cropped ? "crop" : "selection"} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`
+          : `Exported ${cropped ? "crop" : "selection"} PNG @${scale}× · ${slice.artboard.width}×${slice.artboard.height}`,
       );
       setExportOpen(false);
       return;
@@ -190,6 +205,22 @@ export function TopBar() {
               onClick={() => exportFile("sel-svg")}
             >
               Selection SVG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={selection.length === 0}
+              onClick={() => exportFile("crop-png")}
+            >
+              Crop PNG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={selection.length === 0}
+              onClick={() => exportFile("crop-svg")}
+            >
+              Crop SVG
             </Button>
             <Button size="sm" className="mb-1 w-full" variant="primary" onClick={() => exportFile("print")}>
               Print PNG
