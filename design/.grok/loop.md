@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-09-30 17:05 BST — Shadow-aware crop. Crop PNG/SVG and Isolate crop grow the artboard by drop-shadow halo (blur + spread + offset). Inset shadows do not pad.
+2026-09-30 19:20 BST — Layer groups. Select two or more ungrouped layers, Group (Cmd+G). Nested rows in the Layers panel, hide/lock/move cascade to children. Ungroup (Cmd+Shift+G) releases them.
 
 ## Next recommended
 
-Drop a rectangle, add a drop shadow with large oy/blur, Export → Crop PNG. Shadow should stay inside the file. Switch to inset — crop stays tight.
+Drag a group in the layers list as a unit, or nest a group inside another group.
 
 ## Done
 
@@ -14,7 +14,8 @@ Drop a rectangle, add a drop shadow with large oy/blur, Export → Crop PNG. Sha
 - Export menu: Isolate PNG / SVG / crop variants
 - shadowCropExtents + cropSelectionDocument pad
 - shadow-crop-pad tests
+- Layer groups: parentId + group kind, group/ungroup store actions, layers tree, Cmd+G
 
 ## Backlog
 
-- Layer groups
+- Layer groups (reorder as unit, nested groups, group transform handles)
