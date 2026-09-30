@@ -2,20 +2,19 @@
 
 ## Iteration
 
-2026-09-30 15:05 BST — Isolate export. Export menu ships Isolate PNG/SVG and Isolate crop PNG/SVG from the current isolate set (visible layers), disabled when isolation is off.
+2026-09-30 17:05 BST — Shadow-aware crop. Crop PNG/SVG and Isolate crop grow the artboard by drop-shadow halo (blur + spread + offset). Inset shadows do not pad.
 
 ## Next recommended
 
-Alt-click a layer to isolate, Export → Isolate PNG (full artboard, hidden layers dropped) then Isolate crop PNG (tight AABB). Compare with Selection PNG.
+Drop a rectangle, add a drop shadow with large oy/blur, Export → Crop PNG. Shadow should stay inside the file. Switch to inset — crop stays tight.
 
 ## Done
 
 - isolateDocument / cropIsolateDocument
-- Export menu: Isolate PNG / SVG / crop variants (disabled without isolateSnapshot)
-- selection + crop export unchanged
-- export-selection tests cover isolate names and menu labels
+- Export menu: Isolate PNG / SVG / crop variants
+- shadowCropExtents + cropSelectionDocument pad
+- shadow-crop-pad tests
 
 ## Backlog
 
 - Layer groups
-- Shadow-aware crop pad

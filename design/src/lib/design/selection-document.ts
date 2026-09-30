@@ -1,4 +1,5 @@
 import { aabb } from "./geometry";
+import { shadowCropExtents } from "./shadow";
 import type { DesignDocument, DesignNode } from "./types";
 
 /** Keep only the named nodes; same artboard. Empty or missing ids → null. */
@@ -30,10 +31,15 @@ export function cropSelectionDocument(doc: DesignDocument, ids: string[]): Desig
   if (!slice) return null;
   const box = aabb(slice.nodes);
   if (box.w <= 0 || box.h <= 0) return slice;
-  const ox = box.x - CROP_PAD;
-  const oy = box.y - CROP_PAD;
-  const width = Math.max(1, Math.ceil(box.w + CROP_PAD * 2));
-  const height = Math.max(1, Math.ceil(box.h + CROP_PAD * 2));
+  const halo = shadowCropExtents(slice.nodes);
+  const padL = CROP_PAD + halo.left;
+  const padT = CROP_PAD + halo.top;
+  const padR = CROP_PAD + halo.right;
+  const padB = CROP_PAD + halo.bottom;
+  const ox = box.x - padL;
+  const oy = box.y - padT;
+  const width = Math.max(1, Math.ceil(box.w + padL + padR));
+  const height = Math.max(1, Math.ceil(box.h + padT + padB));
   return {
     ...slice,
     name: `${doc.name} crop`,
