@@ -9,11 +9,13 @@ import {
   collectRoutePathsFromTree,
   installPreviewHostBridge,
 } from "@/lib/preview-host-bridge";
+// campaign PDF hook is installed lazily so hub SSR does not pull canvas export.
 
 export function PreviewHostBridge() {
   const router = useRouter();
 
   useEffect(() => {
+    void import("@/lib/design/export-campaign").then((m) => m.installCampaignPdfSmokeHook());
     return installPreviewHostBridge({
       navigate: (path) => {
         router.history.push(path);

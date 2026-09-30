@@ -2,16 +2,23 @@
 
 ## Iteration
 
-2026-09-30 05:01 BST — Browser smoke rasters a three-board campaign PDF and asserts `/Type /Page` count is 3 (not `/Type /Pages`). `countPdfTypePageObjects` + `exportCampaignPdf(docs, scale)` share stack order with Present. Present chrome can download the campaign PDF from the peek rail.
+2026-09-30 05:20 BST — Browser smoke rasters a three-board campaign PDF and asserts `/Type /Page` plus `/Count`. `pdfTypePageCount` ignores the `/Pages` tree. Hub installs the probe hook lazily so canvas export stays off SSR.
 
 ## Next recommended
 
-Wire peek dwell remaining into Present caption fade instead of the constant tickRemaining used for the caption visibility check.
+Export Campaign PDF from the top bar for a live three-board campaign and confirm the downloaded file opens as three pages.
 
 ## Done
 
-- countPdfTypePageObjects ignores `/Type /Pages`.
-- rasterThreeBoardCampaignPdf + window.__voiceDesignCampaignPdfSmoke.
-- browser-smoke desktop probe: expected === typePages === 3.
-- downloadCampaignPdf honors scale; Present Campaign PDF control.
-- esc() SVG entities restored; placeNodes typed; missing peek helpers exported.
+- pdfTypePageCount / pdfPagesCountField on JPEG PDFs.
+- threeBoardCampaignFixture + probeRasterCampaignPdf.
+- installCampaignPdfSmokeHook on PreviewHostBridge (dynamic import).
+- browser-smoke desktop evaluate: typePage === 3, countField === 3, %PDF header.
+- esc() SVG entities restored; present-idle peek helpers typed for typecheck.
+- placeNodes place records typed.
+- shouldRestoreNotesCaretAfterFrameJump after wrap / frame change.
+- persistNotesCaret before go/goTo; restoreNotesCaret + restoreCaretIfFocused on land.
+- PresentNotesPanel mounted; N / Escape still toggle and close.
+- campaignStackAdvance + peekWrapPendingAfterAdvance in PresentView.go.
+- Peek dots: data-present-peek, double-click opens peek notes, wrap keys ArrowUp/Down.
+- peekTickDwellAfterNotesClose exported from present-idle.
