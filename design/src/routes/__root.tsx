@@ -1,7 +1,9 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { CampaignPdfSmokeBridge } from "@/components/campaign-pdf-smoke-bridge";
 import { FONT_LINK } from "@/lib/design/fonts";
+import "@/lib/design/campaign-pdf-smoke";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "The Voice Design";
@@ -32,6 +34,7 @@ export const Route = createRootRoute({
       </head>
       <body className="bg-ground font-sans text-ink">
         <PreviewHostBridge />
+        <CampaignPdfSmokeBridge />
         <AuthProvider>
           <Outlet />
         </AuthProvider>

@@ -9,8 +9,9 @@ const chrome = readFileSync(new URL("../src/components/studio/present-chrome.tsx
 test("campaign PDF page count follows printJpegPage stack order", () => {
   assert.match(exp, /export function campaignPdfPages/);
   assert.match(exp, /export function campaignPdfPageCount/);
+  assert.match(exp, /export function countPdfTypePageObjects/);
   assert.match(exp, /printJpegPage/);
-  assert.match(exp, /campaignPdfPages\(docs\)/);
+  assert.match(exp, /campaignPdfPages\(docs/);
   assert.match(chrome, /exportPeekCampaignPdf/);
   assert.match(chrome, /downloadCampaignPdf/);
 });
@@ -23,6 +24,15 @@ test("three-board campaign fixture reports three PDF pages without raster", () =
   assert.equal(campaignPdfPageCount(fixture), 3);
   assert.equal(campaignPdfPageCount([]), 0);
   assert.match(exp, /return docs\.length/);
+  function countPdfTypePageObjects(text) {
+    return (text.match(/\/Type \/Page(?!s)\b/g) ?? []).length;
+  }
+  assert.equal(
+    countPdfTypePageObjects(
+      "<< /Type /Pages /Kids [3 0 R 6 0 R 9 0 R] /Count 3 >> << /Type /Page /Parent 2 0 R >> << /Type /Page /Parent 2 0 R >> << /Type /Page /Parent 2 0 R >>",
+    ),
+    3,
+  );
 });
 
 test("named caption vanishes at remaining 0 with no ghost name", () => {
