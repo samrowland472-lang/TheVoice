@@ -4,7 +4,12 @@ import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan
 import { toast } from "sonner";
 import { campaignDocsFromIndex, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
 import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
-import { cropSelectionDocument, selectionDocument } from "@/lib/design/selection-document";
+import {
+  cropIsolateDocument,
+  cropSelectionDocument,
+  isolateDocument,
+  selectionDocument,
+} from "@/lib/design/selection-document";
 import { FORMATS } from "@/lib/design/formats";
 import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
@@ -32,6 +37,7 @@ export function TopBar() {
   const togglePresent = useDesign((s) => s.togglePresent);
   const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
   const selection = useDesign((s) => s.selection);
+  const isolateSnapshot = useDesign((s) => s.isolateSnapshot);
   const [scale, setScale] = useState(2);
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -49,27 +55,50 @@ export function TopBar() {
       | "sel-png"
       | "sel-svg"
       | "crop-png"
-      | "crop-svg",
+      | "crop-svg"
+      | "iso-png"
+      | "iso-svg"
+      | "iso-crop-png"
+      | "iso-crop-svg",
   ) {
     if (!doc) return;
     save();
     const campaign = campaignDocsFromIndex(index, doc);
-    if (kind === "sel-png" || kind === "sel-svg" || kind === "crop-png" || kind === "crop-svg") {
+    if (
+      kind === "sel-png" ||
+      kind === "sel-svg" ||
+      kind === "crop-png" ||
+      kind === "crop-svg" ||
+      kind === "iso-png" ||
+      kind === "iso-svg" ||
+      kind === "iso-crop-png" ||
+      kind === "iso-crop-svg"
+    ) {
       const slice =
-        kind === "crop-png" || kind === "crop-svg"
-          ? cropSelectionDocument(doc, selection)
-          : selectionDocument(doc, selection);
+        kind === "iso-crop-png" || kind === "iso-crop-svg"
+          ? cropIsolateDocument(doc)
+          : kind === "iso-png" || kind === "iso-svg"
+            ? isolateDocument(doc)
+            : kind === "crop-png" || kind === "crop-svg"
+              ? cropSelectionDocument(doc, selection)
+              : selectionDocument(doc, selection);
       if (!slice) {
-        toast.error("Select a layer first");
+        toast.error(kind.startsWith("iso") ? "Isolate a layer first" : "Select a layer first");
         return;
       }
-      if (kind === "sel-svg" || kind === "crop-svg") downloadSvg(slice);
+      if (kind.endsWith("svg")) downloadSvg(slice);
       else downloadDataUrl(exportPng(slice, scale), `${slug(slice.name)}.png`);
-      const cropped = kind.startsWith("crop");
+      const label = kind.startsWith("iso-crop")
+        ? "isolate crop"
+        : kind.startsWith("iso")
+          ? "isolate"
+          : kind.startsWith("crop")
+            ? "crop"
+            : "selection";
       toast.success(
         kind.endsWith("svg")
-          ? `Exported ${cropped ? "crop" : "selection"} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`
-          : `Exported ${cropped ? "crop" : "selection"} PNG @${scale}× · ${slice.artboard.width}×${slice.artboard.height}`,
+          ? `Exported ${label} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`
+          : `Exported ${label} PNG @${scale}× · ${slice.artboard.width}×${slice.artboard.height}`,
       );
       setExportOpen(false);
       return;
@@ -221,6 +250,38 @@ export function TopBar() {
               onClick={() => exportFile("crop-svg")}
             >
               Crop SVG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={!isolateSnapshot}
+              onClick={() => exportFile("iso-png")}
+            >
+              Isolate PNG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={!isolateSnapshot}
+              onClick={() => exportFile("iso-svg")}
+            >
+              Isolate SVG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={!isolateSnapshot}
+              onClick={() => exportFile("iso-crop-png")}
+            >
+              Isolate crop PNG
+            </Button>
+            <Button
+              size="sm"
+              className="mb-1 w-full"
+              disabled={!isolateSnapshot}
+              onClick={() => exportFile("iso-crop-svg")}
+            >
+              Isolate crop SVG
             </Button>
             <Button size="sm" className="mb-1 w-full" variant="primary" onClick={() => exportFile("print")}>
               Print PNG
