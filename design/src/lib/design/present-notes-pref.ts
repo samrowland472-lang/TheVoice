@@ -59,6 +59,20 @@ export function restoreNotesPageId(
   return last.pageId;
 }
 
+/** After wrap (or any present frame jump) keep the notes caret on the landed board. */
+export function shouldRestoreNotesCaretAfterFrameJump(
+  notesVisible: boolean,
+  prevPageId: string,
+  nextPageId: string | null,
+): boolean {
+  if (!notesVisible || !nextPageId) return false;
+  return nextPageId !== prevPageId;
+}
+
+export function caretForPage(pageId: string, textLen: number): { start: number; end: number } {
+  return clampCaret(readCaretMap()[pageId], textLen);
+}
+
 export function writeLastNotesEdit(edit: LastNotesEdit) {
   try {
     localStorage.setItem(NOTES_LAST, JSON.stringify(edit));
