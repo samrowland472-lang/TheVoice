@@ -59,17 +59,23 @@ export function exportCampaignSvg(docs: DesignDocument[]): string {
 }
 
 /** JPEG pages in campaign stack order — same sequence Present walks. */
-export function campaignPdfPages(docs: DesignDocument[]) {
-  return (docs.length ? docs : []).map((d) => printJpegPage(d));
+export function campaignPdfPages(docs: DesignDocument[], scale = 2) {
+  return (docs.length ? docs : []).map((d) => printJpegPage(d, scale));
 }
 
 export function campaignPdfPageCount(docs: DesignDocument[]): number {
   return docs.length;
 }
 
+/** `/Type /Page` objects only — not the `/Type /Pages` parent. */
+export function countPdfTypePageObjects(bytes: Uint8Array): number {
+  const text = new TextDecoder("latin1").decode(bytes);
+  return (text.match(/\/Type \/Page(?!s)\b/g) ?? []).length;
+}
+
 /** One PDF page per board. JPEG /Filter /DCTDecode, same order as Campaign SVG. */
-export function exportCampaignPdf(docs: DesignDocument[]): Uint8Array {
-  const pages = campaignPdfPages(docs);
+export function exportCampaignPdf(docs: DesignDocument[], scale = 2): Uint8Array {
+  const pages = campaignPdfPages(docs, scale);
   return buildJpegPdf(pages, docs[0]?.name ?? "Campaign");
 }
 
@@ -80,7 +86,6 @@ export function downloadCampaignSvg(docs: DesignDocument[], name?: string) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-export function downloadCampaignPdf(docs: DesignDocument[], name?: string, _scale = 2) {
-  void _scale;
-  downloadBytes(exportCampaignPdf(docs), `${slug(name || docs[0]?.name || "campaign")}-campaign.pdf`, "application/pdf");
+export function downloadCampaignPdf(docs: DesignDocument[], name?: string, scale = 2) {
+  downloadBytes(exportCampaignPdf(docs, scale), `${slug(name || docs[0]?.name || "campaign")}-campaign.pdf`, "application/pdf");
 }

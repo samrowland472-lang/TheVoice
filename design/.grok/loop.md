@@ -2,18 +2,16 @@
 
 ## Iteration
 
-2026-09-30 04:05 BST — Present wrap now drives `go()` via `campaignStackAdvance` (ArrowUp/Down last→first). Speaker notes persist the caret before a jump and restore it on the landed frame when notes stay open. Peek dwell keeps remaining across a notes-open wrap. Notes drawer is back on the present stage. `esc()` writes safe SVG entities again.
+2026-09-30 05:01 BST — Browser smoke rasters a three-board campaign PDF and asserts `/Type /Page` count is 3 (not `/Type /Pages`). `countPdfTypePageObjects` + `exportCampaignPdf(docs, scale)` share stack order with Present. Present chrome can download the campaign PDF from the peek rail.
 
 ## Next recommended
 
-Raster a three-board campaign PDF in the browser smoke and assert `/Type /Page` count.
+Wire peek dwell remaining into Present caption fade instead of the constant tickRemaining used for the caption visibility check.
 
 ## Done
 
-- shouldRestoreNotesCaretAfterFrameJump after wrap / frame change.
-- persistNotesCaret before go/goTo; restoreNotesCaret + restoreCaretIfFocused on land.
-- PresentNotesPanel mounted; N / Escape still toggle and close.
-- campaignStackAdvance + peekWrapPendingAfterAdvance in PresentView.go.
-- Peek dots: data-present-peek, double-click opens peek notes, wrap keys ArrowUp/Down.
-- peekTickDwellAfterNotesClose exported from present-idle.
-- placeNodes typed; esc() entities in export.ts.
+- countPdfTypePageObjects ignores `/Type /Pages`.
+- rasterThreeBoardCampaignPdf + window.__voiceDesignCampaignPdfSmoke.
+- browser-smoke desktop probe: expected === typePages === 3.
+- downloadCampaignPdf honors scale; Present Campaign PDF control.
+- esc() SVG entities restored; placeNodes typed; missing peek helpers exported.
