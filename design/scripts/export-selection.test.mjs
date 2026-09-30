@@ -27,3 +27,17 @@ test("crop selection uses AABB and crop menu items", () => {
   assert.match(bar, /Crop PNG/);
   assert.match(bar, /Crop SVG/);
 });
+
+test("isolate export keeps visible nodes and menu items", () => {
+  assert.match(exp, /export function isolateDocument/);
+  assert.match(exp, /n\.visible/);
+  assert.match(exp, /name: `\$\{doc\.name\} isolate`/);
+  assert.match(exp, /export function cropIsolateDocument/);
+  assert.match(bar, /isolateDocument/);
+  assert.match(bar, /cropIsolateDocument/);
+  assert.match(bar, /iso-png/);
+  assert.match(bar, /Isolate PNG/);
+  assert.match(bar, /Isolate SVG/);
+  assert.match(bar, /Isolate crop PNG/);
+  assert.match(bar, /disabled=\{\!isolateSnapshot\}/);
+});

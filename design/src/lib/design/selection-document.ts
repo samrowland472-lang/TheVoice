@@ -10,6 +10,14 @@ export function selectionDocument(doc: DesignDocument, ids: string[]): DesignDoc
   return { ...doc, nodes, name: `${doc.name} selection` };
 }
 
+/** Visible layers only — used when isolate is on. Same artboard. */
+export function isolateDocument(doc: DesignDocument): DesignDocument | null {
+  const ids = doc.nodes.filter((n) => n.visible).map((n) => n.id);
+  const slice = selectionDocument(doc, ids);
+  if (!slice) return null;
+  return { ...slice, name: `${doc.name} isolate` };
+}
+
 const CROP_PAD = 2;
 
 function shiftNode(n: DesignNode, dx: number, dy: number): DesignNode {
@@ -33,4 +41,12 @@ export function cropSelectionDocument(doc: DesignDocument, ids: string[]): Desig
     nodes: slice.nodes.map((n) => shiftNode(n, -ox, -oy)),
     guides: undefined,
   };
+}
+
+/** Isolate set on a tight artboard. */
+export function cropIsolateDocument(doc: DesignDocument): DesignDocument | null {
+  const ids = doc.nodes.filter((n) => n.visible).map((n) => n.id);
+  const cropped = cropSelectionDocument(doc, ids);
+  if (!cropped) return null;
+  return { ...cropped, name: `${doc.name} isolate crop` };
 }
