@@ -40,7 +40,8 @@ export type NodeKind =
   | "text"
   | "image"
   | "path"
-  | "paint";
+  | "paint"
+  | "group";
 
 export interface GradientFill {
   type: "linear";
@@ -84,6 +85,11 @@ export interface BaseNode {
   shadow: Shadow | null;
   linkId?: string;
   href?: string;
+  parentId?: string;
+}
+
+export interface GroupNode extends BaseNode {
+  kind: "group";
 }
 
 export interface TextNode extends BaseNode {
@@ -150,7 +156,7 @@ export interface ShapeNode extends BaseNode {
   headScale?: number;
 }
 
-export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | ShapeNode;
+export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | ShapeNode | GroupNode;
 
 export interface BleedEdges {
   top: number;
@@ -255,6 +261,10 @@ export function isPath(n: DesignNode): n is PathNode {
 
 export function isPaint(n: DesignNode): n is PaintNode {
   return n.kind === "paint";
+}
+
+export function isGroup(n: DesignNode): n is GroupNode {
+  return n.kind === "group";
 }
 
 export function isBitmap(n: DesignNode): n is ImageNode | PaintNode {
