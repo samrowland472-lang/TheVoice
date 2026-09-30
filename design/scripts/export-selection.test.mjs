@@ -18,3 +18,12 @@ test("export menu offers selection PNG and SVG", () => {
   assert.match(bar, /Selection PNG/);
   assert.match(bar, /Selection SVG/);
 });
+
+test("crop selection uses AABB and crop menu items", () => {
+  assert.match(exp, /export function cropSelectionDocument/);
+  assert.match(exp, /aabb\(slice\.nodes\)/);
+  assert.match(bar, /cropSelectionDocument/);
+  assert.match(bar, /crop-png/);
+  assert.match(bar, /Crop PNG/);
+  assert.match(bar, /Crop SVG/);
+});
