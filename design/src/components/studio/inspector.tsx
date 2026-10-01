@@ -122,10 +122,10 @@ export function Inspector() {
             {node.kind === "group" && (
               <p className="font-mono text-[10px] leading-snug text-ink-faint">
                 {!node.visible
-                  ? "Hidden groups hoist on export and do not paint a box. Opacity and blend still wrap that nest."
+                  ? "Hidden groups hoist on the board, PNG, and SVG and do not paint a box. Opacity and blend still wrap that nest."
                   : node.blend && node.blend !== "source-over"
-                    ? "SVG export isolates this group, then blends the nest as one unit against the artboard. Each layer still keeps its own opacity."
-                    : "SVG export puts this opacity on the group so nested layers inherit it. Each layer still keeps its own opacity."}
+                    ? "The board, PNG, and SVG isolate this group, then blend the nest as one unit against the artboard. Each layer still keeps its own opacity."
+                    : "The board, PNG, and SVG put this opacity on the group so nested layers inherit it. Each layer still keeps its own opacity."}
               </p>
             )}
             <div className="flex gap-1">

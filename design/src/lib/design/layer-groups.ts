@@ -147,9 +147,8 @@ export function applyGroupPatch(nodes: DesignNode[], ids: string[], patch: Parti
         next = next.map((n) => (kids.includes(n.id) ? { ...n, x: n.x + dx, y: n.y + dy } : n));
       }
     }
-    if ("visible" in patch) {
-      next = next.map((n) => (kids.includes(n.id) ? { ...n, visible: after.visible } : n));
-    }
+    // Hide does not cascade. A hidden group hoists: children keep their own
+    // visibility, the group box is not painted, and opacity/blend still wrap the nest.
     if ("locked" in patch) {
       next = next.map((n) => (kids.includes(n.id) ? { ...n, locked: after.locked } : n));
     }

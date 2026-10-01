@@ -23,7 +23,7 @@ function svgGroupExportNote(nodes: { kind: string; opacity: number; blend: strin
   const hoisted = groups.some(
     (n) => !n.visible && (n.opacity !== 1 || (n.blend && n.blend !== "source-over")),
   );
-  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}${isolated ? " · blend isolated" : ""}${hoisted ? " · hidden nest keeps opacity" : ""}`;
+  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}${isolated ? " · blend isolated" : ""}${hoisted ? " · hidden nest keeps opacity on PNG" : ""}`;
 }
 
 export function TopBar() {

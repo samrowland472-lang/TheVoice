@@ -5,7 +5,7 @@ import { tracePath } from "./path-curve";
 import { canvasShadowParams } from "./shadow";
 import { arrowPoints } from "./shape-to-path";
 import { layoutTextLines } from "./text-layout";
-import { isGradient, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type Shadow, type Viewport } from "./types";
+import { isGradient, isGroup, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type GroupNode, type Shadow, type Viewport } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -349,6 +349,82 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode) {
   ctx.restore();
 }
 
+/** Group opacity and a non-normal blend ride the nest on the canvas, matching SVG.
+ *  A non-normal blend isolates the nest (offscreen) so it composites as one unit.
+ *  Opacity under 1 multiplies the nest. A fully opaque normal blend paints straight through.
+ */
+export function paintGroupNest(ctx: CanvasRenderingContext2D, n: GroupNode, paint: (ctx: CanvasRenderingContext2D) => void) {
+  const fade = n.opacity !== 1 && !Number.isNaN(n.opacity);
+  const isolate = Boolean(n.blend && n.blend !== "source-over");
+  if (!fade && !isolate) {
+    paint(ctx);
+    return;
+  }
+  if (!isolate) {
+    ctx.save();
+    ctx.globalAlpha *= n.opacity;
+    paint(ctx);
+    ctx.restore();
+    return;
+  }
+  const src = ctx.canvas;
+  const off = document.createElement("canvas");
+  off.width = Math.max(1, src.width);
+  off.height = Math.max(1, src.height);
+  const octx = off.getContext("2d");
+  if (!octx) {
+    ctx.save();
+    ctx.globalAlpha *= n.opacity;
+    ctx.globalCompositeOperation = n.blend;
+    paint(ctx);
+    ctx.restore();
+    return;
+  }
+  octx.setTransform(ctx.getTransform());
+  paint(octx);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha *= n.opacity;
+  ctx.globalCompositeOperation = n.blend;
+  ctx.drawImage(off, 0, 0);
+  ctx.restore();
+}
+
+/** Hidden groups hoist: no group box. Opacity and blend still wrap visible children.
+ *  A fully opaque normal blend is a bare hoist.
+ */
+export function paintHiddenGroupHoist(ctx: CanvasRenderingContext2D, n: GroupNode, paint: (ctx: CanvasRenderingContext2D) => void) {
+  paintGroupNest(ctx, n, paint);
+}
+
+function paintForest(ctx: CanvasRenderingContext2D, nodes: DesignNode[]) {
+  const ids = new Set(nodes.map((n) => n.id));
+  const byParent = new Map<string | undefined, DesignNode[]>();
+  for (const n of nodes) {
+    const key = n.parentId && ids.has(n.parentId) ? n.parentId : undefined;
+    const list = byParent.get(key) ?? [];
+    list.push(n);
+    byParent.set(key, list);
+  }
+  const paintList = (parentId: string | undefined, target: CanvasRenderingContext2D) => {
+    const kids = byParent.get(parentId) ?? [];
+    for (const n of kids) {
+      if (isGroup(n)) {
+        const paintKids = (childCtx: CanvasRenderingContext2D) => paintList(n.id, childCtx);
+        if (!n.visible) {
+          paintHiddenGroupHoist(target, n, paintKids);
+          continue;
+        }
+        paintGroupNest(target, n, paintKids);
+        continue;
+      }
+      if (!n.visible) continue;
+      drawNode(target, n);
+    }
+  };
+  paintList(undefined, ctx);
+}
+
 export function drawDocument(ctx: CanvasRenderingContext2D, doc: DesignDocument, opts: DrawOpts = {}) {
   const dpr = opts.dpr ?? 1;
   const vp = opts.viewport ?? { zoom: 1, x: opts.ox ?? 0, y: opts.oy ?? 0 };
@@ -361,5 +437,5 @@ export function drawDocument(ctx: CanvasRenderingContext2D, doc: DesignDocument,
   ctx.scale(vp.zoom, vp.zoom);
   applyFill(ctx, doc.artboard.background, 0, 0, doc.artboard.width, doc.artboard.height);
   ctx.fillRect(0, 0, doc.artboard.width, doc.artboard.height);
-  for (const n of doc.nodes) drawNode(ctx, n);
+  paintForest(ctx, doc.nodes);
 }

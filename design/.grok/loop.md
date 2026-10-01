@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-01 22:05 BST — Hidden group opacity rides the canvas and PNG. A hidden group still paints no box; its visible children stay on the board and inherit the group's opacity. A non-normal blend isolates that nest offscreen, then composites it as one unit, same as SVG. Hide no longer forces children off, so the hoist is what you see.
+
 2026-10-01 21:05 BST — Hidden groups still hoist (no group box) but opacity and blend ride the nest. A hidden group with opacity under 1 or a non-normal blend wraps its visible children in a `data-hoist` group that carries opacity and `isolation:isolate`. A fully opaque normal blend stays a bare hoist. The inspector says so on a hidden group, and the export note adds "hidden nest keeps opacity".
 
 2026-10-01 17:05 BST — Group blend isolates the nest. A group's non-normal blend writes `isolation:isolate` on the wrapping `<g>` with the blend, so the nest flattens first and composites as one unit against the artboard. Opacity still rides the group. The inspector says so when the blend is not normal, and the export note adds "blend isolated".
@@ -16,7 +18,7 @@
 
 ## Next recommended
 
-Raster PNG still skips a hidden group's opacity, so a faded hidden group only shows in SVG. Apply the same hoist opacity on the canvas raster path.
+Group rotate on the board still moves children, but PNG/SVG export does not bake a group's rotation onto the nest. Bake group rotation into the raster walk and the SVG group transform.
 
 ## Done
 
@@ -39,7 +41,8 @@ Raster PNG still skips a hidden group's opacity, so a faded hidden group only sh
 - Group opacity and blend ride the SVG `<g>`; text and path keep their own opacity
 - Group blend isolates the nest (`isolation:isolate`) so the blend composites the group as one unit
 - Hidden groups hoist without a box; opacity and blend still wrap that nest
+- Raster PNG and the board apply the same hidden-group opacity and isolated blend
 
 ## Backlog
 
-- Raster PNG still skips a hidden group's opacity (SVG hoist now keeps it)
+- Group rotation is live on the board but not baked into PNG/SVG export

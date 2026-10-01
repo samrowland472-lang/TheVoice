@@ -34,11 +34,12 @@ test("layerRows walks groups as indented children", () => {
   assert.match(groups, /depth \+ 1/);
 });
 
-test("moving or hiding a group cascades to descendants", () => {
+test("moving a group cascades to descendants; hide hoists without forcing children off", () => {
   assert.match(groups, /export function applyGroupPatch/);
   assert.match(groups, /descendantIds/);
   assert.match(groups, /n\.x \+ dx/);
-  assert.match(groups, /visible: after\.visible/);
+  assert.match(groups, /Hide does not cascade/);
+  assert.doesNotMatch(groups, /visible: after\.visible/);
 });
 
 test("store exposes group and ungroup", () => {
