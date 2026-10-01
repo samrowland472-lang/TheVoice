@@ -47,6 +47,18 @@ export function rotateHandlePoint(box: Box, zoom: number) {
   return { x: box.x + box.w / 2, y: box.y - 28 / Math.max(zoom, 0.01) };
 }
 
+/** Screen-space chip just above a group AABB so the name can be edited on the board. */
+export function selectionLabelScreen(
+  box: Box,
+  viewport: { x: number; y: number; zoom: number },
+): { left: number; top: number } {
+  const z = Math.max(viewport.zoom, 0.01);
+  return {
+    left: viewport.x + box.x * z,
+    top: viewport.y + box.y * z - 26,
+  };
+}
+
 export function hitRotateHandle(box: Box, x: number, y: number, zoom: number): boolean {
   const p = rotateHandlePoint(box, zoom);
   const r = 12 / Math.max(zoom, 0.01);
