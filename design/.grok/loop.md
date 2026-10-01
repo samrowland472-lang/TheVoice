@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-01 17:05 BST — Group blend isolates the nest. A group's non-normal blend writes `isolation:isolate` on the wrapping `<g>` with the blend, so the nest flattens first and composites as one unit against the artboard. Opacity still rides the group. The inspector says so when the blend is not normal, and the export note adds "blend isolated".
+
 2026-10-01 15:05 BST — Group opacity rides the SVG group. A group's opacity and blend sit on the wrapping `<g>`, so nested layers inherit them on export. Text, path, and shape layers still write their own opacity, wrapped or not. The inspector says so on a group, and the export note adds "opacity rides the group" when a group is not fully opaque or uses a blend.
 
 2026-10-01 14:05 BST — SVG group wrappers. Export SVG nests each group in a `<g>` with its name, and nests groups inside groups. Children keep artboard coordinates. A hidden group does not paint a box; its visible layers still export. The export note counts wrapped groups.
@@ -12,7 +14,7 @@
 
 ## Next recommended
 
-Group isolation on export: a group's blend should composite the nest as one unit against the artboard, not against siblings inside the group.
+Hidden groups still hoist children, so a hidden group's opacity and blend do not ride the export. Keep the hoist (no box) but apply the group's opacity and isolation to the hoisted nest.
 
 ## Done
 
@@ -33,8 +35,8 @@ Group isolation on export: a group's blend should composite the nest as one unit
 - Pasteboard fills the stage (canvas hit target)
 - Export SVG wraps groups in `<g>` tags (nested, named, no group rect)
 - Group opacity and blend ride the SVG `<g>`; text and path keep their own opacity
+- Group blend isolates the nest (`isolation:isolate`) so the blend composites the group as one unit
 
 ## Backlog
 
-- Group isolation on export so a group's blend composites the nest as one unit against the artboard
-- Hidden groups still hoist children, so a hidden group's opacity does not ride the export
+- Hidden groups still hoist children, so a hidden group's opacity and blend do not ride the export

@@ -56,6 +56,14 @@ function blendAttr(n: DesignNode): string {
   return ` style="mix-blend-mode:${blend}"`;
 }
 
+/** Non-normal group blend. Isolation flattens the nest before the blend hits the artboard. */
+export function svgGroupBlendStyle(n: { blend: string }): string {
+  const blend = n.blend;
+  if (!blend || blend === "source-over") return "";
+  if (!SVG_BLENDS.split(",").includes(blend)) return "";
+  return ` style="isolation:isolate;mix-blend-mode:${blend}" data-isolate="1"`;
+}
+
 /** Own opacity. A wrapping group multiplies this via the parent <g>, it does not replace it. */
 export function svgOpacityAttr(n: { opacity: number }): string {
   if (n.opacity === 1 || Number.isNaN(n.opacity)) return "";
@@ -293,10 +301,12 @@ function svgGroupId(id: string, prefix = "") {
 }
 
 /** Logical group wrapper. Children keep artboard coordinates, so the group does not add a transform.
- *  Opacity and blend sit on this <g> and composite the nest. Leaves still write their own opacity.
+ *  Opacity sits on this <g>. A non-normal blend also isolates the nest so the group composites
+ *  as one unit against the artboard, not child-by-child against siblings inside the group.
+ *  Leaves still write their own opacity.
  */
 export function svgGroupOpen(n: GroupNode, prefix = ""): string {
-  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${svgOpacityAttr(n)}${blendAttr(n)}>`;
+  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${svgOpacityAttr(n)}${svgGroupBlendStyle(n)}>`;
 }
 
 export function exportSvgBody(doc: DesignDocument, prefix = ""): string {

@@ -18,8 +18,9 @@ import { Button } from "@/components/ui/button";
 function svgGroupExportNote(nodes: { kind: string; opacity: number; blend: string; visible: boolean }[]) {
   const groups = nodes.filter((n) => n.kind === "group");
   if (!groups.length) return "";
-  const rides = groups.some((n) => n.visible && (n.opacity !== 1 || (n.blend && n.blend !== "source-over")));
-  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}`;
+  const rides = groups.some((n) => n.visible && n.opacity !== 1);
+  const isolated = groups.some((n) => n.visible && n.blend && n.blend !== "source-over");
+  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}${isolated ? " · blend isolated" : ""}`;
 }
 
 export function TopBar() {

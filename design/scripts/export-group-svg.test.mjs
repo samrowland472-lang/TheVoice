@@ -27,7 +27,7 @@ test("export toast names wrapped groups", () => {
 test("group opacity and blend ride the wrapping g", () => {
   assert.match(exp, /export function svgOpacityAttr/);
   assert.match(exp, /\$\{svgOpacityAttr\(n\)\}\$\{blendAttr\(n\)\}/);
-  assert.match(exp, /Opacity and blend sit on this <g>/);
+  assert.match(exp, /Opacity sits on this <g>/);
   assert.match(top, /opacity rides the group/);
   assert.match(top, /svgGroupExportNote/);
 });
@@ -37,4 +37,16 @@ test("text and path layers keep their own opacity outside a group wrap", () => {
   assert.match(exp, /\$\{svgOpacityAttr\(n\)\}/);
   const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
   assert.match(inspector, /Each layer still keeps its own opacity/);
+});
+
+test("group blend isolates the nest before compositing against the artboard", () => {
+  assert.match(exp, /export function svgGroupBlendStyle/);
+  assert.match(exp, /isolation:isolate;mix-blend-mode:/);
+  assert.match(exp, /data-isolate="1"/);
+  assert.match(exp, /\$\{svgOpacityAttr\(n\)\}\$\{svgGroupBlendStyle\(n\)\}/);
+  assert.doesNotMatch(exp, /svgGroupOpen[\s\S]{0,220}\$\{blendAttr\(n\)\}/);
+  assert.match(top, /blend isolated/);
+  const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
+  assert.match(inspector, /isolates this group/);
+  assert.match(inspector, /one unit against the artboard/);
 });

@@ -121,7 +121,9 @@ export function Inspector() {
             </Field>
             {node.kind === "group" && (
               <p className="font-mono text-[10px] leading-snug text-ink-faint">
-                SVG export puts this opacity and blend on the group so nested layers inherit them. Each layer still keeps its own opacity.
+                {node.blend && node.blend !== "source-over"
+                  ? "SVG export isolates this group, then blends the nest as one unit against the artboard. Each layer still keeps its own opacity."
+                  : "SVG export puts this opacity on the group so nested layers inherit it. Each layer still keeps its own opacity."}
               </p>
             )}
             <div className="flex gap-1">
