@@ -1,7 +1,11 @@
 import { useRef, useState } from "react";
-import { Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
+import { flattenLayers, type LayerDrop } from "@/lib/design/groups";
+import { isGroup } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
+
+type DropHint = LayerDrop;
 
 export function LayersPanel() {
   const doc = useDesign((s) => s.doc);
@@ -11,11 +15,13 @@ export function LayersPanel() {
   const toggleIsolate = useDesign((s) => s.toggleIsolate);
   const isolateSnapshot = useDesign((s) => s.isolateSnapshot);
   const reorder = useDesign((s) => s.reorder);
-  const reorderInsert = useDesign((s) => s.reorderInsert);
+  const dropLayers = useDesign((s) => s.dropLayers);
+  const groupSelection = useDesign((s) => s.groupSelection);
+  const ungroupSelection = useDesign((s) => s.ungroupSelection);
   const listRef = useRef<HTMLUListElement>(null);
   const dragIdsRef = useRef<string[] | null>(null);
   const [dragIds, setDragIds] = useState<string[] | null>(null);
-  const [dropAt, setDropAt] = useState<number | null>(null);
+  const [dropHint, setDropHint] = useState<DropHint | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [query, setQuery] = useState("");
@@ -23,24 +29,39 @@ export function LayersPanel() {
   if (!doc) return null;
   const needle = query.trim().toLowerCase();
   const filtering = needle.length > 0;
-  const layers = [...doc.nodes].reverse().filter((n) => {
-    if (!filtering) return true;
-    const name = (n.name || "").toLowerCase();
-    const kind = (n.kind || "").toLowerCase();
-    return name.includes(needle) || kind.includes(needle);
-  });
+  const tree = flattenLayers(doc.nodes);
+  const layers = filtering
+    ? [...doc.nodes]
+        .reverse()
+        .filter((n) => {
+          const name = (n.name || "").toLowerCase();
+          const kind = (n.kind || "").toLowerCase();
+          return name.includes(needle) || kind.includes(needle);
+        })
+        .map((node) => ({ node, depth: 0 }))
+    : tree;
   const draggingSet = dragIds ? new Set(dragIds) : null;
+  const canGroup = selection.length >= 2;
 
-  const indexFromY = (clientY: number) => {
+  const hintFromY = (clientY: number): DropHint | null => {
     const items = listRef.current?.querySelectorAll<HTMLElement>("[data-layer-id]");
-    if (!items?.length) return 0;
+    if (!items?.length) return null;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       if (!item) continue;
       const r = item.getBoundingClientRect();
-      if (clientY < r.top + r.height / 2) return i;
+      const id = item.dataset.layerId;
+      if (!id) continue;
+      if (clientY < r.top) return { mode: "before", anchorId: id };
+      if (clientY <= r.bottom) {
+        const y = (clientY - r.top) / Math.max(1, r.height);
+        if (item.dataset.layerKind === "group" && y > 0.28 && y < 0.72) return { mode: "into", groupId: id };
+        return y < 0.5 ? { mode: "before", anchorId: id } : { mode: "after", anchorId: id };
+      }
     }
-    return items.length;
+    const last = items[items.length - 1];
+    const id = last?.dataset.layerId;
+    return id ? { mode: "after", anchorId: id } : null;
   };
 
   const autoScroll = (clientY: number) => {
@@ -55,10 +76,11 @@ export function LayersPanel() {
 
   const finish = (clientY: number) => {
     const ids = dragIdsRef.current;
-    if (ids?.length) reorderInsert(ids, indexFromY(clientY));
+    const hint = hintFromY(clientY);
+    if (ids?.length && hint) dropLayers(ids, hint);
     dragIdsRef.current = null;
     setDragIds(null);
-    setDropAt(null);
+    setDropHint(null);
   };
 
   return (
@@ -86,6 +108,23 @@ export function LayersPanel() {
             </button>
           )}
         </label>
+        <div className="mt-1.5 flex gap-1">
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!canGroup}
+            onClick={() => groupSelection()}
+          >
+            Group
+          </button>
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink"
+            onClick={() => ungroupSelection()}
+          >
+            Ungroup
+          </button>
+        </div>
         {isolateSnapshot ? (
           <button
             type="button"
@@ -102,21 +141,26 @@ export function LayersPanel() {
         )}
       </div>
       <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
-        {layers.map((n, i) => {
+        {layers.map(({ node: n, depth }) => {
           const active = selection.includes(n.id);
           const isKey = selection.length >= 2 && selection[selection.length - 1] === n.id;
           const dragging = draggingSet?.has(n.id) ?? false;
+          const into = dropHint?.mode === "into" && dropHint.groupId === n.id;
+          const before = dropHint?.mode === "before" && dropHint.anchorId === n.id;
+          const after = dropHint?.mode === "after" && dropHint.anchorId === n.id;
+          const group = isGroup(n);
           return (
-            <li key={n.id} data-layer-id={n.id} className="relative">
-              {dropAt === i && (
-                <span className="pointer-events-none absolute inset-x-1 -top-px z-10 h-0.5 rounded-full bg-phosphor" />
-              )}
+            <li key={n.id} data-layer-id={n.id} data-layer-kind={n.kind} className="relative">
+              {before && <span className="pointer-events-none absolute inset-x-1 -top-px z-10 h-0.5 rounded-full bg-phosphor" />}
+              {after && <span className="pointer-events-none absolute inset-x-1 -bottom-px z-10 h-0.5 rounded-full bg-phosphor" />}
               <div
                 className={cn(
                   "flex h-9 items-center gap-0.5 rounded-[8px] px-0.5 text-xs",
                   active ? "bg-phosphor/10 text-ink" : "text-ink-dim hover:bg-surface-alt",
                   dragging && "opacity-40",
+                  into && "ring-1 ring-phosphor",
                 )}
+                style={{ paddingLeft: depth * 12 }}
               >
                 <span
                   className={cn(
@@ -128,16 +172,16 @@ export function LayersPanel() {
                     if (e.button !== 0 || filtering) return;
                     e.currentTarget.setPointerCapture(e.pointerId);
                     const sel = useDesign.getState().selection;
-                    const group = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
-                    dragIdsRef.current = group;
-                    setDragIds(group);
-                    setDropAt(i);
+                    const groupIds = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
+                    dragIdsRef.current = groupIds;
+                    setDragIds(groupIds);
+                    setDropHint({ mode: "before", anchorId: n.id });
                     if (!sel.includes(n.id)) select([n.id]);
                   }}
                   onPointerMove={(e) => {
                     if (!dragIdsRef.current) return;
                     autoScroll(e.clientY);
-                    setDropAt(indexFromY(e.clientY));
+                    setDropHint(hintFromY(e.clientY));
                   }}
                   onPointerUp={(e) => {
                     if (!dragIdsRef.current) return;
@@ -146,11 +190,21 @@ export function LayersPanel() {
                   onPointerCancel={() => {
                     dragIdsRef.current = null;
                     setDragIds(null);
-                    setDropAt(null);
+                    setDropHint(null);
                   }}
                 >
                   <GripVertical className="size-3.5" />
                 </span>
+                {group ? (
+                  <button
+                    type="button"
+                    className="grid size-6 shrink-0 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
+                    aria-label={n.collapsed ? "Expand group" : "Collapse group"}
+                    onClick={() => updateNodes([n.id], { collapsed: !n.collapsed }, true)}
+                  >
+                    <ChevronRight className={cn("size-3.5 transition-transform", !n.collapsed && "rotate-90")} />
+                  </button>
+                ) : null}
                 {editingId === n.id ? (
                   <input
                     className="field mx-1 h-7 min-w-0 flex-1 px-1.5 font-sans text-xs"
@@ -195,6 +249,9 @@ export function LayersPanel() {
                         Key
                       </span>
                     )}
+                    {into && (
+                      <span className="ml-1.5 font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">Into</span>
+                    )}
                   </button>
                 )}
                 <button
@@ -224,29 +281,24 @@ export function LayersPanel() {
                 </button>
                 <button
                   type="button"
-                  className="size-7 font-mono text-[10px] hover:text-ink"
+                  className="grid size-7 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
                   onClick={() => reorder(n.id, "up")}
                   aria-label="Bring forward"
                 >
-                  ↑
+                  <ChevronUp className="size-3.5" />
                 </button>
                 <button
                   type="button"
-                  className="size-7 font-mono text-[10px] hover:text-ink"
+                  className="grid size-7 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
                   onClick={() => reorder(n.id, "down")}
                   aria-label="Send back"
                 >
-                  ↓
+                  <ChevronDown className="size-3.5" />
                 </button>
               </div>
             </li>
           );
         })}
-        {dropAt === layers.length && layers.length > 0 && (
-          <li className="relative h-2">
-            <span className="pointer-events-none absolute inset-x-1 top-0 h-0.5 rounded-full bg-phosphor" />
-          </li>
-        )}
         {layers.length === 0 && (
           <li className="px-2 py-6 text-center text-xs text-ink-faint">
             {filtering ? "No layers match" : "Empty artboard"}

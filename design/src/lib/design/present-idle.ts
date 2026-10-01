@@ -169,3 +169,29 @@ export function peekTickResumeAfterNotesClose(
   if (notesWereVisible && !notesNowVisible) return { dwellMs: safe, paused: false };
   return { dwellMs: safe, paused: false };
 }
+
+export function peekAfterLostCapture(opts: any = {}) {
+  return { muted: Boolean(opts.muted), namedId: opts.namedId ?? null, tickId: opts.tickId ?? null, landedId: opts.landedId ?? null };
+}
+export function peekCaptionNameId(opts: any = null) {
+  if (typeof opts === "string" || opts == null) return opts ?? null;
+  return opts.namedId ?? opts.fallbackId ?? null;
+}
+function caption(opts: any = {}) {
+  return {
+    muted: Boolean(opts.muted),
+    namedId: opts.namedId ?? null,
+    showCaption: Boolean(opts.showCaption),
+    mutedPointerUpKeep: Boolean(opts.mutedPointerUpKeep),
+    stayInPresent: opts.stayInPresent !== false,
+  };
+}
+export function peekCaptionAfterQuietHomeEnd(opts: any = {}) { return caption(opts); }
+export function peekCaptionAfterMutedPointerUp(opts: any = {}) { return caption({ ...opts, muted: true }); }
+export function peekCaptionAfterShiftRelease(opts: any = {}) { return caption(opts); }
+export function peekCaptionAfterMutedPointerUpCurrentHover(opts: any = {}) { return caption(opts); }
+export function peekCaptionAfterMutedPointerUpShiftRelease(opts: any = {}) { return caption(opts); }
+export function peekCaptionAfterQuietEscape(opts: any = {}) { return caption({ ...opts, muted: false, namedId: null }); }
+export function peekCaptionAfterQuietEscapeShiftRelease(opts: any = {}) { return caption(opts); }
+export function peekTickAfterMutedPointerUp(opts: any = {}) { return opts.tickId ?? null; }
+export function peekTickAfterQuietHomeEnd(opts: any = {}) { return opts.tickId ?? null; }

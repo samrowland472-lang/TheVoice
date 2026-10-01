@@ -16,6 +16,7 @@ import {
 } from "./persist";
 import { blankDocument, instantiateTemplate } from "./templates";
 import { expandMovePlaces } from "./group-transform";
+import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
 
@@ -248,6 +249,44 @@ export const useDesign = create<any>((set: any, get: any) => ({
       isolateSnapshot: next.isolateSnapshot,
       dirty: true,
     });
+  },
+  groupSelection: () => {
+    const { doc, selection } = get();
+    if (!doc) return;
+    const made = makeGroup(doc.nodes, selection);
+    if (!made) return;
+    get().commit();
+    set({ doc: { ...doc, nodes: made.nodes }, selection: [made.groupId], dirty: true });
+  },
+  ungroupSelection: () => {
+    const { doc, selection } = get();
+    if (!doc) return;
+    const groups = selection.filter((id) => doc.nodes.some((n) => n.id === id && n.kind === "group"));
+    if (!groups.length) return;
+    const kids = doc.nodes.filter((n) => n.parentId && groups.includes(n.parentId)).map((n) => n.id);
+    const next = ungroup(doc.nodes, groups);
+    get().commit();
+    set({
+      doc: { ...doc, nodes: next },
+      selection: kids.length ? kids : selection.filter((id) => !groups.includes(id)),
+      dirty: true,
+    });
+  },
+  dropLayers: (ids: string[], drop: LayerDrop) => {
+    const { doc } = get();
+    if (!doc || !ids.length) return;
+    const next = applyLayerDrop(doc.nodes, ids, drop);
+    if (!next) return;
+    get().commit();
+    set({ doc: { ...doc, nodes: next }, dirty: true });
+  },
+  reorder: (id: string, dir: "up" | "down") => {
+    const { doc } = get();
+    if (!doc) return;
+    const next = nudgeLayer(doc.nodes, id, dir);
+    if (!next) return;
+    get().commit();
+    set({ doc: { ...doc, nodes: next }, dirty: true });
   },
   updateNodes: (ids, patch, commit = false) => {
     const { doc } = get();

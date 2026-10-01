@@ -2,11 +2,11 @@
 
 ## Iteration
 
-2026-10-01 05:10 BST — Multi-select rotate around the shared AABB centre. The cyan stem above the selection box turns the whole pick as one: each layer keeps its own rotation and orbits the shared midpoint. Shift snaps to 15°. Groups still rotate as a nest.
+2026-10-01 11:20 BST — Layers drag-drop keeps parentId. Drop the grip on the middle of a group to nest (phosphor ring, Into). Drop on the edge to sit beside that row and inherit its parent. A group cannot be dropped into itself. Group / Ungroup sit under the filter; the list indents and collapses.
 
 ## Next recommended
 
-Layers drag-drop that keeps parentId when dropping onto a group.
+Marquee-select that includes a group's children when the group box is hit, without selecting locked layers.
 
 ## Done
 
@@ -20,7 +20,10 @@ Layers drag-drop that keeps parentId when dropping onto a group.
 - Group rotate handle (one angle for the nest)
 - Layers tree indent + collapse twist + Group/Ungroup chrome
 - Multi-select rotate around shared centre
+- Layers drag-drop that keeps parentId when dropping onto a group
 
 ## Backlog
 
-- Layers drag-drop that keeps parentId when dropping onto a group
+- Marquee-select that includes a group's children when the group box is hit, without selecting locked layers
+- Rename a group from the canvas selection label
+- Export SVG that wraps groups in `<g>` tags

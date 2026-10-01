@@ -78,6 +78,11 @@ export function makeGroup(nodes: DesignNode[], memberIds: string[]): { nodes: De
     fill: "transparent",
     stroke: "transparent",
     strokeWidth: 0,
+    strokeDash: 0,
+    strokeDashOffset: 0,
+    lineCap: "round",
+    lineJoin: "round",
+    miterLimit: 4,
     radius: 0,
     shadow: null,
     parentId,
@@ -103,4 +108,91 @@ export function ungroup(nodes: DesignNode[], groupIds: string[]): DesignNode[] {
       }
       return n;
     });
+}
+
+export type LayerDrop =
+  | { mode: "into"; groupId: string }
+  | { mode: "before" | "after"; anchorId: string };
+
+function ancestorIds(nodes: DesignNode[], id: string): string[] {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const out: string[] = [];
+  const seen = new Set<string>();
+  let cur = byId.get(id);
+  while (cur?.parentId && !seen.has(cur.parentId)) {
+    seen.add(cur.parentId);
+    out.push(cur.parentId);
+    cur = byId.get(cur.parentId);
+  }
+  return out;
+}
+
+function movingRoots(nodes: DesignNode[], ids: string[]): DesignNode[] {
+  const idset = new Set(ids);
+  return nodes.filter((n) => idset.has(n.id) && !ancestorIds(nodes, n.id).some((a) => idset.has(a)));
+}
+
+function subtreeEnd(nodes: DesignNode[], id: string): number {
+  const desc = new Set(descendantsOf(nodes, id).map((n) => n.id));
+  let end = nodes.findIndex((n) => n.id === id);
+  nodes.forEach((n, i) => {
+    if (desc.has(n.id) && i > end) end = i;
+  });
+  return end;
+}
+
+/** Move layer roots in the list. Into a group sets parentId. Sibling drops keep the anchor parent. */
+export function applyLayerDrop(nodes: DesignNode[], ids: string[], drop: LayerDrop): DesignNode[] | null {
+  const moving = movingRoots(nodes, ids);
+  if (!moving.length) return null;
+  const movingIds = new Set(moving.map((n) => n.id));
+  if (drop.mode === "into" && movingIds.has(drop.groupId)) return null;
+  if (drop.mode !== "into" && movingIds.has(drop.anchorId)) return null;
+
+  let parentId: string | undefined;
+  if (drop.mode === "into") {
+    const group = nodes.find((n) => n.id === drop.groupId);
+    if (!group || !isGroup(group)) return null;
+    if (moving.some((m) => ancestorIds(nodes, group.id).includes(m.id))) return null;
+    parentId = group.id;
+  } else {
+    const anchor = nodes.find((n) => n.id === drop.anchorId);
+    if (!anchor) return null;
+    if (moving.some((m) => ancestorIds(nodes, anchor.id).includes(m.id))) return null;
+    parentId = anchor.parentId;
+  }
+
+  const rest = nodes.filter((n) => !movingIds.has(n.id));
+  const patched = moving.map((n) => ({ ...n, parentId }));
+  let index = rest.length;
+  if (drop.mode === "into") {
+    index = subtreeEnd(rest, drop.groupId) + 1;
+  } else {
+    const anchorAt = rest.findIndex((n) => n.id === drop.anchorId);
+    if (anchorAt < 0) return null;
+    index = drop.mode === "before" ? subtreeEnd(rest, drop.anchorId) + 1 : anchorAt;
+  }
+  if (index < 0) index = 0;
+  if (index > rest.length) index = rest.length;
+  const next = rest.slice();
+  next.splice(index, 0, ...patched);
+  return next;
+}
+
+/** Visual up is in front (later in the node array) among siblings. */
+export function nudgeLayer(nodes: DesignNode[], id: string, dir: "up" | "down"): DesignNode[] | null {
+  const node = nodes.find((n) => n.id === id);
+  if (!node) return null;
+  const siblings = nodes.filter((n) => n.parentId === node.parentId);
+  const idx = siblings.findIndex((n) => n.id === id);
+  const other = dir === "up" ? siblings[idx + 1] : siblings[idx - 1];
+  if (!other) return null;
+  const a = nodes.findIndex((n) => n.id === id);
+  const b = nodes.findIndex((n) => n.id === other.id);
+  if (a < 0 || b < 0) return null;
+  const next = nodes.slice();
+  const tmp = next[a]!;
+  next[a] = next[b]!;
+  next[b] = tmp;
+  return next;
 }

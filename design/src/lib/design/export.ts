@@ -304,8 +304,19 @@ export function downloadSvg(doc: DesignDocument) {
 
 function esc(s: string) {
   return s
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """);
+    .replace(/&/g, "&" + "amp;")
+    .replace(/</g, "&" + "lt;")
+    .replace(/>/g, "&" + "gt;")
+    .replace(/"/g, "&" + "quot;");
+}
+
+export function pdfTypePageCount(bytes: Uint8Array): number {
+  const text = new TextDecoder("latin1").decode(bytes);
+  return (text.match(/\/Type\s*\/Page(?!s)/g) || []).length;
+}
+
+export function pdfPagesCountField(bytes: Uint8Array): number {
+  const text = new TextDecoder("latin1").decode(bytes);
+  const match = text.match(/\/Count\s+(\d+)/);
+  return match ? Number(match[1]) : 0;
 }

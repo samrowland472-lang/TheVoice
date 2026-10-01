@@ -71,7 +71,7 @@ export function campaignPdfPageCount(docs: DesignDocument[]): number {
 }
 
 /** One PDF page per board. JPEG /Filter /DCTDecode, same order as Campaign SVG. */
-export function exportCampaignPdf(docs: DesignDocument[]): Uint8Array {
+export function exportCampaignPdf(docs: DesignDocument[], _scale = 1): Uint8Array {
   const pages = campaignPdfPages(docs);
   return buildJpegPdf(pages, docs[0]?.name ?? "Campaign");
 }
@@ -132,4 +132,8 @@ export function installCampaignPdfSmokeHook() {
     probeRaster: probeRasterCampaignPdf,
     threeBoard: threeBoardCampaignFixture,
   };
+}
+
+export function countPdfTypePageObjects(bytes: Uint8Array): number {
+  return pdfTypePageCount(bytes);
 }
