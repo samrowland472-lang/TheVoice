@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
+import { hitResizeHandle, mapNodeToBox, resizeBox, type Box, type ResizeHandle } from "@/lib/design/box-resize";
 import { aabb } from "@/lib/design/geometry";
+import {
+  drawTransformHandles,
+  hitRotateHandle,
+  rotateGroupNodes,
+  rotateSelectionNodes,
+  scaleGroupNodes,
+  selectionTransformBox,
+} from "@/lib/design/group-transform";
 import { hitTop } from "@/lib/design/hit";
 import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit } from "@/lib/design/path-actions";
 import { knifePreviewLobe, knifeStrokePreview } from "@/lib/design/path-cut";
@@ -10,7 +19,9 @@ import { tracePath } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
 import { useDesign } from "@/lib/design/store";
-import { isPath } from "@/lib/design/types";
+import { isGroup, isPath } from "@/lib/design/types";
+import type { DesignNode } from "@/lib/design/types";
+import { GroupNameChip } from "./group-name-chip";
 import type { PathEditHit } from "@/lib/design/path-edit";
 
 export function CanvasStage() {
@@ -42,6 +53,24 @@ export function CanvasStage() {
     sy: number;
     orig: { id: string; x: number; y: number }[];
   } | null>(null);
+  const xformRef = useRef<
+    | {
+        kind: "rotate";
+        cx: number;
+        cy: number;
+        origin: number;
+        nodes: DesignNode[];
+        groupId?: string;
+      }
+    | {
+        kind: "resize";
+        handle: ResizeHandle;
+        box: Box;
+        nodes: DesignNode[];
+        groupId?: string;
+      }
+    | null
+  >(null);
   const guidesRef = useRef<GuideSet>({ x: [], y: [], spaces: [] });
   const [hoverTick, setHoverTick] = useState(0);
   const doc = useDesign((s) => s.doc);
@@ -283,6 +312,10 @@ export function CanvasStage() {
         ctx.stroke();
         ctx.setLineDash([]);
       }
+      if (selection.length && !mq) {
+        const box = selectionTransformBox(doc.nodes, selection);
+        if (box && box.w > 0 && box.h > 0) drawTransformHandles(ctx, box, viewport.zoom);
+      }
     }
     ctx.restore();
   }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick]);
@@ -362,6 +395,40 @@ export function CanvasStage() {
       return;
     }
     if (s.tool !== "select") return;
+    if (s.doc && s.selection.length) {
+      const box = selectionTransformBox(s.doc.nodes, s.selection);
+      if (box) {
+        const only = s.selection.length === 1 ? s.doc.nodes.find((n) => n.id === s.selection[0]) : undefined;
+        const groupId = only && isGroup(only) ? only.id : undefined;
+        if (hitRotateHandle(box, d.x, d.y, s.viewport.zoom)) {
+          e.preventDefault();
+          e.currentTarget.setPointerCapture(e.pointerId);
+          s.commit();
+          const cx = box.x + box.w / 2;
+          const cy = box.y + box.h / 2;
+          const nodes = groupId
+            ? s.doc.nodes.map((n) => (n.id === groupId ? { ...n, x: box.x, y: box.y, w: box.w, h: box.h } : n))
+            : s.doc.nodes;
+          xformRef.current = {
+            kind: "rotate",
+            cx,
+            cy,
+            origin: (Math.atan2(d.y - cy, d.x - cx) * 180) / Math.PI,
+            nodes,
+            groupId,
+          };
+          return;
+        }
+        const handle = hitResizeHandle(box, d.x, d.y, s.viewport.zoom);
+        if (handle) {
+          e.preventDefault();
+          e.currentTarget.setPointerCapture(e.pointerId);
+          s.commit();
+          xformRef.current = { kind: "resize", handle, box, nodes: s.doc.nodes, groupId };
+          return;
+        }
+      }
+    }
     const selected = s.selection[0] ? s.doc?.nodes.find((n) => n.id === s.selection[0]) : null;
     if (selected && isPath(selected) && s.selection.length === 1) {
       const hit = hitPathNode(selected, d.x, d.y, s.viewport.zoom);
@@ -429,6 +496,25 @@ export function CanvasStage() {
       mq.y = Math.min(mq.sy, d.y);
       mq.w = Math.abs(d.x - mq.sx);
       mq.h = Math.abs(d.y - mq.sy);
+      setHoverTick((n) => n + 1);
+      return;
+    }
+    const xform = xformRef.current;
+    if (xform && s.doc) {
+      if (xform.kind === "rotate") {
+        let delta = (Math.atan2(d.y - xform.cy, d.x - xform.cx) * 180) / Math.PI - xform.origin;
+        if (e.shiftKey) delta = Math.round(delta / 15) * 15;
+        const next = xform.groupId
+          ? rotateGroupNodes(xform.nodes, xform.groupId, delta)
+          : rotateSelectionNodes(xform.nodes, s.selection, delta);
+        useDesign.setState({ doc: { ...s.doc, nodes: next }, dirty: true });
+      } else {
+        const to = resizeBox(xform.box, xform.handle, d.x, d.y, e.shiftKey);
+        const next = xform.groupId
+          ? scaleGroupNodes(xform.nodes, xform.groupId, to)
+          : xform.nodes.map((n) => (s.selection.includes(n.id) ? mapNodeToBox(n, xform.box, to) : n));
+        useDesign.setState({ doc: { ...s.doc, nodes: next }, dirty: true });
+      }
       setHoverTick((n) => n + 1);
       return;
     }
@@ -509,6 +595,16 @@ export function CanvasStage() {
       }
       return;
     }
+    if (xformRef.current) {
+      xformRef.current = null;
+      setHoverTick((n) => n + 1);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+      return;
+    }
     if (moveRef.current) {
       moveRef.current = null;
       guidesRef.current = { x: [], y: [], spaces: [] };
@@ -577,6 +673,7 @@ export function CanvasStage() {
       onPointerCancel={onPointerUp}
     >
       <canvas ref={mainRef} className="absolute inset-0" />
+      <GroupNameChip />
       {tool === "pen" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
           Click add · drag cubic · pull last handle to first to preview close · Alt break · ⌫ last · Enter close · Esc finish
@@ -584,7 +681,7 @@ export function CanvasStage() {
       )}
       {tool === "select" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag empty board to marquee · Shift add · click empty clears
+          Drag the ring to turn a group · Shift snaps 15° · corner handles scale the nest
         </div>
       )}
       {tool === "knife" && !present && (

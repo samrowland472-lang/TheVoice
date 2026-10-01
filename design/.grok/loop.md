@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 00:10 BST — Board rotate handle. Selecting a group draws one box with a ring above the nest. Dragging the ring adds only to the group's angle (Shift snaps to 15°), so the nest turns about the group centre on the board the same way PNG and SVG already do. Corner handles scale that nest. A selection that is not a group uses the same handles around the shared box. The group name chip is back on the board.
+
 2026-10-01 23:05 BST — Group rotation rides the nest. A group's angle turns its children about the group centre on the board, in PNG, and on the SVG `<g>`. Hidden groups still hoist with no box, and a rotated hoist keeps that turn. Leaves keep their own rotation. The inspector says so, and the export note adds "rotation rides the group".
 
 2026-10-01 22:05 BST — Hidden group opacity rides the canvas and PNG. A hidden group still paints no box; its visible children stay on the board and inherit the group's opacity. A non-normal blend isolates that nest offscreen, then composites it as one unit, same as SVG. Hide no longer forces children off, so the hoist is what you see.
@@ -20,7 +22,8 @@
 
 ## Next recommended
 
-Wire the group rotate handle on the board to `rotateGroupNodes` so dragging the handle only adds to the group's angle (the nest already turns from that field). Selection handles are still missing from the stage.
+Snap the group rotate handle to the rotated nest frame (the box is still the unrotated child union) and show a live degree readout beside the ring.
+
 
 ## Done
 
@@ -45,7 +48,9 @@ Wire the group rotate handle on the board to `rotateGroupNodes` so dragging the 
 - Hidden groups hoist without a box; opacity and blend still wrap that nest
 - Raster PNG and the board apply the same hidden-group opacity and isolated blend
 - Group rotation rides the nest on the board, PNG, and SVG `<g>` (hidden hoist included)
+- Board rotate handle wired to rotateGroupNodes; resize handles scale the nest via scaleGroupNodes
+- Group name chip mounted on the stage again
 
 ## Backlog
 
-- Board rotate handle is not wired in the stage (helpers exist; nest angle already paints)
+- Rotate handle still sits on the unrotated child union, not the spun frame
