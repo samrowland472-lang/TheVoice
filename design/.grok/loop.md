@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-01 12:05 BST — Layers drop polish. Illegal nests (a group into itself or a descendant) show a faint ring and No, and the drop is refused. Holding the grip on a collapsed group centre opens it so children can be targeted. The insert bar follows the row indent. While dragging, the panel says centre nests and the edge keeps that row's parent.
+
 2026-10-01 11:30 BST — Marquee through a group box now selects the group and its unlocked, visible children. Locked layers stay out of the pick. Shift-marquee still adds.
 
 ## Next recommended
@@ -21,6 +23,7 @@ Rename a group from the canvas selection label.
 - Layers tree indent + collapse twist + Group/Ungroup chrome
 - Multi-select rotate around shared centre
 - Layers drag-drop that keeps parentId when dropping onto a group
+- Drop polish: No on illegal nests, dwell-open collapsed groups, indented insert bar
 - Marquee-select includes a group's children when the group box is hit, skips locked
 
 ## Backlog

@@ -141,25 +141,37 @@ function subtreeEnd(nodes: DesignNode[], id: string): number {
   return end;
 }
 
+/** A group cannot land inside itself or a descendant. Sibling drops need a real anchor. */
+export function layerDropLegal(nodes: DesignNode[], ids: string[], drop: LayerDrop): boolean {
+  const moving = movingRoots(nodes, ids);
+  if (!moving.length) return false;
+  const movingIds = new Set(moving.map((n) => n.id));
+  if (drop.mode === "into") {
+    if (movingIds.has(drop.groupId)) return false;
+    const group = nodes.find((n) => n.id === drop.groupId);
+    if (!group || !isGroup(group)) return false;
+    if (moving.some((m) => ancestorIds(nodes, group.id).includes(m.id))) return false;
+    return true;
+  }
+  if (movingIds.has(drop.anchorId)) return false;
+  const anchor = nodes.find((n) => n.id === drop.anchorId);
+  if (!anchor) return false;
+  if (moving.some((m) => ancestorIds(nodes, anchor.id).includes(m.id))) return false;
+  return true;
+}
+
 /** Move layer roots in the list. Into a group sets parentId. Sibling drops keep the anchor parent. */
 export function applyLayerDrop(nodes: DesignNode[], ids: string[], drop: LayerDrop): DesignNode[] | null {
+  if (!layerDropLegal(nodes, ids, drop)) return null;
   const moving = movingRoots(nodes, ids);
-  if (!moving.length) return null;
   const movingIds = new Set(moving.map((n) => n.id));
-  if (drop.mode === "into" && movingIds.has(drop.groupId)) return null;
-  if (drop.mode !== "into" && movingIds.has(drop.anchorId)) return null;
 
   let parentId: string | undefined;
   if (drop.mode === "into") {
-    const group = nodes.find((n) => n.id === drop.groupId);
-    if (!group || !isGroup(group)) return null;
-    if (moving.some((m) => ancestorIds(nodes, group.id).includes(m.id))) return null;
-    parentId = group.id;
+    parentId = drop.groupId;
   } else {
     const anchor = nodes.find((n) => n.id === drop.anchorId);
-    if (!anchor) return null;
-    if (moving.some((m) => ancestorIds(nodes, anchor.id).includes(m.id))) return null;
-    parentId = anchor.parentId;
+    parentId = anchor?.parentId;
   }
 
   const rest = nodes.filter((n) => !movingIds.has(n.id));

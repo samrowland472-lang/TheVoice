@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
-import { flattenLayers, type LayerDrop } from "@/lib/design/groups";
+import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
 import { isGroup } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,7 @@ export function LayersPanel() {
   const ungroupSelection = useDesign((s) => s.ungroupSelection);
   const listRef = useRef<HTMLUListElement>(null);
   const dragIdsRef = useRef<string[] | null>(null);
+  const dwellRef = useRef<number | null>(null);
   const [dragIds, setDragIds] = useState<string[] | null>(null);
   const [dropHint, setDropHint] = useState<DropHint | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -74,10 +75,31 @@ export function LayersPanel() {
     else if (clientY > r.bottom - edge) list.scrollTop += 8;
   };
 
+  const clearDwell = () => {
+    if (dwellRef.current != null) {
+      window.clearTimeout(dwellRef.current);
+      dwellRef.current = null;
+    }
+  };
+
+  const armDwell = (hint: DropHint | null) => {
+    clearDwell();
+    if (hint?.mode !== "into") return;
+    const group = doc.nodes.find((n) => n.id === hint.groupId);
+    if (!group || !isGroup(group) || !group.collapsed) return;
+    const id = group.id;
+    dwellRef.current = window.setTimeout(() => {
+      dwellRef.current = null;
+      updateNodes([id], { collapsed: false }, true);
+    }, 420);
+  };
+
   const finish = (clientY: number) => {
     const ids = dragIdsRef.current;
     const hint = hintFromY(clientY);
-    if (ids?.length && hint) dropLayers(ids, hint);
+    const live = useDesign.getState().doc;
+    if (ids?.length && hint && live && layerDropLegal(live.nodes, ids, hint)) dropLayers(ids, hint);
+    clearDwell();
     dragIdsRef.current = null;
     setDragIds(null);
     setDropHint(null);
@@ -139,6 +161,11 @@ export function LayersPanel() {
             {layers.length} match{layers.length === 1 ? "" : "es"}
           </p>
         )}
+        {dragIds && !filtering && (
+          <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
+            Centre nests. Edge keeps that row's parent.
+          </p>
+        )}
       </div>
       <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
         {layers.map(({ node: n, depth }) => {
@@ -149,16 +176,30 @@ export function LayersPanel() {
           const before = dropHint?.mode === "before" && dropHint.anchorId === n.id;
           const after = dropHint?.mode === "after" && dropHint.anchorId === n.id;
           const group = isGroup(n);
+          const blocked =
+            !!dropHint && !!dragIds && (into || before || after) && !layerDropLegal(doc.nodes, dragIds, dropHint);
+          const barLeft = 8 + depth * 12;
           return (
             <li key={n.id} data-layer-id={n.id} data-layer-kind={n.kind} className="relative">
-              {before && <span className="pointer-events-none absolute inset-x-1 -top-px z-10 h-0.5 rounded-full bg-phosphor" />}
-              {after && <span className="pointer-events-none absolute inset-x-1 -bottom-px z-10 h-0.5 rounded-full bg-phosphor" />}
+              {before && (
+                <span
+                  className={cn("pointer-events-none absolute -top-px z-10 h-0.5 rounded-full", blocked ? "bg-ink-faint" : "bg-phosphor")}
+                  style={{ left: barLeft, right: 8 }}
+                />
+              )}
+              {after && (
+                <span
+                  className={cn("pointer-events-none absolute -bottom-px z-10 h-0.5 rounded-full", blocked ? "bg-ink-faint" : "bg-phosphor")}
+                  style={{ left: barLeft, right: 8 }}
+                />
+              )}
               <div
                 className={cn(
                   "flex h-9 items-center gap-0.5 rounded-[8px] px-0.5 text-xs",
                   active ? "bg-phosphor/10 text-ink" : "text-ink-dim hover:bg-surface-alt",
                   dragging && "opacity-40",
-                  into && "ring-1 ring-phosphor",
+                  into && !blocked && "ring-1 ring-phosphor",
+                  into && blocked && "ring-1 ring-ink-faint",
                 )}
                 style={{ paddingLeft: depth * 12 }}
               >
@@ -181,13 +222,16 @@ export function LayersPanel() {
                   onPointerMove={(e) => {
                     if (!dragIdsRef.current) return;
                     autoScroll(e.clientY);
-                    setDropHint(hintFromY(e.clientY));
+                    const hint = hintFromY(e.clientY);
+                    setDropHint(hint);
+                    armDwell(hint);
                   }}
                   onPointerUp={(e) => {
                     if (!dragIdsRef.current) return;
                     finish(e.clientY);
                   }}
                   onPointerCancel={() => {
+                    clearDwell();
                     dragIdsRef.current = null;
                     setDragIds(null);
                     setDropHint(null);
@@ -250,7 +294,14 @@ export function LayersPanel() {
                       </span>
                     )}
                     {into && (
-                      <span className="ml-1.5 font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">Into</span>
+                      <span
+                        className={cn(
+                          "ml-1.5 font-mono text-[9px] tracking-[0.14em] uppercase",
+                          blocked ? "text-ink-faint" : "text-phosphor",
+                        )}
+                      >
+                        {blocked ? "No" : "Into"}
+                      </span>
                     )}
                   </button>
                 )}
