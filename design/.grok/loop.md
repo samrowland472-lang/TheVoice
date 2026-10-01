@@ -2,13 +2,15 @@
 
 ## Iteration
 
+2026-10-01 14:05 BST — SVG group wrappers. Export SVG nests each group in a `<g>` with its name, and nests groups inside groups. Children keep artboard coordinates. A hidden group does not paint a box; its visible layers still export. The export note counts wrapped groups.
+
 2026-10-01 13:05 BST — Group name on the board. A selected group shows its name above the box; double-click the chip to type a new name. Enter keeps it, Esc leaves the old one. The pasteboard now fills the stage so clicks reach the canvas.
 
 2026-10-01 12:05 BST — Layers drop polish. Illegal nests (a group into itself or a descendant) show a faint ring and No, and the drop is refused. Holding the grip on a collapsed group centre opens it so children can be targeted. The insert bar follows the row indent. While dragging, the panel says centre nests and the edge keeps that row's parent.
 
 ## Next recommended
 
-Export SVG that wraps groups in `<g>` tags.
+Group opacity and blend ride the SVG `<g>` so nested layers inherit them on export.
 
 ## Done
 
@@ -27,7 +29,9 @@ Export SVG that wraps groups in `<g>` tags.
 - Marquee-select includes a group's children when the group box is hit, skips locked
 - Rename a group from the canvas selection label
 - Pasteboard fills the stage (canvas hit target)
+- Export SVG wraps groups in `<g>` tags (nested, named, no group rect)
 
 ## Backlog
 
-- Export SVG that wraps groups in `<g>` tags
+- Group opacity and blend ride the SVG `<g>` so nested layers inherit them on export
+- SVG text and path layers keep their own opacity when a group is not wrapping them

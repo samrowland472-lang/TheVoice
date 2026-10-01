@@ -95,9 +95,10 @@ export function TopBar() {
           : kind.startsWith("crop")
             ? "crop"
             : "selection";
+      const groups = slice.nodes.filter((n) => n.kind === "group").length;
       toast.success(
         kind.endsWith("svg")
-          ? `Exported ${label} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}`
+          ? `Exported ${label} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}${groups ? ` · ${groups} group${groups === 1 ? "" : "s"} wrapped` : ""}`
           : `Exported ${label} PNG @${scale}× · ${slice.artboard.width}×${slice.artboard.height}`,
       );
       setExportOpen(false);
@@ -127,7 +128,9 @@ export function TopBar() {
             ? "Exported print PDF"
             : kind === "print"
               ? "Exported print PNG @4×"
-              : `Exported ${kind.toUpperCase()}${kind === "svg" ? "" : ` @${scale}×`}`,
+              : kind === "svg"
+                ? `Exported SVG${doc.nodes.some((n) => n.kind === "group") ? ` · ${doc.nodes.filter((n) => n.kind === "group").length} group${doc.nodes.filter((n) => n.kind === "group").length === 1 ? "" : "s"} wrapped` : ""}`
+                : `Exported ${kind.toUpperCase()} @${scale}×`,
     );
     setExportOpen(false);
   }

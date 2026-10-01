@@ -6,7 +6,8 @@ import { drawPrintMarks, resolveBleed } from "./print-marks";
 import { drawDocument } from "./render";
 import { canvasShadowParams } from "./shadow";
 import { layoutTextLines, measureTracked } from "./text-layout";
-import type { DesignDocument, DesignNode, PathNode, PathPoint, Shadow, ShapeNode, TextNode } from "./types";
+import type { DesignDocument, DesignNode, GroupNode, PathNode, PathPoint, Shadow, ShapeNode, TextNode } from "./types";
+import { isGroup } from "./types";
 import {
   buildJpegPdf as writeJpegPdf,
   downloadBytes,
@@ -249,41 +250,72 @@ export function svgTextMarkup(t: TextNode, fill: string, prefix = ""): string {
   return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${shadowAttr(t, prefix)}${clip}>${tspans}</text>`;
 }
 
+function svgLeafMarkup(n: DesignNode, prefix: string): string {
+  const fill = typeof n.fill === "string" ? n.fill : "#3fc6ff";
+  const extra = svgStrokeStyle(n);
+  if (n.kind === "text") {
+    return rotateWrap(n, svgTextMarkup(n as TextNode, fill, prefix));
+  }
+  if (n.kind === "path") {
+    const p = n as PathNode;
+    const { cut, islands } = partitionPathHoles(p);
+    const parts = [bakedPathD(p, p.points, p.closed), ...cut.map((ring) => bakedPathD(p, ring, true))];
+    const rule = pathFillRule(p);
+    const ruleAttr = cut.length || rule === "evenodd" ? ` fill-rule="${rule}"` : "";
+    const holeIslands = islands
+      .map(
+        (ring) =>
+          `<path d="${esc(bakedPathD(p, ring, true))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${blendAttr(n)}/>`,
+      )
+      .join("");
+    const islandGroup = holeIslands ? `<g data-islands="1">${holeIslands}</g>` : "";
+    return `<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${shadowAttr(n, prefix)}${blendAttr(n)}/>${islandGroup}`;
+  }
+  if (isConvertibleShape(n)) {
+    const s = n as ShapeNode;
+    const contour = shapeContour(s);
+    return `<path d="${esc(bakedPathD(s, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n, prefix)}${blendAttr(n)}/>`;
+  }
+  return rotateWrap(
+    n,
+    `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n, prefix)}${blendAttr(n)}/>`,
+  );
+}
+
+function svgGroupId(id: string, prefix = "") {
+  return `${prefix}g-${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+}
+
+/** Logical group wrapper. Children keep artboard coordinates, so the group does not add a transform. */
+export function svgGroupOpen(n: GroupNode, prefix = ""): string {
+  const opacity = n.opacity !== 1 ? ` opacity="${n.opacity}"` : "";
+  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${opacity}${blendAttr(n)}>`;
+}
+
 export function exportSvgBody(doc: DesignDocument, prefix = ""): string {
-  return doc.nodes
-    .filter((n) => n.visible)
-    .map((n) => {
-      const fill = typeof n.fill === "string" ? n.fill : "#3fc6ff";
-      const extra = svgStrokeStyle(n);
-      if (n.kind === "text") {
-        return rotateWrap(n, svgTextMarkup(n as TextNode, fill, prefix));
-      }
-      if (n.kind === "path") {
-        const p = n as PathNode;
-        const { cut, islands } = partitionPathHoles(p);
-        const parts = [bakedPathD(p, p.points, p.closed), ...cut.map((ring) => bakedPathD(p, ring, true))];
-        const rule = pathFillRule(p);
-        const ruleAttr = cut.length || rule === "evenodd" ? ` fill-rule="${rule}"` : "";
-        const holeIslands = islands
-          .map(
-            (ring) =>
-              `<path d="${esc(bakedPathD(p, ring, true))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${blendAttr(n)}/>`,
-          )
-          .join("");
-        const islandGroup = holeIslands ? `<g data-islands="1">${holeIslands}</g>` : "";
-        return `<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${shadowAttr(n, prefix)}${blendAttr(n)}/>${islandGroup}`;
-      }
-      if (isConvertibleShape(n)) {
-        const s = n as ShapeNode;
-        const contour = shapeContour(s);
-        return `<path d="${esc(bakedPathD(s, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n, prefix)}${blendAttr(n)}/>`;
-      }
-      return rotateWrap(
-        n,
-        `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n, prefix)}${blendAttr(n)}/>`,
-      );
-    })
-    .join("");
+  const ids = new Set(doc.nodes.map((n) => n.id));
+  const byParent = new Map<string | undefined, DesignNode[]>();
+  for (const n of doc.nodes) {
+    const key = n.parentId && ids.has(n.parentId) ? n.parentId : undefined;
+    const list = byParent.get(key) ?? [];
+    list.push(n);
+    byParent.set(key, list);
+  }
+  const walk = (parentId: string | undefined): string => {
+    const kids = byParent.get(parentId) ?? [];
+    return kids
+      .map((n) => {
+        if (isGroup(n)) {
+          const inner = walk(n.id);
+          if (!n.visible) return inner;
+          return `${svgGroupOpen(n, prefix)}${inner}</g>`;
+        }
+        if (!n.visible) return "";
+        return svgLeafMarkup(n, prefix);
+      })
+      .join("");
+  };
+  return walk(undefined);
 }
 
 export function exportSvg(doc: DesignDocument): string {
