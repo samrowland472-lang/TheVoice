@@ -9,6 +9,8 @@ import {
   rotateSelectionNodes,
   scaleGroupNodes,
   selectionTransformBox,
+  spinPoint,
+  unspinPoint,
 } from "@/lib/design/group-transform";
 import { hitTop } from "@/lib/design/hit";
 import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit } from "@/lib/design/path-actions";
@@ -19,6 +21,7 @@ import { tracePath } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
 import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
 import type { DesignNode } from "@/lib/design/types";
 import { GroupNameChip } from "./group-name-chip";
@@ -314,7 +317,23 @@ export function CanvasStage() {
       }
       if (selection.length && !mq) {
         const box = selectionTransformBox(doc.nodes, selection);
-        if (box && box.w > 0 && box.h > 0) drawTransformHandles(ctx, box, viewport.zoom);
+        if (box && box.w > 0 && box.h > 0) {
+          const only = selection.length === 1 ? doc.nodes.find((n) => n.id === selection[0]) : null;
+          const spinDeg = only?.rotation ?? 0;
+          drawTransformHandles(ctx, box, viewport.zoom, spinDeg);
+          const live = xformRef.current;
+          if (live?.kind === "rotate") {
+            const node = live.groupId ? doc.nodes.find((n) => n.id === live.groupId) : only;
+            const deg = Math.round(node?.rotation ?? 0);
+            const label = spinPoint(box, box.x + box.w / 2, box.y - 44 / Math.max(viewport.zoom, 0.01), node?.rotation ?? spinDeg);
+            ctx.save();
+            ctx.fillStyle = "rgba(63,198,255,0.95)";
+            ctx.font = `${11 / viewport.zoom}px "IBM Plex Mono", ui-monospace, monospace`;
+            ctx.textAlign = "center";
+            ctx.fillText(`${deg}\u00b0`, label.x, label.y);
+            ctx.restore();
+          }
+        }
       }
     }
     ctx.restore();
@@ -400,7 +419,8 @@ export function CanvasStage() {
       if (box) {
         const only = s.selection.length === 1 ? s.doc.nodes.find((n) => n.id === s.selection[0]) : undefined;
         const groupId = only && isGroup(only) ? only.id : undefined;
-        if (hitRotateHandle(box, d.x, d.y, s.viewport.zoom)) {
+        const spin = only?.rotation ?? 0;
+        if (hitRotateHandle(box, d.x, d.y, s.viewport.zoom, spin)) {
           e.preventDefault();
           e.currentTarget.setPointerCapture(e.pointerId);
           s.commit();
@@ -419,7 +439,8 @@ export function CanvasStage() {
           };
           return;
         }
-        const handle = hitResizeHandle(box, d.x, d.y, s.viewport.zoom);
+        const local = unspinPoint(box, d.x, d.y, spin);
+        const handle = hitResizeHandle(box, local.x, local.y, s.viewport.zoom);
         if (handle) {
           e.preventDefault();
           e.currentTarget.setPointerCapture(e.pointerId);
@@ -507,9 +528,12 @@ export function CanvasStage() {
         const next = xform.groupId
           ? rotateGroupNodes(xform.nodes, xform.groupId, delta)
           : rotateSelectionNodes(xform.nodes, s.selection, delta);
+        const base = xform.groupId ? (xform.nodes.find((n) => n.id === xform.groupId)?.rotation ?? 0) : 0;
+        setStudioStatus(xform.groupId ? `Group angle ${Math.round(base + delta)}°` : `Selection angle ${Math.round(delta)}°`);
         useDesign.setState({ doc: { ...s.doc, nodes: next }, dirty: true });
       } else {
-        const to = resizeBox(xform.box, xform.handle, d.x, d.y, e.shiftKey);
+        const local = unspinPoint(xform.box, d.x, d.y, xform.nodes.find((n) => n.id === xform.groupId)?.rotation ?? 0);
+        const to = resizeBox(xform.box, xform.handle, local.x, local.y, e.shiftKey);
         const next = xform.groupId
           ? scaleGroupNodes(xform.nodes, xform.groupId, to)
           : xform.nodes.map((n) => (s.selection.includes(n.id) ? mapNodeToBox(n, xform.box, to) : n));
@@ -597,6 +621,7 @@ export function CanvasStage() {
     }
     if (xformRef.current) {
       xformRef.current = null;
+      setStudioStatus(null);
       setHoverTick((n) => n + 1);
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);

@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 00:15 BST — Spun frame for the group ring. The box, corner handles, and rotate ring now turn with the group's angle about the nest centre, matching the board, PNG, and SVG. Dragging the ring still only adds to that angle. While the ring is held, the degree sits beside it and in the status strip. Shift still snaps to 15°.
+
 2026-10-02 00:10 BST — Board rotate handle. Selecting a group draws one box with a ring above the nest. Dragging the ring adds only to the group's angle (Shift snaps to 15°), so the nest turns about the group centre on the board the same way PNG and SVG already do. Corner handles scale that nest. A selection that is not a group uses the same handles around the shared box. The group name chip is back on the board.
 
 2026-10-01 23:05 BST — Group rotation rides the nest. A group's angle turns its children about the group centre on the board, in PNG, and on the SVG `<g>`. Hidden groups still hoist with no box, and a rotated hoist keeps that turn. Leaves keep their own rotation. The inspector says so, and the export note adds "rotation rides the group".
@@ -22,7 +24,7 @@
 
 ## Next recommended
 
-Snap the group rotate handle to the rotated nest frame (the box is still the unrotated child union) and show a live degree readout beside the ring.
+Resize handles still scale the unrotated child union. After a spin, dragging a corner should scale in the spun frame without shearing the nest.
 
 
 ## Done
@@ -49,8 +51,9 @@ Snap the group rotate handle to the rotated nest frame (the box is still the unr
 - Raster PNG and the board apply the same hidden-group opacity and isolated blend
 - Group rotation rides the nest on the board, PNG, and SVG `<g>` (hidden hoist included)
 - Board rotate handle wired to rotateGroupNodes; resize handles scale the nest via scaleGroupNodes
+- Rotate ring and corner handles sit on the spun nest frame; live degree beside the ring
 - Group name chip mounted on the stage again
 
 ## Backlog
 
-- Rotate handle still sits on the unrotated child union, not the spun frame
+- Spun-frame resize that does not shear the nest

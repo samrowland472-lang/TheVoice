@@ -59,10 +59,22 @@ export function selectionLabelScreen(
   };
 }
 
-export function hitRotateHandle(box: Box, x: number, y: number, zoom: number): boolean {
+/** World point into the unrotated frame (group angle turns the nest about the box centre). */
+export function unspinPoint(box: Box, x: number, y: number, rotation: number) {
+  if (!rotation) return { x, y };
+  return rotatePoint(x, y, box.x + box.w / 2, box.y + box.h / 2, -rotation);
+}
+
+export function spinPoint(box: Box, x: number, y: number, rotation: number) {
+  if (!rotation) return { x, y };
+  return rotatePoint(x, y, box.x + box.w / 2, box.y + box.h / 2, rotation);
+}
+
+export function hitRotateHandle(box: Box, x: number, y: number, zoom: number, rotation = 0): boolean {
+  const local = unspinPoint(box, x, y, rotation);
   const p = rotateHandlePoint(box, zoom);
   const r = 12 / Math.max(zoom, 0.01);
-  return Math.hypot(x - p.x, y - p.y) <= r;
+  return Math.hypot(local.x - p.x, local.y - p.y) <= r;
 }
 
 export function rotateNodeAbout(n: DesignNode, cx: number, cy: number, delta: number): DesignNode {
@@ -101,12 +113,19 @@ export function rotateSelectionNodes(nodes: DesignNode[], selectedIds: string[],
   return nodes.map((n) => (ids.has(n.id) ? rotateNodeAbout(n, cx, cy, delta) : n));
 }
 
-export function drawTransformHandles(ctx: CanvasRenderingContext2D, box: Box, zoom: number) {
+export function drawTransformHandles(ctx: CanvasRenderingContext2D, box: Box, zoom: number, rotation = 0) {
   const hair = 1 / Math.max(zoom, 0.01);
   const size = 8 / Math.max(zoom, 0.01);
   const rot = rotateHandlePoint(box, zoom);
   const midTop = { x: box.x + box.w / 2, y: box.y };
   ctx.save();
+  if (rotation) {
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    ctx.translate(cx, cy);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-cx, -cy);
+  }
   ctx.strokeStyle = "rgba(63,198,255,0.95)";
   ctx.lineWidth = hair * 1.2;
   ctx.setLineDash([6 * hair, 4 * hair]);
