@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const snap = readFileSync(new URL("../src/lib/design/snap.ts", import.meta.url), "utf8");
+const snap = readFileSync(new URL("../src/lib/design/marquee-nodes.ts", import.meta.url), "utf8");
 const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
 
 test("nodesInMarquee pulls unlocked descendants when a group box is hit", () => {
