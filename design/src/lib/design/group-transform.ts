@@ -1,4 +1,5 @@
 import { handlePoint, RESIZE_HANDLES, mapNodeToBox, type Box } from "./box-resize";
+import { rotatePoint } from "./geometry";
 import { descendantIds, unionBounds } from "./layer-groups";
 import { isGroup, type DesignNode } from "./types";
 
@@ -42,16 +43,75 @@ export function selectionTransformBox(nodes: DesignNode[], selectedIds: string[]
   return unionBounds(picked);
 }
 
+export function rotateHandlePoint(box: Box, zoom: number) {
+  return { x: box.x + box.w / 2, y: box.y - 28 / Math.max(zoom, 0.01) };
+}
+
+export function hitRotateHandle(box: Box, x: number, y: number, zoom: number): boolean {
+  const p = rotateHandlePoint(box, zoom);
+  const r = 12 / Math.max(zoom, 0.01);
+  return Math.hypot(x - p.x, y - p.y) <= r;
+}
+
+export function rotateNodeAbout(n: DesignNode, cx: number, cy: number, delta: number): DesignNode {
+  if (!delta) return n;
+  const ocx = n.x + n.w / 2;
+  const ocy = n.y + n.h / 2;
+  const p = rotatePoint(ocx, ocy, cx, cy, delta);
+  return { ...n, x: p.x - n.w / 2, y: p.y - n.h / 2, rotation: n.rotation + delta };
+}
+
+export function rotateGroupNodes(nodes: DesignNode[], groupId: string, delta: number): DesignNode[] {
+  const box = groupBox(nodes, groupId);
+  if (!box) return nodes;
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  const ids = new Set(groupTransformIds(nodes, groupId));
+  return nodes.map((n) => (ids.has(n.id) ? rotateNodeAbout(n, cx, cy, delta) : n));
+}
+
+/** Rotate every selected node (and group descendants) about the shared AABB centre. */
+export function rotateSelectionNodes(nodes: DesignNode[], selectedIds: string[], delta: number): DesignNode[] {
+  if (!delta || !selectedIds.length) return nodes;
+  if (selectedIds.length === 1) {
+    const only = nodes.find((n) => n.id === selectedIds[0]);
+    if (only && isGroup(only)) return rotateGroupNodes(nodes, only.id, delta);
+  }
+  const box = selectionTransformBox(nodes, selectedIds);
+  if (!box) return nodes;
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  const ids = new Set<string>();
+  for (const id of selectedIds) {
+    ids.add(id);
+    const n = nodes.find((x) => x.id === id);
+    if (n && isGroup(n)) {
+      for (const d of descendantIds(nodes, id)) ids.add(d);
+    }
+  }
+  return nodes.map((n) => (ids.has(n.id) ? rotateNodeAbout(n, cx, cy, delta) : n));
+}
+
 export function drawTransformHandles(ctx: CanvasRenderingContext2D, box: Box, zoom: number) {
   const hair = 1 / Math.max(zoom, 0.01);
   const size = 8 / Math.max(zoom, 0.01);
+  const rot = rotateHandlePoint(box, zoom);
+  const midTop = { x: box.x + box.w / 2, y: box.y };
   ctx.save();
   ctx.strokeStyle = "rgba(63,198,255,0.95)";
   ctx.lineWidth = hair * 1.2;
   ctx.setLineDash([6 * hair, 4 * hair]);
   ctx.strokeRect(box.x, box.y, box.w, box.h);
   ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(midTop.x, midTop.y);
+  ctx.lineTo(rot.x, rot.y);
+  ctx.stroke();
   ctx.fillStyle = "#0b1218";
+  ctx.beginPath();
+  ctx.arc(rot.x, rot.y, 5 / Math.max(zoom, 0.01), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
   for (const h of RESIZE_HANDLES) {
     const p = handlePoint(box, h);
     ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
