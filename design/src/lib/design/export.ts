@@ -56,6 +56,12 @@ function blendAttr(n: DesignNode): string {
   return ` style="mix-blend-mode:${blend}"`;
 }
 
+/** Own opacity. A wrapping group multiplies this via the parent <g>, it does not replace it. */
+export function svgOpacityAttr(n: { opacity: number }): string {
+  if (n.opacity === 1 || Number.isNaN(n.opacity)) return "";
+  return ` opacity="${n.opacity}"`;
+}
+
 /** Canvas rotates about the node box center — SVG must match. */
 export function svgRotateTransform(n: Pick<DesignNode, "x" | "y" | "w" | "h" | "rotation">): string {
   const rot = n.rotation ?? 0;
@@ -247,7 +253,7 @@ export function svgTextMarkup(t: TextNode, fill: string, prefix = ""): string {
     })
     .join("");
   const clip = ` clip-path="url(#${svgTextClipId(t.id, prefix)})"`;
-  return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${shadowAttr(t, prefix)}${clip}>${tspans}</text>`;
+  return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${svgOpacityAttr(t)}${shadowAttr(t, prefix)}${clip}>${tspans}</text>`;
 }
 
 function svgLeafMarkup(n: DesignNode, prefix: string): string {
@@ -265,20 +271,20 @@ function svgLeafMarkup(n: DesignNode, prefix: string): string {
     const holeIslands = islands
       .map(
         (ring) =>
-          `<path d="${esc(bakedPathD(p, ring, true))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${blendAttr(n)}/>`,
+          `<path d="${esc(bakedPathD(p, ring, true))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${svgOpacityAttr(n)}${blendAttr(n)}/>`,
       )
       .join("");
     const islandGroup = holeIslands ? `<g data-islands="1">${holeIslands}</g>` : "";
-    return `<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${shadowAttr(n, prefix)}${blendAttr(n)}/>${islandGroup}`;
+    return `<path d="${esc(parts.join(" "))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${ruleAttr}${svgOpacityAttr(n)}${shadowAttr(n, prefix)}${blendAttr(n)}/>${islandGroup}`;
   }
   if (isConvertibleShape(n)) {
     const s = n as ShapeNode;
     const contour = shapeContour(s);
-    return `<path d="${esc(bakedPathD(s, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n, prefix)}${blendAttr(n)}/>`;
+    return `<path d="${esc(bakedPathD(s, contour.points, contour.closed))}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${svgOpacityAttr(n)}${shadowAttr(n, prefix)}${blendAttr(n)}/>`;
   }
   return rotateWrap(
     n,
-    `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${shadowAttr(n, prefix)}${blendAttr(n)}/>`,
+    `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" fill="${esc(fill)}" stroke="${esc(n.stroke)}" stroke-width="${n.strokeWidth}"${extra}${svgOpacityAttr(n)}${shadowAttr(n, prefix)}${blendAttr(n)}/>`,
   );
 }
 
@@ -286,10 +292,11 @@ function svgGroupId(id: string, prefix = "") {
   return `${prefix}g-${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 }
 
-/** Logical group wrapper. Children keep artboard coordinates, so the group does not add a transform. */
+/** Logical group wrapper. Children keep artboard coordinates, so the group does not add a transform.
+ *  Opacity and blend sit on this <g> and composite the nest. Leaves still write their own opacity.
+ */
 export function svgGroupOpen(n: GroupNode, prefix = ""): string {
-  const opacity = n.opacity !== 1 ? ` opacity="${n.opacity}"` : "";
-  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${opacity}${blendAttr(n)}>`;
+  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${svgOpacityAttr(n)}${blendAttr(n)}>`;
 }
 
 export function exportSvgBody(doc: DesignDocument, prefix = ""): string {

@@ -15,6 +15,13 @@ import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
 import { Button } from "@/components/ui/button";
 
+function svgGroupExportNote(nodes: { kind: string; opacity: number; blend: string; visible: boolean }[]) {
+  const groups = nodes.filter((n) => n.kind === "group");
+  if (!groups.length) return "";
+  const rides = groups.some((n) => n.visible && (n.opacity !== 1 || (n.blend && n.blend !== "source-over")));
+  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}`;
+}
+
 export function TopBar() {
   const navigate = useNavigate();
   const doc = useDesign((s) => s.doc);
@@ -95,10 +102,9 @@ export function TopBar() {
           : kind.startsWith("crop")
             ? "crop"
             : "selection";
-      const groups = slice.nodes.filter((n) => n.kind === "group").length;
       toast.success(
         kind.endsWith("svg")
-          ? `Exported ${label} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}${groups ? ` · ${groups} group${groups === 1 ? "" : "s"} wrapped` : ""}`
+          ? `Exported ${label} SVG · ${slice.nodes.length} layer${slice.nodes.length === 1 ? "" : "s"}${svgGroupExportNote(slice.nodes)}`
           : `Exported ${label} PNG @${scale}× · ${slice.artboard.width}×${slice.artboard.height}`,
       );
       setExportOpen(false);
@@ -129,7 +135,7 @@ export function TopBar() {
             : kind === "print"
               ? "Exported print PNG @4×"
               : kind === "svg"
-                ? `Exported SVG${doc.nodes.some((n) => n.kind === "group") ? ` · ${doc.nodes.filter((n) => n.kind === "group").length} group${doc.nodes.filter((n) => n.kind === "group").length === 1 ? "" : "s"} wrapped` : ""}`
+                ? `Exported SVG${svgGroupExportNote(doc.nodes)}`
                 : `Exported ${kind.toUpperCase()} @${scale}×`,
     );
     setExportOpen(false);

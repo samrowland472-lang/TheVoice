@@ -119,6 +119,11 @@ export function Inspector() {
                 ))}
               </select>
             </Field>
+            {node.kind === "group" && (
+              <p className="font-mono text-[10px] leading-snug text-ink-faint">
+                SVG export puts this opacity and blend on the group so nested layers inherit them. Each layer still keeps its own opacity.
+              </p>
+            )}
             <div className="flex gap-1">
               <button
                 type="button"

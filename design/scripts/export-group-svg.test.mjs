@@ -20,6 +20,21 @@ test("hidden groups hoist visible children instead of painting a box", () => {
 });
 
 test("export toast names wrapped groups", () => {
-  assert.match(top, /group\$\{groups === 1 \? "" : "s"\} wrapped/);
+  assert.match(top, /group\$\{groups.length === 1 \? "" : "s"\} wrapped/);
   assert.match(top, /kind === "group"/);
+});
+
+test("group opacity and blend ride the wrapping g", () => {
+  assert.match(exp, /export function svgOpacityAttr/);
+  assert.match(exp, /\$\{svgOpacityAttr\(n\)\}\$\{blendAttr\(n\)\}/);
+  assert.match(exp, /Opacity and blend sit on this <g>/);
+  assert.match(top, /opacity rides the group/);
+  assert.match(top, /svgGroupExportNote/);
+});
+
+test("text and path layers keep their own opacity outside a group wrap", () => {
+  assert.match(exp, /\$\{svgOpacityAttr\(t\)\}/);
+  assert.match(exp, /\$\{svgOpacityAttr\(n\)\}/);
+  const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
+  assert.match(inspector, /Each layer still keeps its own opacity/);
 });
