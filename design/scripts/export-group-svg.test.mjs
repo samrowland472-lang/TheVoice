@@ -16,7 +16,21 @@ test("SVG export wraps groups in g tags and keeps children inside", () => {
 });
 
 test("hidden groups hoist visible children instead of painting a box", () => {
-  assert.match(exp, /if \(!n\.visible\) return inner/);
+  assert.match(exp, /if \(!n\.visible\) return svgHiddenGroupHoist\(n, inner\)/);
+  assert.match(exp, /export function svgHiddenGroupHoist/);
+  assert.match(exp, /data-hoist="1"/);
+  assert.match(exp, /do not paint a group box/);
+  assert.doesNotMatch(exp, /data-hoist="1"[\s\S]{0,80}data-kind="group"/);
+});
+
+test("hidden group opacity and blend still wrap the hoisted nest", () => {
+  assert.match(exp, /svgHiddenGroupHoist[\s\S]{0,280}svgOpacityAttr\(n\)/);
+  assert.match(exp, /svgHiddenGroupHoist[\s\S]{0,320}svgGroupBlendStyle\(n\)/);
+  assert.match(exp, /if \(!opacity && !blend\) return inner/);
+  assert.match(top, /hidden nest keeps opacity/);
+  const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
+  assert.match(inspector, /do not paint a box/);
+  assert.match(inspector, /still wrap that nest/);
 });
 
 test("export toast names wrapped groups", () => {

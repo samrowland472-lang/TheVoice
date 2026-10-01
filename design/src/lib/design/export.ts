@@ -309,6 +309,18 @@ export function svgGroupOpen(n: GroupNode, prefix = ""): string {
   return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${svgOpacityAttr(n)}${svgGroupBlendStyle(n)}>`;
 }
 
+/** Hidden groups hoist children and do not paint a group box.
+ *  Opacity and a non-normal blend still wrap that nest so they ride the export.
+ *  A fully opaque normal blend stays a bare hoist (no extra tag).
+ */
+export function svgHiddenGroupHoist(n: GroupNode, inner: string): string {
+  if (!inner) return "";
+  const opacity = svgOpacityAttr(n);
+  const blend = svgGroupBlendStyle(n);
+  if (!opacity && !blend) return inner;
+  return `<g data-hoist="1" data-name="${esc(n.name || "Group")}"${opacity}${blend}>${inner}</g>`;
+}
+
 export function exportSvgBody(doc: DesignDocument, prefix = ""): string {
   const ids = new Set(doc.nodes.map((n) => n.id));
   const byParent = new Map<string | undefined, DesignNode[]>();
@@ -324,7 +336,7 @@ export function exportSvgBody(doc: DesignDocument, prefix = ""): string {
       .map((n) => {
         if (isGroup(n)) {
           const inner = walk(n.id);
-          if (!n.visible) return inner;
+          if (!n.visible) return svgHiddenGroupHoist(n, inner);
           return `${svgGroupOpen(n, prefix)}${inner}</g>`;
         }
         if (!n.visible) return "";
