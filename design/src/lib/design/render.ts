@@ -349,21 +349,40 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode) {
   ctx.restore();
 }
 
-/** Group opacity and a non-normal blend ride the nest on the canvas, matching SVG.
+/** Group rotation, opacity, and a non-normal blend ride the nest on the canvas, matching SVG.
+ *  Rotation turns the nest about the group box centre before opacity and blend.
  *  A non-normal blend isolates the nest (offscreen) so it composites as one unit.
- *  Opacity under 1 multiplies the nest. A fully opaque normal blend paints straight through.
+ *  Opacity under 1 multiplies the nest. A fully opaque, unrotated, normal blend paints straight through.
  */
+export function paintGroupRotation(ctx: CanvasRenderingContext2D, n: GroupNode, paint: (ctx: CanvasRenderingContext2D) => void) {
+  const rot = n.rotation || 0;
+  if (!rot) {
+    paint(ctx);
+    return;
+  }
+  const cx = n.x + n.w / 2;
+  const cy = n.y + n.h / 2;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(degToRad(rot));
+  ctx.translate(-cx, -cy);
+  paint(ctx);
+  ctx.restore();
+}
+
 export function paintGroupNest(ctx: CanvasRenderingContext2D, n: GroupNode, paint: (ctx: CanvasRenderingContext2D) => void) {
   const fade = n.opacity !== 1 && !Number.isNaN(n.opacity);
   const isolate = Boolean(n.blend && n.blend !== "source-over");
-  if (!fade && !isolate) {
+  const spin = Boolean(n.rotation);
+  const paintSpun = (target: CanvasRenderingContext2D) => paintGroupRotation(target, n, paint);
+  if (!fade && !isolate && !spin) {
     paint(ctx);
     return;
   }
   if (!isolate) {
     ctx.save();
-    ctx.globalAlpha *= n.opacity;
-    paint(ctx);
+    if (fade) ctx.globalAlpha *= n.opacity;
+    paintSpun(ctx);
     ctx.restore();
     return;
   }
@@ -376,12 +395,12 @@ export function paintGroupNest(ctx: CanvasRenderingContext2D, n: GroupNode, pain
     ctx.save();
     ctx.globalAlpha *= n.opacity;
     ctx.globalCompositeOperation = n.blend;
-    paint(ctx);
+    paintSpun(ctx);
     ctx.restore();
     return;
   }
   octx.setTransform(ctx.getTransform());
-  paint(octx);
+  paintSpun(octx);
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.globalAlpha *= n.opacity;
@@ -390,8 +409,8 @@ export function paintGroupNest(ctx: CanvasRenderingContext2D, n: GroupNode, pain
   ctx.restore();
 }
 
-/** Hidden groups hoist: no group box. Opacity and blend still wrap visible children.
- *  A fully opaque normal blend is a bare hoist.
+/** Hidden groups hoist: no group box. Opacity, blend, and rotation still wrap visible children.
+ *  A fully opaque, unrotated, normal blend is a bare hoist.
  */
 export function paintHiddenGroupHoist(ctx: CanvasRenderingContext2D, n: GroupNode, paint: (ctx: CanvasRenderingContext2D) => void) {
   paintGroupNest(ctx, n, paint);

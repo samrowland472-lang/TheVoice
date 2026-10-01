@@ -26,7 +26,7 @@ test("hidden groups hoist visible children instead of painting a box", () => {
 test("hidden group opacity and blend still wrap the hoisted nest", () => {
   assert.match(exp, /svgHiddenGroupHoist[\s\S]{0,280}svgOpacityAttr\(n\)/);
   assert.match(exp, /svgHiddenGroupHoist[\s\S]{0,320}svgGroupBlendStyle\(n\)/);
-  assert.match(exp, /if \(!opacity && !blend\) return inner/);
+  assert.match(exp, /if \(!opacity && !blend && !rot\) return inner/);
   assert.match(top, /hidden nest keeps opacity/);
   const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
   assert.match(inspector, /do not paint a box/);
@@ -63,4 +63,16 @@ test("group blend isolates the nest before compositing against the artboard", ()
   const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
   assert.match(inspector, /isolates this group/);
   assert.match(inspector, /one unit against the artboard/);
+});
+
+test("group rotation rides the SVG group transform", () => {
+  assert.match(exp, /export function svgGroupRotateTransform/);
+  assert.match(exp, /data-rotate="1"/);
+  assert.match(exp, /\$\{svgGroupRotateTransform\(n\)\}\$\{svgOpacityAttr\(n\)\}/);
+  assert.match(exp, /turns the nest about the group centre/);
+  assert.match(exp, /const rot = svgGroupRotateTransform\(n\)/);
+  assert.match(top, /rotation rides the group/);
+  const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
+  assert.match(inspector, /Rotation rides the group on the board, PNG, and SVG/);
+  assert.match(inspector, /nest turns as one unit/);
 });

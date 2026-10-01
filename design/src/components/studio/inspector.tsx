@@ -124,8 +124,11 @@ export function Inspector() {
                 {!node.visible
                   ? "Hidden groups hoist on the board, PNG, and SVG and do not paint a box. Opacity and blend still wrap that nest."
                   : node.blend && node.blend !== "source-over"
-                    ? "The board, PNG, and SVG isolate this group, then blend the nest as one unit against the artboard. Each layer still keeps its own opacity."
+                    ? "The board, PNG, and SVG isolates this group, then blend the nest as one unit against the artboard. Each layer still keeps its own opacity."
                     : "The board, PNG, and SVG put this opacity on the group so nested layers inherit it. Each layer still keeps its own opacity."}
+                {node.rotation
+                  ? " Rotation rides the group on the board, PNG, and SVG, so the nest turns as one unit."
+                  : ""}
               </p>
             )}
             <div className="flex gap-1">

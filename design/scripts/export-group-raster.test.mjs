@@ -23,3 +23,12 @@ test("hidden group opacity and blend ride the canvas nest", () => {
   assert.match(inspector, /still wrap that nest/);
   assert.match(top, /hidden nest keeps opacity on PNG/);
 });
+
+test("raster walk turns a group nest about the group centre", () => {
+  assert.match(render, /export function paintGroupRotation/);
+  assert.match(render, /ctx\.rotate\(degToRad\(rot\)\)/);
+  assert.match(render, /group box centre/);
+  assert.match(render, /paintGroupRotation\(target, n, paint\)/);
+  assert.match(inspector, /Rotation rides the group on the board, PNG, and SVG/);
+  assert.match(top, /rotation rides the group/);
+});

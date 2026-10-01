@@ -73,13 +73,10 @@ export function rotateNodeAbout(n: DesignNode, cx: number, cy: number, delta: nu
   return { ...n, x: p.x - n.w / 2, y: p.y - n.h / 2, rotation: n.rotation + delta };
 }
 
+/** Nest angle lives on the group. Board, PNG, and SVG turn children about the group centre. */
 export function rotateGroupNodes(nodes: DesignNode[], groupId: string, delta: number): DesignNode[] {
-  const box = groupBox(nodes, groupId);
-  if (!box) return nodes;
-  const cx = box.x + box.w / 2;
-  const cy = box.y + box.h / 2;
-  const ids = new Set(groupTransformIds(nodes, groupId));
-  return nodes.map((n) => (ids.has(n.id) ? rotateNodeAbout(n, cx, cy, delta) : n));
+  if (!delta) return nodes;
+  return nodes.map((n) => (n.id === groupId ? { ...n, rotation: n.rotation + delta } : n));
 }
 
 /** Rotate every selected node (and group descendants) about the shared AABB centre. */

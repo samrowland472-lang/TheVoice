@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-01 23:05 BST — Group rotation rides the nest. A group's angle turns its children about the group centre on the board, in PNG, and on the SVG `<g>`. Hidden groups still hoist with no box, and a rotated hoist keeps that turn. Leaves keep their own rotation. The inspector says so, and the export note adds "rotation rides the group".
+
 2026-10-01 22:05 BST — Hidden group opacity rides the canvas and PNG. A hidden group still paints no box; its visible children stay on the board and inherit the group's opacity. A non-normal blend isolates that nest offscreen, then composites it as one unit, same as SVG. Hide no longer forces children off, so the hoist is what you see.
 
 2026-10-01 21:05 BST — Hidden groups still hoist (no group box) but opacity and blend ride the nest. A hidden group with opacity under 1 or a non-normal blend wraps its visible children in a `data-hoist` group that carries opacity and `isolation:isolate`. A fully opaque normal blend stays a bare hoist. The inspector says so on a hidden group, and the export note adds "hidden nest keeps opacity".
@@ -18,7 +20,7 @@
 
 ## Next recommended
 
-Group rotate on the board still moves children, but PNG/SVG export does not bake a group's rotation onto the nest. Bake group rotation into the raster walk and the SVG group transform.
+Wire the group rotate handle on the board to `rotateGroupNodes` so dragging the handle only adds to the group's angle (the nest already turns from that field). Selection handles are still missing from the stage.
 
 ## Done
 
@@ -42,7 +44,8 @@ Group rotate on the board still moves children, but PNG/SVG export does not bake
 - Group blend isolates the nest (`isolation:isolate`) so the blend composites the group as one unit
 - Hidden groups hoist without a box; opacity and blend still wrap that nest
 - Raster PNG and the board apply the same hidden-group opacity and isolated blend
+- Group rotation rides the nest on the board, PNG, and SVG `<g>` (hidden hoist included)
 
 ## Backlog
 
-- Group rotation is live on the board but not baked into PNG/SVG export
+- Board rotate handle is not wired in the stage (helpers exist; nest angle already paints)

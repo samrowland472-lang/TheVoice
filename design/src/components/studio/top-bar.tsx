@@ -15,15 +15,16 @@ import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
 import { Button } from "@/components/ui/button";
 
-function svgGroupExportNote(nodes: { kind: string; opacity: number; blend: string; visible: boolean }[]) {
+function svgGroupExportNote(nodes: { kind: string; opacity: number; blend: string; visible: boolean; rotation?: number }[]) {
   const groups = nodes.filter((n) => n.kind === "group");
   if (!groups.length) return "";
   const rides = groups.some((n) => n.opacity !== 1);
   const isolated = groups.some((n) => n.blend && n.blend !== "source-over");
+  const turned = groups.some((n) => n.rotation);
   const hoisted = groups.some(
-    (n) => !n.visible && (n.opacity !== 1 || (n.blend && n.blend !== "source-over")),
+    (n) => !n.visible && (n.opacity !== 1 || (n.blend && n.blend !== "source-over") || Boolean(n.rotation)),
   );
-  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}${isolated ? " · blend isolated" : ""}${hoisted ? " · hidden nest keeps opacity on PNG" : ""}`;
+  return ` · ${groups.length} group${groups.length === 1 ? "" : "s"} wrapped${rides ? " · opacity rides the group" : ""}${isolated ? " · blend isolated" : ""}${turned ? " · rotation rides the group" : ""}${hoisted ? " · hidden nest keeps opacity on PNG" : ""}`;
 }
 
 export function TopBar() {

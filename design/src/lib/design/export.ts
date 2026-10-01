@@ -79,6 +79,13 @@ export function svgRotateTransform(n: Pick<DesignNode, "x" | "y" | "w" | "h" | "
   return `rotate(${rot} ${cx} ${cy})`;
 }
 
+/** Group rotation turns the nest about the group box centre. Children keep their own rotation inside it. */
+export function svgGroupRotateTransform(n: Pick<DesignNode, "x" | "y" | "w" | "h" | "rotation">): string {
+  const t = svgRotateTransform(n);
+  if (!t) return "";
+  return ` transform="${t}" data-rotate="1"`;
+}
+
 function rotateWrap(n: DesignNode, inner: string): string {
   const t = svgRotateTransform(n);
   if (!t) return inner;
@@ -300,25 +307,26 @@ function svgGroupId(id: string, prefix = "") {
   return `${prefix}g-${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 }
 
-/** Logical group wrapper. Children keep artboard coordinates, so the group does not add a transform.
+/** Logical group wrapper. Rotation sits on this <g> and turns the nest about the group centre.
  *  Opacity sits on this <g>. A non-normal blend also isolates the nest so the group composites
  *  as one unit against the artboard, not child-by-child against siblings inside the group.
- *  Leaves still write their own opacity.
+ *  Leaves still write their own opacity and their own rotation.
  */
 export function svgGroupOpen(n: GroupNode, prefix = ""): string {
-  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${svgOpacityAttr(n)}${svgGroupBlendStyle(n)}>`;
+  return `<g id="${svgGroupId(n.id, prefix)}" data-kind="group" data-name="${esc(n.name || "Group")}"${svgGroupRotateTransform(n)}${svgOpacityAttr(n)}${svgGroupBlendStyle(n)}>`;
 }
 
 /** Hidden groups hoist children and do not paint a group box.
- *  Opacity and a non-normal blend still wrap that nest so they ride the export.
- *  A fully opaque normal blend stays a bare hoist (no extra tag).
+ *  Opacity, blend, and rotation still wrap that nest so they ride the export.
+ *  A fully opaque, unrotated, normal blend stays a bare hoist (no extra tag).
  */
 export function svgHiddenGroupHoist(n: GroupNode, inner: string): string {
   if (!inner) return "";
   const opacity = svgOpacityAttr(n);
   const blend = svgGroupBlendStyle(n);
-  if (!opacity && !blend) return inner;
-  return `<g data-hoist="1" data-name="${esc(n.name || "Group")}"${opacity}${blend}>${inner}</g>`;
+  const rot = svgGroupRotateTransform(n);
+  if (!opacity && !blend && !rot) return inner;
+  return `<g data-hoist="1" data-name="${esc(n.name || "Group")}"${rot}${opacity}${blend}>${inner}</g>`;
 }
 
 export function exportSvgBody(doc: DesignDocument, prefix = ""): string {
