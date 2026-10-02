@@ -53,3 +53,31 @@ test("frame scale keeps a rotated rect rectangular", () => {
   assert.ok(Math.abs(rotation - 26.56505117707799) < 1e-6);
   assert.match(src, /frameScaleAxes\(n\.rotation \|\| 0, sx, sy\)/);
 });
+
+test("edge handles pin the opposite edge in world space", () => {
+  assert.match(src, /export function edgePinDelta/);
+  assert.match(src, /export function oppositeEdgePoint/);
+  assert.match(src, /export function translateNest/);
+  assert.match(src, /opposite edge/);
+  assert.match(stage, /edgePinDelta/);
+  assert.match(stage, /opposite edge pinned/);
+  assert.match(stage, /edges pin the opposite side/);
+  const from = { x: 0, y: 0, w: 100, h: 100 };
+  const to = { x: 0, y: 0, w: 160, h: 100 };
+  const rot = 90 * Math.PI / 180;
+  const spin = (box, x, y) => {
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    return { x: cx + dx * Math.cos(rot) - dy * Math.sin(rot), y: cy + dx * Math.sin(rot) + dy * Math.cos(rot) };
+  };
+  const before = spin(from, 0, 50);
+  const after = spin(to, 0, 50);
+  const dx = before.x - after.x;
+  const dy = before.y - after.y;
+  assert.ok(Math.abs(dx) > 1 || Math.abs(dy) > 1, "a spun east drag must translate to keep the west edge");
+  const pinned = spin({ ...to, x: to.x + dx, y: to.y + dy }, 0 + dx, 50 + dy);
+  assert.ok(Math.abs(pinned.x - before.x) < 1e-6);
+  assert.ok(Math.abs(pinned.y - before.y) < 1e-6);
+});

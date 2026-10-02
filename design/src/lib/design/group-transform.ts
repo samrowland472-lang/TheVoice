@@ -93,6 +93,56 @@ export function scaleGroupNodes(nodes: DesignNode[], groupId: string, to: Box): 
   });
 }
 
+export type EdgeHandle = "n" | "e" | "s" | "w";
+
+export function isEdgeHandle(handle: string): handle is EdgeHandle {
+  return handle === "n" || handle === "e" || handle === "s" || handle === "w";
+}
+
+/** Midpoint of the edge opposite the dragged handle, in the unrotated nest frame. */
+export function oppositeEdgePoint(box: Box, handle: EdgeHandle): { x: number; y: number } {
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  if (handle === "e") return { x: box.x, y: cy };
+  if (handle === "w") return { x: box.x + box.w, y: cy };
+  if (handle === "s") return { x: cx, y: box.y };
+  return { x: cx, y: box.y + box.h };
+}
+
+/** Endpoints of the pinned edge in the unrotated nest frame. */
+export function oppositeEdgeSegment(box: Box, handle: EdgeHandle): [{ x: number; y: number }, { x: number; y: number }] {
+  if (handle === "e" || handle === "w") {
+    const x = handle === "e" ? box.x : box.x + box.w;
+    return [
+      { x, y: box.y },
+      { x, y: box.y + box.h },
+    ];
+  }
+  const y = handle === "s" ? box.y : box.y + box.h;
+  return [
+    { x: box.x, y },
+    { x: box.x + box.w, y },
+  ];
+}
+
+/**
+ * One-axis local scale moves the nest centre, so a spun group would swing the
+ * opposite edge. Shift so that edge's midpoint stays on the same world point.
+ */
+export function edgePinDelta(from: Box, to: Box, handle: EdgeHandle, rotation: number): { dx: number; dy: number } {
+  const anchor = oppositeEdgePoint(from, handle);
+  const pinned = oppositeEdgePoint(to, handle);
+  const before = spinPoint(from, anchor.x, anchor.y, rotation);
+  const after = spinPoint(to, pinned.x, pinned.y, rotation);
+  return { dx: before.x - after.x, dy: before.y - after.y };
+}
+
+export function translateNest(nodes: DesignNode[], groupId: string, dx: number, dy: number): DesignNode[] {
+  if (!dx && !dy) return nodes;
+  const ids = new Set(groupTransformIds(nodes, groupId));
+  return nodes.map((n) => (ids.has(n.id) ? { ...n, x: n.x + dx, y: n.y + dy } : n));
+}
+
 export function selectionTransformBox(nodes: DesignNode[], selectedIds: string[]): Box | null {
   if (selectedIds.length === 1) {
     const only = nodes.find((n) => n.id === selectedIds[0]);

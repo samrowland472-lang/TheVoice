@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 02:10 BST — Edge handles pin the opposite side. North, east, south, and west handles on a group scale one local axis (Shift does not open the other axis). After the nest scales, the group and its children shift so the opposite edge's midpoint stays on the same world point under the group angle. The pinned edge lights while the handle is held, and the status strip says the axis percent with opposite edge pinned.
+
 2026-10-02 01:01 BST — Spun-frame resize without shear. Corner and edge handles still unspin into the nest frame, then scale children there. A rotated leaf is refit to a rectangle (edge lengths follow the scaled axes, angle follows the width edge) so the nest does not skew. The group box is synced to the union before the drag so the paint centre matches the frame. While a handle is held, the percent sits beside the box and in the status strip. Shift still locks aspect.
 
 2026-10-02 00:15 BST — Spun frame for the group ring. The box, corner handles, and rotate ring now turn with the group's angle about the nest centre, matching the board, PNG, and SVG. Dragging the ring still only adds to that angle. While the ring is held, the degree sits beside it and in the status strip. Shift still snaps to 15°.
@@ -26,7 +28,7 @@
 
 ## Next recommended
 
-Edge handles on a spun nest should scale one local axis and keep the opposite edge pinned in world space after the group angle.
+Corner handles on a spun nest should pin the opposite corner in world space, the same way edge handles pin the opposite edge.
 
 
 ## Done
@@ -56,7 +58,8 @@ Edge handles on a spun nest should scale one local axis and keep the opposite ed
 - Rotate ring and corner handles sit on the spun nest frame; live degree beside the ring
 - Group name chip mounted on the stage again
 - Spun-frame resize refits rotated leaves so the nest does not shear; live percent beside the box
+- Edge handles scale one local axis and pin the opposite edge in world space; pinned edge lights while held
 
 ## Backlog
 
-- Edge handles on a spun nest that scale one local axis and keep the opposite edge pinned in world space
+- Corner handles on a spun nest that pin the opposite corner in world space
