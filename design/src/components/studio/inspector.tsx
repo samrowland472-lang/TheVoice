@@ -12,6 +12,14 @@ import {
   toggleDistributePreview,
   type DistributeAxis,
 } from "@/lib/design/distribute-preview";
+import {
+  alignMoveCount,
+  clearAlignPreview,
+  getAlignPreview,
+  subscribeAlignPreview,
+  toggleAlignPreview,
+  type AlignEdge,
+} from "@/lib/design/align-preview";
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
@@ -72,6 +80,7 @@ export function Inspector() {
 
   useEffect(() => {
     if (getDistributePreview()) clearDistributePreview();
+    if (getAlignPreview()) clearAlignPreview();
   }, [selectionKey, docId]);
 
   return (
@@ -94,13 +103,17 @@ export function Inspector() {
       {rail ? (
         <div className="space-y-3 px-3 py-3">
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Equal gap size stays on the canvas spacing tick. A distribute preview pins first and last on the board.
+            Equal gap size stays on the canvas spacing tick. A distribute preview pins first and last. Align pins the key edge.
           </p>
+          <AlignChrome />
           <DistributeChrome />
         </div>
       ) : (
         <>
       <EqualGapHold />
+      <section className="border-b border-border px-3 py-3">
+        <AlignChrome />
+      </section>
       <section className="space-y-2 border-b border-border px-3 py-3">
         <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Board</div>
         <label className="flex items-center justify-between gap-2 font-mono text-[10px] text-ink-dim">
@@ -250,6 +263,92 @@ function EqualGapHold() {
   );
 }
 
+
+const ALIGN_EDGES: { edge: AlignEdge; label: string; commit: string }[] = [
+  { edge: "left", label: "Left", commit: "Commit left" },
+  { edge: "center", label: "Center", commit: "Commit center" },
+  { edge: "right", label: "Right", commit: "Commit right" },
+  { edge: "top", label: "Top", commit: "Commit top" },
+  { edge: "middle", label: "Middle", commit: "Commit middle" },
+  { edge: "bottom", label: "Bottom", commit: "Commit bottom" },
+];
+
+function AlignChrome() {
+  const doc = useDesign((s) => s.doc);
+  const selection = useDesign((s) => s.selection);
+  const plan = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
+  const roots = doc ? distributeRoots(doc.nodes, selection) : [];
+  const ready = roots.length >= 2;
+
+  return (
+    <div className="space-y-1.5" data-align-ready={ready ? "1" : "0"}>
+      <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Align to key</div>
+      <div className="grid grid-cols-3 gap-1">
+        {ALIGN_EDGES.map(({ edge, label, commit }) => (
+          <AlignButton
+            key={edge}
+            edge={edge}
+            label={plan?.edge === edge ? commit : label}
+            pressed={plan?.edge === edge}
+            disabled={!ready}
+          />
+        ))}
+      </div>
+      {plan ? (
+        <div className="space-y-1.5" data-align-edge={plan.edge} data-align-stay="1" data-align-move={alignMoveCount(plan)} data-align-key={plan.keyId}>
+          <p className="font-mono text-[12px] text-phosphor">{plan.edge} edge</p>
+          <p className="font-mono text-[10px] leading-snug text-ink-faint">
+            Preview only. Key stays. {alignMoveCount(plan)} move. Enter or the lit button commits.
+          </p>
+          <button
+            type="button"
+            className="h-7 w-full rounded-[8px] border border-border font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            onClick={() => clearAlignPreview()}
+          >
+            Cancel preview
+          </button>
+        </div>
+      ) : (
+        <p className="font-mono text-[10px] leading-snug text-ink-faint">
+          {ready
+            ? "Last selected layer is the key. First click draws its edge. Enter commits."
+            : "Select two unlocked layers to align to the key."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AlignButton({
+  edge,
+  label,
+  pressed,
+  disabled,
+}: {
+  edge: AlignEdge;
+  label: string;
+  pressed: boolean;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={pressed}
+      data-align={edge}
+      className={`h-8 rounded-[8px] border font-mono text-[10px] tracking-wide ${
+        pressed ? "border-phosphor text-phosphor" : "border-border text-ink-dim"
+      } hover:border-phosphor hover:text-ink disabled:opacity-40`}
+      onClick={() => {
+        clearDistributePreview(true);
+        toggleAlignPreview(edge);
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function DistributeChrome() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
@@ -311,7 +410,10 @@ function DistributeButton({
       className={`h-8 flex-1 rounded-[8px] border font-mono text-[10px] tracking-wide ${
         pressed ? "border-phosphor text-phosphor" : "border-border text-ink-dim"
       } hover:border-phosphor hover:text-ink disabled:opacity-40`}
-      onClick={() => toggleDistributePreview(axis)}
+      onClick={() => {
+        clearAlignPreview(true);
+        toggleDistributePreview(axis);
+      }}
     >
       {label}
     </button>

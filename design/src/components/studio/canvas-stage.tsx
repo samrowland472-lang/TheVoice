@@ -34,6 +34,7 @@ import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/de
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
+import { drawAlignPreview, getAlignPreview, subscribeAlignPreview } from "@/lib/design/align-preview";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -101,6 +102,7 @@ export function CanvasStage() {
   const nudgeHold = useDesign((s) => s.nudgeHold);
   const inspectorRail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
   const distributePreview = useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
+  const alignPreview = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -324,6 +326,7 @@ export function CanvasStage() {
         drawSmartGuides(ctx, guides, doc.artboard, viewport.zoom);
       }
       if (distributePreview) drawDistributePreview(ctx, distributePreview, viewport.zoom);
+      if (alignPreview) drawAlignPreview(ctx, alignPreview, viewport.zoom);
       const mq = marqueeRef.current;
       if (mq && (mq.w > 0.5 || mq.h > 0.5)) {
         ctx.beginPath();
@@ -449,7 +452,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
