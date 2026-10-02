@@ -432,7 +432,11 @@ export function CanvasStage() {
             ctx.textAlign = ex >= cx ? "left" : "right";
             ctx.textBaseline = ey >= cy ? "top" : "bottom";
             const step = Math.round(mag * 10) / 10;
-            ctx.fillText(cue.snapped ? `${step} px · nest · guide` : `${step} px · nest`, ex, ey);
+            const gaps = cue.guides?.equalGaps ?? [];
+            const named = gaps.length
+              ? `${step} px · nest · equal gap ${gaps.map((g) => Math.round(g.size * 10) / 10).join(" / ")}`
+              : `${step} px · nest · guide`;
+            ctx.fillText(cue.snapped ? named : `${step} px · nest`, ex, ey);
             ctx.restore();
           }
         }

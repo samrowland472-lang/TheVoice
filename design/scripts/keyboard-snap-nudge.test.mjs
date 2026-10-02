@@ -6,6 +6,7 @@ const src = readFileSync(new URL("../src/lib/design/group-transform.ts", import.
 const store = readFileSync(new URL("../src/lib/design/store-impl.ts", import.meta.url), "utf8");
 const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
 const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
+const snap = readFileSync(new URL("../src/lib/design/snap.ts", import.meta.url), "utf8");
 
 test("keyboard nest nudge snaps with the drag guide set", () => {
   assert.match(src, /export function keyboardSnapNudge/);
@@ -22,4 +23,10 @@ test("keyboard nest nudge snaps with the drag guide set", () => {
   assert.match(stage, /drawSmartGuides/);
   assert.match(stage, /nudgeHold/);
   assert.match(stage, /nest · guide/);
+  assert.match(src, /snapped to equal gap/);
+  assert.match(src, /equalGaps/);
+  assert.match(store, /guides\.equalGaps/);
+  assert.match(stage, /equal gap/);
+  assert.match(snap, /equalGaps/);
+  assert.match(snap, /gap\?: number/);
 });

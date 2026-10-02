@@ -201,12 +201,21 @@ export function nudgeSelection(nodes: DesignNode[], selectedIds: string[], dx: n
   });
 }
 
-export function nudgeStatus(dx: number, dy: number, group: boolean, snapped = false): string {
+export function nudgeStatus(
+  dx: number,
+  dy: number,
+  group: boolean,
+  snapped = false,
+  equalGaps: { axis: "x" | "y"; size: number }[] = [],
+): string {
   const parts: string[] = [];
   if (dx) parts.push(`${formatStep(Math.abs(dx))} px ${dx < 0 ? "left" : "right"}`);
   if (dy) parts.push(`${formatStep(Math.abs(dy))} px ${dy < 0 ? "up" : "down"}`);
   const motion = parts.join(" · ");
-  const snap = snapped ? " · snapped to guide" : "";
+  const gaps = equalGaps
+    .map((g) => `${formatStep(g.size)} px ${g.axis === "x" ? "across" : "down"}`)
+    .join(" · ");
+  const snap = gaps ? ` · snapped to equal gap ${gaps}` : snapped ? " · snapped to guide" : "";
   return group ? `Nest nudged ${motion} · group moved as one${snap}` : `Nudged ${motion}${snap}`;
 }
 
@@ -260,10 +269,20 @@ export function keyboardSnapNudge(
   const hit = smartSnap(proposed, others, artboard, threshold, extra);
   const x = releaseSnapAxis(dx, hit.dx);
   const y = releaseSnapAxis(dy, hit.dy);
+  const equalGaps = (hit.guides.equalGaps ?? []).filter(
+    (g) => (g.axis === "x" && x.held) || (g.axis === "y" && y.held),
+  );
+  const spaces = (hit.guides.spaces ?? []).filter((t) => {
+    if (t.axis === "x" && !x.held) return false;
+    if (t.axis === "y" && !y.held) return false;
+    if (!equalGaps.length) return true;
+    return equalGaps.some((g) => g.axis === t.axis && Math.abs(g.size - t.size) < 0.75);
+  });
   const guides: GuideSet = {
     x: x.held ? hit.guides.x : [],
     y: y.held ? hit.guides.y : [],
-    spaces: x.held || y.held ? (hit.guides.spaces ?? []) : [],
+    spaces,
+    equalGaps,
   };
   return { dx: x.delta, dy: y.delta, guides, snapped: x.held || y.held };
 }

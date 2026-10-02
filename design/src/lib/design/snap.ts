@@ -9,10 +9,17 @@ export interface SpaceTick {
   size: number;
 }
 
+export interface EqualGap {
+  axis: "x" | "y";
+  size: number;
+}
+
 export interface GuideSet {
   x: number[];
   y: number[];
   spaces?: SpaceTick[];
+  /** Winning keyboard/drag snap landed on a matched sibling gap. */
+  equalGaps?: EqualGap[];
 }
 
 export type Box = { x: number; y: number; w: number; h: number };
@@ -139,7 +146,7 @@ export function smartSnap(
     ys.push(e.t, e.m, e.b);
   }
 
-  type Cand = { delta: number; dist: number; line: number };
+  type Cand = { delta: number; dist: number; line: number; gap?: number };
   const xCands: Cand[] = [];
   const yCands: Cand[] = [];
 
@@ -163,12 +170,13 @@ export function smartSnap(
       const b = sortedX[j]!;
       const gap = b.x - ar;
       if (gap <= 0) continue;
-      xCands.push({ delta: a.x - gap - box.w - box.x, dist: Math.abs(a.x - gap - box.w - box.x), line: a.x });
-      xCands.push({ delta: ar + gap - box.x, dist: Math.abs(ar + gap - box.x), line: ar + gap });
+      xCands.push({ delta: a.x - gap - box.w - box.x, dist: Math.abs(a.x - gap - box.w - box.x), line: a.x, gap });
+      xCands.push({ delta: ar + gap - box.x, dist: Math.abs(ar + gap - box.x), line: ar + gap, gap });
       xCands.push({
         delta: b.x + b.w + gap - box.x,
         dist: Math.abs(b.x + b.w + gap - box.x),
         line: b.x + b.w,
+        gap,
       });
     }
     xCands.push({ delta: a.x - box.w - box.x, dist: Math.abs(a.x - box.w - box.x), line: a.x });
@@ -181,12 +189,13 @@ export function smartSnap(
       const b = sortedY[j]!;
       const gap = b.y - ab;
       if (gap <= 0) continue;
-      yCands.push({ delta: a.y - gap - box.h - box.y, dist: Math.abs(a.y - gap - box.h - box.y), line: a.y });
-      yCands.push({ delta: ab + gap - box.y, dist: Math.abs(ab + gap - box.y), line: ab + gap });
+      yCands.push({ delta: a.y - gap - box.h - box.y, dist: Math.abs(a.y - gap - box.h - box.y), line: a.y, gap });
+      yCands.push({ delta: ab + gap - box.y, dist: Math.abs(ab + gap - box.y), line: ab + gap, gap });
       yCands.push({
         delta: b.y + b.h + gap - box.y,
         dist: Math.abs(b.y + b.h + gap - box.y),
         line: b.y + b.h,
+        gap,
       });
     }
     yCands.push({ delta: a.y - box.h - box.y, dist: Math.abs(a.y - box.h - box.y), line: a.y });
@@ -195,6 +204,7 @@ export function smartSnap(
 
   let bestX = threshold + 1;
   let dx = 0;
+  let gapX: number | null = null;
   const gx: number[] = [];
   for (const c of xCands) {
     if (c.dist < bestX - 0.01) {
@@ -202,13 +212,16 @@ export function smartSnap(
       dx = c.delta;
       gx.length = 0;
       gx.push(c.line);
+      gapX = c.gap ?? null;
     } else if (Math.abs(c.dist - bestX) <= 0.01 && c.dist <= threshold) {
       gx.push(c.line);
+      if (gapX == null && c.gap != null) gapX = c.gap;
     }
   }
 
   let bestY = threshold + 1;
   let dy = 0;
+  let gapY: number | null = null;
   const gy: number[] = [];
   for (const c of yCands) {
     if (c.dist < bestY - 0.01) {
@@ -216,8 +229,10 @@ export function smartSnap(
       dy = c.delta;
       gy.length = 0;
       gy.push(c.line);
+      gapY = c.gap ?? null;
     } else if (Math.abs(c.dist - bestY) <= 0.01 && c.dist <= threshold) {
       gy.push(c.line);
+      if (gapY == null && c.gap != null) gapY = c.gap;
     }
   }
 
@@ -227,6 +242,15 @@ export function smartSnap(
   };
   const snappedBox = { x: box.x + (bestX <= threshold ? dx : 0), y: box.y + (bestY <= threshold ? dy : 0), w: box.w, h: box.h };
   guides.spaces = spacingTicks(snappedBox, siblingBoxes, artboard, guides);
+  const equalGaps: EqualGap[] = [];
+  if (bestX <= threshold && gapX != null) equalGaps.push({ axis: "x", size: gapX });
+  if (bestY <= threshold && gapY != null) equalGaps.push({ axis: "y", size: gapY });
+  if (equalGaps.length) {
+    guides.equalGaps = equalGaps;
+    guides.spaces = (guides.spaces ?? []).filter((t) =>
+      equalGaps.some((g) => g.axis === t.axis && Math.abs(g.size - t.size) < 0.75),
+    );
+  }
 
   return {
     dx: bestX <= threshold ? dx : 0,
@@ -280,6 +304,7 @@ export function drawSmartGuides(
   }
   ctx.setLineDash([]);
   const tick = 5 / zoom;
+  const named = guides.equalGaps ?? [];
   for (const s of guides.spaces ?? []) {
     ctx.beginPath();
     if (s.axis === "x") {
@@ -298,6 +323,17 @@ export function drawSmartGuides(
       ctx.lineTo(s.mid + tick, s.b);
     }
     ctx.stroke();
+    const match = named.find((g) => g.axis === s.axis && Math.abs(g.size - s.size) < 0.75);
+    if (!match) continue;
+    const size = Math.round(match.size * 10) / 10;
+    const label = Number.isInteger(size) ? `${size} px` : `${size} px`;
+    ctx.save();
+    ctx.font = `${11 / zoom}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (s.axis === "x") ctx.fillText(label, (s.a + s.b) / 2, s.mid - 10 / zoom);
+    else ctx.fillText(label, s.mid + 14 / zoom, (s.a + s.b) / 2);
+    ctx.restore();
   }
   ctx.restore();
 }

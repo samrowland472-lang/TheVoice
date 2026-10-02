@@ -17,6 +17,7 @@ import {
 import { blankDocument, instantiateTemplate } from "./templates";
 import { expandMovePlaces, getNudgeCue, keyboardSnapNudge, nudgeSelection, nudgeStatus, setNudgeCue } from "./group-transform";
 import { setStudioStatus } from "./studio-status";
+import type { GuideSet } from "./snap";
 import { isGroup } from "./types";
 import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
@@ -380,11 +381,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
     if (!doc || !selection.length || (!dx && !dy)) return;
     let appliedX = dx;
     let appliedY = dy;
-    let guides: { x: number[]; y: number[]; spaces?: { axis: "x" | "y"; a: number; b: number; mid: number; size: number }[] } = {
-      x: [],
-      y: [],
-      spaces: [],
-    };
+    let guides: GuideSet = { x: [], y: [], spaces: [], equalGaps: [] };
     let snapped = false;
     if (opts?.snap) {
       const extra = {
@@ -404,13 +401,13 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const only = selection.length === 1 ? doc.nodes.find((n: DesignNode) => n.id === selection[0]) : null;
     const group = Boolean(only && isGroup(only) && !only.locked);
     setNudgeCue({ dx: appliedX, dy: appliedY, group, guides, snapped });
-    setStudioStatus(nudgeStatus(appliedX, appliedY, group, snapped));
+    setStudioStatus(nudgeStatus(appliedX, appliedY, group, snapped, guides.equalGaps ?? []));
     set({ doc: { ...doc, nodes: next }, dirty: true, nudgeHold: Date.now() });
   },
   releaseNudgeGuides: () => {
     const cue = getNudgeCue();
     if (cue?.guides && (cue.guides.x.length || cue.guides.y.length || (cue.guides.spaces?.length ?? 0) > 0)) {
-      setNudgeCue({ ...cue, guides: { x: [], y: [], spaces: [] }, snapped: false });
+      setNudgeCue({ ...cue, guides: { x: [], y: [], spaces: [], equalGaps: [] }, snapped: false });
     }
     set({ nudgeHold: Date.now() });
   },

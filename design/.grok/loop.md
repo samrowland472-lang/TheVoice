@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 16:05 BST — Keyboard snap names a matched equal gap. When an arrow step lands on a sibling gap, the status strip says snapped to equal gap with the size across or down, the phosphor spacing tick stays lit with the guide and reads that size, and Alt still bypasses the snap. Releasing the arrow clears the tick.
+
 2026-10-02 15:05 BST — Keyboard nest nudge snaps to guides. Arrow keys still step 1 px, Shift 10 px, Alt 0.5 px. With snap on, a step that lands within the drag threshold pulls the nest onto the artboard, a sibling, or a ruler guide and lights that phosphor line while the arrow is held. Alt bypasses the snap. A nest already on the line steps off so the guide does not trap it. The status strip says snapped to guide.
 
 2026-10-02 14:02 BST — Keyboard nudge moves a selected group as one nest. Arrow keys still step 1 px, Shift 10 px, Alt 0.5 px. A lone group selection shifts the group and its children together (locked groups stay put). A phosphor tick leaves the nest centre with the step, and the status strip says the direction with group moved as one. Mixed selections still expand like a drag.
@@ -36,7 +38,7 @@
 
 ## Next recommended
 
-Name the equal-gap spacing tick in the status strip when a keyboard snap lands on a matched gap, and keep that tick lit with the guide while the arrow is held.
+Show the matched gap on the inspector while a keyboard snap holds the equal-gap tick, so the size is readable without the canvas label.
 
 
 ## Done
@@ -71,7 +73,8 @@ Name the equal-gap spacing tick in the status strip when a keyboard snap lands o
 - Live width and height percent beside the dragged corner handle
 - Keyboard nudge moves a selected group and its children as one nest; tick and status read the step
 - Keyboard nest nudge snaps to guides (Alt bypasses) and lights the guide while held
+- Keyboard snap names a matched equal gap in the status strip and keeps that spacing tick lit while the arrow is held
 
 ## Backlog
 
-- Name the equal-gap spacing tick in the status strip when a keyboard snap lands on a matched gap
+- Show the matched gap size in the inspector while a keyboard equal-gap snap is held
