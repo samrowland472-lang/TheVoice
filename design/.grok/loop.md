@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 22:12 BST — Align to the artboard previews the phosphor edge before commit. Left, center, right, top, middle, and bottom draw the board edge; layers already on it stay with solid corners, the rest are dashed ghosts. The inspector and status strip name the edge plus how many stay and how many move. Enter or the lit button commits, Esc cancels. A selected group moves with its children. The key preview still names the layer that stays.
+
 2026-10-02 22:10 BST — Align preview names the key layer. The phosphor key box and the edge tick read that layer's name, and the inspector and status strip say that name stays. Enter or the lit button still commits, Esc cancels.
 
 2026-10-02 21:20 BST — Align to the key object previews the phosphor edge before commit. Last selected unlocked layer is the key and stays; the other layers draw dashed ghosts on that edge. The inspector and status strip name the edge plus how many move. Enter or the lit button commits, Esc cancels. A selected group moves with its children.
@@ -50,11 +52,6 @@
 
 2026-10-01 12:05 BST — Layers drop polish. Illegal nests (a group into itself or a descendant) show a faint ring and No, and the drop is refused. Holding the grip on a collapsed group centre opens it so children can be targeted. The insert bar follows the row indent. While dragging, the panel says centre nests and the edge keeps that row's parent.
 
-## Next recommended
-
-Align selection to the key object with a phosphor edge preview before commit, matching the distribute gap preview.
-
-
 ## Done
 
 - Align preview names the key layer on the edge, the key box, the inspector, and the status strip
@@ -96,11 +93,12 @@ Align selection to the key object with a phosphor edge preview before commit, ma
 - Distribute selection previews phosphor gap ticks before commit; Enter or a second click applies it
 - Distribute preview pins first and last with stay marks; inspector names how many move
 - Align to the key object previews the phosphor edge before commit; key stays, Enter commits
+- Align to the artboard with the same phosphor edge preview; board edge stays, Enter commits
 
 ## Backlog
 
-- Align selection to the artboard with the same phosphor edge preview before commit
+- Align to the key and the artboard in one preview, with a target chip so the same edge button can flip between last selected and the board
 
 ## Next recommended
 
-Align to the artboard (left, center, right, top, middle, bottom) using the same preview, so the key edge can target the board instead of the last selected layer.
+A target chip on the align edge buttons so one row can preview either the key object or the artboard without a second set of controls.

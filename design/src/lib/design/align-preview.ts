@@ -15,8 +15,11 @@ export type AlignEdgeLine = {
   to: number;
 };
 
+export type AlignTarget = "key" | "board";
+
 export type AlignPlan = {
   edge: AlignEdge;
+  target: AlignTarget;
   keyId: string;
   keyName: string;
   ids: string[];
@@ -116,12 +119,49 @@ export function planAlign(nodes: DesignNode[], ids: string[], edge: AlignEdge): 
   if (!Number.isFinite(from) || !Number.isFinite(to)) return null;
   return {
     edge,
+    target: "key",
     keyId: key.id,
     keyName: key.name?.trim() || "key",
     ids: roots.map((n) => n.id),
     deltas,
     ghosts,
     edgeLine: { axis: vertical ? "x" : "y", at: edgeAt(keyBox, edge), from, to },
+  };
+}
+
+/**
+ * Align unlocked roots to an artboard edge. Layers already on that edge stay.
+ * One unlocked layer is enough. Groups move with their children on commit.
+ */
+export function planAlignBoard(
+  nodes: DesignNode[],
+  ids: string[],
+  edge: AlignEdge,
+  board: { width: number; height: number },
+): AlignPlan | null {
+  const roots = alignRoots(nodes, ids);
+  if (!roots.length || board.width <= 0 || board.height <= 0) return null;
+  const frame = { x: 0, y: 0, w: board.width, h: board.height };
+  const deltas: AlignPlan["deltas"] = [];
+  const ghosts: AlignGhost[] = [];
+  const vertical = edge === "left" || edge === "center" || edge === "right";
+  for (const n of roots) {
+    const box = geometryBox(n);
+    const { dx, dy } = edgeOffset(box, frame, edge);
+    deltas.push({ id: n.id, dx, dy });
+    ghosts.push({ x: box.x + dx, y: box.y + dy, w: box.w, h: box.h, stay: dx === 0 && dy === 0 });
+  }
+  const from = vertical ? 0 : 0;
+  const to = vertical ? board.height : board.width;
+  return {
+    edge,
+    target: "board",
+    keyId: "artboard",
+    keyName: "board",
+    ids: roots.map((n) => n.id),
+    deltas,
+    ghosts,
+    edgeLine: { axis: vertical ? "x" : "y", at: edgeAt(frame, edge), from, to },
   };
 }
 
@@ -170,30 +210,34 @@ export function clearAlignPreview(silent = false) {
   if (!silent) releaseStudioStatus();
 }
 
-export function armAlignPreview(edge: AlignEdge): AlignPlan | null {
+export function armAlignPreview(edge: AlignEdge, target: AlignTarget = "key"): AlignPlan | null {
   const doc = useDesign.getState().doc;
   const selection = useDesign.getState().selection;
   if (!doc) return null;
-  const plan = planAlign(doc.nodes, selection, edge);
+  const plan = target === "board"
+    ? planAlignBoard(doc.nodes, selection, edge, doc.artboard)
+    : planAlign(doc.nodes, selection, edge);
   if (!plan) {
     preview = null;
     emit();
-    holdStudioStatus("Align needs two unlocked layers");
+    holdStudioStatus(target === "board" ? "Align to board needs an unlocked layer" : "Align needs two unlocked layers");
     return null;
   }
   preview = plan;
   emit();
-  holdStudioStatus(`Align preview · ${plan.edge} edge · ${plan.keyName} stays · ${alignMoveCount(plan)} move · Enter commits`);
+  const stay = plan.ghosts.filter((g) => g.stay).length;
+  const where = plan.target === "board" ? "board edge" : `${plan.keyName} stays`;
+  holdStudioStatus(`Align preview · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · Enter commits`);
   return plan;
 }
 
 /** First click previews the phosphor edge. A second click on the same edge commits. */
-export function toggleAlignPreview(edge: AlignEdge) {
-  if (preview?.edge === edge) {
+export function toggleAlignPreview(edge: AlignEdge, target: AlignTarget = "key") {
+  if (preview?.edge === edge && preview.target === target) {
     commitAlignPreview();
     return;
   }
-  armAlignPreview(edge);
+  armAlignPreview(edge, target);
 }
 
 export function commitAlignPreview(): boolean {
@@ -205,7 +249,7 @@ export function commitAlignPreview(): boolean {
   useDesign.setState({ doc: { ...doc, nodes: next }, dirty: true });
   preview = null;
   emit();
-  holdStudioStatus(`Aligned ${plan.edge} to ${plan.keyName}`);
+  holdStudioStatus(`Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName}`);
   return true;
 }
 
@@ -243,8 +287,8 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
     ctx.lineTo(g.x + g.w, g.y + g.h - pin);
     ctx.stroke();
     ctx.fillStyle = "rgba(63,198,255,0.95)";
-    ctx.fillText("key", g.x + g.w / 2, g.y - 9 / z);
-    ctx.fillText(plan.keyName, g.x + g.w / 2, g.y - 20 / z);
+    ctx.fillText(plan.target === "board" ? "stay" : "key", g.x + g.w / 2, g.y - 9 / z);
+    if (plan.target !== "board") ctx.fillText(plan.keyName, g.x + g.w / 2, g.y - 20 / z);
   }
   ctx.setLineDash([]);
   ctx.strokeStyle = "rgba(63,198,255,0.95)";
@@ -268,7 +312,9 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
     ctx.lineTo(line.to, line.at + tick);
   }
   ctx.stroke();
-  const label = `${plan.edge} · ${plan.keyName}`;
+  const label = plan.target === "board"
+    ? `${plan.edge} board · ${alignMoveCount(plan)} move`
+    : `${plan.edge} · ${plan.keyName} · ${alignMoveCount(plan)} move`;
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
   if (line.axis === "x") ctx.fillText(label, line.at + 28 / z, (line.from + line.to) / 2);
   else ctx.fillText(label, (line.from + line.to) / 2, line.at - 12 / z);

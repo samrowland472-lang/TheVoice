@@ -12,7 +12,7 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /export function drawAlignPreview/);
   assert.match(preview, /First click previews the phosphor edge/);
   assert.match(preview, /expandMovePlaces/);
-  assert.match(preview, /fillText\("key"/);
+  assert.match(preview, /"stay" : "key"/);
   assert.match(preview, /keyName/);
   assert.match(preview, /plan\.keyName/);
   assert.match(inspector, /data-align-key-name/);
@@ -24,8 +24,24 @@ test("align preview draws the key edge before commit", () => {
   assert.match(inspector, /data-align-move/);
   assert.match(inspector, /data-align=/);
   assert.match(inspector, /Commit left/);
+  assert.match(inspector, /Align to board/);
+  assert.match(inspector, /data-align-board=/);
+  assert.match(inspector, /data-align-target="board"/);
+  assert.match(preview, /export function planAlignBoard/);
+  assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.target === "board" \? "board" : plan\.keyName\}/);
   assert.match(keys, /commitAlignPreview\(\)/);
   assert.match(keys, /clearAlignPreview\(\)/);
+});
+
+test("board left edge shifts a box onto x 0 and pins a box already there", () => {
+  const board = { x: 0, w: 200 };
+  const mover = { x: 40, w: 20 };
+  const stay = { x: 0, w: 10 };
+  assert.equal(board.x - mover.x, -40);
+  assert.equal(board.x - stay.x, 0);
+  assert.match(preview, /target: "board"/);
+  assert.match(preview, /Align to board needs an unlocked layer/);
+  assert.match(preview, /board edge/);
 });
 
 test("left edge keeps the key and shifts the other box", () => {
@@ -35,5 +51,5 @@ test("left edge keeps the key and shifts the other box", () => {
   assert.equal(dx, 40);
   assert.equal(other.x + dx, key.x);
   assert.match(preview, /key stays/);
-  assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.keyName\}/);
+  assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.target === "board" \? "board" : plan\.keyName\}/);
 });
