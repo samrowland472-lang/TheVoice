@@ -304,9 +304,14 @@ function publishEqualGapHold(next: EqualGapHold[]) {
   for (const fn of equalGapListeners) fn();
 }
 
-/** Matched spacing while a keyboard snap holds the equal-gap tick. */
+/** Matched spacing while a drag or keyboard snap holds the equal-gap tick. */
 export function getEqualGapHold() {
   return equalGapHold;
+}
+
+/** Drag publishes the matched size directly; keyboard still goes through the nudge cue. */
+export function setEqualGapHold(gaps: EqualGapHold[]) {
+  publishEqualGapHold(gaps.map((g) => ({ axis: g.axis, size: g.size })));
 }
 
 export function subscribeEqualGapHold(fn: () => void) {

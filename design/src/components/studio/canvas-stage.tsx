@@ -16,7 +16,9 @@ import {
   rotateSelectionNodes,
   scaleGroupNodes,
   selectionTransformBox,
+  formatEqualGapHold,
   getNudgeCue,
+  setEqualGapHold,
   setNudgeCue,
   spinPoint,
   translateNest,
@@ -697,8 +699,12 @@ export function CanvasStage() {
         dx += snapped.dx;
         dy += snapped.dy;
         guidesRef.current = snapped.guides;
+        const gaps = snapped.guides.equalGaps ?? [];
+        setEqualGapHold(gaps);
+        if (gaps.length) setStudioStatus(`Snapped to equal gap ${formatEqualGapHold(gaps)}`);
       } else {
         guidesRef.current = { x: [], y: [], spaces: [] };
+        setEqualGapHold([]);
       }
       s.placeNodes(moving.orig.map((o) => ({ id: o.id, x: o.x + dx, y: o.y + dy })));
       setHoverTick((n) => n + 1);
@@ -767,6 +773,8 @@ export function CanvasStage() {
     if (moveRef.current) {
       moveRef.current = null;
       guidesRef.current = { x: [], y: [], spaces: [] };
+      setEqualGapHold([]);
+      setStudioStatus(null);
       setHoverTick((n) => n + 1);
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);

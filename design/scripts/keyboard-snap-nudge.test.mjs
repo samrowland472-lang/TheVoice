@@ -34,5 +34,8 @@ test("keyboard nest nudge snaps with the drag guide set", () => {
   assert.match(src, /export function formatEqualGapHold/);
   assert.match(src, /publishEqualGapHold/);
   assert.match(inspector, /data-equal-gap-hold/);
-  assert.match(inspector, /Matched spacing while the arrow is held/);
+  assert.match(inspector, /Matched spacing while a drag or arrow holds the snap/);
+  assert.match(stage, /setEqualGapHold/);
+  assert.match(src, /export function setEqualGapHold/);
+
 });

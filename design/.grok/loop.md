@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 18:05 BST — Drag equal-gap snap names the matched size in the inspector. While a selection is dragged onto a sibling gap, the phosphor Equal gap readout shows the size across or down, the same spacing the canvas tick names, and the status strip says snapped to equal gap. Alt still bypasses the snap. Releasing the pointer clears the readout.
+
 2026-10-02 17:08 BST — Inspector shows the matched equal gap while the arrow is held. The phosphor Equal gap readout sits at the top of the inspector with the size across or down, the same spacing the canvas tick names. Releasing the arrow, or a step that does not match a gap, clears it.
 
 2026-10-02 16:05 BST — Keyboard snap names a matched equal gap. When an arrow step lands on a sibling gap, the status strip says snapped to equal gap with the size across or down, the phosphor spacing tick stays lit with the guide and reads that size, and Alt still bypasses the snap. Releasing the arrow clears the tick.
@@ -40,11 +42,12 @@
 
 ## Next recommended
 
-Name a drag equal-gap snap in the inspector the same way the keyboard hold does, so a pointer snap is readable off the canvas.
+Show the drag equal-gap size on the spacing tick itself when the inspector is collapsed, so the match is readable from the canvas alone.
 
 
 ## Done
 
+- Drag equal-gap snap names the matched size in the inspector while the pointer holds the gap; release clears it
 - isolateDocument / cropIsolateDocument
 - Export menu: Isolate PNG / SVG / crop variants
 - shadowCropExtents + cropSelectionDocument pad
@@ -80,4 +83,4 @@ Name a drag equal-gap snap in the inspector the same way the keyboard hold does,
 
 ## Backlog
 
-- Drag equal-gap snap names the matched size in the inspector, not only on keyboard nudge
+- Canvas spacing tick keeps the equal-gap size when the inspector is collapsed

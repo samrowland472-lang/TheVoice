@@ -201,7 +201,7 @@ function EqualGapHold() {
       <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-phosphor">Equal gap</div>
       <p className="font-mono text-[12px] text-ink">{label}</p>
       <p className="font-mono text-[10px] leading-snug text-ink-faint">
-        Matched spacing while the arrow is held. Releasing the key clears this readout.
+        Matched spacing while a drag or arrow holds the snap. Releasing clears this readout.
       </p>
     </section>
   );
