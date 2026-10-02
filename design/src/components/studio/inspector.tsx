@@ -5,6 +5,7 @@ import { getInspectorRail, setInspectorRail, subscribeInspectorRail } from "@/li
 import {
   clearDistributePreview,
   distributeRoots,
+  formatDistributeGap,
   getDistributePreview,
   subscribeDistributePreview,
   toggleDistributePreview,
@@ -263,13 +264,21 @@ function DistributeChrome() {
         <DistributeButton axis="v" label={plan?.axis === "v" ? "Commit down" : "Down"} pressed={plan?.axis === "v"} disabled={!ready} />
       </div>
       {plan ? (
-        <button
-          type="button"
-          className="h-7 w-full rounded-[8px] border border-border font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-          onClick={() => clearDistributePreview()}
-        >
-          Cancel preview
-        </button>
+        <div className="space-y-1.5" data-distribute-gap={formatDistributeGap(plan.gap)}>
+          <p className="font-mono text-[12px] text-phosphor">
+            {formatDistributeGap(plan.gap)} px {plan.axis === "h" ? "across" : "down"}
+          </p>
+          <p className="font-mono text-[10px] leading-snug text-ink-faint">
+            Preview only. First and last stay. Enter or the lit button commits.
+          </p>
+          <button
+            type="button"
+            className="h-7 w-full rounded-[8px] border border-border font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            onClick={() => clearDistributePreview()}
+          >
+            Cancel preview
+          </button>
+        </div>
       ) : (
         <p className="font-mono text-[10px] leading-snug text-ink-faint">
           {ready

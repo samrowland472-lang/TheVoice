@@ -2,7 +2,7 @@
 
 ## Iteration
 
-2026-10-02 20:10 BST — Distribute selection previews the even gap before commit. Across or Down draws phosphor ghosts and a size tick on the board; first and last stay. Enter or a second click commits, Esc cancels. A selected group moves with its children.
+2026-10-02 20:18 BST — Distribute preview names the even gap in the inspector before commit. Across or Down draws phosphor ghosts and a size tick on the board, and the inspector reads the same size across or down. First and last stay. Enter or the lit button commits, Esc cancels. A selected group moves with its children.
 
 2026-10-02 19:05 BST — Canvas spacing tick keeps the equal-gap size when the inspector is collapsed. Rail hides the inspector Equal gap readout (localStorage). The phosphor tick still names the matched size across or down, including when the spacing geometry was filtered off the live guides.
 

@@ -14,6 +14,7 @@ test("distribute preview plans an even gap and draws it before commit", () => {
   assert.match(preview, /expandMovePlaces/);
   assert.match(stage, /drawDistributePreview\(ctx, distributePreview, viewport.zoom\)/);
   assert.match(inspector, /Commit across/);
+  assert.match(inspector, /data-distribute-gap/);
   assert.match(inspector, /data-distribute=/);
   assert.match(keys, /commitDistributePreview\(\)/);
   assert.match(keys, /clearDistributePreview\(\)/);
