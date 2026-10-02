@@ -5,6 +5,7 @@ import { getInspectorRail, setInspectorRail, subscribeInspectorRail } from "@/li
 import {
   clearDistributePreview,
   distributeRoots,
+  distributeMoveCount,
   formatDistributeGap,
   getDistributePreview,
   subscribeDistributePreview,
@@ -93,7 +94,7 @@ export function Inspector() {
       {rail ? (
         <div className="space-y-3 px-3 py-3">
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Equal gap size stays on the canvas spacing tick.
+            Equal gap size stays on the canvas spacing tick. A distribute preview pins first and last on the board.
           </p>
           <DistributeChrome />
         </div>
@@ -264,12 +265,12 @@ function DistributeChrome() {
         <DistributeButton axis="v" label={plan?.axis === "v" ? "Commit down" : "Down"} pressed={plan?.axis === "v"} disabled={!ready} />
       </div>
       {plan ? (
-        <div className="space-y-1.5" data-distribute-gap={formatDistributeGap(plan.gap)}>
+        <div className="space-y-1.5" data-distribute-gap={formatDistributeGap(plan.gap)} data-distribute-stay="2" data-distribute-move={distributeMoveCount(plan)}>
           <p className="font-mono text-[12px] text-phosphor">
             {formatDistributeGap(plan.gap)} px {plan.axis === "h" ? "across" : "down"}
           </p>
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Preview only. First and last stay. Enter or the lit button commits.
+            Preview only. First and last stay. {distributeMoveCount(plan)} move. Enter or the lit button commits.
           </p>
           <button
             type="button"

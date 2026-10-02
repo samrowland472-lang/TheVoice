@@ -15,7 +15,11 @@ test("distribute preview plans an even gap and draws it before commit", () => {
   assert.match(stage, /drawDistributePreview\(ctx, distributePreview, viewport.zoom\)/);
   assert.match(inspector, /Commit across/);
   assert.match(inspector, /data-distribute-gap/);
+  assert.match(inspector, /data-distribute-stay/);
+  assert.match(inspector, /data-distribute-move/);
   assert.match(inspector, /data-distribute=/);
+  assert.match(preview, /export function distributeMoveCount/);
+  assert.match(preview, /fillText\("stay"/);
   assert.match(keys, /commitDistributePreview\(\)/);
   assert.match(keys, /clearDistributePreview\(\)/);
 });
@@ -41,5 +45,6 @@ test("even spacing keeps the first and last boxes and names one gap", () => {
   assert.equal(next[0].x, 0);
   assert.equal(next[1].x, 45);
   assert.equal(next[2].x, 90);
-  assert.match(preview, /px \$\{plan\.axis === "h" \? "across" : "down"\}/);
+  assert.match(preview, /px \$\{way\}/);
+  assert.match(preview, /ghosts\[ghosts\.length - 1\]!\.stay = true/);
 });

@@ -14,7 +14,7 @@ export type DistributeTick = {
   size: number;
 };
 
-export type DistributeGhost = { x: number; y: number; w: number; h: number };
+export type DistributeGhost = { x: number; y: number; w: number; h: number; stay: boolean };
 
 export type DistributePlan = {
   axis: DistributeAxis;
@@ -77,11 +77,18 @@ export function planDistribute(nodes: DesignNode[], ids: string[], axis: Distrib
     const dx = axis === "h" ? cursor - item.box.x : 0;
     const dy = axis === "v" ? cursor - item.box.y : 0;
     deltas.push({ id: item.n.id, dx, dy });
-    const ghost = { x: item.box.x + dx, y: item.box.y + dy, w: item.box.w, h: item.box.h };
+    const ghost = {
+      x: item.box.x + dx,
+      y: item.box.y + dy,
+      w: item.box.w,
+      h: item.box.h,
+      stay: ghosts.length === 0,
+    };
     ghosts.push(ghost);
     placed.push(ghost);
     cursor += (axis === "h" ? item.box.w : item.box.h) + gap;
   }
+  if (ghosts.length) ghosts[ghosts.length - 1]!.stay = true;
   for (let i = 0; i < placed.length - 1; i++) {
     const a = placed[i]!;
     const b = placed[i + 1]!;
@@ -161,7 +168,7 @@ export function armDistributePreview(axis: DistributeAxis): DistributePlan | nul
   preview = plan;
   emit();
   const way = axis === "h" ? "across" : "down";
-  holdStudioStatus(`Distribute preview · ${formatDistributeGap(plan.gap)} px ${way} · Enter commits`);
+  holdStudioStatus(`Distribute preview · ${formatDistributeGap(plan.gap)} px ${way} · 2 stay · ${distributeMoveCount(plan)} move · Enter commits`);
   return plan;
 }
 
@@ -188,27 +195,47 @@ export function commitDistributePreview(): boolean {
   return true;
 }
 
-/** Phosphor ghosts at the even positions, with a size on each gap tick. */
+export function distributeMoveCount(plan: DistributePlan): number {
+  return plan.ghosts.filter((g) => !g.stay).length;
+}
+
+/** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number) {
   const z = Math.max(zoom, 0.01);
   ctx.save();
-  ctx.strokeStyle = "rgba(63,198,255,0.92)";
-  ctx.fillStyle = "rgba(63,198,255,0.08)";
   ctx.lineWidth = 1.2 / z;
-  ctx.setLineDash([5 / z, 4 / z]);
+  ctx.font = `${10 / z}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   for (const g of plan.ghosts) {
+    ctx.setLineDash(g.stay ? [] : [5 / z, 4 / z]);
+    ctx.strokeStyle = "rgba(63,198,255,0.92)";
+    ctx.fillStyle = g.stay ? "rgba(63,198,255,0.04)" : "rgba(63,198,255,0.10)";
     ctx.beginPath();
     ctx.rect(g.x, g.y, g.w, g.h);
     ctx.fill();
     ctx.stroke();
+    if (!g.stay) continue;
+    const pin = 7 / z;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y + pin);
+    ctx.lineTo(g.x, g.y);
+    ctx.lineTo(g.x + pin, g.y);
+    ctx.moveTo(g.x + g.w - pin, g.y);
+    ctx.lineTo(g.x + g.w, g.y);
+    ctx.lineTo(g.x + g.w, g.y + pin);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63,198,255,0.95)";
+    ctx.fillText("stay", g.x + g.w / 2, g.y - 9 / z);
   }
   ctx.setLineDash([]);
+  ctx.strokeStyle = "rgba(63,198,255,0.92)";
   ctx.fillStyle = "rgba(63,198,255,0.95)";
   const tick = 5 / z;
-  const label = `${formatDistributeGap(plan.gap)} px ${plan.axis === "h" ? "across" : "down"}`;
+  const way = plan.axis === "h" ? "across" : "down";
+  const label = `${formatDistributeGap(plan.gap)} px ${way}`;
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
   plan.ticks.forEach((s, index) => {
     ctx.beginPath();
     if (s.axis === "x") {

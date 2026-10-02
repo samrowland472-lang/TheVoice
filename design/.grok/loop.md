@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 21:06 BST — Distribute preview pins first and last as stay. Solid phosphor corners and a stay label mark the boxes that do not move; dashed ghosts are the layers that will shift. The inspector and status strip name the even gap plus how many stay and how many move. Enter or the lit button still commits, Esc cancels.
+
 2026-10-02 20:18 BST — Distribute preview names the even gap in the inspector before commit. Across or Down draws phosphor ghosts and a size tick on the board, and the inspector reads the same size across or down. First and last stay. Enter or the lit button commits, Esc cancels. A selected group moves with its children.
 
 2026-10-02 19:05 BST — Canvas spacing tick keeps the equal-gap size when the inspector is collapsed. Rail hides the inspector Equal gap readout (localStorage). The phosphor tick still names the matched size across or down, including when the spacing geometry was filtered off the live guides.
@@ -87,6 +89,7 @@ Align selection to the key object with a phosphor edge preview before commit, ma
 
 - Canvas spacing tick keeps the equal-gap size (across or down) when the inspector is collapsed to a rail
 - Distribute selection previews phosphor gap ticks before commit; Enter or a second click applies it
+- Distribute preview pins first and last with stay marks; inspector names how many move
 
 ## Backlog
 
