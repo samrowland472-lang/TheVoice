@@ -325,15 +325,39 @@ export function drawSmartGuides(
     ctx.stroke();
     const match = named.find((g) => g.axis === s.axis && Math.abs(g.size - s.size) < 0.75);
     if (!match) continue;
-    const size = Math.round(match.size * 10) / 10;
-    const label = Number.isInteger(size) ? `${size} px` : `${size} px`;
-    ctx.save();
-    ctx.font = `${11 / zoom}px "IBM Plex Mono", ui-monospace, monospace`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    if (s.axis === "x") ctx.fillText(label, (s.a + s.b) / 2, s.mid - 10 / zoom);
-    else ctx.fillText(label, s.mid + 14 / zoom, (s.a + s.b) / 2);
-    ctx.restore();
+    const lx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid + 14 / zoom;
+    const ly = s.axis === "x" ? s.mid - 10 / zoom : (s.a + s.b) / 2;
+    paintEqualGapLabel(ctx, match, lx, ly, zoom);
+  }
+  // Inspector rail hides the Equal gap readout. Keep the matched size on the canvas
+  // even when the spacing tick geometry was filtered off the live guides.
+  for (const g of named) {
+    const has = (guides.spaces ?? []).some((s) => s.axis === g.axis && Math.abs(s.size - g.size) < 0.75);
+    if (has) continue;
+    const line = g.axis === "x" ? guides.x[0] : guides.y[0];
+    if (line == null) continue;
+    const lx = g.axis === "x" ? line : artboard.width / 2 + 14 / zoom;
+    const ly = g.axis === "x" ? artboard.height / 2 - 10 / zoom : line;
+    paintEqualGapLabel(ctx, g, lx, ly, zoom);
   }
   ctx.restore();
 }
+
+/** Same wording as the inspector Equal gap readout: size across or down. */
+function paintEqualGapLabel(
+  ctx: CanvasRenderingContext2D,
+  gap: EqualGap,
+  x: number,
+  y: number,
+  zoom: number,
+) {
+  const size = Math.round(gap.size * 10) / 10;
+  const label = `${size} px ${gap.axis === "x" ? "across" : "down"}`;
+  ctx.save();
+  ctx.font = `${11 / zoom}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(label, x, y);
+  ctx.restore();
+}
+

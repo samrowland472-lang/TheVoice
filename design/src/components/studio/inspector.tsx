@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
 import { formatEqualGapHold, getEqualGapHold, subscribeEqualGapHold } from "@/lib/design/group-transform";
+import { getInspectorRail, setInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
@@ -55,11 +56,31 @@ export function Inspector() {
   const mixedOpacity = new Set(selectedNodes.map((n) => n.opacity)).size > 1;
   const mixedBlend = new Set(selectedNodes.map((n) => n.blend)).size > 1;
 
+  const rail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
+
   return (
-    <aside className="flex h-full w-[260px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface">
-      <div className="border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-dim">
-        Inspector
+    <aside
+      className="flex h-full w-[260px] shrink-0 flex-col overflow-y-auto border-l border-border bg-surface"
+      data-inspector-rail={rail ? "1" : "0"}
+    >
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-dim">Inspector</div>
+        <button
+          type="button"
+          className="h-6 rounded-[6px] border border-border px-1.5 font-mono text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+          aria-pressed={rail}
+          aria-label={rail ? "expand inspector" : "collapse inspector to rail"}
+          onClick={() => setInspectorRail(!rail)}
+        >
+          {rail ? "Open" : "Rail"}
+        </button>
       </div>
+      {rail ? (
+        <p className="px-3 py-3 font-mono text-[10px] leading-snug text-ink-faint">
+          Equal gap size stays on the canvas spacing tick.
+        </p>
+      ) : (
+        <>
       <EqualGapHold />
       <section className="space-y-2 border-b border-border px-3 py-3">
         <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Board</div>
@@ -186,6 +207,8 @@ export function Inspector() {
               <MixedType nodes={texts} />
             </section>
           )}
+        </>
+      )}
         </>
       )}
     </aside>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { handlePoint, hitResizeHandle, mapNodeToBox, resizeBox, type Box, type ResizeHandle } from "@/lib/design/box-resize";
 import { aabb } from "@/lib/design/geometry";
@@ -32,6 +32,7 @@ import { hasHandle } from "@/lib/design/path-curve";
 import { tracePath } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
+import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -97,6 +98,7 @@ export function CanvasStage() {
   const tool = useDesign((s) => s.tool);
   const present = useDesign((s) => s.present);
   const nudgeHold = useDesign((s) => s.nudgeHold);
+  const inspectorRail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -313,11 +315,10 @@ export function CanvasStage() {
     }
     if (!present && tool === "select") {
       const cueGuides = getNudgeCue()?.guides;
-      const guides =
-        cueGuides && (cueGuides.x.length || cueGuides.y.length || (cueGuides.spaces && cueGuides.spaces.length))
-          ? cueGuides
-          : guidesRef.current;
-      if (guides.x.length || guides.y.length || (guides.spaces && guides.spaces.length)) {
+      const hasGuides = (g: GuideSet | undefined) =>
+        Boolean(g && (g.x.length || g.y.length || g.spaces?.length || g.equalGaps?.length));
+      const guides = hasGuides(cueGuides) ? cueGuides! : guidesRef.current;
+      if (hasGuides(guides)) {
         drawSmartGuides(ctx, guides, doc.artboard, viewport.zoom);
       }
       const mq = marqueeRef.current;
@@ -445,7 +446,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -833,6 +834,7 @@ export function CanvasStage() {
   return (
     <div
       ref={wrapRef}
+      data-inspector-rail={inspectorRail ? "1" : "0"}
       className="pasteboard relative min-h-0 flex-1 touch-none overflow-hidden"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

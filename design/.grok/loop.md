@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 19:05 BST — Canvas spacing tick keeps the equal-gap size when the inspector is collapsed. Rail hides the inspector Equal gap readout (localStorage). The phosphor tick still names the matched size across or down, including when the spacing geometry was filtered off the live guides.
+
 2026-10-02 18:05 BST — Drag equal-gap snap names the matched size in the inspector. While a selection is dragged onto a sibling gap, the phosphor Equal gap readout shows the size across or down, the same spacing the canvas tick names, and the status strip says snapped to equal gap. Alt still bypasses the snap. Releasing the pointer clears the readout.
 
 2026-10-02 17:08 BST — Inspector shows the matched equal gap while the arrow is held. The phosphor Equal gap readout sits at the top of the inspector with the size across or down, the same spacing the canvas tick names. Releasing the arrow, or a step that does not match a gap, clears it.
@@ -81,6 +83,8 @@ Show the drag equal-gap size on the spacing tick itself when the inspector is co
 - Keyboard snap names a matched equal gap in the status strip and keeps that spacing tick lit while the arrow is held
 - Inspector Equal gap readout while a keyboard snap holds the matched size; release clears it
 
+- Canvas spacing tick keeps the equal-gap size (across or down) when the inspector is collapsed to a rail
+
 ## Backlog
 
-- Canvas spacing tick keeps the equal-gap size when the inspector is collapsed
+- Distribute selection with a phosphor gap preview before commit
