@@ -151,6 +151,16 @@ export function oppositeCornerPoint(box: Box, handle: CornerHandle): { x: number
   return { x: box.x + box.w, y: box.y };
 }
 
+/** Local-frame point just outside the dragged corner, for a live W/H readout. */
+export function cornerReadoutAnchor(box: Box, handle: CornerHandle, zoom: number): { x: number; y: number } {
+  const hp = handlePoint(box, handle);
+  const dx = hp.x - (box.x + box.w / 2);
+  const dy = hp.y - (box.y + box.h / 2);
+  const len = Math.hypot(dx, dy) || 1;
+  const pad = 20 / Math.max(zoom, 0.01);
+  return { x: hp.x + (dx / len) * pad, y: hp.y + (dy / len) * pad };
+}
+
 /**
  * A local corner scale moves the nest centre, so a spun group would swing the
  * opposite corner. Shift so that corner stays on the same world point.

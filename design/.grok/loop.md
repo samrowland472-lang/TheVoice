@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 07:01 BST — Corner readout sits beside the dragged handle. North-west, north-east, south-east, and south-west still pin the opposite corner (Shift locks aspect). While the handle is held, a phosphor tick runs out from that corner and reads width and height percent. The nest still shows the pair above the box, the opposite corner still lights, and the status strip says width and height with the opposite corner pinned.
+
 2026-10-02 06:05 BST — Corner handles pin the opposite corner. North-west, north-east, south-east, and south-west handles still scale the spun nest (Shift locks aspect). After the nest scales, the group and its children shift so the opposite corner stays on the same world point under the group angle. That corner lights as a diamond while the handle is held, and the status strip says the scale with opposite corner pinned.
 
 2026-10-02 02:10 BST — Edge handles pin the opposite side. North, east, south, and west handles on a group scale one local axis (Shift does not open the other axis). After the nest scales, the group and its children shift so the opposite edge's midpoint stays on the same world point under the group angle. The pinned edge lights while the handle is held, and the status strip says the axis percent with opposite edge pinned.
@@ -30,7 +32,7 @@
 
 ## Next recommended
 
-Live readout on the corner handle itself (width and height percent beside the dragged corner), not only above the nest.
+Keyboard nudge for a selected group that moves the nest as one unit (arrow keys, Shift for a larger step), matching how a single leaf already nudges.
 
 
 ## Done
@@ -62,8 +64,8 @@ Live readout on the corner handle itself (width and height percent beside the dr
 - Spun-frame resize refits rotated leaves so the nest does not shear; live percent beside the box
 - Edge handles scale one local axis and pin the opposite edge in world space; pinned edge lights while held
 - Corner handles pin the opposite corner in world space; pinned corner lights while held
+- Live width and height percent beside the dragged corner handle
 
 ## Backlog
 
-- Live width and height percent beside the dragged corner handle
 - Keyboard nudge for a selected group that moves the nest as one unit

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
-import { hitResizeHandle, mapNodeToBox, resizeBox, type Box, type ResizeHandle } from "@/lib/design/box-resize";
+import { handlePoint, hitResizeHandle, mapNodeToBox, resizeBox, type Box, type ResizeHandle } from "@/lib/design/box-resize";
 import { aabb } from "@/lib/design/geometry";
 import {
   cornerPinDelta,
+  cornerReadoutAnchor,
   drawTransformHandles,
   edgePinDelta,
   hitRotateHandle,
@@ -358,6 +359,21 @@ export function CanvasStage() {
             );
             ctx.strokeStyle = "rgba(63,198,255,0.95)";
             ctx.lineWidth = 2.4 / Math.max(viewport.zoom, 0.01);
+            if (cornerHandle) {
+              const hp = handlePoint(box, cornerHandle);
+              const anchor = cornerReadoutAnchor(box, cornerHandle, viewport.zoom);
+              const wh = spinPoint(box, hp.x, hp.y, rot);
+              const wl = spinPoint(box, anchor.x, anchor.y, rot);
+              ctx.beginPath();
+              ctx.moveTo(wh.x, wh.y);
+              ctx.lineTo(wl.x, wl.y);
+              ctx.stroke();
+              ctx.textAlign = wl.x >= wh.x ? "left" : "right";
+              ctx.textBaseline = wl.y >= wh.y ? "top" : "bottom";
+              ctx.fillText(`W ${sx}%  H ${sy}%`, wl.x, wl.y);
+              ctx.textAlign = "center";
+              ctx.textBaseline = "alphabetic";
+            }
             if (edgeHandle) {
               const [a, b] = oppositeEdgeSegment(box, edgeHandle);
               const wa = spinPoint(box, a.x, a.y, rot);
@@ -605,7 +621,7 @@ export function CanvasStage() {
             edgeHandle
               ? `${edgeHandle === "e" || edgeHandle === "w" ? "Width" : "Height"} ${edgeHandle === "e" || edgeHandle === "w" ? sx : sy}% · opposite edge pinned`
               : cornerHandle
-                ? `Nest scale ${sx}% × ${sy}% · opposite corner pinned`
+                ? `Width ${sx}% · height ${sy}% · opposite corner pinned`
                 : `Nest scale ${sx}% × ${sy}%`,
           );
         }
@@ -778,7 +794,7 @@ export function CanvasStage() {
       )}
       {tool === "select" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag the ring to turn a group · Shift snaps 15° · edges pin the opposite side · corners pin the opposite corner
+          Drag the ring to turn a group · Shift snaps 15° · edges pin the opposite side · corners pin the opposite corner · W and H sit beside the handle
         </div>
       )}
       {tool === "knife" && !present && (
