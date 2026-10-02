@@ -17,6 +17,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /plan\.keyName/);
   assert.match(inspector, /data-align-key-name/);
   assert.match(preview, /plan\.edge} edge/);
+  assert.match(preview, /export function placeAlignEdgeChip/);
+  assert.match(preview, /clear of stay boxes/);
+  assert.match(preview, /alignEdgeChipLabel/);
   assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport.zoom\)/);
   assert.match(inspector, /Align to key/);
   assert.match(inspector, /data-align-edge/);
@@ -26,7 +29,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(inspector, /Commit left/);
   assert.match(inspector, /Align to board/);
   assert.match(inspector, /data-align-board=/);
-  assert.match(inspector, /data-align-target="board"/);
+  assert.match(inspector, /data-align-target=\{target\}/);
+  assert.match(inspector, /data-align-target-chip=\{target\}/);
   assert.match(preview, /export function planAlignBoard/);
   assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.target === "board" \? "board" : plan\.keyName\}/);
   assert.match(keys, /commitAlignPreview\(\)/);

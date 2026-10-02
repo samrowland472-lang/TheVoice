@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 00:15 BST — Align edge chip sits on the tick, clear of the stay box. The phosphor pill names the key layer or the board and slides along the edge past the stay box and its name stack. The tick extends to the pill. Enter still commits.
+
 2026-10-02 23:05 BST — Align edge row shares one set of buttons. A phosphor chip flips the target between the last selected layer and the artboard, remembered in localStorage. Flipping the chip re-arms the same edge. The inspector and status strip name key or board, how many stay, and how many move. Enter or the lit button commits, Esc cancels.
 
 2026-10-02 22:12 BST — Align to the artboard previews the phosphor edge before commit. Left, center, right, top, middle, and bottom draw the board edge; layers already on it stay with solid corners, the rest are dashed ghosts. The inspector and status strip name the edge plus how many stay and how many move. Enter or the lit button commits, Esc cancels. A selected group moves with its children. The key preview still names the layer that stays.
@@ -56,6 +58,7 @@
 
 ## Done
 
+- Align edge chip sits on the tick, clear of the stay box; names the key layer or the board
 - Align preview names the key layer on the edge, the key box, the inspector, and the status strip
 - Drag equal-gap snap names the matched size in the inspector while the pointer holds the gap; release clears it
 - isolateDocument / cropIsolateDocument
@@ -101,8 +104,8 @@
 
 ## Backlog
 
-- Nudge the align edge tick so the chip name sits on the board line (key name or board) without overlapping the stay box
+- Align edge chip names the matched edge (left, center, right) as well as the key or board, still clear of the stay box
 
 ## Next recommended
 
-Nudge the align edge tick so the chip name (key layer or board) sits clear of the stay box on both axes.
+Add the edge name to the align chip (left, center, right, top, middle, bottom) without letting the longer pill cover the stay box.

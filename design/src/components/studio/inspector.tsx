@@ -373,6 +373,7 @@ function AlignTargetChip({
       disabled={disabled}
       aria-pressed={pressed}
       data-align-target-chip={target}
+      aria-label={target === "key" ? "Align to key" : "Align to board"}
       title={target === "key" ? "Align to the last selected layer" : "Align to the artboard"}
       className={`h-6 max-w-[92px] truncate rounded-[6px] border px-1.5 font-mono text-[9px] tracking-wide ${
         pressed ? "border-phosphor text-phosphor" : "border-border text-ink-dim"

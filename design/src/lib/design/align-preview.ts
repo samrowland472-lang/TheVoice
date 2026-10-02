@@ -187,6 +187,57 @@ export function alignMoveCount(plan: AlignPlan): number {
   return plan.deltas.filter((d) => d.dx || d.dy).length;
 }
 
+export function alignEdgeChipLabel(plan: AlignPlan): string {
+  const raw = plan.target === "board" ? "board" : plan.keyName.trim() || "key";
+  return raw.length > 22 ? `${raw.slice(0, 21)}…` : raw;
+}
+
+export type AlignEdgeChip = { x: number; y: number; w: number; h: number; label: string };
+
+function spansOverlap(a0: number, a1: number, b0: number, b1: number) {
+  return a0 < b1 && a1 > b0;
+}
+
+/**
+ * Seat the name chip on the edge line, clear of stay boxes.
+ * Prefer a gap on the line; otherwise hang just past the stay box, still on the tick.
+ */
+export function placeAlignEdgeChip(plan: AlignPlan, zoom: number): AlignEdgeChip {
+  const z = Math.max(zoom, 0.01);
+  const label = alignEdgeChipLabel(plan);
+  const w = (Math.max(36, label.length * 6.6) + 12) / z;
+  const h = 16 / z;
+  const line = plan.edgeLine;
+  const along = line.axis === "x" ? h : w;
+  const gap = 6 / z;
+  const stays = plan.ghosts.filter((g) => g.stay);
+  const nameStack = 24 / z;
+  const blocked = stays.map((g) =>
+    line.axis === "x"
+      ? [g.y - nameStack, g.y + g.h + gap] as const
+      : [g.x - gap, g.x + g.w + gap] as const,
+  );
+  const hits = (center: number) => {
+    const a = center - along / 2;
+    const b = center + along / 2;
+    return blocked.some(([oa, ob]) => spansOverlap(a, b, oa, ob));
+  };
+  const candidates: number[] = [(line.from + line.to) / 2];
+  for (const [a, b] of blocked) {
+    candidates.push(b + along / 2);
+    candidates.push(a - along / 2);
+  }
+  candidates.push(line.from + along / 2);
+  candidates.push(line.to - along / 2);
+  let alongCenter = candidates.find((c) => Number.isFinite(c) && !hits(c));
+  if (alongCenter == null) {
+    const end = blocked.length ? Math.max(...blocked.map(([, b]) => b)) : line.to;
+    alongCenter = end + along / 2;
+  }
+  if (line.axis === "x") return { x: line.at, y: alongCenter, w, h, label };
+  return { x: alongCenter, y: line.at, w, h, label };
+}
+
 let preview: AlignPlan | null = null;
 const listeners = new Set<() => void>();
 
@@ -331,28 +382,35 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
   ctx.fillStyle = "rgba(63,198,255,0.95)";
   const tick = 6 / z;
   const line = plan.edgeLine;
+  const chip = placeAlignEdgeChip(plan, zoom);
+  const from = line.axis === "x" ? Math.min(line.from, chip.y) : Math.min(line.from, chip.x);
+  const to = line.axis === "x" ? Math.max(line.to, chip.y) : Math.max(line.to, chip.x);
   ctx.beginPath();
   if (line.axis === "x") {
-    ctx.moveTo(line.at, line.from);
-    ctx.lineTo(line.at, line.to);
+    ctx.moveTo(line.at, from);
+    ctx.lineTo(line.at, to);
     ctx.moveTo(line.at - tick, line.from);
     ctx.lineTo(line.at + tick, line.from);
     ctx.moveTo(line.at - tick, line.to);
     ctx.lineTo(line.at + tick, line.to);
   } else {
-    ctx.moveTo(line.from, line.at);
-    ctx.lineTo(line.to, line.at);
+    ctx.moveTo(from, line.at);
+    ctx.lineTo(to, line.at);
     ctx.moveTo(line.from, line.at - tick);
     ctx.lineTo(line.from, line.at + tick);
     ctx.moveTo(line.to, line.at - tick);
     ctx.lineTo(line.to, line.at + tick);
   }
   ctx.stroke();
-  const label = plan.target === "board"
-    ? `${plan.edge} board · ${alignMoveCount(plan)} move`
-    : `${plan.edge} · ${plan.keyName} · ${alignMoveCount(plan)} move`;
+  const radius = 3 / z;
+  ctx.beginPath();
+  ctx.roundRect(chip.x - chip.w / 2, chip.y - chip.h / 2, chip.w, chip.h, radius);
+  ctx.fillStyle = "rgba(7, 16, 22, 0.88)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(63,198,255,0.95)";
+  ctx.stroke();
+  ctx.fillStyle = "rgba(63,198,255,0.95)";
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
-  if (line.axis === "x") ctx.fillText(label, line.at + 28 / z, (line.from + line.to) / 2);
-  else ctx.fillText(label, (line.from + line.to) / 2, line.at - 12 / z);
+  ctx.fillText(chip.label, chip.x, chip.y);
   ctx.restore();
 }
