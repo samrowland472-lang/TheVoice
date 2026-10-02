@@ -1,4 +1,6 @@
+import { useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
+import { formatEqualGapHold, getEqualGapHold, subscribeEqualGapHold } from "@/lib/design/group-transform";
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
@@ -58,6 +60,7 @@ export function Inspector() {
       <div className="border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-dim">
         Inspector
       </div>
+      <EqualGapHold />
       <section className="space-y-2 border-b border-border px-3 py-3">
         <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Board</div>
         <label className="flex items-center justify-between gap-2 font-mono text-[10px] text-ink-dim">
@@ -186,5 +189,20 @@ export function Inspector() {
         </>
       )}
     </aside>
+  );
+}
+
+function EqualGapHold() {
+  const gaps = useSyncExternalStore(subscribeEqualGapHold, getEqualGapHold, getEqualGapHold);
+  if (!gaps.length) return null;
+  const label = formatEqualGapHold(gaps);
+  return (
+    <section className="space-y-1 border-b border-border bg-ground px-3 py-3" data-equal-gap-hold={label}>
+      <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-phosphor">Equal gap</div>
+      <p className="font-mono text-[12px] text-ink">{label}</p>
+      <p className="font-mono text-[10px] leading-snug text-ink-faint">
+        Matched spacing while the arrow is held. Releasing the key clears this readout.
+      </p>
+    </section>
   );
 }

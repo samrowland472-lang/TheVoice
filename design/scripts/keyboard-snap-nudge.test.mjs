@@ -7,6 +7,7 @@ const store = readFileSync(new URL("../src/lib/design/store-impl.ts", import.met
 const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
 const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
 const snap = readFileSync(new URL("../src/lib/design/snap.ts", import.meta.url), "utf8");
+const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 
 test("keyboard nest nudge snaps with the drag guide set", () => {
   assert.match(src, /export function keyboardSnapNudge/);
@@ -29,4 +30,9 @@ test("keyboard nest nudge snaps with the drag guide set", () => {
   assert.match(stage, /equal gap/);
   assert.match(snap, /equalGaps/);
   assert.match(snap, /gap\?: number/);
+  assert.match(src, /export function getEqualGapHold/);
+  assert.match(src, /export function formatEqualGapHold/);
+  assert.match(src, /publishEqualGapHold/);
+  assert.match(inspector, /data-equal-gap-hold/);
+  assert.match(inspector, /Matched spacing while the arrow is held/);
 });

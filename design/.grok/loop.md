@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 17:08 BST — Inspector shows the matched equal gap while the arrow is held. The phosphor Equal gap readout sits at the top of the inspector with the size across or down, the same spacing the canvas tick names. Releasing the arrow, or a step that does not match a gap, clears it.
+
 2026-10-02 16:05 BST — Keyboard snap names a matched equal gap. When an arrow step lands on a sibling gap, the status strip says snapped to equal gap with the size across or down, the phosphor spacing tick stays lit with the guide and reads that size, and Alt still bypasses the snap. Releasing the arrow clears the tick.
 
 2026-10-02 15:05 BST — Keyboard nest nudge snaps to guides. Arrow keys still step 1 px, Shift 10 px, Alt 0.5 px. With snap on, a step that lands within the drag threshold pulls the nest onto the artboard, a sibling, or a ruler guide and lights that phosphor line while the arrow is held. Alt bypasses the snap. A nest already on the line steps off so the guide does not trap it. The status strip says snapped to guide.
@@ -38,7 +40,7 @@
 
 ## Next recommended
 
-Show the matched gap on the inspector while a keyboard snap holds the equal-gap tick, so the size is readable without the canvas label.
+Name a drag equal-gap snap in the inspector the same way the keyboard hold does, so a pointer snap is readable off the canvas.
 
 
 ## Done
@@ -74,7 +76,8 @@ Show the matched gap on the inspector while a keyboard snap holds the equal-gap 
 - Keyboard nudge moves a selected group and its children as one nest; tick and status read the step
 - Keyboard nest nudge snaps to guides (Alt bypasses) and lights the guide while held
 - Keyboard snap names a matched equal gap in the status strip and keeps that spacing tick lit while the arrow is held
+- Inspector Equal gap readout while a keyboard snap holds the matched size; release clears it
 
 ## Backlog
 
-- Show the matched gap size in the inspector while a keyboard equal-gap snap is held
+- Drag equal-gap snap names the matched size in the inspector, not only on keyboard nudge

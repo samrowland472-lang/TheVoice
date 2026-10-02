@@ -290,8 +290,40 @@ export function keyboardSnapNudge(
 export type NudgeCue = { dx: number; dy: number; group: boolean; guides?: GuideSet; snapped?: boolean };
 let nudgeCue: NudgeCue | null = null;
 
+export type EqualGapHold = { axis: "x" | "y"; size: number };
+
+let equalGapHold: EqualGapHold[] = [];
+const equalGapListeners = new Set<() => void>();
+
+function publishEqualGapHold(next: EqualGapHold[]) {
+  const same =
+    next.length === equalGapHold.length &&
+    next.every((g, i) => g.axis === equalGapHold[i]?.axis && g.size === equalGapHold[i]?.size);
+  if (same) return;
+  equalGapHold = next;
+  for (const fn of equalGapListeners) fn();
+}
+
+/** Matched spacing while a keyboard snap holds the equal-gap tick. */
+export function getEqualGapHold() {
+  return equalGapHold;
+}
+
+export function subscribeEqualGapHold(fn: () => void) {
+  equalGapListeners.add(fn);
+  return () => {
+    equalGapListeners.delete(fn);
+  };
+}
+
+export function formatEqualGapHold(gaps: EqualGapHold[]) {
+  return gaps.map((g) => `${formatStep(g.size)} px ${g.axis === "x" ? "across" : "down"}`).join(" · ");
+}
+
 export function setNudgeCue(next: NudgeCue | null) {
   nudgeCue = next;
+  const gaps = next?.guides?.equalGaps ?? [];
+  publishEqualGapHold(gaps.length ? gaps.map((g) => ({ axis: g.axis, size: g.size })) : []);
 }
 
 export function getNudgeCue() {
