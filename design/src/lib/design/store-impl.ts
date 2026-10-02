@@ -15,7 +15,7 @@ import {
   writeCampaignOrder,
 } from "./persist";
 import { blankDocument, instantiateTemplate } from "./templates";
-import { expandMovePlaces, nudgeSelection, nudgeStatus, setNudgeCue } from "./group-transform";
+import { expandMovePlaces, getNudgeCue, keyboardSnapNudge, nudgeSelection, nudgeStatus, setNudgeCue } from "./group-transform";
 import { setStudioStatus } from "./studio-status";
 import { isGroup } from "./types";
 import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, type LayerDrop } from "./groups";
@@ -36,6 +36,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   future: [],
   grid: true,
   snap: true,
+  nudgeHold: 0,
   rulers: true,
   safeArea: false,
   brand: loadBrand(),
@@ -374,17 +375,44 @@ export const useDesign = create<any>((set: any, get: any) => ({
       dirty: true,
     });
   },
-  translateSelected: (dx: number, dy: number) => {
+  translateSelected: (dx: number, dy: number, opts?: { snap?: boolean }) => {
     const { doc, selection } = get();
     if (!doc || !selection.length || (!dx && !dy)) return;
-    const next = nudgeSelection(doc.nodes, selection, dx, dy);
+    let appliedX = dx;
+    let appliedY = dy;
+    let guides: { x: number[]; y: number[]; spaces?: { axis: "x" | "y"; a: number; b: number; mid: number; size: number }[] } = {
+      x: [],
+      y: [],
+      spaces: [],
+    };
+    let snapped = false;
+    if (opts?.snap) {
+      const extra = {
+        x: (doc.guides ?? []).filter((g) => g.axis === "x").map((g) => g.pos),
+        y: (doc.guides ?? []).filter((g) => g.axis === "y").map((g) => g.pos),
+      };
+      const hit = keyboardSnapNudge(doc.nodes, selection, dx, dy, doc.artboard, extra);
+      appliedX = hit.dx;
+      appliedY = hit.dy;
+      guides = hit.guides;
+      snapped = hit.snapped;
+    }
+    if (!appliedX && !appliedY) return;
+    const next = nudgeSelection(doc.nodes, selection, appliedX, appliedY);
     if (next === doc.nodes) return;
     get().commit();
     const only = selection.length === 1 ? doc.nodes.find((n: DesignNode) => n.id === selection[0]) : null;
     const group = Boolean(only && isGroup(only) && !only.locked);
-    setNudgeCue({ dx, dy, group });
-    setStudioStatus(nudgeStatus(dx, dy, group));
-    set({ doc: { ...doc, nodes: next }, dirty: true });
+    setNudgeCue({ dx: appliedX, dy: appliedY, group, guides, snapped });
+    setStudioStatus(nudgeStatus(appliedX, appliedY, group, snapped));
+    set({ doc: { ...doc, nodes: next }, dirty: true, nudgeHold: Date.now() });
+  },
+  releaseNudgeGuides: () => {
+    const cue = getNudgeCue();
+    if (cue?.guides && (cue.guides.x.length || cue.guides.y.length || (cue.guides.spaces?.length ?? 0) > 0)) {
+      setNudgeCue({ ...cue, guides: { x: [], y: [], spaces: [] }, snapped: false });
+    }
+    set({ nudgeHold: Date.now() });
   },
   placeNodes: (places) => {
     const { doc } = get();

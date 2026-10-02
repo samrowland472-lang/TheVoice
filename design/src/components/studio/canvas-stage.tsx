@@ -94,6 +94,7 @@ export function CanvasStage() {
   const pathEditHit = useDesign((s) => s.pathEditHit);
   const tool = useDesign((s) => s.tool);
   const present = useDesign((s) => s.present);
+  const nudgeHold = useDesign((s) => s.nudgeHold);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -309,7 +310,11 @@ export function CanvasStage() {
       }
     }
     if (!present && tool === "select") {
-      const guides = guidesRef.current;
+      const cueGuides = getNudgeCue()?.guides;
+      const guides =
+        cueGuides && (cueGuides.x.length || cueGuides.y.length || (cueGuides.spaces && cueGuides.spaces.length))
+          ? cueGuides
+          : guidesRef.current;
       if (guides.x.length || guides.y.length || (guides.spaces && guides.spaces.length)) {
         drawSmartGuides(ctx, guides, doc.artboard, viewport.zoom);
       }
@@ -427,14 +432,14 @@ export function CanvasStage() {
             ctx.textAlign = ex >= cx ? "left" : "right";
             ctx.textBaseline = ey >= cy ? "top" : "bottom";
             const step = Math.round(mag * 10) / 10;
-            ctx.fillText(`${step} px · nest`, ex, ey);
+            ctx.fillText(cue.snapped ? `${step} px · nest · guide` : `${step} px · nest`, ex, ey);
             ctx.restore();
           }
         }
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold]);
 
   useEffect(() => {
     const wrap = wrapRef.current;

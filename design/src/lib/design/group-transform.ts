@@ -1,6 +1,7 @@
 import { handlePoint, RESIZE_HANDLES, type Box } from "./box-resize";
 import { rotatePoint } from "./geometry";
 import { descendantIds, unionBounds } from "./layer-groups";
+import { smartSnap, type GuideSet } from "./snap";
 import { isGroup, type DesignNode } from "./types";
 
 export function groupBox(nodes: DesignNode[], groupId: string): Box | null {
@@ -200,15 +201,74 @@ export function nudgeSelection(nodes: DesignNode[], selectedIds: string[], dx: n
   });
 }
 
-export function nudgeStatus(dx: number, dy: number, group: boolean): string {
+export function nudgeStatus(dx: number, dy: number, group: boolean, snapped = false): string {
   const parts: string[] = [];
   if (dx) parts.push(`${formatStep(Math.abs(dx))} px ${dx < 0 ? "left" : "right"}`);
   if (dy) parts.push(`${formatStep(Math.abs(dy))} px ${dy < 0 ? "up" : "down"}`);
   const motion = parts.join(" · ");
-  return group ? `Nest nudged ${motion} · group moved as one` : `Nudged ${motion}`;
+  const snap = snapped ? " · snapped to guide" : "";
+  return group ? `Nest nudged ${motion} · group moved as one${snap}` : `Nudged ${motion}${snap}`;
 }
 
-export type NudgeCue = { dx: number; dy: number; group: boolean };
+const emptyGuides = (): GuideSet => ({ x: [], y: [], spaces: [] });
+
+/**
+ * A drag snaps when the box is within threshold. Keyboard steps are smaller than
+ * that window, so a guide would trap the nest. If the snap cancels the step,
+ * the nest was already on the line — leave it so the next arrow can depart.
+ */
+export function releaseSnapAxis(step: number, snapDelta: number): { delta: number; held: boolean } {
+  if (Math.abs(snapDelta) < 0.05) return { delta: step, held: false };
+  const next = step + snapDelta;
+  if (Math.abs(step) > 0.01 && Math.abs(next) < 0.05) return { delta: step, held: false };
+  return { delta: next, held: true };
+}
+
+/** Same artboard, sibling, and ruler-guide snap as a drag. Alt skips this. */
+export function keyboardSnapNudge(
+  nodes: DesignNode[],
+  selectedIds: string[],
+  dx: number,
+  dy: number,
+  artboard: { width: number; height: number },
+  extra?: GuideSet,
+  threshold = 6,
+): { dx: number; dy: number; guides: GuideSet; snapped: boolean } {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const selected = selectedIds
+    .map((id) => byId.get(id))
+    .filter((n): n is DesignNode => n != null && !n.locked);
+  if (!selected.length || (!dx && !dy)) return { dx, dy, guides: emptyGuides(), snapped: false };
+
+  const exclude = new Set<string>();
+  let moving: DesignNode[];
+  if (selected.length === 1 && isGroup(selected[0]!)) {
+    const box = groupBox(nodes, selected[0]!.id);
+    for (const id of groupTransformIds(nodes, selected[0]!.id)) exclude.add(id);
+    moving = box
+      ? [{ ...selected[0]!, x: box.x, y: box.y, w: box.w, h: box.h, rotation: 0 }]
+      : [selected[0]!];
+  } else {
+    for (const n of selected) {
+      exclude.add(n.id);
+      if (isGroup(n)) for (const id of descendantIds(nodes, n.id)) exclude.add(id);
+    }
+    moving = selected;
+  }
+  const others = nodes.filter((n) => n.visible && !exclude.has(n.id) && !isGroup(n));
+  const proposed = moving.map((n) => ({ ...n, x: n.x + dx, y: n.y + dy }));
+  const hit = smartSnap(proposed, others, artboard, threshold, extra);
+  const x = releaseSnapAxis(dx, hit.dx);
+  const y = releaseSnapAxis(dy, hit.dy);
+  const guides: GuideSet = {
+    x: x.held ? hit.guides.x : [],
+    y: y.held ? hit.guides.y : [],
+    spaces: x.held || y.held ? (hit.guides.spaces ?? []) : [],
+  };
+  return { dx: x.delta, dy: y.delta, guides, snapped: x.held || y.held };
+}
+
+export type NudgeCue = { dx: number; dy: number; group: boolean; guides?: GuideSet; snapped?: boolean };
 let nudgeCue: NudgeCue | null = null;
 
 export function setNudgeCue(next: NudgeCue | null) {

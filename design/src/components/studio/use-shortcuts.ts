@@ -28,6 +28,7 @@ const KEYS: Record<string, Tool> = {
 
 export function useShortcuts(_opts?: { onPalette?: () => void }) {
   useEffect(() => {
+    const arrows = new Set<string>();
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const typing = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
@@ -235,9 +236,11 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
           return;
         }
         e.preventDefault();
+        arrows.add(e.key);
         const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
         const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
-        useDesign.getState().translateSelected(dx, dy);
+        // Alt is the fine step and the snap bypass, matching a drag.
+        useDesign.getState().translateSelected(dx, dy, { snap: s.snap && !e.altKey });
       }
       if (meta) return;
       const tool = KEYS[e.key.toLowerCase()];
@@ -276,10 +279,17 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       reader.readAsDataURL(file);
     };
 
+    const onUp = (e: KeyboardEvent) => {
+      if (!arrows.has(e.key)) return;
+      arrows.delete(e.key);
+      if (arrows.size === 0) useDesign.getState().releaseNudgeGuides();
+    };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onUp);
     window.addEventListener("paste", onPaste);
     return () => {
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onUp);
       window.removeEventListener("paste", onPaste);
     };
   }, []);

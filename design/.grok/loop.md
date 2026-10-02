@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 15:05 BST — Keyboard nest nudge snaps to guides. Arrow keys still step 1 px, Shift 10 px, Alt 0.5 px. With snap on, a step that lands within the drag threshold pulls the nest onto the artboard, a sibling, or a ruler guide and lights that phosphor line while the arrow is held. Alt bypasses the snap. A nest already on the line steps off so the guide does not trap it. The status strip says snapped to guide.
+
 2026-10-02 14:02 BST — Keyboard nudge moves a selected group as one nest. Arrow keys still step 1 px, Shift 10 px, Alt 0.5 px. A lone group selection shifts the group and its children together (locked groups stay put). A phosphor tick leaves the nest centre with the step, and the status strip says the direction with group moved as one. Mixed selections still expand like a drag.
 
 2026-10-02 07:01 BST — Corner readout sits beside the dragged handle. North-west, north-east, south-east, and south-west still pin the opposite corner (Shift locks aspect). While the handle is held, a phosphor tick runs out from that corner and reads width and height percent. The nest still shows the pair above the box, the opposite corner still lights, and the status strip says width and height with the opposite corner pinned.
@@ -34,7 +36,7 @@
 
 ## Next recommended
 
-Snap the keyboard nest nudge to guides the same way a drag already snaps (Alt still bypasses), and light the guide while the arrow is held.
+Name the equal-gap spacing tick in the status strip when a keyboard snap lands on a matched gap, and keep that tick lit with the guide while the arrow is held.
 
 
 ## Done
@@ -68,7 +70,8 @@ Snap the keyboard nest nudge to guides the same way a drag already snaps (Alt st
 - Corner handles pin the opposite corner in world space; pinned corner lights while held
 - Live width and height percent beside the dragged corner handle
 - Keyboard nudge moves a selected group and its children as one nest; tick and status read the step
+- Keyboard nest nudge snaps to guides (Alt bypasses) and lights the guide while held
 
 ## Backlog
 
-- Keyboard nest nudge snaps to guides (Alt bypasses) and lights the guide while held
+- Name the equal-gap spacing tick in the status strip when a keyboard snap lands on a matched gap
