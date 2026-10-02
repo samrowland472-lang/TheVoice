@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 23:05 BST — Align edge row shares one set of buttons. A phosphor chip flips the target between the last selected layer and the artboard, remembered in localStorage. Flipping the chip re-arms the same edge. The inspector and status strip name key or board, how many stay, and how many move. Enter or the lit button commits, Esc cancels.
+
 2026-10-02 22:12 BST — Align to the artboard previews the phosphor edge before commit. Left, center, right, top, middle, and bottom draw the board edge; layers already on it stay with solid corners, the rest are dashed ghosts. The inspector and status strip name the edge plus how many stay and how many move. Enter or the lit button commits, Esc cancels. A selected group moves with its children. The key preview still names the layer that stays.
 
 2026-10-02 22:10 BST — Align preview names the key layer. The phosphor key box and the edge tick read that layer's name, and the inspector and status strip say that name stays. Enter or the lit button still commits, Esc cancels.
@@ -95,10 +97,12 @@
 - Align to the key object previews the phosphor edge before commit; key stays, Enter commits
 - Align to the artboard with the same phosphor edge preview; board edge stays, Enter commits
 
+- Align to the key and the artboard in one preview, with a target chip so the same edge button can flip between last selected and the board
+
 ## Backlog
 
-- Align to the key and the artboard in one preview, with a target chip so the same edge button can flip between last selected and the board
+- Nudge the align edge tick so the chip name sits on the board line (key name or board) without overlapping the stay box
 
 ## Next recommended
 
-A target chip on the align edge buttons so one row can preview either the key object or the artboard without a second set of controls.
+Nudge the align edge tick so the chip name (key layer or board) sits clear of the stay box on both axes.

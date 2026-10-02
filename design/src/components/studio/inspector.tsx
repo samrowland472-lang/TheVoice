@@ -13,11 +13,16 @@ import {
   type DistributeAxis,
 } from "@/lib/design/distribute-preview";
 import {
+  alignKey,
   alignMoveCount,
   alignRoots,
+  armAlignPreview,
   clearAlignPreview,
   getAlignPreview,
+  getAlignTarget,
+  setAlignTarget,
   subscribeAlignPreview,
+  subscribeAlignTarget,
   toggleAlignPreview,
   type AlignEdge,
   type AlignTarget,
@@ -105,11 +110,9 @@ export function Inspector() {
       {rail ? (
         <div className="space-y-3 px-3 py-3">
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Equal gap size stays on the canvas spacing tick. A distribute preview pins first and last. Align pins the key edge, or the artboard edge.
+            Equal gap size stays on the canvas spacing tick. A distribute preview pins first and last. Align uses one edge row. The chip flips key or board.
           </p>
           <AlignChrome />
-        <BoardAlignChrome />
-          <BoardAlignChrome />
           <DistributeChrome />
         </div>
       ) : (
@@ -117,7 +120,6 @@ export function Inspector() {
       <EqualGapHold />
       <section className="border-b border-border px-3 py-3">
         <AlignChrome />
-        <BoardAlignChrome />
       </section>
       <section className="space-y-2 border-b border-border px-3 py-3">
         <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Board</div>
@@ -282,28 +284,53 @@ function AlignChrome() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
   const plan = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
-  const roots = doc ? distributeRoots(doc.nodes, selection) : [];
-  const ready = roots.length >= 2;
+  const target = useSyncExternalStore(subscribeAlignTarget, getAlignTarget, getAlignTarget);
+  const roots = doc ? alignRoots(doc.nodes, selection) : [];
+  const key = doc ? alignKey(doc.nodes, selection) : null;
+  const keyReady = Boolean(key);
+  const boardReady = roots.length >= 1;
+  const ready = target === "board" ? boardReady : keyReady;
+  const live = plan?.target === target ? plan : null;
+  const stay = live ? live.ghosts.filter((g) => g.stay).length : 0;
+  const keyName = key?.name?.trim() || "key";
 
   return (
-    <div className="space-y-1.5" data-align-ready={ready ? "1" : "0"}>
-      <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Align to key</div>
+    <div className="space-y-1.5" data-align-ready={keyReady ? "1" : "0"} data-align-board-ready={boardReady ? "1" : "0"} data-align-target={target}>
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Align</div>
+        <div className="flex gap-1" role="group" aria-label="Align target">
+          <AlignTargetChip target="key" current={target} label={keyReady ? keyName : "Key"} disabled={false} />
+          <AlignTargetChip target="board" current={target} label="Board" disabled={false} />
+        </div>
+      </div>
       <div className="grid grid-cols-3 gap-1">
         {ALIGN_EDGES.map(({ edge, label, commit }) => (
           <AlignButton
             key={edge}
             edge={edge}
-            label={plan?.edge === edge ? commit : label}
-            pressed={plan?.edge === edge}
+            target={target}
+            label={live?.edge === edge ? commit : label}
+            pressed={live?.edge === edge}
             disabled={!ready}
           />
         ))}
       </div>
-      {plan ? (
-        <div className="space-y-1.5" data-align-edge={plan.edge} data-align-stay="1" data-align-move={alignMoveCount(plan)} data-align-key={plan.keyId} data-align-key-name={plan.keyName}>
-          <p className="font-mono text-[12px] text-phosphor">{plan.edge} edge · {plan.keyName}</p>
+      {live ? (
+        <div
+          className="space-y-1.5"
+          data-align-edge={live.edge}
+          data-align-stay={stay}
+          data-align-move={alignMoveCount(live)}
+          data-align-key={live.keyId}
+          data-align-key-name={live.keyName}
+        >
+          <p className="font-mono text-[12px] text-phosphor">
+            {live.target === "board" ? `${live.edge} board` : `${live.edge} edge · ${live.keyName}`}
+          </p>
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Preview only. {plan.keyName} stays. {alignMoveCount(plan)} move. Enter or the lit button commits.
+            {live.target === "board"
+              ? `Preview only. Board edge. ${stay} stay. ${alignMoveCount(live)} move. Enter or the lit button commits.`
+              : `Preview only. ${live.keyName} stays. ${alignMoveCount(live)} move. Enter or the lit button commits.`}
           </p>
           <button
             type="button"
@@ -315,12 +342,49 @@ function AlignChrome() {
         </div>
       ) : (
         <p className="font-mono text-[10px] leading-snug text-ink-faint">
-          {ready
-            ? "Last selected layer is the key. First click draws its edge. Enter commits."
-            : "Select two unlocked layers to align to the key."}
+          {target === "board"
+            ? boardReady
+              ? "Board chip. First click draws the artboard edge. Layers already on it stay. Enter commits."
+              : "Select an unlocked layer to align to the artboard."
+            : keyReady
+              ? `${keyName} is the key. First click draws its edge. Enter commits.`
+              : "Select two unlocked layers, or flip the chip to Board."}
         </p>
       )}
     </div>
+  );
+}
+
+function AlignTargetChip({
+  target,
+  current,
+  label,
+  disabled,
+}: {
+  target: AlignTarget;
+  current: AlignTarget;
+  label: string;
+  disabled: boolean;
+}) {
+  const pressed = current === target;
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={pressed}
+      data-align-target-chip={target}
+      title={target === "key" ? "Align to the last selected layer" : "Align to the artboard"}
+      className={`h-6 max-w-[92px] truncate rounded-[6px] border px-1.5 font-mono text-[9px] tracking-wide ${
+        pressed ? "border-phosphor text-phosphor" : "border-border text-ink-dim"
+      } hover:border-phosphor hover:text-ink disabled:opacity-40`}
+      onClick={() => {
+        setAlignTarget(target);
+        const plan = getAlignPreview();
+        if (plan && plan.target !== target) armAlignPreview(plan.edge, target);
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -354,55 +418,6 @@ function AlignButton({
     >
       {label}
     </button>
-  );
-}
-
-function BoardAlignChrome() {
-  const doc = useDesign((s) => s.doc);
-  const selection = useDesign((s) => s.selection);
-  const plan = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
-  const boardPlan = plan?.target === "board" ? plan : null;
-  const roots = doc ? alignRoots(doc.nodes, selection) : [];
-  const ready = roots.length >= 1;
-  const stay = boardPlan ? boardPlan.ghosts.filter((g) => g.stay).length : 0;
-
-  return (
-    <div className="space-y-1.5" data-align-board-ready={ready ? "1" : "0"}>
-      <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Align to board</div>
-      <div className="grid grid-cols-3 gap-1">
-        {ALIGN_EDGES.map(({ edge, label, commit }) => (
-          <AlignButton
-            key={edge}
-            edge={edge}
-            target="board"
-            label={boardPlan?.edge === edge ? commit : label}
-            pressed={boardPlan?.edge === edge}
-            disabled={!ready}
-          />
-        ))}
-      </div>
-      {boardPlan ? (
-        <div className="space-y-1.5" data-align-target="board" data-align-edge={boardPlan.edge} data-align-stay={stay} data-align-move={alignMoveCount(boardPlan)}>
-          <p className="font-mono text-[12px] text-phosphor">{boardPlan.edge} board</p>
-          <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Preview only. Board edge. {stay} stay. {alignMoveCount(boardPlan)} move. Enter or the lit button commits.
-          </p>
-          <button
-            type="button"
-            className="h-7 w-full rounded-[8px] border border-border font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
-            onClick={() => clearAlignPreview()}
-          >
-            Cancel preview
-          </button>
-        </div>
-      ) : (
-        <p className="font-mono text-[10px] leading-snug text-ink-faint">
-          {ready
-            ? "First click draws the artboard edge. Layers already on it stay. Enter commits."
-            : "Select an unlocked layer to align to the artboard."}
-        </p>
-      )}
-    </div>
   );
 }
 

@@ -190,6 +190,42 @@ export function alignMoveCount(plan: AlignPlan): number {
 let preview: AlignPlan | null = null;
 const listeners = new Set<() => void>();
 
+const TARGET_KEY = "voice-design.align-target";
+let alignTarget: AlignTarget = "key";
+const targetListeners = new Set<() => void>();
+
+function readStoredTarget(): AlignTarget {
+  try {
+    return localStorage.getItem(TARGET_KEY) === "board" ? "board" : "key";
+  } catch {
+    return "key";
+  }
+}
+
+if (typeof localStorage !== "undefined") alignTarget = readStoredTarget();
+
+/** Key object or artboard. The same edge row reads this chip. */
+export function getAlignTarget(): AlignTarget {
+  return alignTarget;
+}
+
+export function setAlignTarget(next: AlignTarget) {
+  if (alignTarget === next) return;
+  alignTarget = next;
+  try {
+    localStorage.setItem(TARGET_KEY, next);
+  } catch {
+    /* private mode */
+  }
+  for (const fn of targetListeners) fn();
+}
+
+export function subscribeAlignTarget(fn: () => void) {
+  targetListeners.add(fn);
+  return () => targetListeners.delete(fn);
+}
+
+
 function emit() {
   for (const fn of listeners) fn();
 }
@@ -227,7 +263,7 @@ export function armAlignPreview(edge: AlignEdge, target: AlignTarget = "key"): A
   emit();
   const stay = plan.ghosts.filter((g) => g.stay).length;
   const where = plan.target === "board" ? "board edge" : `${plan.keyName} stays`;
-  holdStudioStatus(`Align preview · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · Enter commits`);
+  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · Enter commits`);
   return plan;
 }
 
