@@ -137,6 +137,32 @@ export function edgePinDelta(from: Box, to: Box, handle: EdgeHandle, rotation: n
   return { dx: before.x - after.x, dy: before.y - after.y };
 }
 
+export type CornerHandle = "nw" | "ne" | "se" | "sw";
+
+export function isCornerHandle(handle: string): handle is CornerHandle {
+  return handle === "nw" || handle === "ne" || handle === "se" || handle === "sw";
+}
+
+/** Corner opposite the dragged handle, in the unrotated nest frame. */
+export function oppositeCornerPoint(box: Box, handle: CornerHandle): { x: number; y: number } {
+  if (handle === "nw") return { x: box.x + box.w, y: box.y + box.h };
+  if (handle === "ne") return { x: box.x, y: box.y + box.h };
+  if (handle === "se") return { x: box.x, y: box.y };
+  return { x: box.x + box.w, y: box.y };
+}
+
+/**
+ * A local corner scale moves the nest centre, so a spun group would swing the
+ * opposite corner. Shift so that corner stays on the same world point.
+ */
+export function cornerPinDelta(from: Box, to: Box, handle: CornerHandle, rotation: number): { dx: number; dy: number } {
+  const anchor = oppositeCornerPoint(from, handle);
+  const pinned = oppositeCornerPoint(to, handle);
+  const before = spinPoint(from, anchor.x, anchor.y, rotation);
+  const after = spinPoint(to, pinned.x, pinned.y, rotation);
+  return { dx: before.x - after.x, dy: before.y - after.y };
+}
+
 export function translateNest(nodes: DesignNode[], groupId: string, dx: number, dy: number): DesignNode[] {
   if (!dx && !dy) return nodes;
   const ids = new Set(groupTransformIds(nodes, groupId));

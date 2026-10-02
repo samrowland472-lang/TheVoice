@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 06:05 BST — Corner handles pin the opposite corner. North-west, north-east, south-east, and south-west handles still scale the spun nest (Shift locks aspect). After the nest scales, the group and its children shift so the opposite corner stays on the same world point under the group angle. That corner lights as a diamond while the handle is held, and the status strip says the scale with opposite corner pinned.
+
 2026-10-02 02:10 BST — Edge handles pin the opposite side. North, east, south, and west handles on a group scale one local axis (Shift does not open the other axis). After the nest scales, the group and its children shift so the opposite edge's midpoint stays on the same world point under the group angle. The pinned edge lights while the handle is held, and the status strip says the axis percent with opposite edge pinned.
 
 2026-10-02 01:01 BST — Spun-frame resize without shear. Corner and edge handles still unspin into the nest frame, then scale children there. A rotated leaf is refit to a rectangle (edge lengths follow the scaled axes, angle follows the width edge) so the nest does not skew. The group box is synced to the union before the drag so the paint centre matches the frame. While a handle is held, the percent sits beside the box and in the status strip. Shift still locks aspect.
@@ -28,7 +30,7 @@
 
 ## Next recommended
 
-Corner handles on a spun nest should pin the opposite corner in world space, the same way edge handles pin the opposite edge.
+Live readout on the corner handle itself (width and height percent beside the dragged corner), not only above the nest.
 
 
 ## Done
@@ -59,7 +61,9 @@ Corner handles on a spun nest should pin the opposite corner in world space, the
 - Group name chip mounted on the stage again
 - Spun-frame resize refits rotated leaves so the nest does not shear; live percent beside the box
 - Edge handles scale one local axis and pin the opposite edge in world space; pinned edge lights while held
+- Corner handles pin the opposite corner in world space; pinned corner lights while held
 
 ## Backlog
 
-- Corner handles on a spun nest that pin the opposite corner in world space
+- Live width and height percent beside the dragged corner handle
+- Keyboard nudge for a selected group that moves the nest as one unit

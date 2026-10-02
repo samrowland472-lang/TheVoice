@@ -127,7 +127,7 @@ export function Inspector() {
                     ? "The board, PNG, and SVG isolates this group, then blend the nest as one unit against the artboard. Each layer still keeps its own opacity."
                     : "The board, PNG, and SVG put this opacity on the group so nested layers inherit it. Each layer still keeps its own opacity."}
                 {node.rotation
-                  ? " Rotation rides the group on the board, PNG, and SVG, so the nest turns as one unit. Edge handles scale one local axis and keep the opposite edge pinned in world space."
+                  ? " Rotation rides the group on the board, PNG, and SVG, so the nest turns as one unit. Edge handles scale one local axis and keep the opposite edge pinned in world space. Corner handles keep the opposite corner pinned in world space."
                   : ""}
               </p>
             )}

@@ -3,10 +3,13 @@ import { computeBoolean, isBooleanable } from "@/lib/design/boolean-ops";
 import { hitResizeHandle, mapNodeToBox, resizeBox, type Box, type ResizeHandle } from "@/lib/design/box-resize";
 import { aabb } from "@/lib/design/geometry";
 import {
+  cornerPinDelta,
   drawTransformHandles,
   edgePinDelta,
   hitRotateHandle,
+  isCornerHandle,
   isEdgeHandle,
+  oppositeCornerPoint,
   oppositeEdgeSegment,
   rotateGroupNodes,
   rotateSelectionNodes,
@@ -342,21 +345,38 @@ export function CanvasStage() {
             const sy = Math.round((box.h / live.box.h) * 100);
             const rot = node?.rotation ?? spinDeg;
             const edgeHandle = isEdgeHandle(live.handle) ? live.handle : null;
+            const cornerHandle = isCornerHandle(live.handle) ? live.handle : null;
             const label = spinPoint(box, box.x + box.w / 2, box.y - 44 / Math.max(viewport.zoom, 0.01), rot);
             ctx.save();
             ctx.fillStyle = "rgba(63,198,255,0.95)";
             ctx.font = `${11 / viewport.zoom}px "IBM Plex Mono", ui-monospace, monospace`;
             ctx.textAlign = "center";
-            ctx.fillText(edgeHandle ? `${edgeHandle === "e" || edgeHandle === "w" ? sx : sy}% pinned` : `${sx}% \u00d7 ${sy}%`, label.x, label.y);
+            ctx.fillText(
+              edgeHandle ? `${edgeHandle === "e" || edgeHandle === "w" ? sx : sy}% pinned` : `${sx}% \u00d7 ${sy}%${cornerHandle ? " pinned" : ""}`,
+              label.x,
+              label.y,
+            );
+            ctx.strokeStyle = "rgba(63,198,255,0.95)";
+            ctx.lineWidth = 2.4 / Math.max(viewport.zoom, 0.01);
             if (edgeHandle) {
               const [a, b] = oppositeEdgeSegment(box, edgeHandle);
               const wa = spinPoint(box, a.x, a.y, rot);
               const wb = spinPoint(box, b.x, b.y, rot);
-              ctx.strokeStyle = "rgba(63,198,255,0.95)";
-              ctx.lineWidth = 2.4 / Math.max(viewport.zoom, 0.01);
               ctx.beginPath();
               ctx.moveTo(wa.x, wa.y);
               ctx.lineTo(wb.x, wb.y);
+              ctx.stroke();
+            } else if (cornerHandle) {
+              const c = oppositeCornerPoint(box, cornerHandle);
+              const wc = spinPoint(box, c.x, c.y, rot);
+              const r = 5 / Math.max(viewport.zoom, 0.01);
+              ctx.beginPath();
+              ctx.moveTo(wc.x, wc.y - r);
+              ctx.lineTo(wc.x + r, wc.y);
+              ctx.lineTo(wc.x, wc.y + r);
+              ctx.lineTo(wc.x - r, wc.y);
+              ctx.closePath();
+              ctx.fill();
               ctx.stroke();
             }
             ctx.restore();
@@ -565,6 +585,7 @@ export function CanvasStage() {
       } else {
         const rot = xform.nodes.find((n) => n.id === xform.groupId)?.rotation ?? 0;
         const edgeHandle = xform.groupId && isEdgeHandle(xform.handle) ? xform.handle : null;
+        const cornerHandle = xform.groupId && isCornerHandle(xform.handle) ? xform.handle : null;
         const local = unspinPoint(xform.box, d.x, d.y, rot);
         const to = resizeBox(xform.box, xform.handle, local.x, local.y, edgeHandle ? false : e.shiftKey);
         let next = xform.groupId
@@ -573,6 +594,9 @@ export function CanvasStage() {
         if (xform.groupId && edgeHandle) {
           const pin = edgePinDelta(xform.box, to, edgeHandle, rot);
           next = translateNest(next, xform.groupId, pin.dx, pin.dy);
+        } else if (xform.groupId && cornerHandle) {
+          const pin = cornerPinDelta(xform.box, to, cornerHandle, rot);
+          next = translateNest(next, xform.groupId, pin.dx, pin.dy);
         }
         if (xform.groupId && xform.box.w > 0 && xform.box.h > 0) {
           const sx = Math.round((to.w / xform.box.w) * 100);
@@ -580,7 +604,9 @@ export function CanvasStage() {
           setStudioStatus(
             edgeHandle
               ? `${edgeHandle === "e" || edgeHandle === "w" ? "Width" : "Height"} ${edgeHandle === "e" || edgeHandle === "w" ? sx : sy}% · opposite edge pinned`
-              : `Nest scale ${sx}% × ${sy}%`,
+              : cornerHandle
+                ? `Nest scale ${sx}% × ${sy}% · opposite corner pinned`
+                : `Nest scale ${sx}% × ${sy}%`,
           );
         }
         useDesign.setState({ doc: { ...s.doc, nodes: next }, dirty: true });
@@ -752,7 +778,7 @@ export function CanvasStage() {
       )}
       {tool === "select" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag the ring to turn a group · Shift snaps 15° · edges pin the opposite side · corners scale the spun nest
+          Drag the ring to turn a group · Shift snaps 15° · edges pin the opposite side · corners pin the opposite corner
         </div>
       )}
       {tool === "knife" && !present && (
