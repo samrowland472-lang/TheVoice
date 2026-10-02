@@ -1,4 +1,4 @@
-import { handlePoint, RESIZE_HANDLES, mapNodeToBox, type Box } from "./box-resize";
+import { handlePoint, RESIZE_HANDLES, type Box } from "./box-resize";
 import { rotatePoint } from "./geometry";
 import { descendantIds, unionBounds } from "./layer-groups";
 import { isGroup, type DesignNode } from "./types";
@@ -20,6 +20,68 @@ export function groupTransformIds(nodes: DesignNode[], groupId: string): string[
   return [groupId, ...descendantIds(nodes, groupId)];
 }
 
+/**
+ * Axis-aligned scale in the group frame, refit as a rectangle so a rotated
+ * child stays a rect (edge lengths follow the scaled axes; no skew).
+ */
+export function frameScaleAxes(rotationDeg: number, sx: number, sy: number) {
+  const r = (rotationDeg * Math.PI) / 180;
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  const ux = sx * c;
+  const uy = sy * s;
+  const vx = -sx * s;
+  const vy = sy * c;
+  const wScale = Math.hypot(ux, uy) || 1;
+  const hScale = Math.hypot(vx, vy) || 1;
+  let rotation = (Math.atan2(uy, ux) * 180) / Math.PI;
+  if (Object.is(rotation, -0)) rotation = 0;
+  return { wScale, hScale, rotation };
+}
+
+function scaleLocalPoint<T extends { x: number; y: number; in?: { x: number; y: number } | null; out?: { x: number; y: number } | null }>(
+  p: T,
+  sx: number,
+  sy: number,
+): T {
+  return {
+    ...p,
+    x: p.x * sx,
+    y: p.y * sy,
+    in: p.in ? { x: p.in.x * sx, y: p.in.y * sy } : p.in,
+    out: p.out ? { x: p.out.x * sx, y: p.out.y * sy } : p.out,
+  };
+}
+
+/** Scale a leaf in the unrotated nest frame. Rotation is refit so the rect does not shear. */
+export function scaleNodeInFrame(n: DesignNode, from: Box, to: Box): DesignNode {
+  if (from.w < 1e-6 || from.h < 1e-6) return n;
+  const sx = to.w / from.w;
+  const sy = to.h / from.h;
+  const cx = n.x + n.w / 2;
+  const cy = n.y + n.h / 2;
+  const ncx = to.x + (cx - from.x) * sx;
+  const ncy = to.y + (cy - from.y) * sy;
+  const fitted = frameScaleAxes(n.rotation || 0, sx, sy);
+  const w = Math.max(1, n.w * fitted.wScale);
+  const h = n.kind === "text" ? n.h : Math.max(1, n.h * fitted.hScale);
+  const x = ncx - w / 2;
+  const y = ncy - h / 2;
+  if (n.kind === "path") {
+    return {
+      ...n,
+      x,
+      y,
+      w,
+      h,
+      rotation: fitted.rotation,
+      points: n.points.map((pt) => scaleLocalPoint(pt, fitted.wScale, fitted.hScale)),
+      holes: n.holes?.map((ring) => ring.map((pt) => scaleLocalPoint(pt, fitted.wScale, fitted.hScale))),
+    };
+  }
+  return { ...n, x, y, w, h, rotation: fitted.rotation };
+}
+
 export function scaleGroupNodes(nodes: DesignNode[], groupId: string, to: Box): DesignNode[] {
   const from = groupBox(nodes, groupId);
   if (!from) return nodes;
@@ -27,7 +89,7 @@ export function scaleGroupNodes(nodes: DesignNode[], groupId: string, to: Box): 
   return nodes.map((n) => {
     if (!ids.has(n.id)) return n;
     if (n.id === groupId) return { ...n, x: to.x, y: to.y, w: to.w, h: to.h };
-    return mapNodeToBox(n, from, to);
+    return scaleNodeInFrame(n, from, to);
   });
 }
 

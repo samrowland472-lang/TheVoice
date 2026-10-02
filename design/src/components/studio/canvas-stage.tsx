@@ -332,6 +332,17 @@ export function CanvasStage() {
             ctx.textAlign = "center";
             ctx.fillText(`${deg}\u00b0`, label.x, label.y);
             ctx.restore();
+          } else if (live?.kind === "resize" && live.groupId && live.box.w > 0 && live.box.h > 0) {
+            const node = doc.nodes.find((n) => n.id === live.groupId);
+            const sx = Math.round((box.w / live.box.w) * 100);
+            const sy = Math.round((box.h / live.box.h) * 100);
+            const label = spinPoint(box, box.x + box.w / 2, box.y - 44 / Math.max(viewport.zoom, 0.01), node?.rotation ?? spinDeg);
+            ctx.save();
+            ctx.fillStyle = "rgba(63,198,255,0.95)";
+            ctx.font = `${11 / viewport.zoom}px "IBM Plex Mono", ui-monospace, monospace`;
+            ctx.textAlign = "center";
+            ctx.fillText(`${sx}% \u00d7 ${sy}%`, label.x, label.y);
+            ctx.restore();
           }
         }
       }
@@ -445,7 +456,10 @@ export function CanvasStage() {
           e.preventDefault();
           e.currentTarget.setPointerCapture(e.pointerId);
           s.commit();
-          xformRef.current = { kind: "resize", handle, box, nodes: s.doc.nodes, groupId };
+          const nodes = groupId
+            ? s.doc.nodes.map((n) => (n.id === groupId ? { ...n, x: box.x, y: box.y, w: box.w, h: box.h } : n))
+            : s.doc.nodes;
+          xformRef.current = { kind: "resize", handle, box, nodes, groupId };
           return;
         }
       }
@@ -537,6 +551,11 @@ export function CanvasStage() {
         const next = xform.groupId
           ? scaleGroupNodes(xform.nodes, xform.groupId, to)
           : xform.nodes.map((n) => (s.selection.includes(n.id) ? mapNodeToBox(n, xform.box, to) : n));
+        if (xform.groupId && xform.box.w > 0 && xform.box.h > 0) {
+          const sx = Math.round((to.w / xform.box.w) * 100);
+          const sy = Math.round((to.h / xform.box.h) * 100);
+          setStudioStatus(`Nest scale ${sx}% × ${sy}%`);
+        }
         useDesign.setState({ doc: { ...s.doc, nodes: next }, dirty: true });
       }
       setHoverTick((n) => n + 1);
@@ -706,7 +725,7 @@ export function CanvasStage() {
       )}
       {tool === "select" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag the ring to turn a group · Shift snaps 15° · corner handles scale the nest
+          Drag the ring to turn a group · Shift snaps 15° · corners scale the spun nest
         </div>
       )}
       {tool === "knife" && !present && (

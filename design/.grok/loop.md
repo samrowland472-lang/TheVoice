@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 01:01 BST — Spun-frame resize without shear. Corner and edge handles still unspin into the nest frame, then scale children there. A rotated leaf is refit to a rectangle (edge lengths follow the scaled axes, angle follows the width edge) so the nest does not skew. The group box is synced to the union before the drag so the paint centre matches the frame. While a handle is held, the percent sits beside the box and in the status strip. Shift still locks aspect.
+
 2026-10-02 00:15 BST — Spun frame for the group ring. The box, corner handles, and rotate ring now turn with the group's angle about the nest centre, matching the board, PNG, and SVG. Dragging the ring still only adds to that angle. While the ring is held, the degree sits beside it and in the status strip. Shift still snaps to 15°.
 
 2026-10-02 00:10 BST — Board rotate handle. Selecting a group draws one box with a ring above the nest. Dragging the ring adds only to the group's angle (Shift snaps to 15°), so the nest turns about the group centre on the board the same way PNG and SVG already do. Corner handles scale that nest. A selection that is not a group uses the same handles around the shared box. The group name chip is back on the board.
@@ -24,7 +26,7 @@
 
 ## Next recommended
 
-Resize handles still scale the unrotated child union. After a spin, dragging a corner should scale in the spun frame without shearing the nest.
+Edge handles on a spun nest should scale one local axis and keep the opposite edge pinned in world space after the group angle.
 
 
 ## Done
@@ -53,7 +55,8 @@ Resize handles still scale the unrotated child union. After a spin, dragging a c
 - Board rotate handle wired to rotateGroupNodes; resize handles scale the nest via scaleGroupNodes
 - Rotate ring and corner handles sit on the spun nest frame; live degree beside the ring
 - Group name chip mounted on the stage again
+- Spun-frame resize refits rotated leaves so the nest does not shear; live percent beside the box
 
 ## Backlog
 
-- Spun-frame resize that does not shear the nest
+- Edge handles on a spun nest that scale one local axis and keep the opposite edge pinned in world space
