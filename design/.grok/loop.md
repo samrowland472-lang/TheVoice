@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 20:10 BST — Distribute selection previews the even gap before commit. Across or Down draws phosphor ghosts and a size tick on the board; first and last stay. Enter or a second click commits, Esc cancels. A selected group moves with its children.
+
 2026-10-02 19:05 BST — Canvas spacing tick keeps the equal-gap size when the inspector is collapsed. Rail hides the inspector Equal gap readout (localStorage). The phosphor tick still names the matched size across or down, including when the spacing geometry was filtered off the live guides.
 
 2026-10-02 18:05 BST — Drag equal-gap snap names the matched size in the inspector. While a selection is dragged onto a sibling gap, the phosphor Equal gap readout shows the size across or down, the same spacing the canvas tick names, and the status strip says snapped to equal gap. Alt still bypasses the snap. Releasing the pointer clears the readout.
@@ -44,7 +46,7 @@
 
 ## Next recommended
 
-Show the drag equal-gap size on the spacing tick itself when the inspector is collapsed, so the match is readable from the canvas alone.
+Align selection to the key object with a phosphor edge preview before commit, matching the distribute gap preview.
 
 
 ## Done
@@ -84,7 +86,8 @@ Show the drag equal-gap size on the spacing tick itself when the inspector is co
 - Inspector Equal gap readout while a keyboard snap holds the matched size; release clears it
 
 - Canvas spacing tick keeps the equal-gap size (across or down) when the inspector is collapsed to a rail
+- Distribute selection previews phosphor gap ticks before commit; Enter or a second click applies it
 
 ## Backlog
 
-- Distribute selection with a phosphor gap preview before commit
+- Align selection to the key object with a phosphor edge preview before commit

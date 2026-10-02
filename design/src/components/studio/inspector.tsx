@@ -1,7 +1,15 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
 import { formatEqualGapHold, getEqualGapHold, subscribeEqualGapHold } from "@/lib/design/group-transform";
 import { getInspectorRail, setInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
+import {
+  clearDistributePreview,
+  distributeRoots,
+  getDistributePreview,
+  subscribeDistributePreview,
+  toggleDistributePreview,
+  type DistributeAxis,
+} from "@/lib/design/distribute-preview";
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
@@ -57,6 +65,12 @@ export function Inspector() {
   const mixedBlend = new Set(selectedNodes.map((n) => n.blend)).size > 1;
 
   const rail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
+  const selectionKey = selection.join("|");
+  const docId = doc.id;
+
+  useEffect(() => {
+    if (getDistributePreview()) clearDistributePreview();
+  }, [selectionKey, docId]);
 
   return (
     <aside
@@ -76,9 +90,12 @@ export function Inspector() {
         </button>
       </div>
       {rail ? (
-        <p className="px-3 py-3 font-mono text-[10px] leading-snug text-ink-faint">
-          Equal gap size stays on the canvas spacing tick.
-        </p>
+        <div className="space-y-3 px-3 py-3">
+          <p className="font-mono text-[10px] leading-snug text-ink-faint">
+            Equal gap size stays on the canvas spacing tick.
+          </p>
+          <DistributeChrome />
+        </div>
       ) : (
         <>
       <EqualGapHold />
@@ -97,6 +114,7 @@ export function Inspector() {
             <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">
               {selectedNodes.length > 1 ? `${selectedNodes.length} layers` : node.name}
             </div>
+            <DistributeChrome />
             <label className="block font-mono text-[10px] text-ink-dim">
               Name
               <input className="mt-1 w-full border border-border bg-ground px-2 py-1 font-mono text-[11px] text-ink" value={node.name} onChange={(e) => updateNodes(ids, { name: e.target.value })} />
@@ -227,5 +245,65 @@ function EqualGapHold() {
         Matched spacing while a drag or arrow holds the snap. Releasing clears this readout.
       </p>
     </section>
+  );
+}
+
+function DistributeChrome() {
+  const doc = useDesign((s) => s.doc);
+  const selection = useDesign((s) => s.selection);
+  const plan = useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
+  const roots = doc ? distributeRoots(doc.nodes, selection) : [];
+  const ready = roots.length >= 3;
+
+  return (
+    <div className="space-y-1.5" data-distribute-ready={ready ? "1" : "0"}>
+      <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Distribute</div>
+      <div className="flex gap-1">
+        <DistributeButton axis="h" label={plan?.axis === "h" ? "Commit across" : "Across"} pressed={plan?.axis === "h"} disabled={!ready} />
+        <DistributeButton axis="v" label={plan?.axis === "v" ? "Commit down" : "Down"} pressed={plan?.axis === "v"} disabled={!ready} />
+      </div>
+      {plan ? (
+        <button
+          type="button"
+          className="h-7 w-full rounded-[8px] border border-border font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+          onClick={() => clearDistributePreview()}
+        >
+          Cancel preview
+        </button>
+      ) : (
+        <p className="font-mono text-[10px] leading-snug text-ink-faint">
+          {ready
+            ? "First click shows the even gap on the board. First and last stay. Enter commits."
+            : "Select three unlocked layers to space them."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function DistributeButton({
+  axis,
+  label,
+  pressed,
+  disabled,
+}: {
+  axis: DistributeAxis;
+  label: string;
+  pressed: boolean;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={pressed}
+      data-distribute={axis}
+      className={`h-8 flex-1 rounded-[8px] border font-mono text-[10px] tracking-wide ${
+        pressed ? "border-phosphor text-phosphor" : "border-border text-ink-dim"
+      } hover:border-phosphor hover:text-ink disabled:opacity-40`}
+      onClick={() => toggleDistributePreview(axis)}
+    >
+      {label}
+    </button>
   );
 }

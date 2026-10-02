@@ -8,6 +8,7 @@ import {
   stepPathHole,
   stepPathHolePoint,
 } from "@/lib/design/path-actions";
+import { clearDistributePreview, commitDistributePreview, getDistributePreview } from "@/lib/design/distribute-preview";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -50,6 +51,11 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       }
 
       if (e.key === "Escape") {
+        if (getDistributePreview()) {
+          e.preventDefault();
+          clearDistributePreview();
+          return;
+        }
         if (s.paletteOpen) {
           s.setPaletteOpen(false);
           return;
@@ -139,6 +145,12 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
           }
         }
         s.removeSelected();
+        return;
+      }
+
+      if (e.key === "Enter" && getDistributePreview()) {
+        e.preventDefault();
+        commitDistributePreview();
         return;
       }
 

@@ -33,6 +33,7 @@ import { tracePath } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
+import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -99,6 +100,7 @@ export function CanvasStage() {
   const present = useDesign((s) => s.present);
   const nudgeHold = useDesign((s) => s.nudgeHold);
   const inspectorRail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
+  const distributePreview = useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -321,6 +323,7 @@ export function CanvasStage() {
       if (hasGuides(guides)) {
         drawSmartGuides(ctx, guides, doc.artboard, viewport.zoom);
       }
+      if (distributePreview) drawDistributePreview(ctx, distributePreview, viewport.zoom);
       const mq = marqueeRef.current;
       if (mq && (mq.w > 0.5 || mq.h > 0.5)) {
         ctx.beginPath();
@@ -446,7 +449,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
