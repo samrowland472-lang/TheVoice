@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 22:10 BST — Align preview names the key layer. The phosphor key box and the edge tick read that layer's name, and the inspector and status strip say that name stays. Enter or the lit button still commits, Esc cancels.
+
 2026-10-02 21:20 BST — Align to the key object previews the phosphor edge before commit. Last selected unlocked layer is the key and stays; the other layers draw dashed ghosts on that edge. The inspector and status strip name the edge plus how many move. Enter or the lit button commits, Esc cancels. A selected group moves with its children.
 
 2026-10-02 21:06 BST — Distribute preview pins first and last as stay. Solid phosphor corners and a stay label mark the boxes that do not move; dashed ghosts are the layers that will shift. The inspector and status strip name the even gap plus how many stay and how many move. Enter or the lit button still commits, Esc cancels.
@@ -55,6 +57,7 @@ Align selection to the key object with a phosphor edge preview before commit, ma
 
 ## Done
 
+- Align preview names the key layer on the edge, the key box, the inspector, and the status strip
 - Drag equal-gap snap names the matched size in the inspector while the pointer holds the gap; release clears it
 - isolateDocument / cropIsolateDocument
 - Export menu: Isolate PNG / SVG / crop variants

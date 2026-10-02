@@ -13,6 +13,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /First click previews the phosphor edge/);
   assert.match(preview, /expandMovePlaces/);
   assert.match(preview, /fillText\("key"/);
+  assert.match(preview, /keyName/);
+  assert.match(preview, /plan\.keyName/);
+  assert.match(inspector, /data-align-key-name/);
   assert.match(preview, /plan\.edge} edge/);
   assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport.zoom\)/);
   assert.match(inspector, /Align to key/);
@@ -32,5 +35,5 @@ test("left edge keeps the key and shifts the other box", () => {
   assert.equal(dx, 40);
   assert.equal(other.x + dx, key.x);
   assert.match(preview, /key stays/);
-  assert.match(preview, /Aligned \$\{plan\.edge\} to key/);
+  assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.keyName\}/);
 });

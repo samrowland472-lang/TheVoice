@@ -18,6 +18,7 @@ export type AlignEdgeLine = {
 export type AlignPlan = {
   edge: AlignEdge;
   keyId: string;
+  keyName: string;
   ids: string[];
   deltas: { id: string; dx: number; dy: number }[];
   ghosts: AlignGhost[];
@@ -116,6 +117,7 @@ export function planAlign(nodes: DesignNode[], ids: string[], edge: AlignEdge): 
   return {
     edge,
     keyId: key.id,
+    keyName: key.name?.trim() || "key",
     ids: roots.map((n) => n.id),
     deltas,
     ghosts,
@@ -181,7 +183,7 @@ export function armAlignPreview(edge: AlignEdge): AlignPlan | null {
   }
   preview = plan;
   emit();
-  holdStudioStatus(`Align preview · ${plan.edge} edge · key stays · ${alignMoveCount(plan)} move · Enter commits`);
+  holdStudioStatus(`Align preview · ${plan.edge} edge · ${plan.keyName} stays · ${alignMoveCount(plan)} move · Enter commits`);
   return plan;
 }
 
@@ -203,7 +205,7 @@ export function commitAlignPreview(): boolean {
   useDesign.setState({ doc: { ...doc, nodes: next }, dirty: true });
   preview = null;
   emit();
-  holdStudioStatus(`Aligned ${plan.edge} to key`);
+  holdStudioStatus(`Aligned ${plan.edge} to ${plan.keyName}`);
   return true;
 }
 
@@ -242,6 +244,7 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
     ctx.stroke();
     ctx.fillStyle = "rgba(63,198,255,0.95)";
     ctx.fillText("key", g.x + g.w / 2, g.y - 9 / z);
+    ctx.fillText(plan.keyName, g.x + g.w / 2, g.y - 20 / z);
   }
   ctx.setLineDash([]);
   ctx.strokeStyle = "rgba(63,198,255,0.95)";
@@ -265,7 +268,7 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
     ctx.lineTo(line.to, line.at + tick);
   }
   ctx.stroke();
-  const label = `${plan.edge} edge`;
+  const label = `${plan.edge} · ${plan.keyName}`;
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
   if (line.axis === "x") ctx.fillText(label, line.at + 28 / z, (line.from + line.to) / 2);
   else ctx.fillText(label, (line.from + line.to) / 2, line.at - 12 / z);

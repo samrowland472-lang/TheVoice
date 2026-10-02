@@ -295,10 +295,10 @@ function AlignChrome() {
         ))}
       </div>
       {plan ? (
-        <div className="space-y-1.5" data-align-edge={plan.edge} data-align-stay="1" data-align-move={alignMoveCount(plan)} data-align-key={plan.keyId}>
-          <p className="font-mono text-[12px] text-phosphor">{plan.edge} edge</p>
+        <div className="space-y-1.5" data-align-edge={plan.edge} data-align-stay="1" data-align-move={alignMoveCount(plan)} data-align-key={plan.keyId} data-align-key-name={plan.keyName}>
+          <p className="font-mono text-[12px] text-phosphor">{plan.edge} edge · {plan.keyName}</p>
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            Preview only. Key stays. {alignMoveCount(plan)} move. Enter or the lit button commits.
+            Preview only. {plan.keyName} stays. {alignMoveCount(plan)} move. Enter or the lit button commits.
           </p>
           <button
             type="button"
