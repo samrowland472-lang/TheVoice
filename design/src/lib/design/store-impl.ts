@@ -15,7 +15,9 @@ import {
   writeCampaignOrder,
 } from "./persist";
 import { blankDocument, instantiateTemplate } from "./templates";
-import { expandMovePlaces } from "./group-transform";
+import { expandMovePlaces, nudgeSelection, nudgeStatus, setNudgeCue } from "./group-transform";
+import { setStudioStatus } from "./studio-status";
+import { isGroup } from "./types";
 import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
@@ -371,6 +373,18 @@ export const useDesign = create<any>((set: any, get: any) => ({
       },
       dirty: true,
     });
+  },
+  translateSelected: (dx: number, dy: number) => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length || (!dx && !dy)) return;
+    const next = nudgeSelection(doc.nodes, selection, dx, dy);
+    if (next === doc.nodes) return;
+    get().commit();
+    const only = selection.length === 1 ? doc.nodes.find((n: DesignNode) => n.id === selection[0]) : null;
+    const group = Boolean(only && isGroup(only) && !only.locked);
+    setNudgeCue({ dx, dy, group });
+    setStudioStatus(nudgeStatus(dx, dy, group));
+    set({ doc: { ...doc, nodes: next }, dirty: true });
   },
   placeNodes: (places) => {
     const { doc } = get();

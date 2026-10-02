@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-02 14:02 BST — Keyboard nudge moves a selected group as one nest. Arrow keys still step 1 px, Shift 10 px, Alt 0.5 px. A lone group selection shifts the group and its children together (locked groups stay put). A phosphor tick leaves the nest centre with the step, and the status strip says the direction with group moved as one. Mixed selections still expand like a drag.
+
 2026-10-02 07:01 BST — Corner readout sits beside the dragged handle. North-west, north-east, south-east, and south-west still pin the opposite corner (Shift locks aspect). While the handle is held, a phosphor tick runs out from that corner and reads width and height percent. The nest still shows the pair above the box, the opposite corner still lights, and the status strip says width and height with the opposite corner pinned.
 
 2026-10-02 06:05 BST — Corner handles pin the opposite corner. North-west, north-east, south-east, and south-west handles still scale the spun nest (Shift locks aspect). After the nest scales, the group and its children shift so the opposite corner stays on the same world point under the group angle. That corner lights as a diamond while the handle is held, and the status strip says the scale with opposite corner pinned.
@@ -32,7 +34,7 @@
 
 ## Next recommended
 
-Keyboard nudge for a selected group that moves the nest as one unit (arrow keys, Shift for a larger step), matching how a single leaf already nudges.
+Snap the keyboard nest nudge to guides the same way a drag already snaps (Alt still bypasses), and light the guide while the arrow is held.
 
 
 ## Done
@@ -65,7 +67,8 @@ Keyboard nudge for a selected group that moves the nest as one unit (arrow keys,
 - Edge handles scale one local axis and pin the opposite edge in world space; pinned edge lights while held
 - Corner handles pin the opposite corner in world space; pinned corner lights while held
 - Live width and height percent beside the dragged corner handle
+- Keyboard nudge moves a selected group and its children as one nest; tick and status read the step
 
 ## Backlog
 
-- Keyboard nudge for a selected group that moves the nest as one unit
+- Keyboard nest nudge snaps to guides (Alt bypasses) and lights the guide while held

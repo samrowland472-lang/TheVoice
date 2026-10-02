@@ -16,6 +16,8 @@ import {
   rotateSelectionNodes,
   scaleGroupNodes,
   selectionTransformBox,
+  getNudgeCue,
+  setNudgeCue,
   spinPoint,
   translateNest,
   unspinPoint,
@@ -397,6 +399,37 @@ export function CanvasStage() {
             }
             ctx.restore();
           }
+          const cue = getNudgeCue();
+          if (cue?.group && only && isGroup(only) && !live) {
+            const len = Math.max(Math.hypot(cue.dx, cue.dy), 22 / Math.max(viewport.zoom, 0.01));
+            const mag = Math.hypot(cue.dx, cue.dy) || 1;
+            const cx = box.x + box.w / 2;
+            const cy = box.y + box.h / 2;
+            const ex = cx + (cue.dx / mag) * len;
+            const ey = cy + (cue.dy / mag) * len;
+            ctx.save();
+            ctx.strokeStyle = "rgba(63,198,255,0.95)";
+            ctx.fillStyle = "rgba(63,198,255,0.95)";
+            ctx.lineWidth = 1.6 / Math.max(viewport.zoom, 0.01);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+            const r = 4 / Math.max(viewport.zoom, 0.01);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - r);
+            ctx.lineTo(cx + r, cy);
+            ctx.lineTo(cx, cy + r);
+            ctx.lineTo(cx - r, cy);
+            ctx.closePath();
+            ctx.fill();
+            ctx.font = `${11 / viewport.zoom}px "IBM Plex Mono", ui-monospace, monospace`;
+            ctx.textAlign = ex >= cx ? "left" : "right";
+            ctx.textBaseline = ey >= cy ? "top" : "bottom";
+            const step = Math.round(mag * 10) / 10;
+            ctx.fillText(`${step} px · nest`, ex, ey);
+            ctx.restore();
+          }
         }
       }
     }
@@ -418,6 +451,10 @@ export function CanvasStage() {
 
   function onPointerDown(e: React.PointerEvent) {
     if (present || e.button !== 0) return;
+    if (getNudgeCue()) {
+      setNudgeCue(null);
+      setHoverTick((n) => n + 1);
+    }
     const s = useDesign.getState();
     const d = clientDoc(e);
     if (s.tool === "knife") {

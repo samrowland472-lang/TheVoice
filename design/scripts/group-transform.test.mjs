@@ -107,3 +107,14 @@ test("corner handles pin the opposite corner in world space", () => {
   assert.ok(Math.abs(pinned.x - before.x) < 1e-6);
   assert.ok(Math.abs(pinned.y - before.y) < 1e-6);
 });
+
+test("arrow nudge moves a selected group as one nest", () => {
+  assert.match(src, /export function nudgeSelection/);
+  assert.match(src, /export function nudgeStatus/);
+  assert.match(src, /group moved as one/);
+  assert.match(store, /translateSelected/);
+  assert.match(store, /nudgeSelection/);
+  const shortcuts = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
+  assert.match(shortcuts, /translateSelected\(dx, dy\)/);
+  assert.match(stage, /px · nest/);
+});

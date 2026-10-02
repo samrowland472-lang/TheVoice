@@ -179,6 +179,46 @@ export function translateNest(nodes: DesignNode[], groupId: string, dx: number, 
   return nodes.map((n) => (ids.has(n.id) ? { ...n, x: n.x + dx, y: n.y + dy } : n));
 }
 
+function formatStep(n: number) {
+  const rounded = Math.round(n * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
+/** Arrow-key copy: one group moves the nest; mixed selections expand like a drag. */
+export function nudgeSelection(nodes: DesignNode[], selectedIds: string[], dx: number, dy: number): DesignNode[] {
+  if ((!dx && !dy) || !selectedIds.length) return nodes;
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const selected = selectedIds.map((id) => byId.get(id)).filter((n): n is DesignNode => n != null && !n.locked);
+  if (!selected.length) return nodes;
+  if (selected.length === 1 && isGroup(selected[0]!)) return translateNest(nodes, selected[0]!.id, dx, dy);
+  const places = selected.map((n) => ({ id: n.id, x: n.x + dx, y: n.y + dy }));
+  const expanded = expandMovePlaces(nodes, places);
+  const map = new Map(expanded.map((p) => [p.id, p]));
+  return nodes.map((n) => {
+    const p = map.get(n.id);
+    return p ? { ...n, x: p.x, y: p.y } : n;
+  });
+}
+
+export function nudgeStatus(dx: number, dy: number, group: boolean): string {
+  const parts: string[] = [];
+  if (dx) parts.push(`${formatStep(Math.abs(dx))} px ${dx < 0 ? "left" : "right"}`);
+  if (dy) parts.push(`${formatStep(Math.abs(dy))} px ${dy < 0 ? "up" : "down"}`);
+  const motion = parts.join(" · ");
+  return group ? `Nest nudged ${motion} · group moved as one` : `Nudged ${motion}`;
+}
+
+export type NudgeCue = { dx: number; dy: number; group: boolean };
+let nudgeCue: NudgeCue | null = null;
+
+export function setNudgeCue(next: NudgeCue | null) {
+  nudgeCue = next;
+}
+
+export function getNudgeCue() {
+  return nudgeCue;
+}
+
 export function selectionTransformBox(nodes: DesignNode[], selectedIds: string[]): Box | null {
   if (selectedIds.length === 1) {
     const only = nodes.find((n) => n.id === selectedIds[0]);
