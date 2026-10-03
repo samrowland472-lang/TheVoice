@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 01:35 BST — Stay corner stamps the matched edge. Each stay box carries a phosphor pill on the matched corner (left, center, right, top, middle, bottom) so the box and the edge chip agree when the inspector is a rail. The stamp sits inset so it does not cover the outer chip. Enter still commits.
+
 2026-10-03 01:20 BST — Align edge chip names the matched edge. The phosphor pill reads left · key, center · board, and the other four edges, and hangs off the stay side on outer edges so the longer label does not cover the stay box. Center and middle stay on the tick, in a gap or just past the box. Enter still commits.
 
 2026-10-03 00:15 BST — Align edge chip sits on the tick, clear of the stay box. The phosphor pill names the key layer or the board and slides along the edge past the stay box and its name stack. The tick extends to the pill. Enter still commits.
@@ -104,11 +106,12 @@
 
 - Align to the key and the artboard in one preview, with a target chip so the same edge button can flip between last selected and the board
 - Align edge chip names the matched edge (left, center, right, top, middle, bottom) and the key or board, hung clear of the stay box
+- Stay corner stamp names the matched edge on the box so the rail-collapsed canvas still reads left, center, right, top, middle, or bottom
 
 ## Backlog
 
-- Align preview stay marks name the matched edge on the box corner, not only on the pill
+- Align commit keeps the edge name on the moved boxes for a beat so the commit matches the preview stamp
 
 ## Next recommended
 
-Stamp the edge name on the stay corner (left, center, right, top, middle, bottom) so the box and the pill agree when the inspector is collapsed.
+After Enter, hold the edge name on the boxes that moved for a short beat, then clear it, so the commit matches the stay-corner stamp.

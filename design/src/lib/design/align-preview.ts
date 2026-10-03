@@ -246,6 +246,30 @@ export function placeAlignEdgeChip(plan: AlignPlan, zoom: number): AlignEdgeChip
   return { x: alongCenter, y: line.at, w, h, label };
 }
 
+export type AlignStayStamp = { x: number; y: number; w: number; h: number; label: string };
+
+/**
+ * Edge name on the stay box corner so the box and the pill agree
+ * when the inspector is collapsed to a rail. Inset on the matched
+ * corner so the outer edge chip stays clear of the stamp.
+ */
+export function placeAlignStayStamp(
+  ghost: { x: number; y: number; w: number; h: number },
+  edge: AlignEdge,
+  zoom: number,
+): AlignStayStamp {
+  const z = Math.max(zoom, 0.01);
+  const label = edge;
+  const w = (Math.max(28, label.length * 6.2) + 8) / z;
+  const h = 14 / z;
+  const inset = 2 / z;
+  if (edge === "right") return { x: ghost.x + ghost.w - inset - w / 2, y: ghost.y + inset + h / 2, w, h, label };
+  if (edge === "bottom") return { x: ghost.x + inset + w / 2, y: ghost.y + ghost.h - inset - h / 2, w, h, label };
+  if (edge === "center") return { x: ghost.x + ghost.w / 2, y: ghost.y + inset + h / 2, w, h, label };
+  if (edge === "middle") return { x: ghost.x + inset + w / 2, y: ghost.y + ghost.h / 2, w, h, label };
+  return { x: ghost.x + inset + w / 2, y: ghost.y + inset + h / 2, w, h, label };
+}
+
 let preview: AlignPlan | null = null;
 const listeners = new Set<() => void>();
 
@@ -384,6 +408,15 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
     ctx.fillStyle = "rgba(63,198,255,0.95)";
     ctx.fillText(plan.target === "board" ? "stay" : "key", g.x + g.w / 2, g.y - 9 / z);
     if (plan.target !== "board") ctx.fillText(plan.keyName, g.x + g.w / 2, g.y - 20 / z);
+    const stamp = placeAlignStayStamp(g, plan.edge, zoom);
+    ctx.beginPath();
+    ctx.roundRect(stamp.x - stamp.w / 2, stamp.y - stamp.h / 2, stamp.w, stamp.h, 2 / z);
+    ctx.fillStyle = "rgba(7, 16, 22, 0.88)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(63,198,255,0.95)";
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63,198,255,0.95)";
+    ctx.fillText(stamp.label, stamp.x, stamp.y);
   }
   ctx.setLineDash([]);
   ctx.strokeStyle = "rgba(63,198,255,0.95)";

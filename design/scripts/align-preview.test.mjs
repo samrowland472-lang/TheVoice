@@ -24,6 +24,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /hang the longer/);
   assert.match(preview, /plan\.edge === "left"/);
   assert.match(preview, /plan\.edge === "bottom"/);
+  assert.match(preview, /export function placeAlignStayStamp/);
+  assert.match(preview, /stay box corner/);
+  assert.match(preview, /stamp\.label/);
+  assert.match(preview, /edge === "middle"/);
+  assert.match(preview, /edge === "center"/);
 
   assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport.zoom\)/);
   assert.match(inspector, /Align to key/);
