@@ -7,6 +7,7 @@ const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", 
 const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
 const layers = readFileSync(new URL("../src/components/studio/layers-panel.tsx", import.meta.url), "utf8");
 const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
+const studio = readFileSync(new URL("../src/components/studio/studio-app.tsx", import.meta.url), "utf8");
 
 test("align preview draws the key edge before commit", () => {
   assert.match(preview, /export function planAlign/);
@@ -49,6 +50,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /caption if stamp crops names key or board and fades with the stamp/);
   assert.match(preview, /export function noteAlignCommitFadeCaption/);
   assert.match(preview, /strip reads \$\{pill\}/);
+  assert.match(preview, /strip reads \$\{chip\}/);
+  assert.match(preview, /const chip = alignEdgeChipLabel\(plan\)/);
+  assert.match(studio, /StudioStatusStrip/);
   assert.match(preview, /baseStatus/);
   assert.match(preview, /fadingPill/);
   assert.match(preview, /rail and the strip agree/);

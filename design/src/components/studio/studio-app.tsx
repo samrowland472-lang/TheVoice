@@ -27,6 +27,7 @@ import { ToolRail } from "./tool-rail";
 import { TopBar } from "./top-bar";
 import { useShortcuts } from "./use-shortcuts";
 import { CampaignStrip } from "./campaign-strip";
+import { StudioStatusStrip } from "./studio-status-strip";
 import { PresentView } from "./present-chrome";
 
 export function StudioApp({ id }: { id: string }) {
@@ -151,6 +152,7 @@ export function StudioApp({ id }: { id: string }) {
           <AiPanel />
         </aside>
       </div>
+      <StudioStatusStrip />
       <div className="flex shrink-0 border-t border-border md:hidden">
         {(["layers", "inspect", "ai"] as const).map((tab) => (
           <button

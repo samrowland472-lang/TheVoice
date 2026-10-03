@@ -352,7 +352,8 @@ export function armAlignPreview(edge: AlignEdge, target: AlignTarget = "key"): A
   clearAlignCommitEcho();
   const stay = plan.ghosts.filter((g) => g.stay).length;
   const where = plan.target === "board" ? "board edge" : `${plan.keyName} stays`;
-  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · edge caption if chip crops names key or board · Enter commits`);
+  const chip = alignEdgeChipLabel(plan);
+  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · strip reads ${chip} · edge caption if chip crops names key or board · Enter commits`);
   return plan;
 }
 

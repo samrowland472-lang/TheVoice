@@ -17,6 +17,8 @@ export function isHeldStudioStatus() {
 }
 
 export function setStudioStatus(next: string | null, opts?: { hold?: boolean }) {
+  // A held align line stays until release or the next inspector write.
+  if (next == null && held) return;
   status = next;
   held = Boolean(next && opts?.hold);
   emit();
