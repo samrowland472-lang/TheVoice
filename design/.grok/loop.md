@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 13:02 BST — Inspector align line uses the layers chip. While a preview is armed, the phosphor line reads the same pill as each mover row (left · key, center · board), including the 16-character key trim. Esc still clears it. Enter still commits.
+
 2026-10-03 12:01 BST — Layers row names the armed align chip. While a preview is up, each layer that will move shows the same pill as the canvas (left · key, center · board) beside its name. Stay rows stay unmarked. Esc still clears it. Enter still commits.
 
 2026-10-03 11:01 BST — Layers row names the fading crop pill. After Enter, while the commit caption eases and a mover stamp sits off the rail, each shifted layer repeats the pill (left · key, center · board) beside its name. A solid beat keeps the name bare. Esc still clears it early.
@@ -86,6 +88,7 @@
 
 ## Done
 
+- Inspector align preview line uses the same truncated chip as the layer pill (left · poster title…, center · board) so a long key name agrees across the list and the open inspector
 - Armed align preview names the same edge chip on each mover's layers row (left · key, center · board) before Enter; stay rows stay unmarked
 - Layers row of each mover repeats the fading crop pill (left · key, center · board) beside the name while the commit caption eases
 - Inspector align line repeats the fading crop pill (left · key, center · board) beside the move count while the commit caption eases
@@ -146,8 +149,8 @@
 
 ## Backlog
 
-- Inspector align preview line uses the same truncated chip as the layer pill (left · poster title…, center · board) so a long key name agrees across the list and the open inspector
+- Status strip, while an align preview is armed, repeats the same truncated chip the layers row and inspector line show (left · poster title…, center · board)
 
 ## Next recommended
 
-While an align preview is armed, the inspector phosphor line should read the same chip string the layers row shows, including the 16-character key trim. Esc still clears it.
+While an align preview is armed, the status strip should read the same chip string the layers row and inspector line show, including the 16-character key trim. Esc still clears it.

@@ -13,6 +13,7 @@ import {
   type DistributeAxis,
 } from "@/lib/design/distribute-preview";
 import {
+  alignEdgeChipLabel,
   alignKey,
   alignMoveCount,
   alignRoots,
@@ -326,14 +327,13 @@ function AlignChrome() {
           data-align-move={alignMoveCount(live)}
           data-align-key={live.keyId}
           data-align-key-name={live.keyName}
+          data-align-preview-chip={alignEdgeChipLabel(live)}
         >
-          <p className="font-mono text-[12px] text-phosphor">
-            {live.target === "board" ? `${live.edge} board` : `${live.edge} edge · ${live.keyName}`}
+          <p className="font-mono text-[12px] text-phosphor" data-align-preview-line="">
+            {alignEdgeChipLabel(live)}
           </p>
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
-            {live.target === "board"
-              ? `Preview only. Canvas pill reads ${live.edge} · board, off the stay box. ${stay} stay. ${alignMoveCount(live)} move. Enter or the lit button commits.`
-              : `Preview only. Canvas pill reads ${live.edge} · ${live.keyName}, off the stay box. ${alignMoveCount(live)} move. Enter or the lit button commits.`}
+            {`Preview only. Same chip as the layers row: ${alignEdgeChipLabel(live)}. Long key names trim at 16. ${stay} stay. ${alignMoveCount(live)} move. Enter or the lit button commits. Esc clears it.`}
           </p>
           <button
             type="button"
