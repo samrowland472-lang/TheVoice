@@ -327,8 +327,15 @@ export function CanvasStage() {
         drawSmartGuides(ctx, guides, doc.artboard, viewport.zoom);
       }
       if (distributePreview) drawDistributePreview(ctx, distributePreview, viewport.zoom);
-      if (alignPreview) drawAlignPreview(ctx, alignPreview, viewport.zoom);
-      else if (alignEcho) {
+      if (alignPreview) {
+        const z = Math.max(viewport.zoom, 0.01);
+        drawAlignPreview(ctx, alignPreview, viewport.zoom, {
+          x: -viewport.x / z,
+          y: -viewport.y / z,
+          w: w / z,
+          h: h / z,
+        });
+      } else if (alignEcho) {
         const z = Math.max(viewport.zoom, 0.01);
         drawAlignCommitEcho(ctx, alignEcho, viewport.zoom, {
           x: -viewport.x / z,

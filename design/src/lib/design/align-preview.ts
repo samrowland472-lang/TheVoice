@@ -347,7 +347,7 @@ export function armAlignPreview(edge: AlignEdge, target: AlignTarget = "key"): A
   clearAlignCommitEcho();
   const stay = plan.ghosts.filter((g) => g.stay).length;
   const where = plan.target === "board" ? "board edge" : `${plan.keyName} stays`;
-  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · Enter commits`);
+  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · edge caption if chip crops · Enter commits`);
   return plan;
 }
 
@@ -494,7 +494,12 @@ export function commitAlignPreview(): boolean {
 }
 
 /** Phosphor edge on the key, solid key box, dashed ghosts for layers that will shift. */
-export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan, zoom: number) {
+export function drawAlignPreview(
+  ctx: CanvasRenderingContext2D,
+  plan: AlignPlan,
+  zoom: number,
+  crop: AlignViewCrop | null = null,
+) {
   const z = Math.max(zoom, 0.01);
   ctx.save();
   ctx.lineWidth = 1.2 / z;
@@ -583,6 +588,8 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
   ctx.fillStyle = "rgba(63,198,255,0.95)";
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
   ctx.fillText(chip.label, chip.x, chip.y);
+  const caption = placeAlignPreviewEdgeCaption(plan, zoom, crop);
+  if (caption) paintAlignEdgeCaption(ctx, caption, z);
   ctx.restore();
 }
 
@@ -599,25 +606,8 @@ function stampOffCrop(
   return left < crop.x || top < crop.y || left + stamp.w > crop.x + crop.w || top + stamp.h > crop.y + crop.h;
 }
 
-/**
- * Tiny edge name on the visible end of the commit tick when a stamp or the tick
- * sits off the rail crop. Null when the whole beat is already on screen.
- */
-export function placeAlignCommitEdgeCaption(
-  tick: AlignEdgeLine,
-  edge: AlignEdge,
-  boxes: { x: number; y: number; w: number; h: number }[],
-  zoom: number,
-  crop: AlignViewCrop | null,
-): AlignEdgeCaption | null {
-  if (!crop || crop.w <= 0 || crop.h <= 0 || !boxes.length) return null;
+function seatEdgeCaption(tick: AlignEdgeLine, edge: AlignEdge, zoom: number, crop: AlignViewCrop): AlignEdgeCaption {
   const z = Math.max(zoom, 0.01);
-  const stampsOff = boxes.some((g) => stampOffCrop(placeAlignStayStamp(g, edge, zoom), crop));
-  const tickOff =
-    tick.axis === "x"
-      ? tick.at < crop.x || tick.at > crop.x + crop.w || tick.from < crop.y || tick.to > crop.y + crop.h
-      : tick.at < crop.y || tick.at > crop.y + crop.h || tick.from < crop.x || tick.to > crop.x + crop.w;
-  if (!stampsOff && !tickOff) return null;
   const label = edge;
   const w = (Math.max(22, label.length * 5.4) + 6) / z;
   const h = 12 / z;
@@ -645,6 +635,57 @@ export function placeAlignCommitEdgeCaption(
   else if (tick.to > crop.x + crop.w && tick.from >= crop.x) x = visTo - w / 2 - pad;
   else x = (Math.max(visFrom, crop.x) + Math.min(visTo, crop.x + crop.w)) / 2;
   return { x: clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z), y, w, h, label };
+}
+
+function paintAlignEdgeCaption(ctx: CanvasRenderingContext2D, caption: AlignEdgeCaption, z: number) {
+  ctx.beginPath();
+  ctx.roundRect(caption.x - caption.w / 2, caption.y - caption.h / 2, caption.w, caption.h, 2 / z);
+  ctx.fillStyle = "rgba(7, 16, 22, 0.92)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(63,198,255,0.95)";
+  ctx.stroke();
+  ctx.fillStyle = "rgba(63,198,255,0.95)";
+  ctx.font = `${9 / z}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.fillText(caption.label, caption.x, caption.y);
+}
+
+/**
+ * Tiny edge name on the visible end of the preview tick when the edge chip
+ * or a stay stamp sits off the rail crop. Null when both already read on screen.
+ */
+export function placeAlignPreviewEdgeCaption(
+  plan: AlignPlan,
+  zoom: number,
+  crop: AlignViewCrop | null,
+): AlignEdgeCaption | null {
+  if (!crop || crop.w <= 0 || crop.h <= 0) return null;
+  const chip = placeAlignEdgeChip(plan, zoom);
+  const stays = plan.ghosts.filter((g) => g.stay);
+  const chipOff = stampOffCrop(chip, crop);
+  const stampsOff = stays.some((g) => stampOffCrop(placeAlignStayStamp(g, plan.edge, zoom), crop));
+  if (!chipOff && !stampsOff) return null;
+  return seatEdgeCaption(plan.edgeLine, plan.edge, zoom, crop);
+}
+
+/**
+ * Tiny edge name on the visible end of the commit tick when a stamp or the tick
+ * sits off the rail crop. Null when the whole beat is already on screen.
+ */
+export function placeAlignCommitEdgeCaption(
+  tick: AlignEdgeLine,
+  edge: AlignEdge,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  crop: AlignViewCrop | null,
+): AlignEdgeCaption | null {
+  if (!crop || crop.w <= 0 || crop.h <= 0 || !boxes.length) return null;
+  const stampsOff = boxes.some((g) => stampOffCrop(placeAlignStayStamp(g, edge, zoom), crop));
+  const tickOff =
+    tick.axis === "x"
+      ? tick.at < crop.x || tick.at > crop.x + crop.w || tick.from < crop.y || tick.to > crop.y + crop.h
+      : tick.at < crop.y || tick.at > crop.y + crop.h || tick.from < crop.x || tick.to > crop.x + crop.w;
+  if (!stampsOff && !tickOff) return null;
+  return seatEdgeCaption(tick, edge, zoom, crop);
 }
 
 /** After Enter, the matched edge name and a short edge tick fade together. */
@@ -711,16 +752,6 @@ export function drawAlignCommitEcho(
     ctx.fillText(stamp.label, stamp.x, stamp.y);
   }
   const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop);
-  if (caption) {
-    ctx.beginPath();
-    ctx.roundRect(caption.x - caption.w / 2, caption.y - caption.h / 2, caption.w, caption.h, 2 / z);
-    ctx.fillStyle = "rgba(7, 16, 22, 0.92)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(63,198,255,0.95)";
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63,198,255,0.95)";
-    ctx.font = `${9 / z}px "IBM Plex Mono", ui-monospace, monospace`;
-    ctx.fillText(caption.label, caption.x, caption.y);
-  }
+  if (caption) paintAlignEdgeCaption(ctx, caption, z);
   ctx.restore();
 }

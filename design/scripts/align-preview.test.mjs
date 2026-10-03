@@ -44,10 +44,15 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /caption if cropped/);
   assert.match(preview, /visible end of the commit tick/);
   assert.match(preview, /caption\.label/);
+  assert.match(preview, /export function placeAlignPreviewEdgeCaption/);
+  assert.match(preview, /edge caption if chip crops/);
+  assert.match(preview, /visible end of the preview tick/);
+  assert.match(preview, /paintAlignEdgeCaption/);
+  assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport\.zoom, \{/);
   assert.match(keys, /clearAlignCommitEcho\(\)/);
 
 
-  assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport.zoom\)/);
+  assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport\.zoom, \{/);
   assert.match(inspector, /Align to key/);
   assert.match(inspector, /data-align-edge/);
   assert.match(inspector, /data-align-stay/);
