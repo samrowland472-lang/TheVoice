@@ -344,6 +344,7 @@ export function armAlignPreview(edge: AlignEdge, target: AlignTarget = "key"): A
   }
   preview = plan;
   emit();
+  clearAlignCommitEcho();
   const stay = plan.ghosts.filter((g) => g.stay).length;
   const where = plan.target === "board" ? "board edge" : `${plan.keyName} stays`;
   holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · Enter commits`);
@@ -359,6 +360,53 @@ export function toggleAlignPreview(edge: AlignEdge, target: AlignTarget = "key")
   armAlignPreview(edge, target);
 }
 
+export type AlignCommitEcho = {
+  edge: AlignEdge;
+  boxes: { x: number; y: number; w: number; h: number }[];
+};
+
+let echo: AlignCommitEcho | null = null;
+let echoTimer: ReturnType<typeof setTimeout> | null = null;
+const echoListeners = new Set<() => void>();
+
+function emitEcho() {
+  for (const fn of echoListeners) fn();
+}
+
+export function getAlignCommitEcho(): AlignCommitEcho | null {
+  return echo;
+}
+
+export function subscribeAlignCommitEcho(fn: () => void) {
+  echoListeners.add(fn);
+  return () => echoListeners.delete(fn);
+}
+
+export function clearAlignCommitEcho() {
+  if (echoTimer) clearTimeout(echoTimer);
+  echoTimer = null;
+  if (!echo) return;
+  echo = null;
+  emitEcho();
+}
+
+/** Hold the edge name on boxes that moved so the commit matches the stay stamp. */
+export function holdAlignCommitEcho(plan: AlignPlan) {
+  const boxes = plan.ghosts.filter((g) => !g.stay).map((g) => ({ x: g.x, y: g.y, w: g.w, h: g.h }));
+  if (!boxes.length) {
+    clearAlignCommitEcho();
+    return;
+  }
+  echo = { edge: plan.edge, boxes };
+  emitEcho();
+  if (echoTimer) clearTimeout(echoTimer);
+  echoTimer = setTimeout(() => {
+    echo = null;
+    echoTimer = null;
+    emitEcho();
+  }, 1200);
+}
+
 export function commitAlignPreview(): boolean {
   const plan = preview;
   const doc = useDesign.getState().doc;
@@ -368,7 +416,13 @@ export function commitAlignPreview(): boolean {
   useDesign.setState({ doc: { ...doc, nodes: next }, dirty: true });
   preview = null;
   emit();
-  holdStudioStatus(`Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName}`);
+  holdAlignCommitEcho(plan);
+  const moved = plan.ghosts.filter((g) => !g.stay).length;
+  holdStudioStatus(
+    moved
+      ? `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved`
+      : `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName}`,
+  );
   return true;
 }
 
@@ -462,5 +516,44 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
   ctx.fillStyle = "rgba(63,198,255,0.95)";
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
   ctx.fillText(chip.label, chip.x, chip.y);
+  ctx.restore();
+}
+
+/** After Enter, the matched edge name stays on moved boxes for a beat. */
+export function drawAlignCommitEcho(ctx: CanvasRenderingContext2D, held: AlignCommitEcho, zoom: number) {
+  const z = Math.max(zoom, 0.01);
+  ctx.save();
+  ctx.lineWidth = 1.2 / z;
+  ctx.font = `${10 / z}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.strokeStyle = "rgba(63,198,255,0.95)";
+  ctx.fillStyle = "rgba(63,198,255,0.95)";
+  const pin = 8 / z;
+  for (const g of held.boxes) {
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y + pin);
+    ctx.lineTo(g.x, g.y);
+    ctx.lineTo(g.x + pin, g.y);
+    ctx.moveTo(g.x + g.w - pin, g.y);
+    ctx.lineTo(g.x + g.w, g.y);
+    ctx.lineTo(g.x + g.w, g.y + pin);
+    ctx.moveTo(g.x, g.y + g.h - pin);
+    ctx.lineTo(g.x, g.y + g.h);
+    ctx.lineTo(g.x + pin, g.y + g.h);
+    ctx.moveTo(g.x + g.w - pin, g.y + g.h);
+    ctx.lineTo(g.x + g.w, g.y + g.h);
+    ctx.lineTo(g.x + g.w, g.y + g.h - pin);
+    ctx.stroke();
+    const stamp = placeAlignStayStamp(g, held.edge, zoom);
+    ctx.beginPath();
+    ctx.roundRect(stamp.x - stamp.w / 2, stamp.y - stamp.h / 2, stamp.w, stamp.h, 2 / z);
+    ctx.fillStyle = "rgba(7, 16, 22, 0.88)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(63,198,255,0.95)";
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63,198,255,0.95)";
+    ctx.fillText(stamp.label, stamp.x, stamp.y);
+  }
   ctx.restore();
 }

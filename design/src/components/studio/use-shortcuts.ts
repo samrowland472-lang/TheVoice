@@ -9,7 +9,7 @@ import {
   stepPathHolePoint,
 } from "@/lib/design/path-actions";
 import { clearDistributePreview, commitDistributePreview, getDistributePreview } from "@/lib/design/distribute-preview";
-import { clearAlignPreview, commitAlignPreview, getAlignPreview } from "@/lib/design/align-preview";
+import { clearAlignCommitEcho, clearAlignPreview, commitAlignPreview, getAlignCommitEcho, getAlignPreview } from "@/lib/design/align-preview";
 import { useDesign } from "@/lib/design/store";
 import type { Tool } from "@/lib/design/types";
 
@@ -55,6 +55,11 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
         if (getAlignPreview()) {
           e.preventDefault();
           clearAlignPreview();
+          return;
+        }
+        if (getAlignCommitEcho()) {
+          e.preventDefault();
+          clearAlignCommitEcho();
           return;
         }
         if (getDistributePreview()) {

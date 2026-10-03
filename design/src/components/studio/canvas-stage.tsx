@@ -34,7 +34,7 @@ import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/de
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
-import { drawAlignPreview, getAlignPreview, subscribeAlignPreview } from "@/lib/design/align-preview";
+import { drawAlignCommitEcho, drawAlignPreview, getAlignCommitEcho, getAlignPreview, subscribeAlignCommitEcho, subscribeAlignPreview } from "@/lib/design/align-preview";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -103,6 +103,7 @@ export function CanvasStage() {
   const inspectorRail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
   const distributePreview = useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
   const alignPreview = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
+  const alignEcho = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -327,6 +328,7 @@ export function CanvasStage() {
       }
       if (distributePreview) drawDistributePreview(ctx, distributePreview, viewport.zoom);
       if (alignPreview) drawAlignPreview(ctx, alignPreview, viewport.zoom);
+      else if (alignEcho) drawAlignCommitEcho(ctx, alignEcho, viewport.zoom);
       const mq = marqueeRef.current;
       if (mq && (mq.w > 0.5 || mq.h > 0.5)) {
         ctx.beginPath();
@@ -452,7 +454,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
