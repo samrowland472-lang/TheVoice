@@ -42,6 +42,12 @@ test("align preview draws the key edge before commit", () => {
   assert.match(stage, /drawAlignCommitEcho\(ctx, alignEcho, viewport\.zoom/);
   assert.match(preview, /export function placeAlignCommitEdgeCaption/);
   assert.match(preview, /caption if stamp crops names key or board and fades with the stamp/);
+  assert.match(preview, /export function noteAlignCommitFadeCaption/);
+  assert.match(preview, /strip reads \$\{pill\}/);
+  assert.match(preview, /baseStatus/);
+  assert.match(preview, /fadingPill/);
+  assert.match(preview, /rail and the strip agree/);
+
   assert.match(preview, /releases with the beat/);
   assert.match(preview, /paintAlignEdgeCaption\(ctx, caption, z, alpha\)/);
   assert.match(preview, /chipLabel/);

@@ -371,6 +371,8 @@ export type AlignCommitEcho = {
   until: number;
   /** Bumps while the stamp fades so the stage redraws. */
   tick: number;
+  /** Solid-phase line. The fade may append the cropped pill, then restore this. */
+  baseStatus: string;
   status: string;
 };
 
@@ -459,9 +461,9 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   }
   const moved = boxes.length;
   const chipLabel = alignEdgeChipLabel(plan);
-  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
+  const baseStatus = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
-  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, born, until: born + ALIGN_ECHO_MS, tick: 0, status };
+  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);
   const step = () => {
@@ -475,6 +477,20 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
     echoTimer = setTimeout(step, 50);
   };
   echoTimer = setTimeout(step, 50);
+}
+
+/**
+ * While the commit caption eases, the status strip repeats the cropped pill
+ * (left · key, center · board) so the rail and the strip agree. A short edge
+ * name, or a caption that has not started fading, leaves the solid line.
+ */
+export function noteAlignCommitFadeCaption(pill: string | null) {
+  if (!echo) return;
+  const next = pill ? `${echo.baseStatus} · strip reads ${pill}` : echo.baseStatus;
+  if (echo.status === next && getStudioStatus() === next) return;
+  const prev = echo.status;
+  echo.status = next;
+  if (getStudioStatus() === prev || getStudioStatus() === echo.baseStatus) holdStudioStatus(next);
 }
 
 export function commitAlignPreview(): boolean {
@@ -784,4 +800,6 @@ export function drawAlignCommitEcho(
   ctx.restore();
   const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop, held.chipLabel);
   if (caption) paintAlignEdgeCaption(ctx, caption, z, alpha);
+  const fadingPill = alpha < 0.999 && caption && caption.label === held.chipLabel ? caption.label : null;
+  noteAlignCommitFadeCaption(fadingPill);
 }

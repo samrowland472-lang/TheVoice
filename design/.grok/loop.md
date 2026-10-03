@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 09:01 BST — Status strip names the fading crop caption. After Enter, once the commit beat starts to ease and a mover stamp is off the rail, the strip repeats the pill (left · key, center · board) so it still reads after the canvas caption fades. A tick-only crop keeps the solid line. Esc still clears it early.
+
 2026-10-03 08:01 BST — Align commit crop caption eases with the stamp. After Enter, if a mover stamp sits off the rail, the tiny pill (left · key, center · board) uses the same fade as the edge name so it releases with the beat instead of cutting. A tick-only crop still keeps the short edge name. Esc still clears it early.
 
 2026-10-03 07:01 BST — Align commit crop caption names key or board when a mover stamp is the thing off the rail. The tiny phosphor caption on the visible end of the tick repeats the preview pill (left · key, center · board) for that fade beat. A tick-only crop still keeps the short edge name. Esc still clears it early.
@@ -131,11 +133,12 @@
 - Align preview crop caption repeats the chip pill (left · key, center · board) when the chip is the thing off the rail; stay-only crops keep the short edge name
 - Align commit crop caption repeats the preview pill (left · key, center · board) when a mover stamp is the thing off the rail; tick-only crops keep the short edge name
 - Align commit crop caption eases with the stamp alpha so a cropped pill releases with the beat instead of cutting
+- Status strip repeats the fading crop caption (left · key, center · board) so the rail and the strip agree during the release
 
 ## Backlog
 
-- Status strip names the fading crop caption (left · key, center · board) so the rail and the strip agree during the release
+- Inspector align line names the same fading crop pill while the commit caption eases, so a collapsed rail and the inspector agree
 
 ## Next recommended
 
-While the commit caption is easing, the status strip should repeat that pill so the target still reads after the canvas crop starts to fade.
+While the commit caption is easing, the inspector align line should repeat that pill (left · key, center · board) beside the move count.
