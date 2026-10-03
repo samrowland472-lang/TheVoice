@@ -187,6 +187,11 @@ export function alignMoveCount(plan: AlignPlan): number {
   return plan.deltas.filter((d) => d.dx || d.dy).length;
 }
 
+/** Layers that shift under an armed align preview. Stay rows stay unmarked. */
+export function alignPreviewMoverIds(plan: AlignPlan): string[] {
+  return plan.deltas.filter((_, i) => plan.ghosts[i] && !plan.ghosts[i].stay).map((d) => d.id);
+}
+
 export function alignEdgeChipLabel(plan: AlignPlan): string {
   const raw = plan.target === "board" ? "board" : plan.keyName.trim() || "key";
   const who = raw.length > 16 ? `${raw.slice(0, 15)}…` : raw;
@@ -469,7 +474,7 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   const chipLabel = alignEdgeChipLabel(plan);
   const baseStatus = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
-  const moverIds = plan.deltas.filter((_, i) => plan.ghosts[i] && !plan.ghosts[i].stay).map((d) => d.id);
+  const moverIds = alignPreviewMoverIds(plan);
   echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, moveCount: boxes.length, fadePill: null, moverIds, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);

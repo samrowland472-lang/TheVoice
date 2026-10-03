@@ -58,6 +58,14 @@ test("align preview draws the key edge before commit", () => {
   assert.match(layers, /data-layer-align-pill/);
   assert.match(layers, /alignEcho\?\.moverIds.includes/);
   assert.match(layers, /subscribeAlignCommitEcho/);
+  assert.match(preview, /export function alignPreviewMoverIds/);
+  assert.match(preview, /Stay rows stay unmarked/);
+  assert.match(layers, /subscribeAlignPreview/);
+  assert.match(layers, /alignPreviewMoverIds\(alignPreview\)/);
+  assert.match(layers, /data-layer-align-preview=/);
+  assert.match(layers, /data-layer-align-preview-mover/);
+  assert.match(layers, /alignEdgeChipLabel\(alignPreview\)/);
+  assert.match(layers, /Edge chip while align preview is armed/);
   assert.match(inspector, /\$\{echo.fadePill\} · \$\{echo.moveCount\} move/);
 
 

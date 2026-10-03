@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 12:01 BST — Layers row names the armed align chip. While a preview is up, each layer that will move shows the same pill as the canvas (left · key, center · board) beside its name. Stay rows stay unmarked. Esc still clears it. Enter still commits.
+
 2026-10-03 11:01 BST — Layers row names the fading crop pill. After Enter, while the commit caption eases and a mover stamp sits off the rail, each shifted layer repeats the pill (left · key, center · board) beside its name. A solid beat keeps the name bare. Esc still clears it early.
 
 2026-10-03 10:01 BST — Inspector align line names the fading crop pill. After Enter, while the commit caption eases and a mover stamp sits off the rail, the align line repeats the pill (left · key, center · board) beside the move count. A solid beat keeps the edge and the count. Esc still clears it early.
@@ -84,6 +86,7 @@
 
 ## Done
 
+- Armed align preview names the same edge chip on each mover's layers row (left · key, center · board) before Enter; stay rows stay unmarked
 - Layers row of each mover repeats the fading crop pill (left · key, center · board) beside the name while the commit caption eases
 - Inspector align line repeats the fading crop pill (left · key, center · board) beside the move count while the commit caption eases
 - Align edge chip sits on the tick, clear of the stay box; names the key layer or the board
@@ -143,8 +146,8 @@
 
 ## Backlog
 
-- Align preview names the same edge chip on each mover's layers row before Enter, so the list agrees with the canvas pill while the inspector is a rail
+- Inspector align preview line uses the same truncated chip as the layer pill (left · poster title…, center · board) so a long key name agrees across the list and the open inspector
 
 ## Next recommended
 
-While an align preview is armed, each layer that will move should show the chip (left · key, center · board) beside its name. Stay rows stay unmarked. Esc still clears it.
+While an align preview is armed, the inspector phosphor line should read the same chip string the layers row shows, including the 16-character key trim. Esc still clears it.
