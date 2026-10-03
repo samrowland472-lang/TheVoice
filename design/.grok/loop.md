@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 23:01 BST — Commit tick caption fits the rail. While the crop caption eases, a release line wider than the rail shrinks the type or wraps once so the tick still names the full line the inspector, layers row, and status strip show (left · key · 2 move · fade left · poster title… · 2 move). A tick that is only partly on the rail keeps every word, including the move count. A tick-only crop keeps the short edge name. Esc still clears it early.
+
 2026-10-03 22:01 BST — Commit tick caption repeats the release line while a cropped mover stamp eases. After Enter, once the stamp alpha drops, a stamp sitting off the rail shows the same line the inspector, layers row, and status strip already read (left · key · 2 move · fade left · poster title… · 2 move). The solid beat still leads with the truncated chip. A tick-only crop keeps the short edge name. Esc still clears it early.
 
 2026-10-03 21:01 BST — Inspector fade line keeps the solid lead and appends the cropped pill. While the commit caption eases, the align line reads the same release line as the layers row and status strip (left · key · 2 move · fade left · poster title… · 2 move). A solid beat still leads with the truncated chip and move count. Esc still clears it early.
@@ -102,6 +104,7 @@
 
 ## Done
 
+- Align commit tick caption, when the release line is wider than the rail, shrinks the type or wraps once so a cropped tick still names the full line (left · key · 2 move · fade left · poster title… · 2 move) instead of clipping the move count. Esc still clears it early.
 - Inspector fade line keeps the solid lead and appends the cropped pill with the same move count the layers fade line and status strip show (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.
 - Status strip fade append keeps the solid lead and names the cropped pill with the same move count the inspector fade line shows (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.
 
@@ -175,8 +178,8 @@
 
 ## Backlog
 
-- Align commit tick caption eases with the same stamp alpha as the release line, and a cropped tick that is only partly on the rail still names the full line (left · key · 2 move · fade left · poster title… · 2 move) instead of clipping the last words. Esc still clears it early.
+- Wrapped commit tick caption stays clear of the landed boxes. When the release line wraps once, the two-line pill seats off the mover box the way the edge chip does, and still eases with the stamp alpha. Esc still clears it early.
 
 ## Next recommended
 
-While the crop caption eases, if the release line itself is wider than the rail, the commit tick caption should still show the full line the inspector, layers row, and status strip show (left · key · 2 move · fade left · poster title… · 2 move) — shrink the type or wrap once rather than clipping the move count. Esc still clears it early.
+When the commit tick caption wraps, seat the two-line pill clear of the landed boxes so the move count is not drawn over the art, and keep the same stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.

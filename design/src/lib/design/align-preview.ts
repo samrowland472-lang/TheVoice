@@ -661,7 +661,17 @@ export function drawAlignPreview(
 
 export type AlignViewCrop = { x: number; y: number; w: number; h: number };
 
-export type AlignEdgeCaption = { x: number; y: number; w: number; h: number; label: string };
+export type AlignEdgeCaption = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  label: string;
+  /** Fitted lines when the release line is wider than the rail. */
+  lines?: string[];
+  /** Screen px before zoom. Shrinks so a long release line still fits. */
+  fontPx?: number;
+};
 
 function stampOffCrop(
   stamp: { x: number; y: number; w: number; h: number },
@@ -678,10 +688,11 @@ function seatEdgeCaption(
   zoom: number,
   crop: AlignViewCrop,
   label: string = edge,
+  fit?: { w: number; h: number; lines: string[]; fontPx: number },
 ): AlignEdgeCaption {
   const z = Math.max(zoom, 0.01);
-  const w = (Math.max(22, label.length * 5.6) + 8) / z;
-  const h = 12 / z;
+  const w = fit?.w ?? (Math.max(22, label.length * 5.6) + 8) / z;
+  const h = fit?.h ?? 12 / z;
   const pad = 6 / z;
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
   if (tick.axis === "x") {
@@ -694,7 +705,15 @@ function seatEdgeCaption(
     } else if (tick.from < crop.y && tick.to <= crop.y + crop.h) y = visFrom + h / 2 + pad;
     else if (tick.to > crop.y + crop.h && tick.from >= crop.y) y = visTo - h / 2 - pad;
     else y = (Math.max(visFrom, crop.y) + Math.min(visTo, crop.y + crop.h)) / 2;
-    return { x, y: clamp(y, crop.y + h / 2 + 2 / z, crop.y + crop.h - h / 2 - 2 / z), w, h, label };
+    return {
+      x,
+      y: clamp(y, crop.y + h / 2 + 2 / z, crop.y + crop.h - h / 2 - 2 / z),
+      w,
+      h,
+      label,
+      lines: fit?.lines,
+      fontPx: fit?.fontPx,
+    };
   }
   const visFrom = Math.max(tick.from, crop.x);
   const visTo = Math.min(tick.to, crop.x + crop.w);
@@ -705,7 +724,83 @@ function seatEdgeCaption(
   } else if (tick.from < crop.x && tick.to <= crop.x + crop.w) x = visFrom + w / 2 + pad;
   else if (tick.to > crop.x + crop.w && tick.from >= crop.x) x = visTo - w / 2 - pad;
   else x = (Math.max(visFrom, crop.x) + Math.min(visTo, crop.x + crop.w)) / 2;
-  return { x: clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z), y, w, h, label };
+  return {
+    x: clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z),
+    y,
+    w,
+    h,
+    label,
+    lines: fit?.lines,
+    fontPx: fit?.fontPx,
+  };
+}
+
+/**
+ * Split a release line once on the phosphor separator so a cropped tick can
+ * keep every word. Prefers a break near the middle.
+ */
+function wrapReleaseLineOnce(label: string): [string, string] | null {
+  const parts = label.split(" · ");
+  if (parts.length < 2) return null;
+  let best = 1;
+  let bestDiff = Infinity;
+  for (let i = 1; i < parts.length; i++) {
+    const left = parts.slice(0, i).join(" · ");
+    const right = parts.slice(i).join(" · ");
+    const diff = Math.abs(left.length - right.length);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = i;
+    }
+  }
+  return [parts.slice(0, best).join(" · "), parts.slice(best).join(" · ")];
+}
+
+function captionBox(text: string, fontPx: number, zoom: number) {
+  const z = Math.max(zoom, 0.01);
+  const w = (Math.max(22, text.length * 5.6 * (fontPx / 9)) + 8) / z;
+  const h = (fontPx + 3) / z;
+  return { w, h };
+}
+
+/**
+ * When the release line is wider than the rail, shrink the type or wrap once
+ * rather than clipping the move count. A cropped tick that is only partly on
+ * the rail still names the full line (left · key · 2 move · fade left · poster
+ * title… · 2 move).
+ */
+function fitAlignCommitCaption(label: string, zoom: number, crop: AlignViewCrop) {
+  const z = Math.max(zoom, 0.01);
+  const maxW = Math.max(24 / z, crop.w - 8 / z);
+  const maxH = Math.max(14 / z, crop.h - 8 / z);
+  const fonts = [9, 8, 7, 6];
+  const single = fonts
+    .map((fontPx) => ({ fontPx, lines: [label], ...captionBox(label, fontPx, zoom) }))
+    .find((box) => box.w <= maxW && box.h <= maxH);
+  if (single) return single;
+  const wrapped = wrapReleaseLineOnce(label);
+  if (wrapped) {
+    const fit = fonts
+      .map((fontPx) => {
+        const a = captionBox(wrapped[0], fontPx, zoom);
+        const b = captionBox(wrapped[1], fontPx, zoom);
+        return { fontPx, lines: [...wrapped], w: Math.max(a.w, b.w), h: a.h + b.h };
+      })
+      .find((box) => box.w <= maxW && box.h <= maxH);
+    if (fit) return fit;
+    const fontPx = 6;
+    const a = captionBox(wrapped[0], fontPx, zoom);
+    const b = captionBox(wrapped[1], fontPx, zoom);
+    return {
+      fontPx,
+      lines: [...wrapped],
+      w: Math.min(maxW, Math.max(a.w, b.w)),
+      h: Math.min(maxH, a.h + b.h),
+    };
+  }
+  const fontPx = 6;
+  const box = captionBox(label, fontPx, zoom);
+  return { fontPx, lines: [label], w: Math.min(maxW, box.w), h: Math.min(maxH, box.h) };
 }
 
 function paintAlignEdgeCaption(
@@ -727,8 +822,15 @@ function paintAlignEdgeCaption(
   ctx.strokeStyle = "rgba(63,198,255,0.95)";
   ctx.stroke();
   ctx.fillStyle = "rgba(63,198,255,0.95)";
-  ctx.font = `${9 / z}px "IBM Plex Mono", ui-monospace, monospace`;
-  ctx.fillText(caption.label, caption.x, caption.y);
+  const fontPx = caption.fontPx ?? 9;
+  const lines = caption.lines?.length ? caption.lines : [caption.label];
+  ctx.font = `${fontPx / z}px "IBM Plex Mono", ui-monospace, monospace`;
+  if (lines.length === 1) ctx.fillText(lines[0], caption.x, caption.y);
+  else {
+    const lineH = (fontPx + 1) / z;
+    const start = caption.y - (lineH * (lines.length - 1)) / 2;
+    lines.forEach((line, i) => ctx.fillText(line, caption.x, start + i * lineH));
+  }
   ctx.restore();
 }
 
@@ -762,7 +864,10 @@ export function placeAlignPreviewEdgeCaption(
  * layers row, and status strip show
  * (left · key · 2 move · fade left · poster title… · 2 move). A tick-only crop
  * keeps the short edge name. The caption uses the stamp alpha so a cropped
- * pill releases with the beat. Null when the whole beat is already on screen.
+ * pill releases with the beat. If that release line is wider than the rail,
+ * the caption shrinks the type or wraps once rather than clipping the move count,
+ * so a tick that is only partly on the rail still names the full line.
+ * Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
   tick: AlignEdgeLine,
@@ -781,7 +886,8 @@ export function placeAlignCommitEdgeCaption(
       : tick.at < crop.y || tick.at > crop.y + crop.h || tick.from < crop.x || tick.to > crop.x + crop.w;
   if (!stampsOff && !tickOff) return null;
   const label = stampsOff && releaseLine ? releaseLine : stampsOff && chipLabel ? chipLabel : edge;
-  return seatEdgeCaption(tick, edge, zoom, crop, label);
+  const fit = fitAlignCommitCaption(label, zoom, crop);
+  return seatEdgeCaption(tick, edge, zoom, crop, label, fit);
 }
 
 /** After Enter, the matched edge name, the short edge tick, and a cropped caption fade together. */

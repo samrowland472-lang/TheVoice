@@ -97,6 +97,12 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /stampsOff && releaseLine \? releaseLine : stampsOff && chipLabel \? chipLabel : edge/);
   assert.match(preview, /alignCommitLayerFadeLine\(held\.chipLabel, held\.chipLabel, held\.moveCount\)/);
   assert.match(preview, /repeats the same release line/);
+  assert.match(preview, /wider than the rail/);
+  assert.match(preview, /shrinks the type or wraps once rather than clipping the move count/);
+  assert.match(preview, /only partly on the rail still names the full line/);
+  assert.match(preview, /function fitAlignCommitCaption/);
+  assert.match(preview, /function wrapReleaseLineOnce/);
+  assert.match(preview, /seatEdgeCaption\(tick, edge, zoom, crop, label, fit\)/);
   assert.match(preview, /held\.chipLabel/);
   assert.match(preview, /repeats the preview pill/);
   assert.match(preview, /visible end of the commit tick/);
