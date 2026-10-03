@@ -1,7 +1,7 @@
 import { geometryBox, type AlignEdge } from "./align";
 import { expandMovePlaces } from "./group-transform";
 import { useDesign } from "./store-impl";
-import { holdStudioStatus, releaseStudioStatus } from "./studio-status";
+import { getStudioStatus, holdStudioStatus, releaseStudioStatus } from "./studio-status";
 import type { DesignNode } from "./types";
 
 export type { AlignEdge };
@@ -363,7 +363,15 @@ export function toggleAlignPreview(edge: AlignEdge, target: AlignTarget = "key")
 export type AlignCommitEcho = {
   edge: AlignEdge;
   boxes: { x: number; y: number; w: number; h: number }[];
+  born: number;
+  until: number;
+  /** Bumps while the stamp fades so the stage redraws. */
+  tick: number;
+  status: string;
 };
+
+const ALIGN_ECHO_MS = 1200;
+const ALIGN_ECHO_FADE_AT = 700;
 
 let echo: AlignCommitEcho | null = null;
 let echoTimer: ReturnType<typeof setTimeout> | null = null;
@@ -386,25 +394,52 @@ export function clearAlignCommitEcho() {
   if (echoTimer) clearTimeout(echoTimer);
   echoTimer = null;
   if (!echo) return;
+  const held = echo.status;
   echo = null;
   emitEcho();
+  if (held && getStudioStatus() === held) releaseStudioStatus();
 }
 
 /** Hold the edge name on boxes that moved so the commit matches the stay stamp. */
+function settleAlignCommitEcho() {
+  const held = echo?.status;
+  echo = null;
+  echoTimer = null;
+  emitEcho();
+  if (held && getStudioStatus() === held) releaseStudioStatus();
+}
+
+/** 1 while the stamp is solid, then eases to 0 so the beat reads as a release. */
+export function alignCommitEchoAlpha(held: AlignCommitEcho, now = Date.now()): number {
+  const age = now - held.born;
+  if (age <= ALIGN_ECHO_FADE_AT) return 1;
+  const span = Math.max(1, held.until - held.born - ALIGN_ECHO_FADE_AT);
+  return Math.max(0, 1 - (age - ALIGN_ECHO_FADE_AT) / span);
+}
+
 export function holdAlignCommitEcho(plan: AlignPlan) {
   const boxes = plan.ghosts.filter((g) => !g.stay).map((g) => ({ x: g.x, y: g.y, w: g.w, h: g.h }));
   if (!boxes.length) {
     clearAlignCommitEcho();
     return;
   }
-  echo = { edge: plan.edge, boxes };
+  const moved = boxes.length;
+  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved`;
+  const born = Date.now();
+  echo = { edge: plan.edge, boxes, born, until: born + ALIGN_ECHO_MS, tick: 0, status };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);
-  echoTimer = setTimeout(() => {
-    echo = null;
-    echoTimer = null;
+  const step = () => {
+    if (!echo) return;
+    if (Date.now() >= echo.until) {
+      settleAlignCommitEcho();
+      return;
+    }
+    echo = { ...echo, tick: echo.tick + 1 };
     emitEcho();
-  }, 1200);
+    echoTimer = setTimeout(step, 50);
+  };
+  echoTimer = setTimeout(step, 50);
 }
 
 export function commitAlignPreview(): boolean {
@@ -420,7 +455,7 @@ export function commitAlignPreview(): boolean {
   const moved = plan.ghosts.filter((g) => !g.stay).length;
   holdStudioStatus(
     moved
-      ? `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved`
+      ? echo?.status ?? `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved`
       : `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName}`,
   );
   return true;
@@ -522,7 +557,10 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
 /** After Enter, the matched edge name stays on moved boxes for a beat. */
 export function drawAlignCommitEcho(ctx: CanvasRenderingContext2D, held: AlignCommitEcho, zoom: number) {
   const z = Math.max(zoom, 0.01);
+  const alpha = alignCommitEchoAlpha(held);
+  if (alpha <= 0.01) return;
   ctx.save();
+  ctx.globalAlpha = alpha;
   ctx.lineWidth = 1.2 / z;
   ctx.font = `${10 / z}px "IBM Plex Mono", ui-monospace, monospace`;
   ctx.textAlign = "center";

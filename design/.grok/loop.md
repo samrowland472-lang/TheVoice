@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 02:20 BST — Align commit stamp fades out. After Enter the edge name stays solid on the boxes that moved, then eases off so the beat reads as a release. The status strip drops with the stamp. Esc still clears it early.
+
 2026-10-03 02:05 BST — Align commit holds the edge name on moved boxes. After Enter, each box that shifted keeps the same phosphor corner stamp (left, center, right, top, middle, bottom) for a short beat, then it clears. Esc clears it early. A new preview replaces it. Boxes already on the edge do not get a commit stamp.
 
 2026-10-03 01:35 BST — Stay corner stamps the matched edge. Each stay box carries a phosphor pill on the matched corner (left, center, right, top, middle, bottom) so the box and the edge chip agree when the inspector is a rail. The stamp sits inset so it does not cover the outer chip. Enter still commits.
@@ -110,11 +112,12 @@
 - Align edge chip names the matched edge (left, center, right, top, middle, bottom) and the key or board, hung clear of the stay box
 - Stay corner stamp names the matched edge on the box so the rail-collapsed canvas still reads left, center, right, top, middle, or bottom
 - Align commit holds that edge name on the boxes that moved for a beat, then clears
+- Align commit stamp eases out instead of cutting, and the status strip drops with it
 
 ## Backlog
 
-- Align commit echo fades the stamp instead of cutting it, so the beat reads as a release
+- Align commit echo keeps a short matched-edge tick while the stamp fades, so the rail still shows which edge landed
 
 ## Next recommended
 
-Fade the commit stamp over the last part of the beat instead of clearing it in one frame.
+After Enter, draw the matched edge tick with the fading stamp so the box and the edge still agree while the beat releases.
