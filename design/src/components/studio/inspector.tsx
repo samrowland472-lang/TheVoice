@@ -329,8 +329,8 @@ function AlignChrome() {
           </p>
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
             {live.target === "board"
-              ? `Preview only. Board edge. ${stay} stay. ${alignMoveCount(live)} move. Enter or the lit button commits.`
-              : `Preview only. ${live.keyName} stays. ${alignMoveCount(live)} move. Enter or the lit button commits.`}
+              ? `Preview only. Canvas pill reads ${live.edge} · board, off the stay box. ${stay} stay. ${alignMoveCount(live)} move. Enter or the lit button commits.`
+              : `Preview only. Canvas pill reads ${live.edge} · ${live.keyName}, off the stay box. ${alignMoveCount(live)} move. Enter or the lit button commits.`}
           </p>
           <button
             type="button"

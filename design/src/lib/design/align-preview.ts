@@ -189,7 +189,8 @@ export function alignMoveCount(plan: AlignPlan): number {
 
 export function alignEdgeChipLabel(plan: AlignPlan): string {
   const raw = plan.target === "board" ? "board" : plan.keyName.trim() || "key";
-  return raw.length > 22 ? `${raw.slice(0, 21)}…` : raw;
+  const who = raw.length > 16 ? `${raw.slice(0, 15)}…` : raw;
+  return `${plan.edge} · ${who}`;
 }
 
 export type AlignEdgeChip = { x: number; y: number; w: number; h: number; label: string };
@@ -199,8 +200,10 @@ function spansOverlap(a0: number, a1: number, b0: number, b1: number) {
 }
 
 /**
- * Seat the name chip on the edge line, clear of stay boxes.
- * Prefer a gap on the line; otherwise hang just past the stay box, still on the tick.
+ * Seat the edge chip on the tick, clear of stay boxes.
+ * The pill names the edge and the key or board. Outer edges hang the longer
+ * pill off the stay side so it does not cover the box. Center and middle
+ * stay on the line, in a gap or just past the stay box.
  */
 export function placeAlignEdgeChip(plan: AlignPlan, zoom: number): AlignEdgeChip {
   const z = Math.max(zoom, 0.01);
@@ -210,6 +213,7 @@ export function placeAlignEdgeChip(plan: AlignPlan, zoom: number): AlignEdgeChip
   const line = plan.edgeLine;
   const along = line.axis === "x" ? h : w;
   const gap = 6 / z;
+  const pad = 4 / z;
   const stays = plan.ghosts.filter((g) => g.stay);
   const nameStack = 24 / z;
   const blocked = stays.map((g) =>
@@ -234,6 +238,10 @@ export function placeAlignEdgeChip(plan: AlignPlan, zoom: number): AlignEdgeChip
     const end = blocked.length ? Math.max(...blocked.map(([, b]) => b)) : line.to;
     alongCenter = end + along / 2;
   }
+  if (plan.edge === "left") return { x: line.at - w / 2 - pad, y: alongCenter, w, h, label };
+  if (plan.edge === "right") return { x: line.at + w / 2 + pad, y: alongCenter, w, h, label };
+  if (plan.edge === "top") return { x: alongCenter, y: line.at - h / 2 - pad, w, h, label };
+  if (plan.edge === "bottom") return { x: alongCenter, y: line.at + h / 2 + pad, w, h, label };
   if (line.axis === "x") return { x: line.at, y: alongCenter, w, h, label };
   return { x: alongCenter, y: line.at, w, h, label };
 }
@@ -400,6 +408,15 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
     ctx.lineTo(line.from, line.at + tick);
     ctx.moveTo(line.to, line.at - tick);
     ctx.lineTo(line.to, line.at + tick);
+  }
+  ctx.stroke();
+  ctx.beginPath();
+  if (line.axis === "x") {
+    ctx.moveTo(line.at, chip.y);
+    ctx.lineTo(chip.x, chip.y);
+  } else {
+    ctx.moveTo(chip.x, line.at);
+    ctx.lineTo(chip.x, chip.y);
   }
   ctx.stroke();
   const radius = 3 / z;

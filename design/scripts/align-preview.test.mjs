@@ -20,6 +20,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /export function placeAlignEdgeChip/);
   assert.match(preview, /clear of stay boxes/);
   assert.match(preview, /alignEdgeChipLabel/);
+  assert.match(preview, /\$\{plan\.edge\} · \$\{who\}/);
+  assert.match(preview, /hang the longer/);
+  assert.match(preview, /plan\.edge === "left"/);
+  assert.match(preview, /plan\.edge === "bottom"/);
+
   assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport.zoom\)/);
   assert.match(inspector, /Align to key/);
   assert.match(inspector, /data-align-edge/);

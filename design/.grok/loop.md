@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 01:20 BST — Align edge chip names the matched edge. The phosphor pill reads left · key, center · board, and the other four edges, and hangs off the stay side on outer edges so the longer label does not cover the stay box. Center and middle stay on the tick, in a gap or just past the box. Enter still commits.
+
 2026-10-03 00:15 BST — Align edge chip sits on the tick, clear of the stay box. The phosphor pill names the key layer or the board and slides along the edge past the stay box and its name stack. The tick extends to the pill. Enter still commits.
 
 2026-10-02 23:05 BST — Align edge row shares one set of buttons. A phosphor chip flips the target between the last selected layer and the artboard, remembered in localStorage. Flipping the chip re-arms the same edge. The inspector and status strip name key or board, how many stay, and how many move. Enter or the lit button commits, Esc cancels.
@@ -101,11 +103,12 @@
 - Align to the artboard with the same phosphor edge preview; board edge stays, Enter commits
 
 - Align to the key and the artboard in one preview, with a target chip so the same edge button can flip between last selected and the board
+- Align edge chip names the matched edge (left, center, right, top, middle, bottom) and the key or board, hung clear of the stay box
 
 ## Backlog
 
-- Align edge chip names the matched edge (left, center, right) as well as the key or board, still clear of the stay box
+- Align preview stay marks name the matched edge on the box corner, not only on the pill
 
 ## Next recommended
 
-Add the edge name to the align chip (left, center, right, top, middle, bottom) without letting the longer pill cover the stay box.
+Stamp the edge name on the stay corner (left, center, right, top, middle, bottom) so the box and the pill agree when the inspector is collapsed.
