@@ -473,7 +473,7 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   }
   const moved = boxes.length;
   const chipLabel = alignEdgeChipLabel(plan);
-  const baseStatus = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
+  const baseStatus = `Aligned · strip reads ${chipLabel} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
   const moverIds = alignPreviewMoverIds(plan);
   echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, moveCount: boxes.length, fadePill: null, moverIds, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
@@ -522,10 +522,11 @@ export function commitAlignPreview(): boolean {
   emit();
   holdAlignCommitEcho(plan);
   const moved = plan.ghosts.filter((g) => !g.stay).length;
+  const chip = alignEdgeChipLabel(plan);
   holdStudioStatus(
     moved
-      ? echo?.status ?? `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`
-      : `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName}`,
+      ? echo?.status ?? `Aligned · strip reads ${chip} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`
+      : `Aligned · strip reads ${chip}`,
   );
   return true;
 }

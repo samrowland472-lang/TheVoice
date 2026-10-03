@@ -108,7 +108,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(inspector, /data-align-target=\{target\}/);
   assert.match(inspector, /data-align-target-chip=\{target\}/);
   assert.match(preview, /export function planAlignBoard/);
-  assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.target === "board" \? "board" : plan\.keyName\}/);
+  assert.match(preview, /Aligned · strip reads \$\{chipLabel\}/);
+  assert.match(preview, /Aligned · strip reads \$\{chip\}/);
   assert.match(keys, /commitAlignPreview\(\)/);
   assert.match(keys, /clearAlignPreview\(\)/);
 });
@@ -131,5 +132,6 @@ test("left edge keeps the key and shifts the other box", () => {
   assert.equal(dx, 40);
   assert.equal(other.x + dx, key.x);
   assert.match(preview, /key stays/);
-  assert.match(preview, /Aligned \$\{plan\.edge\} to \$\{plan\.target === "board" \? "board" : plan\.keyName\}/);
+  assert.match(preview, /Aligned · strip reads \$\{chipLabel\}/);
+  assert.match(preview, /Aligned · strip reads \$\{chip\}/);
 });

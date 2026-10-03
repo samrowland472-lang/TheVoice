@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 15:01 BST — Solid align commit line uses the truncated chip. After Enter, before the fade pill appends, the status strip reads the same 16-character pill the preview just showed (left · poster title…, center · board) instead of the raw key name. The fade pill can still append. Esc still clears it early.
+
 2026-10-03 14:02 BST — Status strip uses the armed align chip. While a preview is up, the strip reads the same pill as the layers row and the inspector line (left · key, center · board), including the 16-character key trim. Esc still clears it. Enter still commits.
 
 2026-10-03 13:02 BST — Inspector align line uses the layers chip. While a preview is armed, the phosphor line reads the same pill as each mover row (left · key, center · board), including the 16-character key trim. Esc still clears it. Enter still commits.
@@ -90,6 +92,8 @@
 
 ## Done
 
+- 2026-10-03 15:01 BST — Solid align commit line uses the truncated chip (status strip reads left · key / center · board before the fade pill appends).
+
 - Status strip, while an align preview is armed, repeats the same truncated chip the layers row and inspector line show (left · poster title…, center · board)
 
 - Inspector align preview line uses the same truncated chip as the layer pill (left · poster title…, center · board) so a long key name agrees across the list and the open inspector
@@ -153,8 +157,8 @@
 
 ## Backlog
 
-- Solid align commit line uses the truncated chip. After Enter, before the fade pill appends, the status strip reads the same 16-character pill (left · poster title…, center · board) instead of the raw key name.
+- Inspector solid align line uses the truncated chip. After Enter, before the fade pill replaces the line, the phosphor line reads the same 16-character pill (left · poster title…, center · board) beside the move count instead of the raw edge name alone.
 
 ## Next recommended
 
-After Enter, the solid commit beat on the status strip should read the same truncated chip the preview strip just showed (left · key, center · board). The fade pill can still append. Esc still clears it early.
+After Enter, the solid commit beat on the inspector align line should read the same truncated chip the status strip just showed (left · key, center · board) beside the move count. The fade pill can still replace it. Esc still clears it early.
