@@ -757,10 +757,12 @@ export function placeAlignPreviewEdgeCaption(
 /**
  * Tiny edge name on the visible end of the commit tick when a stamp or the tick
  * sits off the rail crop. If a mover stamp is the thing off the rail, the
- * caption repeats the preview pill (left · key, center · board) so the fade
- * still names the target. A tick-only crop keeps the short edge name.
- * The pill uses the stamp alpha so a cropped caption releases with the beat.
- * Null when the whole beat is already on screen.
+ * solid beat still repeats the preview pill (left · key, center · board). While
+ * that caption eases, the tick repeats the same release line the inspector,
+ * layers row, and status strip show
+ * (left · key · 2 move · fade left · poster title… · 2 move). A tick-only crop
+ * keeps the short edge name. The caption uses the stamp alpha so a cropped
+ * pill releases with the beat. Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
   tick: AlignEdgeLine,
@@ -769,6 +771,7 @@ export function placeAlignCommitEdgeCaption(
   zoom: number,
   crop: AlignViewCrop | null,
   chipLabel?: string,
+  releaseLine?: string | null,
 ): AlignEdgeCaption | null {
   if (!crop || crop.w <= 0 || crop.h <= 0 || !boxes.length) return null;
   const stampsOff = boxes.some((g) => stampOffCrop(placeAlignStayStamp(g, edge, zoom), crop));
@@ -777,7 +780,7 @@ export function placeAlignCommitEdgeCaption(
       ? tick.at < crop.x || tick.at > crop.x + crop.w || tick.from < crop.y || tick.to > crop.y + crop.h
       : tick.at < crop.y || tick.at > crop.y + crop.h || tick.from < crop.x || tick.to > crop.x + crop.w;
   if (!stampsOff && !tickOff) return null;
-  const label = stampsOff && chipLabel ? chipLabel : edge;
+  const label = stampsOff && releaseLine ? releaseLine : stampsOff && chipLabel ? chipLabel : edge;
   return seatEdgeCaption(tick, edge, zoom, crop, label);
 }
 
@@ -845,8 +848,23 @@ export function drawAlignCommitEcho(
     ctx.fillText(stamp.label, stamp.x, stamp.y);
   }
   ctx.restore();
-  const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop, held.chipLabel);
+  const fading = alpha < 0.999;
+  const releaseLine = fading
+    ? alignCommitLayerFadeLine(held.chipLabel, held.chipLabel, held.moveCount)
+    : null;
+  const caption = placeAlignCommitEdgeCaption(
+    line,
+    held.edge,
+    held.boxes,
+    zoom,
+    crop,
+    held.chipLabel,
+    releaseLine,
+  );
   if (caption) paintAlignEdgeCaption(ctx, caption, z, alpha);
-  const fadingPill = alpha < 0.999 && caption && caption.label === held.chipLabel ? caption.label : null;
+  const stampCropped =
+    caption != null &&
+    (caption.label === held.chipLabel || (releaseLine != null && caption.label === releaseLine));
+  const fadingPill = fading && stampCropped ? held.chipLabel : null;
   noteAlignCommitFadeCaption(fadingPill);
 }

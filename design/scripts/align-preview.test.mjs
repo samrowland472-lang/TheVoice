@@ -94,7 +94,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /releases with the beat/);
   assert.match(preview, /paintAlignEdgeCaption\(ctx, caption, z, alpha\)/);
   assert.match(preview, /chipLabel/);
-  assert.match(preview, /stampsOff && chipLabel \? chipLabel : edge/);
+  assert.match(preview, /stampsOff && releaseLine \? releaseLine : stampsOff && chipLabel \? chipLabel : edge/);
+  assert.match(preview, /alignCommitLayerFadeLine\(held\.chipLabel, held\.chipLabel, held\.moveCount\)/);
+  assert.match(preview, /repeats the same release line/);
   assert.match(preview, /held\.chipLabel/);
   assert.match(preview, /repeats the preview pill/);
   assert.match(preview, /visible end of the commit tick/);
