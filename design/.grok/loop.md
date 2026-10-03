@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 08:01 BST — Align commit crop caption eases with the stamp. After Enter, if a mover stamp sits off the rail, the tiny pill (left · key, center · board) uses the same fade as the edge name so it releases with the beat instead of cutting. A tick-only crop still keeps the short edge name. Esc still clears it early.
+
 2026-10-03 07:01 BST — Align commit crop caption names key or board when a mover stamp is the thing off the rail. The tiny phosphor caption on the visible end of the tick repeats the preview pill (left · key, center · board) for that fade beat. A tick-only crop still keeps the short edge name. Esc still clears it early.
 
 2026-10-03 06:05 BST — Align preview crop caption names the chip target. When the edge chip sits off the rail, the tiny phosphor caption on the visible end of the tick repeats the pill (left · key, center · board), not only the edge. Stay-only crops keep the short edge name. Esc still cancels. Enter still commits.
@@ -128,11 +130,12 @@
 - Align preview pins the same edge caption on the visible end of the tick when the chip or stay stamp is cropped by the rail
 - Align preview crop caption repeats the chip pill (left · key, center · board) when the chip is the thing off the rail; stay-only crops keep the short edge name
 - Align commit crop caption repeats the preview pill (left · key, center · board) when a mover stamp is the thing off the rail; tick-only crops keep the short edge name
+- Align commit crop caption eases with the stamp alpha so a cropped pill releases with the beat instead of cutting
 
 ## Backlog
 
-- Commit caption eases with the stamp alpha so a cropped pill does not pop off while the edge name is still fading
+- Status strip names the fading crop caption (left · key, center · board) so the rail and the strip agree during the release
 
 ## Next recommended
 
-If the commit crop caption is on screen, draw it at the same fade as the mover stamp so the pill releases with the beat instead of cutting.
+While the commit caption is easing, the status strip should repeat that pill so the target still reads after the canvas crop starts to fade.

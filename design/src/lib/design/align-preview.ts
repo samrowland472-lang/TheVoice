@@ -459,7 +459,7 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   }
   const moved = boxes.length;
   const chipLabel = alignEdgeChipLabel(plan);
-  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board`;
+  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
   echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, born, until: born + ALIGN_ECHO_MS, tick: 0, status };
   emitEcho();
@@ -645,7 +645,18 @@ function seatEdgeCaption(
   return { x: clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z), y, w, h, label };
 }
 
-function paintAlignEdgeCaption(ctx: CanvasRenderingContext2D, caption: AlignEdgeCaption, z: number) {
+function paintAlignEdgeCaption(
+  ctx: CanvasRenderingContext2D,
+  caption: AlignEdgeCaption,
+  z: number,
+  alpha = 1,
+) {
+  const ink = Math.max(0, Math.min(1, alpha));
+  if (ink <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha *= ink;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.beginPath();
   ctx.roundRect(caption.x - caption.w / 2, caption.y - caption.h / 2, caption.w, caption.h, 2 / z);
   ctx.fillStyle = "rgba(7, 16, 22, 0.92)";
@@ -655,6 +666,7 @@ function paintAlignEdgeCaption(ctx: CanvasRenderingContext2D, caption: AlignEdge
   ctx.fillStyle = "rgba(63,198,255,0.95)";
   ctx.font = `${9 / z}px "IBM Plex Mono", ui-monospace, monospace`;
   ctx.fillText(caption.label, caption.x, caption.y);
+  ctx.restore();
 }
 
 /**
@@ -684,6 +696,7 @@ export function placeAlignPreviewEdgeCaption(
  * sits off the rail crop. If a mover stamp is the thing off the rail, the
  * caption repeats the preview pill (left · key, center · board) so the fade
  * still names the target. A tick-only crop keeps the short edge name.
+ * The pill uses the stamp alpha so a cropped caption releases with the beat.
  * Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
@@ -705,7 +718,7 @@ export function placeAlignCommitEdgeCaption(
   return seatEdgeCaption(tick, edge, zoom, crop, label);
 }
 
-/** After Enter, the matched edge name and a short edge tick fade together. */
+/** After Enter, the matched edge name, the short edge tick, and a cropped caption fade together. */
 export function drawAlignCommitEcho(
   ctx: CanvasRenderingContext2D,
   held: AlignCommitEcho,
@@ -768,7 +781,7 @@ export function drawAlignCommitEcho(
     ctx.fillStyle = "rgba(63,198,255,0.95)";
     ctx.fillText(stamp.label, stamp.x, stamp.y);
   }
-  const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop, held.chipLabel);
-  if (caption) paintAlignEdgeCaption(ctx, caption, z);
   ctx.restore();
+  const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop, held.chipLabel);
+  if (caption) paintAlignEdgeCaption(ctx, caption, z, alpha);
 }
