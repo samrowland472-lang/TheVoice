@@ -204,17 +204,17 @@ export function alignCommitSolidLead(chipLabel: string, moveCount: number): stri
 }
 
 /**
- * Fade append on the status strip. Keeps the solid lead in front, then names
- * the cropped pill and the same move count the inspector fade line shows
- * (left · key · 2 move · fade left · poster title… · 2 move).
+ * Fade append shared by the status strip, inspector line, and mover rows.
+ * Keeps the solid lead in front, then names the cropped pill and the same
+ * move count (left · key · 2 move · fade left · poster title… · 2 move).
  */
 export function alignCommitFadeAppend(pill: string, moveCount: number): string {
   return `fade ${pill} · ${moveCount} move`;
 }
 
 /**
- * Layers fade line. Keeps the solid lead and appends the cropped pill with the
- * same move count the status strip shows
+ * Inspector and layers fade line. Keeps the solid lead and appends the cropped
+ * pill with the same move count the status strip shows
  * (left · key · 2 move · fade left · poster title… · 2 move).
  */
 export function alignCommitLayerFadeLine(chipLabel: string, pill: string, moveCount: number): string {
@@ -517,16 +517,12 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
 }
 
 /**
- * While the commit caption eases, the status strip keeps the solid lead and
- * appends the cropped pill with the same move count the inspector fade line
- * shows (left · key · 2 move · fade left · poster title… · 2 move). Esc still
- * clears it early. The inspector align line and each mover's layers row repeat
- * the cropped pill (left · key, center · board) so the rail and the strip agree
- * with a collapsed inspector. Before that fade, the status strip leads with the
- * same truncated chip and move count the inspector solid line and each mover
- * row show (left · key · 2 move). While the caption eases, each mover row keeps
- * that solid lead and appends the cropped pill with the same move count
- * (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.
+ * While the commit caption eases, the status strip, inspector align line, and
+ * each mover row keep the solid lead and append the cropped pill with the same
+ * move count (left · key · 2 move · fade left · poster title… · 2 move). Esc
+ * still clears it early. Before that fade, the three lead with the same
+ * truncated chip and move count (left · key · 2 move) so the rail and the strip agree. each mover's layers row keeps the lead, and each mover row keeps
+ * that lead while the inspector fade line matches it.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;

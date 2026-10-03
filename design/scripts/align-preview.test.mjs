@@ -75,9 +75,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(layers, /data-layer-align-preview-mover/);
   assert.match(layers, /alignEdgeChipLabel\(alignPreview\)/);
   assert.match(layers, /Edge chip while align preview is armed/);
-  assert.match(inspector, /\$\{echo.fadePill\} · \$\{echo.moveCount\} move/);
+  assert.match(inspector, /alignCommitLayerFadeLine\(echo.chipLabel, echo.fadePill, echo.moveCount\)/);
   assert.match(inspector, /data-align-commit-chip=\{echo.chipLabel\}/);
-  assert.match(inspector, /\$\{echo.chipLabel\} · \$\{echo.moveCount\} move/);
+  assert.match(inspector, /alignCommitSolidLead\(echo.chipLabel, echo.moveCount\)/);
   assert.match(inspector, /Same truncated chip and move count the status strip leads with/);
   assert.match(preview, /alignCommitSolidLead/);
   assert.match(preview, /\$\{lead\} · Aligned · strip reads \$\{chipLabel\}/);
@@ -87,7 +87,7 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /export function alignCommitLayerFadeLine/);
   assert.match(preview, /each mover row keeps/);
   assert.match(inspector, /The fade pill can still append after it/);
-  assert.match(inspector, /appends this pill with the same move count/);
+  assert.match(inspector, /appends the cropped pill with the same move count the layers row and status strip show/);
   assert.match(preview, /export function alignCommitFadeAppend/);
 
 

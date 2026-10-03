@@ -13,6 +13,8 @@ import {
   type DistributeAxis,
 } from "@/lib/design/distribute-preview";
 import {
+  alignCommitLayerFadeLine,
+  alignCommitSolidLead,
   alignEdgeChipLabel,
   alignKey,
   alignMoveCount,
@@ -352,14 +354,17 @@ function AlignChrome() {
             data-align-commit-move={echo.moveCount}
             data-align-commit-chip={echo.chipLabel}
             data-align-commit-pill={echo.fadePill ?? ""}
+            title={echo.fadePill
+              ? alignCommitLayerFadeLine(echo.chipLabel, echo.fadePill, echo.moveCount)
+              : alignCommitSolidLead(echo.chipLabel, echo.moveCount)}
           >
             {echo.fadePill
-              ? `${echo.fadePill} · ${echo.moveCount} move`
-              : `${echo.chipLabel} · ${echo.moveCount} move`}
+              ? alignCommitLayerFadeLine(echo.chipLabel, echo.fadePill, echo.moveCount)
+              : alignCommitSolidLead(echo.chipLabel, echo.moveCount)}
           </p>
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
             {echo.fadePill
-              ? "Fade pill. Status strip keeps the solid lead and appends this pill with the same move count. Esc clears it early."
+              ? "Fade line. Keeps the solid lead and appends the cropped pill with the same move count the layers row and status strip show. Esc clears it early."
               : "Solid beat. Same truncated chip and move count the status strip leads with. The fade pill can still append after it. Esc clears it early."}
           </p>
         </div>
