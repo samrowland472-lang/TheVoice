@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 06:05 BST — Align preview crop caption names the chip target. When the edge chip sits off the rail, the tiny phosphor caption on the visible end of the tick repeats the pill (left · key, center · board), not only the edge. Stay-only crops keep the short edge name. Esc still cancels. Enter still commits.
+
 2026-10-03 05:05 BST — Align preview repeats the crop caption. If the edge chip or a stay stamp sits off the rail, a tiny phosphor edge name pins to the visible end of the preview tick, the same caption the commit beat uses. Esc still cancels. Enter still commits.
 
 2026-10-03 04:05 BST — Align commit tick names the edge when the stamp sits off the rail crop. After Enter, if a mover stamp or the matched-edge tick is clipped, a tiny phosphor caption pins to the visible end of the tick and fades with the stamp. Esc still clears it early.
@@ -122,11 +124,12 @@
 - Align commit echo keeps a short matched-edge tick on the movers while the stamp fades
 - Align commit tick names the edge in a tiny phosphor caption when the stamp or tick sits off the rail crop
 - Align preview pins the same edge caption on the visible end of the tick when the chip or stay stamp is cropped by the rail
+- Align preview crop caption repeats the chip pill (left · key, center · board) when the chip is the thing off the rail; stay-only crops keep the short edge name
 
 ## Backlog
 
-- Preview crop caption names key or board, matching the edge chip, when the chip is the thing off the rail
+- Commit crop caption names key or board when the faded stamp is the only thing off the rail, matching the preview pill
 
 ## Next recommended
 
-If the preview caption is showing because the chip cropped, name the same target as the chip (left · key, center · board) so the rail reads the full pill, not only the edge.
+If the commit tick caption is showing because a mover stamp cropped, name the same target the preview pill used (left · key, center · board) so the fade beat still reads the full edge.

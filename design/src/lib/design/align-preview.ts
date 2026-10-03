@@ -347,7 +347,7 @@ export function armAlignPreview(edge: AlignEdge, target: AlignTarget = "key"): A
   clearAlignCommitEcho();
   const stay = plan.ghosts.filter((g) => g.stay).length;
   const where = plan.target === "board" ? "board edge" : `${plan.keyName} stays`;
-  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · edge caption if chip crops · Enter commits`);
+  holdStudioStatus(`Align preview · ${plan.target} · ${plan.edge} edge · ${where} · ${stay} stay · ${alignMoveCount(plan)} move · edge caption if chip crops names key or board · Enter commits`);
   return plan;
 }
 
@@ -606,10 +606,15 @@ function stampOffCrop(
   return left < crop.x || top < crop.y || left + stamp.w > crop.x + crop.w || top + stamp.h > crop.y + crop.h;
 }
 
-function seatEdgeCaption(tick: AlignEdgeLine, edge: AlignEdge, zoom: number, crop: AlignViewCrop): AlignEdgeCaption {
+function seatEdgeCaption(
+  tick: AlignEdgeLine,
+  edge: AlignEdge,
+  zoom: number,
+  crop: AlignViewCrop,
+  label: string = edge,
+): AlignEdgeCaption {
   const z = Math.max(zoom, 0.01);
-  const label = edge;
-  const w = (Math.max(22, label.length * 5.4) + 6) / z;
+  const w = (Math.max(22, label.length * 5.6) + 8) / z;
   const h = 12 / z;
   const pad = 6 / z;
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -651,7 +656,10 @@ function paintAlignEdgeCaption(ctx: CanvasRenderingContext2D, caption: AlignEdge
 
 /**
  * Tiny edge name on the visible end of the preview tick when the edge chip
- * or a stay stamp sits off the rail crop. Null when both already read on screen.
+ * or a stay stamp sits off the rail crop. If the chip is the thing off the
+ * rail, the caption repeats the chip pill (left · key, center · board) so
+ * the rail still reads the target. Stay-only crops keep the short edge name.
+ * Null when both already read on screen.
  */
 export function placeAlignPreviewEdgeCaption(
   plan: AlignPlan,
@@ -664,7 +672,8 @@ export function placeAlignPreviewEdgeCaption(
   const chipOff = stampOffCrop(chip, crop);
   const stampsOff = stays.some((g) => stampOffCrop(placeAlignStayStamp(g, plan.edge, zoom), crop));
   if (!chipOff && !stampsOff) return null;
-  return seatEdgeCaption(plan.edgeLine, plan.edge, zoom, crop);
+  const label = chipOff ? alignEdgeChipLabel(plan) : plan.edge;
+  return seatEdgeCaption(plan.edgeLine, plan.edge, zoom, crop, label);
 }
 
 /**

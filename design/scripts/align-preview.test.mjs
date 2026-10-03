@@ -46,6 +46,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /caption\.label/);
   assert.match(preview, /export function placeAlignPreviewEdgeCaption/);
   assert.match(preview, /edge caption if chip crops/);
+  assert.match(preview, /repeats the chip pill/);
+  assert.match(preview, /chipOff \? alignEdgeChipLabel\(plan\) : plan\.edge/);
+  assert.match(preview, /names key or board/);
   assert.match(preview, /visible end of the preview tick/);
   assert.match(preview, /paintAlignEdgeCaption/);
   assert.match(stage, /drawAlignPreview\(ctx, alignPreview, viewport\.zoom, \{/);
