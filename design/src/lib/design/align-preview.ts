@@ -363,12 +363,44 @@ export function toggleAlignPreview(edge: AlignEdge, target: AlignTarget = "key")
 export type AlignCommitEcho = {
   edge: AlignEdge;
   boxes: { x: number; y: number; w: number; h: number }[];
+  /** Short tick on the landed edge, spanning only the boxes that moved. */
+  edgeTick: AlignEdgeLine;
   born: number;
   until: number;
   /** Bumps while the stamp fades so the stage redraws. */
   tick: number;
   status: string;
 };
+
+/**
+ * Short matched-edge tick for the commit beat. Spans the movers only,
+ * so the rail still shows which edge landed without redrawing the board line.
+ */
+export function placeAlignCommitEdgeTick(
+  boxes: { x: number; y: number; w: number; h: number }[],
+  edge: AlignEdge,
+): AlignEdgeLine {
+  const vertical = edge === "left" || edge === "center" || edge === "right";
+  let from = Infinity;
+  let to = -Infinity;
+  let at = 0;
+  for (const box of boxes) {
+    if (edge === "left") at = box.x;
+    else if (edge === "right") at = box.x + box.w;
+    else if (edge === "center") at = box.x + box.w / 2;
+    else if (edge === "top") at = box.y;
+    else if (edge === "bottom") at = box.y + box.h;
+    else at = box.y + box.h / 2;
+    if (vertical) {
+      from = Math.min(from, box.y);
+      to = Math.max(to, box.y + box.h);
+    } else {
+      from = Math.min(from, box.x);
+      to = Math.max(to, box.x + box.w);
+    }
+  }
+  return { axis: vertical ? "x" : "y", at, from, to };
+}
 
 const ALIGN_ECHO_MS = 1200;
 const ALIGN_ECHO_FADE_AT = 700;
@@ -424,9 +456,9 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
     return;
   }
   const moved = boxes.length;
-  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved`;
+  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`;
   const born = Date.now();
-  echo = { edge: plan.edge, boxes, born, until: born + ALIGN_ECHO_MS, tick: 0, status };
+  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), born, until: born + ALIGN_ECHO_MS, tick: 0, status };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);
   const step = () => {
@@ -455,7 +487,7 @@ export function commitAlignPreview(): boolean {
   const moved = plan.ghosts.filter((g) => !g.stay).length;
   holdStudioStatus(
     moved
-      ? echo?.status ?? `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved`
+      ? echo?.status ?? `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`
       : `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName}`,
   );
   return true;
@@ -554,7 +586,7 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
   ctx.restore();
 }
 
-/** After Enter, the matched edge name stays on moved boxes for a beat. */
+/** After Enter, the matched edge name and a short edge tick fade together. */
 export function drawAlignCommitEcho(ctx: CanvasRenderingContext2D, held: AlignCommitEcho, zoom: number) {
   const z = Math.max(zoom, 0.01);
   const alpha = alignCommitEchoAlpha(held);
@@ -567,6 +599,25 @@ export function drawAlignCommitEcho(ctx: CanvasRenderingContext2D, held: AlignCo
   ctx.textBaseline = "middle";
   ctx.strokeStyle = "rgba(63,198,255,0.95)";
   ctx.fillStyle = "rgba(63,198,255,0.95)";
+  const tick = 6 / z;
+  const line = held.edgeTick;
+  ctx.beginPath();
+  if (line.axis === "x") {
+    ctx.moveTo(line.at, line.from);
+    ctx.lineTo(line.at, line.to);
+    ctx.moveTo(line.at - tick, line.from);
+    ctx.lineTo(line.at + tick, line.from);
+    ctx.moveTo(line.at - tick, line.to);
+    ctx.lineTo(line.at + tick, line.to);
+  } else {
+    ctx.moveTo(line.from, line.at);
+    ctx.lineTo(line.to, line.at);
+    ctx.moveTo(line.from, line.at - tick);
+    ctx.lineTo(line.from, line.at + tick);
+    ctx.moveTo(line.to, line.at - tick);
+    ctx.lineTo(line.to, line.at + tick);
+  }
+  ctx.stroke();
   const pin = 8 / z;
   for (const g of held.boxes) {
     ctx.beginPath();

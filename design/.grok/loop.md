@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 03:05 BST — Align commit echo keeps a short matched-edge tick while the stamp fades. After Enter, the tick spans only the boxes that moved, with end caps on the landed edge, and eases off with the stamp and the status strip. Esc still clears it early.
+
 2026-10-03 02:20 BST — Align commit stamp fades out. After Enter the edge name stays solid on the boxes that moved, then eases off so the beat reads as a release. The status strip drops with the stamp. Esc still clears it early.
 
 2026-10-03 02:05 BST — Align commit holds the edge name on moved boxes. After Enter, each box that shifted keeps the same phosphor corner stamp (left, center, right, top, middle, bottom) for a short beat, then it clears. Esc clears it early. A new preview replaces it. Boxes already on the edge do not get a commit stamp.
@@ -113,11 +115,12 @@
 - Stay corner stamp names the matched edge on the box so the rail-collapsed canvas still reads left, center, right, top, middle, or bottom
 - Align commit holds that edge name on the boxes that moved for a beat, then clears
 - Align commit stamp eases out instead of cutting, and the status strip drops with it
+- Align commit echo keeps a short matched-edge tick on the movers while the stamp fades
 
 ## Backlog
 
-- Align commit echo keeps a short matched-edge tick while the stamp fades, so the rail still shows which edge landed
+- Align commit tick names the edge in a tiny phosphor caption when the stamp would sit off the rail crop
 
 ## Next recommended
 
-After Enter, draw the matched edge tick with the fading stamp so the box and the edge still agree while the beat releases.
+If the matched-edge tick is cropped by the viewport, pin a tiny edge caption on the visible end of the tick so the rail still reads left, center, right, top, middle, or bottom.
