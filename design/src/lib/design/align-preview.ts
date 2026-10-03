@@ -365,6 +365,8 @@ export type AlignCommitEcho = {
   boxes: { x: number; y: number; w: number; h: number }[];
   /** Short tick on the landed edge, spanning only the boxes that moved. */
   edgeTick: AlignEdgeLine;
+  /** Same pill the preview chip used (left · key, center · board). */
+  chipLabel: string;
   born: number;
   until: number;
   /** Bumps while the stamp fades so the stage redraws. */
@@ -456,9 +458,10 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
     return;
   }
   const moved = boxes.length;
-  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if cropped`;
+  const chipLabel = alignEdgeChipLabel(plan);
+  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board`;
   const born = Date.now();
-  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), born, until: born + ALIGN_ECHO_MS, tick: 0, status };
+  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, born, until: born + ALIGN_ECHO_MS, tick: 0, status };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);
   const step = () => {
@@ -678,7 +681,10 @@ export function placeAlignPreviewEdgeCaption(
 
 /**
  * Tiny edge name on the visible end of the commit tick when a stamp or the tick
- * sits off the rail crop. Null when the whole beat is already on screen.
+ * sits off the rail crop. If a mover stamp is the thing off the rail, the
+ * caption repeats the preview pill (left · key, center · board) so the fade
+ * still names the target. A tick-only crop keeps the short edge name.
+ * Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
   tick: AlignEdgeLine,
@@ -686,6 +692,7 @@ export function placeAlignCommitEdgeCaption(
   boxes: { x: number; y: number; w: number; h: number }[],
   zoom: number,
   crop: AlignViewCrop | null,
+  chipLabel?: string,
 ): AlignEdgeCaption | null {
   if (!crop || crop.w <= 0 || crop.h <= 0 || !boxes.length) return null;
   const stampsOff = boxes.some((g) => stampOffCrop(placeAlignStayStamp(g, edge, zoom), crop));
@@ -694,7 +701,8 @@ export function placeAlignCommitEdgeCaption(
       ? tick.at < crop.x || tick.at > crop.x + crop.w || tick.from < crop.y || tick.to > crop.y + crop.h
       : tick.at < crop.y || tick.at > crop.y + crop.h || tick.from < crop.x || tick.to > crop.x + crop.w;
   if (!stampsOff && !tickOff) return null;
-  return seatEdgeCaption(tick, edge, zoom, crop);
+  const label = stampsOff && chipLabel ? chipLabel : edge;
+  return seatEdgeCaption(tick, edge, zoom, crop, label);
 }
 
 /** After Enter, the matched edge name and a short edge tick fade together. */
@@ -760,7 +768,7 @@ export function drawAlignCommitEcho(
     ctx.fillStyle = "rgba(63,198,255,0.95)";
     ctx.fillText(stamp.label, stamp.x, stamp.y);
   }
-  const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop);
+  const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop, held.chipLabel);
   if (caption) paintAlignEdgeCaption(ctx, caption, z);
   ctx.restore();
 }

@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 07:01 BST — Align commit crop caption names key or board when a mover stamp is the thing off the rail. The tiny phosphor caption on the visible end of the tick repeats the preview pill (left · key, center · board) for that fade beat. A tick-only crop still keeps the short edge name. Esc still clears it early.
+
 2026-10-03 06:05 BST — Align preview crop caption names the chip target. When the edge chip sits off the rail, the tiny phosphor caption on the visible end of the tick repeats the pill (left · key, center · board), not only the edge. Stay-only crops keep the short edge name. Esc still cancels. Enter still commits.
 
 2026-10-03 05:05 BST — Align preview repeats the crop caption. If the edge chip or a stay stamp sits off the rail, a tiny phosphor edge name pins to the visible end of the preview tick, the same caption the commit beat uses. Esc still cancels. Enter still commits.
@@ -125,11 +127,12 @@
 - Align commit tick names the edge in a tiny phosphor caption when the stamp or tick sits off the rail crop
 - Align preview pins the same edge caption on the visible end of the tick when the chip or stay stamp is cropped by the rail
 - Align preview crop caption repeats the chip pill (left · key, center · board) when the chip is the thing off the rail; stay-only crops keep the short edge name
+- Align commit crop caption repeats the preview pill (left · key, center · board) when a mover stamp is the thing off the rail; tick-only crops keep the short edge name
 
 ## Backlog
 
-- Commit crop caption names key or board when the faded stamp is the only thing off the rail, matching the preview pill
+- Commit caption eases with the stamp alpha so a cropped pill does not pop off while the edge name is still fading
 
 ## Next recommended
 
-If the commit tick caption is showing because a mover stamp cropped, name the same target the preview pill used (left · key, center · board) so the fade beat still reads the full edge.
+If the commit crop caption is on screen, draw it at the same fade as the mover stamp so the pill releases with the beat instead of cutting.
