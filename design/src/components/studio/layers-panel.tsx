@@ -5,6 +5,8 @@ import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/grou
 import { isGroup } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import {
+  alignCommitLayerFadeLine,
+  alignCommitSolidLead,
   alignEdgeChipLabel,
   alignPreviewMoverIds,
   getAlignCommitEcho,
@@ -20,7 +22,10 @@ export function LayersPanel() {
   const selection = useDesign((s) => s.selection);
   const alignEcho = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
   const alignPill = alignEcho?.fadePill ?? null;
-  const alignSolid = alignEcho && !alignPill ? `${alignEcho.chipLabel} · ${alignEcho.moveCount} move` : null;
+  const alignSolid = alignEcho ? alignCommitSolidLead(alignEcho.chipLabel, alignEcho.moveCount) : null;
+  const alignFade = alignEcho && alignPill
+    ? alignCommitLayerFadeLine(alignEcho.chipLabel, alignPill, alignEcho.moveCount)
+    : null;
   const alignPreview = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
   const previewChip = alignPreview ? alignEdgeChipLabel(alignPreview) : null;
   const previewMovers = alignPreview ? alignPreviewMoverIds(alignPreview) : [];
@@ -317,7 +322,7 @@ export function LayersPanel() {
                         {previewChip}
                       </span>
                     )}
-                    {alignSolid && alignEcho?.moverIds.includes(n.id) && (
+                    {alignSolid && !alignFade && alignEcho?.moverIds.includes(n.id) && (
                       <span
                         className="ml-1.5 inline-block rounded-[4px] bg-phosphor/15 px-1 py-px font-mono text-[9px] tracking-[0.04em] text-phosphor"
                         data-layer-align-solid={alignSolid}
@@ -327,14 +332,16 @@ export function LayersPanel() {
                         {alignSolid}
                       </span>
                     )}
-                    {alignPill && alignEcho?.moverIds.includes(n.id) && (
+                    {alignFade && alignEcho?.moverIds.includes(n.id) && (
                       <span
-                        className="ml-1.5 inline-block rounded-[4px] bg-phosphor/15 px-1 py-px font-mono text-[9px] tracking-[0.04em] text-phosphor"
-                        data-layer-align-pill={alignPill}
+                        className="ml-1.5 inline-block max-w-[16rem] truncate rounded-[4px] bg-phosphor/15 px-1 py-px align-bottom font-mono text-[9px] tracking-[0.04em] text-phosphor"
+                        data-layer-align-fade={alignFade}
+                        data-layer-align-solid={alignSolid ?? ""}
+                        data-layer-align-pill={alignPill ?? ""}
                         data-layer-align-mover=""
-                        title="Matched edge while the commit caption eases"
+                        title={alignFade}
                       >
-                        {alignPill}
+                        {alignFade}
                       </span>
                     )}
                     {into && (

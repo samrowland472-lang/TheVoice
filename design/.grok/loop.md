@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 20:01 BST — Layers row fade line keeps the solid lead and appends the cropped pill. While the commit caption eases, each mover row reads the same release line as the status strip (left · key · 2 move · fade left · poster title… · 2 move). Stay rows stay unmarked. Esc still clears it early.
+
 2026-10-03 19:01 BST — Status strip fade append names the move count after the cropped pill. While the commit caption eases, the strip keeps the solid lead and appends the same pill and count the inspector fade line shows (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.
 
 2026-10-03 18:01 BST — Status strip solid beat leads with the truncated chip and move count. After Enter, before the fade caption appends, the strip opens with the same line the inspector and each mover row show (left · key · 2 move). The fade caption can still append. Esc still clears it early.
@@ -163,11 +165,12 @@
 - Align commit crop caption repeats the preview pill (left · key, center · board) when a mover stamp is the thing off the rail; tick-only crops keep the short edge name
 - Align commit crop caption eases with the stamp alpha so a cropped pill releases with the beat instead of cutting
 - Status strip repeats the fading crop caption (left · key, center · board) so the rail and the strip agree during the release
+- Layers row fade line keeps the solid lead and appends the cropped pill with the same move count the status strip shows (left · key · 2 move · fade left · poster title… · 2 move) so a scrolled list matches the release line. Esc still clears it early.
 
 ## Backlog
 
-- Layers row fade line keeps the solid lead and appends the cropped pill with the same move count the status strip shows (left · key · 2 move · fade left · poster title… · 2 move) so a scrolled list matches the release line. Esc still clears it early.
+- Inspector fade line keeps the solid lead and appends the cropped pill with the same move count the layers fade line and status strip show (left · key · 2 move · fade left · poster title… · 2 move) so the three agree during the release. Esc still clears it early.
 
 ## Next recommended
 
-While the crop caption eases, each mover row should keep the solid lead and append the cropped pill with the same move count the status strip fade line shows (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.
+While the crop caption eases, the inspector align line should keep the solid lead and append the cropped pill with the same move count the layers row and status strip show (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.

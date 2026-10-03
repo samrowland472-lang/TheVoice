@@ -212,6 +212,15 @@ export function alignCommitFadeAppend(pill: string, moveCount: number): string {
   return `fade ${pill} · ${moveCount} move`;
 }
 
+/**
+ * Layers fade line. Keeps the solid lead and appends the cropped pill with the
+ * same move count the status strip shows
+ * (left · key · 2 move · fade left · poster title… · 2 move).
+ */
+export function alignCommitLayerFadeLine(chipLabel: string, pill: string, moveCount: number): string {
+  return `${alignCommitSolidLead(chipLabel, moveCount)} · ${alignCommitFadeAppend(pill, moveCount)}`;
+}
+
 export type AlignEdgeChip = { x: number; y: number; w: number; h: number; label: string };
 
 function spansOverlap(a0: number, a1: number, b0: number, b1: number) {
@@ -515,8 +524,9 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
  * the cropped pill (left · key, center · board) so the rail and the strip agree
  * with a collapsed inspector. Before that fade, the status strip leads with the
  * same truncated chip and move count the inspector solid line and each mover
- * row show (left · key · 2 move). The fade pill replaces that chip on the row;
- * it does not stack beside it.
+ * row show (left · key · 2 move). While the caption eases, each mover row keeps
+ * that solid lead and appends the cropped pill with the same move count
+ * (left · key · 2 move · fade left · poster title… · 2 move). Esc still clears it early.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;
