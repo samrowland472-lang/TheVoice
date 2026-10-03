@@ -456,7 +456,7 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
     return;
   }
   const moved = boxes.length;
-  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`;
+  const status = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if cropped`;
   const born = Date.now();
   echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), born, until: born + ALIGN_ECHO_MS, tick: 0, status };
   emitEcho();
@@ -586,8 +586,74 @@ export function drawAlignPreview(ctx: CanvasRenderingContext2D, plan: AlignPlan,
   ctx.restore();
 }
 
+export type AlignViewCrop = { x: number; y: number; w: number; h: number };
+
+export type AlignEdgeCaption = { x: number; y: number; w: number; h: number; label: string };
+
+function stampOffCrop(
+  stamp: { x: number; y: number; w: number; h: number },
+  crop: AlignViewCrop,
+): boolean {
+  const left = stamp.x - stamp.w / 2;
+  const top = stamp.y - stamp.h / 2;
+  return left < crop.x || top < crop.y || left + stamp.w > crop.x + crop.w || top + stamp.h > crop.y + crop.h;
+}
+
+/**
+ * Tiny edge name on the visible end of the commit tick when a stamp or the tick
+ * sits off the rail crop. Null when the whole beat is already on screen.
+ */
+export function placeAlignCommitEdgeCaption(
+  tick: AlignEdgeLine,
+  edge: AlignEdge,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  crop: AlignViewCrop | null,
+): AlignEdgeCaption | null {
+  if (!crop || crop.w <= 0 || crop.h <= 0 || !boxes.length) return null;
+  const z = Math.max(zoom, 0.01);
+  const stampsOff = boxes.some((g) => stampOffCrop(placeAlignStayStamp(g, edge, zoom), crop));
+  const tickOff =
+    tick.axis === "x"
+      ? tick.at < crop.x || tick.at > crop.x + crop.w || tick.from < crop.y || tick.to > crop.y + crop.h
+      : tick.at < crop.y || tick.at > crop.y + crop.h || tick.from < crop.x || tick.to > crop.x + crop.w;
+  if (!stampsOff && !tickOff) return null;
+  const label = edge;
+  const w = (Math.max(22, label.length * 5.4) + 6) / z;
+  const h = 12 / z;
+  const pad = 6 / z;
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+  if (tick.axis === "x") {
+    const visFrom = Math.max(tick.from, crop.y);
+    const visTo = Math.min(tick.to, crop.y + crop.h);
+    const x = clamp(tick.at, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z);
+    let y: number;
+    if (visTo - visFrom < h + pad) {
+      y = tick.to < crop.y ? crop.y + h / 2 + pad : crop.y + crop.h - h / 2 - pad;
+    } else if (tick.from < crop.y && tick.to <= crop.y + crop.h) y = visFrom + h / 2 + pad;
+    else if (tick.to > crop.y + crop.h && tick.from >= crop.y) y = visTo - h / 2 - pad;
+    else y = (Math.max(visFrom, crop.y) + Math.min(visTo, crop.y + crop.h)) / 2;
+    return { x, y: clamp(y, crop.y + h / 2 + 2 / z, crop.y + crop.h - h / 2 - 2 / z), w, h, label };
+  }
+  const visFrom = Math.max(tick.from, crop.x);
+  const visTo = Math.min(tick.to, crop.x + crop.w);
+  const y = clamp(tick.at, crop.y + h / 2 + 2 / z, crop.y + crop.h - h / 2 - 2 / z);
+  let x: number;
+  if (visTo - visFrom < w + pad) {
+    x = tick.to < crop.x ? crop.x + w / 2 + pad : crop.x + crop.w - w / 2 - pad;
+  } else if (tick.from < crop.x && tick.to <= crop.x + crop.w) x = visFrom + w / 2 + pad;
+  else if (tick.to > crop.x + crop.w && tick.from >= crop.x) x = visTo - w / 2 - pad;
+  else x = (Math.max(visFrom, crop.x) + Math.min(visTo, crop.x + crop.w)) / 2;
+  return { x: clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z), y, w, h, label };
+}
+
 /** After Enter, the matched edge name and a short edge tick fade together. */
-export function drawAlignCommitEcho(ctx: CanvasRenderingContext2D, held: AlignCommitEcho, zoom: number) {
+export function drawAlignCommitEcho(
+  ctx: CanvasRenderingContext2D,
+  held: AlignCommitEcho,
+  zoom: number,
+  crop: AlignViewCrop | null = null,
+) {
   const z = Math.max(zoom, 0.01);
   const alpha = alignCommitEchoAlpha(held);
   if (alpha <= 0.01) return;
@@ -643,6 +709,18 @@ export function drawAlignCommitEcho(ctx: CanvasRenderingContext2D, held: AlignCo
     ctx.stroke();
     ctx.fillStyle = "rgba(63,198,255,0.95)";
     ctx.fillText(stamp.label, stamp.x, stamp.y);
+  }
+  const caption = placeAlignCommitEdgeCaption(line, held.edge, held.boxes, zoom, crop);
+  if (caption) {
+    ctx.beginPath();
+    ctx.roundRect(caption.x - caption.w / 2, caption.y - caption.h / 2, caption.w, caption.h, 2 / z);
+    ctx.fillStyle = "rgba(7, 16, 22, 0.92)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(63,198,255,0.95)";
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63,198,255,0.95)";
+    ctx.font = `${9 / z}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.fillText(caption.label, caption.x, caption.y);
   }
   ctx.restore();
 }

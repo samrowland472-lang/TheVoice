@@ -328,7 +328,15 @@ export function CanvasStage() {
       }
       if (distributePreview) drawDistributePreview(ctx, distributePreview, viewport.zoom);
       if (alignPreview) drawAlignPreview(ctx, alignPreview, viewport.zoom);
-      else if (alignEcho) drawAlignCommitEcho(ctx, alignEcho, viewport.zoom);
+      else if (alignEcho) {
+        const z = Math.max(viewport.zoom, 0.01);
+        drawAlignCommitEcho(ctx, alignEcho, viewport.zoom, {
+          x: -viewport.x / z,
+          y: -viewport.y / z,
+          w: w / z,
+          h: h / z,
+        });
+      }
       const mq = marqueeRef.current;
       if (mq && (mq.w > 0.5 || mq.h > 0.5)) {
         ctx.beginPath();

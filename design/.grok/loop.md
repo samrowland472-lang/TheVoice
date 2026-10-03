@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 04:05 BST — Align commit tick names the edge when the stamp sits off the rail crop. After Enter, if a mover stamp or the matched-edge tick is clipped, a tiny phosphor caption pins to the visible end of the tick and fades with the stamp. Esc still clears it early.
+
 2026-10-03 03:05 BST — Align commit echo keeps a short matched-edge tick while the stamp fades. After Enter, the tick spans only the boxes that moved, with end caps on the landed edge, and eases off with the stamp and the status strip. Esc still clears it early.
 
 2026-10-03 02:20 BST — Align commit stamp fades out. After Enter the edge name stays solid on the boxes that moved, then eases off so the beat reads as a release. The status strip drops with the stamp. Esc still clears it early.
@@ -116,11 +118,12 @@
 - Align commit holds that edge name on the boxes that moved for a beat, then clears
 - Align commit stamp eases out instead of cutting, and the status strip drops with it
 - Align commit echo keeps a short matched-edge tick on the movers while the stamp fades
+- Align commit tick names the edge in a tiny phosphor caption when the stamp or tick sits off the rail crop
 
 ## Backlog
 
-- Align commit tick names the edge in a tiny phosphor caption when the stamp would sit off the rail crop
+- Align preview edge chip repeats the same crop caption when the stay stamp is off the rail
 
 ## Next recommended
 
-If the matched-edge tick is cropped by the viewport, pin a tiny edge caption on the visible end of the tick so the rail still reads left, center, right, top, middle, or bottom.
+If the align preview chip is cropped by the rail, pin the same tiny edge caption on the visible end of the preview tick so the preview and the commit beat read the same edge.
