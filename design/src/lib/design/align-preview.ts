@@ -495,8 +495,9 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
 /**
  * While the commit caption eases, the status strip, the inspector align
  * line, and each mover's layers row repeat the cropped pill (left · key, center · board)
- * so the rail and the strip agree with a collapsed inspector. A short edge name, or a
- * caption that has not started fading, leaves the solid line and a bare layer name.
+ * so the rail and the strip agree with a collapsed inspector. Before that fade,
+ * the inspector solid beat already reads the same truncated chip as the status strip.
+ * A caption that has not started fading leaves the layers row bare.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;

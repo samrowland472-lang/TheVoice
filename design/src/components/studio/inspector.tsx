@@ -344,17 +344,25 @@ function AlignChrome() {
           </button>
         </div>
       ) : echo ? (
-        <p
-          className="font-mono text-[12px] text-phosphor"
-          data-align-commit-line=""
-          data-align-commit-edge={echo.edge}
-          data-align-commit-move={echo.moveCount}
-          data-align-commit-pill={echo.fadePill ?? ""}
-        >
-          {echo.fadePill
-            ? `${echo.fadePill} · ${echo.moveCount} move`
-            : `${echo.edge} · ${echo.moveCount} move`}
-        </p>
+        <div className="space-y-1">
+          <p
+            className="font-mono text-[12px] text-phosphor"
+            data-align-commit-line=""
+            data-align-commit-edge={echo.edge}
+            data-align-commit-move={echo.moveCount}
+            data-align-commit-chip={echo.chipLabel}
+            data-align-commit-pill={echo.fadePill ?? ""}
+          >
+            {echo.fadePill
+              ? `${echo.fadePill} · ${echo.moveCount} move`
+              : `${echo.chipLabel} · ${echo.moveCount} move`}
+          </p>
+          <p className="font-mono text-[10px] leading-snug text-ink-faint">
+            {echo.fadePill
+              ? "Fade pill. Same cropped caption the canvas is releasing. Esc clears it early."
+              : "Solid beat. Same 16-character chip the status strip just showed. The fade pill can still replace it. Esc clears it early."}
+          </p>
+        </div>
       ) : (
         <p className="font-mono text-[10px] leading-snug text-ink-faint">
           {target === "board"

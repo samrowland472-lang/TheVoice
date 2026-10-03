@@ -75,6 +75,10 @@ test("align preview draws the key edge before commit", () => {
   assert.match(layers, /alignEdgeChipLabel\(alignPreview\)/);
   assert.match(layers, /Edge chip while align preview is armed/);
   assert.match(inspector, /\$\{echo.fadePill\} · \$\{echo.moveCount\} move/);
+  assert.match(inspector, /data-align-commit-chip=\{echo.chipLabel\}/);
+  assert.match(inspector, /\$\{echo.chipLabel\} · \$\{echo.moveCount\} move/);
+  assert.match(inspector, /Same 16-character chip the status strip just showed/);
+  assert.match(inspector, /The fade pill can still replace it/);
 
 
   assert.match(preview, /releases with the beat/);
