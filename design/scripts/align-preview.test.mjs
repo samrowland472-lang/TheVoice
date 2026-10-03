@@ -5,6 +5,7 @@ import { test } from "node:test";
 const preview = readFileSync(new URL("../src/lib/design/align-preview.ts", import.meta.url), "utf8");
 const stage = readFileSync(new URL("../src/components/studio/canvas-stage.tsx", import.meta.url), "utf8");
 const inspector = readFileSync(new URL("../src/components/studio/inspector.tsx", import.meta.url), "utf8");
+const layers = readFileSync(new URL("../src/components/studio/layers-panel.tsx", import.meta.url), "utf8");
 const keys = readFileSync(new URL("../src/components/studio/use-shortcuts.ts", import.meta.url), "utf8");
 
 test("align preview draws the key edge before commit", () => {
@@ -52,6 +53,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(inspector, /data-align-commit-line/);
   assert.match(inspector, /data-align-commit-pill/);
   assert.match(inspector, /echo.fadePill/);
+  assert.match(preview, /moverIds/);
+  assert.match(preview, /each mover's layers row/);
+  assert.match(layers, /data-layer-align-pill/);
+  assert.match(layers, /alignEcho\?\.moverIds.includes/);
+  assert.match(layers, /subscribeAlignCommitEcho/);
   assert.match(inspector, /\$\{echo.fadePill\} · \$\{echo.moveCount\} move/);
 
 

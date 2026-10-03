@@ -371,6 +371,8 @@ export type AlignCommitEcho = {
   moveCount: number;
   /** Cropped pill while the caption eases. Null on the solid beat. */
   fadePill: string | null;
+  /** Layers that shifted. The row repeats the pill beside the name. */
+  moverIds: string[];
   born: number;
   until: number;
   /** Bumps while the stamp fades so the stage redraws. */
@@ -467,7 +469,8 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   const chipLabel = alignEdgeChipLabel(plan);
   const baseStatus = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
-  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, moveCount: boxes.length, fadePill: null, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
+  const moverIds = plan.deltas.filter((_, i) => plan.ghosts[i] && !plan.ghosts[i].stay).map((d) => d.id);
+  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, moveCount: boxes.length, fadePill: null, moverIds, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);
   const step = () => {
@@ -484,10 +487,10 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
 }
 
 /**
- * While the commit caption eases, the status strip and the inspector align
- * line repeat the cropped pill (left · key, center · board) so the rail and the strip agree
- * with the move count. A short edge name, or a caption that has not started
- * fading, leaves the solid line.
+ * While the commit caption eases, the status strip, the inspector align
+ * line, and each mover's layers row repeat the cropped pill (left · key, center · board)
+ * so the rail and the strip agree with a collapsed inspector. A short edge name, or a
+ * caption that has not started fading, leaves the solid line and a bare layer name.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;

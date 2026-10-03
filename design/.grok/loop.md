@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 11:01 BST — Layers row names the fading crop pill. After Enter, while the commit caption eases and a mover stamp sits off the rail, each shifted layer repeats the pill (left · key, center · board) beside its name. A solid beat keeps the name bare. Esc still clears it early.
+
 2026-10-03 10:01 BST — Inspector align line names the fading crop pill. After Enter, while the commit caption eases and a mover stamp sits off the rail, the align line repeats the pill (left · key, center · board) beside the move count. A solid beat keeps the edge and the count. Esc still clears it early.
 
 2026-10-03 09:01 BST — Status strip names the fading crop caption. After Enter, once the commit beat starts to ease and a mover stamp is off the rail, the strip repeats the pill (left · key, center · board) so it still reads after the canvas caption fades. A tick-only crop keeps the solid line. Esc still clears it early.
@@ -82,6 +84,7 @@
 
 ## Done
 
+- Layers row of each mover repeats the fading crop pill (left · key, center · board) beside the name while the commit caption eases
 - Inspector align line repeats the fading crop pill (left · key, center · board) beside the move count while the commit caption eases
 - Align edge chip sits on the tick, clear of the stay box; names the key layer or the board
 - Align preview names the key layer on the edge, the key box, the inspector, and the status strip
@@ -140,8 +143,8 @@
 
 ## Backlog
 
-- Align commit echo names the same fading crop pill on the layers row of each mover, so a collapsed inspector still agrees with the rail
+- Align preview names the same edge chip on each mover's layers row before Enter, so the list agrees with the canvas pill while the inspector is a rail
 
 ## Next recommended
 
-While the commit caption is easing, the layers row for each mover should repeat that pill (left · key, center · board) beside the layer name.
+While an align preview is armed, each layer that will move should show the chip (left · key, center · board) beside its name. Stay rows stay unmarked. Esc still clears it.

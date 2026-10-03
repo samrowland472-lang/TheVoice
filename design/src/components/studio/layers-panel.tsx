@@ -1,15 +1,18 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
 import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
 import { isGroup } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
+import { getAlignCommitEcho, subscribeAlignCommitEcho } from "@/lib/design/align-preview";
 
 type DropHint = LayerDrop;
 
 export function LayersPanel() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
+  const alignEcho = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
+  const alignPill = alignEcho?.fadePill ?? null;
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
   const toggleIsolate = useDesign((s) => s.toggleIsolate);
@@ -291,6 +294,16 @@ export function LayersPanel() {
                     {isKey && (
                       <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
                         Key
+                      </span>
+                    )}
+                    {alignPill && alignEcho?.moverIds.includes(n.id) && (
+                      <span
+                        className="ml-1.5 inline-block rounded-[4px] bg-phosphor/15 px-1 py-px font-mono text-[9px] tracking-[0.04em] text-phosphor"
+                        data-layer-align-pill={alignPill}
+                        data-layer-align-mover=""
+                        title="Matched edge while the commit caption eases"
+                      >
+                        {alignPill}
                       </span>
                     )}
                     {into && (
