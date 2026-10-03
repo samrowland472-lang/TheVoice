@@ -803,6 +803,105 @@ function fitAlignCommitCaption(label: string, zoom: number, crop: AlignViewCrop)
   return { fontPx, lines: [label], w: Math.min(maxW, box.w), h: Math.min(maxH, box.h) };
 }
 
+function captionOverlapsBoxes(
+  caption: { x: number; y: number; w: number; h: number },
+  boxes: { x: number; y: number; w: number; h: number }[],
+) {
+  const left = caption.x - caption.w / 2;
+  const top = caption.y - caption.h / 2;
+  return boxes.some(
+    (box) =>
+      spansOverlap(left, left + caption.w, box.x, box.x + box.w) &&
+      spansOverlap(top, top + caption.h, box.y, box.y + box.h),
+  );
+}
+
+/**
+ * Seat a wrapped commit tick caption off the landed boxes the way the edge
+ * chip hangs clear of a stay. Outer edges hang the two-line pill off the
+ * mover; center and middle slide along the tick into a gap. The pill stays
+ * on the rail so a cropped tick still names the full line, and still eases
+ * with the stamp alpha. The status strip keeps the unwrapped release line.
+ */
+function seatWrappedCommitCaption(
+  tick: AlignEdgeLine,
+  edge: AlignEdge,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  crop: AlignViewCrop,
+  label: string,
+  fit: { w: number; h: number; lines: string[]; fontPx: number },
+): AlignEdgeCaption {
+  const z = Math.max(zoom, 0.01);
+  const pad = 4 / z;
+  const gap = 6 / z;
+  const base = seatEdgeCaption(tick, edge, zoom, crop, label, fit);
+  if (!captionOverlapsBoxes(base, boxes)) return base;
+  const w = fit.w;
+  const h = fit.h;
+  const along = tick.axis === "x" ? h : w;
+  const blocked = boxes.map((g) =>
+    tick.axis === "x"
+      ? ([g.y - gap, g.y + g.h + gap] as const)
+      : ([g.x - gap, g.x + g.w + gap] as const),
+  );
+  const hits = (center: number) => {
+    const a = center - along / 2;
+    const b = center + along / 2;
+    return blocked.some(([oa, ob]) => spansOverlap(a, b, oa, ob));
+  };
+  const candidates: number[] = [(tick.from + tick.to) / 2];
+  for (const [a, b] of blocked) {
+    candidates.push(b + along / 2);
+    candidates.push(a - along / 2);
+  }
+  candidates.push(tick.from - along / 2 - gap);
+  candidates.push(tick.to + along / 2 + gap);
+  let alongCenter = candidates.find((c) => Number.isFinite(c) && !hits(c));
+  if (alongCenter == null) {
+    const end = blocked.length ? Math.max(...blocked.map(([, b]) => b)) : tick.to;
+    alongCenter = end + along / 2;
+  }
+  let x = base.x;
+  let y = base.y;
+  if (edge === "left") {
+    x = tick.at - w / 2 - pad;
+    y = alongCenter;
+  } else if (edge === "right") {
+    x = tick.at + w / 2 + pad;
+    y = alongCenter;
+  } else if (edge === "top") {
+    x = alongCenter;
+    y = tick.at - h / 2 - pad;
+  } else if (edge === "bottom") {
+    x = alongCenter;
+    y = tick.at + h / 2 + pad;
+  } else if (tick.axis === "x") {
+    x = tick.at;
+    y = alongCenter;
+  } else {
+    x = alongCenter;
+    y = tick.at;
+  }
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+  x = clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z);
+  y = clamp(y, crop.y + h / 2 + 2 / z, crop.y + crop.h - h / 2 - 2 / z);
+  if (captionOverlapsBoxes({ x, y, w, h }, boxes)) {
+    if (tick.axis === "x") {
+      const above = crop.y + h / 2 + 2 / z;
+      const below = crop.y + crop.h - h / 2 - 2 / z;
+      const clearY = [above, below].find((cy) => !captionOverlapsBoxes({ x, y: cy, w, h }, boxes));
+      if (clearY != null) y = clearY;
+    } else {
+      const left = crop.x + w / 2 + 2 / z;
+      const right = crop.x + crop.w - w / 2 - 2 / z;
+      const clearX = [left, right].find((cx) => !captionOverlapsBoxes({ x: cx, y, w, h }, boxes));
+      if (clearX != null) x = clearX;
+    }
+  }
+  return { x, y, w, h, label, lines: fit.lines, fontPx: fit.fontPx };
+}
+
 function paintAlignEdgeCaption(
   ctx: CanvasRenderingContext2D,
   caption: AlignEdgeCaption,
@@ -867,7 +966,9 @@ export function placeAlignPreviewEdgeCaption(
  * pill releases with the beat. If that release line is wider than the rail,
  * the caption shrinks the type or wraps once rather than clipping the move count,
  * so a tick that is only partly on the rail still names the full line.
- * Null when the whole beat is already on screen.
+ * A wrapped pill seats clear of the landed boxes the way the edge chip does,
+ * and still eases with the stamp alpha. The status strip keeps the unwrapped
+ * release line. Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
   tick: AlignEdgeLine,
@@ -887,6 +988,7 @@ export function placeAlignCommitEdgeCaption(
   if (!stampsOff && !tickOff) return null;
   const label = stampsOff && releaseLine ? releaseLine : stampsOff && chipLabel ? chipLabel : edge;
   const fit = fitAlignCommitCaption(label, zoom, crop);
+  if (fit.lines.length > 1) return seatWrappedCommitCaption(tick, edge, boxes, zoom, crop, label, fit);
   return seatEdgeCaption(tick, edge, zoom, crop, label, fit);
 }
 

@@ -102,6 +102,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /only partly on the rail still names the full line/);
   assert.match(preview, /function fitAlignCommitCaption/);
   assert.match(preview, /function wrapReleaseLineOnce/);
+  assert.match(preview, /function seatWrappedCommitCaption/);
+  assert.match(preview, /seats clear of the landed boxes/);
+  assert.match(preview, /status strip keeps the unwrapped release line/);
+  assert.match(preview, /fit\.lines\.length > 1/);
+
   assert.match(preview, /seatEdgeCaption\(tick, edge, zoom, crop, label, fit\)/);
   assert.match(preview, /held\.chipLabel/);
   assert.match(preview, /repeats the preview pill/);
