@@ -49,7 +49,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /export function placeAlignCommitEdgeCaption/);
   assert.match(preview, /caption if stamp crops names key or board and fades with the stamp/);
   assert.match(preview, /export function noteAlignCommitFadeCaption/);
-  assert.match(preview, /strip reads \$\{pill\}/);
+  assert.match(preview, /alignCommitFadeAppend\(pill, echo.moveCount\)/);
+  assert.match(preview, /fade \$\{pill\} · \$\{moveCount\} move/);
   assert.match(preview, /strip reads \$\{chip\}/);
   assert.match(preview, /const chip = alignEdgeChipLabel\(plan\)/);
   assert.match(studio, /StudioStatusStrip/);
@@ -81,7 +82,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /alignCommitSolidLead/);
   assert.match(preview, /\$\{lead\} · Aligned · strip reads \$\{chipLabel\}/);
   assert.match(layers, /\$\{alignEcho\.chipLabel\} · \$\{alignEcho\.moveCount\} move/);
-  assert.match(inspector, /The fade pill can still replace it/);
+  assert.match(inspector, /The fade pill can still append after it/);
+  assert.match(inspector, /appends this pill with the same move count/);
+  assert.match(preview, /export function alignCommitFadeAppend/);
 
 
   assert.match(preview, /releases with the beat/);

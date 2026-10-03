@@ -203,6 +203,15 @@ export function alignCommitSolidLead(chipLabel: string, moveCount: number): stri
   return `${chipLabel} · ${moveCount} move`;
 }
 
+/**
+ * Fade append on the status strip. Keeps the solid lead in front, then names
+ * the cropped pill and the same move count the inspector fade line shows
+ * (left · key · 2 move · fade left · poster title… · 2 move).
+ */
+export function alignCommitFadeAppend(pill: string, moveCount: number): string {
+  return `fade ${pill} · ${moveCount} move`;
+}
+
 export type AlignEdgeChip = { x: number; y: number; w: number; h: number; label: string };
 
 function spansOverlap(a0: number, a1: number, b0: number, b1: number) {
@@ -499,17 +508,21 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
 }
 
 /**
- * While the commit caption eases, the status strip, the inspector align
- * line, and each mover's layers row repeat the cropped pill (left · key, center · board)
- * so the rail and the strip agree with a collapsed inspector. Before that fade,
- * the status strip leads with the same truncated chip and move count the
- * inspector solid line and each mover row show (left · key · 2 move). The fade
- * caption can still append. The fade pill replaces that chip on the row; it
- * does not stack beside it.
+ * While the commit caption eases, the status strip keeps the solid lead and
+ * appends the cropped pill with the same move count the inspector fade line
+ * shows (left · key · 2 move · fade left · poster title… · 2 move). Esc still
+ * clears it early. The inspector align line and each mover's layers row repeat
+ * the cropped pill (left · key, center · board) so the rail and the strip agree
+ * with a collapsed inspector. Before that fade, the status strip leads with the
+ * same truncated chip and move count the inspector solid line and each mover
+ * row show (left · key · 2 move). The fade pill replaces that chip on the row;
+ * it does not stack beside it.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;
-  const next = pill ? `${echo.baseStatus} · strip reads ${pill}` : echo.baseStatus;
+  const next = pill
+    ? `${echo.baseStatus} · ${alignCommitFadeAppend(pill, echo.moveCount)}`
+    : echo.baseStatus;
   const fadePill = pill;
   const statusSame = echo.status === next && getStudioStatus() === next;
   const pillSame = echo.fadePill === fadePill;
