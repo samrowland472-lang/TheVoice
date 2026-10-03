@@ -360,7 +360,7 @@ function AlignChrome() {
           <p className="font-mono text-[10px] leading-snug text-ink-faint">
             {echo.fadePill
               ? "Fade pill. Same cropped caption the canvas is releasing. Esc clears it early."
-              : "Solid beat. Same 16-character chip the status strip just showed. The fade pill can still replace it. Esc clears it early."}
+              : "Solid beat. Same truncated chip and move count the status strip leads with. The fade pill can still replace it. Esc clears it early."}
           </p>
         </div>
       ) : (

@@ -20,7 +20,7 @@ export function LayersPanel() {
   const selection = useDesign((s) => s.selection);
   const alignEcho = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
   const alignPill = alignEcho?.fadePill ?? null;
-  const alignSolid = alignEcho && !alignPill ? alignEcho.chipLabel : null;
+  const alignSolid = alignEcho && !alignPill ? `${alignEcho.chipLabel} · ${alignEcho.moveCount} move` : null;
   const alignPreview = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
   const previewChip = alignPreview ? alignEdgeChipLabel(alignPreview) : null;
   const previewMovers = alignPreview ? alignPreviewMoverIds(alignPreview) : [];
@@ -322,7 +322,7 @@ export function LayersPanel() {
                         className="ml-1.5 inline-block rounded-[4px] bg-phosphor/15 px-1 py-px font-mono text-[9px] tracking-[0.04em] text-phosphor"
                         data-layer-align-solid={alignSolid}
                         data-layer-align-mover=""
-                        title="Same 16-character chip as the inspector solid beat"
+                        title="Same truncated chip and move count as the inspector solid beat"
                       >
                         {alignSolid}
                       </span>

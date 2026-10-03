@@ -198,6 +198,11 @@ export function alignEdgeChipLabel(plan: AlignPlan): string {
   return `${plan.edge} · ${who}`;
 }
 
+/** Solid-beat lead shared by the status strip, inspector line, and mover rows. */
+export function alignCommitSolidLead(chipLabel: string, moveCount: number): string {
+  return `${chipLabel} · ${moveCount} move`;
+}
+
 export type AlignEdgeChip = { x: number; y: number; w: number; h: number; label: string };
 
 function spansOverlap(a0: number, a1: number, b0: number, b1: number) {
@@ -473,7 +478,8 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   }
   const moved = boxes.length;
   const chipLabel = alignEdgeChipLabel(plan);
-  const baseStatus = `Aligned · strip reads ${chipLabel} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
+  const lead = alignCommitSolidLead(chipLabel, moved);
+  const baseStatus = `${lead} · Aligned · strip reads ${chipLabel} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
   const moverIds = alignPreviewMoverIds(plan);
   echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, moveCount: boxes.length, fadePill: null, moverIds, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
@@ -496,9 +502,10 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
  * While the commit caption eases, the status strip, the inspector align
  * line, and each mover's layers row repeat the cropped pill (left · key, center · board)
  * so the rail and the strip agree with a collapsed inspector. Before that fade,
- * the inspector solid beat and each mover's layers row already read the same
- * truncated chip as the status strip (left · key, center · board). The fade pill
- * replaces that chip on the row; it does not stack beside it.
+ * the status strip leads with the same truncated chip and move count the
+ * inspector solid line and each mover row show (left · key · 2 move). The fade
+ * caption can still append. The fade pill replaces that chip on the row; it
+ * does not stack beside it.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;
@@ -527,8 +534,8 @@ export function commitAlignPreview(): boolean {
   const chip = alignEdgeChipLabel(plan);
   holdStudioStatus(
     moved
-      ? echo?.status ?? `Aligned · strip reads ${chip} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`
-      : `Aligned · strip reads ${chip}`,
+      ? echo?.status ?? `${alignCommitSolidLead(chip, moved)} · Aligned · strip reads ${chip} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it`
+      : `${alignCommitSolidLead(chip, moved)} · Aligned · strip reads ${chip}`,
   );
   return true;
 }
