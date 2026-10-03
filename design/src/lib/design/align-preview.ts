@@ -367,6 +367,10 @@ export type AlignCommitEcho = {
   edgeTick: AlignEdgeLine;
   /** Same pill the preview chip used (left · key, center · board). */
   chipLabel: string;
+  /** Movers that shifted. The inspector line keeps this beside the pill. */
+  moveCount: number;
+  /** Cropped pill while the caption eases. Null on the solid beat. */
+  fadePill: string | null;
   born: number;
   until: number;
   /** Bumps while the stamp fades so the stage redraws. */
@@ -463,7 +467,7 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
   const chipLabel = alignEdgeChipLabel(plan);
   const baseStatus = `Aligned ${plan.edge} to ${plan.target === "board" ? "board" : plan.keyName} · ${plan.edge} stamp holds on ${moved} moved · edge tick fades with it · caption if stamp crops names key or board and fades with the stamp`;
   const born = Date.now();
-  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
+  echo = { edge: plan.edge, boxes, edgeTick: placeAlignCommitEdgeTick(boxes, plan.edge), chipLabel, moveCount: boxes.length, fadePill: null, born, until: born + ALIGN_ECHO_MS, tick: 0, baseStatus, status: baseStatus };
   emitEcho();
   if (echoTimer) clearTimeout(echoTimer);
   const step = () => {
@@ -480,17 +484,22 @@ export function holdAlignCommitEcho(plan: AlignPlan) {
 }
 
 /**
- * While the commit caption eases, the status strip repeats the cropped pill
- * (left · key, center · board) so the rail and the strip agree. A short edge
- * name, or a caption that has not started fading, leaves the solid line.
+ * While the commit caption eases, the status strip and the inspector align
+ * line repeat the cropped pill (left · key, center · board) so the rail and the strip agree
+ * with the move count. A short edge name, or a caption that has not started
+ * fading, leaves the solid line.
  */
 export function noteAlignCommitFadeCaption(pill: string | null) {
   if (!echo) return;
   const next = pill ? `${echo.baseStatus} · strip reads ${pill}` : echo.baseStatus;
-  if (echo.status === next && getStudioStatus() === next) return;
+  const fadePill = pill;
+  const statusSame = echo.status === next && getStudioStatus() === next;
+  const pillSame = echo.fadePill === fadePill;
+  if (statusSame && pillSame) return;
   const prev = echo.status;
-  echo.status = next;
+  echo = { ...echo, status: next, fadePill };
   if (getStudioStatus() === prev || getStudioStatus() === echo.baseStatus) holdStudioStatus(next);
+  if (!pillSame) emitEcho();
 }
 
 export function commitAlignPreview(): boolean {

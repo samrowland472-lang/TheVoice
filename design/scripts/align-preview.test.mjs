@@ -47,6 +47,13 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /baseStatus/);
   assert.match(preview, /fadingPill/);
   assert.match(preview, /rail and the strip agree/);
+  assert.match(preview, /fadePill/);
+  assert.match(preview, /moveCount: boxes.length/);
+  assert.match(inspector, /data-align-commit-line/);
+  assert.match(inspector, /data-align-commit-pill/);
+  assert.match(inspector, /echo.fadePill/);
+  assert.match(inspector, /\$\{echo.fadePill\} · \$\{echo.moveCount\} move/);
+
 
   assert.match(preview, /releases with the beat/);
   assert.match(preview, /paintAlignEdgeCaption\(ctx, caption, z, alpha\)/);

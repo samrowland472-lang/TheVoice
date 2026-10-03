@@ -18,9 +18,11 @@ import {
   alignRoots,
   armAlignPreview,
   clearAlignPreview,
+  getAlignCommitEcho,
   getAlignPreview,
   getAlignTarget,
   setAlignTarget,
+  subscribeAlignCommitEcho,
   subscribeAlignPreview,
   subscribeAlignTarget,
   toggleAlignPreview,
@@ -284,6 +286,7 @@ function AlignChrome() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
   const plan = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
+  const echo = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
   const target = useSyncExternalStore(subscribeAlignTarget, getAlignTarget, getAlignTarget);
   const roots = doc ? alignRoots(doc.nodes, selection) : [];
   const key = doc ? alignKey(doc.nodes, selection) : null;
@@ -340,6 +343,18 @@ function AlignChrome() {
             Cancel preview
           </button>
         </div>
+      ) : echo ? (
+        <p
+          className="font-mono text-[12px] text-phosphor"
+          data-align-commit-line=""
+          data-align-commit-edge={echo.edge}
+          data-align-commit-move={echo.moveCount}
+          data-align-commit-pill={echo.fadePill ?? ""}
+        >
+          {echo.fadePill
+            ? `${echo.fadePill} · ${echo.moveCount} move`
+            : `${echo.edge} · ${echo.moveCount} move`}
+        </p>
       ) : (
         <p className="font-mono text-[10px] leading-snug text-ink-faint">
           {target === "board"

@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-03 10:01 BST — Inspector align line names the fading crop pill. After Enter, while the commit caption eases and a mover stamp sits off the rail, the align line repeats the pill (left · key, center · board) beside the move count. A solid beat keeps the edge and the count. Esc still clears it early.
+
 2026-10-03 09:01 BST — Status strip names the fading crop caption. After Enter, once the commit beat starts to ease and a mover stamp is off the rail, the strip repeats the pill (left · key, center · board) so it still reads after the canvas caption fades. A tick-only crop keeps the solid line. Esc still clears it early.
 
 2026-10-03 08:01 BST — Align commit crop caption eases with the stamp. After Enter, if a mover stamp sits off the rail, the tiny pill (left · key, center · board) uses the same fade as the edge name so it releases with the beat instead of cutting. A tick-only crop still keeps the short edge name. Esc still clears it early.
@@ -80,6 +82,7 @@
 
 ## Done
 
+- Inspector align line repeats the fading crop pill (left · key, center · board) beside the move count while the commit caption eases
 - Align edge chip sits on the tick, clear of the stay box; names the key layer or the board
 - Align preview names the key layer on the edge, the key box, the inspector, and the status strip
 - Drag equal-gap snap names the matched size in the inspector while the pointer holds the gap; release clears it
@@ -137,8 +140,8 @@
 
 ## Backlog
 
-- Inspector align line names the same fading crop pill while the commit caption eases, so a collapsed rail and the inspector agree
+- Align commit echo names the same fading crop pill on the layers row of each mover, so a collapsed inspector still agrees with the rail
 
 ## Next recommended
 
-While the commit caption is easing, the inspector align line should repeat that pill (left · key, center · board) beside the move count.
+While the commit caption is easing, the layers row for each mover should repeat that pill (left · key, center · board) beside the layer name.
