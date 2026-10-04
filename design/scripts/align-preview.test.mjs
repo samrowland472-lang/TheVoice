@@ -112,6 +112,10 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /tucks the move-count line into the nearest gap beside the short mover/);
   assert.match(preview, /function tuckMoveCountBesideShortMover/);
   assert.match(preview, /tuckedMoveCount/);
+  assert.match(preview, /When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover/);
+  assert.match(preview, /function pinTuckedCountToNearestCropEdge/);
+  assert.match(preview, /gap sits off the rail/);
+  assert.match(preview, /pin the line to the crop edge nearest that/);
   assert.match(preview, /Esc still clears it early/);
   assert.match(preview, /fit\.lines\.length > 1/);
 

@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 03:01 BST — Tucked move-count line, when the gap beside the short mover sits off the rail, pins to the crop edge nearest that mover so the count stays readable. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 02:01 BST — Wrapped commit tick caption, when both crop ends are blocked, tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The lead line takes the other clear side when it can. The pill still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 01:01 BST — Wrapped commit tick caption slides to the open end of the crop when the rail clamp pulls the two-line pill back onto a short mover. The move count stays off the art, the pill still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -110,6 +112,7 @@
 
 ## Done
 
+- Tucked move-count line, when the gap beside the short mover sits off the rail, pins to the crop edge nearest that mover so the count stays readable. The stamp alpha still eases it. The status strip keeps the unwrapped release line. Esc still clears it early.
 - Wrapped commit tick caption slides to the open end of the crop when the rail clamp pulls the two-line pill back onto a short mover. The move count stays off the art and the pill still eases with the stamp alpha. The status strip keeps the unwrapped release line. Esc still clears it early.
 - Wrapped commit tick caption seats clear of the landed boxes. When the release line wraps once, the two-line pill hangs off the mover the way the edge chip does (move count stays off the art) and still eases with the stamp alpha. The status strip keeps the unwrapped release line. Esc still clears it early.
 - Align commit tick caption, when the release line is wider than the rail, shrinks the type or wraps once so a cropped tick still names the full line (left · key · 2 move · fade left · poster title… · 2 move) instead of clipping the move count. Esc still clears it early.
@@ -187,8 +190,8 @@
 
 ## Backlog
 
-- Tucked move-count line, when the gap beside the short mover is itself off the rail, pins to the crop edge nearest that mover so the count stays readable. Esc still clears it early.
+- Pinned move-count line, when the nearest crop edge is the edge the lead line already uses, swaps the count to the other crop edge so the two lines do not stack. Esc still clears it early.
 
 ## Next recommended
 
-When the gap beside the short mover sits off the rail, pin the tucked move-count line to the crop edge nearest that mover so the count stays readable. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the pinned move-count line and the lead line share the crop edge nearest the short mover, swap the count to the other crop edge so the two lines do not stack. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.

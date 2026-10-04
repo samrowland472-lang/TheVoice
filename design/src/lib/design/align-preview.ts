@@ -977,9 +977,63 @@ function seatWrappedCommitCaption(
 }
 
 /**
+ * When the gap beside the short mover sits off the rail, pin the tucked
+ * move-count line to the crop edge nearest that mover so the count stays
+ * readable. Slides along that edge if the aligned seat would cover a box.
+ * Esc still clears it early.
+ */
+function pinTuckedCountToNearestCropEdge(
+  tick: AlignEdgeLine,
+  short: { x: number; y: number; w: number; h: number },
+  box: { w: number; h: number },
+  zoom: number,
+  crop: AlignViewCrop,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  avoid?: { x: number; y: number; w: number; h: number },
+): { x: number; y: number } | null {
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+  const hitsAvoid = (c: { x: number; y: number }) => {
+    if (!avoid) return false;
+    return (
+      spansOverlap(c.x - box.w / 2, c.x + box.w / 2, avoid.x - avoid.w / 2, avoid.x + avoid.w / 2) &&
+      spansOverlap(c.y - box.h / 2, c.y + box.h / 2, avoid.y - avoid.h / 2, avoid.y + avoid.h / 2)
+    );
+  };
+  const clear = (c: { x: number; y: number }) =>
+    !captionOverlapsBoxes({ ...c, w: box.w, h: box.h }, boxes) && !hitsAvoid(c);
+  const seats: { x: number; y: number }[] = [];
+  if (tick.axis === "x") {
+    const left = crop.x + box.w / 2 + inset;
+    const right = crop.x + crop.w - box.w / 2 - inset;
+    const mid = short.x + short.w / 2;
+    const nearest = Math.abs(mid - crop.x) <= Math.abs(mid - (crop.x + crop.w)) ? left : right;
+    const other = nearest === left ? right : left;
+    const y = clamp(short.y + short.h / 2, crop.y + box.h / 2 + inset, crop.y + crop.h - box.h / 2 - inset);
+    const above = crop.y + box.h / 2 + inset;
+    const below = crop.y + crop.h - box.h / 2 - inset;
+    seats.push({ x: nearest, y }, { x: nearest, y: above }, { x: nearest, y: below }, { x: other, y }, { x: other, y: above }, { x: other, y: below });
+  } else {
+    const top = crop.y + box.h / 2 + inset;
+    const bottom = crop.y + crop.h - box.h / 2 - inset;
+    const mid = short.y + short.h / 2;
+    const nearest = Math.abs(mid - crop.y) <= Math.abs(mid - (crop.y + crop.h)) ? top : bottom;
+    const other = nearest === top ? bottom : top;
+    const x = clamp(short.x + short.w / 2, crop.x + box.w / 2 + inset, crop.x + crop.w - box.w / 2 - inset);
+    const left = crop.x + box.w / 2 + inset;
+    const right = crop.x + crop.w - box.w / 2 - inset;
+    seats.push({ x, y: nearest }, { x: left, y: nearest }, { x: right, y: nearest }, { x, y: other }, { x: left, y: other }, { x: right, y: other });
+  }
+  return seats.find(clear) ?? null;
+}
+
+/**
  * When both crop ends are blocked, tuck the move-count line into the nearest
  * gap beside the short mover so the count stays off the art. Prefers the side
  * closest to the tick, then the other side, and skips a seat that lands on a box.
+ * When that gap sits off the rail, pin the line to the crop edge nearest that
+ * mover so the count stays readable.
  */
 function tuckMoveCountBesideShortMover(
   tick: AlignEdgeLine,
@@ -1021,6 +1075,22 @@ function tuckMoveCountBesideShortMover(
       spansOverlap(c.y - box.h / 2, c.y + box.h / 2, avoid.y - avoid.h / 2, avoid.y + avoid.h / 2)
     );
   };
+  const anchor = tick.axis === "x" ? short.y + short.h / 2 : short.x + short.w / 2;
+  const gapDist = (c: { x: number; y: number }) =>
+    tick.axis === "x" ? Math.abs(c.x - tick.at) + Math.abs(c.y - anchor) : Math.abs(c.y - tick.at) + Math.abs(c.x - anchor);
+  const onRail = (c: { x: number; y: number }) =>
+    c.x - box.w / 2 >= crop.x - 0.01 &&
+    c.x + box.w / 2 <= crop.x + crop.w + 0.01 &&
+    c.y - box.h / 2 >= crop.y - 0.01 &&
+    c.y + box.h / 2 <= crop.y + crop.h + 0.01;
+  const clear = (c: { x: number; y: number }) =>
+    !captionOverlapsBoxes({ ...c, w: box.w, h: box.h }, boxes) && !hitsAvoid(c);
+  const openGaps = candidates.filter(clear).sort((a, b) => gapDist(a) - gapDist(b));
+  const preferred = openGaps[0];
+  if (!preferred || !onRail(preferred)) {
+    const pinned = pinTuckedCountToNearestCropEdge(tick, short, box, zoom, crop, boxes, avoid);
+    if (pinned) return { x: pinned.x, y: pinned.y, w: box.w, h: box.h, text: line };
+  }
   const scored = candidates
     .map((c) => ({
       x: clamp(c.x, crop.x + box.w / 2 + 2 / z, crop.x + crop.w - box.w / 2 - 2 / z),
@@ -1028,12 +1098,7 @@ function tuckMoveCountBesideShortMover(
     }))
     .filter((c) => !captionOverlapsBoxes({ ...c, w: box.w, h: box.h }, boxes) && !hitsAvoid(c));
   if (!scored.length) return null;
-  const anchor = tick.axis === "x" ? short.y + short.h / 2 : short.x + short.w / 2;
-  scored.sort((a, b) => {
-    const da = tick.axis === "x" ? Math.abs(a.x - tick.at) + Math.abs(a.y - anchor) : Math.abs(a.y - tick.at) + Math.abs(a.x - anchor);
-    const db = tick.axis === "x" ? Math.abs(b.x - tick.at) + Math.abs(b.y - anchor) : Math.abs(b.y - tick.at) + Math.abs(b.x - anchor);
-    return da - db;
-  });
+  scored.sort((a, b) => gapDist(a) - gapDist(b));
   const pick = scored[0];
   return { x: pick.x, y: pick.y, w: box.w, h: box.h, text: line };
 }
@@ -1115,7 +1180,8 @@ export function placeAlignPreviewEdgeCaption(
  * so a tick that is only partly on the rail still names the full line.
  * A wrapped pill seats clear of the landed boxes the way the edge chip does.
  * When the rail clamp pulls it back onto a short mover, the two-line pill slides to the open end of the crop so the move count stays off the art.
- * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art,
+ * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art.
+ * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable,
  * and still eases with the stamp alpha. The status strip keeps the unwrapped
  * release line. Esc still clears it early. Null when the whole beat is already on screen.
  */
