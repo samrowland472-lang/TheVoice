@@ -856,7 +856,7 @@ function openCropEndAlong(
  * chip hangs clear of a stay. Outer edges hang the two-line pill off the
  * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The pill stays
  * on the rail so a cropped tick still names the full line, and still eases
- * with the stamp alpha. When the swapped move-count line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead. The status strip keeps the unwrapped release line.
+ * with the stamp alpha. When the swapped move-count line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead. When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art. The status strip keeps the unwrapped release line.
  * Esc still clears it early.
  */
 function seatWrappedCommitCaption(
@@ -971,6 +971,7 @@ function seatWrappedCommitCaption(
       );
       const slid = slideSwappedCountAlongBlockedEdge(
         tick,
+        edge,
         boxes,
         zoom,
         crop,
@@ -1055,13 +1056,63 @@ function pinTuckedCountToNearestCropEdge(
 
 
 /**
+ * When the slid move-count line's first clear gap still shares a span with a
+ * stay stamp on that edge, nudge one caption-height further into the gap so
+ * the count clears the stamp as well as the art. Keeps the stamp alpha.
+ * Esc still clears it early.
+ */
+function nudgeSlidCountClearOfStayStamp(
+  edge: AlignEdge,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  count: { x: number; y: number; w: number; h: number },
+  seat: number,
+  lo: number,
+  hi: number,
+  verticalEdge: boolean,
+): number {
+  if (!boxes.length || hi < lo) return seat;
+  const stamps = boxes.map((g) => placeAlignStayStamp(g, edge, zoom));
+  const half = verticalEdge ? count.h / 2 : count.w / 2;
+  const crossA = verticalEdge ? count.x - count.w / 2 : count.y - count.h / 2;
+  const crossB = verticalEdge ? count.x + count.w / 2 : count.y + count.h / 2;
+  const shares = (center: number) => {
+    const a = center - half;
+    const b = center + half;
+    return stamps.some((stamp) => {
+      const alongA = verticalEdge ? stamp.y - stamp.h / 2 : stamp.x - stamp.w / 2;
+      const alongB = verticalEdge ? stamp.y + stamp.h / 2 : stamp.x + stamp.w / 2;
+      const stampCrossA = verticalEdge ? stamp.x - stamp.w / 2 : stamp.y - stamp.h / 2;
+      const stampCrossB = verticalEdge ? stamp.x + stamp.w / 2 : stamp.y + stamp.h / 2;
+      return spansOverlap(a, b, alongA, alongB) && spansOverlap(crossA, crossB, stampCrossA, stampCrossB);
+    });
+  };
+  if (!shares(seat)) return seat;
+  const stampAlong = stamps
+    .filter((stamp) => {
+      const alongA = verticalEdge ? stamp.y - stamp.h / 2 : stamp.x - stamp.w / 2;
+      const alongB = verticalEdge ? stamp.y + stamp.h / 2 : stamp.x + stamp.w / 2;
+      const stampCrossA = verticalEdge ? stamp.x - stamp.w / 2 : stamp.y - stamp.h / 2;
+      const stampCrossB = verticalEdge ? stamp.x + stamp.w / 2 : stamp.y + stamp.h / 2;
+      return spansOverlap(seat - half, seat + half, alongA, alongB) && spansOverlap(crossA, crossB, stampCrossA, stampCrossB);
+    })
+    .map((stamp) => (verticalEdge ? stamp.y : stamp.x));
+  const stampMid = stampAlong.reduce((sum, c) => sum + c, 0) / Math.max(stampAlong.length, 1);
+  const dir = seat >= stampMid ? 1 : -1;
+  return Math.min(Math.max(seat + dir * count.h, lo), hi);
+}
+
+/**
  * When the swapped move-count line lands on a blocked other crop edge, slide
  * it along that edge into the first clear gap so the count stays off the art
- * and off the lead. Keeps the stamp alpha. The status strip still reads the
- * unwrapped release line. Esc still clears it early.
+ * and off the lead. When that first clear gap still shares a span with a stay
+ * stamp on that edge, nudge one caption-height further into the gap so the
+ * count clears the stamp as well as the art. Keeps the stamp alpha. The status
+ * strip still reads the unwrapped release line. Esc still clears it early.
  */
 function slideSwappedCountAlongBlockedEdge(
   tick: AlignEdgeLine,
+  edge: AlignEdge,
   boxes: { x: number; y: number; w: number; h: number }[],
   zoom: number,
   crop: AlignViewCrop,
@@ -1130,11 +1181,21 @@ function slideSwappedCountAlongBlockedEdge(
       const lo = a0 + half;
       const hi = b0 - half;
       if (hi < lo - 0.001) return null;
-      return Math.min(Math.max(alongStart, lo), hi);
+      return { seat: Math.min(Math.max(alongStart, lo), hi), lo, hi };
     })
-    .filter((seat): seat is number => seat != null)
-    .sort((p, q) => Math.abs(p - alongStart) - Math.abs(q - alongStart));
-  for (const seat of seats) {
+    .filter((row): row is { seat: number; lo: number; hi: number } => row != null)
+    .sort((p, q) => Math.abs(p.seat - alongStart) - Math.abs(q.seat - alongStart));
+  for (const row of seats) {
+    const seat = nudgeSlidCountClearOfStayStamp(
+      edge,
+      boxes,
+      zoom,
+      { ...count, x: fixedX, y: verticalEdge ? count.y : fixedY },
+      row.seat,
+      row.lo,
+      row.hi,
+      verticalEdge,
+    );
     const next = verticalEdge ? { x: fixedX, y: seat } : { x: seat, y: fixedY };
     if (!blocked(next)) return { ...count, ...next };
   }
@@ -1334,7 +1395,8 @@ export function placeAlignPreviewEdgeCaption(
  * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art.
  * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable.
  * When that pinned count and the lead line share that nearest crop edge, the count swaps to the other crop edge so the two lines do not stack.
- * When that swapped line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead,
+ * When that swapped line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead.
+ * When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art,
  * and still eases with the stamp alpha. The status strip keeps the unwrapped
  * release line. Esc still clears it early. Null when the whole beat is already on screen.
  */

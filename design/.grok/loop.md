@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 06:01 BST — Slid move-count line, when the first clear gap still shares a span with a stay stamp on that edge, nudges one caption-height further into the gap so the count clears the stamp as well as the art. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 05:01 BST — Swapped move-count line, when the other crop edge is also blocked, slides along that edge into the first clear gap so the count stays off the art and off the lead. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 04:01 BST — Pinned move-count line, when the nearest crop edge is the edge the lead line already uses, swaps the count to the other crop edge so the two lines do not stack. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -115,6 +117,7 @@
 2026-10-01 12:05 BST — Layers drop polish. Illegal nests (a group into itself or a descendant) show a faint ring and No, and the drop is refused. Holding the grip on a collapsed group centre opens it so children can be targeted. The insert bar follows the row indent. While dragging, the panel says centre nests and the edge keeps that row's parent.
 
 ## Done
+- Slid move-count line, when the first clear gap still shares a span with a stay stamp on that edge, nudges one caption-height further into the gap so the count clears the stamp as well as the art. Esc still clears it early.
 
 - 2026-10-04 05:01 BST — Swapped move-count line slides along a blocked other crop edge into the first clear gap.
 
@@ -198,8 +201,8 @@
 
 ## Backlog
 
-- Slid move-count line, when the first clear gap still shares a span with a stay stamp on that edge, nudges one caption-height further into the gap so the count clears the stamp as well as the art. Esc still clears it early.
+- Nudged move-count line, when the extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, steps one more caption-height into the gap so the count clears both stamps. Esc still clears it early.
 
 ## Next recommended
 
-When the slid move-count line still shares a span with a stay stamp on that edge, nudge it one caption-height further into the gap so the count clears the stamp as well as the art. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the nudged move-count line still shares a span with a second stay stamp on that edge, step one more caption-height into the gap so the count clears both stamps. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
