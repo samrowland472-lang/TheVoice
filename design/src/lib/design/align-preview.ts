@@ -671,6 +671,8 @@ export type AlignEdgeCaption = {
   lines?: string[];
   /** Screen px before zoom. Shrinks so a long release line still fits. */
   fontPx?: number;
+  /** Move-count line parked beside the short mover when both crop ends are blocked. */
+  tuckedMoveCount?: { x: number; y: number; w: number; h: number; text: string };
 };
 
 function stampOffCrop(
@@ -852,9 +854,10 @@ function openCropEndAlong(
 /**
  * Seat a wrapped commit tick caption off the landed boxes the way the edge
  * chip hangs clear of a stay. Outer edges hang the two-line pill off the
- * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. The pill stays
+ * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The pill stays
  * on the rail so a cropped tick still names the full line, and still eases
  * with the stamp alpha. The status strip keeps the unwrapped release line.
+ * Esc still clears it early.
  */
 function seatWrappedCommitCaption(
   tick: AlignEdgeLine,
@@ -870,8 +873,8 @@ function seatWrappedCommitCaption(
   const gap = 6 / z;
   const base = seatEdgeCaption(tick, edge, zoom, crop, label, fit);
   if (!captionOverlapsBoxes(base, boxes)) return base;
-  const w = fit.w;
-  const h = fit.h;
+  let w = fit.w;
+  let h = fit.h;
   const along = tick.axis === "x" ? h : w;
   const blocked = boxes.map((g) =>
     tick.axis === "x"
@@ -942,7 +945,97 @@ function seatWrappedCommitCaption(
       if (clearX != null) x = clearX;
     }
   }
+  const endsBlocked = openCropEndAlong(tick, crop, tick.axis === "x" ? h : w, zoom, boxes) == null;
+  if (endsBlocked && fit.lines.length > 1 && captionOverlapsBoxes({ x, y, w, h }, boxes)) {
+    const tucked = tuckMoveCountBesideShortMover(tick, boxes, zoom, crop, fit.lines[fit.lines.length - 1], fit.fontPx);
+    if (tucked) {
+      const lead = fit.lines[0];
+      const leadSeat = tuckMoveCountBesideShortMover(tick, boxes, zoom, crop, lead, fit.fontPx, tucked);
+      if (leadSeat) {
+        x = leadSeat.x;
+        y = leadSeat.y;
+        w = leadSeat.w;
+        h = leadSeat.h;
+      } else {
+        const leadBox = captionBox(lead, fit.fontPx, zoom);
+        w = leadBox.w;
+        h = leadBox.h;
+      }
+      return {
+        x,
+        y,
+        w,
+        h,
+        label,
+        lines: [lead],
+        fontPx: fit.fontPx,
+        tuckedMoveCount: tucked,
+      };
+    }
+  }
   return { x, y, w, h, label, lines: fit.lines, fontPx: fit.fontPx };
+}
+
+/**
+ * When both crop ends are blocked, tuck the move-count line into the nearest
+ * gap beside the short mover so the count stays off the art. Prefers the side
+ * closest to the tick, then the other side, and skips a seat that lands on a box.
+ */
+function tuckMoveCountBesideShortMover(
+  tick: AlignEdgeLine,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  crop: AlignViewCrop,
+  line: string,
+  fontPx: number,
+  avoid?: { x: number; y: number; w: number; h: number },
+): { x: number; y: number; w: number; h: number; text: string } | null {
+  if (!boxes.length || !line) return null;
+  const z = Math.max(zoom, 0.01);
+  const pad = 4 / z;
+  const box = captionBox(line, fontPx, zoom);
+  const short = boxes.reduce((best, g) => {
+    const along = tick.axis === "x" ? g.h : g.w;
+    const bestAlong = tick.axis === "x" ? best.h : best.w;
+    return along < bestAlong ? g : best;
+  });
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+  const candidates: { x: number; y: number }[] = [];
+  if (tick.axis === "x") {
+    const y = clamp(short.y + short.h / 2, crop.y + box.h / 2 + 2 / z, crop.y + crop.h - box.h / 2 - 2 / z);
+    candidates.push({ x: short.x - box.w / 2 - pad, y });
+    candidates.push({ x: short.x + short.w + box.w / 2 + pad, y });
+    candidates.push({ x: short.x - box.w / 2 - pad, y: short.y - box.h / 2 - pad });
+    candidates.push({ x: short.x + short.w + box.w / 2 + pad, y: short.y + short.h + box.h / 2 + pad });
+  } else {
+    const x = clamp(short.x + short.w / 2, crop.x + box.w / 2 + 2 / z, crop.x + crop.w - box.w / 2 - 2 / z);
+    candidates.push({ x, y: short.y - box.h / 2 - pad });
+    candidates.push({ x, y: short.y + short.h + box.h / 2 + pad });
+    candidates.push({ x: short.x - box.w / 2 - pad, y: short.y - box.h / 2 - pad });
+    candidates.push({ x: short.x + short.w + box.w / 2 + pad, y: short.y + short.h + box.h / 2 + pad });
+  }
+  const hitsAvoid = (c: { x: number; y: number }) => {
+    if (!avoid) return false;
+    return (
+      spansOverlap(c.x - box.w / 2, c.x + box.w / 2, avoid.x - avoid.w / 2, avoid.x + avoid.w / 2) &&
+      spansOverlap(c.y - box.h / 2, c.y + box.h / 2, avoid.y - avoid.h / 2, avoid.y + avoid.h / 2)
+    );
+  };
+  const scored = candidates
+    .map((c) => ({
+      x: clamp(c.x, crop.x + box.w / 2 + 2 / z, crop.x + crop.w - box.w / 2 - 2 / z),
+      y: clamp(c.y, crop.y + box.h / 2 + 2 / z, crop.y + crop.h - box.h / 2 - 2 / z),
+    }))
+    .filter((c) => !captionOverlapsBoxes({ ...c, w: box.w, h: box.h }, boxes) && !hitsAvoid(c));
+  if (!scored.length) return null;
+  const anchor = tick.axis === "x" ? short.y + short.h / 2 : short.x + short.w / 2;
+  scored.sort((a, b) => {
+    const da = tick.axis === "x" ? Math.abs(a.x - tick.at) + Math.abs(a.y - anchor) : Math.abs(a.y - tick.at) + Math.abs(a.x - anchor);
+    const db = tick.axis === "x" ? Math.abs(b.x - tick.at) + Math.abs(b.y - anchor) : Math.abs(b.y - tick.at) + Math.abs(b.x - anchor);
+    return da - db;
+  });
+  const pick = scored[0];
+  return { x: pick.x, y: pick.y, w: box.w, h: box.h, text: line };
 }
 
 function paintAlignEdgeCaption(
@@ -972,6 +1065,17 @@ function paintAlignEdgeCaption(
     const lineH = (fontPx + 1) / z;
     const start = caption.y - (lineH * (lines.length - 1)) / 2;
     lines.forEach((line, i) => ctx.fillText(line, caption.x, start + i * lineH));
+  }
+  const tucked = caption.tuckedMoveCount;
+  if (tucked) {
+    ctx.beginPath();
+    ctx.roundRect(tucked.x - tucked.w / 2, tucked.y - tucked.h / 2, tucked.w, tucked.h, 2 / z);
+    ctx.fillStyle = "rgba(7, 16, 22, 0.92)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(63,198,255,0.95)";
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63,198,255,0.95)";
+    ctx.fillText(tucked.text, tucked.x, tucked.y);
   }
   ctx.restore();
 }
@@ -1010,9 +1114,10 @@ export function placeAlignPreviewEdgeCaption(
  * the caption shrinks the type or wraps once rather than clipping the move count,
  * so a tick that is only partly on the rail still names the full line.
  * A wrapped pill seats clear of the landed boxes the way the edge chip does.
- * When the rail clamp pulls it back onto a short mover, the two-line pill slides to the open end of the crop so the move count stays off the art,
+ * When the rail clamp pulls it back onto a short mover, the two-line pill slides to the open end of the crop so the move count stays off the art.
+ * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art,
  * and still eases with the stamp alpha. The status strip keeps the unwrapped
- * release line. Null when the whole beat is already on screen.
+ * release line. Esc still clears it early. Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
   tick: AlignEdgeLine,

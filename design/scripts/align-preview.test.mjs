@@ -108,6 +108,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /function openCropEndAlong/);
   assert.match(preview, /rail clamp pulls that two-line pill back onto a short mover/);
   assert.match(preview, /slides to the open end of the crop so the move count stays off the art/);
+  assert.match(preview, /both crop ends are blocked/);
+  assert.match(preview, /tucks the move-count line into the nearest gap beside the short mover/);
+  assert.match(preview, /function tuckMoveCountBesideShortMover/);
+  assert.match(preview, /tuckedMoveCount/);
+  assert.match(preview, /Esc still clears it early/);
   assert.match(preview, /fit\.lines\.length > 1/);
 
   assert.match(preview, /seatEdgeCaption\(tick, edge, zoom, crop, label, fit\)/);

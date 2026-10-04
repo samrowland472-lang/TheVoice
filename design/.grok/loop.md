@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 02:01 BST — Wrapped commit tick caption, when both crop ends are blocked, tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The lead line takes the other clear side when it can. The pill still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 01:01 BST — Wrapped commit tick caption slides to the open end of the crop when the rail clamp pulls the two-line pill back onto a short mover. The move count stays off the art, the pill still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 00:01 BST — Wrapped commit tick caption seats clear of the landed boxes. When the release line wraps once, the two-line pill hangs off the mover the way the edge chip does, so the move count is not drawn over the art, and it still eases with the stamp alpha. The status strip keeps the unwrapped release line (left · key · 2 move · fade left · poster title… · 2 move). A tick-only crop keeps the short edge name. Esc still clears it early.
@@ -181,11 +183,12 @@
 - Status strip repeats the fading crop caption (left · key, center · board) so the rail and the strip agree during the release
 - Layers row fade line keeps the solid lead and appends the cropped pill with the same move count the status strip shows (left · key · 2 move · fade left · poster title… · 2 move) so a scrolled list matches the release line. Esc still clears it early.
 - Align commit tick caption, when a mover stamp is cropped, repeats the same release line the inspector, layers row, and status strip show (left · key · 2 move · fade left · poster title… · 2 move) so the canvas agrees during the release. Esc still clears it early.
+- Wrapped commit tick caption, when both crop ends are blocked, tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The lead takes the other clear side. Esc still clears it early.
 
 ## Backlog
 
-- Wrapped commit tick caption, when both crop ends are blocked, tucks the move-count line into the nearest gap beside the short mover instead of sitting on the art. Esc still clears it early.
+- Tucked move-count line, when the gap beside the short mover is itself off the rail, pins to the crop edge nearest that mover so the count stays readable. Esc still clears it early.
 
 ## Next recommended
 
-When both crop ends are blocked, tuck the wrapped commit caption's move-count line into the nearest gap beside the short mover so it stays off the art. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the gap beside the short mover sits off the rail, pin the tucked move-count line to the crop edge nearest that mover so the count stays readable. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
