@@ -856,7 +856,7 @@ function openCropEndAlong(
  * chip hangs clear of a stay. Outer edges hang the two-line pill off the
  * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The pill stays
  * on the rail so a cropped tick still names the full line, and still eases
- * with the stamp alpha. The status strip keeps the unwrapped release line.
+ * with the stamp alpha. When the swapped move-count line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead. The status strip keeps the unwrapped release line.
  * Esc still clears it early.
  */
 function seatWrappedCommitCaption(
@@ -969,6 +969,14 @@ function seatWrappedCommitCaption(
         { x, y, w, h },
         tucked,
       );
+      const slid = slideSwappedCountAlongBlockedEdge(
+        tick,
+        boxes,
+        zoom,
+        crop,
+        { x, y, w, h },
+        swapped,
+      );
       return {
         x,
         y,
@@ -977,7 +985,7 @@ function seatWrappedCommitCaption(
         label,
         lines: [lead],
         fontPx: fit.fontPx,
-        tuckedMoveCount: swapped,
+        tuckedMoveCount: slid,
       };
     }
   }
@@ -1044,6 +1052,94 @@ function pinTuckedCountToNearestCropEdge(
   return null;
 }
 
+
+
+/**
+ * When the swapped move-count line lands on a blocked other crop edge, slide
+ * it along that edge into the first clear gap so the count stays off the art
+ * and off the lead. Keeps the stamp alpha. The status strip still reads the
+ * unwrapped release line. Esc still clears it early.
+ */
+function slideSwappedCountAlongBlockedEdge(
+  tick: AlignEdgeLine,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  if (!boxes.length) return count;
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const tol = 1.5 / z;
+  const blocked = (c: { x: number; y: number }) =>
+    captionOverlapsBoxes({ ...c, w: count.w, h: count.h }, boxes) ||
+    captionOverlapsBoxes({ ...c, w: count.w, h: count.h }, [lead]);
+  if (!blocked(count)) return count;
+  const onLeft = Math.abs(count.x - (crop.x + count.w / 2 + inset)) <= tol;
+  const onRight = Math.abs(count.x - (crop.x + crop.w - count.w / 2 - inset)) <= tol;
+  const onTop = Math.abs(count.y - (crop.y + count.h / 2 + inset)) <= tol;
+  const onBottom = Math.abs(count.y - (crop.y + crop.h - count.h / 2 - inset)) <= tol;
+  let fixedX = count.x;
+  let fixedY = count.y;
+  let alongMin = 0;
+  let alongMax = 0;
+  let alongStart = count.y;
+  let verticalEdge = false;
+  if (tick.axis === "x" && (onLeft || onRight)) {
+    verticalEdge = true;
+    fixedX = onLeft ? crop.x + count.w / 2 + inset : crop.x + crop.w - count.w / 2 - inset;
+    alongMin = crop.y + count.h / 2 + inset;
+    alongMax = crop.y + crop.h - count.h / 2 - inset;
+    alongStart = count.y;
+  } else if (tick.axis === "y" && (onTop || onBottom)) {
+    fixedY = onTop ? crop.y + count.h / 2 + inset : crop.y + crop.h - count.h / 2 - inset;
+    alongMin = crop.x + count.w / 2 + inset;
+    alongMax = crop.x + crop.w - count.w / 2 - inset;
+    alongStart = count.x;
+  } else return count;
+  if (alongMax < alongMin) return count;
+  const half = verticalEdge ? count.h / 2 : count.w / 2;
+  const edgeA = verticalEdge ? fixedX - count.w / 2 : fixedY - count.h / 2;
+  const edgeB = verticalEdge ? fixedX + count.w / 2 : fixedY + count.h / 2;
+  const intervals: [number, number][] = [];
+  for (const g of [...boxes, lead]) {
+    const crossA = verticalEdge ? g.x : g.y;
+    const crossB = verticalEdge ? g.x + g.w : g.y + g.h;
+    if (!spansOverlap(edgeA, edgeB, crossA, crossB)) continue;
+    const a0 = verticalEdge ? g.y : g.x;
+    const b0 = verticalEdge ? g.y + g.h : g.x + g.w;
+    intervals.push([a0 - inset, b0 + inset]);
+  }
+  intervals.sort((p, q) => p[0] - q[0]);
+  const merged: [number, number][] = [];
+  for (const iv of intervals) {
+    const last = merged[merged.length - 1];
+    if (!last || iv[0] > last[1]) merged.push([iv[0], iv[1]]);
+    else last[1] = Math.max(last[1], iv[1]);
+  }
+  const free: [number, number][] = [];
+  let cursor = alongMin - half;
+  for (const [a0, b0] of merged) {
+    if (a0 > cursor) free.push([cursor, Math.min(a0, alongMax + half)]);
+    cursor = Math.max(cursor, b0);
+  }
+  if (cursor < alongMax + half) free.push([cursor, alongMax + half]);
+  const seats = free
+    .map(([a0, b0]) => {
+      const lo = a0 + half;
+      const hi = b0 - half;
+      if (hi < lo - 0.001) return null;
+      return Math.min(Math.max(alongStart, lo), hi);
+    })
+    .filter((seat): seat is number => seat != null)
+    .sort((p, q) => Math.abs(p - alongStart) - Math.abs(q - alongStart));
+  for (const seat of seats) {
+    const next = verticalEdge ? { x: fixedX, y: seat } : { x: seat, y: fixedY };
+    if (!blocked(next)) return { ...count, ...next };
+  }
+  return count;
+}
 
 /**
  * When the pinned move-count line and the lead line share the crop edge nearest the short mover, swaps the count to the other crop edge so the two lines do not stack. Esc still clears it early.
@@ -1237,7 +1333,8 @@ export function placeAlignPreviewEdgeCaption(
  * When the rail clamp pulls it back onto a short mover, the two-line pill slides to the open end of the crop so the move count stays off the art.
  * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art.
  * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable.
- * When that pinned count and the lead line share that nearest crop edge, the count swaps to the other crop edge so the two lines do not stack,
+ * When that pinned count and the lead line share that nearest crop edge, the count swaps to the other crop edge so the two lines do not stack.
+ * When that swapped line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead,
  * and still eases with the stamp alpha. The status strip keeps the unwrapped
  * release line. Esc still clears it early. Null when the whole beat is already on screen.
  */

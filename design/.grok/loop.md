@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 05:01 BST — Swapped move-count line, when the other crop edge is also blocked, slides along that edge into the first clear gap so the count stays off the art and off the lead. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 04:01 BST — Pinned move-count line, when the nearest crop edge is the edge the lead line already uses, swaps the count to the other crop edge so the two lines do not stack. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 03:01 BST — Tucked move-count line, when the gap beside the short mover sits off the rail, pins to the crop edge nearest that mover so the count stays readable. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -114,6 +116,9 @@
 
 ## Done
 
+- 2026-10-04 05:01 BST — Swapped move-count line slides along a blocked other crop edge into the first clear gap.
+
+
 - Pinned move-count line, when the nearest crop edge is the edge the lead line already uses, swaps the count to the other crop edge so the two lines do not stack. The stamp alpha still eases it. The status strip keeps the unwrapped release line. Esc still clears it early.
 - Tucked move-count line, when the gap beside the short mover sits off the rail, pins to the crop edge nearest that mover so the count stays readable. The stamp alpha still eases it. The status strip keeps the unwrapped release line. Esc still clears it early.
 - Wrapped commit tick caption slides to the open end of the crop when the rail clamp pulls the two-line pill back onto a short mover. The move count stays off the art and the pill still eases with the stamp alpha. The status strip keeps the unwrapped release line. Esc still clears it early.
@@ -193,8 +198,8 @@
 
 ## Backlog
 
-- Swapped move-count line, when the other crop edge is also blocked, slides along that edge into the first clear gap so the count stays off the art and off the lead. Esc still clears it early.
+- Slid move-count line, when the first clear gap still shares a span with a stay stamp on that edge, nudges one caption-height further into the gap so the count clears the stamp as well as the art. Esc still clears it early.
 
 ## Next recommended
 
-When the swapped move-count line lands on a blocked other crop edge, slide it along that edge into the first clear gap so the count stays off the art and off the lead. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the slid move-count line still shares a span with a stay stamp on that edge, nudge it one caption-height further into the gap so the count clears the stamp as well as the art. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.

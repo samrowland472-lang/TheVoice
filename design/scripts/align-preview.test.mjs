@@ -117,6 +117,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /function swapPinnedCountOffSharedCropEdge/);
   assert.match(preview, /share the crop edge nearest the short mover/);
   assert.match(preview, /swaps the count to the other crop edge so the two lines do not stack/);
+  assert.match(preview, /function slideSwappedCountAlongBlockedEdge/);
+  assert.match(preview, /slides along that edge into the first clear gap so the count stays off the art and off the lead/);
   assert.match(preview, /gap sits off the rail/);
   assert.match(preview, /pin the line to the crop edge nearest that/);
   assert.match(preview, /Esc still clears it early/);
