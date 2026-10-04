@@ -961,6 +961,14 @@ function seatWrappedCommitCaption(
         w = leadBox.w;
         h = leadBox.h;
       }
+      const swapped = swapPinnedCountOffSharedCropEdge(
+        tick,
+        boxes,
+        zoom,
+        crop,
+        { x, y, w, h },
+        tucked,
+      );
       return {
         x,
         y,
@@ -969,7 +977,7 @@ function seatWrappedCommitCaption(
         label,
         lines: [lead],
         fontPx: fit.fontPx,
-        tuckedMoveCount: tucked,
+        tuckedMoveCount: swapped,
       };
     }
   }
@@ -990,6 +998,7 @@ function pinTuckedCountToNearestCropEdge(
   crop: AlignViewCrop,
   boxes: { x: number; y: number; w: number; h: number }[],
   avoid?: { x: number; y: number; w: number; h: number },
+  preferOther = false,
 ): { x: number; y: number } | null {
   const z = Math.max(zoom, 0.01);
   const inset = 2 / z;
@@ -1013,7 +1022,9 @@ function pinTuckedCountToNearestCropEdge(
     const y = clamp(short.y + short.h / 2, crop.y + box.h / 2 + inset, crop.y + crop.h - box.h / 2 - inset);
     const above = crop.y + box.h / 2 + inset;
     const below = crop.y + crop.h - box.h / 2 - inset;
-    seats.push({ x: nearest, y }, { x: nearest, y: above }, { x: nearest, y: below }, { x: other, y }, { x: other, y: above }, { x: other, y: below });
+    const nearSeats = [{ x: nearest, y }, { x: nearest, y: above }, { x: nearest, y: below }];
+    const otherSeats = [{ x: other, y }, { x: other, y: above }, { x: other, y: below }];
+    seats.push(...(preferOther ? [...otherSeats, ...nearSeats] : [...nearSeats, ...otherSeats]));
   } else {
     const top = crop.y + box.h / 2 + inset;
     const bottom = crop.y + crop.h - box.h / 2 - inset;
@@ -1023,9 +1034,53 @@ function pinTuckedCountToNearestCropEdge(
     const x = clamp(short.x + short.w / 2, crop.x + box.w / 2 + inset, crop.x + crop.w - box.w / 2 - inset);
     const left = crop.x + box.w / 2 + inset;
     const right = crop.x + crop.w - box.w / 2 - inset;
-    seats.push({ x, y: nearest }, { x: left, y: nearest }, { x: right, y: nearest }, { x, y: other }, { x: left, y: other }, { x: right, y: other });
+    const nearSeats = [{ x, y: nearest }, { x: left, y: nearest }, { x: right, y: nearest }];
+    const otherSeats = [{ x, y: other }, { x: left, y: other }, { x: right, y: other }];
+    seats.push(...(preferOther ? [...otherSeats, ...nearSeats] : [...nearSeats, ...otherSeats]));
   }
-  return seats.find(clear) ?? null;
+  const clearSeat = seats.find(clear);
+  if (clearSeat) return clearSeat;
+  if (preferOther) return seats[0] ?? null;
+  return null;
+}
+
+
+/**
+ * When the pinned move-count line and the lead line share the crop edge nearest the short mover, swaps the count to the other crop edge so the two lines do not stack. Esc still clears it early.
+ */
+function swapPinnedCountOffSharedCropEdge(
+  tick: AlignEdgeLine,
+  boxes: { x: number; y: number; w: number; h: number }[],
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  if (!boxes.length) return count;
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const tol = 1 / z;
+  const short = boxes.reduce((best, g) => {
+    const along = tick.axis === "x" ? g.h : g.w;
+    const bestAlong = tick.axis === "x" ? best.h : best.w;
+    return along < bestAlong ? g : best;
+  });
+  const onEdge = (center: number, half: number, start: number, end: number, nearestIsStart: boolean) => {
+    const startSeat = start + half + inset;
+    const endSeat = end - half - inset;
+    if (nearestIsStart) return Math.abs(center - startSeat) <= tol;
+    return Math.abs(center - endSeat) <= tol;
+  };
+  const shared =
+    tick.axis === "x"
+      ? onEdge(lead.x, lead.w / 2, crop.x, crop.x + crop.w, Math.abs(short.x + short.w / 2 - crop.x) <= Math.abs(short.x + short.w / 2 - (crop.x + crop.w))) &&
+        onEdge(count.x, count.w / 2, crop.x, crop.x + crop.w, Math.abs(short.x + short.w / 2 - crop.x) <= Math.abs(short.x + short.w / 2 - (crop.x + crop.w)))
+      : onEdge(lead.y, lead.h / 2, crop.y, crop.y + crop.h, Math.abs(short.y + short.h / 2 - crop.y) <= Math.abs(short.y + short.h / 2 - (crop.y + crop.h))) &&
+        onEdge(count.y, count.h / 2, crop.y, crop.y + crop.h, Math.abs(short.y + short.h / 2 - crop.y) <= Math.abs(short.y + short.h / 2 - (crop.y + crop.h)));
+  if (!shared) return count;
+  const swapped = pinTuckedCountToNearestCropEdge(tick, short, count, zoom, crop, boxes, lead, true);
+  if (!swapped) return count;
+  return { ...count, x: swapped.x, y: swapped.y };
 }
 
 /**
@@ -1181,7 +1236,8 @@ export function placeAlignPreviewEdgeCaption(
  * A wrapped pill seats clear of the landed boxes the way the edge chip does.
  * When the rail clamp pulls it back onto a short mover, the two-line pill slides to the open end of the crop so the move count stays off the art.
  * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art.
- * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable,
+ * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable.
+ * When that pinned count and the lead line share that nearest crop edge, the count swaps to the other crop edge so the two lines do not stack,
  * and still eases with the stamp alpha. The status strip keeps the unwrapped
  * release line. Esc still clears it early. Null when the whole beat is already on screen.
  */
