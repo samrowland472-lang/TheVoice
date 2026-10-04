@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 20:01 BST — Stepped move-count line, when the fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, one more caption-height into the gap so the count clears the row of stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 16:01 BST — Stepped move-count line, when the third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, one more caption-height into the gap so the count clears the row of stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 13:01 BST — Stepped move-count line, when the second caption-height still leaves the count sharing a span with a third stay stamp on that edge, one more caption-height into the gap so the count clears the row of stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -123,6 +125,8 @@
 2026-10-01 12:05 BST — Layers drop polish. Illegal nests (a group into itself or a descendant) show a faint ring and No, and the drop is refused. Holding the grip on a collapsed group centre opens it so children can be targeted. The insert bar follows the row indent. While dragging, the panel says centre nests and the edge keeps that row's parent.
 
 ## Done
+- Stepped move-count line, when the fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
+
 - Slid move-count line, when the first clear gap still shares a span with a stay stamp on that edge, nudges one caption-height further into the gap so the count clears the stamp as well as the art. Esc still clears it early.
 
 - 2026-10-04 05:01 BST — Swapped move-count line slides along a blocked other crop edge into the first clear gap.
@@ -211,8 +215,8 @@
 
 ## Backlog
 
-- Stepped move-count line, when the fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
+- Stepped move-count line, when the fifth caption-height still leaves the count sharing a span with a sixth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
 
 ## Next recommended
 
-When the stepped move-count line still shares a span with a fifth stay stamp on that edge, step one more caption-height into the gap so the count clears the row. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the stepped move-count line still shares a span with a sixth stay stamp on that edge, step one more caption-height into the gap so the count clears the row. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
