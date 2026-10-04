@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 16:01 BST — Stepped move-count line, when the third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, one more caption-height into the gap so the count clears the row of stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 13:01 BST — Stepped move-count line, when the second caption-height still leaves the count sharing a span with a third stay stamp on that edge, one more caption-height into the gap so the count clears the row of stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 10:01 BST — Stepped move-count line, when the extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, one more caption-height into the gap so the count clears both stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -205,11 +207,12 @@
 
 - Stepped move-count line, when the extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, steps one more caption-height into the gap so the count clears both stamps. Esc still clears it early.
 - Stepped move-count line, when the second caption-height still leaves the count sharing a span with a third stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
+- Stepped move-count line, when the third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
 
 ## Backlog
 
-- Stepped move-count line, when the third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
+- Stepped move-count line, when the fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
 
 ## Next recommended
 
-When the stepped move-count line still shares a span with a fourth stay stamp on that edge, step one more caption-height into the gap so the count clears the row. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the stepped move-count line still shares a span with a fifth stay stamp on that edge, step one more caption-height into the gap so the count clears the row. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
