@@ -817,9 +817,42 @@ function captionOverlapsBoxes(
 }
 
 /**
+ * Open end of the crop along the tick. A short mover leaves one rail end
+ * clear; the farther clear end is the one that keeps the move count off the art.
+ */
+function openCropEndAlong(
+  tick: AlignEdgeLine,
+  crop: AlignViewCrop,
+  along: number,
+  zoom: number,
+  boxes: { x: number; y: number; w: number; h: number }[],
+): number | null {
+  const z = Math.max(zoom, 0.01);
+  const gap = 6 / z;
+  const min = tick.axis === "x" ? crop.y + along / 2 + 2 / z : crop.x + along / 2 + 2 / z;
+  const max = tick.axis === "x" ? crop.y + crop.h - along / 2 - 2 / z : crop.x + crop.w - along / 2 - 2 / z;
+  if (!(min <= max)) return null;
+  const blocked = boxes.map((g) =>
+    tick.axis === "x"
+      ? ([g.y - gap, g.y + g.h + gap] as const)
+      : ([g.x - gap, g.x + g.w + gap] as const),
+  );
+  const hits = (center: number) => {
+    const a = center - along / 2;
+    const b = center + along / 2;
+    return blocked.some(([oa, ob]) => spansOverlap(a, b, oa, ob));
+  };
+  const open = [min, max].filter((end) => !hits(end));
+  if (!open.length) return null;
+  const centers = boxes.map((g) => (tick.axis === "x" ? g.y + g.h / 2 : g.x + g.w / 2));
+  const mid = centers.reduce((sum, c) => sum + c, 0) / centers.length;
+  return open.sort((a, b) => Math.abs(b - mid) - Math.abs(a - mid))[0];
+}
+
+/**
  * Seat a wrapped commit tick caption off the landed boxes the way the edge
  * chip hangs clear of a stay. Outer edges hang the two-line pill off the
- * mover; center and middle slide along the tick into a gap. The pill stays
+ * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. The pill stays
  * on the rail so a cropped tick still names the full line, and still eases
  * with the stamp alpha. The status strip keeps the unwrapped release line.
  */
@@ -884,8 +917,18 @@ function seatWrappedCommitCaption(
     y = tick.at;
   }
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+  const beforeClampX = x;
+  const beforeClampY = y;
   x = clamp(x, crop.x + w / 2 + 2 / z, crop.x + crop.w - w / 2 - 2 / z);
   y = clamp(y, crop.y + h / 2 + 2 / z, crop.y + crop.h - h / 2 - 2 / z);
+  const railClampPulled = x !== beforeClampX || y !== beforeClampY;
+  if (railClampPulled && captionOverlapsBoxes({ x, y, w, h }, boxes)) {
+    const open = openCropEndAlong(tick, crop, tick.axis === "x" ? h : w, zoom, boxes);
+    if (open != null) {
+      if (tick.axis === "x") y = open;
+      else x = open;
+    }
+  }
   if (captionOverlapsBoxes({ x, y, w, h }, boxes)) {
     if (tick.axis === "x") {
       const above = crop.y + h / 2 + 2 / z;
@@ -966,7 +1009,8 @@ export function placeAlignPreviewEdgeCaption(
  * pill releases with the beat. If that release line is wider than the rail,
  * the caption shrinks the type or wraps once rather than clipping the move count,
  * so a tick that is only partly on the rail still names the full line.
- * A wrapped pill seats clear of the landed boxes the way the edge chip does,
+ * A wrapped pill seats clear of the landed boxes the way the edge chip does.
+ * When the rail clamp pulls it back onto a short mover, the two-line pill slides to the open end of the crop so the move count stays off the art,
  * and still eases with the stamp alpha. The status strip keeps the unwrapped
  * release line. Null when the whole beat is already on screen.
  */
