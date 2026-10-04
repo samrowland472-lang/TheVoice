@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-04 10:01 BST — Stepped move-count line, when the extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, one more caption-height into the gap so the count clears both stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-04 06:01 BST — Slid move-count line, when the first clear gap still shares a span with a stay stamp on that edge, nudges one caption-height further into the gap so the count clears the stamp as well as the art. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-04 05:01 BST — Swapped move-count line, when the other crop edge is also blocked, slides along that edge into the first clear gap so the count stays off the art and off the lead. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -199,10 +201,12 @@
 - Align commit tick caption, when a mover stamp is cropped, repeats the same release line the inspector, layers row, and status strip show (left · key · 2 move · fade left · poster title… · 2 move) so the canvas agrees during the release. Esc still clears it early.
 - Wrapped commit tick caption, when both crop ends are blocked, tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The lead takes the other clear side. Esc still clears it early.
 
+- Stepped move-count line, when the extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, steps one more caption-height into the gap so the count clears both stamps. Esc still clears it early.
+
 ## Backlog
 
-- Nudged move-count line, when the extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, steps one more caption-height into the gap so the count clears both stamps. Esc still clears it early.
+- Stepped move-count line, when the second caption-height still leaves the count sharing a span with a third stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. Esc still clears it early.
 
 ## Next recommended
 
-When the nudged move-count line still shares a span with a second stay stamp on that edge, step one more caption-height into the gap so the count clears both stamps. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the stepped move-count line still shares a span with a third stay stamp on that edge, step one more caption-height into the gap so the count clears the row. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.

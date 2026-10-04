@@ -122,6 +122,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /function nudgeSlidCountClearOfStayStamp/);
   assert.match(preview, /shares a span with a stay stamp on that edge/);
   assert.match(preview, /nudges one caption-height further into the gap so it clears the stamp as well as the art/);
+  assert.match(preview, /sharing a span with a second stay stamp on that edge/);
+  assert.match(preview, /steps one more caption-height into the gap so the count clears both stamps/);
   assert.match(preview, /gap sits off the rail/);
   assert.match(preview, /pin the line to the crop edge nearest that/);
   assert.match(preview, /Esc still clears it early/);
