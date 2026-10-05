@@ -131,6 +131,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /sharing a span with a fifth stay stamp on that edge/);
   assert.match(preview, /sharing a span with a sixth stay stamp on that edge/);
   assert.match(preview, /const sixth = overlapping\(penta\)/);
+  assert.match(preview, /sharing a span with a seventh stay stamp on that edge/);
+  assert.match(preview, /const seventh = overlapping\(hexa\)/);
+  assert.match(preview, /steps one more caption-height into the gap so the count clears the row of stamps/);
   assert.match(preview, /steps one more caption-height into the gap so the count clears the row of stamps/);
   assert.match(preview, /gap sits off the rail/);
   assert.match(preview, /pin the line to the crop edge nearest that/);
