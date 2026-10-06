@@ -856,7 +856,7 @@ function openCropEndAlong(
  * chip hangs clear of a stay. Outer edges hang the two-line pill off the
  * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The pill stays
  * on the rail so a cropped tick still names the full line, and still eases
- * with the stamp alpha. When the swapped move-count line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead. When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art. When that extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, it steps one more caption-height into the gap so the count clears both stamps. When that second caption-height still leaves the count sharing a span with a third stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that fifth caption-height still leaves the count sharing a span with a sixth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that sixth caption-height still leaves the count sharing a span with a seventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that seventh caption-height still leaves the count sharing a span with an eighth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that eighth caption-height still leaves the count sharing a span with a ninth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that ninth caption-height still leaves the count sharing a span with a tenth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that tenth caption-height still leaves the count sharing a span with an eleventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. The status strip keeps the unwrapped release line.
+ * with the stamp alpha. When the swapped move-count line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead. When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art. When that extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, it steps one more caption-height into the gap so the count clears both stamps. When that second caption-height still leaves the count sharing a span with a third stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that fifth caption-height still leaves the count sharing a span with a sixth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that sixth caption-height still leaves the count sharing a span with a seventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that seventh caption-height still leaves the count sharing a span with an eighth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that eighth caption-height still leaves the count sharing a span with a ninth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that ninth caption-height still leaves the count sharing a span with a tenth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that tenth caption-height still leaves the count sharing a span with an eleventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that eleventh caption-height still leaves the count sharing a span with a twelfth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. The status strip keeps the unwrapped release line.
  * Esc still clears it early.
  */
 function seatWrappedCommitCaption(
@@ -1088,6 +1088,9 @@ function pinTuckedCountToNearestCropEdge(
  * When that tenth caption-height still leaves the count sharing a span with an
  * eleventh stay stamp on that edge, step one more caption-height into the gap so
  * the count clears the row of stamps.
+ * When that eleventh caption-height still leaves the count sharing a span with a
+ * twelfth stay stamp on that edge, step one more caption-height into the gap so
+ * the count clears the row of stamps.
  * Keeps the stamp alpha. The status strip still reads the unwrapped release
  * line. Esc still clears it early.
  */
@@ -1123,109 +1126,21 @@ function nudgeSlidCountClearOfStayStamp(
   const stampMid = stampAlong.reduce((sum, c) => sum + c, 0) / Math.max(stampAlong.length, 1);
   const dir = seat >= stampMid ? 1 : -1;
   const step = count.h;
-  const nudged = Math.min(Math.max(seat + dir * step, lo), hi);
   const sameStamp = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) =>
     Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01 && Math.abs(a.w - b.w) < 0.01 && Math.abs(a.h - b.h) < 0.01;
-  const second = overlapping(nudged).filter((stamp) => !first.some((hit) => sameStamp(hit, stamp)));
-  if (!second.length) return nudged;
-  const twice = Math.min(Math.max(nudged + dir * step, lo), hi);
-  const third = overlapping(twice).filter(
-    (stamp) => !first.some((hit) => sameStamp(hit, stamp)) && !second.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!third.length) return twice;
-  const thrice = Math.min(Math.max(twice + dir * step, lo), hi);
-  const fourth = overlapping(thrice).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!fourth.length) return thrice;
-  const quad = Math.min(Math.max(thrice + dir * step, lo), hi);
-  const fifth = overlapping(quad).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!fifth.length) return quad;
-  const penta = Math.min(Math.max(quad + dir * step, lo), hi);
-  const sixth = overlapping(penta).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)) &&
-      !fifth.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!sixth.length) return penta;
-  const hexa = Math.min(Math.max(penta + dir * step, lo), hi);
-  const seventh = overlapping(hexa).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)) &&
-      !fifth.some((hit) => sameStamp(hit, stamp)) &&
-      !sixth.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!seventh.length) return hexa;
-  const hepta = Math.min(Math.max(hexa + dir * step, lo), hi);
-  const eighth = overlapping(hepta).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)) &&
-      !fifth.some((hit) => sameStamp(hit, stamp)) &&
-      !sixth.some((hit) => sameStamp(hit, stamp)) &&
-      !seventh.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!eighth.length) return hepta;
-  const octa = Math.min(Math.max(hepta + dir * step, lo), hi);
-  const ninth = overlapping(octa).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)) &&
-      !fifth.some((hit) => sameStamp(hit, stamp)) &&
-      !sixth.some((hit) => sameStamp(hit, stamp)) &&
-      !seventh.some((hit) => sameStamp(hit, stamp)) &&
-      !eighth.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!ninth.length) return octa;
-  const nona = Math.min(Math.max(octa + dir * step, lo), hi);
-  const tenth = overlapping(nona).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)) &&
-      !fifth.some((hit) => sameStamp(hit, stamp)) &&
-      !sixth.some((hit) => sameStamp(hit, stamp)) &&
-      !seventh.some((hit) => sameStamp(hit, stamp)) &&
-      !eighth.some((hit) => sameStamp(hit, stamp)) &&
-      !ninth.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!tenth.length) return nona;
-  const deca = Math.min(Math.max(nona + dir * step, lo), hi);
-  const eleventh = overlapping(deca).filter(
-    (stamp) =>
-      !first.some((hit) => sameStamp(hit, stamp)) &&
-      !second.some((hit) => sameStamp(hit, stamp)) &&
-      !third.some((hit) => sameStamp(hit, stamp)) &&
-      !fourth.some((hit) => sameStamp(hit, stamp)) &&
-      !fifth.some((hit) => sameStamp(hit, stamp)) &&
-      !sixth.some((hit) => sameStamp(hit, stamp)) &&
-      !seventh.some((hit) => sameStamp(hit, stamp)) &&
-      !eighth.some((hit) => sameStamp(hit, stamp)) &&
-      !ninth.some((hit) => sameStamp(hit, stamp)) &&
-      !tenth.some((hit) => sameStamp(hit, stamp)),
-  );
-  if (!eleventh.length) return deca;
-  return Math.min(Math.max(deca + dir * step, lo), hi);
+  const seen = [...first];
+  let center = seat;
+  // Each new stay stamp on this edge takes one caption-height into the gap.
+  // Twelve covers a full row of stay stamps without stacking the count on the last one.
+  for (let n = 0; n < 12; n++) {
+    const next = Math.min(Math.max(center + dir * step, lo), hi);
+    const novel = overlapping(next).filter((stamp) => !seen.some((hit) => sameStamp(hit, stamp)));
+    if (!novel.length) return next;
+    seen.push(...novel);
+    center = next;
+    if (center === lo || center === hi) return center;
+  }
+  return center;
 }
 
 /**
