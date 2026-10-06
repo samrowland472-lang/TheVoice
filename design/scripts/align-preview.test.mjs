@@ -131,6 +131,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /still stacks the swapped move-count line on the lead after the twelve-step walk/);
   assert.match(preview, /drop the count one caption-height off that shared vertical span/);
   assert.match(preview, /no longer read as one stack/);
+  assert.match(preview, /one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band/);
+  assert.match(preview, /step one more caption-height off that shared span/);
+  assert.match(preview, /at\(step \* 2\)/);
 
   assert.match(preview, /slides along that edge into the first clear gap so the count stays off the art and off the lead/);
   assert.match(preview, /function nudgeSlidCountClearOfStayStamp/);

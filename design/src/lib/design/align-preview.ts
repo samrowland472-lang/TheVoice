@@ -1286,7 +1286,8 @@ function slideSwappedCountAlongBlockedEdge(
 
 /**
  * When a wrapped commit tick caption still stacks the swapped move-count line on the lead after the twelve-step walk, drop the count one caption-height off that shared vertical span so the two lines no longer read as one stack.
- * Prefer down; if the crop clamp holds that drop inside the lead band, step one caption-height up instead. One drop only.
+ * Prefer down; if the crop clamp holds that drop inside the lead band, step one caption-height up instead.
+ * When that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, step one more caption-height off that shared span. Prefer the second step down; if the clamp holds that second step inside the lead band, step one more caption-height up.
  * Keeps the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function dropSwappedCountOffSharedLeadSpan(
@@ -1295,13 +1296,14 @@ function dropSwappedCountOffSharedLeadSpan(
   lead: { x: number; y: number; w: number; h: number },
   count: { x: number; y: number; w: number; h: number; text: string },
 ): { x: number; y: number; w: number; h: number; text: string } {
-  const shareY = spansOverlap(
-    count.y - count.h / 2,
-    count.y + count.h / 2,
-    lead.y - lead.h / 2,
-    lead.y + lead.h / 2,
-  );
-  if (!shareY) return count;
+  const sharesLead = (box: { y: number; h: number }) =>
+    spansOverlap(
+      box.y - box.h / 2,
+      box.y + box.h / 2,
+      lead.y - lead.h / 2,
+      lead.y + lead.h / 2,
+    );
+  if (!sharesLead(count)) return count;
   const z = Math.max(zoom, 0.01);
   const inset = 2 / z;
   const lo = crop.y + count.h / 2 + inset;
@@ -1309,25 +1311,23 @@ function dropSwappedCountOffSharedLeadSpan(
   if (hi < lo) return count;
   const step = count.h;
   const clampY = (y: number) => Math.min(Math.max(y, lo), hi);
-  const down = clampY(count.y + step);
-  const downBox = { ...count, y: down };
-  const downShares = spansOverlap(
-    downBox.y - downBox.h / 2,
-    downBox.y + downBox.h / 2,
-    lead.y - lead.h / 2,
-    lead.y + lead.h / 2,
+  const at = (delta: number) => {
+    const y = clampY(count.y + delta);
+    return { box: { ...count, y }, y };
+  };
+  const down = at(step);
+  if (!sharesLead(down.box)) return down.box;
+  const up = at(-step);
+  if (!sharesLead(up.box)) return up.box;
+  // Second caption-height when the one-caption drop is still in the lead band.
+  const down2 = at(step * 2);
+  if (!sharesLead(down2.box)) return down2.box;
+  const up2 = at(-step * 2);
+  if (!sharesLead(up2.box)) return up2.box;
+  const best = [down, up, down2, up2].reduce((a, b) =>
+    Math.abs(b.y - lead.y) > Math.abs(a.y - lead.y) ? b : a,
   );
-  if (!downShares) return downBox;
-  const up = clampY(count.y - step);
-  const upBox = { ...count, y: up };
-  const upShares = spansOverlap(
-    upBox.y - upBox.h / 2,
-    upBox.y + upBox.h / 2,
-    lead.y - lead.h / 2,
-    lead.y + lead.h / 2,
-  );
-  if (!upShares) return upBox;
-  return Math.abs(down - lead.y) >= Math.abs(up - lead.y) ? downBox : upBox;
+  return best.box;
 }
 
 function swapPinnedCountOffSharedCropEdge(
@@ -1520,6 +1520,7 @@ export function placeAlignPreviewEdgeCaption(
  * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art.
  * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable.
  * When that pinned count and the lead line share that nearest crop edge, the count swaps to the other crop edge so the two lines do not stack.
+When the swapped count still shares a vertical span with the lead after the twelve-step walk, it drops one caption-height off that span, and when that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, it steps one more caption-height off that shared span.
  * When that swapped line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead.
  * When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art.
  * When that extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, it steps one more caption-height into the gap so the count clears both stamps.
