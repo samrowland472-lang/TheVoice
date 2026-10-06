@@ -978,6 +978,7 @@ function seatWrappedCommitCaption(
         { x, y, w, h },
         swapped,
       );
+      const dropped = dropSwappedCountOffSharedLeadSpan(zoom, crop, { x, y, w, h }, slid);
       return {
         x,
         y,
@@ -986,7 +987,7 @@ function seatWrappedCommitCaption(
         label,
         lines: [lead],
         fontPx: fit.fontPx,
-        tuckedMoveCount: slid,
+        tuckedMoveCount: dropped,
       };
     }
   }
@@ -1282,6 +1283,53 @@ function slideSwappedCountAlongBlockedEdge(
 /**
  * When the pinned move-count line and the lead line share the crop edge nearest the short mover, swaps the count to the other crop edge so the two lines do not stack. Esc still clears it early.
  */
+
+/**
+ * When a wrapped commit tick caption still stacks the swapped move-count line on the lead after the twelve-step walk, drop the count one caption-height off that shared vertical span so the two lines no longer read as one stack.
+ * Prefer down; if the crop clamp holds that drop inside the lead band, step one caption-height up instead. One drop only.
+ * Keeps the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+ */
+function dropSwappedCountOffSharedLeadSpan(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  const shareY = spansOverlap(
+    count.y - count.h / 2,
+    count.y + count.h / 2,
+    lead.y - lead.h / 2,
+    lead.y + lead.h / 2,
+  );
+  if (!shareY) return count;
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const lo = crop.y + count.h / 2 + inset;
+  const hi = crop.y + crop.h - count.h / 2 - inset;
+  if (hi < lo) return count;
+  const step = count.h;
+  const clampY = (y: number) => Math.min(Math.max(y, lo), hi);
+  const down = clampY(count.y + step);
+  const downBox = { ...count, y: down };
+  const downShares = spansOverlap(
+    downBox.y - downBox.h / 2,
+    downBox.y + downBox.h / 2,
+    lead.y - lead.h / 2,
+    lead.y + lead.h / 2,
+  );
+  if (!downShares) return downBox;
+  const up = clampY(count.y - step);
+  const upBox = { ...count, y: up };
+  const upShares = spansOverlap(
+    upBox.y - upBox.h / 2,
+    upBox.y + upBox.h / 2,
+    lead.y - lead.h / 2,
+    lead.y + lead.h / 2,
+  );
+  if (!upShares) return upBox;
+  return Math.abs(down - lead.y) >= Math.abs(up - lead.y) ? downBox : upBox;
+}
+
 function swapPinnedCountOffSharedCropEdge(
   tick: AlignEdgeLine,
   boxes: { x: number; y: number; w: number; h: number }[],

@@ -127,6 +127,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(swappedDoc, /The walk stops at twelve so a full row/);
   assert.match(swappedDoc, /Same twelve-step stay-stamp walk the slid/);
   assert.match(preview, /Same twelve-step stay-stamp walk the slid line uses. Stops at twelve so a full row clears/);
+  assert.match(preview, /function dropSwappedCountOffSharedLeadSpan/);
+  assert.match(preview, /still stacks the swapped move-count line on the lead after the twelve-step walk/);
+  assert.match(preview, /drop the count one caption-height off that shared vertical span/);
+  assert.match(preview, /no longer read as one stack/);
+
   assert.match(preview, /slides along that edge into the first clear gap so the count stays off the art and off the lead/);
   assert.match(preview, /function nudgeSlidCountClearOfStayStamp/);
   assert.match(preview, /shares a span with a stay stamp on that edge/);
