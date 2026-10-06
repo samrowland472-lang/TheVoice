@@ -138,6 +138,10 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /Second caption-height drop, when the extra step is also clamped inside the lead band/);
   assert.match(preview, /slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead/);
   assert.match(preview, /Prefer the seat just outside the lead band closest to the count/);
+  assert.match(preview, /function tuckCountOneCaptionWidthOffEdgeBesideLead/);
+  assert.match(preview, /lead band covers both crop ends so no along-edge gap clears the vertical span/);
+  assert.match(preview, /tuck the count one caption-width off that edge into the nearest gap beside the lead/);
+  assert.match(preview, /inward \* count\.w/);
 
 
   assert.match(preview, /slides along that edge into the first clear gap so the count stays off the art and off the lead/);

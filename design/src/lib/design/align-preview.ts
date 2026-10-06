@@ -1289,6 +1289,7 @@ function slideSwappedCountAlongBlockedEdge(
  * Prefer down; if the crop clamp holds that drop inside the lead band, step one caption-height up instead.
  * When that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, step one more caption-height off that shared span. Prefer the second step down; if the clamp holds that second step inside the lead band, step one more caption-height up.
  * When the second caption-height drop is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
+ * When that crop-edge slide still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead.
  * Keeps the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function dropSwappedCountOffSharedLeadSpan(
@@ -1327,10 +1328,52 @@ function dropSwappedCountOffSharedLeadSpan(
   if (!sharesLead(up2.box)) return up2.box;
   const slid = slideCountAlongCropEdgeClearOfLead(zoom, crop, lead, count);
   if (slid && !sharesLead(slid)) return slid;
+  const tucked = tuckCountOneCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+  if (Math.abs(tucked.x - count.x) > 0.01 || !sharesLead(tucked)) return tucked;
   const best = [down, up, down2, up2].reduce((a, b) =>
     Math.abs(b.y - lead.y) > Math.abs(a.y - lead.y) ? b : a,
   );
   return best.box;
+}
+
+/**
+ * Crop-edge slide, when the lead band covers both crop ends so no along-edge gap clears the vertical span, tucks the move-count line one caption-width off that edge into the nearest gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. X leaves the edge. Stamp alpha unchanged. Esc still clears it early.
+ */
+function tuckCountOneCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const lo = crop.y + count.h / 2 + inset;
+  const hi = crop.y + crop.h - count.h / 2 - inset;
+  const leftSeat = crop.x + count.w / 2 + inset;
+  const rightSeat = crop.x + crop.w - count.w / 2 - inset;
+  const onLeft = Math.abs(count.x - leftSeat) <= Math.abs(count.x - rightSeat);
+  const inward = onLeft ? 1 : -1;
+  const x = Math.min(Math.max(count.x + inward * count.w, leftSeat), rightSeat);
+  const leadTop = lead.y - lead.h / 2;
+  const leadBot = lead.y + lead.h / 2;
+  const below = leadBot + count.h / 2 + inset;
+  const above = leadTop - count.h / 2 - inset;
+  const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
+  const overlapsLead = (y: number) =>
+    spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
+    spansOverlap(y - count.h / 2, y + count.h / 2, leadTop, leadBot);
+  const raw = [below, above, lead.y, count.y, lo, hi];
+  const seats: number[] = [];
+  for (const y of raw) {
+    const clamped = clampY(y);
+    if (seats.some((s) => Math.abs(s - clamped) < 0.01)) continue;
+    seats.push(clamped);
+  }
+  const clear = seats.filter((y) => !overlapsLead(y));
+  const pool = clear.length ? clear : seats;
+  pool.sort((a, b) => Math.abs(a - count.y) - Math.abs(b - count.y));
+  return { ...count, x, y: pool[0] };
 }
 
 /**
