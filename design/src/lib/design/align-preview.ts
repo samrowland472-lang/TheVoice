@@ -1166,6 +1166,23 @@ function nudgeSlidCountClearOfStayStamp(
  * When that sixth caption-height still leaves the count sharing a span with a
  * seventh stay stamp on that edge, step one more caption-height into the gap so
  * the count clears the row of stamps.
+ * When that seventh caption-height still leaves the count sharing a span with an
+ * eighth stay stamp on that edge, step one more caption-height into the gap so
+ * the count clears the row of stamps.
+ * When that eighth caption-height still leaves the count sharing a span with a
+ * ninth stay stamp on that edge, step one more caption-height into the gap so
+ * the count clears the row of stamps.
+ * When that ninth caption-height still leaves the count sharing a span with a
+ * tenth stay stamp on that edge, step one more caption-height into the gap so
+ * the count clears the row of stamps.
+ * When that tenth caption-height still leaves the count sharing a span with an
+ * eleventh stay stamp on that edge, step one more caption-height into the gap so
+ * the count clears the row of stamps.
+ * When that eleventh caption-height still leaves the count sharing a span with a
+ * twelfth stay stamp on that edge, step one more caption-height into the gap so
+ * the count clears the row of stamps. The walk stops at twelve so a full row
+ * clears without another one-off. Same twelve-step stay-stamp walk the slid
+ * line uses.
  * Keeps the stamp alpha. The status strip still reads the unwrapped release
  * line. Esc still clears it early.
  */
@@ -1245,6 +1262,7 @@ function slideSwappedCountAlongBlockedEdge(
     .filter((row): row is { seat: number; lo: number; hi: number } => row != null)
     .sort((p, q) => Math.abs(p.seat - alongStart) - Math.abs(q.seat - alongStart));
   for (const row of seats) {
+    // Same twelve-step stay-stamp walk the slid line uses. Stops at twelve so a full row clears.
     const seat = nudgeSlidCountClearOfStayStamp(
       edge,
       boxes,

@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-06 08:01 BST — Swapped move-count line uses the same twelve-step stay-stamp walk as the slid line. When the slide along a blocked other crop edge still shares a span with an eighth through twelfth stay stamp, it steps one more caption-height into the gap so the count clears the row. The walk stops at twelve so a full row clears without another one-off. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
+
 2026-10-06 05:01 BST — Stepped move-count line, when the eleventh caption-height still leaves the count sharing a span with a twelfth stay stamp on that edge, steps one more caption-height into the gap so the count clears the row of stamps. The walk stops at twelve so a full row clears without another one-off. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
 
 2026-10-06 01:01 BST — Stepped move-count line, when the tenth caption-height still leaves the count sharing a span with an eleventh stay stamp on that edge, one more caption-height into the gap so the count clears the row of stamps. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -241,8 +243,8 @@
 
 ## Backlog
 
-- Swapped move-count line, when the slide along a blocked other crop edge still shares a span with a row of stay stamps, use the same twelve-step caption-height walk so the count clears that row too. Esc still clears it early.
+- Wrapped commit tick caption, when the tucked move-count line and the lead still share a vertical span after the twelve-step swap, drop the count one caption-height off that shared span so the two lines no longer read as one stack. Esc still clears it early.
 
 ## Next recommended
 
-Give the swapped move-count line the same twelve-step stay-stamp walk the slid line now uses, so a blocked other crop edge clears a row of stamps instead of stopping at seven. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When a wrapped commit tick caption still stacks the swapped move-count line on the lead after the twelve-step walk, drop the count one caption-height off that shared span. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.

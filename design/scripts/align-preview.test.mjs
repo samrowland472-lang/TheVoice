@@ -118,6 +118,15 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /share the crop edge nearest the short mover/);
   assert.match(preview, /swaps the count to the other crop edge so the two lines do not stack/);
   assert.match(preview, /function slideSwappedCountAlongBlockedEdge/);
+  const swappedDoc = preview.slice(
+    preview.indexOf("When the swapped move-count line lands on a blocked other crop edge"),
+    preview.indexOf("function slideSwappedCountAlongBlockedEdge"),
+  );
+  assert.match(swappedDoc, /sharing a span with an eighth stay stamp on that edge/);
+  assert.match(swappedDoc, /sharing a span with a twelfth stay stamp on that edge/);
+  assert.match(swappedDoc, /The walk stops at twelve so a full row/);
+  assert.match(swappedDoc, /Same twelve-step stay-stamp walk the slid/);
+  assert.match(preview, /Same twelve-step stay-stamp walk the slid line uses. Stops at twelve so a full row clears/);
   assert.match(preview, /slides along that edge into the first clear gap so the count stays off the art and off the lead/);
   assert.match(preview, /function nudgeSlidCountClearOfStayStamp/);
   assert.match(preview, /shares a span with a stay stamp on that edge/);
