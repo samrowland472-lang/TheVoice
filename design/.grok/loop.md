@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-06 19:01 BST — Second caption-height drop, when the extra step is also clamped inside the lead band, slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead. Prefer the seat just outside the lead band closest to the count; if that seat is off the crop, use the other side, then the crop ends. X stays on the edge. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+
 2026-10-06 15:01 BST — Dropped move-count line, when the one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, steps one more caption-height off that shared span. Prefer the second step down; if the clamp holds that too, step one more caption-height up. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 2026-10-06 12:01 BST — Wrapped commit tick caption drops the swapped move-count line one caption-height off the lead when they still share a vertical span after the twelve-step walk. Prefer down; if the crop clamp holds that drop in the lead band, step one caption-height up. One drop only. It still eases with the stamp alpha, and the status strip keeps the unwrapped release line. Esc still clears it early.
@@ -247,11 +249,12 @@
 
 - Wrapped commit tick caption, when the tucked move-count line and the lead still share a vertical span after the twelve-step swap, drops the count one caption-height off that shared span so the two lines no longer read as one stack. Esc still clears it early.
 - Dropped move-count line, when the one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, steps one more caption-height off that shared span. Esc still clears it early.
+- Second caption-height drop, when the extra step is also clamped inside the lead band, slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead. Esc still clears it early.
 
 ## Backlog
 
-- Second caption-height drop, when the extra step is also clamped inside the lead band, slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead. Esc still clears it early.
+- Crop-edge slide, when the lead band covers both crop ends so no along-edge gap clears the vertical span, tucks the move-count line one caption-width off that edge into the nearest gap beside the lead. Esc still clears it early.
 
 ## Next recommended
 
-When the second caption-height still leaves the swapped move-count line sharing a vertical span with the lead because the crop clamp held both steps in the band, slide the count along the crop edge into the nearest gap that clears that span. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the slide along the crop edge still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
