@@ -1292,6 +1292,7 @@ function slideSwappedCountAlongBlockedEdge(
  * When that crop-edge slide still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead.
  * When that one caption-width tuck still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
  * When that second caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
+ * When that third caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
  * Keeps the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function dropSwappedCountOffSharedLeadSpan(
@@ -1338,7 +1339,10 @@ function dropSwappedCountOffSharedLeadSpan(
   const stepped = stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, tucked);
   if (!coversLead(stepped)) return stepped;
   const steppedAgain = stepCountSecondCaptionWidthOffEdgeBesideLead(zoom, crop, lead, stepped);
-  if (Math.abs(steppedAgain.x - stepped.x) > 0.01 || !coversLead(steppedAgain)) return steppedAgain;
+  if (!coversLead(steppedAgain)) return steppedAgain;
+  const steppedThird = stepCountThirdCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedAgain);
+  if (Math.abs(steppedThird.x - steppedAgain.x) > 0.01 || !coversLead(steppedThird)) return steppedThird;
+  if (Math.abs(steppedAgain.x - stepped.x) > 0.01) return steppedAgain;
   if (Math.abs(stepped.x - tucked.x) > 0.01 || !sharesLead(stepped)) return stepped;
   if (Math.abs(tucked.x - count.x) > 0.01 || !sharesLead(tucked)) return tucked;
   const best = [down, up, down2, up2].reduce((a, b) =>
@@ -1432,6 +1436,19 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
  * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountSecondCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  return stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+}
+
+/**
+ * Third caption-width step, when the second extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+ */
+function stepCountThirdCaptionWidthOffEdgeBesideLead(
   zoom: number,
   crop: AlignViewCrop,
   lead: { x: number; y: number; w: number; h: number },
