@@ -144,9 +144,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /function stepCountThirdCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /function stepCountFourthCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /function stepCountFifthCaptionWidthOffEdgeBesideLead/);
+  assert.match(preview, /function stepCountSixthCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /stepCountThirdCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedAgain\)/);
   assert.match(preview, /stepCountFourthCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedThird\)/);
   assert.match(preview, /stepCountFifthCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedFourth\)/);
+  assert.match(preview, /stepCountSixthCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedFifth\)/);
   assert.match(preview, /step one more caption-width off the edge into the next gap beside the lead/);
   assert.match(preview, /the lead is wider than that step so the count still covers the lead/);
   assert.match(preview, /Second caption-width step, when the lead is still wider than that step so the count covers the lead/);
@@ -157,6 +159,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /that fourth caption-width still covers the lead because the lead is wider than that step/);
   assert.match(preview, /Fifth caption-width step, when the fourth extra step still covers the lead because the lead is wider than that step/);
   assert.match(preview, /that fifth caption-width still covers the lead because the lead is wider than that step/);
+  assert.match(preview, /Sixth caption-width step, when the fifth extra step still covers the lead because the lead is wider than that step/);
+  assert.match(preview, /that sixth caption-width still covers the lead because the lead is wider than that step/);
   assert.match(preview, /lead band covers both crop ends so no along-edge gap clears the vertical span/);
   assert.match(preview, /tuck the count one caption-width off that edge into the nearest gap beside the lead/);
   assert.match(preview, /inward \* count\.w/);
