@@ -1290,6 +1290,7 @@ function slideSwappedCountAlongBlockedEdge(
  * When that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, step one more caption-height off that shared span. Prefer the second step down; if the clamp holds that second step inside the lead band, step one more caption-height up.
  * When the second caption-height drop is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
  * When that crop-edge slide still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead.
+ * When that one caption-width tuck still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
  * Keeps the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function dropSwappedCountOffSharedLeadSpan(
@@ -1329,6 +1330,12 @@ function dropSwappedCountOffSharedLeadSpan(
   const slid = slideCountAlongCropEdgeClearOfLead(zoom, crop, lead, count);
   if (slid && !sharesLead(slid)) return slid;
   const tucked = tuckCountOneCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+  const coversLead = (box: { x: number; y: number; w: number; h: number }) =>
+    spansOverlap(box.x - box.w / 2, box.x + box.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
+    spansOverlap(box.y - box.h / 2, box.y + box.h / 2, lead.y - lead.h / 2, lead.y + lead.h / 2);
+  if (!coversLead(tucked)) return tucked;
+  const stepped = stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, tucked);
+  if (Math.abs(stepped.x - tucked.x) > 0.01 || !coversLead(stepped)) return stepped;
   if (Math.abs(tucked.x - count.x) > 0.01 || !sharesLead(tucked)) return tucked;
   const best = [down, up, down2, up2].reduce((a, b) =>
     Math.abs(b.y - lead.y) > Math.abs(a.y - lead.y) ? b : a,
@@ -1371,6 +1378,46 @@ function tuckCountOneCaptionWidthOffEdgeBesideLead(
     seats.push(clamped);
   }
   const clear = seats.filter((y) => !overlapsLead(y));
+  const pool = clear.length ? clear : seats;
+  pool.sort((a, b) => Math.abs(a - count.y) - Math.abs(b - count.y));
+  return { ...count, x, y: pool[0] };
+}
+
+/**
+ * One caption-width tuck, when the lead is wider than that step so the count still covers the lead, steps one more caption-width off the edge into the next gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+ */
+function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const lo = crop.y + count.h / 2 + inset;
+  const hi = crop.y + crop.h - count.h / 2 - inset;
+  const leftSeat = crop.x + count.w / 2 + inset;
+  const rightSeat = crop.x + crop.w - count.w / 2 - inset;
+  const onLeft = Math.abs(count.x - leftSeat) <= Math.abs(count.x - rightSeat);
+  const inward = onLeft ? 1 : -1;
+  const x = Math.min(Math.max(count.x + inward * count.w, leftSeat), rightSeat);
+  const leadTop = lead.y - lead.h / 2;
+  const leadBot = lead.y + lead.h / 2;
+  const below = leadBot + count.h / 2 + inset;
+  const above = leadTop - count.h / 2 - inset;
+  const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
+  const covers = (y: number) =>
+    spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
+    spansOverlap(y - count.h / 2, y + count.h / 2, leadTop, leadBot);
+  const raw = [below, above, lo, hi];
+  const seats: number[] = [];
+  for (const y of raw) {
+    const clamped = clampY(y);
+    if (seats.some((s) => Math.abs(s - clamped) < 0.01)) continue;
+    seats.push(clamped);
+  }
+  const clear = seats.filter((y) => !covers(y));
   const pool = clear.length ? clear : seats;
   pool.sort((a, b) => Math.abs(a - count.y) - Math.abs(b - count.y));
   return { ...count, x, y: pool[0] };
