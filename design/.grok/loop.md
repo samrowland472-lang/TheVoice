@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-09 21:01 BST — Eighteenth caption-width step, when the seventeenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+
 2026-10-09 20:01 BST — Seventeenth caption-width step, when the sixteenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 2026-10-09 19:01 BST — Sixteenth caption-width step, when the fifteenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
@@ -184,6 +186,8 @@
 
 ## Done
 
+- 2026-10-09 21:01 BST — Eighteenth caption-width step, when the seventeenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+
 - 2026-10-09 20:01 BST — Seventeenth caption-width step, when the sixteenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 - 2026-10-09 19:01 BST — Sixteenth caption-width step off the edge beside the lead when the fifteenth extra step still covers the lead. Stamp alpha unchanged. Esc still clears it early.
@@ -317,8 +321,8 @@
 
 ## Backlog
 
-- Eighteenth caption-width step, when the seventeenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+- Nineteenth caption-width step, when the eighteenth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
 
 ## Next recommended
 
-When the seventeenth extra caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
+When the eighteenth extra caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead. Keep the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
