@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-10 16:01 BST — Thirty-seventh caption-width step, when the thirty-sixth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+
 2026-10-10 15:02 BST — Thirty-sixth caption-width step, when the thirty-fifth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 
@@ -383,4 +385,4 @@
 
 ## Backlog
 
-- Thirty-seventh caption-width step, when the thirty-sixth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+- Thirty-eighth caption-width step, when the thirty-seventh extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
