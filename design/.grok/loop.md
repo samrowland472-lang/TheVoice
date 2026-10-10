@@ -2,6 +2,8 @@
 
 ## Iteration
 
+2026-10-10 19:01 BST — Fortieth caption-width step, when the thirty-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+
 2026-10-10 18:01 BST — Thirty-ninth caption-width step, when the thirty-eighth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 2026-10-10 17:01 BST — Thirty-eighth caption-width step, when the thirty-seventh extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
@@ -390,7 +392,8 @@
 - Wrapped commit tick caption, when the tucked move-count line and the lead still share a vertical span after the twelve-step swap, drops the count one caption-height off that shared span so the two lines no longer read as one stack. Esc still clears it early.
 - Dropped move-count line, when the one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, steps one more caption-height off that shared span. Esc still clears it early.
 - Second caption-height drop, when the extra step is also clamped inside the lead band, slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead. Esc still clears it early.
+- Fortieth caption-width step, when the thirty-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
 
 ## Backlog
 
-- Fortieth caption-width step, when the thirty-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+- Forty-first caption-width step, when the fortieth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
