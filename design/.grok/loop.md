@@ -1,6 +1,6 @@
 ## Iteration
 
-2026-10-10 22:01 BST — Forty-third caption-width step, when the forty-second extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+2026-10-10 23:01 BST — Forty-fourth caption-width step, when the forty-third extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 # The Voice Design — 100-hour improvement loop
 
@@ -238,6 +238,8 @@
 2026-10-01 12:05 BST — Layers drop polish. Illegal nests (a group into itself or a descendant) show a faint ring and No, and the drop is refused. Holding the grip on a collapsed group centre opens it so children can be targeted. The insert bar follows the row indent. While dragging, the panel says centre nests and the edge keeps that row's parent.
 
 ## Done
+- Forty-fourth caption-width step, when the forty-third extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+
 - Forty-third caption-width step, when the forty-second extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 - Forty-second caption-width step, when the forty-first extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
@@ -410,8 +412,8 @@
 
 ## Backlog
 
-- Forty-fourth caption-width step, when the forty-third extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+- Forty-fifth caption-width step, when the forty-fourth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
 
 ## Next recommended
 
-Forty-fourth caption-width step, when the forty-third extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+Forty-fifth caption-width step, when the forty-fourth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
