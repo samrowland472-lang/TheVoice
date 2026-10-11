@@ -189,6 +189,9 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /function stepCountFortyNinthCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /stepCountFortyNinthCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedFortyEighth\)/);
   assert.match(preview, /Forty-ninth caption-width step, when the forty-eighth extra step still covers the lead because the lead is wider than that step/);
+  assert.match(preview, /Sixty-second caption-width step, when the sixty-first extra step still covers the lead because the lead is wider than that step/);
+  assert.match(preview, /function stepCountSixtySecondCaptionWidthOffEdgeBesideLead/);
+  assert.match(preview, /stepCountSixtySecondCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedSixtyFirst\)/);
   assert.match(preview, /stepCountTwelfthCaptionWidthOffEdgeBesideLead\(zoom, crop, lead, steppedEleventh\)/);
   assert.match(preview, /if \(!coversLead\(steppedTwelfth\)\) return steppedTwelfth/);
   assert.match(preview, /Thirteenth caption-width step, when the twelfth extra step still covers the lead because the lead is wider than that step/);
