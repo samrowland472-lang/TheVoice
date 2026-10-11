@@ -1497,6 +1497,8 @@ function dropSwappedCountOffSharedLeadSpan(
   if (Math.abs(steppedFiftyEighth.x - steppedFiftySeventh.x) > 0.01 || !coversLead(steppedFiftyEighth)) return steppedFiftyEighth;
   const steppedFiftyNinth = stepCountFiftyNinthCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedFiftyEighth);
   if (Math.abs(steppedFiftyNinth.x - steppedFiftyEighth.x) > 0.01 || !coversLead(steppedFiftyNinth)) return steppedFiftyNinth;
+  const steppedSixtieth = stepCountSixtiethCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedFiftyNinth);
+  if (Math.abs(steppedSixtieth.x - steppedFiftyNinth.x) > 0.01 || !coversLead(steppedSixtieth)) return steppedSixtieth;
   if (Math.abs(steppedTwentyFourth.x - steppedTwentyThird.x) > 0.01 || !coversLead(steppedTwentyFourth)) return steppedTwentyFourth;
   if (Math.abs(steppedTwentyThird.x - steppedTwentySecond.x) > 0.01 || !coversLead(steppedTwentyThird)) return steppedTwentyThird;
   if (Math.abs(steppedTwentySecond.x - steppedTwentyFirst.x) > 0.01 || !coversLead(steppedTwentySecond)) return steppedTwentySecond;
@@ -2354,6 +2356,19 @@ function stepCountFiftyEighthCaptionWidthOffEdgeBesideLead(
  * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function stepCountFiftyNinthCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  return stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+}
+
+/**
+ * Sixtieth caption-width step, when the fifty-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+ */
+function stepCountSixtiethCaptionWidthOffEdgeBesideLead(
   zoom: number,
   crop: AlignViewCrop,
   lead: { x: number; y: number; w: number; h: number },
