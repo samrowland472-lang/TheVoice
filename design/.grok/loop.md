@@ -1,5 +1,9 @@
 ## Iteration
 
+2026-10-11 04:01 BST — Forty-ninth caption-width step, when the forty-eighth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
+
+## Iteration
+
 2026-10-11 03:01 BST — Forty-eighth caption-width step, when the forty-seventh extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. The status strip still reads the unwrapped release line. Esc still clears it early.
 
 ## Iteration
@@ -430,8 +434,8 @@
 
 ## Backlog
 
-- Forty-ninth caption-width step, when the forty-eighth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+- Fiftieth caption-width step, when the forty-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
 
 ## Next recommended
 
-Forty-ninth caption-width step, when the forty-eighth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+Fiftieth caption-width step, when the forty-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
