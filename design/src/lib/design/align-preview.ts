@@ -1524,6 +1524,8 @@ function dropSwappedCountOffSharedLeadSpan(
   if (Math.abs(steppedSeventieth.x - steppedSixtyNinth.x) > 0.01 || !coversLead(steppedSeventieth)) return steppedSeventieth;
   const steppedSeventyFirst = stepCountSeventyFirstCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedSeventieth);
   if (Math.abs(steppedSeventyFirst.x - steppedSeventieth.x) > 0.01 || !coversLead(steppedSeventyFirst)) return steppedSeventyFirst;
+  const steppedSeventySecond = stepCountSeventySecondCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedSeventyFirst);
+  if (Math.abs(steppedSeventySecond.x - steppedSeventyFirst.x) > 0.01 || !coversLead(steppedSeventySecond)) return steppedSeventySecond;
   if (Math.abs(steppedTwentyFourth.x - steppedTwentyThird.x) > 0.01 || !coversLead(steppedTwentyFourth)) return steppedTwentyFourth;
   if (Math.abs(steppedTwentyThird.x - steppedTwentySecond.x) > 0.01 || !coversLead(steppedTwentyThird)) return steppedTwentyThird;
   if (Math.abs(steppedTwentySecond.x - steppedTwentyFirst.x) > 0.01 || !coversLead(steppedTwentySecond)) return steppedTwentySecond;
@@ -2539,6 +2541,19 @@ function stepCountSeventiethCaptionWidthOffEdgeBesideLead(
  * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountSeventyFirstCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  return stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+}
+
+/**
+ * Seventy-second caption-width step, when the seventy-first extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+ */
+function stepCountSeventySecondCaptionWidthOffEdgeBesideLead(
   zoom: number,
   crop: AlignViewCrop,
   lead: { x: number; y: number; w: number; h: number },
