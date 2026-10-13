@@ -1528,6 +1528,10 @@ function dropSwappedCountOffSharedLeadSpan(
   if (Math.abs(steppedSeventySecond.x - steppedSeventyFirst.x) > 0.01 || !coversLead(steppedSeventySecond)) return steppedSeventySecond;
   const steppedSeventyThird = stepCountSeventyThirdCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedSeventySecond);
   if (Math.abs(steppedSeventyThird.x - steppedSeventySecond.x) > 0.01 || !coversLead(steppedSeventyThird)) return steppedSeventyThird;
+  const steppedSeventyFourth = stepCountSeventyFourthCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedSeventyThird);
+  if (Math.abs(steppedSeventyFourth.x - steppedSeventyThird.x) > 0.01 || !coversLead(steppedSeventyFourth)) return steppedSeventyFourth;
+  const steppedSeventyFifth = stepCountSeventyFifthCaptionWidthOffEdgeBesideLead(zoom, crop, lead, steppedSeventyFourth);
+  if (Math.abs(steppedSeventyFifth.x - steppedSeventyFourth.x) > 0.01 || !coversLead(steppedSeventyFifth)) return steppedSeventyFifth;
   if (Math.abs(steppedTwentyFourth.x - steppedTwentyThird.x) > 0.01 || !coversLead(steppedTwentyFourth)) return steppedTwentyFourth;
   if (Math.abs(steppedTwentyThird.x - steppedTwentySecond.x) > 0.01 || !coversLead(steppedTwentyThird)) return steppedTwentyThird;
   if (Math.abs(steppedTwentySecond.x - steppedTwentyFirst.x) > 0.01 || !coversLead(steppedTwentySecond)) return steppedTwentySecond;
@@ -2569,6 +2573,32 @@ function stepCountSeventySecondCaptionWidthOffEdgeBesideLead(
  * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountSeventyThirdCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  return stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+}
+
+/**
+ * Seventy-fourth caption-width step, when the seventy-third extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+ */
+function stepCountSeventyFourthCaptionWidthOffEdgeBesideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+): { x: number; y: number; w: number; h: number; text: string } {
+  return stepCountOneMoreCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
+}
+
+/**
+ * Seventy-fifth caption-width step, when the seventy-fourth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+ */
+function stepCountSeventyFifthCaptionWidthOffEdgeBesideLead(
   zoom: number,
   crop: AlignViewCrop,
   lead: { x: number; y: number; w: number; h: number },
