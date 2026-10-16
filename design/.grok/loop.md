@@ -1,15 +1,15 @@
 ## Iteration
 
-2026-10-16 20:05 BST — Ninety-ninth caption-width step, when the ninety-eighth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+2026-10-16 21:01 BST — Hundredth caption-width step, when the ninety-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
 
 ## Done
 
-- Ninety-ninth caption-width step chained after the ninety-eighth in the align-preview seat logic so a still-covering count advances one more caption-width into the next clear gap beside the lead.
+- Hundredth caption-width step chained after the ninety-ninth in the align-preview seat logic so a still-covering count advances one more caption-width into the next clear gap beside the lead.
 
 ## Backlog
 
-- Hundredth caption-width step, when the ninety-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+- Hundred-first caption-width step, when the hundredth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
 
 ## Next recommended
 
-Hundredth caption-width step, when the ninety-ninth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
+Hundred-first caption-width step, when the hundredth extra step still covers the lead because the lead is wider than that step, steps one more caption-width off the edge into the next gap beside the lead. Esc still clears it early.
