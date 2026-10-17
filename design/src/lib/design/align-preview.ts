@@ -1394,7 +1394,7 @@ function dropSwappedCountOffSharedLeadSpan(
   // Keep stepping one caption-width off the edge into the next gap beside the lead
   // until the count clears the lead or the seat stops moving (crop edge reached).
   // Prefer the seat just beside the lead closest to the count; if that seat still
-  // covers the lead, use the other side of the lead, then the crop ends.
+  // covers the lead, try the other side of the lead before the crop ends.
   // Stamp alpha unchanged. Esc still clears it early.
   let current = tucked;
   for (let i = 0; i < 256; i++) {
@@ -1459,7 +1459,7 @@ function tuckCountOneCaptionWidthOffEdgeBesideLead(
 
 /**
  * One caption-width tuck, when the lead is wider than that step so the count still covers the lead, steps one more caption-width off the edge into the next gap beside the lead.
- * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, try the other side before crop ends. Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
   zoom: number,
@@ -1475,26 +1475,41 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
   const rightSeat = crop.x + crop.w - count.w / 2 - inset;
   const onLeft = Math.abs(count.x - leftSeat) <= Math.abs(count.x - rightSeat);
   const inward = onLeft ? 1 : -1;
-  const x = Math.min(Math.max(count.x + inward * count.w, leftSeat), rightSeat);
+  const preferredX = Math.min(Math.max(count.x + inward * count.w, leftSeat), rightSeat);
+  const oppositeX = Math.min(Math.max(count.x - inward * count.w, leftSeat), rightSeat);
   const leadTop = lead.y - lead.h / 2;
   const leadBot = lead.y + lead.h / 2;
   const below = leadBot + count.h / 2 + inset;
   const above = leadTop - count.h / 2 - inset;
   const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
-  const covers = (y: number) =>
+  const coversAt = (x: number, y: number) =>
     spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
     spansOverlap(y - count.h / 2, y + count.h / 2, leadTop, leadBot);
-  const raw = [below, above, lo, hi];
-  const seats: number[] = [];
-  for (const y of raw) {
-    const clamped = clampY(y);
-    if (seats.some((s) => Math.abs(s - clamped) < 0.01)) continue;
-    seats.push(clamped);
+  const chooseY = (x: number) => {
+    const raw = [below, above, lo, hi];
+    const seats: number[] = [];
+    for (const y of raw) {
+      const clamped = clampY(y);
+      if (seats.some((s) => Math.abs(s - clamped) < 0.01)) continue;
+      seats.push(clamped);
+    }
+    const clear = seats.filter((y) => !coversAt(x, y));
+    const pool = clear.length ? clear : seats;
+    pool.sort((a, b) => Math.abs(a - count.y) - Math.abs(b - count.y));
+    return pool[0];
+  };
+  // Prefer the seat just beside the lead closest to the count on the preferred side.
+  const preferredY = chooseY(preferredX);
+  if (!coversAt(preferredX, preferredY)) {
+    return { ...count, x: preferredX, y: preferredY };
   }
-  const clear = seats.filter((y) => !covers(y));
-  const pool = clear.length ? clear : seats;
-  pool.sort((a, b) => Math.abs(a - count.y) - Math.abs(b - count.y));
-  return { ...count, x, y: pool[0] };
+  // If that seat still covers the lead, try the other side before crop ends.
+  const oppositeY = chooseY(oppositeX);
+  if (!coversAt(oppositeX, oppositeY)) {
+    return { ...count, x: oppositeX, y: oppositeY };
+  }
+  // Fall through to preferred (which may land on ends).
+  return { ...count, x: preferredX, y: preferredY };
 }
 
 
