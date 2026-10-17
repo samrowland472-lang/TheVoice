@@ -1524,6 +1524,7 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
 /**
  * When both sides are blocked by wide leads on a multi-line release, the move-count seating steps off the stay stamps and crop edges so the count stays clear.
  * Prefer the seat just beside the lead closest to the count; if that seat still covers a stamp or lands on a crop edge, try the opposite side before accepting an edge seat.
+ * When the preferred beside-lead seats still land on a stay stamp after the opposite-side try, step one more caption-height off the stamp row so the count stays readable.
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -1575,7 +1576,23 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
   if (!coversLead(oppositeX, oppositeY) && !coversStamp(oppositeX, oppositeY) && !onCropEdge(oppositeX)) {
     return { ...count, x: oppositeX, y: oppositeY };
   }
-  return { ...count, x: preferredX, y: preferredY };
+  // Preferred seats still land on a stay stamp after the opposite-side try: step one more caption-height off the stamp row.
+  let seated = { ...count, x: preferredX, y: preferredY };
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp) {
+      const dir = seated.y >= stamp.y ? 1 : -1;
+      const steppedY = clampY(seated.y + dir * count.h);
+      if (!coversStamp(seated.x, steppedY) && !coversLead(seated.x, steppedY)) {
+        seated = { ...seated, y: steppedY };
+      }
+    }
+  }
+  return seated;
 }
 
 function slideCountAlongCropEdgeClearOfLead(
