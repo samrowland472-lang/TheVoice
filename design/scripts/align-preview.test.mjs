@@ -140,6 +140,11 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /Prefer the seat just outside the lead band closest to the count/);
   assert.match(preview, /function tuckCountOneCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /function stepCountOneMoreCaptionWidthOffEdgeBesideLead/);
+  assert.match(preview, /When both sides are blocked by wide leads on a multi-line release, the move-count seating steps off the stay stamps and crop edges so the count stays clear/);
+  assert.match(preview, /Prefer the seat just beside the lead closest to the count; if that seat still covers a stamp or lands on a crop edge, try the opposite side before accepting an edge seat/);
+  assert.match(preview, /function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead/);
+  assert.match(preview, /stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead\(/);
+
   assert.match(preview, /function stepCountSecondCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /function stepCountThirdCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /function stepCountFourthCaptionWidthOffEdgeBesideLead/);

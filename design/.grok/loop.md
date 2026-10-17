@@ -1,17 +1,17 @@
 ## Iteration
 
-2026-10-17 04:01 BST — When the caption-width step loop lands on a shared span with the lead, the seat now prefers the just-beside position closest to the count. If that seat still covers the lead, it tries the opposite side of the lead before falling to the crop ends. Stamp alpha unchanged. Esc still clears it early.
+2026-10-17 05:15 BST — When both sides are blocked by wide leads on a multi-line release, the move-count seating now steps off the stay stamps and crop edges. It prefers the just-beside seat closest to the count; if that seat still covers a stamp or lands on a crop edge, it tries the opposite side before accepting an edge seat. Stamp alpha unchanged. Esc still clears it early.
 
 ## Done
 
-- stepCountOneMoreCaptionWidthOffEdgeBesideLead now computes the preferred (inward) side first, choosing the closest clear beside-lead seat to the current count.
-- If the preferred side still covers the lead, it tries the opposite horizontal side with the same closest-seat preference before accepting a covering or end seat.
-- The drop path loop continues to bound steps until clear or stable; early vertical drops, slide, and one-caption tuck remain.
+- stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead prefers the inward beside-lead seat that clears stamps, the lead, and crop edges, falling back to the opposite side.
+- Called from the multi-line ends-blocked path in seatWrappedCommitCaption after the drop, so the tucked move-count stays off stay stamps and crop edges when wide leads block both sides.
+- Earlier caption-width step preference, vertical drops, slide, and one-caption tuck remain.
 
 ## Backlog
 
-- Keep the move-count seating off stay stamps and crop edges for multi-line releases when both sides are blocked by wide leads.
+- Keep the move-count seating readable when the preferred beside-lead seats still land on a stay stamp after the opposite-side try, by stepping one more caption-height off the stamp row.
 
 ## Next recommended
 
-Keep the move-count seating off stay stamps and crop edges for multi-line releases when both sides are blocked by wide leads.
+Keep the move-count seating readable when the preferred beside-lead seats still land on a stay stamp after the opposite-side try, by stepping one more caption-height off the stamp row.

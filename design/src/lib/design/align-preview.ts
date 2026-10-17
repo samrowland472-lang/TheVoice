@@ -979,6 +979,13 @@ function seatWrappedCommitCaption(
         swapped,
       );
       const dropped = dropSwappedCountOffSharedLeadSpan(zoom, crop, { x, y, w, h }, slid);
+      const cleared = stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
+        zoom,
+        crop,
+        { x, y, w, h },
+        dropped,
+        boxes,
+      );
       return {
         x,
         y,
@@ -987,7 +994,7 @@ function seatWrappedCommitCaption(
         label,
         lines: [lead],
         fontPx: fit.fontPx,
-        tuckedMoveCount: dropped,
+        tuckedMoveCount: cleared,
       };
     }
   }
@@ -1512,6 +1519,64 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
   return { ...count, x: preferredX, y: preferredY };
 }
 
+
+
+/**
+ * When both sides are blocked by wide leads on a multi-line release, the move-count seating steps off the stay stamps and crop edges so the count stays clear.
+ * Prefer the seat just beside the lead closest to the count; if that seat still covers a stamp or lands on a crop edge, try the opposite side before accepting an edge seat.
+ * Stamp alpha unchanged. Esc still clears it early.
+ */
+function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
+  zoom: number,
+  crop: AlignViewCrop,
+  lead: { x: number; y: number; w: number; h: number },
+  count: { x: number; y: number; w: number; h: number; text: string },
+  stamps: { x: number; y: number; w: number; h: number }[],
+): { x: number; y: number; w: number; h: number; text: string } {
+  const z = Math.max(zoom, 0.01);
+  const inset = 2 / z;
+  const lo = crop.y + count.h / 2 + inset;
+  const hi = crop.y + crop.h - count.h / 2 - inset;
+  const leftSeat = crop.x + count.w / 2 + inset;
+  const rightSeat = crop.x + crop.w - count.w / 2 - inset;
+  const onLeft = Math.abs(count.x - leftSeat) <= Math.abs(count.x - rightSeat);
+  const inward = onLeft ? 1 : -1;
+  const preferredX = Math.min(Math.max(count.x + inward * count.w, leftSeat), rightSeat);
+  const oppositeX = Math.min(Math.max(count.x - inward * count.w, leftSeat), rightSeat);
+  const onCropEdge = (x: number) => Math.abs(x - leftSeat) < 0.5 || Math.abs(x - rightSeat) < 0.5;
+  const coversStamp = (x: number, y: number) =>
+    stamps.some((s) =>
+      spansOverlap(x - count.w / 2, x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+      spansOverlap(y - count.h / 2, y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+  const coversLead = (x: number, y: number) =>
+    spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
+    spansOverlap(y - count.h / 2, y + count.h / 2, lead.y - lead.h / 2, lead.y + lead.h / 2);
+  const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
+  const chooseY = (x: number) => {
+    const raw = [lead.y + lead.h / 2 + count.h / 2 + inset, lead.y - lead.h / 2 - count.h / 2 - inset, lo, hi, count.y];
+    const seats: number[] = [];
+    for (const y of raw) {
+      const clamped = clampY(y);
+      if (seats.some((s) => Math.abs(s - clamped) < 0.01)) continue;
+      seats.push(clamped);
+    }
+    const clear = seats.filter((y) => !coversLead(x, y) && !coversStamp(x, y) && !onCropEdge(x));
+    const pool = clear.length ? clear : seats.filter((y) => !coversLead(x, y) && !coversStamp(x, y));
+    const final = pool.length ? pool : seats;
+    final.sort((a, b) => Math.abs(a - count.y) - Math.abs(b - count.y));
+    return final[0];
+  };
+  const preferredY = chooseY(preferredX);
+  if (!coversLead(preferredX, preferredY) && !coversStamp(preferredX, preferredY) && !onCropEdge(preferredX)) {
+    return { ...count, x: preferredX, y: preferredY };
+  }
+  const oppositeY = chooseY(oppositeX);
+  if (!coversLead(oppositeX, oppositeY) && !coversStamp(oppositeX, oppositeY) && !onCropEdge(oppositeX)) {
+    return { ...count, x: oppositeX, y: oppositeY };
+  }
+  return { ...count, x: preferredX, y: preferredY };
+}
 
 function slideCountAlongCropEdgeClearOfLead(
   zoom: number,
