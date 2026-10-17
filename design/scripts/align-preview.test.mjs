@@ -144,6 +144,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /Prefer the seat just beside the lead closest to the count; if that seat still covers a stamp or lands on a crop edge, try the opposite side before accepting an edge seat/);
   assert.match(preview, /When the preferred beside-lead seats still land on a stay stamp after the opposite-side try, step one more caption-height off the stamp row so the count stays readable/);
   assert.match(preview, /When that one-more caption-height step still lands on a second stay stamp, step one more caption-height off that second stamp so the count stays readable/);
+  assert.match(preview, /When that tenth caption-height step still lands on an eleventh stay stamp, step one more caption-height off that eleventh stamp so the count stays readable/);
+  assert.match(preview, /When that eleventh caption-height step still lands on a twelfth stay stamp, step one more caption-height off that twelfth stamp so the count stays readable/);
   assert.match(preview, /function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead/);
   assert.match(preview, /stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead\(/);
 
