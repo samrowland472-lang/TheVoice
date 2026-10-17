@@ -1541,6 +1541,8 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
  * When that fourteenth caption-height step still lands on a fifteenth stay stamp, step one more caption-height off that fifteenth stamp so the count stays readable.
  * When that fifteenth caption-height step still lands on a sixteenth stay stamp, step one more caption-height off that sixteenth stamp so the count stays readable.
  * When that sixteenth caption-height step still lands on a seventeenth stay stamp, step one more caption-height off that seventeenth stamp so the count stays readable.
+ * When that seventeenth caption-height step still lands on an eighteenth stay stamp, step one more caption-height off that eighteenth stamp so the count stays readable.
+ * When that eighteenth caption-height step still lands on a nineteenth stay stamp, step one more caption-height off that nineteenth stamp so the count stays readable.
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -1860,6 +1862,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       const steppedY18 = clampY(seated.y + dir18 * count.h);
       if (!coversStamp(seated.x, steppedY18) && !coversLead(seated.x, steppedY18)) {
         seated = { ...seated, y: steppedY18 };
+      }
+    }
+  }
+  // When that eighteenth caption-height step still lands on a nineteenth stay stamp, step one more caption-height off that nineteenth stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp19 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp19) {
+      const dir19 = seated.y >= stamp19.y ? 1 : -1;
+      const steppedY19 = clampY(seated.y + dir19 * count.h);
+      if (!coversStamp(seated.x, steppedY19) && !coversLead(seated.x, steppedY19)) {
+        seated = { ...seated, y: steppedY19 };
       }
     }
   }
