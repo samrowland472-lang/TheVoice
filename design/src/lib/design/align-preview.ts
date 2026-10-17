@@ -1538,6 +1538,7 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
  * When that eleventh caption-height step still lands on a twelfth stay stamp, step one more caption-height off that twelfth stamp so the count stays readable.
  * When that twelfth caption-height step still lands on a thirteenth stay stamp, step one more caption-height off that thirteenth stamp so the count stays readable.
  * When that thirteenth caption-height step still lands on a fourteenth stay stamp, step one more caption-height off that fourteenth stamp so the count stays readable.
+ * When that fourteenth caption-height step still lands on a fifteenth stay stamp, step one more caption-height off that fifteenth stamp so the count stays readable.
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -1797,6 +1798,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       const steppedY14 = clampY(seated.y + dir14 * count.h);
       if (!coversStamp(seated.x, steppedY14) && !coversLead(seated.x, steppedY14)) {
         seated = { ...seated, y: steppedY14 };
+      }
+    }
+  }
+  // When that fourteenth caption-height step still lands on a fifteenth stay stamp, step one more caption-height off that fifteenth stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp15 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp15) {
+      const dir15 = seated.y >= stamp15.y ? 1 : -1;
+      const steppedY15 = clampY(seated.y + dir15 * count.h);
+      if (!coversStamp(seated.x, steppedY15) && !coversLead(seated.x, steppedY15)) {
+        seated = { ...seated, y: steppedY15 };
       }
     }
   }
