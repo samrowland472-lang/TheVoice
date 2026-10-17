@@ -1688,6 +1688,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       }
     }
   }
+  // When that seventh caption-height step still lands on an eighth stay stamp, step one more caption-height off that eighth stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp8 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp8) {
+      const dir8 = seated.y >= stamp8.y ? 1 : -1;
+      const steppedY8 = clampY(seated.y + dir8 * count.h);
+      if (!coversStamp(seated.x, steppedY8) && !coversLead(seated.x, steppedY8)) {
+        seated = { ...seated, y: steppedY8 };
+      }
+    }
+  }
   return seated;
 }
 
