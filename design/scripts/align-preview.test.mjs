@@ -149,6 +149,8 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /When that fourteenth caption-height step still lands on a fifteenth stay stamp, step one more caption-height off that fifteenth stamp so the count stays readable/);
   assert.match(preview, /When that seventeenth caption-height step still lands on an eighteenth stay stamp, step one more caption-height off that eighteenth stamp/);
   assert.match(preview, /When that eighteenth caption-height step still lands on a nineteenth stay stamp, step one more caption-height off that nineteenth stamp/);
+  assert.match(preview, /When that twenty-second caption-height step still lands on a twenty-third stay stamp, step one more caption-height off that twenty-third stamp so the count stays readable/);
+  assert.match(preview, /When that twenty-third caption-height step still lands on a twenty-fourth stay stamp, step one more caption-height off that twenty-fourth stamp so the count stays readable/);
   assert.match(preview, /function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead/);
   assert.match(preview, /stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead\(/);
 
