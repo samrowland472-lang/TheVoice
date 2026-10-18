@@ -1556,6 +1556,8 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
  * When that twenty-ninth caption-height step still lands on a thirtieth stay stamp, step one more caption-height off that thirtieth stamp so the count stays readable.
  * When that thirtieth caption-height step still lands on a thirty-first stay stamp, step one more caption-height off that thirty-first stamp so the count stays readable.
  * When that thirty-first caption-height step still lands on a thirty-second stay stamp, step one more caption-height off that thirty-second stamp so the count stays readable.
+ * When that thirty-second caption-height step still lands on a thirty-third stay stamp, step one more caption-height off that thirty-third stamp so the count stays readable.
+ * When that thirty-third caption-height step still lands on a thirty-fourth stay stamp, step one more caption-height off that thirty-fourth stamp so the count stays readable.
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -2100,6 +2102,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       const steppedY33 = clampY(seated.y + dir33 * count.h);
       if (!coversStamp(seated.x, steppedY33) && !coversLead(seated.x, steppedY33)) {
         seated = { ...seated, y: steppedY33 };
+      }
+    }
+  }
+  // When that thirty-third caption-height step still lands on a thirty-fourth stay stamp, step one more caption-height off that thirty-fourth stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp34 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp34) {
+      const dir34 = seated.y >= stamp34.y ? 1 : -1;
+      const steppedY34 = clampY(seated.y + dir34 * count.h);
+      if (!coversStamp(seated.x, steppedY34) && !coversLead(seated.x, steppedY34)) {
+        seated = { ...seated, y: steppedY34 };
       }
     }
   }
