@@ -1295,7 +1295,8 @@ function slideSwappedCountAlongBlockedEdge(
  * When a wrapped commit tick caption still stacks the swapped move-count line on the lead after the twelve-step walk, drop the count one caption-height off that shared vertical span so the two lines no longer read as one stack.
  * Prefer down; if the crop clamp holds that drop inside the lead band, step one caption-height up instead.
  * When that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, step one more caption-height off that shared span. Prefer the second step down; if the clamp holds that second step inside the lead band, step one more caption-height up.
- * When the second caption-height drop is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
+ * Second caption-height drop, when the extra step is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
+* When the second caption-height drop is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
  * When that crop-edge slide still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead.
  * When that one caption-width tuck still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
  * When that second caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
@@ -1568,6 +1569,7 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
  * When that forty-first caption-height step still lands on a forty-second stay stamp, step one more caption-height off that forty-second stamp so the count stays readable.
  * When that forty-second caption-height step still lands on a forty-third stay stamp, step one more caption-height off that forty-third stamp so the count stays readable.
  * When that forty-third caption-height step still lands on a forty-fourth stay stamp, step one more caption-height off that forty-fourth stamp so the count stays readable.
+ * When that forty-fourth caption-height step still lands on a forty-fifth stay stamp, step one more caption-height off that forty-fifth stamp so the count stays readable.
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -2277,6 +2279,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       const steppedY44 = clampY(seated.y + dir44 * count.h);
       if (!coversStamp(seated.x, steppedY44) && !coversLead(seated.x, steppedY44)) {
         seated = { ...seated, y: steppedY44 };
+      }
+    }
+  }
+  // When that forty-fourth caption-height step still lands on a forty-fifth stay stamp, step one more caption-height off that forty-fifth stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp45 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp45) {
+      const dir45 = seated.y >= stamp45.y ? 1 : -1;
+      const steppedY45 = clampY(seated.y + dir45 * count.h);
+      if (!coversStamp(seated.x, steppedY45) && !coversLead(seated.x, steppedY45)) {
+        seated = { ...seated, y: steppedY45 };
       }
     }
   }
