@@ -2247,6 +2247,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       }
     }
   }
+  // When that forty-second caption-height step still lands on a forty-third stay stamp, step one more caption-height off that forty-third stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp43 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp43) {
+      const dir43 = seated.y >= stamp43.y ? 1 : -1;
+      const steppedY43 = clampY(seated.y + dir43 * count.h);
+      if (!coversStamp(seated.x, steppedY43) && !coversLead(seated.x, steppedY43)) {
+        seated = { ...seated, y: steppedY43 };
+      }
+    }
+  }
   return seated;
 }
 
