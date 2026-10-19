@@ -1565,6 +1565,9 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
  * When that thirty-eighth caption-height step still lands on a thirty-ninth stay stamp, step one more caption-height off that thirty-ninth stamp so the count stays readable.
  * When that thirty-ninth caption-height step still lands on a fortieth stay stamp, step one more caption-height off that fortieth stamp so the count stays readable.
  * When that fortieth caption-height step still lands on a forty-first stay stamp, step one more caption-height off that forty-first stamp so the count stays readable.
+ * When that forty-first caption-height step still lands on a forty-second stay stamp, step one more caption-height off that forty-second stamp so the count stays readable.
+ * When that forty-second caption-height step still lands on a forty-third stay stamp, step one more caption-height off that forty-third stamp so the count stays readable.
+ * When that forty-third caption-height step still lands on a forty-fourth stay stamp, step one more caption-height off that forty-fourth stamp so the count stays readable.
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -2259,6 +2262,21 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
       const steppedY43 = clampY(seated.y + dir43 * count.h);
       if (!coversStamp(seated.x, steppedY43) && !coversLead(seated.x, steppedY43)) {
         seated = { ...seated, y: steppedY43 };
+      }
+    }
+  }
+  // When that forty-third caption-height step still lands on a forty-fourth stay stamp, step one more caption-height off that forty-fourth stamp.
+  if (coversStamp(seated.x, seated.y)) {
+    const stamp44 = stamps.find(
+      (s) =>
+        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
+        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
+    );
+    if (stamp44) {
+      const dir44 = seated.y >= stamp44.y ? 1 : -1;
+      const steppedY44 = clampY(seated.y + dir44 * count.h);
+      if (!coversStamp(seated.x, steppedY44) && !coversLead(seated.x, steppedY44)) {
+        seated = { ...seated, y: steppedY44 };
       }
     }
   }
