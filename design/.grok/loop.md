@@ -1,17 +1,17 @@
 ## Iteration
 
-2026-10-19 21:01 BST — When the forty-sixth caption-height step still lands on a forty-seventh stay stamp, the move-count seating steps one more caption-height off that forty-seventh stamp so the count stays readable. Stamp alpha unchanged. Esc still clears it early.
+2026-10-20 00:03 BST — Refactored the move-count seating so a single loop steps the caption off any number of overlapping stay stamps (up to 64) instead of an unrolled chain of 47 ifs. Stamp alpha unchanged. Esc still clears it early.
 
 ## Done
 
-- stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead now steps one more caption-height off a forty-seventh overlapping stay stamp when the forty-sixth step still covers one.
-- Called from the multi-line ends-blocked path in seatWrappedCommitCaption after the drop, so the tucked move-count stays off stay stamps even after the opposite-side try and earlier steps fail.
-- Earlier one-step through forty-six-step stamp clear, caption-width step preference, vertical drops, slide, and one-caption tuck remain.
+- Replaced the 47-step unrolled stamp-clear chain in stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead with a while loop that keeps stepping one caption-height off the current overlapping stay stamp until the count is clear or no further progress is possible.
+- Handles the previous forty-seventh case and any deeper stack of stay stamps without further copy-paste.
+- Earlier caption-width step preference, vertical drops, slide, and one-caption tuck remain.
 
 ## Backlog
 
-- Keep the move-count seating readable when the forty-seventh caption-height step still lands on a forty-eighth stay stamp, by stepping one more caption-height off that forty-eighth stamp.
+- Consider extracting the shared stamp-overlap test into a small helper if more seating paths grow similar loops.
 
 ## Next recommended
 
-Keep the move-count seating readable when the forty-seventh caption-height step still lands on a forty-eighth stay stamp, by stepping one more caption-height off that forty-eighth stamp.
+Consider extracting the shared stamp-overlap test into a small helper if more seating paths grow similar loops.
