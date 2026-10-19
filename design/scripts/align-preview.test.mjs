@@ -137,7 +137,7 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /function slideCountAlongCropEdgeClearOfLead/);
   assert.match(preview, /Second caption-height drop, when the extra step is also clamped inside the lead band/);
   assert.match(preview, /slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead/);
-  assert.match(preview, /Prefer the seat just outside the lead band closest to the count/);
+  assert.match(preview, /Prefer the seat just beside the lead closest to the count/);
   assert.match(preview, /function tuckCountOneCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /function stepCountOneMoreCaptionWidthOffEdgeBesideLead/);
   assert.match(preview, /When both sides are blocked by wide leads on a multi-line release, the move-count seating steps off the stay stamps and crop edges so the count stays clear/);
@@ -165,6 +165,7 @@ test("align preview draws the key edge before commit", () => {
   assert.match(preview, /When that thirty-ninth caption-height step still lands on a fortieth stay stamp, step one more caption-height off that fortieth stamp so the count stays readable/);
   assert.match(preview, /When that fortieth caption-height step still lands on a forty-first stay stamp, step one more caption-height off that forty-first stamp so the count stays readable/);
   assert.match(preview, /When that forty-fourth caption-height step still lands on a forty-fifth stay stamp, step one more caption-height off that forty-fifth stamp so the count stays readable/);
+  assert.match(preview, /When that forty-sixth caption-height step still lands on a forty-seventh stay stamp, step one more caption-height off that forty-seventh stamp so the count stays readable/);
   assert.match(preview, /function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead/);
   assert.match(preview, /stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead\(/);
 
