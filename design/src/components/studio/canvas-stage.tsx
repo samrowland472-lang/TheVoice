@@ -118,6 +118,7 @@ export function CanvasStage() {
   const booleanPreview = useDesign((s) => s.booleanPreview);
   const pathEditHit = useDesign((s) => s.pathEditHit);
   const tool = useDesign((s) => s.tool);
+  const brush = useDesign((s) => s.brush);
   const present = useDesign((s) => s.present);
   const nudgeHold = useDesign((s) => s.nudgeHold);
   const inspectorRail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
@@ -904,6 +905,16 @@ export function CanvasStage() {
       {tool === "knife" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
           Drag across one ring — only that lobe lights, then the stroke opens it
+        </div>
+      )}
+      {tool === "brush" && !present && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
+          Drag to paint · [ ] resize · size {brush.size} · flow {Math.round(brush.opacity * 100)}
+        </div>
+      )}
+      {tool === "eraser" && !present && (
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
+          Drag to erase · [ ] resize · size {brush.size} · flow {Math.round(brush.opacity * 100)}
         </div>
       )}
     </div>
