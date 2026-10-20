@@ -227,6 +227,17 @@ function spansOverlap(a0: number, a1: number, b0: number, b1: number) {
   return a0 < b1 && a1 > b0;
 }
 
+/** Center-based axis-aligned boxes share any area. */
+function centerRectsOverlap(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): boolean {
+  return (
+    spansOverlap(a.x - a.w / 2, a.x + a.w / 2, b.x - b.w / 2, b.x + b.w / 2) &&
+    spansOverlap(a.y - a.h / 2, a.y + a.h / 2, b.y - b.h / 2, b.y + b.h / 2)
+  );
+}
+
 /**
  * Seat the edge chip on the tick, clear of stay boxes.
  * The pill names the edge and the key or board. Outer edges hang the longer
@@ -1022,10 +1033,7 @@ function pinTuckedCountToNearestCropEdge(
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
   const hitsAvoid = (c: { x: number; y: number }) => {
     if (!avoid) return false;
-    return (
-      spansOverlap(c.x - box.w / 2, c.x + box.w / 2, avoid.x - avoid.w / 2, avoid.x + avoid.w / 2) &&
-      spansOverlap(c.y - box.h / 2, c.y + box.h / 2, avoid.y - avoid.h / 2, avoid.y + avoid.h / 2)
-    );
+    return centerRectsOverlap({ x: c.x, y: c.y, w: box.w, h: box.h }, avoid);
   };
   const clear = (c: { x: number; y: number }) =>
     !captionOverlapsBoxes({ ...c, w: box.w, h: box.h }, boxes) && !hitsAvoid(c);
@@ -1114,19 +1122,11 @@ function nudgeSlidCountClearOfStayStamp(
 ): number {
   if (!boxes.length || hi < lo) return seat;
   const stamps = boxes.map((g) => placeAlignStayStamp(g, edge, zoom));
-  const half = verticalEdge ? count.h / 2 : count.w / 2;
-  const crossA = verticalEdge ? count.x - count.w / 2 : count.y - count.h / 2;
-  const crossB = verticalEdge ? count.x + count.w / 2 : count.y + count.h / 2;
   const overlapping = (center: number) => {
-    const a = center - half;
-    const b = center + half;
-    return stamps.filter((stamp) => {
-      const alongA = verticalEdge ? stamp.y - stamp.h / 2 : stamp.x - stamp.w / 2;
-      const alongB = verticalEdge ? stamp.y + stamp.h / 2 : stamp.x + stamp.w / 2;
-      const stampCrossA = verticalEdge ? stamp.x - stamp.w / 2 : stamp.y - stamp.h / 2;
-      const stampCrossB = verticalEdge ? stamp.x + stamp.w / 2 : stamp.y + stamp.h / 2;
-      return spansOverlap(a, b, alongA, alongB) && spansOverlap(crossA, crossB, stampCrossA, stampCrossB);
-    });
+    const probe = verticalEdge
+      ? { x: count.x, y: center, w: count.w, h: count.h }
+      : { x: center, y: count.y, w: count.w, h: count.h };
+    return stamps.filter((stamp) => centerRectsOverlap(probe, stamp));
   };
   const first = overlapping(seat);
   if (!first.length) return seat;
@@ -1396,8 +1396,7 @@ function dropSwappedCountOffSharedLeadSpan(
   if (slid && !sharesLead(slid)) return slid;
   const tucked = tuckCountOneCaptionWidthOffEdgeBesideLead(zoom, crop, lead, count);
   const coversLead = (box: { x: number; y: number; w: number; h: number }) =>
-    spansOverlap(box.x - box.w / 2, box.x + box.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
-    spansOverlap(box.y - box.h / 2, box.y + box.h / 2, lead.y - lead.h / 2, lead.y + lead.h / 2);
+    centerRectsOverlap(box, lead);
   if (!coversLead(tucked)) return tucked;
   // Keep stepping one caption-width off the edge into the next gap beside the lead
   // until the count clears the lead or the seat stops moving (crop edge reached).
@@ -1450,8 +1449,7 @@ function tuckCountOneCaptionWidthOffEdgeBesideLead(
   const above = leadTop - count.h / 2 - inset;
   const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
   const overlapsLead = (y: number) =>
-    spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
-    spansOverlap(y - count.h / 2, y + count.h / 2, leadTop, leadBot);
+    centerRectsOverlap({ x, y, w: count.w, h: count.h }, lead);
   const raw = [below, above, lead.y, count.y, lo, hi];
   const seats: number[] = [];
   for (const y of raw) {
@@ -1491,8 +1489,7 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
   const above = leadTop - count.h / 2 - inset;
   const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
   const coversAt = (x: number, y: number) =>
-    spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
-    spansOverlap(y - count.h / 2, y + count.h / 2, leadTop, leadBot);
+    centerRectsOverlap({ x, y, w: count.w, h: count.h }, lead);
   const chooseY = (x: number) => {
     const raw = [below, above, lo, hi];
     const seats: number[] = [];
@@ -1593,13 +1590,9 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
   const oppositeX = Math.min(Math.max(count.x - inward * count.w, leftSeat), rightSeat);
   const onCropEdge = (x: number) => Math.abs(x - leftSeat) < 0.5 || Math.abs(x - rightSeat) < 0.5;
   const coversStamp = (x: number, y: number) =>
-    stamps.some((s) =>
-      spansOverlap(x - count.w / 2, x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
-      spansOverlap(y - count.h / 2, y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
-    );
+    stamps.some((s) => centerRectsOverlap({ x, y, w: count.w, h: count.h }, s));
   const coversLead = (x: number, y: number) =>
-    spansOverlap(x - count.w / 2, x + count.w / 2, lead.x - lead.w / 2, lead.x + lead.w / 2) &&
-    spansOverlap(y - count.h / 2, y + count.h / 2, lead.y - lead.h / 2, lead.y + lead.h / 2);
+    centerRectsOverlap({ x, y, w: count.w, h: count.h }, lead);
   const clampY = (y: number) => (hi < lo ? count.y : Math.min(Math.max(y, lo), hi));
   const chooseY = (x: number) => {
     const raw = [lead.y + lead.h / 2 + count.h / 2 + inset, lead.y - lead.h / 2 - count.h / 2 - inset, lo, hi, count.y];
@@ -1628,11 +1621,7 @@ function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
   let steps = 0;
   const maxSteps = 64;
   while (coversStamp(seated.x, seated.y) && steps < maxSteps) {
-    const stamp = stamps.find(
-      (s) =>
-        spansOverlap(seated.x - count.w / 2, seated.x + count.w / 2, s.x - s.w / 2, s.x + s.w / 2) &&
-        spansOverlap(seated.y - count.h / 2, seated.y + count.h / 2, s.y - s.h / 2, s.y + s.h / 2),
-    );
+    const stamp = stamps.find((s) => centerRectsOverlap(seated, s));
     if (!stamp) break;
     const dir = seated.y >= stamp.y ? 1 : -1;
     const steppedY = clampY(seated.y + dir * count.h);
@@ -1757,10 +1746,7 @@ function tuckMoveCountBesideShortMover(
   }
   const hitsAvoid = (c: { x: number; y: number }) => {
     if (!avoid) return false;
-    return (
-      spansOverlap(c.x - box.w / 2, c.x + box.w / 2, avoid.x - avoid.w / 2, avoid.x + avoid.w / 2) &&
-      spansOverlap(c.y - box.h / 2, c.y + box.h / 2, avoid.y - avoid.h / 2, avoid.y + avoid.h / 2)
-    );
+    return centerRectsOverlap({ x: c.x, y: c.y, w: box.w, h: box.h }, avoid);
   };
   const anchor = tick.axis === "x" ? short.y + short.h / 2 : short.x + short.w / 2;
   const gapDist = (c: { x: number; y: number }) =>
