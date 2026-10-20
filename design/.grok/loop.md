@@ -1,17 +1,18 @@
 ## Iteration
 
-2026-10-20 19:05 BST — Added centered contextual hints for the brush and eraser tools on the canvas stage. Phosphor text, no chrome. Shows drag action, [ ] resize shortcut, current size, and flow. Existing left tool chip and pen/select/knife hints unchanged.
+2026-10-20 22:05 BST — Bound single-letter keys for the remaining shape tools: G for polygon, S for star, A for arrow, M for image. Tool rail titles and command palette now list the shortcuts. Phosphor chrome unchanged. Existing keys preserved.
 
 ## Done
 
-- Subscribed CanvasStage to brush state and rendered non-interactive absolute hints when tool is brush or eraser and not in present mode.
-- Typecheck, build, and browser-smoke all green. Screenshots confirm canvas and status text present with no console errors.
+- Extended KEYS map in use-shortcuts.ts and tool titles in tool-rail.tsx.
+- Added matching command-palette entries in studio-app.tsx.
+- Typecheck, build, and browser-smoke all green. Hub screenshot shows stable chrome; no console errors.
 
 ## Backlog
 
 - None remaining on the seating comment unrolls.
-- Optional: bind single-letter keys for polygon / star / arrow / image if desired.
+- Optional: deeper inspector or layers polish if desired.
 
 ## Next recommended
 
-Small visual polish on the inspector or layers panel, or bind the optional single-letter tool keys.
+Small visual polish on the inspector or layers panel, or a new vertical slice on export/present.
