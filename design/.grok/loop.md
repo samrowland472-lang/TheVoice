@@ -1,17 +1,17 @@
 ## Iteration
 
-2026-10-20 04:05 BST — Extracted a shared centerRectsOverlap helper for the move-count seating paths so stamp, lead, and avoid tests share one implementation instead of repeated spansOverlap pairs. Seating behaviour unchanged. Esc still clears early.
+2026-10-20 08:15 BST — Collapsed the long unrolled “When that Nth caption-height/width still…” comment blocks on the move-count seating functions into concise summaries of the multi-step clearance walks. Seating behaviour unchanged. Esc still clears early.
 
 ## Done
 
-- Added centerRectsOverlap next to spansOverlap for axis-aligned center-based boxes.
-- Replaced the duplicated stamp/lead/avoid overlap tests in stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead, nudgeSlidCountClearOfStayStamp, tuckCountOneCaptionWidthOffEdgeBesideLead, stepCountOneMoreCaptionWidthOffEdgeBesideLead, and the two hitsAvoid sites.
-- Stamp alpha, caption-height steps, and crop-edge clamps remain as before.
+- Replaced the twelve-step stay-stamp walk descriptions in nudgeSlidCountClearOfStayStamp and slideSwappedCountAlongBlockedEdge with a short “walk up to twelve caption-height steps” summary.
+- Collapsed the giant seatWrappedCommitCaption comment (including the caption-width lead-clearance lists) into a few sentences that name the twelve-step stamp walk and the caption-width lead steps.
+- Inline loop comments and the actual for-loop implementations remain; only the JSDoc lists were shortened.
 
 ## Backlog
 
-- Consider collapsing the long unrolled comment blocks on the seating functions once the loop form is stable.
+- Remaining shorter unrolled fragments on later seating helpers (drop/slide/tuck paths) can be tightened the same way if desired.
 
 ## Next recommended
 
-Consider collapsing the long unrolled comment blocks on the seating functions once the loop form is stable.
+Tighten any remaining shorter unrolled comment fragments on the drop, slide, and tuck seating helpers.

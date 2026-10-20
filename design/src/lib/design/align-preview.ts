@@ -865,10 +865,19 @@ function openCropEndAlong(
 /**
  * Seat a wrapped commit tick caption off the landed boxes the way the edge
  * chip hangs clear of a stay. Outer edges hang the two-line pill off the
- * mover; center and middle slide along the tick into a gap. When the rail clamp pulls that two-line pill back onto a short mover, it slides to the open end of the crop so the move count stays off the art. When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art. The pill stays
- * on the rail so a cropped tick still names the full line, and still eases
- * with the stamp alpha. When the swapped move-count line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead. When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art. When that extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, it steps one more caption-height into the gap so the count clears both stamps. When that second caption-height still leaves the count sharing a span with a third stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that fifth caption-height still leaves the count sharing a span with a sixth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that sixth caption-height still leaves the count sharing a span with a seventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that seventh caption-height still leaves the count sharing a span with an eighth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that eighth caption-height still leaves the count sharing a span with a ninth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that ninth caption-height still leaves the count sharing a span with a tenth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that tenth caption-height still leaves the count sharing a span with an eleventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. When that eleventh caption-height still leaves the count sharing a span with a twelfth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps. The status strip keeps the unwrapped release line. When the ninety-seventh caption-width step still covers the lead because the lead is wider than that step, it steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. When the hundred-first caption-width step still covers the lead because the lead is wider than that step, it steps one more caption-width off the edge into the next gap beside the lead. Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends.
- * Esc still clears it early.
+ * mover; center and middle slide along the tick into a gap. When the rail
+ * clamp pulls that two-line pill back onto a short mover, it slides to the
+ * open end of the crop so the move count stays off the art. When both crop
+ * ends are blocked, it tucks the move-count line into the nearest gap beside
+ * the short mover. The pill stays on the rail so a cropped tick still names
+ * the full line, and still eases with the stamp alpha.
+ *
+ * When the swapped move-count line lands on a blocked other crop edge, it
+ * slides along that edge into the first clear gap, then walks up to twelve
+ * caption-height steps to clear successive stay stamps. Wider leads are
+ * cleared by caption-width steps beside the lead (preferring the nearest
+ * clear side, then the crop ends). The status strip keeps the unwrapped
+ * release line. Esc still clears it early.
  */
 function seatWrappedCommitCaption(
   tick: AlignEdgeLine,
@@ -1073,42 +1082,10 @@ function pinTuckedCountToNearestCropEdge(
 
 /**
  * When the slid move-count line's first clear gap still shares a span with a
- * stay stamp on that edge, nudge one caption-height further into the gap so
- * the count clears the stamp as well as the art. When that extra caption-height
- * still leaves the count sharing a span with a second stay stamp on that edge,
- * step one more caption-height into the gap so the count clears both stamps.
- * When that second caption-height still leaves the count sharing a span with a
- * third stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that third caption-height still leaves the count sharing a span with a
- * fourth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that fourth caption-height still leaves the count sharing a span with a
- * fifth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that fifth caption-height still leaves the count sharing a span with a
- * sixth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that sixth caption-height still leaves the count sharing a span with a
- * seventh stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that seventh caption-height still leaves the count sharing a span with an
- * eighth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that eighth caption-height still leaves the count sharing a span with a
- * ninth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that ninth caption-height still leaves the count sharing a span with a
- * tenth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that tenth caption-height still leaves the count sharing a span with an
- * eleventh stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that eleventh caption-height still leaves the count sharing a span with a
- * twelfth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * Keeps the stamp alpha. The status strip still reads the unwrapped release
- * line. Esc still clears it early.
+ * stay stamp on that edge, walk up to twelve caption-height steps further
+ * into the gap so the count clears successive stay stamps on the edge as
+ * well as the art. Keeps the stamp alpha. The status strip still reads the
+ * unwrapped release line. Esc still clears it early.
  */
 function nudgeSlidCountClearOfStayStamp(
   edge: AlignEdge,
@@ -1154,45 +1131,10 @@ function nudgeSlidCountClearOfStayStamp(
 /**
  * When the swapped move-count line lands on a blocked other crop edge, slide
  * it along that edge into the first clear gap so the count stays off the art
- * and off the lead. When that first clear gap still shares a span with a stay
- * stamp on that edge, nudge one caption-height further into the gap so the
- * count clears the stamp as well as the art. When that extra caption-height
- * still leaves the count sharing a span with a second stay stamp on that edge,
- * step one more caption-height into the gap so the count clears both stamps.
- * When that second caption-height still leaves the count sharing a span with a
- * third stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that third caption-height still leaves the count sharing a span with a
- * fourth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that fourth caption-height still leaves the count sharing a span with a
- * fifth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that fifth caption-height still leaves the count sharing a span with a
- * sixth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that sixth caption-height still leaves the count sharing a span with a
- * seventh stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that seventh caption-height still leaves the count sharing a span with an
- * eighth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that eighth caption-height still leaves the count sharing a span with a
- * ninth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that ninth caption-height still leaves the count sharing a span with a
- * tenth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that tenth caption-height still leaves the count sharing a span with an
- * eleventh stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps.
- * When that eleventh caption-height still leaves the count sharing a span with a
- * twelfth stay stamp on that edge, step one more caption-height into the gap so
- * the count clears the row of stamps. The walk stops at twelve so a full row
- * clears without another one-off. Same twelve-step stay-stamp walk the slid
- * line uses.
- * Keeps the stamp alpha. The status strip still reads the unwrapped release
- * line. Esc still clears it early.
+ * and off the lead. Then walk up to twelve caption-height steps further into
+ * the gap so the count clears successive stay stamps on that edge. Same
+ * twelve-step stay-stamp walk the slid line uses. Keeps the stamp alpha. The
+ * status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function slideSwappedCountAlongBlockedEdge(
   tick: AlignEdgeLine,
