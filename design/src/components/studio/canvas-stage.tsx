@@ -42,6 +42,26 @@ import type { DesignNode } from "@/lib/design/types";
 import { GroupNameChip } from "./group-name-chip";
 import type { PathEditHit } from "@/lib/design/path-edit";
 
+
+const TOOL_HINT: Record<string, string> = {
+  select: "Select · V",
+  hand: "Pan · H",
+  frame: "Frame · F",
+  rect: "Rectangle · R",
+  ellipse: "Ellipse · O",
+  line: "Line · L",
+  polygon: "Polygon",
+  star: "Star",
+  arrow: "Arrow",
+  text: "Text · T",
+  pen: "Pen · P",
+  knife: "Knife · K",
+  brush: "Brush · B",
+  eraser: "Eraser · E",
+  image: "Image",
+  eyedropper: "Eyedropper · I",
+};
+
 export function CanvasStage() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLCanvasElement>(null);
@@ -866,6 +886,11 @@ export function CanvasStage() {
     >
       <canvas ref={mainRef} className="absolute inset-0" />
       <GroupNameChip />
+      {!present && (
+        <div className="pointer-events-none absolute bottom-3 left-3 select-none text-[10px] tracking-wide text-phosphor/70">
+          {TOOL_HINT[tool] ?? tool}
+        </div>
+      )}
       {tool === "pen" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
           Click add · drag cubic · pull last handle to first to preview close · Alt break · ⌫ last · Enter close · Esc finish
