@@ -1236,70 +1236,9 @@ function slideSwappedCountAlongBlockedEdge(
 /**
  * When a wrapped commit tick caption still stacks the swapped move-count line on the lead after the twelve-step walk, drop the count one caption-height off that shared vertical span so the two lines no longer read as one stack.
  * Prefer down; if the crop clamp holds that drop inside the lead band, step one caption-height up instead.
- * When that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, step one more caption-height off that shared span. Prefer the second step down; if the clamp holds that second step inside the lead band, step one more caption-height up.
- * Second caption-height drop, when the extra step is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
-* When the second caption-height drop is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
- * When that crop-edge slide still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead.
- * When that one caption-width tuck still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that second caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that third caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fourth caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fifth caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that sixth caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that seventh caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that eighth caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninth caption-width still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that tenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that eleventh extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twelfth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirteenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fourteenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fifteenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that sixteenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that seventeenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that eighteenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that nineteenth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twentieth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-first extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-second extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-third extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-fourth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-fifth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-sixth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-seventh extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-eighth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that twenty-ninth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirtieth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-first extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-second extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-third extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-sixth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-seventh extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-eighth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that thirty-ninth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fortieth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that forty-first extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that forty-second extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that forty-seventh extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that forty-eighth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that forty-ninth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fifty-eighth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that fifty-ninth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that sixtieth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that sixty-first extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that sixty-sixth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends.
- * When that ninetieth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-first extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-second extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-third extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-fourth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-fifth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-sixth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-seventh extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
- * When that ninety-eighth extra step still covers the lead because the lead is wider than that step, step one more caption-width off the edge into the next gap beside the lead.
+ * If a second caption-height drop is also clamped inside the lead band, slide the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
+ * When that crop-edge slide still leaves the swapped move-count line sharing a vertical span because the lead band covers both crop ends, tuck the count one caption-width off that edge into the nearest gap beside the lead, then walk successive caption-width steps further off the edge until the count clears the lead or the seat stops moving (up to 256 steps).
  * Prefer the seat just beside the lead closest to the count; if that seat still covers the lead, use the other side of the lead, then the crop ends. Stamp alpha unchanged. Esc still clears it early.
- * Keeps the stamp alpha. The status strip still reads the unwrapped release line. Esc still clears it early.
  */
 function dropSwappedCountOffSharedLeadSpan(
   zoom: number,
@@ -1464,53 +1403,7 @@ function stepCountOneMoreCaptionWidthOffEdgeBesideLead(
 /**
  * When both sides are blocked by wide leads on a multi-line release, the move-count seating steps off the stay stamps and crop edges so the count stays clear.
  * Prefer the seat just beside the lead closest to the count; if that seat still covers a stamp or lands on a crop edge, try the opposite side before accepting an edge seat.
- * When the preferred beside-lead seats still land on a stay stamp after the opposite-side try, step one more caption-height off the stamp row so the count stays readable.
- * When that one-more caption-height step still lands on a second stay stamp, step one more caption-height off that second stamp so the count stays readable.
- * When that second caption-height step still lands on a third stay stamp, step one more caption-height off that third stamp so the count stays readable.
- * When that third caption-height step still lands on a fourth stay stamp, step one more caption-height off that fourth stamp so the count stays readable.
- * When that fourth caption-height step still lands on a fifth stay stamp, step one more caption-height off that fifth stamp so the count stays readable.
- * When that fifth caption-height step still lands on a sixth stay stamp, step one more caption-height off that sixth stamp so the count stays readable.
- * When that sixth caption-height step still lands on a seventh stay stamp, step one more caption-height off that seventh stamp so the count stays readable.
- * When that seventh caption-height step still lands on an eighth stay stamp, step one more caption-height off that eighth stamp so the count stays readable.
- * When that eighth caption-height step still lands on a ninth stay stamp, step one more caption-height off that ninth stamp so the count stays readable.
- * When that ninth caption-height step still lands on a tenth stay stamp, step one more caption-height off that tenth stamp so the count stays readable.
- * When that tenth caption-height step still lands on an eleventh stay stamp, step one more caption-height off that eleventh stamp so the count stays readable.
- * When that eleventh caption-height step still lands on a twelfth stay stamp, step one more caption-height off that twelfth stamp so the count stays readable.
- * When that twelfth caption-height step still lands on a thirteenth stay stamp, step one more caption-height off that thirteenth stamp so the count stays readable.
- * When that thirteenth caption-height step still lands on a fourteenth stay stamp, step one more caption-height off that fourteenth stamp so the count stays readable.
- * When that fourteenth caption-height step still lands on a fifteenth stay stamp, step one more caption-height off that fifteenth stamp so the count stays readable.
- * When that fifteenth caption-height step still lands on a sixteenth stay stamp, step one more caption-height off that sixteenth stamp so the count stays readable.
- * When that sixteenth caption-height step still lands on a seventeenth stay stamp, step one more caption-height off that seventeenth stamp so the count stays readable.
- * When that seventeenth caption-height step still lands on an eighteenth stay stamp, step one more caption-height off that eighteenth stamp so the count stays readable.
- * When that eighteenth caption-height step still lands on a nineteenth stay stamp, step one more caption-height off that nineteenth stamp so the count stays readable.
- * When that nineteenth caption-height step still lands on a twentieth stay stamp, step one more caption-height off that twentieth stamp so the count stays readable.
- * When that twentieth caption-height step still lands on a twenty-first stay stamp, step one more caption-height off that twenty-first stamp so the count stays readable.
- * When that twenty-first caption-height step still lands on a twenty-second stay stamp, step one more caption-height off that twenty-second stamp so the count stays readable.
- * When that twenty-second caption-height step still lands on a twenty-third stay stamp, step one more caption-height off that twenty-third stamp so the count stays readable.
- * When that twenty-third caption-height step still lands on a twenty-fourth stay stamp, step one more caption-height off that twenty-fourth stamp so the count stays readable.
- * When that twenty-fourth caption-height step still lands on a twenty-fifth stay stamp, step one more caption-height off that twenty-fifth stamp so the count stays readable.
- * When that twenty-fifth caption-height step still lands on a twenty-sixth stay stamp, step one more caption-height off that twenty-sixth stamp so the count stays readable.
- * When that twenty-sixth caption-height step still lands on a twenty-seventh stay stamp, step one more caption-height off that twenty-seventh stamp so the count stays readable.
- * When that twenty-seventh caption-height step still lands on a twenty-eighth stay stamp, step one more caption-height off that twenty-eighth stamp so the count stays readable.
- * When that twenty-eighth caption-height step still lands on a twenty-ninth stay stamp, step one more caption-height off that twenty-ninth stamp so the count stays readable.
- * When that twenty-ninth caption-height step still lands on a thirtieth stay stamp, step one more caption-height off that thirtieth stamp so the count stays readable.
- * When that thirtieth caption-height step still lands on a thirty-first stay stamp, step one more caption-height off that thirty-first stamp so the count stays readable.
- * When that thirty-first caption-height step still lands on a thirty-second stay stamp, step one more caption-height off that thirty-second stamp so the count stays readable.
- * When that thirty-second caption-height step still lands on a thirty-third stay stamp, step one more caption-height off that thirty-third stamp so the count stays readable.
- * When that thirty-third caption-height step still lands on a thirty-fourth stay stamp, step one more caption-height off that thirty-fourth stamp so the count stays readable.
- * When that thirty-fourth caption-height step still lands on a thirty-fifth stay stamp, step one more caption-height off that thirty-fifth stamp so the count stays readable.
- * When that thirty-fifth caption-height step still lands on a thirty-sixth stay stamp, step one more caption-height off that thirty-sixth stamp so the count stays readable.
- * When that thirty-sixth caption-height step still lands on a thirty-seventh stay stamp, step one more caption-height off that thirty-seventh stamp so the count stays readable.
- * When that thirty-seventh caption-height step still lands on a thirty-eighth stay stamp, step one more caption-height off that thirty-eighth stamp so the count stays readable.
- * When that thirty-eighth caption-height step still lands on a thirty-ninth stay stamp, step one more caption-height off that thirty-ninth stamp so the count stays readable.
- * When that thirty-ninth caption-height step still lands on a fortieth stay stamp, step one more caption-height off that fortieth stamp so the count stays readable.
- * When that fortieth caption-height step still lands on a forty-first stay stamp, step one more caption-height off that forty-first stamp so the count stays readable.
- * When that forty-first caption-height step still lands on a forty-second stay stamp, step one more caption-height off that forty-second stamp so the count stays readable.
- * When that forty-second caption-height step still lands on a forty-third stay stamp, step one more caption-height off that forty-third stamp so the count stays readable.
- * When that forty-third caption-height step still lands on a forty-fourth stay stamp, step one more caption-height off that forty-fourth stamp so the count stays readable.
- * When that forty-fourth caption-height step still lands on a forty-fifth stay stamp, step one more caption-height off that forty-fifth stamp so the count stays readable.
- * When that forty-fifth caption-height step still lands on a forty-sixth stay stamp, step one more caption-height off that forty-sixth stamp so the count stays readable.
- * When that forty-sixth caption-height step still lands on a forty-seventh stay stamp, step one more caption-height off that forty-seventh stamp so the count stays readable.
+ * When the preferred beside-lead seats still land on a stay stamp after the opposite-side try, walk successive caption-height steps off successive stay stamps so the count stays readable (up to about forty-seven steps).
  * Stamp alpha unchanged. Esc still clears it early.
  */
 function stepCountOffStayStampAndCropEdgeWhenBothSidesBlockedByWideLead(
@@ -1798,17 +1691,9 @@ export function placeAlignPreviewEdgeCaption(
  * When both crop ends are blocked, it tucks the move-count line into the nearest gap beside the short mover so the count stays off the art.
  * When that gap sits off the rail, the tucked line pins to the crop edge nearest that mover so the count stays readable.
  * When that pinned count and the lead line share that nearest crop edge, the count swaps to the other crop edge so the two lines do not stack.
-When the swapped count still shares a vertical span with the lead after the twelve-step walk, it drops one caption-height off that span, and when that one-caption drop still shares a vertical span with the lead because the crop clamp held it in the band, it steps one more caption-height off that shared span. When the second caption-height drop is also clamped inside the lead band, it slides the move-count line along the crop edge into the nearest gap that no longer shares a vertical span with the lead.
- * When that swapped line lands on a blocked other crop edge, it slides along that edge into the first clear gap so the count stays off the art and off the lead.
- * When that first clear gap still shares a span with a stay stamp on that edge, the count nudges one caption-height further into the gap so it clears the stamp as well as the art.
- * When that extra caption-height still leaves the count sharing a span with a second stay stamp on that edge, it steps one more caption-height into the gap so the count clears both stamps.
- * When that second caption-height still leaves the count sharing a span with a third stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps.
- * When that third caption-height still leaves the count sharing a span with a fourth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps,
- * When that fourth caption-height still leaves the count sharing a span with a fifth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps,
- * When that fifth caption-height still leaves the count sharing a span with a sixth stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps,
- * When that sixth caption-height still leaves the count sharing a span with a seventh stay stamp on that edge, it steps one more caption-height into the gap so the count clears the row of stamps,
- * and still eases with the stamp alpha. The status strip keeps the unwrapped
- * release line. Esc still clears it early. Null when the whole beat is already on screen.
+ * When the swapped count still shares a vertical span with the lead after the twelve-step walk, it drops one or more caption-heights off that span (preferring down), slides along the crop edge if still clamped, then tucks and walks successive caption-width steps off the edge until clear.
+ * When the swapped line lands on a blocked other crop edge, it slides along that edge into the first clear gap, then walks up to twelve caption-height steps further into the gap to clear successive stay stamps.
+ * Stamp alpha unchanged. Esc still clears it early. Null when the whole beat is already on screen.
  */
 export function placeAlignCommitEdgeCaption(
   tick: AlignEdgeLine,
