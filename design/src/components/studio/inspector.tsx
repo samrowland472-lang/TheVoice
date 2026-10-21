@@ -134,7 +134,12 @@ export function Inspector() {
         </label>
       </section>
       {!node ? (
-        <p className="px-3 py-4 font-mono text-[11px] text-ink-faint">Select a layer to inspect.</p>
+        <div className="space-y-2 px-3 py-4">
+          <p className="font-mono text-[11px] text-ink-faint">Select a layer to inspect.</p>
+          <p className="font-mono text-[10px] leading-snug text-ink-faint">
+            Board {doc.artboard.width}×{doc.artboard.height}. {doc.nodes.length} layer{doc.nodes.length === 1 ? "" : "s"}.
+          </p>
+        </div>
       ) : (
         <>
           <section className="space-y-2 border-b border-border px-3 py-3">

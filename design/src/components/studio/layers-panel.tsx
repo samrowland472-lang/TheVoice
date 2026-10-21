@@ -126,7 +126,13 @@ export function LayersPanel() {
 
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Layers</div>
+      <div className="flex items-baseline justify-between px-3 py-2">
+        <div className="font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Layers</div>
+        <div className="font-mono text-[10px] tracking-wide text-ink-faint">
+          {doc.nodes.length}
+          {selection.length > 0 ? ` · ${selection.length} selected` : ""}
+        </div>
+      </div>
       <div className="px-2 pb-2">
         <label className="relative flex h-8 items-center">
           <Search className="pointer-events-none absolute left-2 size-3.5 text-ink-faint" />
@@ -403,7 +409,9 @@ export function LayersPanel() {
         })}
         {layers.length === 0 && (
           <li className="px-2 py-6 text-center text-xs text-ink-faint">
-            {filtering ? "No layers match" : "Empty artboard"}
+            {filtering
+              ? `No layers match “${needle}”`
+              : "Empty artboard — pick a tool and draw"}
           </li>
         )}
       </ul>

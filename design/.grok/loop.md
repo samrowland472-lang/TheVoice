@@ -1,18 +1,19 @@
 ## Iteration
 
-2026-10-20 22:05 BST — Bound single-letter keys for the remaining shape tools: G for polygon, S for star, A for arrow, M for image. Tool rail titles and command palette now list the shortcuts. Phosphor chrome unchanged. Existing keys preserved.
+2026-10-21 01:10 BST — Layers header now shows total count and selected count. Filter empty state quotes the needle. Inspector empty state shows artboard size and layer count. Phosphor chrome unchanged.
 
 ## Done
 
-- Extended KEYS map in use-shortcuts.ts and tool titles in tool-rail.tsx.
-- Added matching command-palette entries in studio-app.tsx.
-- Typecheck, build, and browser-smoke all green. Hub screenshot shows stable chrome; no console errors.
+- Header count and selected badge in layers-panel.tsx.
+- Richer filter and empty-artboard copy.
+- Board dimensions and layer count in the inspector empty state.
+- Typecheck, build, and browser-smoke verified.
 
 ## Backlog
 
-- None remaining on the seating comment unrolls.
-- Optional: deeper inspector or layers polish if desired.
+- Optional deeper inspector or layers polish.
+- Export/present vertical slices.
 
 ## Next recommended
 
-Small visual polish on the inspector or layers panel, or a new vertical slice on export/present.
+Small visual polish on the inspector (field density, mixed-state clarity) or a focused export/present slice.
