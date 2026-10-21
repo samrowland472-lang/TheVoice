@@ -318,13 +318,14 @@ export function LayersPanel() {
                       <button
                         type="button"
                         className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                        title="Edit opacity · Alt+0–9 sets tenths"
+                        title="Edit opacity · Alt+0–9 tenths · Alt+Shift+0 full"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!selection.includes(n.id)) select([n.id]);
                           requestAnimationFrame(() => {
-                            const el = document.querySelector("[data-opacity-range]") as HTMLInputElement | null;
+                            const el = (document.querySelector("[data-opacity-range='inspector']") ||
+                              document.querySelector("[data-opacity-range]")) as HTMLInputElement | null;
                             el?.focus();
                           });
                         }}
@@ -458,21 +459,34 @@ function OpacityQuickStrip() {
         <span>Opacity</span>
         <span className={mixed ? "text-phosphor" : "text-ink-dim"}>{label}</span>
       </div>
-      <input
-        type="range"
-        className="range-phosphor w-full"
-        min={0}
-        max={1}
-        step={0.01}
-        value={value}
-        aria-label="Layer opacity"
-        data-opacity-range=""
-        onChange={(e) => {
-          const next = Number(e.target.value);
-          updateNodes(selection, { opacity: next });
-        }}
-        onPointerUp={() => useDesign.getState().commit()}
-      />
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={0}
+          max={1}
+          step={0.01}
+          value={value}
+          aria-label="Layer opacity"
+          data-opacity-range="layers"
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            updateNodes(selection, { opacity: next });
+          }}
+          onPointerUp={() => useDesign.getState().commit()}
+        />
+        <button
+          type="button"
+          className="h-6 shrink-0 rounded-[6px] border border-border px-1.5 font-mono text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+          title="Set opacity to 100% · Alt+Shift+0"
+          onClick={() => {
+            updateNodes(selection, { opacity: 1 });
+            useDesign.getState().commit();
+          }}
+        >
+          100%
+        </button>
+      </div>
     </div>
   );
 }
