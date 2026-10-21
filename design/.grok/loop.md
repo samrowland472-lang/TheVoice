@@ -1,18 +1,19 @@
 ## Iteration
 
-2026-10-21 05:05 BST — Inspector geometry fields now show compact labels (X Y W H R Rad) and mixed-state markers. Multi-select with differing values displays “· mixed” and an em-dash placeholder; committing a number writes it onto every selected layer. Name field does the same when names differ. Phosphor chrome unchanged.
+2026-10-21 08:10 BST — Campaign readout. The strip, export menu, and present chrome now show a compact stack label (N boards · stack W×H, 48px gaps). Export toast includes the same label. Phosphor chrome unchanged.
 
 ## Done
 
-- GeoField labels and mixed flags for X/Y/W/H/rotation/radius in inspector.tsx.
-- Mixed name placeholder and aria-label.
-- Typecheck, build, and browser-smoke verified.
+- campaignReadoutFromSizes / campaignStackFromSizes in export-campaign.ts.
+- Strip trailing readout and export-menu readout (this board size + format).
+- Present chrome stack label for multi-board sets.
+- Typecheck, build, and browser-smoke verified. Studio check: 1080 square + 1920 story → 1080×3048.
 
 ## Backlog
 
 - Optional deeper inspector or layers polish.
-- Export/present vertical slices.
+- Export/present vertical slices (crop polish).
 
 ## Next recommended
 
-Focused export/present slice (crop or campaign readout) or denser mixed ink/type chips.
+Denser mixed ink/type chips, or a crop-export polish slice.

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { campaignPages } from "@/lib/design/campaign";
+import { campaignReadoutFromSizes } from "@/lib/design/export-campaign";
 import {
   exitPresentFullscreen,
   presentRootIsFullscreen,
@@ -444,6 +445,19 @@ export function PresentView() {
         <Button size="sm" onClick={() => { void exitPresentFullscreen(); setPresent(false); }}>Exit</Button>
         <span className="truncate text-sm text-ink">{doc.name}</span>
         {pages.length > 1 && <span className="font-mono text-[10px] text-ink-faint">{i + 1} / {pages.length}</span>}
+        {live.campaignId && pages.length > 1 && (
+          <span className="font-mono text-[10px] tracking-wide text-phosphor" data-campaign-readout aria-label="Campaign readout">
+            {campaignReadoutFromSizes(
+              pages.map((page) => {
+                const meta = (index as { id: string; width?: number; height?: number }[]).find((p) => p.id === page.id);
+                return {
+                  width: page.id === live.id ? live.artboard.width : (meta?.width ?? live.artboard.width),
+                  height: page.id === live.id ? live.artboard.height : (meta?.height ?? live.artboard.height),
+                };
+              }),
+            ).label}
+          </span>
+        )}
         {pages.length > 1 && (
           <div className="ml-2 flex items-center gap-1">
             <Button size="sm" variant="ghost" disabled={i <= 0} onClick={() => go(-1)}>Prev</Button>

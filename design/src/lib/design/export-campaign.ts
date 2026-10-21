@@ -29,19 +29,43 @@ export function campaignDocsFromIndex(index: ProjectMeta[], current: DesignDocum
 }
 
 export function campaignStackLayout(docs: DesignDocument[]) {
-  const widths = docs.map((d) => d.artboard.width);
-  const heights = docs.map((d) => d.artboard.height);
-  const width = docs.length ? Math.max(...widths) : 1;
-  const height = docs.length
-    ? heights.reduce((sum, h) => sum + h, 0) + CAMPAIGN_GAP * Math.max(0, docs.length - 1)
+  return campaignStackFromSizes(docs.map((d) => ({ width: d.artboard.width, height: d.artboard.height })));
+}
+
+export type CampaignReadout = {
+  boards: number;
+  stackWidth: number;
+  stackHeight: number;
+  label: string;
+};
+
+/** Shared stack math for SVG export and the campaign readout. */
+export function campaignStackFromSizes(sizes: { width: number; height: number }[]) {
+  const widths = sizes.map((s) => s.width);
+  const heights = sizes.map((s) => s.height);
+  const width = sizes.length ? Math.max(...widths) : 1;
+  const height = sizes.length
+    ? heights.reduce((sum, h) => sum + h, 0) + CAMPAIGN_GAP * Math.max(0, sizes.length - 1)
     : 1;
   const offsets: number[] = [];
   let y = 0;
-  for (const d of docs) {
+  for (const h of heights) {
     offsets.push(y);
-    y += d.artboard.height + CAMPAIGN_GAP;
+    y += h + CAMPAIGN_GAP;
   }
   return { width, height, offsets };
+}
+
+export function campaignReadoutFromSizes(sizes: { width: number; height: number }[]): CampaignReadout {
+  const boards = sizes.length;
+  if (!boards) return { boards: 0, stackWidth: 0, stackHeight: 0, label: "No boards" };
+  const { width, height } = campaignStackFromSizes(sizes);
+  return {
+    boards,
+    stackWidth: width,
+    stackHeight: height,
+    label: `${boards} board${boards === 1 ? "" : "s"} · stack ${width}×${height}`,
+  };
 }
 
 export function exportCampaignSvg(docs: DesignDocument[]): string {

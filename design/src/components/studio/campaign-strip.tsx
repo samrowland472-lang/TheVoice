@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { campaignPages } from "@/lib/design/campaign";
+import { campaignReadoutFromSizes } from "@/lib/design/export-campaign";
 import { FORMATS } from "@/lib/design/formats";
 import { useDesign } from "@/lib/design/store";
+import type { ProjectMeta } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 
 export function CampaignStrip() {
@@ -23,7 +25,7 @@ export function CampaignStrip() {
   const [draft, setDraft] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   if (!doc) return null;
-  const pages = campaignPages(index, doc.campaignId);
+  const pages = campaignPages(index as ProjectMeta[], doc.campaignId);
   const used = new Set(pages.map((p) => p.formatId));
 
   function go(id: string) {
@@ -157,6 +159,7 @@ export function CampaignStrip() {
           <option key={f.id} value={f.id}>{f.label}</option>
         ))}
       </select>
+      <CampaignStripReadout />
     </div>
   );
 }
@@ -167,4 +170,28 @@ function shortFormat(id?: string) {
   if (id === "ig-post" || id === "square" || id === "album") return "Square";
   if (id === "x-post" || id === "linkedin" || id === "wide") return "Banner";
   return FORMATS.find((f) => f.id === id)?.label ?? id;
+}
+
+function CampaignStripReadout() {
+  const doc = useDesign((s) => s.doc);
+  const index = useDesign((s) => s.index);
+  if (!doc?.campaignId) return null;
+  const pages = campaignPages(index as ProjectMeta[], doc.campaignId);
+  const sizes = pages.length
+    ? pages.map((p) => ({
+        width: p.id === doc.id ? doc.artboard.width : p.width,
+        height: p.id === doc.id ? doc.artboard.height : p.height,
+      }))
+    : [{ width: doc.artboard.width, height: doc.artboard.height }];
+  const readout = campaignReadoutFromSizes(sizes);
+  return (
+    <span
+      className="ml-auto shrink-0 font-mono text-[10px] tracking-wide text-phosphor"
+      title={`Campaign stack ${readout.stackWidth}×${readout.stackHeight} with 48px gaps`}
+      aria-label="Campaign readout"
+      data-campaign-readout
+    >
+      {readout.label}
+    </span>
+  );
 }

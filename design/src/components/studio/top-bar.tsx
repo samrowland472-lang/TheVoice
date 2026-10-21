@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan, Search, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { campaignDocsFromIndex, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
+import { campaignPages } from "@/lib/design/campaign";
+import { campaignDocsFromIndex, campaignReadoutFromSizes, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
 import { downloadDataUrl, downloadPrintPdf, downloadSvg, exportJpeg, exportPng, exportPrintPng, slug } from "@/lib/design/export";
 import {
   cropIsolateDocument,
@@ -11,6 +12,7 @@ import {
   selectionDocument,
 } from "@/lib/design/selection-document";
 import { FORMATS } from "@/lib/design/formats";
+import type { ProjectMeta } from "@/lib/design/types";
 import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
 import { Button } from "@/components/ui/button";
@@ -132,9 +134,9 @@ export function TopBar() {
     }
     toast.success(
       kind === "campaign-pdf"
-        ? `Exported campaign PDF · ${campaign.length} boards`
+        ? `Exported campaign PDF · ${campaignReadoutFromSizes(campaign.map((d) => d.artboard)).label}`
         : kind === "campaign-svg"
-          ? `Exported campaign SVG · ${campaign.length} boards`
+          ? `Exported campaign SVG · ${campaignReadoutFromSizes(campaign.map((d) => d.artboard)).label}`
           : kind === "pdf"
             ? "Exported print PDF"
             : kind === "print"
@@ -305,6 +307,7 @@ export function TopBar() {
             </Button>
             {doc.campaignId && (
               <>
+                <CampaignExportReadout />
                 <Button size="sm" className="mt-1 w-full" onClick={() => exportFile("campaign-svg")}>
                   Campaign SVG
                 </Button>
@@ -317,5 +320,32 @@ export function TopBar() {
         )}
       </div>
     </header>
+  );
+}
+
+function CampaignExportReadout() {
+  const doc = useDesign((s) => s.doc);
+  const index = useDesign((s) => s.index);
+  if (!doc?.campaignId) return null;
+  const pages = campaignPages(index as ProjectMeta[], doc.campaignId);
+  const sizes = pages.length
+    ? pages.map((p) => ({
+        width: p.id === doc.id ? doc.artboard.width : p.width,
+        height: p.id === doc.id ? doc.artboard.height : p.height,
+      }))
+    : [{ width: doc.artboard.width, height: doc.artboard.height }];
+  const readout = campaignReadoutFromSizes(sizes);
+  const format = FORMATS.find((f) => f.id === doc.artboard.formatId)?.label ?? doc.artboard.formatId;
+  return (
+    <div
+      className="mt-2 rounded-[8px] border border-phosphor/40 bg-surface-alt px-2 py-1.5 font-mono text-[10px] leading-snug tracking-wide text-phosphor"
+      data-campaign-readout
+      aria-label="Campaign readout"
+    >
+      <div>{readout.label}</div>
+      <div className="text-ink-faint">
+        This board {doc.artboard.width}×{doc.artboard.height} · {format}
+      </div>
+    </div>
   );
 }
