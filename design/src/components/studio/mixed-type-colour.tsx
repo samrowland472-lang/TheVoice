@@ -69,12 +69,12 @@ export function MixedTypeColour({
           Apply key type colour to all type
         </button>
         {mixed && (
-          <div className="mt-2 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 flex flex-wrap gap-1">
             {nodes.map((n) => (
               <button
                 key={`type-fill-${n.id}`}
                 type="button"
-                className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+                className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
                 title={`Unify type colour with ${n.name || "text"}: ${fillChipLabel(n.fill)}`}
                 aria-label={`Unify type colour with ${n.name || "text"}: ${fillChipLabel(n.fill)}`}
                 onClick={() => writeFill(n.fill)}

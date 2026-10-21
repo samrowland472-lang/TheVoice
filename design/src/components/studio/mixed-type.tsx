@@ -189,9 +189,9 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
         {mixedCase ? "Uppercase · mixed" : "Uppercase"}
       </label>
       {mixedStack && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-1.5 flex flex-wrap gap-1">
           {nodes.map((n) => (
-            <button key={n.id} type="button" className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor" title={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n, nodes)}`} aria-label={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n, nodes)}`} onClick={() => stampType(n)}>{typeChipLabel(n, nodes)}</button>
+            <button key={n.id} type="button" className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate" title={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n, nodes)}`} aria-label={`Unify full type with ${n.name || "text"}: ${typeChipLabel(n, nodes)}`} onClick={() => stampType(n)}>{typeChipLabel(n, nodes)}</button>
           ))}
         </div>
       )}

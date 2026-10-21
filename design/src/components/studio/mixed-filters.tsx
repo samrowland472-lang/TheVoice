@@ -75,12 +75,12 @@ export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
         );
       })}
       {mixedAll && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {photos.map((n: ImageNode | PaintNode) => (
             <button
               key={n.id}
               type="button"
-              className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+              className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
               title={`Unify full filters with ${n.name || "photo"}: ${filterChipLabel(n.filters)}`}
               aria-label={`Unify full filters with ${n.name || "photo"}: ${filterChipLabel(n.filters)}`}
               onClick={() => patchImageFilters(ids, cloneFilters(n.filters), true)}

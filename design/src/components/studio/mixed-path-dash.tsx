@@ -35,7 +35,7 @@ function miterKey(n: DesignNode) {
 }
 
 function chipClass() {
-  return "flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor";
+  return "flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate";
 }
 
 export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
@@ -130,7 +130,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </div>
       </Field>
       {mixed && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
             const d = n.strokeDash ?? 0;
             const label = dashChipLabel(d);
@@ -174,7 +174,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </div>
       </Field>
       {mixedOffset && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
             const off = n.strokeDashOffset ?? 0;
             const label = dashOffsetChipLabel(off);
@@ -213,7 +213,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </select>
       </Field>
       {mixedCap && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
             const c = n.lineCap ?? "round";
             const label = capChipLabel(c);
@@ -252,7 +252,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </select>
       </Field>
       {mixedJoin && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
             const j = n.lineJoin ?? "round";
             const label = joinChipLabel(j);
@@ -272,7 +272,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </div>
       )}
       {mixedRhythm && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
             const d = n.strokeDash ?? 0;
             const c = n.lineCap ?? "round";
@@ -320,7 +320,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </Field>
       )}
       {mixedMiter && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
             const m = n.miterLimit ?? 4;
             const label = miterChipLabel(m);
@@ -366,7 +366,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </Field>
       )}
       {mixedSides && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {polygons.map((n) => {
             const s = Math.max(3, Math.round(("sides" in n ? n.sides : undefined) ?? 5));
             const label = sidesChipLabel(s, n.kind);
@@ -412,7 +412,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </Field>
       )}
       {mixedHead && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {arrows.map((n) => {
             const h = ("headScale" in n ? n.headScale : undefined) ?? 1;
             const label = headScaleChipLabel(h);

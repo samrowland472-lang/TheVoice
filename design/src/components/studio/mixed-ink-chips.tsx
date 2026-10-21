@@ -7,7 +7,7 @@ export function MixedFillChips({ nodes, ink }: { nodes: DesignNode[]; ink: strin
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => {
         const hex = solidOf(n.fill, ink);
         const label = fillChipLabel(n.fill);
@@ -15,13 +15,13 @@ export function MixedFillChips({ nodes, ink }: { nodes: DesignNode[]; ink: strin
           <button
             key={n.id}
             type="button"
-            className="flex h-7 items-center gap-1.5 rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
             title={`Unify fill with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify fill with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { fill: cloneFill(n.fill) }, true)}
           >
             <span
-              className="size-3.5 shrink-0 rounded-full border border-phosphor/40"
+              className="size-3 shrink-0 rounded-full border border-phosphor/30"
               style={{ background: n.fill === "transparent" ? "transparent" : hex }}
             />
             {label}
@@ -36,20 +36,20 @@ export function MixedStrokeChips({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => {
         const label = strokeChipLabel(n.stroke, n.strokeWidth);
         return (
           <button
             key={`stroke-${n.id}`}
             type="button"
-            className="flex h-7 items-center gap-1.5 rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
             title={`Unify stroke with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify stroke with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { stroke: n.stroke, strokeWidth: n.strokeWidth }, true)}
           >
             <span
-              className="size-3.5 shrink-0 rounded-full border border-phosphor/40"
+              className="size-3 shrink-0 rounded-full border border-phosphor/30"
               style={{
                 background: n.stroke === "transparent" ? "transparent" : n.stroke,
               }}
@@ -66,14 +66,14 @@ export function MixedOpacityChips({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => {
         const label = `${Math.round(n.opacity * 100)}%`;
         return (
           <button
             key={`op-${n.id}`}
             type="button"
-            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
             title={`Unify opacity with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify opacity with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { opacity: n.opacity }, true)}
@@ -90,12 +90,12 @@ export function MixedBlendChips({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => (
         <button
           key={`blend-${n.id}`}
           type="button"
-          className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+          className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
           title={`Unify blend with ${n.name || n.kind}: ${n.blend}`}
           aria-label={`Unify blend with ${n.name || n.kind}: ${n.blend}`}
           onClick={() => updateNodes(ids, { blend: n.blend as BlendMode }, true)}
@@ -119,14 +119,14 @@ export function MixedVisibilityChips({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => {
         const label = visibilityChipLabel(n.visible);
         return (
           <button
             key={`vis-${n.id}`}
             type="button"
-            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
             title={`Unify visibility with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify visibility with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { visible: n.visible }, true)}
@@ -149,14 +149,14 @@ export function MixedShadowOffsetChips({
   const mapNodes = useDesign((s) => s.mapNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => {
         const label = shadowOffsetChipLabel(axis, n.shadow);
         return (
           <button
             key={`${axis}-${n.id}`}
             type="button"
-            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
             title={`Unify shadow ${axis} with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify shadow ${axis} with ${n.name || n.kind}: ${label}`}
             onClick={() => {
@@ -183,14 +183,14 @@ export function MixedLockChips({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
   return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
+    <div className="mt-1 flex flex-wrap gap-1">
       {nodes.map((n) => {
         const label = lockChipLabel(n.locked);
         return (
           <button
             key={`lock-${n.id}`}
             type="button"
-            className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+            className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
             title={`Unify lock with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify lock with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { locked: n.locked }, true)}

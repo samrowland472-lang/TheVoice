@@ -54,14 +54,14 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
         </div>
       </Field>
       {mixedRotation && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {nodes.map((n) => {
             const label = rotationChipLabel(n.rotation);
             return (
               <button
                 key={`rot-${n.id}`}
                 type="button"
-                className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+                className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
                 title={`Unify rotation with ${n.name || n.kind}: ${label}`}
                 aria-label={`Unify rotation with ${n.name || n.kind}: ${label}`}
                 onClick={() => updateNodes(ids, { rotation: n.rotation }, true)}
@@ -105,14 +105,14 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
         </div>
       </Field>
       {mixedRadius && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {nodes.map((n) => {
             const label = radiusChipLabel(n.radius);
             return (
               <button
                 key={`rad-${n.id}`}
                 type="button"
-                className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+                className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
                 title={`Unify radius with ${n.name || n.kind}: ${label}`}
                 aria-label={`Unify radius with ${n.name || n.kind}: ${label}`}
                 onMouseEnter={() => ghostRadius(n.radius)}

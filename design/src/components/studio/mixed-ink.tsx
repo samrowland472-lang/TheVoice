@@ -179,9 +179,9 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           <button type="button" className="text-[10px] text-phosphor" onClick={() => mapShadows((sh) => (sh ? null : { ...DEFAULT_SHADOW }), true)}>{nodes.every((n) => n.shadow) ? "Clear" : "Add"}</button>
         </div>
         <p className="mt-1 text-[10px] text-ink-faint">selection shadow x / y stay independent</p>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-1.5 flex flex-wrap gap-1">
           {nodes.map((n) => (
-            <button key={`full-sh-${n.id}`} type="button" className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor" title={`Unify full shadow with ${n.name || n.kind}: ${shadowChipLabel(n.shadow)}`} aria-label={`Unify full shadow with ${n.name || n.kind}: ${shadowChipLabel(n.shadow)}`} onClick={() => mapShadows(() => cloneShadow(n.shadow), true)}>{shadowChipLabel(n.shadow)}</button>
+            <button key={`full-sh-${n.id}`} type="button" className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate" title={`Unify full shadow with ${n.name || n.kind}: ${shadowChipLabel(n.shadow)}`} aria-label={`Unify full shadow with ${n.name || n.kind}: ${shadowChipLabel(n.shadow)}`} onClick={() => mapShadows(() => cloneShadow(n.shadow), true)}>{shadowChipLabel(n.shadow)}</button>
           ))}
         </div>
         <Field label={mixedColor ? "Colour · mixed" : "Colour"}>

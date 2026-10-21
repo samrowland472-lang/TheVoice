@@ -52,7 +52,7 @@ export function MixedFillRule({ nodes }: { nodes: DesignNode[] }) {
         </select>
       </Field>
       {mixed && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-1 flex flex-wrap gap-1">
           {paths.map((n) => {
             const rule = pathFillRule(n);
             const label = fillRuleChipLabel(rule);
@@ -60,7 +60,7 @@ export function MixedFillRule({ nodes }: { nodes: DesignNode[] }) {
               <button
                 key={`fill-rule-${n.id}`}
                 type="button"
-                className="flex h-7 items-center rounded-full border border-phosphor/50 bg-surface-alt px-2 font-mono text-[9px] text-phosphor"
+                className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
                 title={`Unify fill rule with ${n.name || n.kind}: ${label}`}
                 aria-label={`Unify fill rule with ${n.name || n.kind}: ${label}`}
                 onMouseEnter={() => ghostFillRule(rule)}
