@@ -1,12 +1,11 @@
 ## Iteration
 
-2026-10-21 01:10 BST — Layers header now shows total count and selected count. Filter empty state quotes the needle. Inspector empty state shows artboard size and layer count. Phosphor chrome unchanged.
+2026-10-21 05:05 BST — Inspector geometry fields now show compact labels (X Y W H R Rad) and mixed-state markers. Multi-select with differing values displays “· mixed” and an em-dash placeholder; committing a number writes it onto every selected layer. Name field does the same when names differ. Phosphor chrome unchanged.
 
 ## Done
 
-- Header count and selected badge in layers-panel.tsx.
-- Richer filter and empty-artboard copy.
-- Board dimensions and layer count in the inspector empty state.
+- GeoField labels and mixed flags for X/Y/W/H/rotation/radius in inspector.tsx.
+- Mixed name placeholder and aria-label.
 - Typecheck, build, and browser-smoke verified.
 
 ## Backlog
@@ -16,4 +15,4 @@
 
 ## Next recommended
 
-Small visual polish on the inspector (field density, mixed-state clarity) or a focused export/present slice.
+Focused export/present slice (crop or campaign readout) or denser mixed ink/type chips.

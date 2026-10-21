@@ -85,6 +85,13 @@ export function Inspector() {
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
   const mixedOpacity = new Set(selectedNodes.map((n) => n.opacity)).size > 1;
   const mixedBlend = new Set(selectedNodes.map((n) => n.blend)).size > 1;
+  const mixedName = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.name)).size > 1;
+  const mixedX = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.x)).size > 1;
+  const mixedY = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.y)).size > 1;
+  const mixedW = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.w)).size > 1;
+  const mixedH = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.h)).size > 1;
+  const mixedRot = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => Math.round(n.rotation))).size > 1;
+  const mixedRad = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.radius)).size > 1;
 
   const rail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
   const selectionKey = selection.join("|");
@@ -148,16 +155,22 @@ export function Inspector() {
             </div>
             <DistributeChrome />
             <label className="block font-mono text-[10px] text-ink-dim">
-              Name
-              <input className="mt-1 w-full border border-border bg-ground px-2 py-1 font-mono text-[11px] text-ink" value={node.name} onChange={(e) => updateNodes(ids, { name: e.target.value })} />
+              {mixedName ? "Name · mixed" : "Name"}
+              <input
+                className="mt-1 w-full border border-border bg-ground px-2 py-1 font-mono text-[11px] text-ink placeholder:text-ink-faint"
+                value={mixedName ? "" : node.name}
+                placeholder={mixedName ? "Mixed" : undefined}
+                aria-label={mixedName ? "Name mixed" : "Name"}
+                onChange={(e) => updateNodes(ids, { name: e.target.value })}
+              />
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              <NumField aria-label="X" value={node.x} onCommit={(x) => updateNodes(ids, { x })} />
-              <NumField aria-label="Y" value={node.y} onCommit={(y) => updateNodes(ids, { y })} />
-              <NumField aria-label="W" value={node.w} onCommit={(w) => updateNodes(ids, { w })} />
-              <NumField aria-label="H" value={node.h} onCommit={(h) => updateNodes(ids, { h })} />
-              <NumField aria-label="Rotation" value={Math.round(node.rotation)} onCommit={(rotation) => updateNodes(ids, { rotation })} />
-              <NumField aria-label="Radius" value={node.radius} onCommit={(radius) => updateNodes(ids, { radius })} />
+            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+              <GeoField label="X" mixed={mixedX} value={node.x} onCommit={(x) => updateNodes(ids, { x })} />
+              <GeoField label="Y" mixed={mixedY} value={node.y} onCommit={(y) => updateNodes(ids, { y })} />
+              <GeoField label="W" mixed={mixedW} value={node.w} onCommit={(w) => updateNodes(ids, { w })} />
+              <GeoField label="H" mixed={mixedH} value={node.h} onCommit={(h) => updateNodes(ids, { h })} />
+              <GeoField label="R" mixed={mixedRot} value={Math.round(node.rotation)} onCommit={(rotation) => updateNodes(ids, { rotation })} />
+              <GeoField label="Rad" mixed={mixedRad} value={node.radius} onCommit={(radius) => updateNodes(ids, { radius })} />
             </div>
           </section>
           <section className="space-y-2 border-b border-border px-3 py-3">
@@ -262,6 +275,32 @@ export function Inspector() {
         </>
       )}
     </aside>
+  );
+}
+
+function GeoField({
+  label,
+  mixed,
+  value,
+  onCommit,
+}: {
+  label: string;
+  mixed: boolean;
+  value: number;
+  onCommit: (n: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-0.5 block font-mono text-[9px] uppercase tracking-[0.12em] text-ink-faint">
+        {mixed ? `${label} · mixed` : label}
+      </span>
+      <NumField
+        aria-label={mixed ? `${label} mixed` : label}
+        mixed={mixed}
+        value={value}
+        onCommit={onCommit}
+      />
+    </label>
   );
 }
 
