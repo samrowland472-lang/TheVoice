@@ -181,6 +181,7 @@ export function LayersPanel() {
             Show all
           </button>
         ) : null}
+        <OpacityQuickStrip />
         {filtering && (
           <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
             {layers.length} match{layers.length === 1 ? "" : "es"}
@@ -313,6 +314,11 @@ export function LayersPanel() {
                   >
                     {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
                     {n.name || n.kind}
+                    {n.opacity < 0.999 && (
+                      <span className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint">
+                        {Math.round(n.opacity * 100)}%
+                      </span>
+                    )}
                     {isKey && (
                       <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
                         Key
@@ -416,6 +422,43 @@ export function LayersPanel() {
         )}
       </ul>
       <HistoryList />
+    </div>
+  );
+}
+
+
+function OpacityQuickStrip() {
+  const selection = useDesign((s) => s.selection);
+  const doc = useDesign((s) => s.doc);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  if (!doc || selection.length === 0) return null;
+  const nodes = selection
+    .map((id) => doc.nodes.find((n) => n.id === id))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n));
+  if (nodes.length === 0) return null;
+  const mixed = new Set(nodes.map((n) => Math.round(n.opacity * 100))).size > 1;
+  const value = mixed ? 1 : nodes[0].opacity;
+  const label = mixed ? "Mixed" : `${Math.round(value * 100)}%`;
+  return (
+    <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
+      <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
+        <span>Opacity</span>
+        <span className={mixed ? "text-phosphor" : "text-ink-dim"}>{label}</span>
+      </div>
+      <input
+        type="range"
+        className="range-phosphor w-full"
+        min={0}
+        max={1}
+        step={0.01}
+        value={value}
+        aria-label="Layer opacity"
+        onChange={(e) => {
+          const next = Number(e.target.value);
+          updateNodes(selection, { opacity: next });
+        }}
+        onPointerUp={() => useDesign.getState().commit()}
+      />
     </div>
   );
 }

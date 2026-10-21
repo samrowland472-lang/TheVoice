@@ -1,18 +1,21 @@
-## Iteration
+# The Voice Design — Improvement Loop
 
-2026-10-21 11:05 BST — Denser mixed chips. Fill, stroke, opacity, blend, visibility, lock, shadow, type, geometry, filter and fill-rule chips now sit at h-6 / 8px mono with tighter gaps and max-width truncate so more options fit in the inspector without wrapping. Phosphor chrome unchanged.
+## Iteration
+- **When**: 2026-10-21 14:03 BST
+- **Slice**: Layers panel opacity quick-strip + per-row opacity badge
+- **Status**: Done
 
 ## Done
-
-- Densified chip button and container styles across mixed-ink-chips, mixed-shadow-chips, mixed-type, mixed-ink, mixed-path-dash, mixed-type-colour, mixed-geometry, mixed-filters, mixed-fill-rule.
-- Smaller color dots, reduced padding and gap, added max-w-[120px] truncate.
-- Typecheck, build, and browser-smoke verified.
-
-## Backlog
-
-- Optional deeper inspector or layers polish.
-- Export/present vertical slices (crop polish).
+- Added `OpacityQuickStrip` in the layers panel header. When one or more layers are selected it shows a phosphor range that writes opacity to the selection (mixed values labelled “Mixed”).
+- Layer rows now show a small mono badge (`NN%`) when opacity is not 100%.
+- Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, no console errors).
 
 ## Next recommended
+- Make the opacity badge clickable to focus the quick-strip, or add a keyboard shortcut (e.g. `0`–`9` for opacity steps) while a layer is selected.
+- Surface the same control in the mobile sheet version of the layers panel if it exists.
+- Consider a “copy opacity” / “paste opacity” pair in the command palette.
 
-Crop-export polish slice, or denser layer rows in the layers panel.
+## Guardrails observed
+- Auth OFF, DB OFF, localStorage only.
+- Phosphor styling, no emoji chrome, no second brand.
+- One vertical slice only.
