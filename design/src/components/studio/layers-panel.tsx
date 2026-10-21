@@ -315,9 +315,22 @@ export function LayersPanel() {
                     {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
                     {n.name || n.kind}
                     {n.opacity < 0.999 && (
-                      <span className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint">
+                      <button
+                        type="button"
+                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        title="Edit opacity · Alt+0–9 sets tenths"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          requestAnimationFrame(() => {
+                            const el = document.querySelector("[data-opacity-range]") as HTMLInputElement | null;
+                            el?.focus();
+                          });
+                        }}
+                      >
                         {Math.round(n.opacity * 100)}%
-                      </span>
+                      </button>
                     )}
                     {isKey && (
                       <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
@@ -453,6 +466,7 @@ function OpacityQuickStrip() {
         step={0.01}
         value={value}
         aria-label="Layer opacity"
+        data-opacity-range=""
         onChange={(e) => {
           const next = Number(e.target.value);
           updateNodes(selection, { opacity: next });

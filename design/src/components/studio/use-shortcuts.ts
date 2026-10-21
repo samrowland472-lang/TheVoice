@@ -97,6 +97,15 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
 
       if (s.present) return;
 
+      // Alt+0–9 sets selection opacity to tenths (0.0–0.9) while layers are selected.
+      if (e.altKey && !meta && !e.shiftKey && s.selection.length > 0 && /^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        const tenths = Number(e.key);
+        s.updateNodes(s.selection, { opacity: tenths / 10 });
+        s.commit();
+        return;
+      }
+
       if (meta && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) s.redo();
