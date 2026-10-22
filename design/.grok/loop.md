@@ -1,20 +1,20 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-21 21:01 BST
-- **Slice**: Inspector opacity rail matches layers badge + Alt+Shift+0 full
+- **When**: 2026-10-22 01:05 BST
+- **Slice**: Live percent entry next to opacity range
 - **Status**: Done
 
 ## Done
-- Opacity range in the inspector rail now carries data-opacity-range="inspector". Layer-row badges prefer focusing that range so the rail and the strip stay in step.
-- Matching 100% chip next to both the inspector range and the layers OpacityQuickStrip. Click sets selection opacity to 1 and commits.
-- Alt+Shift+0 sets selection opacity to 100% (Alt+0–9 still sets tenths). Tooltips mention the full shortcut.
+- Inspector opacity rail now has a live numeric percent field (NumField) beside the range. Type a number 0–100, Enter or blur to commit. Range still updates the readout live. 100% chip and Alt+Shift+0 unchanged.
+- Layers OpacityQuickStrip matches: same percent field, mixed state shows “—” until you type, and committing sets every selected layer.
+- Mixed label stays “Opacity · mixed” in the inspector; the field placeholder is “—” while values differ.
 - Typecheck clean. Build clean. Browser smoke clean.
 
 ## Next recommended
 - Copy/paste opacity via the command palette (or Ctrl/Cmd+Shift+C / V for opacity only).
-- Live numeric readout next to the range that accepts direct percent entry.
 - Opacity histogram or mixed-value indicator when selection spans many tenths.
+- Keyboard focus from the percent field back to the range with arrow keys.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.

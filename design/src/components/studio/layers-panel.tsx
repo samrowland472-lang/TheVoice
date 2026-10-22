@@ -4,6 +4,7 @@ import { useDesign } from "@/lib/design/store";
 import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
 import { isGroup } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
+import { NumField } from "./num-field";
 import {
   alignCommitLayerFadeLine,
   alignCommitSolidLead,
@@ -451,13 +452,12 @@ function OpacityQuickStrip() {
     .filter((n): n is NonNullable<typeof n> => Boolean(n));
   if (nodes.length === 0) return null;
   const mixed = new Set(nodes.map((n) => Math.round(n.opacity * 100))).size > 1;
-  const value = mixed ? 1 : nodes[0].opacity;
-  const label = mixed ? "Mixed" : `${Math.round(value * 100)}%`;
+  const value = mixed ? nodes[nodes.length - 1].opacity : nodes[0].opacity;
   return (
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Opacity</span>
-        <span className={mixed ? "text-phosphor" : "text-ink-dim"}>{label}</span>
+        <span className={mixed ? "text-phosphor" : "text-ink-dim"}>{mixed ? "Mixed" : `${Math.round(value * 100)}%`}</span>
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -475,6 +475,20 @@ function OpacityQuickStrip() {
           }}
           onPointerUp={() => useDesign.getState().commit()}
         />
+        <NumField
+          aria-label="Layer opacity percent"
+          mixed={mixed}
+          value={Math.round(value * 100)}
+          min={0}
+          max={100}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(pct) => {
+            const opacity = Math.max(0, Math.min(1, pct / 100));
+            updateNodes(selection, { opacity });
+            useDesign.getState().commit();
+          }}
+        />
+        <span className="shrink-0 font-mono text-[9px] text-ink-faint">%</span>
         <button
           type="button"
           className="h-6 shrink-0 rounded-[6px] border border-border px-1.5 font-mono text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
