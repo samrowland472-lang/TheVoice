@@ -212,18 +212,24 @@ export function Inspector() {
                   />
                   {mixedOpacity && opacityTicks.length > 0 && (
                     <div
-                      className="pointer-events-none absolute inset-x-0 top-full mt-px h-2"
-                      aria-hidden="true"
+                      className="absolute inset-x-0 top-full mt-px h-2"
                     >
                       {opacityTicks.map(({ pct, count }) => (
-                        <span
+                        <button
                           key={pct}
-                          className="absolute bottom-0 w-px bg-phosphor/80"
+                          type="button"
+                          className="absolute bottom-0 w-1.5 -translate-x-1/2 cursor-pointer bg-phosphor/80 hover:bg-phosphor focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-phosphor"
                           style={{
                             left: `${pct}%`,
                             height: `${Math.min(8, 2 + count * 2)}px`,
                           }}
-                          title={`${count} layer${count === 1 ? "" : "s"} at ${pct}%`}
+                          title={`${count} layer${count === 1 ? "" : "s"} at ${pct}% · click to set all`}
+                          aria-label={`Set opacity to ${pct}%`}
+                          onClick={() => {
+                            const opacity = Math.max(0, Math.min(1, pct / 100));
+                            updateNodes(ids, { opacity });
+                            useDesign.getState().commit();
+                          }}
                         />
                       ))}
                     </div>

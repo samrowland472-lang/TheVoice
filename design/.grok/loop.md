@@ -1,19 +1,19 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-22 11:04 UTC
-- **Slice**: Opacity histogram ticks under the range when mixed
+- **When**: 2026-10-22 14:05 UTC
+- **Slice**: Click a mixed-opacity histogram tick to set the selection
 - **Status**: Done
 
 ## Done
-- When the selection has mixed opacity, phosphor histogram ticks appear under the opacity range. Each unique percent gets a vertical tick whose height scales with how many layers share that opacity.
-- Ticks sit just below the track, pointer-events none, and the range wrapper gains a small bottom margin so they do not collide with the next field.
+- When the selection has mixed opacity, the phosphor histogram ticks under the range are now clickable. Clicking a tick sets every selected layer to that opacity and commits.
+- Ticks use a wider hit target, cursor pointer, hover brighten, and focus ring. Title and aria-label explain the action.
 - Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, canvas present, no console errors).
 
 ## Next recommended
 - Keyboard focus from the percent field back to the range with arrow keys.
 - Live preview of the clipped opacity on the range thumb.
-- Click a histogram tick to set the selection to that opacity.
+- Show the count in the tick tooltip more prominently, or a small number badge on tall ticks.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.
