@@ -1,19 +1,20 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-22 14:05 UTC
-- **Slice**: Click a mixed-opacity histogram tick to set the selection
+- **When**: 2026-10-22 18:06 UTC
+- **Slice**: Keyboard focus from the opacity percent field back to the range with arrow keys
 - **Status**: Done
 
 ## Done
-- When the selection has mixed opacity, the phosphor histogram ticks under the range are now clickable. Clicking a tick sets every selected layer to that opacity and commits.
-- Ticks use a wider hit target, cursor pointer, hover brighten, and focus ring. Title and aria-label explain the action.
+- In the Layer opacity field, ArrowUp and ArrowDown step the selection (Shift steps by 10) and move focus onto the phosphor range so further arrows scrub from there.
+- ArrowLeft at the start of the percent field and ArrowRight at the end do the same, without stealing caret movement inside a typed number.
+- The range commits those keyboard steps into history. Mixed selections unify on the stepped value.
 - Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, canvas present, no console errors).
 
 ## Next recommended
-- Keyboard focus from the percent field back to the range with arrow keys.
 - Live preview of the clipped opacity on the range thumb.
 - Show the count in the tick tooltip more prominently, or a small number badge on tall ticks.
+- Home and End from the percent field jump the range to 0% or 100%.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.

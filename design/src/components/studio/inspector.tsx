@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { formatEqualGapHold, getEqualGapHold, subscribeEqualGapHold } from "@/lib/design/group-transform";
@@ -65,6 +65,7 @@ export function Inspector() {
   const brand = useDesign((s) => s.brand);
   const color = useDesign((s) => s.color);
   const opacityClipboard = useDesign((s) => s.opacityClipboard);
+  const opacityRangeRef = useRef<HTMLInputElement>(null);
 
   if (!doc) return null;
 
@@ -199,6 +200,7 @@ export function Inspector() {
               <div className="flex items-center gap-2">
                 <div className={cn("relative min-w-0 flex-1", mixedOpacity && "mb-2")}>
                   <input
+                    ref={opacityRangeRef}
                     type="range"
                     className="range-phosphor w-full"
                     min={0}
@@ -207,8 +209,23 @@ export function Inspector() {
                     value={node.opacity}
                     aria-label="Layer opacity"
                     data-opacity-range="inspector"
+                    title="Arrow keys step opacity · from the percent field, arrows focus here"
                     onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
                     onPointerUp={() => useDesign.getState().commit()}
+                    onKeyUp={(e) => {
+                      if (
+                        e.key === "ArrowUp" ||
+                        e.key === "ArrowDown" ||
+                        e.key === "ArrowLeft" ||
+                        e.key === "ArrowRight" ||
+                        e.key === "Home" ||
+                        e.key === "End" ||
+                        e.key === "PageUp" ||
+                        e.key === "PageDown"
+                      ) {
+                        useDesign.getState().commit();
+                      }
+                    }}
                   />
                   {mixedOpacity && opacityTicks.length > 0 && (
                     <div
@@ -246,6 +263,30 @@ export function Inspector() {
                     const opacity = Math.max(0, Math.min(1, pct / 100));
                     updateNodes(ids, { opacity });
                     useDesign.getState().commit();
+                  }}
+                  onKeyDown={(e) => {
+                    const vertical = e.key === "ArrowUp" || e.key === "ArrowDown";
+                    const start = e.currentTarget.selectionStart ?? 0;
+                    const end = e.currentTarget.selectionEnd ?? 0;
+                    const collapsed = start === end;
+                    const atStart = collapsed && start === 0;
+                    const atEnd = collapsed && start === e.currentTarget.value.length;
+                    const toRange =
+                      vertical ||
+                      (e.key === "ArrowLeft" && atStart) ||
+                      (e.key === "ArrowRight" && atEnd);
+                    if (!toRange) return;
+                    e.preventDefault();
+                    const step = e.shiftKey ? 10 : 1;
+                    const dir = e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 : -1;
+                    const pct = Math.max(
+                      0,
+                      Math.min(100, Math.round(node.opacity * 100) + dir * step),
+                    );
+                    const opacity = pct / 100;
+                    updateNodes(ids, { opacity });
+                    useDesign.getState().commit();
+                    opacityRangeRef.current?.focus();
                   }}
                 />
                 <span className="shrink-0 font-mono text-[9px] text-ink-faint">%</span>
