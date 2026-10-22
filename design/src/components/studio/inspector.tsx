@@ -63,6 +63,7 @@ export function Inspector() {
   const setArtboardBg = useDesign((s) => s.setArtboardBg);
   const brand = useDesign((s) => s.brand);
   const color = useDesign((s) => s.color);
+  const opacityClipboard = useDesign((s) => s.opacityClipboard);
 
   if (!doc) return null;
 
@@ -84,6 +85,9 @@ export function Inspector() {
   );
   const bg = typeof doc.artboard.background === "string" ? doc.artboard.background : "#ffffff";
   const mixedOpacity = new Set(selectedNodes.map((n) => n.opacity)).size > 1;
+  const opacityPercents = selectedNodes.map((n) => Math.round(n.opacity * 100));
+  const opacityMin = opacityPercents.length ? Math.min(...opacityPercents) : 0;
+  const opacityMax = opacityPercents.length ? Math.max(...opacityPercents) : 0;
   const mixedBlend = new Set(selectedNodes.map((n) => n.blend)).size > 1;
   const mixedName = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.name)).size > 1;
   const mixedX = selectedNodes.length > 1 && new Set(selectedNodes.map((n) => n.x)).size > 1;
@@ -175,7 +179,13 @@ export function Inspector() {
           </section>
           <section className="space-y-2 border-b border-border px-3 py-3">
             <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Layer</div>
-            <Field label={mixedOpacity ? "Opacity \u00b7 mixed" : "Opacity"}>
+            <Field
+              label={
+                mixedOpacity
+                  ? `Opacity \u00b7 ${opacityMin}\u2013${opacityMax}%`
+                  : "Opacity"
+              }
+            >
               <div className="flex items-center gap-2">
                 <input
                   type="range"
@@ -214,6 +224,16 @@ export function Inspector() {
                 >
                   100%
                 </button>
+                {opacityClipboard != null && (
+                  <button
+                    type="button"
+                    className="h-6 shrink-0 rounded-[6px] border border-phosphor/60 bg-surface-alt px-1.5 font-mono text-[9px] tracking-wide text-phosphor hover:border-phosphor hover:text-ink"
+                    title={`Paste opacity ${Math.round(opacityClipboard * 100)}% · Cmd+Shift+V`}
+                    onClick={() => useDesign.getState().pasteOpacity()}
+                  >
+                    Paste {Math.round(opacityClipboard * 100)}%
+                  </button>
+                )}
               </div>
             </Field>
             <Field label={mixedBlend ? "Blend \u00b7 mixed" : "Blend"}>
