@@ -46,6 +46,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   editingText: null,
   dirty: false,
   clipboard: [],
+  opacityClipboard: null as number | null,
   pasteCount: 1,
   present: false,
   viewIntent: null,
@@ -431,6 +432,22 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const { doc, selection } = get();
     if (!doc || !selection.length) return;
     set({ clipboard: doc.nodes.filter((n) => selection.includes(n.id)).map((n) => cloneNode(n, 0, 0)), pasteCount: 1 });
+  },
+  copyOpacity: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    const nodes = doc.nodes.filter((n) => selection.includes(n.id));
+    if (!nodes.length) return;
+    const value = nodes[0].opacity;
+    const mixed = new Set(nodes.map((n) => n.opacity)).size > 1;
+    set({ opacityClipboard: value });
+    setStudioStatus(`Copied opacity ${Math.round(value * 100)}%${mixed ? " (mixed — first layer)" : ""}`);
+  },
+  pasteOpacity: () => {
+    const { selection, opacityClipboard } = get();
+    if (!selection.length || opacityClipboard == null) return;
+    get().updateNodes(selection, { opacity: opacityClipboard }, true);
+    setStudioStatus(`Pasted opacity ${Math.round(opacityClipboard * 100)}%`);
   },
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   togglePrintMarks: () => set({ printMarks: !get().printMarks }),

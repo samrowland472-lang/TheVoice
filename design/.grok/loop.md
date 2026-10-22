@@ -1,20 +1,20 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-22 01:05 BST
-- **Slice**: Live percent entry next to opacity range
+- **When**: 2026-10-22 04:05 BST
+- **Slice**: Copy/paste opacity via command palette and Cmd/Ctrl+Shift+C / V
 - **Status**: Done
 
 ## Done
-- Inspector opacity rail now has a live numeric percent field (NumField) beside the range. Type a number 0–100, Enter or blur to commit. Range still updates the readout live. 100% chip and Alt+Shift+0 unchanged.
-- Layers OpacityQuickStrip matches: same percent field, mixed state shows “—” until you type, and committing sets every selected layer.
-- Mixed label stays “Opacity · mixed” in the inspector; the field placeholder is “—” while values differ.
-- Typecheck clean. Build clean. Browser smoke clean.
+- Copy opacity of the first selected layer (notes mixed) with Cmd/Ctrl+Shift+C or the “Copy opacity” command. Status strip confirms the percent.
+- Paste that opacity onto the current selection with Cmd/Ctrl+Shift+V or “Paste opacity”. Applies to every selected layer and is undoable.
+- Command palette lists both actions under Edit with the keyboard hints.
+- Typecheck clean. Build clean. Browser smoke clean (canvas present, no console errors).
 
 ## Next recommended
-- Copy/paste opacity via the command palette (or Ctrl/Cmd+Shift+C / V for opacity only).
 - Opacity histogram or mixed-value indicator when selection spans many tenths.
 - Keyboard focus from the percent field back to the range with arrow keys.
+- Copy/paste other numeric properties (stroke width, blur) the same way.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.
