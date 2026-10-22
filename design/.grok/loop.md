@@ -1,20 +1,21 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-22 04:05 BST
-- **Slice**: Copy/paste opacity via command palette and Cmd/Ctrl+Shift+C / V
+- **When**: 2026-10-22 03:15 UTC
+- **Slice**: Copy / paste opacity (palette + Cmd+Shift+C/V)
 - **Status**: Done
 
 ## Done
-- Copy opacity of the first selected layer (notes mixed) with Cmd/Ctrl+Shift+C or the “Copy opacity” command. Status strip confirms the percent.
-- Paste that opacity onto the current selection with Cmd/Ctrl+Shift+V or “Paste opacity”. Applies to every selected layer and is undoable.
-- Command palette lists both actions under Edit with the keyboard hints.
-- Typecheck clean. Build clean. Browser smoke clean (canvas present, no console errors).
+- Store keeps `opacityClip` separate from the node clipboard.
+- `copyOpacity` / `pasteOpacity`: copy first selected layer’s opacity; paste applies to the whole selection with undo commit and status strip feedback (“Copied opacity 40%”, “Pasted opacity 40%”).
+- Command palette Edit group: “Copy opacity” (Cmd+Shift+C) and “Paste opacity” (Cmd+Shift+V).
+- Shortcuts: Cmd/Ctrl+Shift+C and Cmd/Ctrl+Shift+V call opacity copy/paste; plain Cmd+C/V still use the node clipboard.
+- Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, canvas present, no console errors).
 
 ## Next recommended
 - Opacity histogram or mixed-value indicator when selection spans many tenths.
 - Keyboard focus from the percent field back to the range with arrow keys.
-- Copy/paste other numeric properties (stroke width, blur) the same way.
+- Paste opacity into the inspector percent field via a small chip when clip is set.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.
