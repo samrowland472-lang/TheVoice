@@ -209,7 +209,7 @@ export function Inspector() {
                     value={node.opacity}
                     aria-label="Layer opacity"
                     data-opacity-range="inspector"
-                    title="Arrow keys step opacity · from the percent field, arrows focus here"
+                    title="Arrow keys step opacity · Home/End jump 0–100% · from the percent field, arrows focus here"
                     onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
                     onPointerUp={() => useDesign.getState().commit()}
                     onKeyUp={(e) => {
@@ -238,7 +238,7 @@ export function Inspector() {
                           className="absolute bottom-0 w-1.5 -translate-x-1/2 cursor-pointer bg-phosphor/80 hover:bg-phosphor focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-phosphor"
                           style={{
                             left: `${pct}%`,
-                            height: `${Math.min(8, 2 + count * 2)}px`,
+                            height: `${Math.min(10, 2 + count * 2)}px`,
                           }}
                           title={`${count} layer${count === 1 ? "" : "s"} at ${pct}% · click to set all`}
                           aria-label={`Set opacity to ${pct}%`}
@@ -247,7 +247,13 @@ export function Inspector() {
                             updateNodes(ids, { opacity });
                             useDesign.getState().commit();
                           }}
-                        />
+                        >
+                          {count > 1 && (
+                            <span className="pointer-events-none absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[8px] leading-none text-phosphor">
+                              {count}
+                            </span>
+                          )}
+                        </button>
                       ))}
                     </div>
                   )}
@@ -265,6 +271,15 @@ export function Inspector() {
                     useDesign.getState().commit();
                   }}
                   onKeyDown={(e) => {
+                    if (e.key === "Home" || e.key === "End") {
+                      e.preventDefault();
+                      const pct = e.key === "Home" ? 0 : 100;
+                      const opacity = pct / 100;
+                      updateNodes(ids, { opacity });
+                      useDesign.getState().commit();
+                      opacityRangeRef.current?.focus();
+                      return;
+                    }
                     const vertical = e.key === "ArrowUp" || e.key === "ArrowDown";
                     const start = e.currentTarget.selectionStart ?? 0;
                     const end = e.currentTarget.selectionEnd ?? 0;

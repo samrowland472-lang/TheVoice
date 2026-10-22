@@ -1,20 +1,20 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-22 18:06 UTC
-- **Slice**: Keyboard focus from the opacity percent field back to the range with arrow keys
+- **When**: 2026-10-22 22:08 UTC
+- **Slice**: Home/End from opacity percent field + count badges on mixed ticks
 - **Status**: Done
 
 ## Done
-- In the Layer opacity field, ArrowUp and ArrowDown step the selection (Shift steps by 10) and move focus onto the phosphor range so further arrows scrub from there.
-- ArrowLeft at the start of the percent field and ArrowRight at the end do the same, without stealing caret movement inside a typed number.
-- The range commits those keyboard steps into history. Mixed selections unify on the stepped value.
+- From the Layer opacity percent field, Home jumps the selection to 0% and End jumps to 100%, commits, and moves focus onto the phosphor range.
+- Mixed-opacity ticks now show a small phosphor count badge above the tick when more than one layer shares that value, making the histogram readable at a glance.
+- Arrow keys, left/right at the caret ends, and the range itself continue to step and commit as before.
 - Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, canvas present, no console errors).
 
 ## Next recommended
-- Live preview of the clipped opacity on the range thumb.
-- Show the count in the tick tooltip more prominently, or a small number badge on tall ticks.
-- Home and End from the percent field jump the range to 0% or 100%.
+- Live preview of the clipped opacity on the range thumb (phosphor swatch or thumb fill that tracks the current value).
+- Keyboard Home/End also on the range itself (already partially handled via onKeyUp commit).
+- Small opacity histogram legend when mixed.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.
