@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { formatEqualGapHold, getEqualGapHold, subscribeEqualGapHold } from "@/lib/design/group-transform";
@@ -210,6 +210,7 @@ export function Inspector() {
                     aria-label="Layer opacity"
                     data-opacity-range="inspector"
                     title="Arrow keys step opacity · Home/End jump 0–100% · from the percent field, arrows focus here"
+                    style={{ "--fill-opacity": String(node.opacity) } as CSSProperties}
                     onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
                     onPointerUp={() => useDesign.getState().commit()}
                     onKeyUp={(e) => {

@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
 import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
@@ -469,6 +469,7 @@ function OpacityQuickStrip() {
           value={value}
           aria-label="Layer opacity"
           data-opacity-range="layers"
+          style={{ "--fill-opacity": String(value) } as CSSProperties}
           onChange={(e) => {
             const next = Number(e.target.value);
             updateNodes(selection, { opacity: next });

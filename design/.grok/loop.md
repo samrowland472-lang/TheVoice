@@ -1,20 +1,20 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-22 22:08 UTC
-- **Slice**: Home/End from opacity percent field + count badges on mixed ticks
+- **When**: 2026-10-23 01:05 UTC
+- **Slice**: Live opacity preview on range thumbs (phosphor fill tracks value)
 - **Status**: Done
 
 ## Done
-- From the Layer opacity percent field, Home jumps the selection to 0% and End jumps to 100%, commits, and moves focus onto the phosphor range.
-- Mixed-opacity ticks now show a small phosphor count badge above the tick when more than one layer shares that value, making the histogram readable at a glance.
-- Arrow keys, left/right at the caret ends, and the range itself continue to step and commit as before.
+- Opacity range thumbs in the Inspector and Layers quick-strip now show a live phosphor fill that mixes toward ground as opacity drops to 0%, so the clipped value is visible on the control itself.
+- Track remains the solid border; thumb border stays full phosphor for visibility. CSS variable `--fill-opacity` drives the mix.
+- Home/End, arrow stepping, mixed ticks, and percent field behaviour unchanged.
 - Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, canvas present, no console errors).
 
 ## Next recommended
-- Live preview of the clipped opacity on the range thumb (phosphor swatch or thumb fill that tracks the current value).
 - Keyboard Home/End also on the range itself (already partially handled via onKeyUp commit).
 - Small opacity histogram legend when mixed.
+- Track fill that also tracks the current opacity intensity.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.

@@ -67,14 +67,25 @@
   height: 4px;
   background: var(--color-border);
   border-radius: 99px;
+  --fill-opacity: 1;
 }
 .range-phosphor::-webkit-slider-thumb {
   appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 99px;
-  background: var(--color-phosphor);
-  border: 0;
+  background: color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground));
+  border: 1px solid var(--color-phosphor);
+  box-shadow: 0 0 0 1px var(--color-ground);
+}
+.range-phosphor::-moz-range-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground));
+  border: 1px solid var(--color-phosphor);
+  box-shadow: 0 0 0 1px var(--color-ground);
 }
 
 .field {
