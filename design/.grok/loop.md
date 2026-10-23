@@ -1,15 +1,14 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-23 21:15 UTC
-- **Slice**: Tiny mixed legends for line cap and join
+- **When**: 2026-10-23 22:05 UTC
+- **Slice**: Polish mixed cap/join legends with visual icons and count badges
 - **Status**: Done
 
 ## Done
-- `capLegendEntries` + `MixedCapLegend`: unique caps in order, human labels, count pills. Click unifies outlines to that cap (ghosts on hover).
-- Shown under the Cap select in Mixed Path Dash when caps differ. Per-path chips kept.
-- `joinLegendEntries` + `MixedJoinLegend`: unique joins in order, labels, count pills. Click unifies outlines to that join (ghosts on hover).
-- Shown under the Join select in Mixed Path Dash when joins differ. Per-path chips kept.
+- MixedCapLegend and MixedJoinLegend now include tiny inline SVG icons showing the actual line-cap and line-join style (butt/round/square, miter/round/bevel).
+- Count pills restyled as subtle phosphor badges. Buttons slightly larger with hover feedback.
+- Ghost preview on hover/focus still unifies the outline style for inspection.
 - Typecheck clean. Build clean. Browser smoke clean (no console or page errors).
 
 ## Next recommended

@@ -42,6 +42,53 @@ function ghostStroke(patch: { lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin
   useDesign.getState().setStrokeGhost(patch);
 }
 
+function CapIcon({ cap }: { cap: CanvasLineCap }) {
+  const common = "stroke-phosphor fill-none";
+  if (cap === "round") {
+    return (
+      <svg width="16" height="8" viewBox="0 0 16 8" className={common} aria-hidden>
+        <line x1="2" y1="4" x2="14" y2="4" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (cap === "square") {
+    return (
+      <svg width="16" height="8" viewBox="0 0 16 8" className={common} aria-hidden>
+        <line x1="2" y1="4" x2="14" y2="4" strokeWidth="3" strokeLinecap="square" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="8" viewBox="0 0 16 8" className={common} aria-hidden>
+      <line x1="3" y1="4" x2="13" y2="4" strokeWidth="3" strokeLinecap="butt" />
+    </svg>
+  );
+}
+
+function JoinIcon({ join }: { join: CanvasLineJoin }) {
+  const common = "stroke-phosphor fill-none";
+  if (join === "round") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" className={common} aria-hidden>
+        <path d="M2 12 L7 2 L12 12" strokeWidth="2.5" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (join === "bevel") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" className={common} aria-hidden>
+        <path d="M2 12 L7 2 L12 12" strokeWidth="2.5" strokeLinejoin="bevel" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" className={common} aria-hidden>
+      <path d="M2 12 L7 2 L12 12" strokeWidth="2.5" strokeLinejoin="miter" />
+    </svg>
+  );
+}
+
+
 export function capLegendEntries(outlines: DesignNode[]) {
   const map = new Map<CanvasLineCap, number>();
   for (const n of outlines) {
@@ -80,7 +127,7 @@ export function MixedCapLegend({ outlines }: { outlines: DesignNode[] }) {
         <button
           key={id}
           type="button"
-          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          className="flex h-7 items-center gap-1.5 rounded-full border border-phosphor/40 bg-surface-alt px-2 font-mono text-[8px] text-phosphor hover:bg-phosphor/10"
           title={`Unify line cap to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
           aria-label={`Set line cap to ${label}`}
           onMouseEnter={() => ghostStroke({ lineCap: id })}
@@ -89,8 +136,9 @@ export function MixedCapLegend({ outlines }: { outlines: DesignNode[] }) {
           onBlur={() => ghostStroke(null)}
           onClick={() => updateNodes(ids, { lineCap: id }, true)}
         >
+          <CapIcon cap={id} />
           <span>{label}</span>
-          <span className="text-phosphor/70">{count}</span>
+          <span className="rounded-full bg-phosphor/20 px-1 text-phosphor/90">{count}</span>
         </button>
       ))}
     </div>
@@ -109,7 +157,7 @@ export function MixedJoinLegend({ outlines }: { outlines: DesignNode[] }) {
         <button
           key={id}
           type="button"
-          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          className="flex h-7 items-center gap-1.5 rounded-full border border-phosphor/40 bg-surface-alt px-2 font-mono text-[8px] text-phosphor hover:bg-phosphor/10"
           title={`Unify line join to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
           aria-label={`Set line join to ${label}`}
           onMouseEnter={() => ghostStroke({ lineJoin: id })}
@@ -118,8 +166,9 @@ export function MixedJoinLegend({ outlines }: { outlines: DesignNode[] }) {
           onBlur={() => ghostStroke(null)}
           onClick={() => updateNodes(ids, { lineJoin: id }, true)}
         >
+          <JoinIcon join={id} />
           <span>{label}</span>
-          <span className="text-phosphor/70">{count}</span>
+          <span className="rounded-full bg-phosphor/20 px-1 text-phosphor/90">{count}</span>
         </button>
       ))}
     </div>
