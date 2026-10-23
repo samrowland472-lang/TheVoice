@@ -69,6 +69,33 @@
   border-radius: 99px;
   --fill-opacity: 1;
 }
+/* Opacity ranges: track fill intensity and length follow the live value */
+.range-phosphor[data-opacity-range] {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) calc(var(--fill-opacity) * 100%),
+    var(--color-border) calc(var(--fill-opacity) * 100%),
+    var(--color-border) 100%
+  );
+}
+.range-phosphor[data-opacity-range]::-moz-range-track {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) calc(var(--fill-opacity) * 100%),
+    var(--color-border) calc(var(--fill-opacity) * 100%),
+    var(--color-border) 100%
+  );
+  height: 4px;
+  border-radius: 99px;
+  border: none;
+}
+.range-phosphor[data-opacity-range]::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 99px;
+}
 .range-phosphor::-webkit-slider-thumb {
   appearance: none;
   width: 14px;

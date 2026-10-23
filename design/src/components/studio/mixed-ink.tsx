@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   cloneShadow,
   DEFAULT_SHADOW,
@@ -155,7 +156,18 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
         {mixedStroke && <MixedStrokeChips nodes={nodes} />}
       </Field>
       <Field label={mixedOpacity ? "Opacity · mixed" : `Opacity ${Math.round(first.opacity * 100)}%`}>
-        <input type="range" className={cn("range-phosphor w-full", mixedOpacity && "opacity-70")} min={0} max={1} step={0.01} value={first.opacity} onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })} onPointerUp={() => useDesign.getState().commit()} />
+        <input
+          type="range"
+          className={cn("range-phosphor w-full", mixedOpacity && "opacity-70")}
+          min={0}
+          max={1}
+          step={0.01}
+          value={first.opacity}
+          data-opacity-range="mixed"
+          style={{ "--fill-opacity": String(first.opacity) } as CSSProperties}
+          onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
+          onPointerUp={() => useDesign.getState().commit()}
+        />
         {mixedOpacity && <MixedOpacityChips nodes={nodes} />}
       </Field>
       <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>{mixedBlend && <MixedBlendChips nodes={nodes} />}</Field>
