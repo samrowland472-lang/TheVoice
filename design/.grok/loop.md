@@ -1,20 +1,19 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-23 18:05 UTC
-- **Slice**: Phosphor fill on type weight, tracking, and leading ranges
+- **When**: 2026-10-23 19:05 UTC
+- **Slice**: PageUp/PageDown coarse steps on phosphor fill ranges
 - **Status**: Done
 
 ## Done
-- Type weight (400–800), tracking (−8–40), and leading (0.7–2) ranges now show live phosphor track fill via the same `--fill-percent` variable used on size, blur, and filters.
-- Home jumps to the range minimum and End to the maximum on those three ranges (single and mixed selection).
-- Mixed selection still drives the fill from the key node value.
-- Typecheck clean. Build clean. Browser smoke clean.
+- Shared `nextFromRangeKey` helper: Home → min, End → max, PageUp/PageDown → ~10% of the range snapped to step.
+- Applied to type size/weight/tracking/leading (single and mixed), photo filters, crop edges, shadow blur, mixed photo filters, and layer opacity.
+- Typecheck clean. Build clean. Browser smoke clean (no console or page errors, no brand warnings).
 
 ## Next recommended
-- Keyboard PageUp/PageDown coarse steps on fill ranges.
 - Tiny mixed-blend legend when blend modes differ.
 - Optional fill on remaining positive ranges (axes, path dash, etc.).
+- Keyboard coarse steps on the remaining non-fill ranges that already have Home/End.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.

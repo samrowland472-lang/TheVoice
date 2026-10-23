@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { nextFromRangeKey } from "./range-keys";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
@@ -199,9 +200,9 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               onChange={(e) => stampAll((cur) => stampShadowBlur(cur, Number(e.target.value)))}
               onPointerUp={commit}
               onKeyDown={(e) => {
-                if (e.key === "Home" || e.key === "End") {
-                  e.preventDefault();
-                  const next = e.key === "Home" ? 0 : 80;
+                const curVal = mixedBlur ? 0 : ghost.blur;
+                const next = nextFromRangeKey(e, curVal, 0, 80, 1);
+                if (next != null) {
                   stampAll((cur) => stampShadowBlur(cur, next));
                   commit();
                 }

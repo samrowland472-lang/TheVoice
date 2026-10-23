@@ -7,6 +7,7 @@ import {
 import { useDesign } from "@/lib/design/store";
 import type { BitmapAdjust, DesignNode, ImageNode, PaintNode } from "@/lib/design/types";
 import type { CSSProperties } from "react";
+import { nextFromRangeKey } from "./range-keys";
 import { Field } from "./inspector-parts";
 
 const FILTERS = [
@@ -62,11 +63,8 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
               }
               onPointerUp={() => useDesign.getState().commit()}
               onKeyDown={(e) => {
-                if (e.key === "Home" || e.key === "End") {
-                  e.preventDefault();
-                  const next = e.key === "Home" ? f.min : f.max;
-                  patchImage(img.id, { filters: { ...filters, [f.key]: next } }, true);
-                }
+                const next = nextFromRangeKey(e, value, f.min, f.max, f.step);
+                if (next != null) patchImage(img.id, { filters: { ...filters, [f.key]: next } }, true);
               }}
             />
           </Field>
@@ -98,11 +96,8 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
             }
             onPointerUp={() => useDesign.getState().commit()}
             onKeyDown={(e) => {
-              if (e.key === "Home" || e.key === "End") {
-                e.preventDefault();
-                const next = e.key === "Home" ? 0.01 : 1;
-                patchImage(img.id, { crop: normalizeCrop({ ...crop, [key]: next }) }, true);
-              }
+              const next = nextFromRangeKey(e, value, 0.01, 1, 0.01);
+              if (next != null) patchImage(img.id, { crop: normalizeCrop({ ...crop, [key]: next }) }, true);
             }}
           />
         </Field>

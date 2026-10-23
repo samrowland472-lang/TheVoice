@@ -1,6 +1,7 @@
 import { CANVAS_FONTS, anyFaceHasAxis, clampAxis, faceAxis } from "@/lib/design/fonts";
 import type { CSSProperties } from "react";
 import { useDesign } from "@/lib/design/store";
+import { nextFromRangeKey } from "./range-keys";
 import {
   clampTypeSize,
   cloneType,
@@ -151,28 +152,28 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
       <label className="block text-[11px] text-ink-dim">
         <span className="mb-1 block">{mixedSize ? "Size · mixed · scale from key" : `Size ${formatNum(keyNode.fontSize)}`}</span>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-size" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.fontSize - 6) / (400 - 6)))) } as CSSProperties} min={6} max={400} step={1} aria-label={mixedSize ? "type size mixed" : "type size"} value={keyNode.fontSize} onChange={(e) => writeSize(Number(e.target.value), false, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 6 : 400; writeSize(next, true, true); } }} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-size" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.fontSize - 6) / (400 - 6)))) } as CSSProperties} min={6} max={400} step={1} aria-label={mixedSize ? "type size mixed" : "type size"} value={keyNode.fontSize} onChange={(e) => writeSize(Number(e.target.value), false, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { const next = nextFromRangeKey(e, keyNode.fontSize, 6, 400, 1); if (next != null) writeSize(next, true, true); }} />
           <NumField className="field w-16 font-mono" value={keyNode.fontSize} mixed={mixedSize} min={6} max={400} aria-label="type size" onCommit={(n) => writeSize(n, true, true)} />
         </div>
       </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
         <span className="mb-1 block">{mixedWeight ? "Weight · mixed" : `Weight ${formatNum(keyNode.fontWeight)}`}</span>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-weight" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.fontWeight - 400) / (800 - 400)))) } as CSSProperties} min={400} max={800} step={100} aria-label={mixedWeight ? "type weight mixed" : "type weight"} value={keyNode.fontWeight} onChange={(e) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) }, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 400 : 800; patch({ fontWeight: next }, true); } }} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-weight" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.fontWeight - 400) / (800 - 400)))) } as CSSProperties} min={400} max={800} step={100} aria-label={mixedWeight ? "type weight mixed" : "type weight"} value={keyNode.fontWeight} onChange={(e) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) }, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { const next = nextFromRangeKey(e, keyNode.fontWeight, 400, 800, 100); if (next != null) patch({ fontWeight: Math.min(800, Math.max(400, Math.round(next / 100) * 100)) }, true); }} />
           <NumField className="field w-16 font-mono" value={keyNode.fontWeight} mixed={mixedWeight} min={400} max={800} aria-label="type weight" onCommit={(n) => patch({ fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) })} />
         </div>
       </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
         <span className="mb-1 block">{mixedTracking ? "Tracking · mixed" : `Tracking ${formatNum(keyNode.letterSpacing)}`}</span>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-tracking" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.letterSpacing - (-8)) / (40 - (-8))))) } as CSSProperties} min={-8} max={40} step={0.25} aria-label={mixedTracking ? "type tracking mixed" : "type tracking"} value={keyNode.letterSpacing} onChange={(e) => patch({ letterSpacing: Number(e.target.value) }, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? -8 : 40; patch({ letterSpacing: next }, true); } }} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-tracking" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.letterSpacing - (-8)) / (40 - (-8))))) } as CSSProperties} min={-8} max={40} step={0.25} aria-label={mixedTracking ? "type tracking mixed" : "type tracking"} value={keyNode.letterSpacing} onChange={(e) => patch({ letterSpacing: Number(e.target.value) }, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { const next = nextFromRangeKey(e, keyNode.letterSpacing, -8, 40, 0.25); if (next != null) patch({ letterSpacing: next }, true); }} />
           <NumField className="field w-16 font-mono" value={keyNode.letterSpacing} mixed={mixedTracking} min={-8} max={40} aria-label="type tracking" onCommit={(n) => patch({ letterSpacing: n })} />
         </div>
       </label>
       <label className="mt-2 block text-[11px] text-ink-dim">
         <span className="mb-1 block">{mixedLeading ? "Leading · mixed" : `Leading ${formatNum(keyNode.lineHeight)}`}</span>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-leading" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.lineHeight - 0.7) / (2 - 0.7)))) } as CSSProperties} min={0.7} max={2} step={0.02} aria-label={mixedLeading ? "type leading mixed" : "type leading"} value={keyNode.lineHeight} onChange={(e) => patch({ lineHeight: Number(e.target.value) }, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 0.7 : 2; patch({ lineHeight: next }, true); } }} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-leading" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.lineHeight - 0.7) / (2 - 0.7)))) } as CSSProperties} min={0.7} max={2} step={0.02} aria-label={mixedLeading ? "type leading mixed" : "type leading"} value={keyNode.lineHeight} onChange={(e) => patch({ lineHeight: Number(e.target.value) }, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { const next = nextFromRangeKey(e, keyNode.lineHeight, 0.7, 2, 0.02); if (next != null) patch({ lineHeight: next }, true); }} />
           <NumField className="field w-16 font-mono" value={keyNode.lineHeight} mixed={mixedLeading} min={0.7} max={2} aria-label="type leading" onCommit={(n) => patch({ lineHeight: n })} />
         </div>
       </label>

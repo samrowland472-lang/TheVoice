@@ -1,3 +1,4 @@
+import { nextFromRangeKey } from "./range-keys";
 import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
@@ -209,10 +210,14 @@ export function Inspector() {
                     value={node.opacity}
                     aria-label="Layer opacity"
                     data-opacity-range="inspector"
-                    title="Arrow keys step opacity · Home/End jump 0–100% · from the percent field, arrows focus here"
+                    title="Arrow keys step opacity · PageUp/PageDown coarse · Home/End jump 0–100% · from the percent field, arrows focus here"
                     style={{ "--fill-opacity": String(node.opacity) } as CSSProperties}
                     onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
                     onPointerUp={() => useDesign.getState().commit()}
+                    onKeyDown={(e) => {
+                      const next = nextFromRangeKey(e, node.opacity, 0, 1, 0.01);
+                      if (next != null) updateNodes(ids, { opacity: next });
+                    }}
                     onKeyUp={(e) => {
                       if (
                         e.key === "ArrowUp" ||
