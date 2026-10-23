@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { CANVAS_FONTS, clampAxis, faceAxis } from "@/lib/design/fonts";
 import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
@@ -38,7 +38,7 @@ export function TextFields({ node, hideType = false }: { node: TextNode; hideTyp
       </Field>
       <Field label={`Size ${Math.round(node.fontSize)}`}>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" min={6} max={400} step={1} aria-label="type size" value={node.fontSize} onChange={(e) => updateNodes([node.id], { fontSize: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-size" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.fontSize - 6) / (400 - 6)))) } as CSSProperties} min={6} max={400} step={1} aria-label="type size" value={node.fontSize} onChange={(e) => updateNodes([node.id], { fontSize: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 6 : 400; updateNodes([node.id], { fontSize: next } as Partial<DesignNode>, true); } }} />
           <NumField className="field w-16 font-mono" value={node.fontSize} min={6} max={400} aria-label="type size" onCommit={(n) => updateNodes([node.id], { fontSize: n } as Partial<DesignNode>, true)} />
         </div>
       </Field>

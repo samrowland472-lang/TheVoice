@@ -198,6 +198,14 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               aria-label={mixedBlur ? "layer shadow blur mixed" : "layer shadow blur"}
               onChange={(e) => stampAll((cur) => stampShadowBlur(cur, Number(e.target.value)))}
               onPointerUp={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Home" || e.key === "End") {
+                  e.preventDefault();
+                  const next = e.key === "Home" ? 0 : 80;
+                  stampAll((cur) => stampShadowBlur(cur, next));
+                  commit();
+                }
+              }}
             />
           </Field>
           <Field label={mixedOx ? "X \u00b7 mixed" : `X ${ghost.ox}`}>

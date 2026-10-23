@@ -61,6 +61,13 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
                 patchImage(img.id, { filters: { ...filters, [f.key]: Number(e.target.value) } })
               }
               onPointerUp={() => useDesign.getState().commit()}
+              onKeyDown={(e) => {
+                if (e.key === "Home" || e.key === "End") {
+                  e.preventDefault();
+                  const next = e.key === "Home" ? f.min : f.max;
+                  patchImage(img.id, { filters: { ...filters, [f.key]: next } }, true);
+                }
+              }}
             />
           </Field>
         );
@@ -79,6 +86,8 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
           <input
             type="range"
             className="range-phosphor w-full"
+            data-fill-range="crop"
+            style={{ "--fill-percent": String(Math.max(0, Math.min(1, (value - 0.01) / (1 - 0.01)))) } as CSSProperties}
             min={0.01}
             max={1}
             step={0.01}
@@ -88,6 +97,13 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
               patchImage(img.id, { crop: normalizeCrop({ ...crop, [key]: Number(e.target.value) }) })
             }
             onPointerUp={() => useDesign.getState().commit()}
+            onKeyDown={(e) => {
+              if (e.key === "Home" || e.key === "End") {
+                e.preventDefault();
+                const next = e.key === "Home" ? 0.01 : 1;
+                patchImage(img.id, { crop: normalizeCrop({ ...crop, [key]: next }) }, true);
+              }
+            }}
           />
         </Field>
       ))}

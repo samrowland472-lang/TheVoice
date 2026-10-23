@@ -1,4 +1,5 @@
 import { CANVAS_FONTS, anyFaceHasAxis, clampAxis, faceAxis } from "@/lib/design/fonts";
+import type { CSSProperties } from "react";
 import { useDesign } from "@/lib/design/store";
 import {
   clampTypeSize,
@@ -150,7 +151,7 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
       <label className="block text-[11px] text-ink-dim">
         <span className="mb-1 block">{mixedSize ? "Size · mixed · scale from key" : `Size ${formatNum(keyNode.fontSize)}`}</span>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" min={6} max={400} step={1} aria-label={mixedSize ? "type size mixed" : "type size"} value={keyNode.fontSize} onChange={(e) => writeSize(Number(e.target.value), false, false)} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-size" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (keyNode.fontSize - 6) / (400 - 6)))) } as CSSProperties} min={6} max={400} step={1} aria-label={mixedSize ? "type size mixed" : "type size"} value={keyNode.fontSize} onChange={(e) => writeSize(Number(e.target.value), false, false)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 6 : 400; writeSize(next, true, true); } }} />
           <NumField className="field w-16 font-mono" value={keyNode.fontSize} mixed={mixedSize} min={6} max={400} aria-label="type size" onCommit={(n) => writeSize(n, true, true)} />
         </div>
       </label>

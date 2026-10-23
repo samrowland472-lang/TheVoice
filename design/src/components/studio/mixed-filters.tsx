@@ -73,6 +73,14 @@ export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
               value={value}
               onChange={(e) => patchImageFilters(ids, { [f.key]: Number(e.target.value) })}
               onPointerUp={() => useDesign.getState().commit()}
+              onKeyDown={(e) => {
+                if (e.key === "Home" || e.key === "End") {
+                  e.preventDefault();
+                  const next = e.key === "Home" ? f.min : f.max;
+                  patchImageFilters(ids, { [f.key]: next });
+                  useDesign.getState().commit();
+                }
+              }}
             />
           </Field>
         );
