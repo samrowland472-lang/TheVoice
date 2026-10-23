@@ -37,6 +37,7 @@ import {
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedInk } from "./mixed-ink";
+import { MixedBlendLegend } from "./mixed-ink-chips";
 import { MixedType } from "./mixed-type";
 import { MixedPathDash } from "./mixed-path-dash";
 import { MixedGeometry } from "./mixed-geometry";
@@ -361,6 +362,7 @@ export function Inspector() {
                   </option>
                 ))}
               </select>
+              {mixedBlend && <MixedBlendLegend nodes={selectedNodes} />}
             </Field>
             {node.kind === "group" && (
               <p className="font-mono text-[10px] leading-snug text-ink-faint">

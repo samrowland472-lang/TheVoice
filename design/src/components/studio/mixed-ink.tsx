@@ -21,6 +21,7 @@ import { Field, Swatches } from "./inspector-parts";
 import { NumField } from "./num-field";
 import {
   MixedBlendChips,
+  MixedBlendLegend,
   MixedFillChips,
   MixedLockChips,
   MixedOpacityChips,
@@ -170,7 +171,10 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
         />
         {mixedOpacity && <MixedOpacityChips nodes={nodes} />}
       </Field>
-      <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>{mixedBlend && <MixedBlendChips nodes={nodes} />}</Field>
+      <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>
+        {mixedBlend && <MixedBlendLegend nodes={nodes} />}
+        {mixedBlend && <MixedBlendChips nodes={nodes} />}
+      </Field>
       <Field label={mixedVis ? "Visibility · mixed" : "Visibility"}>
         <div className="flex gap-1">
           <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim" onClick={() => updateNodes(ids, { visible: true }, true)}>Show all</button>

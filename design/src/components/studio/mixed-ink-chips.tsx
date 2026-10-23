@@ -86,6 +86,45 @@ export function MixedOpacityChips({ nodes }: { nodes: DesignNode[] }) {
   );
 }
 
+const BLEND_ORDER: BlendMode[] = [
+  "source-over",
+  "multiply",
+  "screen",
+  "overlay",
+  "darken",
+  "lighten",
+  "soft-light",
+  "hard-light",
+  "color-dodge",
+  "color-burn",
+];
+
+const BLEND_LABEL: Record<BlendMode, string> = {
+  "source-over": "Normal",
+  multiply: "Multiply",
+  screen: "Screen",
+  overlay: "Overlay",
+  darken: "Darken",
+  lighten: "Lighten",
+  "soft-light": "Soft light",
+  "hard-light": "Hard light",
+  "color-dodge": "Color dodge",
+  "color-burn": "Color burn",
+};
+
+export function blendLegendEntries(nodes: DesignNode[]) {
+  const map = new Map<BlendMode, number>();
+  for (const n of nodes) {
+    const id = (n.blend || "source-over") as BlendMode;
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  return BLEND_ORDER.filter((id) => map.has(id)).map((id) => ({
+    id,
+    label: BLEND_LABEL[id],
+    count: map.get(id) ?? 0,
+  }));
+}
+
 export function MixedBlendChips({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
@@ -101,6 +140,31 @@ export function MixedBlendChips({ nodes }: { nodes: DesignNode[] }) {
           onClick={() => updateNodes(ids, { blend: n.blend as BlendMode }, true)}
         >
           {n.blend}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Compact unique-mode legend. Click unifies the selection to that mode. */
+export function MixedBlendLegend({ nodes }: { nodes: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = nodes.map((n) => n.id);
+  const entries = blendLegendEntries(nodes);
+  if (entries.length < 2) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" aria-label="mixed blend legend">
+      {entries.map(({ id, label, count }) => (
+        <button
+          key={id}
+          type="button"
+          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          title={`Unify blend to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
+          aria-label={`Set blend to ${label}`}
+          onClick={() => updateNodes(ids, { blend: id }, true)}
+        >
+          <span>{label}</span>
+          <span className="text-phosphor/70">{count}</span>
         </button>
       ))}
     </div>

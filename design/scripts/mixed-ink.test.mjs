@@ -54,3 +54,11 @@ test("lock and visibility chips stamp the picked layer onto the selection", () =
   assert.match(mixed, /Show all/);
   assert.match(mixed, /Unlock all/);
 });
+
+test("mixed blend legend lists unique modes with counts", () => {
+  assert.match(chips, /export function blendLegendEntries/);
+  assert.match(chips, /export function MixedBlendLegend/);
+  assert.match(chips, /aria-label="mixed blend legend"/);
+  assert.match(chips, /Set blend to \$\{label\}/);
+  assert.match(mixed, /MixedBlendLegend/);
+});
