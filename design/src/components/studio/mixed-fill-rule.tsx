@@ -13,6 +13,51 @@ function holedPaths(nodes: DesignNode[]): PathNode[] {
   return nodes.filter((n): n is PathNode => isPath(n) && (n.holes?.length ?? 0) > 0);
 }
 
+
+const FILL_RULE_ORDER: ("evenodd" | "nonzero")[] = ["evenodd", "nonzero"];
+
+export function fillRuleLegendEntries(paths: PathNode[]) {
+  const map = new Map<"evenodd" | "nonzero", number>();
+  for (const n of paths) {
+    const id = pathFillRule(n);
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  return FILL_RULE_ORDER.filter((id) => map.has(id)).map((id) => ({
+    id,
+    label: fillRuleChipLabel(id),
+    count: map.get(id) ?? 0,
+  }));
+}
+
+/** Compact unique-rule legend. Click unifies the selection to that rule. */
+export function MixedFillRuleLegend({ paths }: { paths: PathNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = paths.map((n) => n.id);
+  const entries = fillRuleLegendEntries(paths);
+  if (entries.length < 2) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" aria-label="mixed fill rule legend">
+      {entries.map(({ id, label, count }) => (
+        <button
+          key={id}
+          type="button"
+          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          title={`Unify fill rule to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
+          aria-label={`Set fill rule to ${label}`}
+          onMouseEnter={() => ghostFillRule(id)}
+          onFocus={() => ghostFillRule(id)}
+          onMouseLeave={() => ghostFillRule(null)}
+          onBlur={() => ghostFillRule(null)}
+          onClick={() => updateNodes(ids, { fillRule: id }, true)}
+        >
+          <span>{label}</span>
+          <span className="text-phosphor/70">{count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function MixedFillRule({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const paths = holedPaths(nodes);
@@ -51,6 +96,7 @@ export function MixedFillRule({ nodes }: { nodes: DesignNode[] }) {
           <option value="nonzero">nonzero</option>
         </select>
       </Field>
+      {mixed && <MixedFillRuleLegend paths={paths} />}
       {mixed && (
         <div className="mt-1 flex flex-wrap gap-1">
           {paths.map((n) => {

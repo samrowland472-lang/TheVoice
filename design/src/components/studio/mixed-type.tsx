@@ -17,6 +17,46 @@ import { CopyMeter } from "./inspector-type";
 
 const ALIGNS: Align[] = ["left", "center", "right"];
 
+const ALIGN_LABEL: Record<Align, string> = { left: "Left", center: "Center", right: "Right" };
+
+export function alignLegendEntries(nodes: TextNode[]) {
+  const map = new Map<Align, number>();
+  for (const n of nodes) {
+    const id = n.align;
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  return ALIGNS.filter((id) => map.has(id)).map((id) => ({
+    id,
+    label: ALIGN_LABEL[id],
+    count: map.get(id) ?? 0,
+  }));
+}
+
+function MixedAlignLegend({ nodes }: { nodes: TextNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = nodes.map((n) => n.id);
+  const entries = alignLegendEntries(nodes);
+  if (entries.length < 2) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" aria-label="mixed align legend">
+      {entries.map(({ id, label, count }) => (
+        <button
+          key={id}
+          type="button"
+          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          title={`Unify align to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
+          aria-label={`Set align to ${label}`}
+          onClick={() => updateNodes(ids, { align: id }, true)}
+        >
+          <span>{label}</span>
+          <span className="text-phosphor/70">{count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
 // MixedAxisSliders exposes "type optical size mixed" and "type width mixed".
 
 function unique<T>(values: T[]): T[] {
@@ -185,6 +225,7 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
             <button key={a} type="button" className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${!mixedAlign && keyNode.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"}`} onClick={() => patch({ align: a })}>{a}</button>
           ))}
         </div>
+        {mixedAlign && <MixedAlignLegend nodes={nodes} />}
       </div>
       <label className="mt-2 flex items-center gap-2 text-xs text-ink-dim">
         <input type="checkbox" aria-label={mixedCase ? "type uppercase mixed" : "type uppercase"} checked={!mixedCase && keyNode.uppercase} onChange={(e) => patch({ uppercase: e.target.checked })} />
