@@ -32,6 +32,35 @@ export function alignLegendEntries(nodes: TextNode[]) {
   }));
 }
 
+function AlignIcon({ align }: { align: Align }) {
+  const common = "stroke-phosphor fill-none";
+  if (align === "left") {
+    return (
+      <svg width="14" height="10" viewBox="0 0 14 10" className={common} aria-hidden>
+        <line x1="1" y1="2" x2="9" y2="2" strokeWidth="1.5" />
+        <line x1="1" y1="5" x2="7" y2="5" strokeWidth="1.5" />
+        <line x1="1" y1="8" x2="10" y2="8" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  if (align === "center") {
+    return (
+      <svg width="14" height="10" viewBox="0 0 14 10" className={common} aria-hidden>
+        <line x1="3" y1="2" x2="11" y2="2" strokeWidth="1.5" />
+        <line x1="4" y1="5" x2="10" y2="5" strokeWidth="1.5" />
+        <line x1="2" y1="8" x2="12" y2="8" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="10" viewBox="0 0 14 10" className={common} aria-hidden>
+      <line x1="5" y1="2" x2="13" y2="2" strokeWidth="1.5" />
+      <line x1="7" y1="5" x2="13" y2="5" strokeWidth="1.5" />
+      <line x1="4" y1="8" x2="13" y2="8" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 function MixedAlignLegend({ nodes }: { nodes: TextNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const ids = nodes.map((n) => n.id);
@@ -43,13 +72,14 @@ function MixedAlignLegend({ nodes }: { nodes: TextNode[] }) {
         <button
           key={id}
           type="button"
-          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          className="flex h-7 items-center gap-1.5 rounded-full border border-phosphor/40 bg-surface-alt px-2 font-mono text-[8px] text-phosphor hover:bg-phosphor/10"
           title={`Unify align to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
           aria-label={`Set align to ${label}`}
           onClick={() => updateNodes(ids, { align: id }, true)}
         >
+          <AlignIcon align={id} />
           <span>{label}</span>
-          <span className="text-phosphor/70">{count}</span>
+          <span className="rounded-full bg-phosphor/20 px-1 text-phosphor/90">{count}</span>
         </button>
       ))}
     </div>
