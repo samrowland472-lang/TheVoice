@@ -44,19 +44,19 @@ export function TextFields({ node, hideType = false }: { node: TextNode; hideTyp
       </Field>
       <Field label={`Weight ${node.fontWeight}`}>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" min={400} max={800} step={100} aria-label="type weight" value={node.fontWeight} onChange={(e) => updateNodes([node.id], { fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-weight" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.fontWeight - 400) / (800 - 400)))) } as CSSProperties} min={400} max={800} step={100} aria-label="type weight" value={node.fontWeight} onChange={(e) => updateNodes([node.id], { fontWeight: Math.min(800, Math.max(400, Math.round(Number(e.target.value) / 100) * 100)) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 400 : 800; updateNodes([node.id], { fontWeight: next } as Partial<DesignNode>, true); } }} />
           <NumField className="field w-16 font-mono" value={node.fontWeight} min={400} max={800} aria-label="type weight" onCommit={(n) => updateNodes([node.id], { fontWeight: Math.min(800, Math.max(400, Math.round(n / 100) * 100)) } as Partial<DesignNode>, true)} />
         </div>
       </Field>
       <Field label={`Tracking ${node.letterSpacing}`}>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" min={-8} max={40} step={0.25} aria-label="type tracking" value={node.letterSpacing} onChange={(e) => updateNodes([node.id], { letterSpacing: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-tracking" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.letterSpacing - (-8)) / (40 - (-8))))) } as CSSProperties} min={-8} max={40} step={0.25} aria-label="type tracking" value={node.letterSpacing} onChange={(e) => updateNodes([node.id], { letterSpacing: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? -8 : 40; updateNodes([node.id], { letterSpacing: next } as Partial<DesignNode>, true); } }} />
           <NumField className="field w-16 font-mono" value={node.letterSpacing} min={-8} max={40} aria-label="type tracking" onCommit={(n) => updateNodes([node.id], { letterSpacing: n } as Partial<DesignNode>, true)} />
         </div>
       </Field>
       <Field label={`Leading ${node.lineHeight.toFixed(2)}`}>
         <div className="flex items-center gap-2">
-          <input type="range" className="range-phosphor min-w-0 flex-1" min={0.7} max={2} step={0.02} aria-label="type leading" value={node.lineHeight} onChange={(e) => updateNodes([node.id], { lineHeight: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-leading" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.lineHeight - 0.7) / (2 - 0.7)))) } as CSSProperties} min={0.7} max={2} step={0.02} aria-label="type leading" value={node.lineHeight} onChange={(e) => updateNodes([node.id], { lineHeight: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} onKeyDown={(e) => { if (e.key === "Home" || e.key === "End") { e.preventDefault(); const next = e.key === "Home" ? 0.7 : 2; updateNodes([node.id], { lineHeight: next } as Partial<DesignNode>, true); } }} />
           <NumField className="field w-16 font-mono" value={node.lineHeight} min={0.7} max={2} aria-label="type leading" onCommit={(n) => updateNodes([node.id], { lineHeight: n } as Partial<DesignNode>, true)} />
         </div>
       </Field>
