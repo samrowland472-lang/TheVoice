@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
@@ -189,6 +190,8 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
             <input
               type="range"
               className={cn("range-phosphor w-full", mixedBlur && "opacity-70")}
+              data-fill-range="shadow-blur"
+              style={{ "--fill-percent": String(Math.max(0, Math.min(1, (mixedBlur ? 0 : ghost.blur) / 80))) } as CSSProperties}
               min={0}
               max={80}
               value={mixedBlur ? 0 : ghost.blur}

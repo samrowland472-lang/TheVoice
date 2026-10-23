@@ -2,6 +2,7 @@ import { cloneFilters, DEFAULT_FILTERS, filterChipLabel, filterKey, normalizeFil
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode, ImageNode, PaintNode } from "@/lib/design/types";
 import { isBitmap } from "@/lib/design/types";
+import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
 
@@ -63,6 +64,8 @@ export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
             <input
               type="range"
               className={cn("range-phosphor w-full", mixed && "opacity-70")}
+              data-fill-range="photo-mixed"
+              style={{ "--fill-percent": String(Math.max(0, Math.min(1, (value - f.min) / (f.max - f.min || 1)))) } as CSSProperties}
               min={f.min}
               max={f.max}
               step={f.step}

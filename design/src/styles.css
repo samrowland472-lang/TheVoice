@@ -114,6 +114,38 @@
   border: 1px solid var(--color-phosphor);
   box-shadow: 0 0 0 1px var(--color-ground);
 }
+/* Percent ranges (blur, photo filters, shadow blur): track length follows normalized value */
+.range-phosphor[data-fill-range] {
+  --fill-percent: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) calc(var(--fill-percent) * 100%),
+    var(--color-border) calc(var(--fill-percent) * 100%),
+    var(--color-border) 100%
+  );
+}
+.range-phosphor[data-fill-range]::-moz-range-track {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) calc(var(--fill-percent) * 100%),
+    var(--color-border) calc(var(--fill-percent) * 100%),
+    var(--color-border) 100%
+  );
+  height: 4px;
+  border-radius: 99px;
+  border: none;
+}
+.range-phosphor[data-fill-range]::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 99px;
+}
+.range-phosphor[data-fill-range]::-webkit-slider-thumb,
+.range-phosphor[data-fill-range]::-moz-range-thumb {
+  background: color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground));
+}
 
 .field {
   width: 100%;

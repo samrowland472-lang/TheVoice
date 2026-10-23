@@ -6,6 +6,7 @@ import {
 } from "@/lib/design/image-filters";
 import { useDesign } from "@/lib/design/store";
 import type { BitmapAdjust, DesignNode, ImageNode, PaintNode } from "@/lib/design/types";
+import type { CSSProperties } from "react";
 import { Field } from "./inspector-parts";
 
 const FILTERS = [
@@ -49,6 +50,8 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
             <input
               type="range"
               className="range-phosphor w-full"
+              data-fill-range="photo"
+              style={{ "--fill-percent": String(Math.max(0, Math.min(1, (value - f.min) / (f.max - f.min || 1)))) } as CSSProperties}
               min={f.min}
               max={f.max}
               step={f.step}

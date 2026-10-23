@@ -1,21 +1,21 @@
 # The Voice Design — Improvement Loop
 
 ## Iteration
-- **When**: 2026-10-23 05:05 UTC
-- **Slice**: Opacity range track fill tracks value intensity and length
+- **When**: 2026-10-23 08:05 UTC
+- **Slice**: Photo filter and shadow-blur ranges show live phosphor track fill
 - **Status**: Done
 
 ## Done
-- Opacity range tracks (Inspector, Layers quick-strip, Mixed ink) now show a live phosphor-to-ground fill whose length and intensity follow the current opacity, matching the existing thumb preview.
-- CSS variable `--fill-opacity` drives both the thumb mix and the linear-gradient track stop; unfilled portion stays the solid border.
-- Scoped to `[data-opacity-range]` so other phosphor ranges (blur, angle, type, etc.) remain solid tracks.
-- Home/End, arrow stepping, mixed ticks, and percent field behaviour unchanged.
+- Photo filter ranges (Brightness, Contrast, Saturate, Blur) in the single-layer Photo inspector and the mixed Photos strip now draw a phosphor-to-ground track fill whose length and intensity follow the normalized value.
+- Layer shadow Blur range uses the same treatment.
+- CSS uses `[data-fill-range]` + `--fill-percent` so opacity ranges keep their dedicated `--fill-opacity` path.
+- Opacity tracks, mixed ticks, keyboard commit, and all other solid phosphor ranges unchanged.
 - Typecheck clean. Build clean. Browser smoke clean (desktop + mobile, canvas present, no console errors).
 
 ## Next recommended
-- Keyboard Home/End also on the range itself (already partially handled via onKeyUp commit).
+- Keyboard Home/End on the range inputs themselves.
 - Small opacity histogram legend when mixed.
-- Optional track fill for other numeric ranges (blur, radius) using a separate percent variable.
+- Optional fill for remaining positive ranges (type size, crop edges) with the same percent variable.
 
 ## Guardrails observed
 - Auth OFF, DB OFF, localStorage only.
