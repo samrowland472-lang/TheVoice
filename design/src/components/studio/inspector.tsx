@@ -259,16 +259,6 @@ export function Inspector() {
                     </div>
                   )}
                 </div>
-                {mixedOpacity && opacityTicks.length > 0 && (
-                  <div className="mt-1 font-mono text-[8px] leading-none text-ink-faint" aria-label="Opacity histogram legend">
-                    {opacityTicks.map(({ pct, count }, i) => (
-                      <span key={pct}>
-                        {i > 0 && <span className="text-ink-faint/60"> · </span>}
-                        <span className="text-phosphor">{count}×</span>{pct}%
-                      </span>
-                    ))}
-                  </div>
-                )}
                 <NumField
                   aria-label="Layer opacity percent"
                   mixed={mixedOpacity}
