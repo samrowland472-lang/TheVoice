@@ -38,6 +38,96 @@ function chipClass() {
   return "flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate";
 }
 
+function ghostStroke(patch: { lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin } | null) {
+  useDesign.getState().setStrokeGhost(patch);
+}
+
+export function capLegendEntries(outlines: DesignNode[]) {
+  const map = new Map<CanvasLineCap, number>();
+  for (const n of outlines) {
+    const id = n.lineCap ?? "round";
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  return CAPS.filter((id) => map.has(id)).map((id) => ({
+    id,
+    label: capChipLabel(id),
+    count: map.get(id) ?? 0,
+  }));
+}
+
+export function joinLegendEntries(outlines: DesignNode[]) {
+  const map = new Map<CanvasLineJoin, number>();
+  for (const n of outlines) {
+    const id = n.lineJoin ?? "round";
+    map.set(id, (map.get(id) ?? 0) + 1);
+  }
+  return JOINS.filter((id) => map.has(id)).map((id) => ({
+    id,
+    label: joinChipLabel(id),
+    count: map.get(id) ?? 0,
+  }));
+}
+
+/** Compact unique-cap legend. Click unifies the selection to that cap. */
+export function MixedCapLegend({ outlines }: { outlines: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = outlines.map((n) => n.id);
+  const entries = capLegendEntries(outlines);
+  if (entries.length < 2) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" aria-label="mixed line cap legend">
+      {entries.map(({ id, label, count }) => (
+        <button
+          key={id}
+          type="button"
+          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          title={`Unify line cap to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
+          aria-label={`Set line cap to ${label}`}
+          onMouseEnter={() => ghostStroke({ lineCap: id })}
+          onFocus={() => ghostStroke({ lineCap: id })}
+          onMouseLeave={() => ghostStroke(null)}
+          onBlur={() => ghostStroke(null)}
+          onClick={() => updateNodes(ids, { lineCap: id }, true)}
+        >
+          <span>{label}</span>
+          <span className="text-phosphor/70">{count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Compact unique-join legend. Click unifies the selection to that join. */
+export function MixedJoinLegend({ outlines }: { outlines: DesignNode[] }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const ids = outlines.map((n) => n.id);
+  const entries = joinLegendEntries(outlines);
+  if (entries.length < 2) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" aria-label="mixed line join legend">
+      {entries.map(({ id, label, count }) => (
+        <button
+          key={id}
+          type="button"
+          className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor"
+          title={`Unify line join to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
+          aria-label={`Set line join to ${label}`}
+          onMouseEnter={() => ghostStroke({ lineJoin: id })}
+          onFocus={() => ghostStroke({ lineJoin: id })}
+          onMouseLeave={() => ghostStroke(null)}
+          onBlur={() => ghostStroke(null)}
+          onClick={() => updateNodes(ids, { lineJoin: id }, true)}
+        >
+          <span>{label}</span>
+          <span className="text-phosphor/70">{count}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
+
 export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const outlines = nodes.filter((n) => OUTLINE_KINDS.has(n.kind));
@@ -212,6 +302,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           ))}
         </select>
       </Field>
+      {mixedCap && <MixedCapLegend outlines={outlines} />}
       {mixedCap && (
         <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
@@ -251,6 +342,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           ))}
         </select>
       </Field>
+      {mixedJoin && <MixedJoinLegend outlines={outlines} />}
       {mixedJoin && (
         <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
