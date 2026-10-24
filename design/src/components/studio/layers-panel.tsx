@@ -45,6 +45,8 @@ export function LayersPanel() {
   const [dropHint, setDropHint] = useState<DropHint | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
+  const [editingOpacityId, setEditingOpacityId] = useState<string | null>(null);
+  const [opacityDraft, setOpacityDraft] = useState("");
   const [query, setQuery] = useState("");
 
   if (!doc) return null;
@@ -393,12 +395,55 @@ export function LayersPanel() {
                   </button>
                 )}
                 <div className={cn(
-                  "flex items-center px-1 -mx-1 transition-opacity duration-150",
+                  "flex items-center gap-1 px-1 -mx-1 transition-opacity duration-150",
                   active ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
                 )}>
+                  {editingOpacityId === n.id ? (
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={opacityDraft}
+                      autoFocus
+                      aria-label={`${n.name || n.kind} opacity percent`}
+                      className="field h-6 w-12 px-1 font-mono text-[10px]"
+                      onChange={(e) => setOpacityDraft(e.target.value)}
+                      onBlur={() => {
+                        const pct = Math.max(0, Math.min(100, Number(opacityDraft) || 0));
+                        updateNodes([n.id], { opacity: pct / 100 }, true);
+                        setEditingOpacityId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const pct = Math.max(0, Math.min(100, Number(opacityDraft) || 0));
+                          updateNodes([n.id], { opacity: pct / 100 }, true);
+                          setEditingOpacityId(null);
+                        } else if (e.key === "Escape") {
+                          setEditingOpacityId(null);
+                        }
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="min-w-[2.5rem] rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                      title="Click to type opacity percent · Alt+0–9 tenths · Alt+Shift+0 full"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!selection.includes(n.id)) select([n.id]);
+                        setOpacityDraft(String(Math.round(n.opacity * 100)));
+                        setEditingOpacityId(n.id);
+                      }}
+                    >
+                      {Math.round(n.opacity * 100)}%
+                    </button>
+                  )}
                   <input
                     type="range"
-                    className="range-phosphor h-5 w-20 shrink-0"
+                    className="range-phosphor h-5 w-16 shrink-0"
                     min={0}
                     max={1}
                     step={0.01}
