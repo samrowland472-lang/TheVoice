@@ -17,10 +17,11 @@
 
 - Path point inspector now has a Mirror toggle that keeps in/out handles mirrored. Focusing a handle field highlights that arm with a live tangent guide overlay on the canvas.
 - Layers panel now shows a Type quick strip (Size + Tracking) whenever text layers are selected. Scrubbers and number fields update live; mixed selections show Mixed and apply to all selected text.
+- Text layers in the Layers panel now show a compact type-size badge (click to open an inline number field for exact size entry, Enter/Escape).
 
 ## Iteration
-2026-10-24 11:15 BST — Added Type quick strip to Layers panel for selected text: live Size (8–160) and Tracking (−8 to 40) controls with mixed-state handling. Verified typecheck, build, and browser smoke.
+2026-10-24 12:05 BST — Added per-layer type size badge in Layers rows for text layers: click opens an inline number field (6–400, Enter/Escape). Verified typecheck, build, and browser smoke.
 
 ## Next recommended
 - Live phosphor type rhythm overlay (leading lines or tracking ticks) while scrubbing Size / Tracking / Leading in inspector or Layers.
-- Per-layer type size badge in Layers rows (click to edit, like opacity).
+- Per-layer tracking badge next to the size badge.

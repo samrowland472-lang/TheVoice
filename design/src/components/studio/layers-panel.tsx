@@ -47,6 +47,8 @@ export function LayersPanel() {
   const [draftName, setDraftName] = useState("");
   const [editingOpacityId, setEditingOpacityId] = useState<string | null>(null);
   const [opacityDraft, setOpacityDraft] = useState("");
+  const [editingSizeId, setEditingSizeId] = useState<string | null>(null);
+  const [sizeDraft, setSizeDraft] = useState("");
   const [query, setQuery] = useState("");
 
   if (!doc) return null;
@@ -345,6 +347,50 @@ export function LayersPanel() {
                       >
                         {Math.round(n.opacity * 100)}%
                       </button>
+                    )}
+                    {isText(n) && editingSizeId !== n.id && (
+                      <button
+                        type="button"
+                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        title="Click to edit type size"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setSizeDraft(String(Math.round(n.fontSize)));
+                          setEditingSizeId(n.id);
+                        }}
+                      >
+                        {Math.round(n.fontSize)}
+                      </button>
+                    )}
+                    {isText(n) && editingSizeId === n.id && (
+                      <input
+                        type="number"
+                        min={6}
+                        max={400}
+                        step={1}
+                        value={sizeDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} type size`}
+                        className="ml-1.5 inline-block h-5 w-10 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setSizeDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(6, Math.min(400, Number(sizeDraft) || n.fontSize));
+                          updateNodes([n.id], { fontSize: next } as Partial<DesignNode>, true);
+                          setEditingSizeId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(6, Math.min(400, Number(sizeDraft) || n.fontSize));
+                            updateNodes([n.id], { fontSize: next } as Partial<DesignNode>, true);
+                            setEditingSizeId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingSizeId(null);
+                          }
+                        }}
+                      />
                     )}
                     {isKey && (
                       <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
