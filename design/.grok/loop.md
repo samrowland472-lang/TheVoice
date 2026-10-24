@@ -32,20 +32,11 @@
 - Type quick strip summary now has compact click-to-edit weight and font-family badges (inline number field / picker, Enter/Escape/blur). Mixed shows Mixed.
 - Live phosphor type rhythm overlay now includes weight: scrubbing the Weight range (or keyboard) sets a weight ghost that updates measured advance and thickens leading lines on selected text.
 - Type rhythm overlay now draws tracking ticks while scrubbing Weight (independent of Tracking). Advance is measured with the ghost weight so density updates live; leading lines still thicken.
+- Type inspector and Mixed Type weight ranges now match Layers: 100–900 (step 100). Scrub, keyboard-nudge, or exact entry now cover the full phosphor weight scale consistently across panels.
 ## Iteration
-2026-10-24 21:05 BST — Weight ghost extended to Type inspector and Mixed Type weight ranges. Scrub or keyboard-nudge weight to see live phosphor rhythm (thicker leading lines). Verified typecheck, build, and browser smoke.
+2026-10-25 00:05 BST — Aligned Type inspector and Mixed Type weight ranges to 100–900 (matching Layers). Scrub or type any weight from thin to black; live phosphor rhythm updates across the full range. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Clickable size / tracking / leading badges in the Type quick strip summary for consistency.
-- Type rhythm overlay ticks while scrubbing weight (independent of tracking).
-- Align inspector/mixed weight ranges with Layers (100–900) for consistency.
-
-- Type quick strip summary now has compact click-to-edit size, tracking, and leading badges (inline number fields, Enter/Escape/blur). Consistent with weight and family. Mixed selections still show Mixed.
-
-## Iteration
-2026-10-24 23:05 BST — Type rhythm overlay ticks while scrubbing weight (independent of tracking). Scrub Weight to see live phosphor density ticks that update with measured advance. Verified typecheck, build, and browser smoke.
-
-## Next recommended
-- Align inspector/mixed weight ranges with Layers (100–900) for consistency.
 - Show individual property values in the Type summary even when mixed (with Mixed indicator per badge).
 - Type rhythm overlay also for size/leading ghosts (baseline ticks).
+- Clickable size / tracking / leading badges in the Type quick strip summary for consistency (if not already complete).
