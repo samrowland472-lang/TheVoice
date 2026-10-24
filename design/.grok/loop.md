@@ -16,6 +16,11 @@
 - Alt+ArrowUp/Down steps selection opacity by 1% while the Layers panel is focused (clamped 0–100%). Tooltips mention the shortcut.
 
 - Path point inspector now has a Mirror toggle that keeps in/out handles mirrored. Focusing a handle field highlights that arm with a live tangent guide overlay on the canvas.
+- Layers panel now shows a Type quick strip (Size + Tracking) whenever text layers are selected. Scrubbers and number fields update live; mixed selections show Mixed and apply to all selected text.
 
 ## Iteration
-2026-10-24 10:05 BST — Added Mirror handle toggle to path point rows and a live tangent guide overlay that appears when a handle field is focused. Verified typecheck, build, and browser smoke.
+2026-10-24 11:15 BST — Added Type quick strip to Layers panel for selected text: live Size (8–160) and Tracking (−8 to 40) controls with mixed-state handling. Verified typecheck, build, and browser smoke.
+
+## Next recommended
+- Live phosphor type rhythm overlay (leading lines or tracking ticks) while scrubbing Size / Tracking / Leading in inspector or Layers.
+- Per-layer type size badge in Layers rows (click to edit, like opacity).

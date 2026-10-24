@@ -2,7 +2,7 @@ import { useRef, useState, useSyncExternalStore, type CSSProperties } from "reac
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
 import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
-import { isGroup } from "@/lib/design/types";
+import { isGroup, isText, type DesignNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 import {
@@ -194,6 +194,7 @@ export function LayersPanel() {
           </button>
         ) : null}
         <OpacityQuickStrip />
+        <TypeQuickStrip />
         {filtering && (
           <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
             {layers.length} match{layers.length === 1 ? "" : "es"}
@@ -518,6 +519,94 @@ export function LayersPanel() {
   );
 }
 
+
+function TypeQuickStrip() {
+  const selection = useDesign((s) => s.selection);
+  const doc = useDesign((s) => s.doc);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  if (!doc || selection.length === 0) return null;
+  const textNodes = selection
+    .map((id) => doc.nodes.find((n) => n.id === id))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n) && isText(n));
+  if (textNodes.length === 0) return null;
+  const sizeMixed = new Set(textNodes.map((n) => Math.round(n.fontSize))).size > 1;
+  const trackMixed = new Set(textNodes.map((n) => Math.round(n.letterSpacing * 4) / 4)).size > 1;
+  const size = sizeMixed ? textNodes[textNodes.length - 1].fontSize : textNodes[0].fontSize;
+  const tracking = trackMixed ? textNodes[textNodes.length - 1].letterSpacing : textNodes[0].letterSpacing;
+  const ids = textNodes.map((n) => n.id);
+  return (
+    <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
+      <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
+        <span>Type</span>
+        <span className={sizeMixed || trackMixed ? "text-phosphor" : "text-ink-dim"}>
+          {sizeMixed || trackMixed ? "Mixed" : `${Math.round(size)} / ${tracking}`}
+        </span>
+      </div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Size</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={8}
+          max={160}
+          step={1}
+          value={size}
+          aria-label="Type size"
+          data-type-range="size"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (size - 8) / (160 - 8)))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            updateNodes(ids, { fontSize: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={() => useDesign.getState().commit()}
+        />
+        <NumField
+          aria-label="Type size"
+          mixed={sizeMixed}
+          value={Math.round(size)}
+          min={8}
+          max={160}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { fontSize: n } as Partial<DesignNode>);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Track</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={-8}
+          max={40}
+          step={0.25}
+          value={tracking}
+          aria-label="Type tracking"
+          data-type-range="tracking"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (tracking - (-8)) / (40 - (-8))))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={() => useDesign.getState().commit()}
+        />
+        <NumField
+          aria-label="Type tracking"
+          mixed={trackMixed}
+          value={tracking}
+          min={-8}
+          max={40}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { letterSpacing: n } as Partial<DesignNode>);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 function OpacityQuickStrip() {
   const selection = useDesign((s) => s.selection);
