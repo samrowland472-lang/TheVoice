@@ -45,6 +45,9 @@ function ghostStroke(
     lineJoin?: CanvasLineJoin;
     strokeDash?: number;
     strokeDashOffset?: number;
+    miterLimit?: number;
+    sides?: number;
+    headScale?: number;
   } | null,
 ) {
   useDesign.getState().setStrokeGhost(patch);
@@ -224,9 +227,9 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         Stroke · {outlines.length}
       </div>
       <p className="mb-2 text-[10px] text-ink-dim">
-        Width, dash, cap, and join write onto selected outlines — paths, rectangles, ellipses, lines,
-        polygons, stars, and arrows. Scrub width or dash for a live phosphor overlay. Zero dash is a solid stroke. A chip stamps that outline’s
-        dash, cap, or join onto the rest of the pick.
+        Width, dash, cap, join, miter, sides, and arrow head write onto selected outlines — paths, rectangles, ellipses, lines,
+        polygons, stars, and arrows. Scrub any of those for a live phosphor overlay. Zero dash is a solid stroke. A chip stamps that outline’s
+        values onto the rest of the pick.
       </p>
       <Field label={mixedWidth ? "Width · mixed" : `Width ${Math.round(width)}`}>
         <div className="flex items-center gap-2">
@@ -490,8 +493,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               step={0.5}
               aria-label={mixedMiter ? "path miter limit mixed" : "path miter limit"}
               value={mixedMiter ? 4 : miter}
-              onChange={(e) => updateNodes(ids, { miterLimit: Number(e.target.value) })}
-              onPointerUp={() => useDesign.getState().commit()}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                updateNodes(ids, { miterLimit: v });
+                ghostStroke({ miterLimit: v });
+              }}
+              onPointerUp={() => {
+                useDesign.getState().commit();
+                ghostStroke(null);
+              }}
             />
             <NumField
               className="field w-16 font-mono"
@@ -536,8 +546,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               step={1}
               aria-label={mixedSides ? "polygon sides mixed" : "polygon sides"}
               value={mixedSides ? 5 : sidesValue}
-              onChange={(e) => updateNodes(polyIds, { sides: Number(e.target.value) })}
-              onPointerUp={() => useDesign.getState().commit()}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                updateNodes(polyIds, { sides: v });
+                ghostStroke({ sides: v });
+              }}
+              onPointerUp={() => {
+                useDesign.getState().commit();
+                ghostStroke(null);
+              }}
             />
             <NumField
               className="field w-16 font-mono"
@@ -582,8 +599,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               step={0.05}
               aria-label={mixedHead ? "arrow head scale mixed" : "arrow head scale"}
               value={mixedHead ? 1 : headValue}
-              onChange={(e) => updateNodes(arrowIds, { headScale: Number(e.target.value) })}
-              onPointerUp={() => useDesign.getState().commit()}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                updateNodes(arrowIds, { headScale: v });
+                ghostStroke({ headScale: v });
+              }}
+              onPointerUp={() => {
+                useDesign.getState().commit();
+                ghostStroke(null);
+              }}
             />
             <NumField
               className="field w-16 font-mono"
