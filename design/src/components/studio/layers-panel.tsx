@@ -696,9 +696,10 @@ function TypeQuickStrip() {
           style={{ "--fill-percent": String(Math.max(0, Math.min(1, (size - 8) / (160 - 8)))) } as CSSProperties}
           onChange={(e) => {
             const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ fontSize: next });
             updateNodes(ids, { fontSize: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => useDesign.getState().commit()}
+          onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }}
         />
         <NumField
           aria-label="Type size"
@@ -727,9 +728,10 @@ function TypeQuickStrip() {
           style={{ "--fill-percent": String(Math.max(0, Math.min(1, (tracking - (-8)) / (40 - (-8))))) } as CSSProperties}
           onChange={(e) => {
             const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ letterSpacing: next });
             updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => useDesign.getState().commit()}
+          onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }}
         />
         <NumField
           aria-label="Type tracking"
@@ -758,9 +760,10 @@ function TypeQuickStrip() {
           style={{ "--fill-percent": String(Math.max(0, Math.min(1, (leading - 0.7) / (2 - 0.7)))) } as CSSProperties}
           onChange={(e) => {
             const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ lineHeight: next });
             updateNodes(ids, { lineHeight: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => useDesign.getState().commit()}
+          onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }}
         />
         <NumField
           aria-label="Type leading"

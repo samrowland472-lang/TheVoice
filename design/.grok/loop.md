@@ -14,16 +14,16 @@
 - Live phosphor overlay while scrubbing Stroke Width, and hover/focus/change preview for Cap and Join selects (consistent with dash ghost).
 - Live phosphor overlay while scrubbing Stroke Miter Limit, Polygon/Star Sides, and Arrow Head Scale (same ghost system).
 - Alt+ArrowUp/Down steps selection opacity by 1% while the Layers panel is focused (clamped 0–100%). Tooltips mention the shortcut.
-
 - Path point inspector now has a Mirror toggle that keeps in/out handles mirrored. Focusing a handle field highlights that arm with a live tangent guide overlay on the canvas.
 - Layers panel now shows a Type quick strip (Size + Tracking) whenever text layers are selected. Scrubbers and number fields update live; mixed selections show Mixed and apply to all selected text.
 - Text layers in the Layers panel now show a compact type-size badge (click to open an inline number field for exact size entry, Enter/Escape).
-
 - Text layers in the Layers panel now show a compact tracking badge next to the type-size badge (click to open an inline number field for exact tracking entry, Enter/Escape, range -8 to 40).
 - Text layers in the Layers panel now show a compact leading badge next to the size and tracking badges (click to open an inline number field for exact leading entry, Enter/Escape, range 0.7–2, step 0.02). Type quick strip now includes a Leading scrubber and shows size / tracking / leading in the summary.
+- Live phosphor type rhythm overlay: while scrubbing Size, Tracking, or Leading (in the inspector, mixed type, or Layers Type quick strip) horizontal leading lines and approximate tracking ticks appear on selected text layers.
+
 ## Iteration
-2026-10-24 14:05 BST — Added per-layer leading badge in Layers rows for text layers (click opens inline number field 0.7–2) and Leading scrubber to the Type quick strip (summary now shows size / tracking / leading). Verified typecheck, build, and browser smoke.
+2026-10-24 15:05 BST — Added live phosphor type rhythm overlay (leading lines + tracking ticks) while scrubbing Size / Tracking / Leading in inspector or Layers. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Live phosphor type rhythm overlay (leading lines or tracking ticks) while scrubbing Size / Tracking / Leading in inspector or Layers.
 - Compact font-family or weight badge in Layers rows for text.
+- Type rhythm overlay also reacts to keyboard nudges on the range inputs.

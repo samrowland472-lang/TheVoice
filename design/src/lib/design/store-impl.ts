@@ -1,3 +1,4 @@
+import type { TypeGhost } from "./type-ghost";
 import { create } from "zustand";
 import { campaignPageName, campaignPages } from "./campaign";
 import { formatById } from "./formats";
@@ -60,6 +61,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   isolateSnapshot: null as Record<string, boolean> | null,
   alignTarget: "selection",
   strokeGhost: null as StrokeGhost | null,
+  typeGhost: null as TypeGhost | null,
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id) => {
     const doc = loadDoc(id);
@@ -211,6 +213,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setTool: (tool) => set({ tool, editingText: null }),
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
   setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
+  setTypeGhost: (ghost: TypeGhost) => set({ typeGhost: ghost }),
   requestFit: () => set({ viewIntent: { type: "fit" } }),
   requestZoom: (zoom: number) => set({ viewIntent: { type: "zoom", zoom } }),
   select: (ids, additive) => {
