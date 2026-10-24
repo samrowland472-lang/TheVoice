@@ -221,6 +221,34 @@ export function setPathPointSmooth(id: string, index: number, smooth: boolean, h
   setPathEditHit({ index, arm: "anchor", hole });
 }
 
+/** Update in/out handle offsets (relative to the anchor). Pass null to clear a handle. */
+export function setPathPointHandles(
+  id: string,
+  index: number,
+  next: { in?: { x: number; y: number } | null; out?: { x: number; y: number } | null },
+  hole?: number,
+) {
+  const n = livePath(id);
+  if (!n) return;
+  const ring = hole == null ? n.points : (n.holes?.[hole] ?? []);
+  const pt = ring[index];
+  if (!pt) return;
+  const nextPt: PathPoint = {
+    ...pt,
+    in: next.in !== undefined ? next.in : pt.in,
+    out: next.out !== undefined ? next.out : pt.out,
+  };
+  // If both handles are cleared, force corner.
+  if (!nextPt.in && !nextPt.out) nextPt.smooth = false;
+  const nextRing = ring.map((p, i) => (i === index ? nextPt : p));
+  const nextNode: PathNode =
+    hole == null ? { ...n, points: nextRing } : { ...n, holes: (n.holes ?? []).map((h, i) => (i === hole ? nextRing : h)) };
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, nextNode, false);
+  setPathEditHit({ index, arm: "anchor", hole });
+}
+
 export function joinSelectedPathToNearest(wx: number, wy: number, zoom: number): boolean {
   const s = useDesign.getState();
   const doc = s.doc;

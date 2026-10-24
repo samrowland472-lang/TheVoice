@@ -15,6 +15,7 @@ export function NumField({
   className = "field font-mono",
   "aria-label": ariaLabel = "numeric",
   "data-path-axis": dataPathAxis,
+  tabIndex,
 }: {
   value: number;
   mixed?: boolean;
@@ -26,6 +27,7 @@ export function NumField({
   className?: string;
   "aria-label"?: string;
   "data-path-axis"?: "x" | "y";
+  tabIndex?: number;
 }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState(mixed ? "" : formatNum(value));
@@ -57,6 +59,7 @@ export function NumField({
       type="text"
       inputMode="decimal"
       value={draft}
+      tabIndex={tabIndex}
       data-path-axis={dataPathAxis}
       placeholder={mixed && !focused ? "\u2014" : undefined}
       aria-label={mixed ? `${ariaLabel} mixed` : ariaLabel}

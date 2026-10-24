@@ -9,10 +9,12 @@
 - Layers panel rows now include a compact opacity scrubber for direct per-layer opacity tweaks without leaving the list.
 - Opacity scrubber in Layers rows is now hover-only (or always visible when the layer is selected) with a larger hit target for better usability.
 - Layers opacity control now includes a clickable percent badge that opens an inline number field for exact percent entry (Enter/Escape), alongside the scrubber.
+- Path point inspector now shows Bézier in/out handle offsets (when present) plus Smooth / Corner / Delete actions on every point row.
 
 ## Iteration
-2026-10-24 04:05 BST — Added inline percent editor to the Layers panel opacity scrubber. Click the % badge (visible on hover or selection) to type an exact value; scrubber remains for quick adjustments. Verified typecheck, build, and browser smoke.
+2026-10-24 05:10 BST — Deepened the path point inspector: handle In/Out numeric fields appear for points with curves, and each point row now has Smooth, Corner, and Del buttons. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Deepen path point inspector or add live dash/offset preview on the canvas.
+- Add live dash/offset preview on the canvas while scrubbing stroke values.
 - Or add more precise opacity shortcuts (e.g. Alt+Arrow for 1% steps) while the layers list is focused.
+- Or deepen path point inspector further with mirrored-handle toggle and live tangent overlay.

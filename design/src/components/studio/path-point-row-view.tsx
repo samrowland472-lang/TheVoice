@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import { setPathEditHit, setPathPointPosition } from "@/lib/design/path-actions";
+import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint } from "@/lib/design/path-actions";
 import {
   pickNextHoleFirstPointXTabTarget,
   pickNextHoleHeaderTabTarget,
@@ -236,15 +236,60 @@ export function PointRow({
       if (header) { e.preventDefault(); tagHolePointTabCrossing(e.currentTarget, header, header); focusHoldEl(header, from); return; }
     }
   };
+  const hasHandles = Boolean(point.in || point.out);
   return (
     <div data-point={key} className={cn("rounded-[8px] border px-2 py-1.5", active ? "border-phosphor/60 bg-phosphor/10" : "border-border")}>
       <button type="button" className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim" onClick={() => setPathEditHit({ index, arm: "anchor", hole })}>
         <span className="font-mono text-ink">{String(index + 1).padStart(2, "0")}</span>
-        <span>{hole == null ? "outer" : `hole ${hole + 1}`}</span>
+        <span>{hole == null ? "outer" : `hole ${hole + 1}`} · {point.smooth === false ? "corner" : "smooth"}</span>
       </button>
       <div className="grid grid-cols-2 gap-1">
         <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
         <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
+      </div>
+      {hasHandles && (
+        <div className="mt-1 space-y-1 text-[9px] text-ink-dim">
+          <div className="font-mono uppercase tracking-wide">Handles</div>
+          <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-1">
+            <span className="font-mono">In</span>
+            <NumField
+              className="field font-mono text-[11px]"
+              value={Math.round(point.in?.x ?? 0)}
+              aria-label={`${label} in x`}
+              tabIndex={-1}
+              onCommit={(n) => setPathPointHandles(nodeId, index, { in: { x: n, y: point.in?.y ?? 0 } }, hole)}
+            />
+            <NumField
+              className="field font-mono text-[11px]"
+              value={Math.round(point.in?.y ?? 0)}
+              aria-label={`${label} in y`}
+              tabIndex={-1}
+              onCommit={(n) => setPathPointHandles(nodeId, index, { in: { x: point.in?.x ?? 0, y: n } }, hole)}
+            />
+          </div>
+          <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-1">
+            <span className="font-mono">Out</span>
+            <NumField
+              className="field font-mono text-[11px]"
+              value={Math.round(point.out?.x ?? 0)}
+              aria-label={`${label} out x`}
+              tabIndex={-1}
+              onCommit={(n) => setPathPointHandles(nodeId, index, { out: { x: n, y: point.out?.y ?? 0 } }, hole)}
+            />
+            <NumField
+              className="field font-mono text-[11px]"
+              value={Math.round(point.out?.y ?? 0)}
+              aria-label={`${label} out y`}
+              tabIndex={-1}
+              onCommit={(n) => setPathPointHandles(nodeId, index, { out: { x: point.out?.x ?? 0, y: n } }, hole)}
+            />
+          </div>
+        </div>
+      )}
+      <div className="mt-1 flex gap-1">
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
+        <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>
   );
