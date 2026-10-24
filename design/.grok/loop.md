@@ -25,10 +25,15 @@
 - Text layers in the Layers panel now show a compact font-family badge (first word of the family name) next to the weight badge. Click opens a picker of the canvas fonts; change or Escape/blur closes it.
 - Type rhythm overlay (phosphor leading lines + tracking ticks) now reacts to keyboard nudges on Size / Tracking / Leading ranges: Arrow keys, Home, End, PageUp/PageDown show the live ghost while the key is held and clear + commit on keyup or blur (Layers Type quick strip, inspector Type fields, and mixed Type).
 
+
+- Layers Type quick strip now includes a Weight range (100–900, step 100) with live canvas updates and a NumField for exact entry. Mixed weights show Mixed and apply to all selected text.
+- Type quick strip summary now includes weight (size / weight / tracking / leading). Mixed any property shows Mixed.
+- Layers Type quick strip now includes a Family select of canvas fonts. Mixed families show Mixed and a choice applies to the selection.
+
 ## Iteration
-2026-10-24 18:10 BST — Type rhythm overlay now follows keyboard nudges on Size, Tracking, and Leading ranges (Arrow / Home / End / Page). Ghost clears and commits on keyup or blur. Verified typecheck, build, and browser smoke.
+2026-10-24 18:04 BST — Weight range and Family select added to Layers Type quick strip. Live weight updates on canvas; mixed handling for weight and family. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Weight badge in the Type quick strip.
-- Compact font-family badge also appears in the Type quick strip.
-- Weight range in Layers Type quick strip with live preview.
+- Compact weight badge (click-to-edit) in the Type quick strip summary area.
+- Font-family badge next to the summary that opens the picker.
+- Live phosphor overlay for weight (or style axis) while scrubbing.

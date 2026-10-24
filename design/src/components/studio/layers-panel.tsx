@@ -755,9 +755,13 @@ function TypeQuickStrip() {
   const sizeMixed = new Set(textNodes.map((n) => Math.round(n.fontSize))).size > 1;
   const trackMixed = new Set(textNodes.map((n) => Math.round(n.letterSpacing * 4) / 4)).size > 1;
   const leadMixed = new Set(textNodes.map((n) => Math.round(n.lineHeight * 50) / 50)).size > 1;
+  const weightMixed = new Set(textNodes.map((n) => Math.round(n.fontWeight))).size > 1;
+  const familyMixed = new Set(textNodes.map((n) => n.fontFamily)).size > 1;
   const size = sizeMixed ? textNodes[textNodes.length - 1].fontSize : textNodes[0].fontSize;
   const tracking = trackMixed ? textNodes[textNodes.length - 1].letterSpacing : textNodes[0].letterSpacing;
   const leading = leadMixed ? textNodes[textNodes.length - 1].lineHeight : textNodes[0].lineHeight;
+  const weight = weightMixed ? textNodes[textNodes.length - 1].fontWeight : textNodes[0].fontWeight;
+  const family = familyMixed ? textNodes[textNodes.length - 1].fontFamily : textNodes[0].fontFamily;
   const ids = textNodes.map((n) => n.id);
   const clearGhost = () => {
     const s = useDesign.getState();
@@ -770,8 +774,8 @@ function TypeQuickStrip() {
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Type</span>
-        <span className={sizeMixed || trackMixed || leadMixed ? "text-phosphor" : "text-ink-dim"}>
-          {sizeMixed || trackMixed || leadMixed ? "Mixed" : `${Math.round(size)} / ${tracking} / ${leading.toFixed(2)}`}
+        <span className={sizeMixed || trackMixed || leadMixed || weightMixed || familyMixed ? "text-phosphor" : "text-ink-dim"}>
+          {sizeMixed || trackMixed || leadMixed || weightMixed || familyMixed ? "Mixed" : `${Math.round(size)} / ${Math.round(weight)} / ${tracking} / ${leading.toFixed(2)}`}
         </span>
       </div>
       <div className="mb-1.5 flex items-center gap-2">
@@ -896,6 +900,61 @@ function TypeQuickStrip() {
             useDesign.getState().commit();
           }}
         />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Weight</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={100}
+          max={900}
+          step={100}
+          value={weight}
+          aria-label="Type weight"
+          data-type-range="weight"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (weight - 100) / (900 - 100)))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            updateNodes(ids, { fontWeight: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={() => useDesign.getState().commit()}
+          onKeyUp={() => useDesign.getState().commit()}
+          onBlur={() => useDesign.getState().commit()}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, weight, 100, 900, 100);
+            if (next != null) {
+              updateNodes(ids, { fontWeight: next } as Partial<DesignNode>);
+            }
+          }}
+        />
+        <NumField
+          aria-label="Type weight"
+          mixed={weightMixed}
+          value={Math.round(weight)}
+          min={100}
+          max={900}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { fontWeight: n } as Partial<DesignNode>);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Family</span>
+        <select
+          className="h-6 min-w-0 flex-1 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-ink"
+          value={family}
+          aria-label="Type family"
+          onChange={(e) => {
+            updateNodes(ids, { fontFamily: e.target.value } as Partial<DesignNode>, true);
+          }}
+        >
+          {familyMixed && <option value={family}>Mixed</option>}
+          {CANVAS_FONTS.map((f) => (
+            <option key={f.id} value={f.family}>{f.family}</option>
+          ))}
+        </select>
       </div>
     </div>
   );
