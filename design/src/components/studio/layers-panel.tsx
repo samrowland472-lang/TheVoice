@@ -172,6 +172,15 @@ export function LayersPanel() {
           >
             Ungroup
           </button>
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!selection.length}
+            onClick={() => useDesign.getState().duplicateSelected()}
+            title="Duplicate selection (Cmd+D)"
+          >
+            Duplicate
+          </button>
         </div>
         {isolateSnapshot ? (
           <button

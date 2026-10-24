@@ -19,7 +19,7 @@ import { expandMovePlaces, getNudgeCue, keyboardSnapNudge, nudgeSelection, nudge
 import { setStudioStatus } from "./studio-status";
 import type { GuideSet } from "./snap";
 import { isGroup } from "./types";
-import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, type LayerDrop } from "./groups";
+import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, withDescendants, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
 
@@ -208,6 +208,8 @@ export const useDesign = create<any>((set: any, get: any) => ({
   },
   setTool: (tool) => set({ tool, editingText: null }),
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
+  requestFit: () => set({ viewIntent: { type: "fit" } }),
+  requestZoom: (zoom: number) => set({ viewIntent: { type: "zoom", zoom } }),
   select: (ids, additive) => {
     if (additive) {
       const cur = new Set(get().selection);
@@ -431,7 +433,91 @@ export const useDesign = create<any>((set: any, get: any) => ({
   copySelected: () => {
     const { doc, selection } = get();
     if (!doc || !selection.length) return;
-    set({ clipboard: doc.nodes.filter((n) => selection.includes(n.id)).map((n) => cloneNode(n, 0, 0)), pasteCount: 1 });
+    const ids = withDescendants(doc.nodes, selection);
+    const clones = doc.nodes
+      .filter((n) => ids.has(n.id))
+      .map((n) => structuredClone(n));
+    set({ clipboard: clones, pasteCount: 1 });
+    setStudioStatus(`Copied ${selection.length} layer${selection.length === 1 ? "" : "s"}`);
+  },
+  duplicateSelected: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    get().commit();
+    const ids = withDescendants(doc.nodes, selection);
+    const idMap = new Map<string, string>();
+    const clones: DesignNode[] = [];
+    for (const n of doc.nodes) {
+      if (!ids.has(n.id)) continue;
+      const newId = uid(n.kind.slice(0, 2));
+      idMap.set(n.id, newId);
+      const c = structuredClone(n);
+      c.id = newId;
+      c.x += 16;
+      c.y += 16;
+      clones.push(c);
+    }
+    const remapped = clones.map((n) =>
+      n.parentId && idMap.has(n.parentId) ? { ...n, parentId: idMap.get(n.parentId)! } : n,
+    );
+    const newSel = selection.map((id) => idMap.get(id)).filter((id): id is string => Boolean(id));
+    set({
+      doc: { ...doc, nodes: [...doc.nodes, ...remapped] },
+      selection: newSel.length ? newSel : remapped.map((n) => n.id),
+      dirty: true,
+    });
+    setStudioStatus(`Duplicated ${selection.length} layer${selection.length === 1 ? "" : "s"}`);
+  },
+  cutSelected: () => {
+    get().copySelected();
+    get().removeSelected();
+    setStudioStatus("Cut selection");
+  },
+  pasteClipboard: () => {
+    const { doc, clipboard, pasteCount } = get();
+    if (!doc || !clipboard.length) return;
+    get().commit();
+    const offset = 16 * (pasteCount || 1);
+    const idMap = new Map<string, string>();
+    const clones: DesignNode[] = clipboard.map((n) => {
+      const newId = uid(n.kind.slice(0, 2));
+      idMap.set(n.id, newId);
+      const c = structuredClone(n);
+      c.id = newId;
+      c.x += offset;
+      c.y += offset;
+      return c;
+    });
+    const remapped = clones.map((n) =>
+      n.parentId && idMap.has(n.parentId) ? { ...n, parentId: idMap.get(n.parentId)! } : n,
+    );
+    const copiedIds = new Set(clipboard.map((n) => n.id));
+    const topIds = clipboard.filter((n) => !n.parentId || !copiedIds.has(n.parentId)).map((n) => idMap.get(n.id)!);
+    const newSel = topIds.length ? topIds : remapped.map((n) => n.id);
+    set({
+      doc: { ...doc, nodes: [...doc.nodes, ...remapped] },
+      selection: newSel.length ? newSel : remapped.map((n) => n.id),
+      pasteCount: (pasteCount || 1) + 1,
+      dirty: true,
+    });
+    setStudioStatus(`Pasted ${newSel.length || remapped.length} layer${(newSel.length || remapped.length) === 1 ? "" : "s"}`);
+  },
+  removeSelected: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    get().commit();
+    const ids = withDescendants(doc.nodes, selection);
+    set({
+      doc: { ...doc, nodes: doc.nodes.filter((n) => !ids.has(n.id)) },
+      selection: [],
+      dirty: true,
+    });
+    setStudioStatus(`Removed ${selection.length} layer${selection.length === 1 ? "" : "s"}`);
+  },
+  selectAll: () => {
+    const { doc } = get();
+    if (!doc) return;
+    set({ selection: doc.nodes.filter((n) => !n.locked).map((n) => n.id) });
   },
   copyOpacity: () => {
     const { doc, selection } = get();
