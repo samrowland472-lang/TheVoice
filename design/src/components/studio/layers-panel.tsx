@@ -747,6 +747,9 @@ function TypeQuickStrip() {
   const selection = useDesign((s) => s.selection);
   const doc = useDesign((s) => s.doc);
   const updateNodes = useDesign((s) => s.updateNodes);
+  const [editingWeight, setEditingWeight] = useState(false);
+  const [weightDraft, setWeightDraft] = useState("");
+  const [editingFamily, setEditingFamily] = useState(false);
   if (!doc || selection.length === 0) return null;
   const textNodes = selection
     .map((id) => doc.nodes.find((n) => n.id === id))
@@ -770,13 +773,94 @@ function TypeQuickStrip() {
       s.commit();
     }
   };
+  const mixedAny = sizeMixed || trackMixed || leadMixed || weightMixed || familyMixed;
   return (
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Type</span>
-        <span className={sizeMixed || trackMixed || leadMixed || weightMixed || familyMixed ? "text-phosphor" : "text-ink-dim"}>
-          {sizeMixed || trackMixed || leadMixed || weightMixed || familyMixed ? "Mixed" : `${Math.round(size)} / ${Math.round(weight)} / ${tracking} / ${leading.toFixed(2)}`}
-        </span>
+        <div className="flex items-center gap-0.5 text-[9px]">
+          {mixedAny ? (
+            <span className="text-phosphor">Mixed</span>
+          ) : (
+            <>
+              <span className="text-ink-dim">{Math.round(size)}</span>
+              <span className="text-ink-faint">/</span>
+              {!editingWeight ? (
+                <button
+                  type="button"
+                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                  title="Click to edit weight"
+                  onClick={() => {
+                    setWeightDraft(String(Math.round(weight)));
+                    setEditingWeight(true);
+                  }}
+                >
+                  {Math.round(weight)}
+                </button>
+              ) : (
+                <input
+                  type="number"
+                  min={100}
+                  max={900}
+                  step={100}
+                  value={weightDraft}
+                  autoFocus
+                  aria-label="Type weight"
+                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+                  onChange={(e) => setWeightDraft(e.target.value)}
+                  onBlur={() => {
+                    const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+                    updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                    setEditingWeight(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+                      updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                      setEditingWeight(false);
+                    } else if (e.key === "Escape") {
+                      setEditingWeight(false);
+                    }
+                  }}
+                />
+              )}
+              <span className="text-ink-faint">/</span>
+              <span className="text-ink-dim">{tracking}</span>
+              <span className="text-ink-faint">/</span>
+              <span className="text-ink-dim">{leading.toFixed(2)}</span>
+              <span className="mx-0.5 text-ink-faint">·</span>
+              {!editingFamily ? (
+                <button
+                  type="button"
+                  className="max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                  title={`Click to change font family · ${family}`}
+                  onClick={() => setEditingFamily(true)}
+                >
+                  {family.split(" ")[0] || family}
+                </button>
+              ) : (
+                <select
+                  className="h-4 max-w-[5.5rem] rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+                  value={family}
+                  autoFocus
+                  aria-label="Type family"
+                  onChange={(e) => {
+                    updateNodes(ids, { fontFamily: e.target.value } as Partial<DesignNode>, true);
+                    setEditingFamily(false);
+                  }}
+                  onBlur={() => setEditingFamily(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setEditingFamily(false);
+                  }}
+                >
+                  {CANVAS_FONTS.map((f) => (
+                    <option key={f.id} value={f.family}>{f.family}</option>
+                  ))}
+                </select>
+              )}
+            </>
+          )}
+        </div>
       </div>
       <div className="mb-1.5 flex items-center gap-2">
         <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Size</span>
@@ -915,14 +999,16 @@ function TypeQuickStrip() {
           style={{ "--fill-percent": String(Math.max(0, Math.min(1, (weight - 100) / (900 - 100)))) } as CSSProperties}
           onChange={(e) => {
             const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ fontWeight: next });
             updateNodes(ids, { fontWeight: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => useDesign.getState().commit()}
-          onKeyUp={() => useDesign.getState().commit()}
-          onBlur={() => useDesign.getState().commit()}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
           onKeyDown={(e) => {
             const next = nextFromRangeKey(e, weight, 100, 900, 100);
             if (next != null) {
+              useDesign.getState().setTypeGhost({ fontWeight: next });
               updateNodes(ids, { fontWeight: next } as Partial<DesignNode>);
             }
           }}

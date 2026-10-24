@@ -6,6 +6,7 @@ export type TypeGhost = {
   fontSize?: number;
   letterSpacing?: number;
   lineHeight?: number;
+  fontWeight?: number;
 } | null;
 
 export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
@@ -15,12 +16,14 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
     fontSize: ghost.fontSize ?? n.fontSize,
     letterSpacing: ghost.letterSpacing ?? n.letterSpacing,
     lineHeight: ghost.lineHeight ?? n.lineHeight,
+    fontWeight: ghost.fontWeight ?? n.fontWeight,
   };
 }
 
 /**
  * Draw phosphor rhythm guides for selected text layers while type properties are being scrubbed.
  * Horizontal lines mark leading intervals; short vertical ticks approximate tracking density.
+ * Weight ghosts update the measured advance and may thicken the leading lines.
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -48,7 +51,9 @@ export function drawTypeRhythmGhosts(
 
     ctx.save();
     ctx.strokeStyle = phosphor;
-    ctx.lineWidth = Math.max(1 / zoom, 0.75);
+    // Slightly thicker lines when weight is being ghosted
+    const baseW = Math.max(1 / zoom, 0.75);
+    ctx.lineWidth = ghost.fontWeight != null ? baseW * 1.6 : baseW;
     ctx.globalAlpha = 0.9;
 
     // Leading lines — one per line, spanning the text box width
