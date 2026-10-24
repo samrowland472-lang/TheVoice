@@ -33,9 +33,9 @@
 - Live phosphor type rhythm overlay now includes weight: scrubbing the Weight range (or keyboard) sets a weight ghost that updates measured advance and thickens leading lines on selected text.
 
 ## Iteration
-2026-10-24 20:10 BST — Compact weight and font-family badges added to Type quick strip summary. Live phosphor weight ghost on scrub (thicker leading lines, weight-aware measure). Verified typecheck, build, and browser smoke.
+2026-10-24 21:05 BST — Weight ghost extended to Type inspector and Mixed Type weight ranges. Scrub or keyboard-nudge weight to see live phosphor rhythm (thicker leading lines). Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Extend weight ghost to inspector Type weight scrubber and mixed Type.
 - Clickable size / tracking / leading badges in the Type quick strip summary for consistency.
 - Type rhythm overlay ticks while scrubbing weight (independent of tracking).
+- Align inspector/mixed weight ranges with Layers (100–900) for consistency.
