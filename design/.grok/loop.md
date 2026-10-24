@@ -11,11 +11,12 @@
 - Layers opacity control now includes a clickable percent badge that opens an inline number field for exact percent entry (Enter/Escape), alongside the scrubber.
 - Path point inspector now shows Bézier in/out handle offsets (when present) plus Smooth / Corner / Delete actions on every point row.
 - Live phosphor dash/offset ghost overlay on the canvas while scrubbing Stroke Dash or Offset in the inspector.
+- Live phosphor overlay while scrubbing Stroke Width, and hover/focus/change preview for Cap and Join selects (consistent with dash ghost).
 
 ## Iteration
-2026-10-24 06:05 BST — Wired the existing stroke-ghost system into the store and canvas so scrubbing Dash or Offset paints a live phosphor overlay of the pattern on selected outlines. Verified typecheck, build, and browser smoke.
+2026-10-24 07:05 BST — Extended the live phosphor stroke ghost to Width (scrub overlay), Cap, and Join (hover/focus/change preview on the selects). Same overlay system as dash/offset. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
 - Add more precise opacity shortcuts (e.g. Alt+Arrow for 1% steps) while the layers list is focused.
 - Or deepen path point inspector further with mirrored-handle toggle and live tangent overlay.
-- Or extend the stroke ghost to Width, Cap, and Join for consistent live previews.
+- Or extend the stroke ghost to Miter Limit, sides, and arrow head scale for full outline consistency.

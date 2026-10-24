@@ -38,7 +38,15 @@ function chipClass() {
   return "flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate";
 }
 
-function ghostStroke(patch: { lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin; strokeDash?: number; strokeDashOffset?: number } | null) {
+function ghostStroke(
+  patch: {
+    strokeWidth?: number;
+    lineCap?: CanvasLineCap;
+    lineJoin?: CanvasLineJoin;
+    strokeDash?: number;
+    strokeDashOffset?: number;
+  } | null,
+) {
   useDesign.getState().setStrokeGhost(patch);
 }
 
@@ -216,8 +224,8 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         Stroke · {outlines.length}
       </div>
       <p className="mb-2 text-[10px] text-ink-dim">
-        Dash, cap, and join write onto selected outlines — paths, rectangles, ellipses, lines,
-        polygons, stars, and arrows. Zero dash is a solid stroke. A chip stamps that outline’s
+        Width, dash, cap, and join write onto selected outlines — paths, rectangles, ellipses, lines,
+        polygons, stars, and arrows. Scrub width or dash for a live phosphor overlay. Zero dash is a solid stroke. A chip stamps that outline’s
         dash, cap, or join onto the rest of the pick.
       </p>
       <Field label={mixedWidth ? "Width · mixed" : `Width ${Math.round(width)}`}>
@@ -230,8 +238,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             step={1}
             aria-label={mixedWidth ? "path stroke width mixed" : "path stroke width"}
             value={mixedWidth ? 0 : width}
-            onChange={(e) => updateNodes(ids, { strokeWidth: Number(e.target.value) })}
-            onPointerUp={() => useDesign.getState().commit()}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              updateNodes(ids, { strokeWidth: v });
+              ghostStroke({ strokeWidth: v });
+            }}
+            onPointerUp={() => {
+              useDesign.getState().commit();
+              ghostStroke(null);
+            }}
           />
           <NumField
             className="field w-16 font-mono"
@@ -351,7 +366,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           className="field"
           value={mixedCap ? "" : cap}
           aria-label={mixedCap ? "path line cap mixed" : "path line cap"}
-          onChange={(e) => updateNodes(ids, { lineCap: e.target.value as CanvasLineCap }, true)}
+          onMouseEnter={() => ghostStroke({ lineCap: (mixedCap ? "round" : cap) as CanvasLineCap })}
+          onFocus={() => ghostStroke({ lineCap: (mixedCap ? "round" : cap) as CanvasLineCap })}
+          onMouseLeave={() => ghostStroke(null)}
+          onBlur={() => ghostStroke(null)}
+          onChange={(e) => {
+            const v = e.target.value as CanvasLineCap;
+            updateNodes(ids, { lineCap: v }, true);
+            ghostStroke({ lineCap: v });
+          }}
         >
           {mixedCap && (
             <option value="" disabled>
@@ -391,7 +414,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           className="field"
           value={mixedJoin ? "" : join}
           aria-label={mixedJoin ? "path line join mixed" : "path line join"}
-          onChange={(e) => updateNodes(ids, { lineJoin: e.target.value as CanvasLineJoin }, true)}
+          onMouseEnter={() => ghostStroke({ lineJoin: (mixedJoin ? "round" : join) as CanvasLineJoin })}
+          onFocus={() => ghostStroke({ lineJoin: (mixedJoin ? "round" : join) as CanvasLineJoin })}
+          onMouseLeave={() => ghostStroke(null)}
+          onBlur={() => ghostStroke(null)}
+          onChange={(e) => {
+            const v = e.target.value as CanvasLineJoin;
+            updateNodes(ids, { lineJoin: v }, true);
+            ghostStroke({ lineJoin: v });
+          }}
         >
           {mixedJoin && (
             <option value="" disabled>
