@@ -65,8 +65,9 @@ export function drawTypeRhythmGhosts(
       ctx.stroke();
     }
 
-    // Tracking ticks — approximate density using average advance
-    if (ghost.letterSpacing != null && lines[0]) {
+    // Tracking ticks — approximate density using average advance.
+    // Shown while scrubbing tracking or weight (weight changes measured advance).
+    if ((ghost.letterSpacing != null || ghost.fontWeight != null) && lines[0]) {
       const sample = lines[0].slice(0, 24) || "A";
       const advance = (measure(sample) / Math.max(1, sample.length)) + (n.letterSpacing || 0);
       if (advance > 2 / zoom) {
