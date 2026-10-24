@@ -128,7 +128,7 @@ export function LayersPanel() {
   };
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div data-layers-panel className="flex min-h-0 flex-col">
       <div className="flex items-baseline justify-between px-3 py-2">
         <div className="font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Layers</div>
         <div className="font-mono text-[10px] tracking-wide text-ink-faint">
@@ -330,7 +330,7 @@ export function LayersPanel() {
                       <button
                         type="button"
                         className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                        title="Edit opacity · Alt+0–9 tenths · Alt+Shift+0 full"
+                        title="Edit opacity · Alt+0–9 tenths · Alt+Arrow 1% · Alt+Shift+0 full"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -429,7 +429,7 @@ export function LayersPanel() {
                     <button
                       type="button"
                       className="min-w-[2.5rem] rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                      title="Click to type opacity percent · Alt+0–9 tenths · Alt+Shift+0 full"
+                      title="Click to type opacity percent · Alt+0–9 tenths · Alt+Arrow 1% · Alt+Shift+0 full"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -570,7 +570,7 @@ function OpacityQuickStrip() {
         <button
           type="button"
           className="h-6 shrink-0 rounded-[6px] border border-border px-1.5 font-mono text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
-          title="Set opacity to 100% · Alt+Shift+0"
+          title="Set opacity to 100% · Alt+Shift+0 · Alt+Arrow 1% steps"
           onClick={() => {
             updateNodes(selection, { opacity: 1 });
             useDesign.getState().commit();

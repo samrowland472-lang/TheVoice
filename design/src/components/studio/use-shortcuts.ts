@@ -112,6 +112,24 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
         return;
       }
 
+      // Alt+Arrow adjusts selection opacity by 1% while the layers panel is focused.
+      if (e.altKey && !meta && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        const panel = document.querySelector("[data-layers-panel]");
+        if (panel && panel.contains(t)) {
+          e.preventDefault();
+          const delta = e.key === "ArrowUp" ? 0.01 : -0.01;
+          const live = useDesign.getState();
+          if (live.selection.length > 0) {
+            live.mapNodes(
+              live.selection,
+              (n) => ({ ...n, opacity: Math.max(0, Math.min(1, (n.opacity ?? 1) + delta)) }),
+              true,
+            );
+          }
+          return;
+        }
+      }
+
       if (meta && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) s.redo();

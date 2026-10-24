@@ -13,11 +13,12 @@
 - Live phosphor dash/offset ghost overlay on the canvas while scrubbing Stroke Dash or Offset in the inspector.
 - Live phosphor overlay while scrubbing Stroke Width, and hover/focus/change preview for Cap and Join selects (consistent with dash ghost).
 - Live phosphor overlay while scrubbing Stroke Miter Limit, Polygon/Star Sides, and Arrow Head Scale (same ghost system).
+- Alt+ArrowUp/Down steps selection opacity by 1% while the Layers panel is focused (clamped 0–100%). Tooltips mention the shortcut.
 
 ## Iteration
-2026-10-24 08:10 BST — Extended the live phosphor stroke ghost to Miter Limit, polygon/star Sides, and arrow Head Scale. Scrubbing those ranges now shows the outline ghost on the artboard before commit, matching Width/Dash/Cap/Join. Verified typecheck, build, and browser smoke.
+2026-10-24 09:05 BST — Added Alt+Arrow opacity steps (1%) when focus is inside the Layers panel. Existing Alt+0–9 tenths still work. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Add more precise opacity shortcuts (e.g. Alt+Arrow for 1% steps) while the layers list is focused.
-- Or deepen path point inspector further with mirrored-handle toggle and live tangent overlay.
-- Or add live ghost for Radius on rects and Fill Rule on holed paths (already partially wired).
+- Deepen path point inspector with mirrored-handle toggle and live tangent overlay.
+- Or add live ghost for Radius on rects and Fill Rule on holed paths.
+- Or add command-palette entries for the new opacity step actions.
