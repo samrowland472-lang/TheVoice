@@ -392,6 +392,24 @@ export function LayersPanel() {
                     )}
                   </button>
                 )}
+                <input
+                  type="range"
+                  className="range-phosphor h-4 w-16 shrink-0"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={n.opacity}
+                  aria-label={`${n.name || n.kind} opacity`}
+                  data-opacity-range="row"
+                  style={{ "--fill-opacity": String(n.opacity) } as CSSProperties}
+                  onChange={(e) => {
+                    const next = Number(e.target.value);
+                    updateNodes([n.id], { opacity: next });
+                  }}
+                  onPointerUp={() => useDesign.getState().commit()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  title="Scrub layer opacity"
+                />
                 <button
                   type="button"
                   className="size-7 rounded-[6px] hover:bg-ground"
