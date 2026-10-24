@@ -49,6 +49,8 @@ export function LayersPanel() {
   const [opacityDraft, setOpacityDraft] = useState("");
   const [editingSizeId, setEditingSizeId] = useState<string | null>(null);
   const [sizeDraft, setSizeDraft] = useState("");
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [trackDraft, setTrackDraft] = useState("");
   const [query, setQuery] = useState("");
 
   if (!doc) return null;
@@ -388,6 +390,50 @@ export function LayersPanel() {
                             setEditingSizeId(null);
                           } else if (e.key === "Escape") {
                             setEditingSizeId(null);
+                          }
+                        }}
+                      />
+                    )}
+                    {isText(n) && editingTrackId !== n.id && (
+                      <button
+                        type="button"
+                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        title="Click to edit tracking"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setTrackDraft(String(n.letterSpacing));
+                          setEditingTrackId(n.id);
+                        }}
+                      >
+                        {Number.isInteger(n.letterSpacing) ? n.letterSpacing : Number(n.letterSpacing.toFixed(2))}
+                      </button>
+                    )}
+                    {isText(n) && editingTrackId === n.id && (
+                      <input
+                        type="number"
+                        min={-8}
+                        max={40}
+                        step={0.25}
+                        value={trackDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} tracking`}
+                        className="ml-1.5 inline-block h-5 w-12 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setTrackDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(-8, Math.min(40, Number(trackDraft) || n.letterSpacing));
+                          updateNodes([n.id], { letterSpacing: next } as Partial<DesignNode>, true);
+                          setEditingTrackId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(-8, Math.min(40, Number(trackDraft) || n.letterSpacing));
+                            updateNodes([n.id], { letterSpacing: next } as Partial<DesignNode>, true);
+                            setEditingTrackId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingTrackId(null);
                           }
                         }}
                       />
