@@ -231,7 +231,7 @@ export function LayersPanel() {
               )}
               <div
                 className={cn(
-                  "flex h-9 items-center gap-0.5 rounded-[8px] px-0.5 text-xs",
+                  "group flex h-9 items-center gap-0.5 rounded-[8px] px-0.5 text-xs",
                   active ? "bg-phosphor/10 text-ink" : "text-ink-dim hover:bg-surface-alt",
                   dragging && "opacity-40",
                   into && !blocked && "ring-1 ring-phosphor",
@@ -392,24 +392,29 @@ export function LayersPanel() {
                     )}
                   </button>
                 )}
-                <input
-                  type="range"
-                  className="range-phosphor h-4 w-16 shrink-0"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={n.opacity}
-                  aria-label={`${n.name || n.kind} opacity`}
-                  data-opacity-range="row"
-                  style={{ "--fill-opacity": String(n.opacity) } as CSSProperties}
-                  onChange={(e) => {
-                    const next = Number(e.target.value);
-                    updateNodes([n.id], { opacity: next });
-                  }}
-                  onPointerUp={() => useDesign.getState().commit()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  title="Scrub layer opacity"
-                />
+                <div className={cn(
+                  "flex items-center px-1 -mx-1 transition-opacity duration-150",
+                  active ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                )}>
+                  <input
+                    type="range"
+                    className="range-phosphor h-5 w-20 shrink-0"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={n.opacity}
+                    aria-label={`${n.name || n.kind} opacity`}
+                    data-opacity-range="row"
+                    style={{ "--fill-opacity": String(n.opacity) } as CSSProperties}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      updateNodes([n.id], { opacity: next });
+                    }}
+                    onPointerUp={() => useDesign.getState().commit()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    title="Scrub layer opacity"
+                  />
+                </div>
                 <button
                   type="button"
                   className="size-7 rounded-[6px] hover:bg-ground"
