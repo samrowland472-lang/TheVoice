@@ -38,7 +38,7 @@ function chipClass() {
   return "flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate";
 }
 
-function ghostStroke(patch: { lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin } | null) {
+function ghostStroke(patch: { lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin; strokeDash?: number; strokeDashOffset?: number } | null) {
   useDesign.getState().setStrokeGhost(patch);
 }
 
@@ -254,8 +254,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             step={1}
             aria-label={mixed ? "path stroke dash mixed" : "path stroke dash"}
             value={mixed ? 0 : value}
-            onChange={(e) => updateNodes(ids, { strokeDash: Number(e.target.value) })}
-            onPointerUp={() => useDesign.getState().commit()}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              updateNodes(ids, { strokeDash: v });
+              ghostStroke({ strokeDash: v });
+            }}
+            onPointerUp={() => {
+              useDesign.getState().commit();
+              ghostStroke(null);
+            }}
           />
           <NumField
             className="field w-16 font-mono"
@@ -298,8 +305,15 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             step={1}
             aria-label={mixedOffset ? "path dash offset mixed" : "path dash offset"}
             value={mixedOffset ? 0 : offset}
-            onChange={(e) => updateNodes(ids, { strokeDashOffset: Number(e.target.value) })}
-            onPointerUp={() => useDesign.getState().commit()}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              updateNodes(ids, { strokeDashOffset: v });
+              ghostStroke({ strokeDashOffset: v });
+            }}
+            onPointerUp={() => {
+              useDesign.getState().commit();
+              ghostStroke(null);
+            }}
           />
           <NumField
             className="field w-16 font-mono"

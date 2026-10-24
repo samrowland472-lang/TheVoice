@@ -10,11 +10,12 @@
 - Opacity scrubber in Layers rows is now hover-only (or always visible when the layer is selected) with a larger hit target for better usability.
 - Layers opacity control now includes a clickable percent badge that opens an inline number field for exact percent entry (Enter/Escape), alongside the scrubber.
 - Path point inspector now shows Bézier in/out handle offsets (when present) plus Smooth / Corner / Delete actions on every point row.
+- Live phosphor dash/offset ghost overlay on the canvas while scrubbing Stroke Dash or Offset in the inspector.
 
 ## Iteration
-2026-10-24 05:10 BST — Deepened the path point inspector: handle In/Out numeric fields appear for points with curves, and each point row now has Smooth, Corner, and Del buttons. Verified typecheck, build, and browser smoke.
+2026-10-24 06:05 BST — Wired the existing stroke-ghost system into the store and canvas so scrubbing Dash or Offset paints a live phosphor overlay of the pattern on selected outlines. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Add live dash/offset preview on the canvas while scrubbing stroke values.
-- Or add more precise opacity shortcuts (e.g. Alt+Arrow for 1% steps) while the layers list is focused.
+- Add more precise opacity shortcuts (e.g. Alt+Arrow for 1% steps) while the layers list is focused.
 - Or deepen path point inspector further with mirrored-handle toggle and live tangent overlay.
+- Or extend the stroke ghost to Width, Cap, and Join for consistent live previews.

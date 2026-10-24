@@ -22,6 +22,7 @@ import { isGroup } from "./types";
 import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, withDescendants, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
+import type { StrokeGhost } from "./stroke-ghost";
 
 const MAX_HISTORY = 60;
 
@@ -58,6 +59,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   guideLooks: { x: {}, y: {} },
   isolateSnapshot: null as Record<string, boolean> | null,
   alignTarget: "selection",
+  strokeGhost: null as StrokeGhost | null,
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id) => {
     const doc = loadDoc(id);
@@ -208,6 +210,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   },
   setTool: (tool) => set({ tool, editingText: null }),
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
+  setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
   requestFit: () => set({ viewIntent: { type: "fit" } }),
   requestZoom: (zoom: number) => set({ viewIntent: { type: "zoom", zoom } }),
   select: (ids, additive) => {

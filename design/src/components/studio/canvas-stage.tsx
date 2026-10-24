@@ -31,6 +31,7 @@ import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/desig
 import { hasHandle } from "@/lib/design/path-curve";
 import { tracePath } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
+import { drawStrokeGhosts } from "@/lib/design/stroke-ghost";
 import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib/design/snap";
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
@@ -115,6 +116,7 @@ export function CanvasStage() {
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
   const selection = useDesign((s) => s.selection);
+  const strokeGhost = useDesign((s) => s.strokeGhost);
   const booleanPreview = useDesign((s) => s.booleanPreview);
   const pathEditHit = useDesign((s) => s.pathEditHit);
   const tool = useDesign((s) => s.tool);
@@ -365,6 +367,10 @@ export function CanvasStage() {
           h: h / z,
         });
       }
+      if (strokeGhost && selection.length) {
+        const selectedNodes = doc.nodes.filter((n) => selection.includes(n.id));
+        drawStrokeGhosts(ctx, selectedNodes, strokeGhost, viewport.zoom);
+      }
       const mq = marqueeRef.current;
       if (mq && (mq.w > 0.5 || mq.h > 0.5)) {
         ctx.beginPath();
@@ -490,7 +496,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
