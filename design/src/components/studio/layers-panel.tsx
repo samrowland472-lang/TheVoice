@@ -6,6 +6,7 @@ import { isGroup, isText, type DesignNode } from "@/lib/design/types";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
+import { nextFromRangeKey } from "./range-keys";
 import {
   alignCommitLayerFadeLine,
   alignCommitSolidLead,
@@ -758,6 +759,13 @@ function TypeQuickStrip() {
   const tracking = trackMixed ? textNodes[textNodes.length - 1].letterSpacing : textNodes[0].letterSpacing;
   const leading = leadMixed ? textNodes[textNodes.length - 1].lineHeight : textNodes[0].lineHeight;
   const ids = textNodes.map((n) => n.id);
+  const clearGhost = () => {
+    const s = useDesign.getState();
+    if (s.typeGhost) {
+      s.setTypeGhost(null);
+      s.commit();
+    }
+  };
   return (
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
@@ -783,7 +791,16 @@ function TypeQuickStrip() {
             useDesign.getState().setTypeGhost({ fontSize: next });
             updateNodes(ids, { fontSize: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, size, 8, 160, 1);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ fontSize: next });
+              updateNodes(ids, { fontSize: next } as Partial<DesignNode>);
+            }
+          }}
         />
         <NumField
           aria-label="Type size"
@@ -815,7 +832,16 @@ function TypeQuickStrip() {
             useDesign.getState().setTypeGhost({ letterSpacing: next });
             updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, tracking, -8, 40, 0.25);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ letterSpacing: next });
+              updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>);
+            }
+          }}
         />
         <NumField
           aria-label="Type tracking"
@@ -847,7 +873,16 @@ function TypeQuickStrip() {
             useDesign.getState().setTypeGhost({ lineHeight: next });
             updateNodes(ids, { lineHeight: next } as Partial<DesignNode>);
           }}
-          onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, leading, 0.7, 2, 0.02);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ lineHeight: next });
+              updateNodes(ids, { lineHeight: next } as Partial<DesignNode>);
+            }
+          }}
         />
         <NumField
           aria-label="Type leading"

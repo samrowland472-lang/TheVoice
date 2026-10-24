@@ -23,11 +23,12 @@
 - Text layers in the Layers panel now show a compact weight badge next to the size / tracking / leading badges (click to open an inline number field for exact weight entry, Enter/Escape, range 100–900, step 100).
 
 - Text layers in the Layers panel now show a compact font-family badge (first word of the family name) next to the weight badge. Click opens a picker of the canvas fonts; change or Escape/blur closes it.
+- Type rhythm overlay (phosphor leading lines + tracking ticks) now reacts to keyboard nudges on Size / Tracking / Leading ranges: Arrow keys, Home, End, PageUp/PageDown show the live ghost while the key is held and clear + commit on keyup or blur (Layers Type quick strip, inspector Type fields, and mixed Type).
 
 ## Iteration
-2026-10-24 17:05 BST — Added compact font-family badge in Layers rows for text layers (click to open canvas font picker). Verified typecheck, build, and browser smoke.
+2026-10-24 18:10 BST — Type rhythm overlay now follows keyboard nudges on Size, Tracking, and Leading ranges (Arrow / Home / End / Page). Ghost clears and commits on keyup or blur. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Type rhythm overlay also reacts to keyboard nudges on the range inputs.
 - Weight badge in the Type quick strip.
 - Compact font-family badge also appears in the Type quick strip.
+- Weight range in Layers Type quick strip with live preview.
