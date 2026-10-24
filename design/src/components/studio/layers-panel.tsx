@@ -53,6 +53,8 @@ export function LayersPanel() {
   const [trackDraft, setTrackDraft] = useState("");
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [leadDraft, setLeadDraft] = useState("");
+  const [editingWeightId, setEditingWeightId] = useState<string | null>(null);
+  const [weightDraft, setWeightDraft] = useState("");
   const [query, setQuery] = useState("");
 
   if (!doc) return null;
@@ -480,6 +482,50 @@ export function LayersPanel() {
                             setEditingLeadId(null);
                           } else if (e.key === "Escape") {
                             setEditingLeadId(null);
+                          }
+                        }}
+                      />
+                    )}
+                    {isText(n) && editingWeightId !== n.id && (
+                      <button
+                        type="button"
+                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        title="Click to edit weight"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setWeightDraft(String(Math.round(n.fontWeight)));
+                          setEditingWeightId(n.id);
+                        }}
+                      >
+                        {Math.round(n.fontWeight)}
+                      </button>
+                    )}
+                    {isText(n) && editingWeightId === n.id && (
+                      <input
+                        type="number"
+                        min={100}
+                        max={900}
+                        step={100}
+                        value={weightDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} weight`}
+                        className="ml-1.5 inline-block h-5 w-10 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setWeightDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || n.fontWeight)));
+                          updateNodes([n.id], { fontWeight: next } as Partial<DesignNode>, true);
+                          setEditingWeightId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || n.fontWeight)));
+                            updateNodes([n.id], { fontWeight: next } as Partial<DesignNode>, true);
+                            setEditingWeightId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingWeightId(null);
                           }
                         }}
                       />
