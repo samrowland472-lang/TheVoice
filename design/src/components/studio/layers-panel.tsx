@@ -51,6 +51,8 @@ export function LayersPanel() {
   const [sizeDraft, setSizeDraft] = useState("");
   const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
   const [trackDraft, setTrackDraft] = useState("");
+  const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [leadDraft, setLeadDraft] = useState("");
   const [query, setQuery] = useState("");
 
   if (!doc) return null;
@@ -438,6 +440,50 @@ export function LayersPanel() {
                         }}
                       />
                     )}
+                    {isText(n) && editingLeadId !== n.id && (
+                      <button
+                        type="button"
+                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        title="Click to edit leading"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setLeadDraft(n.lineHeight.toFixed(2));
+                          setEditingLeadId(n.id);
+                        }}
+                      >
+                        {n.lineHeight.toFixed(2)}
+                      </button>
+                    )}
+                    {isText(n) && editingLeadId === n.id && (
+                      <input
+                        type="number"
+                        min={0.7}
+                        max={2}
+                        step={0.02}
+                        value={leadDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} leading`}
+                        className="ml-1.5 inline-block h-5 w-12 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setLeadDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(0.7, Math.min(2, Number(leadDraft) || n.lineHeight));
+                          updateNodes([n.id], { lineHeight: next } as Partial<DesignNode>, true);
+                          setEditingLeadId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(0.7, Math.min(2, Number(leadDraft) || n.lineHeight));
+                            updateNodes([n.id], { lineHeight: next } as Partial<DesignNode>, true);
+                            setEditingLeadId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingLeadId(null);
+                          }
+                        }}
+                      />
+                    )}
                     {isKey && (
                       <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
                         Key
@@ -623,15 +669,17 @@ function TypeQuickStrip() {
   if (textNodes.length === 0) return null;
   const sizeMixed = new Set(textNodes.map((n) => Math.round(n.fontSize))).size > 1;
   const trackMixed = new Set(textNodes.map((n) => Math.round(n.letterSpacing * 4) / 4)).size > 1;
+  const leadMixed = new Set(textNodes.map((n) => Math.round(n.lineHeight * 50) / 50)).size > 1;
   const size = sizeMixed ? textNodes[textNodes.length - 1].fontSize : textNodes[0].fontSize;
   const tracking = trackMixed ? textNodes[textNodes.length - 1].letterSpacing : textNodes[0].letterSpacing;
+  const leading = leadMixed ? textNodes[textNodes.length - 1].lineHeight : textNodes[0].lineHeight;
   const ids = textNodes.map((n) => n.id);
   return (
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Type</span>
-        <span className={sizeMixed || trackMixed ? "text-phosphor" : "text-ink-dim"}>
-          {sizeMixed || trackMixed ? "Mixed" : `${Math.round(size)} / ${tracking}`}
+        <span className={sizeMixed || trackMixed || leadMixed ? "text-phosphor" : "text-ink-dim"}>
+          {sizeMixed || trackMixed || leadMixed ? "Mixed" : `${Math.round(size)} / ${tracking} / ${leading.toFixed(2)}`}
         </span>
       </div>
       <div className="mb-1.5 flex items-center gap-2">
@@ -692,6 +740,37 @@ function TypeQuickStrip() {
           className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
           onCommit={(n) => {
             updateNodes(ids, { letterSpacing: n } as Partial<DesignNode>);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Lead</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={0.7}
+          max={2}
+          step={0.02}
+          value={leading}
+          aria-label="Type leading"
+          data-type-range="leading"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (leading - 0.7) / (2 - 0.7)))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            updateNodes(ids, { lineHeight: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={() => useDesign.getState().commit()}
+        />
+        <NumField
+          aria-label="Type leading"
+          mixed={leadMixed}
+          value={Number(leading.toFixed(2))}
+          min={0.7}
+          max={2}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { lineHeight: n } as Partial<DesignNode>);
             useDesign.getState().commit();
           }}
         />

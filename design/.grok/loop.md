@@ -20,9 +20,10 @@
 - Text layers in the Layers panel now show a compact type-size badge (click to open an inline number field for exact size entry, Enter/Escape).
 
 - Text layers in the Layers panel now show a compact tracking badge next to the type-size badge (click to open an inline number field for exact tracking entry, Enter/Escape, range -8 to 40).
+- Text layers in the Layers panel now show a compact leading badge next to the size and tracking badges (click to open an inline number field for exact leading entry, Enter/Escape, range 0.7–2, step 0.02). Type quick strip now includes a Leading scrubber and shows size / tracking / leading in the summary.
 ## Iteration
-2026-10-24 13:05 BST — Added per-layer tracking badge in Layers rows for text layers: click opens an inline number field (-8–40, step 0.25, Enter/Escape). Verified typecheck, build, and browser smoke.
+2026-10-24 14:05 BST — Added per-layer leading badge in Layers rows for text layers (click opens inline number field 0.7–2) and Leading scrubber to the Type quick strip (summary now shows size / tracking / leading). Verified typecheck, build, and browser smoke.
 
 ## Next recommended
 - Live phosphor type rhythm overlay (leading lines or tracking ticks) while scrubbing Size / Tracking / Leading in inspector or Layers.
-- Compact leading badge next to size/tracking in Layers rows.
+- Compact font-family or weight badge in Layers rows for text.
