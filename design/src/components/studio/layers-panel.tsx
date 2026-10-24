@@ -750,6 +750,12 @@ function TypeQuickStrip() {
   const [editingWeight, setEditingWeight] = useState(false);
   const [weightDraft, setWeightDraft] = useState("");
   const [editingFamily, setEditingFamily] = useState(false);
+  const [editingSize, setEditingSize] = useState(false);
+  const [sizeDraft, setSizeDraft] = useState("");
+  const [editingTrack, setEditingTrack] = useState(false);
+  const [trackDraft, setTrackDraft] = useState("");
+  const [editingLead, setEditingLead] = useState(false);
+  const [leadDraft, setLeadDraft] = useState("");
   if (!doc || selection.length === 0) return null;
   const textNodes = selection
     .map((id) => doc.nodes.find((n) => n.id === id))
@@ -783,7 +789,45 @@ function TypeQuickStrip() {
             <span className="text-phosphor">Mixed</span>
           ) : (
             <>
-              <span className="text-ink-dim">{Math.round(size)}</span>
+              {!editingSize ? (
+                <button
+                  type="button"
+                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                  title="Click to edit size"
+                  onClick={() => {
+                    setSizeDraft(String(Math.round(size)));
+                    setEditingSize(true);
+                  }}
+                >
+                  {Math.round(size)}
+                </button>
+              ) : (
+                <input
+                  type="number"
+                  min={8}
+                  max={160}
+                  step={1}
+                  value={sizeDraft}
+                  autoFocus
+                  aria-label="Type size"
+                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+                  onChange={(e) => setSizeDraft(e.target.value)}
+                  onBlur={() => {
+                    const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+                    updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                    setEditingSize(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+                      updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                      setEditingSize(false);
+                    } else if (e.key === "Escape") {
+                      setEditingSize(false);
+                    }
+                  }}
+                />
+              )}
               <span className="text-ink-faint">/</span>
               {!editingWeight ? (
                 <button
@@ -825,9 +869,85 @@ function TypeQuickStrip() {
                 />
               )}
               <span className="text-ink-faint">/</span>
-              <span className="text-ink-dim">{tracking}</span>
+              {!editingTrack ? (
+                <button
+                  type="button"
+                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                  title="Click to edit tracking"
+                  onClick={() => {
+                    setTrackDraft(String(tracking));
+                    setEditingTrack(true);
+                  }}
+                >
+                  {tracking}
+                </button>
+              ) : (
+                <input
+                  type="number"
+                  min={-8}
+                  max={40}
+                  step={0.25}
+                  value={trackDraft}
+                  autoFocus
+                  aria-label="Type tracking"
+                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+                  onChange={(e) => setTrackDraft(e.target.value)}
+                  onBlur={() => {
+                    const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+                    updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                    setEditingTrack(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+                      updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                      setEditingTrack(false);
+                    } else if (e.key === "Escape") {
+                      setEditingTrack(false);
+                    }
+                  }}
+                />
+              )}
               <span className="text-ink-faint">/</span>
-              <span className="text-ink-dim">{leading.toFixed(2)}</span>
+              {!editingLead ? (
+                <button
+                  type="button"
+                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                  title="Click to edit leading"
+                  onClick={() => {
+                    setLeadDraft(leading.toFixed(2));
+                    setEditingLead(true);
+                  }}
+                >
+                  {leading.toFixed(2)}
+                </button>
+              ) : (
+                <input
+                  type="number"
+                  min={0.7}
+                  max={2}
+                  step={0.02}
+                  value={leadDraft}
+                  autoFocus
+                  aria-label="Type leading"
+                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+                  onChange={(e) => setLeadDraft(e.target.value)}
+                  onBlur={() => {
+                    const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+                    updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                    setEditingLead(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+                      updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                      setEditingLead(false);
+                    } else if (e.key === "Escape") {
+                      setEditingLead(false);
+                    }
+                  }}
+                />
+              )}
               <span className="mx-0.5 text-ink-faint">·</span>
               {!editingFamily ? (
                 <button

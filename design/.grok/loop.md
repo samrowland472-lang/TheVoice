@@ -39,3 +39,13 @@
 - Clickable size / tracking / leading badges in the Type quick strip summary for consistency.
 - Type rhythm overlay ticks while scrubbing weight (independent of tracking).
 - Align inspector/mixed weight ranges with Layers (100–900) for consistency.
+
+- Type quick strip summary now has compact click-to-edit size, tracking, and leading badges (inline number fields, Enter/Escape/blur). Consistent with weight and family. Mixed selections still show Mixed.
+
+## Iteration
+2026-10-24 22:05 BST — Clickable size / tracking / leading badges added to the Type quick strip summary. Scrub or type exact values; applies to selected text. Verified typecheck, build, and browser smoke.
+
+## Next recommended
+- Type rhythm overlay ticks while scrubbing weight (independent of tracking).
+- Align inspector/mixed weight ranges with Layers (100–900) for consistency.
+- Show individual property values in the Type summary even when mixed (with Mixed indicator per badge).
