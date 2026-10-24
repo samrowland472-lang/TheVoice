@@ -263,8 +263,24 @@ export function drawPathTangents(
       ctx.moveTo(ax, ay);
       ctx.lineTo(hx, hy);
       ctx.strokeStyle = hot ? "#7ee0ff" : "rgba(63,198,255,0.85)";
-      ctx.lineWidth = armW;
+      ctx.lineWidth = hot ? armW * 2.4 : armW;
       ctx.stroke();
+      if (hot) {
+        // Live tangent guide: faint extension past the handle so the direction stays readable while scrubbing.
+        const len = Math.hypot(h.x, h.y) || 1;
+        const ux = h.x / len;
+        const uy = h.y / len;
+        const ext = 28 / zoom;
+        ctx.save();
+        ctx.setLineDash([3 / zoom, 3 / zoom]);
+        ctx.beginPath();
+        ctx.moveTo(hx, hy);
+        ctx.lineTo(hx + ux * ext, hy + uy * ext);
+        ctx.strokeStyle = "rgba(126,224,255,0.55)";
+        ctx.lineWidth = armW;
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.beginPath();
       ctx.moveTo(hx, hy - diamond);
       ctx.lineTo(hx + diamond, hy);

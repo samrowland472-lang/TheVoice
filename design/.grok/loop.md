@@ -15,10 +15,7 @@
 - Live phosphor overlay while scrubbing Stroke Miter Limit, Polygon/Star Sides, and Arrow Head Scale (same ghost system).
 - Alt+ArrowUp/Down steps selection opacity by 1% while the Layers panel is focused (clamped 0–100%). Tooltips mention the shortcut.
 
-## Iteration
-2026-10-24 09:05 BST — Added Alt+Arrow opacity steps (1%) when focus is inside the Layers panel. Existing Alt+0–9 tenths still work. Verified typecheck, build, and browser smoke.
+- Path point inspector now has a Mirror toggle that keeps in/out handles mirrored. Focusing a handle field highlights that arm with a live tangent guide overlay on the canvas.
 
-## Next recommended
-- Deepen path point inspector with mirrored-handle toggle and live tangent overlay.
-- Or add live ghost for Radius on rects and Fill Rule on holed paths.
-- Or add command-palette entries for the new opacity step actions.
+## Iteration
+2026-10-24 10:05 BST — Added Mirror handle toggle to path point rows and a live tangent guide overlay that appears when a handle field is focused. Verified typecheck, build, and browser smoke.

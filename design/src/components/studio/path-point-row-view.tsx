@@ -1,5 +1,6 @@
-import type { KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint } from "@/lib/design/path-actions";
+import { mirrorHandle } from "@/lib/design/path-curve";
 import {
   pickNextHoleFirstPointXTabTarget,
   pickNextHoleHeaderTabTarget,
@@ -174,6 +175,46 @@ export function PointRow({
 }) {
   const key = hole == null ? `path-${index}` : `hole-${hole}-${index}`;
   const label = hole == null ? `point ${index + 1}` : `hole ${hole + 1} point ${index + 1}`;
+  const [mirror, setMirror] = useState(false);
+
+  function highlightArm(arm: "in" | "out" | "anchor") {
+    setPathEditHit({ index, arm, hole });
+  }
+
+  function commitHandle(
+    arm: "in" | "out",
+    axis: "x" | "y",
+    n: number,
+  ) {
+    const cur = arm === "in" ? (point.in ?? { x: 0, y: 0 }) : (point.out ?? { x: 0, y: 0 });
+    const next = { ...cur, [axis]: n };
+    if (mirror) {
+      const mirrored = mirrorHandle(next);
+      if (arm === "in") {
+        setPathPointHandles(nodeId, index, { in: next, out: mirrored }, hole);
+      } else {
+        setPathPointHandles(nodeId, index, { out: next, in: mirrored }, hole);
+      }
+    } else {
+      setPathPointHandles(nodeId, index, arm === "in" ? { in: next } : { out: next }, hole);
+    }
+    highlightArm(arm);
+  }
+
+  function toggleMirror() {
+    const next = !mirror;
+    setMirror(next);
+    if (!next) return;
+    const src = point.in ?? point.out;
+    if (!src) return;
+    const mirrored = mirrorHandle(src);
+    if (point.in) {
+      setPathPointHandles(nodeId, index, { out: mirrored }, hole);
+    } else if (point.out) {
+      setPathPointHandles(nodeId, index, { in: mirrored }, hole);
+    }
+    highlightArm("anchor");
+  }
   const onAxis = (e: KeyboardEvent<HTMLInputElement>, axis: "x" | "y") => {
     if (e.key !== "Tab") return;
     const from = e.currentTarget;
@@ -257,14 +298,16 @@ export function PointRow({
               value={Math.round(point.in?.x ?? 0)}
               aria-label={`${label} in x`}
               tabIndex={-1}
-              onCommit={(n) => setPathPointHandles(nodeId, index, { in: { x: n, y: point.in?.y ?? 0 } }, hole)}
+              onFocus={() => highlightArm("in")}
+              onCommit={(n) => commitHandle("in", "x", n)}
             />
             <NumField
               className="field font-mono text-[11px]"
               value={Math.round(point.in?.y ?? 0)}
               aria-label={`${label} in y`}
               tabIndex={-1}
-              onCommit={(n) => setPathPointHandles(nodeId, index, { in: { x: point.in?.x ?? 0, y: n } }, hole)}
+              onFocus={() => highlightArm("in")}
+              onCommit={(n) => commitHandle("in", "y", n)}
             />
           </div>
           <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-1">
@@ -274,14 +317,16 @@ export function PointRow({
               value={Math.round(point.out?.x ?? 0)}
               aria-label={`${label} out x`}
               tabIndex={-1}
-              onCommit={(n) => setPathPointHandles(nodeId, index, { out: { x: n, y: point.out?.y ?? 0 } }, hole)}
+              onFocus={() => highlightArm("out")}
+              onCommit={(n) => commitHandle("out", "x", n)}
             />
             <NumField
               className="field font-mono text-[11px]"
               value={Math.round(point.out?.y ?? 0)}
               aria-label={`${label} out y`}
               tabIndex={-1}
-              onCommit={(n) => setPathPointHandles(nodeId, index, { out: { x: point.out?.x ?? 0, y: n } }, hole)}
+              onFocus={() => highlightArm("out")}
+              onCommit={(n) => commitHandle("out", "y", n)}
             />
           </div>
         </div>
@@ -289,6 +334,7 @@ export function PointRow({
       <div className="mt-1 flex gap-1">
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles" onClick={toggleMirror}>Mirror</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>
