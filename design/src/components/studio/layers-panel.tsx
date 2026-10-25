@@ -793,6 +793,11 @@ function TypeQuickStrip() {
   const [editingLead, setEditingLead] = useState(false);
   const [leadDraft, setLeadDraft] = useState("");
   const [lastUsed, setLastUsed] = useState<TypeLastUsed>(loadTypeLastUsed);
+  const [flash, setFlash] = useState(false);
+  const triggerFlash = () => {
+    setFlash(true);
+    window.setTimeout(() => setFlash(false), 700);
+  };
   const remember = (prop: "size" | "weight" | "track" | "lead" | "family", val: number | string) => {
     setLastUsed((prev) => {
       const next = { ...prev, [prop]: val };
@@ -824,7 +829,7 @@ function TypeQuickStrip() {
     }
   };
   return (
-    <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
+    <div className={`mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5 transition-colors ${flash ? "animate-phosphor-flash" : ""}`}>
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Type</span>
         <div className="flex items-center gap-0.5 text-[9px]">
@@ -837,6 +842,7 @@ function TypeQuickStrip() {
                 const start = lastUsed.size ?? Math.round(size);
                 setSizeDraft(String(start));
                 setEditingSize(true);
+                if (lastUsed.size != null) triggerFlash();
               }}
             >
               {sizeMixed ? "Mixed" : Math.round(size)}
@@ -880,6 +886,7 @@ function TypeQuickStrip() {
                 const start = lastUsed.weight ?? Math.round(weight);
                 setWeightDraft(String(start));
                 setEditingWeight(true);
+                if (lastUsed.weight != null) triggerFlash();
               }}
             >
               {weightMixed ? "Mixed" : Math.round(weight)}
@@ -923,6 +930,7 @@ function TypeQuickStrip() {
                 const start = lastUsed.track ?? tracking;
                 setTrackDraft(String(start));
                 setEditingTrack(true);
+                if (lastUsed.track != null) triggerFlash();
               }}
             >
               {trackMixed ? "Mixed" : tracking}
@@ -966,6 +974,7 @@ function TypeQuickStrip() {
                 const start = lastUsed.lead ?? leading;
                 setLeadDraft(start.toFixed(2));
                 setEditingLead(true);
+                if (lastUsed.lead != null) triggerFlash();
               }}
             >
               {leadMixed ? "Mixed" : leading.toFixed(2)}
@@ -1005,7 +1014,10 @@ function TypeQuickStrip() {
               type="button"
               className={`max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${familyMixed ? "text-phosphor" : "text-ink-faint"}`}
               title={familyMixed ? `Mixed family — click to set all · ${family}` : `Click to change font family · ${family}`}
-              onClick={() => setEditingFamily(true)}
+              onClick={() => {
+                setEditingFamily(true);
+                if (familyMixed && lastUsed.family) triggerFlash();
+              }}
             >
               {familyMixed ? "Mixed" : (family.split(" ")[0] || family)}
             </button>

@@ -41,8 +41,10 @@
 
 - Type rhythm overlay tracking density marks now follow the measured average advance of each line’s content (instead of a single approximate top row). Weight and tracking ghosts draw the marks near every baseline so density tracks the live type more closely. The Type inspector Rhythm strip uses the same measured advance for its tracking marks.
 
+- Layers Type quick strip now flashes a subtle phosphor pulse when a Mixed badge opens an editor pre-filled from the remembered last-used value (size, weight, tracking, leading, or family). The flash confirms memory was applied.
+
 ## Iteration
-2026-10-25 08:03 GMT — Tracking density marks in the type rhythm overlay now follow the measured average advance of each line. Marks sit near every baseline so they track live type density more closely while scrubbing tracking or weight. The Type Rhythm strip in the inspector uses the same measured advance. Verified typecheck, build, and browser smoke.
+2026-10-25 11:05 GMT — Layers Type strip shows a subtle phosphor flash when a Mixed editor is opened with a last-used value from localStorage. The pulse confirms the remembered value was applied to the draft. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Show a subtle phosphor flash on the Layers Type strip when a last-used value is applied from memory.
 - Type rhythm overlay: optional per-glyph advance ticks for tracking when the line is short.
+- Show the phosphor flash on the specific badge that received the remembered value.

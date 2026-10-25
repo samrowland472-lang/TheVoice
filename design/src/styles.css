@@ -163,6 +163,23 @@ textarea.field {
   min-height: 4.5rem;
 }
 
+@keyframes phosphor-flash {
+  0% {
+    box-shadow: 0 0 0 1px var(--color-phosphor);
+    background-color: color-mix(in srgb, var(--color-phosphor) 14%, var(--color-surface));
+  }
+  70% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-phosphor) 30%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: var(--color-surface);
+  }
+}
+
+.animate-phosphor-flash {
+  animation: phosphor-flash 0.65s ease-out;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,
