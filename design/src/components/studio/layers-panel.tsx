@@ -779,206 +779,200 @@ function TypeQuickStrip() {
       s.commit();
     }
   };
-  const mixedAny = sizeMixed || trackMixed || leadMixed || weightMixed || familyMixed;
   return (
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Type</span>
         <div className="flex items-center gap-0.5 text-[9px]">
-          {mixedAny ? (
-            <span className="text-phosphor">Mixed</span>
+          {!editingSize ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${sizeMixed ? "text-phosphor" : "text-ink-faint"}`}
+              title={sizeMixed ? "Mixed size — click to set all" : "Click to edit size"}
+              onClick={() => {
+                setSizeDraft(String(Math.round(size)));
+                setEditingSize(true);
+              }}
+            >
+              {sizeMixed ? "Mixed" : Math.round(size)}
+            </button>
           ) : (
-            <>
-              {!editingSize ? (
-                <button
-                  type="button"
-                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                  title="Click to edit size"
-                  onClick={() => {
-                    setSizeDraft(String(Math.round(size)));
-                    setEditingSize(true);
-                  }}
-                >
-                  {Math.round(size)}
-                </button>
-              ) : (
-                <input
-                  type="number"
-                  min={8}
-                  max={160}
-                  step={1}
-                  value={sizeDraft}
-                  autoFocus
-                  aria-label="Type size"
-                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
-                  onChange={(e) => setSizeDraft(e.target.value)}
-                  onBlur={() => {
-                    const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
-                    updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
-                    setEditingSize(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
-                      updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
-                      setEditingSize(false);
-                    } else if (e.key === "Escape") {
-                      setEditingSize(false);
-                    }
-                  }}
-                />
-              )}
-              <span className="text-ink-faint">/</span>
-              {!editingWeight ? (
-                <button
-                  type="button"
-                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                  title="Click to edit weight"
-                  onClick={() => {
-                    setWeightDraft(String(Math.round(weight)));
-                    setEditingWeight(true);
-                  }}
-                >
-                  {Math.round(weight)}
-                </button>
-              ) : (
-                <input
-                  type="number"
-                  min={100}
-                  max={900}
-                  step={100}
-                  value={weightDraft}
-                  autoFocus
-                  aria-label="Type weight"
-                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
-                  onChange={(e) => setWeightDraft(e.target.value)}
-                  onBlur={() => {
-                    const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
-                    updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
-                    setEditingWeight(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
-                      updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
-                      setEditingWeight(false);
-                    } else if (e.key === "Escape") {
-                      setEditingWeight(false);
-                    }
-                  }}
-                />
-              )}
-              <span className="text-ink-faint">/</span>
-              {!editingTrack ? (
-                <button
-                  type="button"
-                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                  title="Click to edit tracking"
-                  onClick={() => {
-                    setTrackDraft(String(tracking));
-                    setEditingTrack(true);
-                  }}
-                >
-                  {tracking}
-                </button>
-              ) : (
-                <input
-                  type="number"
-                  min={-8}
-                  max={40}
-                  step={0.25}
-                  value={trackDraft}
-                  autoFocus
-                  aria-label="Type tracking"
-                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
-                  onChange={(e) => setTrackDraft(e.target.value)}
-                  onBlur={() => {
-                    const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
-                    updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
-                    setEditingTrack(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
-                      updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
-                      setEditingTrack(false);
-                    } else if (e.key === "Escape") {
-                      setEditingTrack(false);
-                    }
-                  }}
-                />
-              )}
-              <span className="text-ink-faint">/</span>
-              {!editingLead ? (
-                <button
-                  type="button"
-                  className="rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                  title="Click to edit leading"
-                  onClick={() => {
-                    setLeadDraft(leading.toFixed(2));
-                    setEditingLead(true);
-                  }}
-                >
-                  {leading.toFixed(2)}
-                </button>
-              ) : (
-                <input
-                  type="number"
-                  min={0.7}
-                  max={2}
-                  step={0.02}
-                  value={leadDraft}
-                  autoFocus
-                  aria-label="Type leading"
-                  className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
-                  onChange={(e) => setLeadDraft(e.target.value)}
-                  onBlur={() => {
-                    const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
-                    updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
-                    setEditingLead(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
-                      updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
-                      setEditingLead(false);
-                    } else if (e.key === "Escape") {
-                      setEditingLead(false);
-                    }
-                  }}
-                />
-              )}
-              <span className="mx-0.5 text-ink-faint">·</span>
-              {!editingFamily ? (
-                <button
-                  type="button"
-                  className="max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
-                  title={`Click to change font family · ${family}`}
-                  onClick={() => setEditingFamily(true)}
-                >
-                  {family.split(" ")[0] || family}
-                </button>
-              ) : (
-                <select
-                  className="h-4 max-w-[5.5rem] rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
-                  value={family}
-                  autoFocus
-                  aria-label="Type family"
-                  onChange={(e) => {
-                    updateNodes(ids, { fontFamily: e.target.value } as Partial<DesignNode>, true);
-                    setEditingFamily(false);
-                  }}
-                  onBlur={() => setEditingFamily(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") setEditingFamily(false);
-                  }}
-                >
-                  {CANVAS_FONTS.map((f) => (
-                    <option key={f.id} value={f.family}>{f.family}</option>
-                  ))}
-                </select>
-              )}
-            </>
+            <input
+              type="number"
+              min={8}
+              max={160}
+              step={1}
+              value={sizeDraft}
+              autoFocus
+              aria-label="Type size"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setSizeDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+                updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                setEditingSize(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+                  updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                  setEditingSize(false);
+                } else if (e.key === "Escape") {
+                  setEditingSize(false);
+                }
+              }}
+            />
+          )}
+          <span className="text-ink-faint">/</span>
+          {!editingWeight ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${weightMixed ? "text-phosphor" : "text-ink-faint"}`}
+              title={weightMixed ? "Mixed weight — click to set all" : "Click to edit weight"}
+              onClick={() => {
+                setWeightDraft(String(Math.round(weight)));
+                setEditingWeight(true);
+              }}
+            >
+              {weightMixed ? "Mixed" : Math.round(weight)}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={100}
+              max={900}
+              step={100}
+              value={weightDraft}
+              autoFocus
+              aria-label="Type weight"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setWeightDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+                updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                setEditingWeight(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+                  updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                  setEditingWeight(false);
+                } else if (e.key === "Escape") {
+                  setEditingWeight(false);
+                }
+              }}
+            />
+          )}
+          <span className="text-ink-faint">/</span>
+          {!editingTrack ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${trackMixed ? "text-phosphor" : "text-ink-faint"}`}
+              title={trackMixed ? "Mixed tracking — click to set all" : "Click to edit tracking"}
+              onClick={() => {
+                setTrackDraft(String(tracking));
+                setEditingTrack(true);
+              }}
+            >
+              {trackMixed ? "Mixed" : tracking}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={-8}
+              max={40}
+              step={0.25}
+              value={trackDraft}
+              autoFocus
+              aria-label="Type tracking"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setTrackDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+                updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                setEditingTrack(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+                  updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                  setEditingTrack(false);
+                } else if (e.key === "Escape") {
+                  setEditingTrack(false);
+                }
+              }}
+            />
+          )}
+          <span className="text-ink-faint">/</span>
+          {!editingLead ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${leadMixed ? "text-phosphor" : "text-ink-faint"}`}
+              title={leadMixed ? "Mixed leading — click to set all" : "Click to edit leading"}
+              onClick={() => {
+                setLeadDraft(leading.toFixed(2));
+                setEditingLead(true);
+              }}
+            >
+              {leadMixed ? "Mixed" : leading.toFixed(2)}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={0.7}
+              max={2}
+              step={0.02}
+              value={leadDraft}
+              autoFocus
+              aria-label="Type leading"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setLeadDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+                updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                setEditingLead(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+                  updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                  setEditingLead(false);
+                } else if (e.key === "Escape") {
+                  setEditingLead(false);
+                }
+              }}
+            />
+          )}
+          <span className="mx-0.5 text-ink-faint">·</span>
+          {!editingFamily ? (
+            <button
+              type="button"
+              className={`max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${familyMixed ? "text-phosphor" : "text-ink-faint"}`}
+              title={familyMixed ? `Mixed family — click to set all · ${family}` : `Click to change font family · ${family}`}
+              onClick={() => setEditingFamily(true)}
+            >
+              {familyMixed ? "Mixed" : (family.split(" ")[0] || family)}
+            </button>
+          ) : (
+            <select
+              className="h-4 max-w-[5.5rem] rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              value={family}
+              autoFocus
+              aria-label="Type family"
+              onChange={(e) => {
+                updateNodes(ids, { fontFamily: e.target.value } as Partial<DesignNode>, true);
+                setEditingFamily(false);
+              }}
+              onBlur={() => setEditingFamily(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setEditingFamily(false);
+              }}
+            >
+              {familyMixed && <option value={family}>Mixed</option>}
+              {CANVAS_FONTS.map((f) => (
+                <option key={f.id} value={f.family}>{f.family}</option>
+              ))}
+            </select>
           )}
         </div>
       </div>
