@@ -37,9 +37,10 @@
 
 - Type quick strip Mixed editors now remember last-used values (size, weight, tracking, leading, family) across page reloads via localStorage. Editors still start from the remembered value when a property is mixed; Mixed badges remain per-property.
 
+- Type inspector now includes a compact phosphor Rhythm strip that draws baseline ticks, a mid-line center mark, density ticks, and tracking marks matching the canvas type rhythm overlay. Updates live while scrubbing size, leading, tracking, or weight (and when a type ghost is active).
+
 ## Iteration
-2026-10-25 06:05 GMT — Persisted last-used type values for Mixed Type quick strip editors across reloads with localStorage. Verified typecheck, build, and browser smoke.
+2026-10-25 07:05 GMT — Added TypeRhythmPreview strip to the Type inspector (and Mixed Type) so the baseline ticks and density marks match the canvas rhythm overlay while scrubbing. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Align the Type inspector baseline preview with the canvas rhythm overlay.
 - Type rhythm overlay: density marks for tracking ghosts that follow measured advance more closely.
 - Show a subtle phosphor flash on the Layers Type strip when a last-used value is applied from memory.

@@ -1,9 +1,10 @@
 import { nextFromRangeKey } from "./range-keys";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { CANVAS_FONTS, clampAxis, faceAxis } from "@/lib/design/fonts";
 import { paletteFromSrc, paletteName } from "@/lib/design/palette";
 import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
 import { useDesign } from "@/lib/design/store";
+import { applyTypeGhost } from "@/lib/design/type-ghost";
 import type { Align, DesignNode, ImageNode, TextNode } from "@/lib/design/types";
 import { Field } from "./inspector-parts";
 import { NumField } from "./num-field";
@@ -61,7 +62,8 @@ export function TextFields({ node, hideType = false }: { node: TextNode; hideTyp
           <NumField className="field w-16 font-mono" value={node.lineHeight} min={0.7} max={2} aria-label="type leading" onCommit={(n) => updateNodes([node.id], { lineHeight: n } as Partial<DesignNode>, true)} />
         </div>
       </Field>
-      <Field label="Align">
+      <TypeRhythmPreview node={node} />
+            <Field label="Align">
         <div className="flex gap-1">
           {(["left", "center", "right"] as Align[]).map((a) => (
             <button key={a} type="button" className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${node.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"}`} onClick={() => updateNodes([node.id], { align: a } as Partial<DesignNode>, true)}>{a}</button>
@@ -91,6 +93,104 @@ export function CopyMeter({ text }: { text: string }) {
       <span>
         {words} {words === 1 ? "word" : "words"} · {lines} {lines === 1 ? "line" : "lines"}
       </span>
+    </div>
+  );
+}
+
+
+export function TypeRhythmPreview({ node }: { node: TextNode }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const typeGhost = useDesign((s) => s.typeGhost);
+  const ghosted = applyTypeGhost(node, typeGhost);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = 220;
+    const cssH = 36;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const phosphor = "rgba(63,198,255,0.85)";
+    const phosphorSoft = "rgba(63,198,255,0.35)";
+    const y = cssH * 0.62;
+    const left = 6;
+    const right = cssW - 6;
+
+    ctx.strokeStyle = phosphor;
+    ctx.lineWidth = typeGhost?.fontWeight != null ? 1.8 : 1.15;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(right, y);
+    ctx.stroke();
+
+    // Left and right baseline ticks
+    const tickH = 7;
+    ctx.beginPath();
+    ctx.moveTo(left, y - tickH);
+    ctx.lineTo(left, y + tickH * 0.35);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(right, y - tickH);
+    ctx.lineTo(right, y + tickH * 0.35);
+    ctx.stroke();
+
+    // Mid-line center tick
+    const midX = (left + right) / 2;
+    const midTick = 9;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(midX, y - midTick / 2);
+    ctx.lineTo(midX, y + midTick / 2);
+    ctx.stroke();
+
+    // Density marks — prefer leading ghost spacing, else size
+    const size = ghosted.fontSize;
+    const lineH = ghosted.lineHeight * size;
+    const densityStep = typeGhost?.lineHeight != null
+      ? Math.max(lineH * 0.42, 11)
+      : Math.max(size * 0.55, 9);
+    if (densityStep > 5 && densityStep < (right - left) * 0.42) {
+      ctx.strokeStyle = phosphorSoft;
+      ctx.lineWidth = 0.75;
+      for (let x = left + densityStep; x < right - densityStep * 0.35; x += densityStep) {
+        if (Math.abs(x - midX) < densityStep * 0.32) continue;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 2.8);
+        ctx.lineTo(x, y + 2.8);
+        ctx.stroke();
+      }
+    }
+
+    // Tracking / weight density ticks (short verticals above the line)
+    if (typeGhost?.letterSpacing != null || typeGhost?.fontWeight != null) {
+      const advance = Math.max(7, size * 0.48 + (ghosted.letterSpacing || 0) * 0.6);
+      ctx.strokeStyle = phosphorSoft;
+      ctx.lineWidth = 0.7;
+      for (let x = left + advance * 0.4; x < right - 2; x += advance) {
+        ctx.beginPath();
+        ctx.moveTo(x, y - 4.5);
+        ctx.lineTo(x, y - 0.5);
+        ctx.stroke();
+      }
+    }
+  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight]);
+
+  return (
+    <div className="mt-2">
+      <div className="mb-1 text-[10px] text-ink-dim">Rhythm</div>
+      <canvas
+        ref={canvasRef}
+        className="w-full max-w-[220px] rounded-[6px] border border-border/50 bg-ground/30"
+        aria-hidden
+      />
     </div>
   );
 }

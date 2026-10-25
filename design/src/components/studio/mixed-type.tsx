@@ -13,7 +13,7 @@ import {
 import type { Align, DesignNode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { MixedAxisSliders } from "./mixed-type-axes";
-import { CopyMeter } from "./inspector-type";
+import { CopyMeter, TypeRhythmPreview } from "./inspector-type";
 
 const ALIGNS: Align[] = ["left", "center", "right"];
 
@@ -247,7 +247,8 @@ export function MixedType({ nodes }: { nodes: TextNode[] }) {
           <NumField className="field w-16 font-mono" value={keyNode.lineHeight} mixed={mixedLeading} min={0.7} max={2} aria-label="type leading" onCommit={(n) => patch({ lineHeight: n })} />
         </div>
       </label>
-      <MixedAxisSliders nodes={nodes} patch={patchAxes} />
+      <TypeRhythmPreview node={keyNode} />
+            <MixedAxisSliders nodes={nodes} patch={patchAxes} />
       <div className="mt-2">
         <div className="mb-1 text-[11px] text-ink-dim">{mixedAlign ? "Align · mixed" : "Align"}</div>
         <div className="flex gap-1" role="group" aria-label={mixedAlign ? "type align mixed" : "type align"}>
