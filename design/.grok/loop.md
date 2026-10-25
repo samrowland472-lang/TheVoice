@@ -17,15 +17,11 @@
 - Path point inspector now has a Mirror toggle that keeps in/out handles mirrored. Focusing a handle field highlights that arm with a live tangent guide overlay on the canvas.
 - Layers panel now shows a Type quick strip (Size + Tracking) whenever text layers are selected. Scrubbers and number fields update live; mixed selections show Mixed and apply to all selected text.
 - Text layers in the Layers panel now show a compact type-size badge (click to open an inline number field for exact size entry, Enter/Escape).
-- Text layers in the Layers panel now show a compact tracking badge next to the type-size badge (click to open an inline number field for exact tracking entry, Enter/Escape, range -8 to 40).
-- Text layers in the Layers panel now show a compact leading badge next to the size and tracking badges (click to open an inline number field for exact leading entry, Enter/Escape, range 0.7–2, step 0.02). Type quick strip now includes a Leading scrubber and shows size / tracking / leading in the summary.
-- Live phosphor type rhythm overlay: while scrubbing Size, Tracking, or Leading (in the inspector, mixed type, or Layers Type quick strip) horizontal leading lines and approximate tracking ticks appear on selected text layers.
-- Text layers in the Layers panel now show a compact weight badge next to the size / tracking / leading badges (click to open an inline number field for exact weight entry, Enter/Escape, range 100–900, step 100).
-
-- Text layers in the Layers panel now show a compact font-family badge (first word of the family name) next to the weight badge. Click opens a picker of the canvas fonts; change or Escape/blur closes it.
-- Type rhythm overlay (phosphor leading lines + tracking ticks) now reacts to keyboard nudges on Size / Tracking / Leading ranges: Arrow keys, Home, End, PageUp/PageDown show the live ghost while the key is held and clear + commit on keyup or blur (Layers Type quick strip, inspector Type fields, and mixed Type).
-
-
+- Text layers in the Layers panel now show a compact tracking badge (click to open an inline number field for exact tracking entry, Enter/Escape).
+- Text layers in the Layers panel now show a compact leading badge (click to open an inline number field for exact leading entry, Enter/Escape).
+- Layers Type quick strip summary now shows size / tracking / leading and is clickable for exact entry (inline number fields, Enter/Escape/blur). Mixed any property shows Mixed.
+- Live phosphor type rhythm overlay on the canvas while scrubbing Size, Tracking, or Leading in the Layers Type quick strip (or the Type inspector). Leading lines and tracking ticks update live with the ghost values.
+- Type rhythm overlay (leading lines + tracking ticks) now reacts to keyboard nudges on Size / Tracking / Leading ranges: Arrow keys, Home, End, PageUp/PageDown show the live ghost while the key is held and clear + commit on keyup or blur (Layers Type quick strip, inspector Type fields, and mixed Type).
 - Layers Type quick strip now includes a Weight range (100–900, step 100) with live canvas updates and a NumField for exact entry. Mixed weights show Mixed and apply to all selected text.
 - Type quick strip summary now includes weight (size / weight / tracking / leading). Mixed any property shows Mixed.
 - Layers Type quick strip now includes a Family select of canvas fonts. Mixed families show Mixed and a choice applies to the selection.
@@ -34,13 +30,13 @@
 - Type rhythm overlay now draws tracking ticks while scrubbing Weight (independent of Tracking). Advance is measured with the ghost weight so density updates live; leading lines still thicken.
 - Type inspector and Mixed Type weight ranges now match Layers: 100–900 (step 100). Scrub, keyboard-nudge, or exact entry now cover the full phosphor weight scale consistently across panels.
 - Type quick strip summary now shows per-property badges even when mixed: Mixed properties display a phosphor “Mixed” label (click still opens the editor to set the value on all selected text). Non-mixed show the live value. Family badge included.
-
 - Type rhythm overlay now draws baseline ticks (left and right vertical markers) on each leading line while scrubbing Size or Leading. The ticks track the ghosted size and leading live so the baseline rhythm stays visible during type adjustments.
+- Type rhythm overlay for Size ghosts now also draws a mid-line center tick on each baseline plus intermediate density marks spaced by the ghosted size. The marks update live while the Size range is scrubbed.
 
 ## Iteration
-2026-10-25 03:05 BST — Type rhythm overlay adds baseline ticks for size and leading ghosts. Left and right vertical markers appear on each line while those ranges are scrubbed. Verified typecheck, build, and browser smoke.
+2026-10-25 03:10 BST — Type rhythm overlay for size ghosts adds mid-line center ticks and intermediate density marks along each baseline. Density spacing follows the ghosted font size so the scale of the type is readable while scrubbing. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Clickable size / tracking / leading badges in the Type quick strip summary for consistency (if not already complete).
 - Show mixed indicator only on the specific badges that differ, and keep last-used value as the edit starting point.
-- Type rhythm overlay density or mid-line ticks for size ghosts.
+- Type rhythm overlay: optional mid-line ticks or density for leading ghosts.
+- Align the Type inspector baseline preview with the canvas rhythm overlay.

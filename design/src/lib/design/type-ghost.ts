@@ -25,6 +25,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * Horizontal lines mark leading intervals; short vertical ticks approximate tracking density.
  * Weight ghosts update the measured advance and may thicken the leading lines.
  * Size and leading ghosts add baseline ticks at the left and right of each line.
+ * Size ghosts also add a mid-line center tick and intermediate density marks along each baseline.
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -80,6 +81,36 @@ export function drawTypeRhythmGhosts(
         ctx.moveTo(n.x + n.w, y - tickLen / 2);
         ctx.lineTo(n.x + n.w, y + tickLen / 2);
         ctx.stroke();
+      }
+    }
+
+    // Size ghosts: mid-line center tick + intermediate density marks along the baseline
+    if (ghost.fontSize != null) {
+      const midTick = Math.max(5 / zoom, 3.5);
+      const densityStep = Math.max(n.fontSize * 0.55, 8 / zoom);
+      ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
+      for (let i = 0; i < lines.length; i++) {
+        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        // center mid-line tick
+        const midX = n.x + n.w / 2;
+        ctx.beginPath();
+        ctx.moveTo(midX, y - midTick / 2);
+        ctx.lineTo(midX, y + midTick / 2);
+        ctx.stroke();
+        // intermediate density marks (skip if too close to edges or center)
+        if (densityStep > 4 / zoom && densityStep < n.w * 0.45) {
+          ctx.strokeStyle = phosphorSoft;
+          ctx.lineWidth = Math.max(0.7 / zoom, 0.5);
+          for (let x = n.x + densityStep; x < n.x + n.w - densityStep * 0.4; x += densityStep) {
+            if (Math.abs(x - midX) < densityStep * 0.35) continue;
+            ctx.beginPath();
+            ctx.moveTo(x, y - midTick * 0.35);
+            ctx.lineTo(x, y + midTick * 0.35);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = phosphor;
+          ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
+        }
       }
     }
 
