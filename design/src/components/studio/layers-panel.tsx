@@ -341,7 +341,10 @@ export function LayersPanel() {
                     {n.opacity < 0.999 && (
                       <button
                         type="button"
-                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
                         title="Edit opacity · Alt+0–9 tenths · Alt+Arrow 1% · Alt+Shift+0 full"
                         onClick={(e) => {
                           e.preventDefault();
@@ -360,7 +363,10 @@ export function LayersPanel() {
                     {isText(n) && editingSizeId !== n.id && (
                       <button
                         type="button"
-                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
                         title="Click to edit type size"
                         onClick={(e) => {
                           e.preventDefault();
@@ -404,7 +410,10 @@ export function LayersPanel() {
                     {isText(n) && editingTrackId !== n.id && (
                       <button
                         type="button"
-                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
                         title="Click to edit tracking"
                         onClick={(e) => {
                           e.preventDefault();
@@ -448,7 +457,10 @@ export function LayersPanel() {
                     {isText(n) && editingLeadId !== n.id && (
                       <button
                         type="button"
-                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
                         title="Click to edit leading"
                         onClick={(e) => {
                           e.preventDefault();
@@ -492,7 +504,10 @@ export function LayersPanel() {
                     {isText(n) && editingWeightId !== n.id && (
                       <button
                         type="button"
-                        className="ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
                         title="Click to edit weight"
                         onClick={(e) => {
                           e.preventDefault();
@@ -536,7 +551,10 @@ export function LayersPanel() {
                     {isText(n) && editingFamilyId !== n.id && (
                       <button
                         type="button"
-                        className="ml-1.5 inline-block max-w-[5.5rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                        className={cn(
+                        "ml-1.5 inline-block max-w-[5.5rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
                         title={`Click to change font family · ${n.fontFamily}`}
                         onClick={(e) => {
                           e.preventDefault();
@@ -779,6 +797,24 @@ function saveTypeLastUsed(next: TypeLastUsed) {
   }
 }
 
+const TYPE_STRIP_COLLAPSED_KEY = "voice-design-type-strip-collapsed";
+
+function loadTypeStripCollapsed(): boolean {
+  try {
+    return localStorage.getItem(TYPE_STRIP_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveTypeStripCollapsed(collapsed: boolean) {
+  try {
+    localStorage.setItem(TYPE_STRIP_COLLAPSED_KEY, collapsed ? "1" : "0");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 function TypeQuickStrip() {
   const selection = useDesign((s) => s.selection);
   const doc = useDesign((s) => s.doc);
@@ -794,6 +830,14 @@ function TypeQuickStrip() {
   const [leadDraft, setLeadDraft] = useState("");
   const [lastUsed, setLastUsed] = useState<TypeLastUsed>(loadTypeLastUsed);
   const [flashProp, setFlashProp] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(loadTypeStripCollapsed);
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      saveTypeStripCollapsed(next);
+      return next;
+    });
+  };
   const triggerFlash = (prop: string) => {
     setFlashProp(prop);
     window.setTimeout(() => setFlashProp(null), 700);
@@ -829,10 +873,24 @@ function TypeQuickStrip() {
     }
   };
   return (
-    <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5 transition-colors">
-      <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
-        <span>Type</span>
-        <div className="flex items-center gap-0.5 text-[9px]">
+    <div className={cn("group/strip mt-2 rounded-[8px] border border-border bg-surface px-2 transition-colors", collapsed ? "py-1" : "py-1.5")}>
+      <div className={cn("flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase", !collapsed && "mb-1")}>
+        <button
+          type="button"
+          className="flex items-center gap-1 hover:text-phosphor"
+          aria-label={collapsed ? "Expand type strip" : "Collapse type strip"}
+          aria-expanded={!collapsed}
+          onClick={toggleCollapsed}
+        >
+          <ChevronRight className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
+          <span>Type</span>
+        </button>
+        <div className={cn(
+          "flex items-center gap-0.5 text-[9px] transition-opacity",
+          collapsed
+            ? "opacity-0 pointer-events-none group-hover/strip:opacity-100 group-hover/strip:pointer-events-auto group-focus-within/strip:opacity-100 group-focus-within/strip:pointer-events-auto"
+            : "opacity-100",
+        )}>
           {!editingSize ? (
             <button
               type="button"
@@ -1046,6 +1104,8 @@ function TypeQuickStrip() {
           )}
         </div>
       </div>
+      {!collapsed && (
+      <>
       <div className="mb-1.5 flex items-center gap-2">
         <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Size</span>
         <input
@@ -1232,6 +1292,8 @@ function TypeQuickStrip() {
           ))}
         </select>
       </div>
+      </>
+      )}
     </div>
   );
 }
