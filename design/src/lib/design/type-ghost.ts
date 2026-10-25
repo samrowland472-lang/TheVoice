@@ -25,7 +25,8 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * Horizontal lines mark leading intervals; short vertical ticks approximate tracking density.
  * Weight ghosts update the measured advance and may thicken the leading lines.
  * Size and leading ghosts add baseline ticks at the left and right of each line.
- * Size ghosts also add a mid-line center tick and intermediate density marks along each baseline.
+ * Size and leading ghosts also add a mid-line center tick and intermediate density marks along each baseline.
+ * Leading density spacing follows the ghosted line height so the vertical rhythm is readable while scrubbing.
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -99,6 +100,34 @@ export function drawTypeRhythmGhosts(
         ctx.stroke();
         // intermediate density marks (skip if too close to edges or center)
         if (densityStep > 4 / zoom && densityStep < n.w * 0.45) {
+          ctx.strokeStyle = phosphorSoft;
+          ctx.lineWidth = Math.max(0.7 / zoom, 0.5);
+          for (let x = n.x + densityStep; x < n.x + n.w - densityStep * 0.4; x += densityStep) {
+            if (Math.abs(x - midX) < densityStep * 0.35) continue;
+            ctx.beginPath();
+            ctx.moveTo(x, y - midTick * 0.35);
+            ctx.lineTo(x, y + midTick * 0.35);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = phosphor;
+          ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
+        }
+      }
+    }
+
+    // Leading ghosts: mid-line center tick + density marks spaced by the ghosted line height
+    if (ghost.lineHeight != null) {
+      const midTick = Math.max(5 / zoom, 3.5);
+      const densityStep = Math.max(lineHeight * 0.65, 10 / zoom);
+      ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
+      for (let i = 0; i < lines.length; i++) {
+        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        const midX = n.x + n.w / 2;
+        ctx.beginPath();
+        ctx.moveTo(midX, y - midTick / 2);
+        ctx.lineTo(midX, y + midTick / 2);
+        ctx.stroke();
+        if (densityStep > 5 / zoom && densityStep < n.w * 0.45) {
           ctx.strokeStyle = phosphorSoft;
           ctx.lineWidth = Math.max(0.7 / zoom, 0.5);
           for (let x = n.x + densityStep; x < n.x + n.w - densityStep * 0.4; x += densityStep) {

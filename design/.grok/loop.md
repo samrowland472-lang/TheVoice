@@ -32,11 +32,12 @@
 - Type quick strip summary now shows per-property badges even when mixed: Mixed properties display a phosphor “Mixed” label (click still opens the editor to set the value on all selected text). Non-mixed show the live value. Family badge included.
 - Type rhythm overlay now draws baseline ticks (left and right vertical markers) on each leading line while scrubbing Size or Leading. The ticks track the ghosted size and leading live so the baseline rhythm stays visible during type adjustments.
 - Type rhythm overlay for Size ghosts now also draws a mid-line center tick on each baseline plus intermediate density marks spaced by the ghosted size. The marks update live while the Size range is scrubbed.
+- Type rhythm overlay for Leading ghosts now draws a mid-line center tick plus intermediate density marks along each baseline. Density spacing follows the ghosted line height so the vertical rhythm stays readable while scrubbing.
 
 ## Iteration
-2026-10-25 03:10 BST — Type rhythm overlay for size ghosts adds mid-line center ticks and intermediate density marks along each baseline. Density spacing follows the ghosted font size so the scale of the type is readable while scrubbing. Verified typecheck, build, and browser smoke.
+2026-10-25 04:03 GMT — Type rhythm overlay for leading ghosts adds mid-line center ticks and density marks spaced by the ghosted line height. Vertical rhythm is visible while scrubbing Leading. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
 - Show mixed indicator only on the specific badges that differ, and keep last-used value as the edit starting point.
-- Type rhythm overlay: optional mid-line ticks or density for leading ghosts.
 - Align the Type inspector baseline preview with the canvas rhythm overlay.
+- Type rhythm overlay: density marks for tracking ghosts that follow measured advance more closely.
