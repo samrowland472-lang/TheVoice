@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Type quick strip Mixed badges now open their editor starting from the last value applied to that property (size, weight, tracking, leading, family). Falls back to the last selected node when no prior value has been set this session. Mixed labels remain only on the specific properties that differ.
 - Clipboard and selection actions now work: Duplicate (Cmd+D), Copy (Cmd+C), Cut (Cmd+X), Paste (Cmd+V), Remove (Delete), Select all (Cmd+A).
 - Groups and their children are cloned together with remapped parent IDs.
 - Layers panel has a Duplicate button next to Group / Ungroup.
@@ -35,9 +36,8 @@
 - Type rhythm overlay for Leading ghosts now draws a mid-line center tick plus intermediate density marks along each baseline. Density spacing follows the ghosted line height so the vertical rhythm stays readable while scrubbing.
 
 ## Iteration
-2026-10-25 04:03 GMT — Type rhythm overlay for leading ghosts adds mid-line center ticks and density marks spaced by the ghosted line height. Vertical rhythm is visible while scrubbing Leading. Verified typecheck, build, and browser smoke.
-
+2026-10-25 05:01 GMT — Type quick strip Mixed editors now start from the last-used value for that property instead of only the last selected node. Mixed indicators stay per-badge. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Show mixed indicator only on the specific badges that differ, and keep last-used value as the edit starting point.
 - Align the Type inspector baseline preview with the canvas rhythm overlay.
 - Type rhythm overlay: density marks for tracking ghosts that follow measured advance more closely.
+- Persist last-used type values across reloads (localStorage) so Mixed editors remember across sessions.

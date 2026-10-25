@@ -756,6 +756,16 @@ function TypeQuickStrip() {
   const [trackDraft, setTrackDraft] = useState("");
   const [editingLead, setEditingLead] = useState(false);
   const [leadDraft, setLeadDraft] = useState("");
+  const [lastUsed, setLastUsed] = useState<{
+    size: number | null;
+    weight: number | null;
+    track: number | null;
+    lead: number | null;
+    family: string | null;
+  }>({ size: null, weight: null, track: null, lead: null, family: null });
+  const remember = (prop: "size" | "weight" | "track" | "lead" | "family", val: number | string) => {
+    setLastUsed((prev) => ({ ...prev, [prop]: val }));
+  };
   if (!doc || selection.length === 0) return null;
   const textNodes = selection
     .map((id) => doc.nodes.find((n) => n.id === id))
@@ -790,7 +800,8 @@ function TypeQuickStrip() {
               className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${sizeMixed ? "text-phosphor" : "text-ink-faint"}`}
               title={sizeMixed ? "Mixed size — click to set all" : "Click to edit size"}
               onClick={() => {
-                setSizeDraft(String(Math.round(size)));
+                const start = lastUsed.size ?? Math.round(size);
+                setSizeDraft(String(start));
                 setEditingSize(true);
               }}
             >
@@ -810,12 +821,14 @@ function TypeQuickStrip() {
               onBlur={() => {
                 const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
                 updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                remember("size", next);
                 setEditingSize(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
                   updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                  remember("size", next);
                   setEditingSize(false);
                 } else if (e.key === "Escape") {
                   setEditingSize(false);
@@ -830,7 +843,8 @@ function TypeQuickStrip() {
               className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${weightMixed ? "text-phosphor" : "text-ink-faint"}`}
               title={weightMixed ? "Mixed weight — click to set all" : "Click to edit weight"}
               onClick={() => {
-                setWeightDraft(String(Math.round(weight)));
+                const start = lastUsed.weight ?? Math.round(weight);
+                setWeightDraft(String(start));
                 setEditingWeight(true);
               }}
             >
@@ -850,12 +864,14 @@ function TypeQuickStrip() {
               onBlur={() => {
                 const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
                 updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                remember("weight", next);
                 setEditingWeight(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
                   updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                  remember("weight", next);
                   setEditingWeight(false);
                 } else if (e.key === "Escape") {
                   setEditingWeight(false);
@@ -870,7 +886,8 @@ function TypeQuickStrip() {
               className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${trackMixed ? "text-phosphor" : "text-ink-faint"}`}
               title={trackMixed ? "Mixed tracking — click to set all" : "Click to edit tracking"}
               onClick={() => {
-                setTrackDraft(String(tracking));
+                const start = lastUsed.track ?? tracking;
+                setTrackDraft(String(start));
                 setEditingTrack(true);
               }}
             >
@@ -890,12 +907,14 @@ function TypeQuickStrip() {
               onBlur={() => {
                 const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
                 updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                remember("track", next);
                 setEditingTrack(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
                   updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                  remember("track", next);
                   setEditingTrack(false);
                 } else if (e.key === "Escape") {
                   setEditingTrack(false);
@@ -910,7 +929,8 @@ function TypeQuickStrip() {
               className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${leadMixed ? "text-phosphor" : "text-ink-faint"}`}
               title={leadMixed ? "Mixed leading — click to set all" : "Click to edit leading"}
               onClick={() => {
-                setLeadDraft(leading.toFixed(2));
+                const start = lastUsed.lead ?? leading;
+                setLeadDraft(start.toFixed(2));
                 setEditingLead(true);
               }}
             >
@@ -930,12 +950,14 @@ function TypeQuickStrip() {
               onBlur={() => {
                 const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
                 updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                remember("lead", next);
                 setEditingLead(false);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
                   updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                  remember("lead", next);
                   setEditingLead(false);
                 } else if (e.key === "Escape") {
                   setEditingLead(false);
@@ -956,11 +978,13 @@ function TypeQuickStrip() {
           ) : (
             <select
               className="h-4 max-w-[5.5rem] rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
-              value={family}
+              value={(familyMixed && lastUsed.family) ? lastUsed.family : family}
               autoFocus
               aria-label="Type family"
               onChange={(e) => {
-                updateNodes(ids, { fontFamily: e.target.value } as Partial<DesignNode>, true);
+                const next = e.target.value;
+                updateNodes(ids, { fontFamily: next } as Partial<DesignNode>, true);
+                remember("family", next);
                 setEditingFamily(false);
               }}
               onBlur={() => setEditingFamily(false)}
@@ -1013,6 +1037,7 @@ function TypeQuickStrip() {
           className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
           onCommit={(n) => {
             updateNodes(ids, { fontSize: n } as Partial<DesignNode>);
+            remember("size", n);
             useDesign.getState().commit();
           }}
         />
@@ -1054,6 +1079,7 @@ function TypeQuickStrip() {
           className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
           onCommit={(n) => {
             updateNodes(ids, { letterSpacing: n } as Partial<DesignNode>);
+            remember("track", n);
             useDesign.getState().commit();
           }}
         />
@@ -1095,6 +1121,7 @@ function TypeQuickStrip() {
           className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
           onCommit={(n) => {
             updateNodes(ids, { lineHeight: n } as Partial<DesignNode>);
+            remember("lead", n);
             useDesign.getState().commit();
           }}
         />
@@ -1136,6 +1163,7 @@ function TypeQuickStrip() {
           className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
           onCommit={(n) => {
             updateNodes(ids, { fontWeight: n } as Partial<DesignNode>);
+            remember("weight", n);
             useDesign.getState().commit();
           }}
         />
@@ -1147,7 +1175,9 @@ function TypeQuickStrip() {
           value={family}
           aria-label="Type family"
           onChange={(e) => {
-            updateNodes(ids, { fontFamily: e.target.value } as Partial<DesignNode>, true);
+            const next = e.target.value;
+            updateNodes(ids, { fontFamily: next } as Partial<DesignNode>, true);
+            remember("family", next);
           }}
         >
           {familyMixed && <option value={family}>Mixed</option>}
