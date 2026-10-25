@@ -793,10 +793,10 @@ function TypeQuickStrip() {
   const [editingLead, setEditingLead] = useState(false);
   const [leadDraft, setLeadDraft] = useState("");
   const [lastUsed, setLastUsed] = useState<TypeLastUsed>(loadTypeLastUsed);
-  const [flash, setFlash] = useState(false);
-  const triggerFlash = () => {
-    setFlash(true);
-    window.setTimeout(() => setFlash(false), 700);
+  const [flashProp, setFlashProp] = useState<string | null>(null);
+  const triggerFlash = (prop: string) => {
+    setFlashProp(prop);
+    window.setTimeout(() => setFlashProp(null), 700);
   };
   const remember = (prop: "size" | "weight" | "track" | "lead" | "family", val: number | string) => {
     setLastUsed((prev) => {
@@ -829,20 +829,20 @@ function TypeQuickStrip() {
     }
   };
   return (
-    <div className={`mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5 transition-colors ${flash ? "animate-phosphor-flash" : ""}`}>
+    <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5 transition-colors">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
         <span>Type</span>
         <div className="flex items-center gap-0.5 text-[9px]">
           {!editingSize ? (
             <button
               type="button"
-              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${sizeMixed ? "text-phosphor" : "text-ink-faint"}`}
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${sizeMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "size" ? "animate-phosphor-flash" : ""}`}
               title={sizeMixed ? "Mixed size — click to set all" : "Click to edit size"}
               onClick={() => {
                 const start = lastUsed.size ?? Math.round(size);
                 setSizeDraft(String(start));
                 setEditingSize(true);
-                if (lastUsed.size != null) triggerFlash();
+                if (lastUsed.size != null) triggerFlash("size");
               }}
             >
               {sizeMixed ? "Mixed" : Math.round(size)}
@@ -880,13 +880,13 @@ function TypeQuickStrip() {
           {!editingWeight ? (
             <button
               type="button"
-              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${weightMixed ? "text-phosphor" : "text-ink-faint"}`}
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${weightMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "weight" ? "animate-phosphor-flash" : ""}`}
               title={weightMixed ? "Mixed weight — click to set all" : "Click to edit weight"}
               onClick={() => {
                 const start = lastUsed.weight ?? Math.round(weight);
                 setWeightDraft(String(start));
                 setEditingWeight(true);
-                if (lastUsed.weight != null) triggerFlash();
+                if (lastUsed.weight != null) triggerFlash("weight");
               }}
             >
               {weightMixed ? "Mixed" : Math.round(weight)}
@@ -924,13 +924,13 @@ function TypeQuickStrip() {
           {!editingTrack ? (
             <button
               type="button"
-              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${trackMixed ? "text-phosphor" : "text-ink-faint"}`}
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${trackMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "track" ? "animate-phosphor-flash" : ""}`}
               title={trackMixed ? "Mixed tracking — click to set all" : "Click to edit tracking"}
               onClick={() => {
                 const start = lastUsed.track ?? tracking;
                 setTrackDraft(String(start));
                 setEditingTrack(true);
-                if (lastUsed.track != null) triggerFlash();
+                if (lastUsed.track != null) triggerFlash("track");
               }}
             >
               {trackMixed ? "Mixed" : tracking}
@@ -968,13 +968,13 @@ function TypeQuickStrip() {
           {!editingLead ? (
             <button
               type="button"
-              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${leadMixed ? "text-phosphor" : "text-ink-faint"}`}
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${leadMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "lead" ? "animate-phosphor-flash" : ""}`}
               title={leadMixed ? "Mixed leading — click to set all" : "Click to edit leading"}
               onClick={() => {
                 const start = lastUsed.lead ?? leading;
                 setLeadDraft(start.toFixed(2));
                 setEditingLead(true);
-                if (lastUsed.lead != null) triggerFlash();
+                if (lastUsed.lead != null) triggerFlash("lead");
               }}
             >
               {leadMixed ? "Mixed" : leading.toFixed(2)}
@@ -1012,11 +1012,11 @@ function TypeQuickStrip() {
           {!editingFamily ? (
             <button
               type="button"
-              className={`max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${familyMixed ? "text-phosphor" : "text-ink-faint"}`}
+              className={`max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${familyMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "family" ? "animate-phosphor-flash" : ""}`}
               title={familyMixed ? `Mixed family — click to set all · ${family}` : `Click to change font family · ${family}`}
               onClick={() => {
                 setEditingFamily(true);
-                if (familyMixed && lastUsed.family) triggerFlash();
+                if (familyMixed && lastUsed.family) triggerFlash("family");
               }}
             >
               {familyMixed ? "Mixed" : (family.split(" ")[0] || family)}

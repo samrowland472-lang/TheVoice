@@ -43,8 +43,10 @@
 
 - Layers Type quick strip now flashes a subtle phosphor pulse when a Mixed badge opens an editor pre-filled from the remembered last-used value (size, weight, tracking, leading, or family). The flash confirms memory was applied.
 
+- Layers Type quick strip Mixed badges now flash individually (phosphor pulse on the specific badge) when opened with a last-used value from localStorage. The pulse confirms which property received the remembered value.
+
 ## Iteration
-2026-10-25 11:05 GMT — Layers Type strip shows a subtle phosphor flash when a Mixed editor is opened with a last-used value from localStorage. The pulse confirms the remembered value was applied to the draft. Verified typecheck, build, and browser smoke.
+2026-10-25 14:05 GMT — Layers Type quick strip Mixed badges flash individually when opened with a last-used value. The phosphor pulse is now on the specific badge (size, weight, tracking, leading, or family) so it is clear which property received the remembered value. Verified typecheck, build, and browser smoke.
 ## Next recommended
 - Type rhythm overlay: optional per-glyph advance ticks for tracking when the line is short.
-- Show the phosphor flash on the specific badge that received the remembered value.
+- Type inspector Rhythm strip: optional matching per-glyph ticks when the measured line is short.
