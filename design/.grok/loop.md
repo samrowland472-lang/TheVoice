@@ -35,9 +35,11 @@
 - Type rhythm overlay for Size ghosts now also draws a mid-line center tick on each baseline plus intermediate density marks spaced by the ghosted size. The marks update live while the Size range is scrubbed.
 - Type rhythm overlay for Leading ghosts now draws a mid-line center tick plus intermediate density marks along each baseline. Density spacing follows the ghosted line height so the vertical rhythm stays readable while scrubbing.
 
+- Type quick strip Mixed editors now remember last-used values (size, weight, tracking, leading, family) across page reloads via localStorage. Editors still start from the remembered value when a property is mixed; Mixed badges remain per-property.
+
 ## Iteration
-2026-10-25 05:01 GMT — Type quick strip Mixed editors now start from the last-used value for that property instead of only the last selected node. Mixed indicators stay per-badge. Verified typecheck, build, and browser smoke.
+2026-10-25 06:05 GMT — Persisted last-used type values for Mixed Type quick strip editors across reloads with localStorage. Verified typecheck, build, and browser smoke.
 ## Next recommended
 - Align the Type inspector baseline preview with the canvas rhythm overlay.
 - Type rhythm overlay: density marks for tracking ghosts that follow measured advance more closely.
-- Persist last-used type values across reloads (localStorage) so Mixed editors remember across sessions.
+- Show a subtle phosphor flash on the Layers Type strip when a last-used value is applied from memory.

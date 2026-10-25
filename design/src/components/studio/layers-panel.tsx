@@ -743,6 +743,42 @@ export function LayersPanel() {
 }
 
 
+const TYPE_LAST_USED_KEY = "voice-design-type-last-used";
+
+type TypeLastUsed = {
+  size: number | null;
+  weight: number | null;
+  track: number | null;
+  lead: number | null;
+  family: string | null;
+};
+
+function loadTypeLastUsed(): TypeLastUsed {
+  const empty: TypeLastUsed = { size: null, weight: null, track: null, lead: null, family: null };
+  try {
+    const raw = localStorage.getItem(TYPE_LAST_USED_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as Partial<TypeLastUsed>;
+    return {
+      size: typeof parsed.size === "number" ? parsed.size : null,
+      weight: typeof parsed.weight === "number" ? parsed.weight : null,
+      track: typeof parsed.track === "number" ? parsed.track : null,
+      lead: typeof parsed.lead === "number" ? parsed.lead : null,
+      family: typeof parsed.family === "string" ? parsed.family : null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function saveTypeLastUsed(next: TypeLastUsed) {
+  try {
+    localStorage.setItem(TYPE_LAST_USED_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
 function TypeQuickStrip() {
   const selection = useDesign((s) => s.selection);
   const doc = useDesign((s) => s.doc);
@@ -756,15 +792,13 @@ function TypeQuickStrip() {
   const [trackDraft, setTrackDraft] = useState("");
   const [editingLead, setEditingLead] = useState(false);
   const [leadDraft, setLeadDraft] = useState("");
-  const [lastUsed, setLastUsed] = useState<{
-    size: number | null;
-    weight: number | null;
-    track: number | null;
-    lead: number | null;
-    family: string | null;
-  }>({ size: null, weight: null, track: null, lead: null, family: null });
+  const [lastUsed, setLastUsed] = useState<TypeLastUsed>(loadTypeLastUsed);
   const remember = (prop: "size" | "weight" | "track" | "lead" | "family", val: number | string) => {
-    setLastUsed((prev) => ({ ...prev, [prop]: val }));
+    setLastUsed((prev) => {
+      const next = { ...prev, [prop]: val };
+      saveTypeLastUsed(next);
+      return next;
+    });
   };
   if (!doc || selection.length === 0) return null;
   const textNodes = selection
