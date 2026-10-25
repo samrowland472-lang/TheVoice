@@ -35,10 +35,12 @@
 - Type inspector and Mixed Type weight ranges now match Layers: 100–900 (step 100). Scrub, keyboard-nudge, or exact entry now cover the full phosphor weight scale consistently across panels.
 - Type quick strip summary now shows per-property badges even when mixed: Mixed properties display a phosphor “Mixed” label (click still opens the editor to set the value on all selected text). Non-mixed show the live value. Family badge included.
 
+- Type rhythm overlay now draws baseline ticks (left and right vertical markers) on each leading line while scrubbing Size or Leading. The ticks track the ghosted size and leading live so the baseline rhythm stays visible during type adjustments.
+
 ## Iteration
-2026-10-25 01:08 BST — Type summary badges now stay visible on mixed selections. Each property shows its value or a phosphor Mixed indicator; click any badge to set that property on all selected text layers. Verified typecheck, build, and browser smoke.
+2026-10-25 03:05 BST — Type rhythm overlay adds baseline ticks for size and leading ghosts. Left and right vertical markers appear on each line while those ranges are scrubbed. Verified typecheck, build, and browser smoke.
 
 ## Next recommended
-- Type rhythm overlay also for size/leading ghosts (baseline ticks).
 - Clickable size / tracking / leading badges in the Type quick strip summary for consistency (if not already complete).
 - Show mixed indicator only on the specific badges that differ, and keep last-used value as the edit starting point.
+- Type rhythm overlay density or mid-line ticks for size ghosts.

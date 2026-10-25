@@ -24,6 +24,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * Draw phosphor rhythm guides for selected text layers while type properties are being scrubbed.
  * Horizontal lines mark leading intervals; short vertical ticks approximate tracking density.
  * Weight ghosts update the measured advance and may thicken the leading lines.
+ * Size and leading ghosts add baseline ticks at the left and right of each line.
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -63,6 +64,23 @@ export function drawTypeRhythmGhosts(
       ctx.moveTo(n.x, y);
       ctx.lineTo(n.x + n.w, y);
       ctx.stroke();
+    }
+
+    // Baseline ticks — left and right markers when size or leading is being ghosted
+    if (ghost.fontSize != null || ghost.lineHeight != null) {
+      const tickLen = Math.max(7 / zoom, 5);
+      ctx.lineWidth = Math.max(1.4 / zoom, 1);
+      for (let i = 0; i < lines.length; i++) {
+        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        ctx.beginPath();
+        // left tick
+        ctx.moveTo(n.x, y - tickLen / 2);
+        ctx.lineTo(n.x, y + tickLen / 2);
+        // right tick
+        ctx.moveTo(n.x + n.w, y - tickLen / 2);
+        ctx.lineTo(n.x + n.w, y + tickLen / 2);
+        ctx.stroke();
+      }
     }
 
     // Tracking ticks — approximate density using average advance.
