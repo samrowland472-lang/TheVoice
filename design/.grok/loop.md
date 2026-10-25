@@ -45,8 +45,12 @@
 
 - Layers Type quick strip Mixed badges now flash individually (phosphor pulse on the specific badge) when opened with a last-used value from localStorage. The pulse confirms which property received the remembered value.
 
+- Type rhythm overlay now draws per-glyph advance ticks for short lines (≤8 glyphs) while scrubbing tracking or weight. Ticks sit at each character’s center, aligned to the line’s text-align, so tracking rhythm is precise on headlines and short copy. Longer lines keep the average-advance marks.
+
+- Type inspector Rhythm strip matches the canvas: when the measured sample is short (≤8 characters) it draws per-glyph ticks instead of average spacing.
+
 ## Iteration
-2026-10-25 14:05 GMT — Layers Type quick strip Mixed badges flash individually when opened with a last-used value. The phosphor pulse is now on the specific badge (size, weight, tracking, leading, or family) so it is clear which property received the remembered value. Verified typecheck, build, and browser smoke.
+2026-10-25 18:06 GMT — Type rhythm overlay and inspector Rhythm strip now draw per-glyph advance ticks for short lines (≤8 glyphs) while scrubbing tracking or weight. Ticks follow each character’s measured advance and respect text alignment. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: optional per-glyph advance ticks for tracking when the line is short.
-- Type inspector Rhythm strip: optional matching per-glyph ticks when the measured line is short.
+- Path point inspector: optional live tangent length numbers on the canvas while scrubbing in/out handles.
+- Layers panel: optional type-size / tracking / leading / weight mini badges that stay visible on hover even when the Type quick strip is collapsed.

@@ -170,25 +170,43 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
     }
 
     // Tracking / weight density marks — spaced by measured average advance of a sample
+    // For short samples (≤8) draw per-glyph ticks instead so the strip matches the canvas on headlines.
     if (typeGhost?.letterSpacing != null || typeGhost?.fontWeight != null) {
       ctx.save();
       ctx.font = `${ghosted.fontWeight} ${Math.min(size, 28)}px ${ghosted.fontFamily}`;
       ctx.letterSpacing = "0px";
       const sample = (node.text || "Type").slice(0, 16) || "A";
-      const glyphW = ctx.measureText(sample).width;
-      ctx.restore();
-      const advance = Math.max(
-        6,
-        glyphW / Math.max(1, sample.length) + (ghosted.letterSpacing || 0) * 0.85,
-      );
+      const tracking = ghosted.letterSpacing || 0;
+      const SHORT = 8;
       ctx.strokeStyle = phosphorSoft;
       ctx.lineWidth = 0.7;
-      for (let x = left + advance * 0.35; x < right - 3; x += advance) {
-        ctx.beginPath();
-        ctx.moveTo(x, y - 4.2);
-        ctx.lineTo(x, y + 1.2);
-        ctx.stroke();
+      if (sample.length <= SHORT) {
+        let cum = 0;
+        for (let g = 0; g < sample.length; g++) {
+          const chW = ctx.measureText(sample[g]).width;
+          const tickX = left + 4 + cum + chW * 0.5;
+          if (tickX > left && tickX < right) {
+            ctx.beginPath();
+            ctx.moveTo(tickX, y - 4.2);
+            ctx.lineTo(tickX, y + 1.2);
+            ctx.stroke();
+          }
+          cum += chW + (g < sample.length - 1 ? tracking * 0.85 : 0);
+        }
+      } else {
+        const glyphW = ctx.measureText(sample).width;
+        const advance = Math.max(
+          6,
+          glyphW / Math.max(1, sample.length) + tracking * 0.85,
+        );
+        for (let x = left + advance * 0.35; x < right - 3; x += advance) {
+          ctx.beginPath();
+          ctx.moveTo(x, y - 4.2);
+          ctx.lineTo(x, y + 1.2);
+          ctx.stroke();
+        }
       }
+      ctx.restore();
     }
   }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight]);
 
