@@ -39,8 +39,10 @@
 
 - Type inspector now includes a compact phosphor Rhythm strip that draws baseline ticks, a mid-line center mark, density ticks, and tracking marks matching the canvas type rhythm overlay. Updates live while scrubbing size, leading, tracking, or weight (and when a type ghost is active).
 
+- Type rhythm overlay tracking density marks now follow the measured average advance of each line’s content (instead of a single approximate top row). Weight and tracking ghosts draw the marks near every baseline so density tracks the live type more closely. The Type inspector Rhythm strip uses the same measured advance for its tracking marks.
+
 ## Iteration
-2026-10-25 07:05 GMT — Added TypeRhythmPreview strip to the Type inspector (and Mixed Type) so the baseline ticks and density marks match the canvas rhythm overlay while scrubbing. Verified typecheck, build, and browser smoke.
+2026-10-25 08:03 GMT — Tracking density marks in the type rhythm overlay now follow the measured average advance of each line. Marks sit near every baseline so they track live type density more closely while scrubbing tracking or weight. The Type Rhythm strip in the inspector uses the same measured advance. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: density marks for tracking ghosts that follow measured advance more closely.
 - Show a subtle phosphor flash on the Layers Type strip when a last-used value is applied from memory.
+- Type rhythm overlay: optional per-glyph advance ticks for tracking when the line is short.

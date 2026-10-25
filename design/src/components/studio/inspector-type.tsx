@@ -169,15 +169,24 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
       }
     }
 
-    // Tracking / weight density ticks (short verticals above the line)
+    // Tracking / weight density marks — spaced by measured average advance of a sample
     if (typeGhost?.letterSpacing != null || typeGhost?.fontWeight != null) {
-      const advance = Math.max(7, size * 0.48 + (ghosted.letterSpacing || 0) * 0.6);
+      ctx.save();
+      ctx.font = `${ghosted.fontWeight} ${Math.min(size, 28)}px ${ghosted.fontFamily}`;
+      ctx.letterSpacing = "0px";
+      const sample = (node.text || "Type").slice(0, 16) || "A";
+      const glyphW = ctx.measureText(sample).width;
+      ctx.restore();
+      const advance = Math.max(
+        6,
+        glyphW / Math.max(1, sample.length) + (ghosted.letterSpacing || 0) * 0.85,
+      );
       ctx.strokeStyle = phosphorSoft;
       ctx.lineWidth = 0.7;
-      for (let x = left + advance * 0.4; x < right - 2; x += advance) {
+      for (let x = left + advance * 0.35; x < right - 3; x += advance) {
         ctx.beginPath();
-        ctx.moveTo(x, y - 4.5);
-        ctx.lineTo(x, y - 0.5);
+        ctx.moveTo(x, y - 4.2);
+        ctx.lineTo(x, y + 1.2);
         ctx.stroke();
       }
     }

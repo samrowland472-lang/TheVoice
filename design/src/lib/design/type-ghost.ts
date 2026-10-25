@@ -22,7 +22,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
 
 /**
  * Draw phosphor rhythm guides for selected text layers while type properties are being scrubbed.
- * Horizontal lines mark leading intervals; short vertical ticks approximate tracking density.
+ * Horizontal lines mark leading intervals; tracking density marks follow the measured average advance of each line.
  * Weight ghosts update the measured advance and may thicken the leading lines.
  * Size and leading ghosts add baseline ticks at the left and right of each line.
  * Size and leading ghosts also add a mid-line center tick and intermediate density marks along each baseline.
@@ -143,21 +143,30 @@ export function drawTypeRhythmGhosts(
       }
     }
 
-    // Tracking ticks — approximate density using average advance.
+    // Tracking density marks — spaced by the measured average advance of the line content.
     // Shown while scrubbing tracking or weight (weight changes measured advance).
-    if ((ghost.letterSpacing != null || ghost.fontWeight != null) && lines[0]) {
-      const sample = lines[0].slice(0, 24) || "A";
-      const advance = (measure(sample) / Math.max(1, sample.length)) + (n.letterSpacing || 0);
-      if (advance > 2 / zoom) {
-        ctx.strokeStyle = phosphorSoft;
-        ctx.lineWidth = Math.max(0.8 / zoom, 0.6);
-        const count = Math.min(48, Math.floor(n.w / advance));
-        for (let k = 0; k <= count; k++) {
-          const x = n.x + k * advance;
-          if (x > n.x + n.w) break;
+    // Drawn near each baseline so they follow the actual text density more closely than a single top row.
+    if ((ghost.letterSpacing != null || ghost.fontWeight != null) && lines.length) {
+      ctx.strokeStyle = phosphorSoft;
+      ctx.lineWidth = Math.max(0.75 / zoom, 0.55);
+      const midTick = Math.max(3.2 / zoom, 2.4);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] || "";
+        if (!line) continue;
+        const sample = line.slice(0, 32) || "A";
+        const glyphW = measure(sample);
+        const advance = Math.max(
+          2 / zoom,
+          glyphW / Math.max(1, sample.length) + (n.letterSpacing || 0),
+        );
+        if (advance < 2.2 / zoom) continue;
+        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        // Start slightly inset so the first mark sits after the left edge
+        const startX = n.x + Math.min(advance * 0.35, 8 / zoom);
+        for (let x = startX; x < n.x + n.w - advance * 0.2; x += advance) {
           ctx.beginPath();
-          ctx.moveTo(x, n.y + startY);
-          ctx.lineTo(x, n.y + startY + tickH);
+          ctx.moveTo(x, y - midTick);
+          ctx.lineTo(x, y + midTick * 0.4);
           ctx.stroke();
         }
       }
