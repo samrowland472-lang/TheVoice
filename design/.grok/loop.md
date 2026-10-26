@@ -52,8 +52,10 @@
 
 - Type inspector Rhythm strip matches the canvas: when the measured sample is short (≤8 characters) it draws per-glyph ticks instead of average spacing.
 
+- Type rhythm overlay now has a Glyph toggle (persisted in localStorage) that shows per-glyph advance ticks independently of line length. When on, ticks are drawn for lines up to 32 glyphs (average spacing beyond that); when off, average spacing is used for all lines. The Type inspector Rhythm strip includes the same toggle and matches the canvas.
+
 ## Iteration
-2026-10-26 04:15 GMT — Path point Len toggle shows live tangent length numbers on the canvas while scrubbing or focusing in/out handles. Preference persists. Verified typecheck, build, and browser smoke.
+2026-10-26 07:05 GMT — Type rhythm overlay Glyph toggle lets you show or hide per-glyph ticks independently of line length. Preference persists. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: optional toggle to show or hide per-glyph ticks independently of line length.
 - Path point inspector: show both in and out lengths at once when the anchor is selected.
+- Layers panel: optional keyboard shortcut to cycle type-strip focus (size → weight → tracking → leading).

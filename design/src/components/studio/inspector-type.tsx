@@ -8,6 +8,7 @@ import { applyTypeGhost } from "@/lib/design/type-ghost";
 import type { Align, DesignNode, ImageNode, TextNode } from "@/lib/design/types";
 import { Field } from "./inspector-parts";
 import { NumField } from "./num-field";
+import { cn } from "@/lib/utils";
 
 export function TextFields({ node, hideType = false }: { node: TextNode; hideType?: boolean }) {
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -101,6 +102,8 @@ export function CopyMeter({ text }: { text: string }) {
 export function TypeRhythmPreview({ node }: { node: TextNode }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const typeGhost = useDesign((s) => s.typeGhost);
+  const showPerGlyphTicks = useDesign((s) => s.showPerGlyphTicks);
+  const setShowPerGlyphTicks = useDesign((s) => s.setShowPerGlyphTicks);
   const ghosted = applyTypeGhost(node, typeGhost);
 
   useEffect(() => {
@@ -170,17 +173,19 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
     }
 
     // Tracking / weight density marks — spaced by measured average advance of a sample
-    // For short samples (≤8) draw per-glyph ticks instead so the strip matches the canvas on headlines.
+    // or per-glyph when the preference is on (independent of sample length, capped for the strip).
     if (typeGhost?.letterSpacing != null || typeGhost?.fontWeight != null) {
       ctx.save();
       ctx.font = `${ghosted.fontWeight} ${Math.min(size, 28)}px ${ghosted.fontFamily}`;
       ctx.letterSpacing = "0px";
-      const sample = (node.text || "Type").slice(0, 16) || "A";
+      const sample = (node.text || "Type").slice(0, 24) || "A";
       const tracking = ghosted.letterSpacing || 0;
       const SHORT = 8;
+      const PER_GLYPH_MAX = 24;
+      const usePerGlyph = showPerGlyphTicks ? sample.length <= PER_GLYPH_MAX : sample.length <= SHORT;
       ctx.strokeStyle = phosphorSoft;
       ctx.lineWidth = 0.7;
-      if (sample.length <= SHORT) {
+      if (usePerGlyph) {
         let cum = 0;
         for (let g = 0; g < sample.length; g++) {
           const chW = ctx.measureText(sample[g]).width;
@@ -208,11 +213,25 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
       }
       ctx.restore();
     }
-  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight]);
+  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks]);
 
   return (
     <div className="mt-2">
-      <div className="mb-1 text-[10px] text-ink-dim">Rhythm</div>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="text-[10px] text-ink-dim">Rhythm</div>
+        <button
+          type="button"
+          className={cn(
+            "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+            showPerGlyphTicks ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+          )}
+          aria-pressed={showPerGlyphTicks}
+          title="Show per-glyph ticks on the canvas and rhythm strip (independent of line length)"
+          onClick={() => setShowPerGlyphTicks(!showPerGlyphTicks)}
+        >
+          Glyph
+        </button>
+      </div>
       <canvas
         ref={canvasRef}
         className="w-full max-w-[220px] rounded-[6px] border border-border/50 bg-ground/30"

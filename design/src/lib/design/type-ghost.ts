@@ -28,12 +28,14 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * Size and leading ghosts also add a mid-line center tick and intermediate density marks along each baseline.
  * Leading density spacing follows the ghosted line height so the vertical rhythm is readable while scrubbing.
  * Tracking ghosts on short lines (≤8 glyphs) draw per-glyph advance ticks aligned to the text.
+ * When preferPerGlyph is true, per-glyph ticks are used for all lines up to a safe length, independent of the short-line cutoff.
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
   ghost: NonNullable<TypeGhost>,
   zoom: number,
+  preferPerGlyph = true,
 ) {
   const phosphor = "rgba(63,198,255,0.85)";
   const phosphorSoft = "rgba(63,198,255,0.35)";
@@ -147,21 +149,23 @@ export function drawTypeRhythmGhosts(
     // Tracking density marks — spaced by the measured average advance of the line content.
     // Shown while scrubbing tracking or weight (weight changes measured advance).
     // Drawn near each baseline so they follow the actual text density more closely than a single top row.
-    // For short lines (≤8 glyphs) draw optional per-glyph advance ticks at each character’s cumulative position
-    // (aligned to the line’s text-align) so tracking rhythm is precise on headlines and short copy.
+    // Per-glyph advance ticks (aligned to the line’s text-align) are used for short lines by default,
+    // or for any line up to 32 glyphs when preferPerGlyph is on, so the rhythm stays precise independent of length.
     if ((ghost.letterSpacing != null || ghost.fontWeight != null) && lines.length) {
       ctx.strokeStyle = phosphorSoft;
       ctx.lineWidth = Math.max(0.75 / zoom, 0.55);
       const midTick = Math.max(3.2 / zoom, 2.4);
       const SHORT = 8;
+      const PER_GLYPH_MAX = 32;
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i] || "";
         if (!line) continue;
         const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
         const tracking = n.letterSpacing || 0;
+        const usePerGlyph = preferPerGlyph ? line.length <= PER_GLYPH_MAX : line.length <= SHORT;
 
-        if (line.length <= SHORT) {
-          // Per-glyph advance ticks for short lines
+        if (usePerGlyph) {
+          // Per-glyph advance ticks
           const lineW = measureTracked(line, measure, tracking);
           let startX = n.x;
           if (n.align === "center") startX = n.x + Math.max(0, (n.w - lineW) / 2);
