@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path point inspector now has a Len toggle (persisted in localStorage) that shows live phosphor tangent length numbers on the canvas next to the active in/out handle while it is focused or dragged. Numbers follow the measured handle length and update as the arm changes.
 - Type quick strip collapses and expands with Shift+T when the Layers panel is focused (no modifier conflicts). The chevron button title mentions the shortcut. Collapse state still persists in localStorage.
 - Type quick strip is now collapsible (phosphor chevron, state remembered in localStorage). When collapsed, the size / weight / tracking / leading / family mini badges stay available on hover or focus of the strip. Layer-row type badges are hover-only (always visible when the layer is selected), independent of strip state.
 - Type quick strip Mixed badges now open their editor starting from the last value applied to that property (size, weight, tracking, leading, family). Falls back to the last selected node when no prior value has been set this session. Mixed labels remain only on the specific properties that differ.
@@ -52,7 +53,7 @@
 - Type inspector Rhythm strip matches the canvas: when the measured sample is short (≤8 characters) it draws per-glyph ticks instead of average spacing.
 
 ## Iteration
-2026-10-26 00:11 GMT — Type quick strip now toggles with Shift+T while focus is inside the Layers panel. Chevron title notes the shortcut. Verified typecheck, build, and browser smoke.
+2026-10-26 04:15 GMT — Path point Len toggle shows live tangent length numbers on the canvas while scrubbing or focusing in/out handles. Preference persists. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path point inspector: optional live tangent length numbers on the canvas while scrubbing in/out handles.
 - Type rhythm overlay: optional toggle to show or hide per-glyph ticks independently of line length.
+- Path point inspector: show both in and out lengths at once when the anchor is selected.

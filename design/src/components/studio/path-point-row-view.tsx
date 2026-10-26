@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
+import { useDesign } from "@/lib/design/store";
 import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint } from "@/lib/design/path-actions";
 import { mirrorHandle } from "@/lib/design/path-curve";
 import {
@@ -176,6 +177,8 @@ export function PointRow({
   const key = hole == null ? `path-${index}` : `hole-${hole}-${index}`;
   const label = hole == null ? `point ${index + 1}` : `hole ${hole + 1} point ${index + 1}`;
   const [mirror, setMirror] = useState(false);
+  const showTangentLengths = useDesign((s) => s.showTangentLengths);
+  const setShowTangentLengths = useDesign((s) => s.setShowTangentLengths);
 
   function highlightArm(arm: "in" | "out" | "anchor") {
     setPathEditHit({ index, arm, hole });
@@ -335,6 +338,7 @@ export function PointRow({
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles" onClick={toggleMirror}>Mirror</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>

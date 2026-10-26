@@ -55,6 +55,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   paletteOpen: false,
   printMarks: false,
   pathEditHit: null,
+  showTangentLengths: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-tangent-lengths") !== "0",
   booleanPreview: null,
   guideSelection: [],
   guideLooks: { x: {}, y: {} },
@@ -95,6 +96,10 @@ export const useDesign = create<any>((set: any, get: any) => ({
     set({ doc: next, dirty: false, index: loadIndex() });
   },
   setPresent: (present) => set({ present }),
+  setShowTangentLengths: (v: boolean) => {
+    if (typeof localStorage !== "undefined") localStorage.setItem("voice-design-tangent-lengths", v ? "1" : "0");
+    set({ showTangentLengths: v });
+  },
   togglePresent: () => set({ present: !get().present, paletteOpen: false }),
   makeCampaign: () => {
     const { doc } = get();

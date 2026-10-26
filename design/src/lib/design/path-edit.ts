@@ -88,6 +88,7 @@ export function drawPathNodeTangents(
   n: PathNode,
   zoom: number,
   active?: PathEditHit | null,
+  showLengths = false,
 ) {
   const c = nodeCenter(n);
   ctx.save();
@@ -97,7 +98,7 @@ export function drawPathNodeTangents(
     ctx.translate(-c.x, -c.y);
   }
   const outerActive = active && active.hole == null ? active : null;
-  drawPathTangents(ctx, n.x, n.y, n.points, zoom, outerActive, "phosphor");
+  drawPathTangents(ctx, n.x, n.y, n.points, zoom, outerActive, "phosphor", showLengths);
   const holes = n.holes ?? [];
   for (let h = 0; h < holes.length; h++) {
     const holeActive = active && active.hole === h ? { ...active, hole: undefined } : null;
@@ -113,7 +114,7 @@ export function drawPathNodeTangents(
       ctx.stroke();
       ctx.restore();
     }
-    drawPathTangents(ctx, n.x, n.y, holes[h]!, zoom, holeActive, "cool");
+    drawPathTangents(ctx, n.x, n.y, holes[h]!, zoom, holeActive, "cool", showLengths);
   }
   ctx.restore();
 }
