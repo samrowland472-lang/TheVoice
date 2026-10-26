@@ -56,8 +56,10 @@
 
 - Path point inspector Len toggle now also shows both in and out tangent lengths at once on the canvas when the anchor is selected (in addition to the focused/dragged handle). Lengths update live with the measured handle arms.
 
+- Path point inspector Mirror state is now remembered per point (node + index + hole) across reloads via localStorage. Toggling Mirror on a point keeps it on when you return to that point, and the opposite handle stays mirrored while you edit either arm.
+
 ## Iteration
-2026-10-26 11:05 GMT — Path point inspector shows both in and out lengths when the anchor is selected (with Len on). Verified typecheck, build, and browser smoke.
+2026-10-26 14:05 GMT — Path point inspector Mirror state remembered per point via localStorage. Verified typecheck, build, and browser smoke.
 ## Next recommended
 - Layers panel: optional keyboard shortcut to cycle type-strip focus (size → weight → tracking → leading).
-- Path point inspector: persist Mirror state per point or for the session.
+- Path point inspector: show current tangent length numbers in the point row (not only on canvas) when Len is on.

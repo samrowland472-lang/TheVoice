@@ -57,6 +57,13 @@ export const useDesign = create<any>((set: any, get: any) => ({
   pathEditHit: null,
   showTangentLengths: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-tangent-lengths") !== "0",
   showPerGlyphTicks: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-per-glyph-ticks") !== "0",
+  mirrorPoints: (() => {
+    if (typeof localStorage === "undefined") return {};
+    try {
+      const raw = localStorage.getItem("voice-design-mirror-points");
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  })(),
   booleanPreview: null,
   guideSelection: [],
   guideLooks: { x: {}, y: {} },
@@ -104,6 +111,14 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setShowPerGlyphTicks: (v: boolean) => {
     if (typeof localStorage !== "undefined") localStorage.setItem("voice-design-per-glyph-ticks", v ? "1" : "0");
     set({ showPerGlyphTicks: v });
+  },
+  setMirrorPoint: (key: string, v: boolean) => {
+    const prev = get().mirrorPoints || {};
+    const next = { ...prev, [key]: v };
+    if (typeof localStorage !== "undefined") {
+      try { localStorage.setItem("voice-design-mirror-points", JSON.stringify(next)); } catch {}
+    }
+    set({ mirrorPoints: next });
   },
   togglePresent: () => set({ present: !get().present, paletteOpen: false }),
   makeCampaign: () => {
