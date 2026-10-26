@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
 import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
@@ -831,13 +831,25 @@ function TypeQuickStrip() {
   const [lastUsed, setLastUsed] = useState<TypeLastUsed>(loadTypeLastUsed);
   const [flashProp, setFlashProp] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(loadTypeStripCollapsed);
-  const toggleCollapsed = () => {
+  const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
       saveTypeStripCollapsed(next);
       return next;
     });
-  };
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.shiftKey && e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey && !e.altKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (!t || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+      if (!t.closest("[data-layers-panel]")) return;
+      e.preventDefault();
+      toggleCollapsed();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [toggleCollapsed]);
   const triggerFlash = (prop: string) => {
     setFlashProp(prop);
     window.setTimeout(() => setFlashProp(null), 700);
@@ -880,6 +892,7 @@ function TypeQuickStrip() {
           className="flex items-center gap-1 hover:text-phosphor"
           aria-label={collapsed ? "Expand type strip" : "Collapse type strip"}
           aria-expanded={!collapsed}
+          title="Shift+T when Layers panel is focused"
           onClick={toggleCollapsed}
         >
           <ChevronRight className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
