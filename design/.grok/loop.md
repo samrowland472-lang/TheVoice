@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path point inspector Len toggle now also shows live rounded tangent length numbers in the point row next to the In and Out handle fields (phosphor tabular mono). Lengths match the canvas numbers and update as handles change. Len button tooltip mentions both canvas and row.
 - Path point inspector now has a Len toggle (persisted in localStorage) that shows live phosphor tangent length numbers on the canvas next to the active in/out handle while it is focused or dragged. Numbers follow the measured handle length and update as the arm changes.
 - Type quick strip collapses and expands with Shift+T when the Layers panel is focused (no modifier conflicts). The chevron button title mentions the shortcut. Collapse state still persists in localStorage.
 - Type quick strip is now collapsible (phosphor chevron, state remembered in localStorage). When collapsed, the size / weight / tracking / leading / family mini badges stay available on hover or focus of the strip. Layer-row type badges are hover-only (always visible when the layer is selected), independent of strip state.
@@ -59,7 +60,7 @@
 - Path point inspector Mirror state is now remembered per point (node + index + hole) across reloads via localStorage. Toggling Mirror on a point keeps it on when you return to that point, and the opposite handle stays mirrored while you edit either arm.
 
 ## Iteration
-2026-10-26 14:05 GMT — Path point inspector Mirror state remembered per point via localStorage. Verified typecheck, build, and browser smoke.
+2026-10-26 18:15 GMT — Path point inspector Len toggle shows live tangent length numbers in the point row next to In/Out fields. Verified typecheck, build, and browser smoke.
 ## Next recommended
 - Layers panel: optional keyboard shortcut to cycle type-strip focus (size → weight → tracking → leading).
-- Path point inspector: show current tangent length numbers in the point row (not only on canvas) when Len is on.
+- Path point inspector: optional keyboard nudge for selected handle length while Len is on.

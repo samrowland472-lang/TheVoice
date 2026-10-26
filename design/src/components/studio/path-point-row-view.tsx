@@ -283,6 +283,8 @@ export function PointRow({
     }
   };
   const hasHandles = Boolean(point.in || point.out);
+  const inLen = point.in ? Math.round(Math.hypot(point.in.x, point.in.y)) : 0;
+  const outLen = point.out ? Math.round(Math.hypot(point.out.x, point.out.y)) : 0;
   return (
     <div data-point={key} className={cn("rounded-[8px] border px-2 py-1.5", active ? "border-phosphor/60 bg-phosphor/10" : "border-border")}>
       <button type="button" className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim" onClick={() => setPathEditHit({ index, arm: "anchor", hole })}>
@@ -296,7 +298,7 @@ export function PointRow({
       {hasHandles && (
         <div className="mt-1 space-y-1 text-[9px] text-ink-dim">
           <div className="font-mono uppercase tracking-wide">Handles</div>
-          <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-1">
+          <div className={cn("grid items-center gap-1", showTangentLengths ? "grid-cols-[auto_1fr_1fr_auto]" : "grid-cols-[auto_1fr_1fr]")}>
             <span className="font-mono">In</span>
             <NumField
               className="field font-mono text-[11px]"
@@ -314,8 +316,11 @@ export function PointRow({
               onFocus={() => highlightArm("in")}
               onCommit={(n) => commitHandle("in", "y", n)}
             />
+            {showTangentLengths && (
+              <span className="font-mono text-[10px] text-phosphor tabular-nums" title="In tangent length">{inLen}</span>
+            )}
           </div>
-          <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-1">
+          <div className={cn("grid items-center gap-1", showTangentLengths ? "grid-cols-[auto_1fr_1fr_auto]" : "grid-cols-[auto_1fr_1fr]")}>
             <span className="font-mono">Out</span>
             <NumField
               className="field font-mono text-[11px]"
@@ -333,6 +338,9 @@ export function PointRow({
               onFocus={() => highlightArm("out")}
               onCommit={(n) => commitHandle("out", "y", n)}
             />
+            {showTangentLengths && (
+              <span className="font-mono text-[10px] text-phosphor tabular-nums" title="Out tangent length">{outLen}</span>
+            )}
           </div>
         </div>
       )}
@@ -340,7 +348,7 @@ export function PointRow({
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles (remembered for this point)" onClick={toggleMirror}>Mirror</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>
