@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Layers Type quick strip: Alt+T cycles focus (size → weight → tracking → leading) while the Layers panel is focused. Opens the next number editor pre-filled, commits the previous field, and flashes on remembered values. Tooltip mentions the shortcut.
 - Path point inspector Len toggle now also shows live rounded tangent length numbers in the point row next to the In and Out handle fields (phosphor tabular mono). Lengths match the canvas numbers and update as handles change. Len button tooltip mentions both canvas and row.
 - Path point inspector now has a Len toggle (persisted in localStorage) that shows live phosphor tangent length numbers on the canvas next to the active in/out handle while it is focused or dragged. Numbers follow the measured handle length and update as the arm changes.
 - Type quick strip collapses and expands with Shift+T when the Layers panel is focused (no modifier conflicts). The chevron button title mentions the shortcut. Collapse state still persists in localStorage.
@@ -60,7 +61,7 @@
 - Path point inspector Mirror state is now remembered per point (node + index + hole) across reloads via localStorage. Toggling Mirror on a point keeps it on when you return to that point, and the opposite handle stays mirrored while you edit either arm.
 
 ## Iteration
-2026-10-26 18:15 GMT — Path point inspector Len toggle shows live tangent length numbers in the point row next to In/Out fields. Verified typecheck, build, and browser smoke.
+2026-10-26 22:05 GMT — Layers Type quick strip: Alt+T (while Layers panel focused) cycles focus through size → weight → tracking → leading number editors. Commits the open field, opens the next pre-filled from last-used or current value, and flashes when memory is applied. Tooltip updated. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Layers panel: optional keyboard shortcut to cycle type-strip focus (size → weight → tracking → leading).
 - Path point inspector: optional keyboard nudge for selected handle length while Len is on.
+- Type strip: optional Shift+Alt+T to cycle in reverse, or include family in the cycle.

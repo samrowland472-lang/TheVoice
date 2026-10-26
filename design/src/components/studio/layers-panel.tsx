@@ -850,6 +850,21 @@ function TypeQuickStrip() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [toggleCollapsed]);
+
+  const cycleFocusRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.altKey && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "t")) return;
+      const t = e.target as HTMLElement | null;
+      if (!t || !t.closest("[data-layers-panel]")) return;
+      if ((t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) && !t.closest("[data-type-strip]")) return;
+      e.preventDefault();
+      cycleFocusRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   const triggerFlash = (prop: string) => {
     setFlashProp(prop);
     window.setTimeout(() => setFlashProp(null), 700);
@@ -861,6 +876,7 @@ function TypeQuickStrip() {
       return next;
     });
   };
+  cycleFocusRef.current = () => {};
   if (!doc || selection.length === 0) return null;
   const textNodes = selection
     .map((id) => doc.nodes.find((n) => n.id === id))
@@ -884,15 +900,72 @@ function TypeQuickStrip() {
       s.commit();
     }
   };
+
+  cycleFocusRef.current = () => {
+    const order = ["size", "weight", "track", "lead"] as const;
+    let current = -1;
+    if (editingSize) current = 0;
+    else if (editingWeight) current = 1;
+    else if (editingTrack) current = 2;
+    else if (editingLead) current = 3;
+    const next = order[(current + 1) % order.length];
+
+    if (editingSize) {
+      const n = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+      updateNodes(ids, { fontSize: n } as Partial<DesignNode>, true);
+      remember("size", n);
+    } else if (editingWeight) {
+      const n = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+      updateNodes(ids, { fontWeight: n } as Partial<DesignNode>, true);
+      remember("weight", n);
+    } else if (editingTrack) {
+      const n = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+      updateNodes(ids, { letterSpacing: n } as Partial<DesignNode>, true);
+      remember("track", n);
+    } else if (editingLead) {
+      const n = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+      updateNodes(ids, { lineHeight: n } as Partial<DesignNode>, true);
+      remember("lead", n);
+    }
+
+    setEditingSize(false);
+    setEditingWeight(false);
+    setEditingTrack(false);
+    setEditingLead(false);
+    setEditingFamily(false);
+
+    if (next === "size") {
+      const start = lastUsed.size ?? Math.round(size);
+      setSizeDraft(String(start));
+      setEditingSize(true);
+      if (lastUsed.size != null) triggerFlash("size");
+    } else if (next === "weight") {
+      const start = lastUsed.weight ?? Math.round(weight);
+      setWeightDraft(String(start));
+      setEditingWeight(true);
+      if (lastUsed.weight != null) triggerFlash("weight");
+    } else if (next === "track") {
+      const start = lastUsed.track ?? Math.round(tracking * 4) / 4;
+      setTrackDraft(String(start));
+      setEditingTrack(true);
+      if (lastUsed.track != null) triggerFlash("track");
+    } else if (next === "lead") {
+      const start = lastUsed.lead ?? Math.round(leading * 50) / 50;
+      setLeadDraft(String(start));
+      setEditingLead(true);
+      if (lastUsed.lead != null) triggerFlash("lead");
+    }
+  };
+
   return (
-    <div className={cn("group/strip mt-2 rounded-[8px] border border-border bg-surface px-2 transition-colors", collapsed ? "py-1" : "py-1.5")}>
+    <div data-type-strip className={cn("group/strip mt-2 rounded-[8px] border border-border bg-surface px-2 transition-colors", collapsed ? "py-1" : "py-1.5")}>
       <div className={cn("flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase", !collapsed && "mb-1")}>
         <button
           type="button"
           className="flex items-center gap-1 hover:text-phosphor"
           aria-label={collapsed ? "Expand type strip" : "Collapse type strip"}
           aria-expanded={!collapsed}
-          title="Shift+T when Layers panel is focused"
+          title="Shift+T collapse · Alt+T cycle focus (size → weight → tracking → leading)"
           onClick={toggleCollapsed}
         >
           <ChevronRight className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
