@@ -1,7 +1,8 @@
-import { type KeyboardEvent } from "react";
+import { type KeyboardEvent, useEffect } from "react";
 import { useDesign } from "@/lib/design/store";
 import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint } from "@/lib/design/path-actions";
 import { mirrorHandle } from "@/lib/design/path-curve";
+import { isPath } from "@/lib/design/types";
 import {
   pickNextHoleFirstPointXTabTarget,
   pickNextHoleHeaderTabTarget,
@@ -181,6 +182,45 @@ export function PointRow({
   const setMirrorPoint = useDesign((s) => s.setMirrorPoint);
   const showTangentLengths = useDesign((s) => s.showTangentLengths);
   const setShowTangentLengths = useDesign((s) => s.setShowTangentLengths);
+  const pathEditHit = useDesign((s) => s.pathEditHit);
+
+  useEffect(() => {
+    if (!showTangentLengths) return;
+    const hit = pathEditHit;
+    if (!hit || hit.index !== index || (hit.hole ?? undefined) !== hole || (hit.arm !== "in" && hit.arm !== "out")) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown" && e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const step = e.shiftKey ? 10 : 1;
+      const dir = e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 : -1;
+      const arm = hit.arm as "in" | "out";
+      const s = useDesign.getState();
+      const node = s.doc?.nodes.find((n) => n.id === nodeId);
+      if (!node || !isPath(node)) return;
+      const ring = hole == null ? node.points : (node.holes?.[hole] ?? []);
+      const pt = ring[index];
+      if (!pt) return;
+      const cur = arm === "in" ? (pt.in ?? { x: 0, y: 0 }) : (pt.out ?? { x: 0, y: 0 });
+      const len = Math.hypot(cur.x, cur.y);
+      if (len < 0.5) return;
+      const nextLen = Math.max(0, len + dir * step);
+      const scale = nextLen / len;
+      const next = { x: cur.x * scale, y: cur.y * scale };
+      const mir = !!(s.mirrorPoints && s.mirrorPoints[mirrorKey]);
+      if (mir) {
+        const mirrored = mirrorHandle(next);
+        if (arm === "in") setPathPointHandles(nodeId, index, { in: next, out: mirrored }, hole);
+        else setPathPointHandles(nodeId, index, { out: next, in: mirrored }, hole);
+      } else {
+        setPathPointHandles(nodeId, index, arm === "in" ? { in: next } : { out: next }, hole);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showTangentLengths, pathEditHit, index, hole, nodeId, mirrorKey]);
 
   function highlightArm(arm: "in" | "out" | "anchor") {
     setPathEditHit({ index, arm, hole });
@@ -348,7 +388,7 @@ export function PointRow({
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles (remembered for this point)" onClick={toggleMirror}>Mirror</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row. Arrow keys nudge the selected handle length (Shift for 10)" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>
