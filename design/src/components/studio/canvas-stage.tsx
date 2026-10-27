@@ -25,10 +25,10 @@ import {
   unspinPoint,
 } from "@/lib/design/group-transform";
 import { hitTop } from "@/lib/design/hit";
-import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit } from "@/lib/design/path-actions";
+import { appendPenPoint, editPathHit, knifeCutStroke, setPathEditHit, setPathPointHandles } from "@/lib/design/path-actions";
 import { knifePreviewLobe, knifeStrokePreview } from "@/lib/design/path-cut";
-import { drawPathNodeTangents, hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
-import { hasHandle } from "@/lib/design/path-curve";
+import { drawPathNodeTangents, hitPathNode, hitPathLengthLabel, pathWorldToLocal } from "@/lib/design/path-edit";
+import { hasHandle, mirrorHandle } from "@/lib/design/path-curve";
 import { tracePath } from "@/lib/design/path-curve";
 import { drawDocument, fitBoxViewport, fitViewport, screenToDoc } from "@/lib/design/render";
 import { drawStrokeGhosts } from "@/lib/design/stroke-ghost";
@@ -113,6 +113,14 @@ export function CanvasStage() {
   >(null);
   const guidesRef = useRef<GuideSet>({ x: [], y: [], spaces: [] });
   const [hoverTick, setHoverTick] = useState(0);
+  const [lengthEditor, setLengthEditor] = useState<{
+    index: number;
+    arm: "in" | "out";
+    hole?: number;
+    screenX: number;
+    screenY: number;
+    value: number;
+  } | null>(null);
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
   const viewIntent = useDesign((s) => s.viewIntent);
@@ -527,6 +535,29 @@ export function CanvasStage() {
     }
     const s = useDesign.getState();
     const d = clientDoc(e);
+    if (s.showTangentLengths && s.selection.length === 1) {
+      const selected = s.doc?.nodes.find((n) => n.id === s.selection[0]);
+      if (selected && isPath(selected)) {
+        const hit = hitPathLengthLabel(selected, d.x, d.y, s.viewport.zoom, s.pathEditHit);
+        if (hit) {
+          e.preventDefault();
+          e.stopPropagation();
+          setPathEditHit({ index: hit.index, arm: hit.arm, hole: hit.hole });
+          const sx = hit.labelX * s.viewport.zoom + s.viewport.x;
+          const sy = hit.labelY * s.viewport.zoom + s.viewport.y;
+          setLengthEditor({
+            index: hit.index,
+            arm: hit.arm,
+            hole: hit.hole,
+            screenX: sx,
+            screenY: sy,
+            value: hit.length,
+          });
+          return;
+        }
+      }
+    }
+    setLengthEditor(null);
     if (s.tool === "knife") {
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -889,6 +920,39 @@ export function CanvasStage() {
     }
   }
 
+  function commitCanvasLength(nextLen: number) {
+    if (!lengthEditor || !doc) return;
+    const selected = doc.nodes.find((n) => n.id === selection[0]);
+    if (!selected || !isPath(selected)) return;
+    const ring = lengthEditor.hole == null ? selected.points : (selected.holes?.[lengthEditor.hole] ?? []);
+    const pt = ring[lengthEditor.index];
+    if (!pt) return;
+    const arm = lengthEditor.arm;
+    const cur = arm === "in" ? (pt.in ?? { x: 0, y: 0 }) : (pt.out ?? { x: 0, y: 0 });
+    const len = Math.hypot(cur.x, cur.y);
+    const target = Math.max(0, nextLen);
+    let next = { x: 0, y: 0 };
+    if (len > 0.001) {
+      const scale = target / len;
+      next = { x: cur.x * scale, y: cur.y * scale };
+    } else if (target > 0) {
+      next = { x: arm === "in" ? -target : target, y: 0 };
+    }
+    const mirrorKey = `${selected.id}:${lengthEditor.hole ?? ""}:${lengthEditor.index}`;
+    const mirror = !!(useDesign.getState().mirrorPoints && useDesign.getState().mirrorPoints[mirrorKey]);
+    if (mirror) {
+      const mirrored = mirrorHandle(next);
+      if (arm === "in") {
+        setPathPointHandles(selected.id, lengthEditor.index, { in: next, out: mirrored }, lengthEditor.hole);
+      } else {
+        setPathPointHandles(selected.id, lengthEditor.index, { out: next, in: mirrored }, lengthEditor.hole);
+      }
+    } else {
+      setPathPointHandles(selected.id, lengthEditor.index, arm === "in" ? { in: next } : { out: next }, lengthEditor.hole);
+    }
+    setLengthEditor(null);
+  }
+
   return (
     <div
       ref={wrapRef}
@@ -900,6 +964,39 @@ export function CanvasStage() {
       onPointerCancel={onPointerUp}
     >
       <canvas ref={mainRef} className="absolute inset-0" />
+      {lengthEditor && !present && (
+        <div
+          className="absolute z-30"
+          style={{ left: lengthEditor.screenX, top: lengthEditor.screenY, transform: "translate(-4px, -50%)" }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <input
+            autoFocus
+            type="text"
+            inputMode="decimal"
+            defaultValue={String(lengthEditor.value)}
+            aria-label={`${lengthEditor.arm} length`}
+            className="h-5 w-12 rounded-[4px] border border-phosphor bg-ground px-1 font-mono text-[11px] text-phosphor outline-none"
+            onBlur={(e) => {
+              const n = Number(e.currentTarget.value);
+              if (Number.isFinite(n)) commitCanvasLength(n);
+              else setLengthEditor(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const n = Number((e.target as HTMLInputElement).value);
+                if (Number.isFinite(n)) commitCanvasLength(n);
+                else setLengthEditor(null);
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setLengthEditor(null);
+              }
+            }}
+          />
+        </div>
+      )}
       <GroupNameChip />
       {!present && (
         <div className="pointer-events-none absolute bottom-3 left-3 select-none text-[10px] tracking-wide text-phosphor/70">
