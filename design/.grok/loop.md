@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path point inspector: length readouts next to In/Out handles are now click-to-edit exact numbers (NumField). Setting a length scales the handle while preserving direction (or seeds a horizontal arm from zero). Mirror is honored. Len tooltip mentions the click-to-edit. Verified typecheck, build, and browser smoke.
 - Path point inspector: while Len is on and a handle (In or Out) is selected, Arrow keys nudge its length by 1 px (Shift for 10). Direction is preserved, mirror is honored, and numbers update live on the canvas and in the row. Len tooltip mentions the shortcut. Verified typecheck, build, and browser smoke.
 - Layers Type quick strip: Alt+T cycles focus (size → weight → tracking → leading) while the Layers panel is focused. Opens the next number editor pre-filled, commits the previous field, and flashes on remembered values. Tooltip mentions the shortcut.
 - Path point inspector Len toggle now also shows live rounded tangent length numbers in the point row next to the In and Out handle fields (phosphor tabular mono). Lengths match the canvas numbers and update as handles change. Len button tooltip mentions both canvas and row.
@@ -62,7 +63,7 @@
 - Path point inspector Mirror state is now remembered per point (node + index + hole) across reloads via localStorage. Toggling Mirror on a point keeps it on when you return to that point, and the opposite handle stays mirrored while you edit either arm.
 
 ## Iteration
-2026-10-27 01:15 GMT — Path point inspector: Arrow-key length nudge for the selected In/Out handle while Len is on (1 px, Shift 10). Preserves direction, respects Mirror, updates live. Tooltip updated. Verified typecheck, build, and browser smoke.
+2026-10-27 05:03 GMT — Path point inspector: click-to-edit exact length numbers next to the Len readouts for In/Out handles. Scales direction, honors Mirror, tooltip updated. Verified typecheck, build, and browser smoke.
 ## Next recommended
 - Type strip: optional Shift+Alt+T to cycle in reverse, or include family in the cycle.
-- Path point inspector: optional click-to-edit exact length number next to the Len readout.
+- Path point inspector: optional click-to-edit exact length number on the canvas readout (in addition to the row).

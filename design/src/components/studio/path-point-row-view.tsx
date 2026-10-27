@@ -246,6 +246,31 @@ export function PointRow({
     highlightArm(arm);
   }
 
+  function commitLength(arm: "in" | "out", nextLen: number) {
+    const cur = arm === "in" ? (point.in ?? { x: 0, y: 0 }) : (point.out ?? { x: 0, y: 0 });
+    const len = Math.hypot(cur.x, cur.y);
+    const target = Math.max(0, nextLen);
+    let next = { x: 0, y: 0 };
+    if (len > 0.001) {
+      const scale = target / len;
+      next = { x: cur.x * scale, y: cur.y * scale };
+    } else if (target > 0) {
+      // Degenerate: give a small horizontal arm so length can be set
+      next = { x: arm === "in" ? -target : target, y: 0 };
+    }
+    if (mirror) {
+      const mirrored = mirrorHandle(next);
+      if (arm === "in") {
+        setPathPointHandles(nodeId, index, { in: next, out: mirrored }, hole);
+      } else {
+        setPathPointHandles(nodeId, index, { out: next, in: mirrored }, hole);
+      }
+    } else {
+      setPathPointHandles(nodeId, index, arm === "in" ? { in: next } : { out: next }, hole);
+    }
+    highlightArm(arm);
+  }
+
   function toggleMirror() {
     const next = !mirror;
     setMirrorPoint(mirrorKey, next);
@@ -357,7 +382,15 @@ export function PointRow({
               onCommit={(n) => commitHandle("in", "y", n)}
             />
             {showTangentLengths && (
-              <span className="font-mono text-[10px] text-phosphor tabular-nums" title="In tangent length">{inLen}</span>
+              <NumField
+                className="field h-5 w-10 px-1 font-mono text-[10px] text-phosphor tabular-nums"
+                value={inLen}
+                min={0}
+                aria-label={`${label} in length`}
+                tabIndex={-1}
+                onFocus={() => highlightArm("in")}
+                onCommit={(n) => commitLength("in", n)}
+              />
             )}
           </div>
           <div className={cn("grid items-center gap-1", showTangentLengths ? "grid-cols-[auto_1fr_1fr_auto]" : "grid-cols-[auto_1fr_1fr]")}>
@@ -379,7 +412,15 @@ export function PointRow({
               onCommit={(n) => commitHandle("out", "y", n)}
             />
             {showTangentLengths && (
-              <span className="font-mono text-[10px] text-phosphor tabular-nums" title="Out tangent length">{outLen}</span>
+              <NumField
+                className="field h-5 w-10 px-1 font-mono text-[10px] text-phosphor tabular-nums"
+                value={outLen}
+                min={0}
+                aria-label={`${label} out length`}
+                tabIndex={-1}
+                onFocus={() => highlightArm("out")}
+                onCommit={(n) => commitLength("out", n)}
+              />
             )}
           </div>
         </div>
@@ -388,7 +429,7 @@ export function PointRow({
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
         <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles (remembered for this point)" onClick={toggleMirror}>Mirror</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row. Arrow keys nudge the selected handle length (Shift for 10)" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row. Click a length to set it exactly. Arrow keys nudge the selected handle length (Shift for 10)" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>
