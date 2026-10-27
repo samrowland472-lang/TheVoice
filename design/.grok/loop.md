@@ -62,8 +62,10 @@
 
 - Path point inspector Mirror state is now remembered per point (node + index + hole) across reloads via localStorage. Toggling Mirror on a point keeps it on when you return to that point, and the opposite handle stays mirrored while you edit either arm.
 
+- Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
+
 ## Iteration
-2026-10-27 05:03 GMT — Path point inspector: click-to-edit exact length numbers next to the Len readouts for In/Out handles. Scales direction, honors Mirror, tooltip updated. Verified typecheck, build, and browser smoke.
+2026-10-27 08:05 GMT — Type strip: Alt+T cycle includes family; Shift+Alt+T reverses. Tooltip updated. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type strip: optional Shift+Alt+T to cycle in reverse, or include family in the cycle.
 - Path point inspector: optional click-to-edit exact length number on the canvas readout (in addition to the row).
+- Type rhythm overlay: optional glyph density scale or weight-specific tick thickness.

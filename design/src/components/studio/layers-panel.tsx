@@ -851,15 +851,15 @@ function TypeQuickStrip() {
     return () => document.removeEventListener("keydown", onKey);
   }, [toggleCollapsed]);
 
-  const cycleFocusRef = useRef<() => void>(() => {});
+  const cycleFocusRef = useRef<(reverse?: boolean) => void>(() => {});
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.altKey && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "t")) return;
+      if (!(e.altKey && !e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "t")) return;
       const t = e.target as HTMLElement | null;
       if (!t || !t.closest("[data-layers-panel]")) return;
       if ((t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) && !t.closest("[data-type-strip]")) return;
       e.preventDefault();
-      cycleFocusRef.current();
+      cycleFocusRef.current(e.shiftKey);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -901,14 +901,16 @@ function TypeQuickStrip() {
     }
   };
 
-  cycleFocusRef.current = () => {
-    const order = ["size", "weight", "track", "lead"] as const;
+  cycleFocusRef.current = (reverse = false) => {
+    const order = ["size", "weight", "track", "lead", "family"] as const;
     let current = -1;
     if (editingSize) current = 0;
     else if (editingWeight) current = 1;
     else if (editingTrack) current = 2;
     else if (editingLead) current = 3;
-    const next = order[(current + 1) % order.length];
+    else if (editingFamily) current = 4;
+    const delta = reverse ? -1 : 1;
+    const next = order[(current + delta + order.length) % order.length];
 
     if (editingSize) {
       const n = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
@@ -927,6 +929,7 @@ function TypeQuickStrip() {
       updateNodes(ids, { lineHeight: n } as Partial<DesignNode>, true);
       remember("lead", n);
     }
+    // family commits on select change; cycling away just closes it
 
     setEditingSize(false);
     setEditingWeight(false);
@@ -954,6 +957,9 @@ function TypeQuickStrip() {
       setLeadDraft(String(start));
       setEditingLead(true);
       if (lastUsed.lead != null) triggerFlash("lead");
+    } else if (next === "family") {
+      setEditingFamily(true);
+      if (familyMixed && lastUsed.family) triggerFlash("family");
     }
   };
 
@@ -965,7 +971,7 @@ function TypeQuickStrip() {
           className="flex items-center gap-1 hover:text-phosphor"
           aria-label={collapsed ? "Expand type strip" : "Collapse type strip"}
           aria-expanded={!collapsed}
-          title="Shift+T collapse · Alt+T cycle focus (size → weight → tracking → leading)"
+          title="Shift+T collapse · Alt+T cycle focus (size → weight → tracking → leading → family) · Shift+Alt+T reverse"
           onClick={toggleCollapsed}
         >
           <ChevronRight className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
