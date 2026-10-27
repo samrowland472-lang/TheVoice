@@ -106,6 +106,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
   const setShowPerGlyphTicks = useDesign((s) => s.setShowPerGlyphTicks);
   const showWeightTickThickness = useDesign((s) => s.showWeightTickThickness);
   const setShowWeightTickThickness = useDesign((s) => s.setShowWeightTickThickness);
+  const showGlyphDensityScale = useDesign((s) => s.showGlyphDensityScale);
+  const setShowGlyphDensityScale = useDesign((s) => s.setShowGlyphDensityScale);
   const ghosted = applyTypeGhost(node, typeGhost);
 
   useEffect(() => {
@@ -159,9 +161,12 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
     // Density marks — prefer leading ghost spacing, else size
     const size = ghosted.fontSize;
     const lineH = ghosted.lineHeight * size;
+    const densityFactor = showGlyphDensityScale
+      ? Math.max(0.55, Math.min(2.4, Math.sqrt(Math.max(6, size) / 16)))
+      : 1;
     const densityStep = typeGhost?.lineHeight != null
-      ? Math.max(lineH * 0.42, 11)
-      : Math.max(size * 0.55, 9);
+      ? Math.max(lineH * 0.42 / densityFactor, 11)
+      : Math.max(size * 0.55 / densityFactor, 9);
     if (densityStep > 5 && densityStep < (right - left) * 0.42) {
       ctx.strokeStyle = phosphorSoft;
       ctx.lineWidth = 0.75;
@@ -209,7 +214,7 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
         const glyphW = ctx.measureText(sample).width;
         const advance = Math.max(
           6,
-          glyphW / Math.max(1, sample.length) + tracking * 0.85,
+          (glyphW / Math.max(1, sample.length) + tracking * 0.85) / densityFactor,
         );
         for (let x = left + advance * 0.35; x < right - 3; x += advance) {
           ctx.beginPath();
@@ -220,7 +225,7 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
       }
       ctx.restore();
     }
-  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks, showWeightTickThickness]);
+  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks, showWeightTickThickness, showGlyphDensityScale]);
 
   return (
     <div className="mt-2">
@@ -238,6 +243,18 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
             onClick={() => setShowWeightTickThickness(!showWeightTickThickness)}
           >
             Wt
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              showGlyphDensityScale ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={showGlyphDensityScale}
+            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip"
+            onClick={() => setShowGlyphDensityScale(!showGlyphDensityScale)}
+          >
+            Den
           </button>
           <button
             type="button"

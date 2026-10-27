@@ -30,6 +30,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * Tracking ghosts on short lines (≤8 glyphs) draw per-glyph advance ticks aligned to the text.
  * When preferPerGlyph is true, per-glyph ticks are used for all lines up to a safe length, independent of the short-line cutoff.
  * When weightTickThickness is true, density and per-glyph ticks scale thickness and height with the ghosted font weight.
+ * When glyphDensityScale is true, intermediate density and average-advance tick spacing scale with the ghosted font size (denser for larger type).
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -38,6 +39,7 @@ export function drawTypeRhythmGhosts(
   zoom: number,
   preferPerGlyph = true,
   weightTickThickness = true,
+  glyphDensityScale = true,
 ) {
   const phosphor = "rgba(63,198,255,0.85)";
   const phosphorSoft = "rgba(63,198,255,0.35)";
@@ -46,6 +48,9 @@ export function drawTypeRhythmGhosts(
   for (const raw of nodes) {
     if (!isText(raw)) continue;
     const n = applyTypeGhost(raw, ghost);
+    const densityFactor = glyphDensityScale
+      ? Math.max(0.55, Math.min(2.4, Math.sqrt(Math.max(6, n.fontSize) / 16)))
+      : 1;
     const measure = (s: string) => {
       ctx.save();
       ctx.font = `${n.fontWeight} ${n.fontSize}px ${n.fontFamily}`;
@@ -93,7 +98,7 @@ export function drawTypeRhythmGhosts(
     // Size ghosts: mid-line center tick + intermediate density marks along the baseline
     if (ghost.fontSize != null) {
       const midTick = Math.max(5 / zoom, 3.5);
-      const densityStep = Math.max(n.fontSize * 0.55, 8 / zoom);
+      const densityStep = Math.max(n.fontSize * 0.55 / densityFactor, 8 / zoom);
       ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
       for (let i = 0; i < lines.length; i++) {
         const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
@@ -123,7 +128,7 @@ export function drawTypeRhythmGhosts(
     // Leading ghosts: mid-line center tick + density marks spaced by the ghosted line height
     if (ghost.lineHeight != null) {
       const midTick = Math.max(5 / zoom, 3.5);
-      const densityStep = Math.max(lineHeight * 0.65, 10 / zoom);
+      const densityStep = Math.max(lineHeight * 0.65 / densityFactor, 10 / zoom);
       ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
       for (let i = 0; i < lines.length; i++) {
         const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
@@ -197,7 +202,7 @@ export function drawTypeRhythmGhosts(
           const glyphW = measure(sample);
           const advance = Math.max(
             2 / zoom,
-            glyphW / Math.max(1, sample.length) + tracking,
+            (glyphW / Math.max(1, sample.length) + tracking) / densityFactor,
           );
           if (advance < 2.2 / zoom) continue;
           const startX = n.x + Math.min(advance * 0.35, 8 / zoom);

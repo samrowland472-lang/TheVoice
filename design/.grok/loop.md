@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Type rhythm overlay: optional glyph density scale (Den toggle, persisted). Intermediate density and average-advance tick spacing scale with the ghosted font size (denser for larger type) on both the canvas and the Type inspector Rhythm strip. Wt and Glyph toggles unchanged. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: optional weight-specific tick thickness (Wt toggle, persisted). While scrubbing weight, canvas and inspector Rhythm strip ticks scale thickness and height with the ghosted font weight (relative to 400). Direction and spacing unchanged. Verified typecheck, build, and browser smoke.
 - Path point inspector: canvas tangent length numbers are now click-to-edit (floating phosphor input). Clicking a live length on the canvas opens an exact number field; committing scales the handle while preserving direction (or seeds a horizontal arm). Mirror is honored. Len tooltip mentions canvas click-to-edit. Verified typecheck, build, and browser smoke.
 - Path point inspector: length readouts next to In/Out handles are now click-to-edit exact numbers (NumField). Setting a length scales the handle while preserving direction (or seeds a horizontal arm from zero). Mirror is honored. Len tooltip mentions the click-to-edit. Verified typecheck, build, and browser smoke.
@@ -67,7 +68,7 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-27 14:10 GMT — Type rhythm overlay: optional Wt tick thickness. Ticks scale with ghosted weight on canvas and rhythm strip. Verified typecheck, build, and browser smoke.
+2026-10-27 21:10 GMT — Type rhythm overlay: optional Den glyph density scale. Tick spacing densifies with larger ghosted size on canvas and rhythm strip. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: optional glyph density scale (beyond weight thickness).
 - Path inspector: multi-point length average or bulk handle length set.
+- Type rhythm overlay: optional density scale factor slider (beyond the on/off Den toggle).
