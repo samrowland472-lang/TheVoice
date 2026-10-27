@@ -381,7 +381,8 @@ export function CanvasStage() {
       if (typeGhost && selection.length) {
         const selectedNodes = doc.nodes.filter((n) => selection.includes(n.id));
         const preferPerGlyph = useDesign.getState().showPerGlyphTicks;
-        drawTypeRhythmGhosts(ctx, selectedNodes, typeGhost, viewport.zoom, preferPerGlyph);
+        const weightTicks = useDesign.getState().showWeightTickThickness;
+        drawTypeRhythmGhosts(ctx, selectedNodes, typeGhost, viewport.zoom, preferPerGlyph, weightTicks);
       }
       if (strokeGhost && selection.length) {
         const selectedNodes = doc.nodes.filter((n) => selection.includes(n.id));

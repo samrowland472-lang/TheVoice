@@ -29,6 +29,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * Leading density spacing follows the ghosted line height so the vertical rhythm is readable while scrubbing.
  * Tracking ghosts on short lines (≤8 glyphs) draw per-glyph advance ticks aligned to the text.
  * When preferPerGlyph is true, per-glyph ticks are used for all lines up to a safe length, independent of the short-line cutoff.
+ * When weightTickThickness is true, density and per-glyph ticks scale thickness and height with the ghosted font weight.
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -36,6 +37,7 @@ export function drawTypeRhythmGhosts(
   ghost: NonNullable<TypeGhost>,
   zoom: number,
   preferPerGlyph = true,
+  weightTickThickness = true,
 ) {
   const phosphor = "rgba(63,198,255,0.85)";
   const phosphorSoft = "rgba(63,198,255,0.35)";
@@ -151,10 +153,17 @@ export function drawTypeRhythmGhosts(
     // Drawn near each baseline so they follow the actual text density more closely than a single top row.
     // Per-glyph advance ticks (aligned to the line’s text-align) are used for short lines by default,
     // or for any line up to 32 glyphs when preferPerGlyph is on, so the rhythm stays precise independent of length.
+    // When weightTickThickness is on and weight is being scrubbed, tick thickness and height scale with the ghosted weight.
     if ((ghost.letterSpacing != null || ghost.fontWeight != null) && lines.length) {
       ctx.strokeStyle = phosphorSoft;
-      ctx.lineWidth = Math.max(0.75 / zoom, 0.55);
-      const midTick = Math.max(3.2 / zoom, 2.4);
+      const baseTickW = Math.max(0.75 / zoom, 0.55);
+      const baseMid = Math.max(3.2 / zoom, 2.4);
+      let wFactor = 1;
+      if (weightTickThickness && ghost.fontWeight != null) {
+        wFactor = Math.max(0.6, Math.min(2.6, (n.fontWeight || 400) / 400));
+      }
+      ctx.lineWidth = baseTickW * wFactor;
+      const midTick = baseMid * Math.pow(wFactor, 0.55);
       const SHORT = 8;
       const PER_GLYPH_MAX = 32;
       for (let i = 0; i < lines.length; i++) {

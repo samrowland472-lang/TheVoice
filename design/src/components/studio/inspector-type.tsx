@@ -104,6 +104,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
   const typeGhost = useDesign((s) => s.typeGhost);
   const showPerGlyphTicks = useDesign((s) => s.showPerGlyphTicks);
   const setShowPerGlyphTicks = useDesign((s) => s.setShowPerGlyphTicks);
+  const showWeightTickThickness = useDesign((s) => s.showWeightTickThickness);
+  const setShowWeightTickThickness = useDesign((s) => s.setShowWeightTickThickness);
   const ghosted = applyTypeGhost(node, typeGhost);
 
   useEffect(() => {
@@ -184,7 +186,12 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
       const PER_GLYPH_MAX = 24;
       const usePerGlyph = showPerGlyphTicks ? sample.length <= PER_GLYPH_MAX : sample.length <= SHORT;
       ctx.strokeStyle = phosphorSoft;
-      ctx.lineWidth = 0.7;
+      let wFactor = 1;
+      if (showWeightTickThickness && typeGhost?.fontWeight != null) {
+        wFactor = Math.max(0.6, Math.min(2.6, (ghosted.fontWeight || 400) / 400));
+      }
+      ctx.lineWidth = 0.7 * wFactor;
+      const tickH = 4.2 * Math.pow(wFactor, 0.5);
       if (usePerGlyph) {
         let cum = 0;
         for (let g = 0; g < sample.length; g++) {
@@ -192,8 +199,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
           const tickX = left + 4 + cum + chW * 0.5;
           if (tickX > left && tickX < right) {
             ctx.beginPath();
-            ctx.moveTo(tickX, y - 4.2);
-            ctx.lineTo(tickX, y + 1.2);
+            ctx.moveTo(tickX, y - tickH);
+            ctx.lineTo(tickX, y + tickH * 0.28);
             ctx.stroke();
           }
           cum += chW + (g < sample.length - 1 ? tracking * 0.85 : 0);
@@ -206,31 +213,45 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
         );
         for (let x = left + advance * 0.35; x < right - 3; x += advance) {
           ctx.beginPath();
-          ctx.moveTo(x, y - 4.2);
-          ctx.lineTo(x, y + 1.2);
+          ctx.moveTo(x, y - tickH);
+          ctx.lineTo(x, y + tickH * 0.28);
           ctx.stroke();
         }
       }
       ctx.restore();
     }
-  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks]);
+  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks, showWeightTickThickness]);
 
   return (
     <div className="mt-2">
       <div className="mb-1 flex items-center justify-between gap-2">
         <div className="text-[10px] text-ink-dim">Rhythm</div>
-        <button
-          type="button"
-          className={cn(
-            "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
-            showPerGlyphTicks ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
-          )}
-          aria-pressed={showPerGlyphTicks}
-          title="Show per-glyph ticks on the canvas and rhythm strip (independent of line length)"
-          onClick={() => setShowPerGlyphTicks(!showPerGlyphTicks)}
-        >
-          Glyph
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              showWeightTickThickness ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={showWeightTickThickness}
+            title="Scale rhythm tick thickness and height with font weight while scrubbing weight"
+            onClick={() => setShowWeightTickThickness(!showWeightTickThickness)}
+          >
+            Wt
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              showPerGlyphTicks ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={showPerGlyphTicks}
+            title="Show per-glyph ticks on the canvas and rhythm strip (independent of line length)"
+            onClick={() => setShowPerGlyphTicks(!showPerGlyphTicks)}
+          >
+            Glyph
+          </button>
+        </div>
       </div>
       <canvas
         ref={canvasRef}

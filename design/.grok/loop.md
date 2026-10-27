@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Type rhythm overlay: optional weight-specific tick thickness (Wt toggle, persisted). While scrubbing weight, canvas and inspector Rhythm strip ticks scale thickness and height with the ghosted font weight (relative to 400). Direction and spacing unchanged. Verified typecheck, build, and browser smoke.
 - Path point inspector: canvas tangent length numbers are now click-to-edit (floating phosphor input). Clicking a live length on the canvas opens an exact number field; committing scales the handle while preserving direction (or seeds a horizontal arm). Mirror is honored. Len tooltip mentions canvas click-to-edit. Verified typecheck, build, and browser smoke.
 - Path point inspector: length readouts next to In/Out handles are now click-to-edit exact numbers (NumField). Setting a length scales the handle while preserving direction (or seeds a horizontal arm from zero). Mirror is honored. Len tooltip mentions the click-to-edit. Verified typecheck, build, and browser smoke.
 - Path point inspector: while Len is on and a handle (In or Out) is selected, Arrow keys nudge its length by 1 px (Shift for 10). Direction is preserved, mirror is honored, and numbers update live on the canvas and in the row. Len tooltip mentions the shortcut. Verified typecheck, build, and browser smoke.
@@ -66,6 +67,7 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-27 11:06 GMT — Path point inspector: click-to-edit exact length on canvas readout. Floating input, direction preserved, mirror honored. Verified typecheck, build, and browser smoke.
+2026-10-27 14:10 GMT — Type rhythm overlay: optional Wt tick thickness. Ticks scale with ghosted weight on canvas and rhythm strip. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: optional glyph density scale or weight-specific tick thickness.
+- Type rhythm overlay: optional glyph density scale (beyond weight thickness).
+- Path inspector: multi-point length average or bulk handle length set.
