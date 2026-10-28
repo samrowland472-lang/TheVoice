@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Type rhythm overlay: density factor visual density preview thumbnail. When Den is on, a compact phosphor SVG thumbnail beside the factor slider and NumField shows a live sample of density ticks (spacing scales with 1/factor). Tooltip mentions the preview. Verified typecheck, build, and browser smoke.
 - Path inspector: bulk handle length. Avg shows the mean length of every existing in/out handle (outer path + holes). A compact NumField beside it sets all handle lengths to an exact value: direction is preserved, zero handles seed a horizontal arm, and per-point Mirror is honored. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor click-to-edit exact number. When Den is on, a compact NumField sits beside the factor slider. Click it, type a value (0.4–2.5), Enter/blur commits and clamps. Slider and keyboard nudge unchanged. Tooltip mentions exact entry. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor keyboard nudge. While the factor slider is focused, Arrow keys adjust the density scale (0.05 step, Shift for 0.25). Home/End/PageUp/PageDown also work. Tooltip and Den button mention the shortcut. Verified typecheck, build, and browser smoke.
@@ -72,7 +73,7 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-28 12:05 GMT — Path inspector: bulk handle length average and set (Avg readout + NumField). Verified typecheck, build, and browser smoke.
+2026-10-28 19:03 GMT — Type rhythm overlay: density factor visual density preview thumbnail (SVG ticks). Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: density factor visual density preview thumbnail.
 - Path inspector: multi-select points for bulk length (or per-ring averages).
+- Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover.
