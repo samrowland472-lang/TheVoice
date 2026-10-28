@@ -383,7 +383,8 @@ export function CanvasStage() {
         const preferPerGlyph = useDesign.getState().showPerGlyphTicks;
         const weightTicks = useDesign.getState().showWeightTickThickness;
         const densityScale = useDesign.getState().showGlyphDensityScale;
-        drawTypeRhythmGhosts(ctx, selectedNodes, typeGhost, viewport.zoom, preferPerGlyph, weightTicks, densityScale);
+        const densityFactor = useDesign.getState().glyphDensityScaleFactor;
+        drawTypeRhythmGhosts(ctx, selectedNodes, typeGhost, viewport.zoom, preferPerGlyph, weightTicks, densityScale, densityFactor);
       }
       if (strokeGhost && selection.length) {
         const selectedNodes = doc.nodes.filter((n) => selection.includes(n.id));

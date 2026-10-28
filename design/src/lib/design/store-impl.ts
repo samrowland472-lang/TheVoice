@@ -59,6 +59,12 @@ export const useDesign = create<any>((set: any, get: any) => ({
   showPerGlyphTicks: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-per-glyph-ticks") !== "0",
   showWeightTickThickness: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-weight-tick-thickness") !== "0",
   showGlyphDensityScale: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-glyph-density-scale") !== "0",
+  glyphDensityScaleFactor: (() => {
+    if (typeof localStorage === "undefined") return 1;
+    const raw = localStorage.getItem("voice-design-glyph-density-factor");
+    const n = raw == null ? 1 : Number(raw);
+    return Number.isFinite(n) ? Math.max(0.4, Math.min(2.5, n)) : 1;
+  })(),
   mirrorPoints: (() => {
     if (typeof localStorage === "undefined") return {};
     try {
@@ -121,6 +127,11 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setShowGlyphDensityScale: (v: boolean) => {
     if (typeof localStorage !== "undefined") localStorage.setItem("voice-design-glyph-density-scale", v ? "1" : "0");
     set({ showGlyphDensityScale: v });
+  },
+  setGlyphDensityScaleFactor: (v: number) => {
+    const next = Math.max(0.4, Math.min(2.5, Number.isFinite(v) ? v : 1));
+    if (typeof localStorage !== "undefined") localStorage.setItem("voice-design-glyph-density-factor", String(next));
+    set({ glyphDensityScaleFactor: next });
   },
   setMirrorPoint: (key: string, v: boolean) => {
     const prev = get().mirrorPoints || {};

@@ -31,6 +31,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * When preferPerGlyph is true, per-glyph ticks are used for all lines up to a safe length, independent of the short-line cutoff.
  * When weightTickThickness is true, density and per-glyph ticks scale thickness and height with the ghosted font weight.
  * When glyphDensityScale is true, intermediate density and average-advance tick spacing scale with the ghosted font size (denser for larger type).
+ * densityScaleFactor multiplies that spacing (1 = default densification, higher = denser ticks).
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -40,6 +41,7 @@ export function drawTypeRhythmGhosts(
   preferPerGlyph = true,
   weightTickThickness = true,
   glyphDensityScale = true,
+  densityScaleFactor = 1,
 ) {
   const phosphor = "rgba(63,198,255,0.85)";
   const phosphorSoft = "rgba(63,198,255,0.35)";
@@ -48,9 +50,10 @@ export function drawTypeRhythmGhosts(
   for (const raw of nodes) {
     if (!isText(raw)) continue;
     const n = applyTypeGhost(raw, ghost);
-    const densityFactor = glyphDensityScale
+    const autoDensity = glyphDensityScale
       ? Math.max(0.55, Math.min(2.4, Math.sqrt(Math.max(6, n.fontSize) / 16)))
       : 1;
+    const densityFactor = Math.max(0.35, Math.min(4, autoDensity * (Number.isFinite(densityScaleFactor) ? densityScaleFactor : 1)));
     const measure = (s: string) => {
       ctx.save();
       ctx.font = `${n.fontWeight} ${n.fontSize}px ${n.fontFamily}`;
