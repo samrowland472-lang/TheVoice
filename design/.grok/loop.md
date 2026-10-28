@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: per-ring handle length averages and bulk set. Outer and each hole show their own average length plus a compact NumField that sets only that ring's handles (direction preserved, zero seeds horizontal, Mirror honored). Global All bulk remains. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor visual density preview thumbnail. When Den is on, a compact phosphor SVG thumbnail beside the factor slider and NumField shows a live sample of density ticks (spacing scales with 1/factor). Tooltip mentions the preview. Verified typecheck, build, and browser smoke.
 - Path inspector: bulk handle length. Avg shows the mean length of every existing in/out handle (outer path + holes). A compact NumField beside it sets all handle lengths to an exact value: direction is preserved, zero handles seed a horizontal arm, and per-point Mirror is honored. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor click-to-edit exact number. When Den is on, a compact NumField sits beside the factor slider. Click it, type a value (0.4–2.5), Enter/blur commits and clamps. Slider and keyboard nudge unchanged. Tooltip mentions exact entry. Verified typecheck, build, and browser smoke.
@@ -73,7 +74,7 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-28 19:03 GMT — Type rhythm overlay: density factor visual density preview thumbnail (SVG ticks). Verified typecheck, build, and browser smoke.
+2026-10-28 22:10 GMT — Path inspector: per-ring handle length averages and bulk set. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: multi-select points for bulk length (or per-ring averages).
+- Path inspector: multi-select points (shift-click) for bulk length on the selected set only.
 - Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover.

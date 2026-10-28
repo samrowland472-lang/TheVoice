@@ -66,21 +66,32 @@ import { NumField } from "./num-field";
 import { PointRow } from "./path-point-row";
 
 
-function avgHandleLength(node: PathNode): number {
+function collectHandleLengths(pts: PathPoint[]): number[] {
   const lengths: number[] = [];
-  const collect = (pts: PathPoint[]) => {
-    for (const p of pts) {
-      if (p.in) lengths.push(Math.hypot(p.in.x, p.in.y));
-      if (p.out) lengths.push(Math.hypot(p.out.x, p.out.y));
-    }
-  };
-  collect(node.points);
-  (node.holes ?? []).forEach(collect);
+  for (const p of pts) {
+    if (p.in) lengths.push(Math.hypot(p.in.x, p.in.y));
+    if (p.out) lengths.push(Math.hypot(p.out.x, p.out.y));
+  }
+  return lengths;
+}
+
+function avgHandleLength(node: PathNode): number {
+  const lengths = [
+    ...collectHandleLengths(node.points),
+    ...(node.holes ?? []).flatMap(collectHandleLengths),
+  ];
   if (lengths.length === 0) return 0;
   return Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length);
 }
 
-function bulkSetHandleLength(node: PathNode, target: number) {
+function avgHandleLengthForRing(node: PathNode, hole: number | null): number {
+  const pts = hole == null ? node.points : (node.holes?.[hole] ?? []);
+  const lengths = collectHandleLengths(pts);
+  if (lengths.length === 0) return 0;
+  return Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length);
+}
+
+function bulkSetHandleLength(node: PathNode, target: number, scope: "all" | "outer" | number = "all") {
   const len = Math.max(0, Math.round(target));
   const s = useDesign.getState();
   const mirrorPoints = s.mirrorPoints ?? {};
@@ -111,8 +122,12 @@ function bulkSetHandleLength(node: PathNode, target: number) {
       }
       return { ...p, in: nextIn, out: nextOut };
     });
-  const nextPoints = applyToRing(node.points);
-  const nextHoles = (node.holes ?? []).map((ring, h) => applyToRing(ring, h));
+  const applyOuter = scope === "all" || scope === "outer";
+  const nextPoints = applyOuter ? applyToRing(node.points) : node.points;
+  const nextHoles = (node.holes ?? []).map((ring, h) => {
+    const apply = scope === "all" || scope === h;
+    return apply ? applyToRing(ring, h) : ring;
+  });
   s.commit();
   s.replaceNode(node.id, { ...node, points: nextPoints, holes: nextHoles.length ? nextHoles : node.holes }, false);
 }
@@ -322,18 +337,32 @@ export function PathFields({ node }: { node: PathNode }) {
           </button>
         </div>
         <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-          <span title="Average length of all existing handles">Avg</span>
+          <span title="Average length of all existing handles">All</span>
           <span className="font-mono text-phosphor tabular-nums">{avgHandleLength(node)}</span>
           <span title="Set every handle length to this value. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored.">
             <NumField
               className="field font-mono text-[11px] w-14"
               value={avgHandleLength(node)}
               min={0}
-              aria-label="bulk handle length"
+              aria-label="bulk handle length all"
               onCommit={(n) => bulkSetHandleLength(node, n)}
             />
           </span>
           <span className="text-[9px] text-ink-dim/70">bulk</span>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-ink-dim">
+          <span title="Average length of outer path handles">Outer</span>
+          <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForRing(node, null)}</span>
+          <span title="Set outer path handle lengths. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored.">
+            <NumField
+              className="field font-mono text-[11px] w-14"
+              value={avgHandleLengthForRing(node, null)}
+              min={0}
+              aria-label="bulk handle length outer"
+              onCommit={(n) => bulkSetHandleLength(node, n, "outer")}
+            />
+          </span>
+          <span className="text-[9px] text-ink-dim/70">ring</span>
         </div>
         <div ref={pointListRef} data-point-list className="max-h-56 space-y-1 overflow-auto scrollbar-thin">
           {node.points.map((pt, i) => (
@@ -353,6 +382,18 @@ export function PathFields({ node }: { node: PathNode }) {
                   >
                     Hole {h + 1}
                   </button>
+                  <span className="font-mono text-[10px] text-phosphor tabular-nums" title="Average handle length for this hole">
+                    {avgHandleLengthForRing(node, h)}
+                  </span>
+                  <span title="Set this hole's handle lengths. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored.">
+                    <NumField
+                      className="field font-mono text-[11px] w-12"
+                      value={avgHandleLengthForRing(node, h)}
+                      min={0}
+                      aria-label={`bulk handle length hole ${h + 1}`}
+                      onCommit={(n) => bulkSetHandleLength(node, n, h)}
+                    />
+                  </span>
                   <button
                     type="button"
                     data-hole-fill
