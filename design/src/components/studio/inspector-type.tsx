@@ -254,7 +254,7 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
               showGlyphDensityScale ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
             )}
             aria-pressed={showGlyphDensityScale}
-            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification."
+            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification (Arrow keys while focused; Shift for larger nudge)."
             onClick={() => setShowGlyphDensityScale(!showGlyphDensityScale)}
           >
             Den
@@ -267,8 +267,23 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
               step={0.05}
               value={glyphDensityScaleFactor}
               onChange={(e) => setGlyphDensityScaleFactor(Number(e.target.value))}
+              onKeyDown={(e) => {
+                const special = nextFromRangeKey(e, glyphDensityScaleFactor, 0.4, 2.5, 0.05);
+                if (special != null) {
+                  setGlyphDensityScaleFactor(special);
+                  return;
+                }
+                const dir =
+                  e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 :
+                  e.key === "ArrowDown" || e.key === "ArrowLeft" ? -1 : 0;
+                if (dir === 0) return;
+                e.preventDefault();
+                const step = e.shiftKey ? 0.25 : 0.05;
+                const next = Math.min(2.5, Math.max(0.4, glyphDensityScaleFactor + dir * step));
+                setGlyphDensityScaleFactor(next);
+              }}
               className="h-1 w-12 cursor-pointer accent-phosphor"
-              title={`Density factor ×${glyphDensityScaleFactor.toFixed(2)} (higher = denser ticks)`}
+              title={`Density factor ×${glyphDensityScaleFactor.toFixed(2)} (higher = denser). Arrow keys nudge (Shift for larger).`}
               aria-label="Density scale factor"
             />
           )}
