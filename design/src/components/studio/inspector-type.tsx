@@ -254,38 +254,48 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
               showGlyphDensityScale ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
             )}
             aria-pressed={showGlyphDensityScale}
-            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification (Arrow keys while focused; Shift for larger nudge)."
+            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification (Arrow keys while focused; Shift for larger nudge). Exact number beside the slider."
             onClick={() => setShowGlyphDensityScale(!showGlyphDensityScale)}
           >
             Den
           </button>
           {showGlyphDensityScale && (
-            <input
-              type="range"
-              min={0.4}
-              max={2.5}
-              step={0.05}
-              value={glyphDensityScaleFactor}
-              onChange={(e) => setGlyphDensityScaleFactor(Number(e.target.value))}
-              onKeyDown={(e) => {
-                const special = nextFromRangeKey(e, glyphDensityScaleFactor, 0.4, 2.5, 0.05);
-                if (special != null) {
-                  setGlyphDensityScaleFactor(special);
-                  return;
-                }
-                const dir =
-                  e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 :
-                  e.key === "ArrowDown" || e.key === "ArrowLeft" ? -1 : 0;
-                if (dir === 0) return;
-                e.preventDefault();
-                const step = e.shiftKey ? 0.25 : 0.05;
-                const next = Math.min(2.5, Math.max(0.4, glyphDensityScaleFactor + dir * step));
-                setGlyphDensityScaleFactor(next);
-              }}
-              className="h-1 w-12 cursor-pointer accent-phosphor"
-              title={`Density factor ×${glyphDensityScaleFactor.toFixed(2)} (higher = denser). Arrow keys nudge (Shift for larger).`}
-              aria-label="Density scale factor"
-            />
+            <>
+              <input
+                type="range"
+                min={0.4}
+                max={2.5}
+                step={0.05}
+                value={glyphDensityScaleFactor}
+                onChange={(e) => setGlyphDensityScaleFactor(Number(e.target.value))}
+                onKeyDown={(e) => {
+                  const special = nextFromRangeKey(e, glyphDensityScaleFactor, 0.4, 2.5, 0.05);
+                  if (special != null) {
+                    setGlyphDensityScaleFactor(special);
+                    return;
+                  }
+                  const dir =
+                    e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 :
+                    e.key === "ArrowDown" || e.key === "ArrowLeft" ? -1 : 0;
+                  if (dir === 0) return;
+                  e.preventDefault();
+                  const step = e.shiftKey ? 0.25 : 0.05;
+                  const next = Math.min(2.5, Math.max(0.4, glyphDensityScaleFactor + dir * step));
+                  setGlyphDensityScaleFactor(next);
+                }}
+                className="h-1 w-12 cursor-pointer accent-phosphor"
+                title={`Density factor ×${glyphDensityScaleFactor.toFixed(2)} (higher = denser). Arrow keys nudge (Shift for larger). Exact number beside.`}
+                aria-label="Density scale factor"
+              />
+              <NumField
+                value={glyphDensityScaleFactor}
+                min={0.4}
+                max={2.5}
+                aria-label="Density scale factor exact"
+                className="h-5 w-10 shrink-0 rounded-[4px] border border-border/70 bg-surface/40 px-0.5 text-center font-mono text-[9px] tabular-nums text-phosphor"
+                onCommit={(n) => setGlyphDensityScaleFactor(n)}
+              />
+            </>
           )}
           <button
             type="button"
