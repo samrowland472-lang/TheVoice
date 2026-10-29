@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover. Hovering the density thumbnail temporarily shows the phosphor rhythm density ghosts on the selected type on the canvas (using the current factor). Clears on leave if it was the only ghost. Tooltip updated. Verified typecheck, build, and browser smoke.
 - Path inspector: per-ring handle length averages and bulk set. Outer and each hole show their own average length plus a compact NumField that sets only that ring's handles (direction preserved, zero seeds horizontal, Mirror honored). Global All bulk remains. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor visual density preview thumbnail. When Den is on, a compact phosphor SVG thumbnail beside the factor slider and NumField shows a live sample of density ticks (spacing scales with 1/factor). Tooltip mentions the preview. Verified typecheck, build, and browser smoke.
 - Path inspector: bulk handle length. Avg shows the mean length of every existing in/out handle (outer path + holes). A compact NumField beside it sets all handle lengths to an exact value: direction is preserved, zero handles seed a horizontal arm, and per-point Mirror is honored. Verified typecheck, build, and browser smoke.
@@ -76,7 +77,7 @@
 - Path inspector: multi-select points (shift-click) for bulk length on the selected set only. Shift-click point headers in the inspector or anchors on the canvas to build a selection. When two or more points are selected a Sel average and NumField appear; committing sets handle lengths only on those points (direction preserved, zero seeds horizontal, Mirror honored). Single clicks still focus one point. Verified typecheck, build, and browser smoke.
 
 ## Iteration
-2026-10-29 01:10 GMT — Path inspector: multi-select points (shift-click) for bulk length on the selected set only. Verified typecheck, build, and browser smoke.
+2026-10-29 04:15 GMT — Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover.
 - Path inspector: multi-select points keyboard bulk length nudge.
+- Type rhythm overlay: density factor live preview while scrubbing the factor slider.

@@ -100,7 +100,7 @@ export function CopyMeter({ text }: { text: string }) {
 
 
 
-function DensityFactorThumb({ factor }: { factor: number }) {
+function DensityFactorThumb({ factor, onHoverStart, onHoverEnd }: { factor: number; onHoverStart?: () => void; onHoverEnd?: () => void }) {
   const f = Math.max(0.4, Math.min(2.5, factor || 1));
   const base = 7;
   const step = Math.max(2.4, base / f);
@@ -115,10 +115,12 @@ function DensityFactorThumb({ factor }: { factor: number }) {
       width="48"
       height="16"
       viewBox="0 0 48 16"
-      className="shrink-0 rounded-[3px] border border-border/40 bg-ground/40"
+      className="shrink-0 rounded-[3px] border border-border/40 bg-ground/40 cursor-help"
       aria-hidden
+      onMouseEnter={onHoverStart}
+      onMouseLeave={onHoverEnd}
     >
-      <title>{`Density preview ×${f.toFixed(2)}`}</title>
+      <title>{`Density preview ×${f.toFixed(2)}. Hover to preview on canvas.`}</title>
       <line x1="1" y1="8" x2="47" y2="8" stroke="rgba(63,198,255,0.25)" strokeWidth="0.6" />
       {ticks.map((tx, i) => (
         <line
@@ -290,7 +292,7 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
               showGlyphDensityScale ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
             )}
             aria-pressed={showGlyphDensityScale}
-            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification (Arrow keys while focused; Shift for larger nudge). Exact number and density preview thumbnail beside the slider."
+            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification (Arrow keys while focused; Shift for larger nudge). Exact number and density preview thumbnail beside the slider. Hover the thumbnail to preview density ghosts on the canvas."
             onClick={() => setShowGlyphDensityScale(!showGlyphDensityScale)}
           >
             Den
@@ -331,7 +333,19 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
                 className="h-5 w-10 shrink-0 rounded-[4px] border border-border/70 bg-surface/40 px-0.5 text-center font-mono text-[9px] tabular-nums text-phosphor"
                 onCommit={(n) => setGlyphDensityScaleFactor(n)}
               />
-              <DensityFactorThumb factor={glyphDensityScaleFactor} />
+              <DensityFactorThumb
+                factor={glyphDensityScaleFactor}
+                onHoverStart={() => {
+                  if (useDesign.getState().typeGhost) return;
+                  useDesign.getState().setTypeGhost({ fontSize: node.fontSize });
+                }}
+                onHoverEnd={() => {
+                  const g = useDesign.getState().typeGhost;
+                  if (g && g.fontSize === node.fontSize && g.letterSpacing == null && g.lineHeight == null && g.fontWeight == null) {
+                    useDesign.getState().setTypeGhost(null);
+                  }
+                }}
+              />
             </>
           )}
           <button
