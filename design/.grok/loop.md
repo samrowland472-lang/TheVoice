@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Type rhythm overlay: density factor double-click reset to 1. Double-clicking the Den factor slider or the density preview thumbnail resets the scale factor to 1.0 (and clears a density-only ghost). Tooltips on the Den button, slider, and thumbnail mention the reset. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor live canvas preview while scrubbing the factor slider. Scrubbing the Den factor (or Arrow-nudging it) temporarily shows the phosphor density ghosts on the selected type; the ticks update live with the factor. Clears on pointer-up or blur if the ghost was only for the preview. Canvas redraws on factor changes. Tooltip updated. Verified typecheck, build, and browser smoke.
 - Path inspector: multi-select points keyboard bulk length nudge. With two or more points selected (Shift-click), Arrow keys nudge the bulk handle length by 1 px (Shift for 10) when not typing in a field. Direction is preserved, zero handles seed horizontal, Mirror is honored. Sel tooltip mentions the shortcut. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note on mobile).
 - Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover. Hovering the density thumbnail temporarily shows the phosphor rhythm density ghosts on the selected type on the canvas (using the current factor). Clears on leave if it was the only ghost. Tooltip updated. Verified typecheck, build, and browser smoke.
@@ -77,7 +78,8 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-29 11:05 GMT — Type rhythm overlay: density factor live canvas preview while scrubbing the factor slider. Verified typecheck, build, and browser smoke.
+2026-10-29 14:07 GMT — Type rhythm overlay: density factor double-click reset to 1. Verified typecheck, build, and browser smoke.
 ## Next recommended
+- Type rhythm overlay: density factor double-click reset (done).
 - Type rhythm overlay: density factor live preview while scrubbing the factor slider (done).
 - Path inspector: multi-select points keyboard bulk length nudge (done).
