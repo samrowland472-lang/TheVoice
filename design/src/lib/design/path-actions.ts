@@ -55,6 +55,20 @@ export function setPathEditHit(hit: PathEditHit | null) {
   useDesign.setState({ pathEditHit: hit });
 }
 
+export function togglePathPointSelection(index: number, hole?: number) {
+  const s = useDesign.getState();
+  const key = (p: { index: number; hole?: number }) => `${p.hole ?? ""}:${p.index}`;
+  const targetKey = `${hole ?? ""}:${index}`;
+  const cur = s.pathPointSelection ?? [];
+  const exists = cur.some((p) => key(p) === targetKey);
+  const next = exists ? cur.filter((p) => key(p) !== targetKey) : [...cur, { index, hole }];
+  useDesign.setState({ pathPointSelection: next, pathEditHit: { index, arm: "anchor", hole } });
+}
+
+export function setPathPointSelection(points: { index: number; hole?: number }[]) {
+  useDesign.setState({ pathPointSelection: points });
+}
+
 export function editPathHit(
   id: string,
   hit: PathEditHit,

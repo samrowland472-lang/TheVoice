@@ -84,6 +84,19 @@ function avgHandleLength(node: PathNode): number {
   return Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length);
 }
 
+function avgHandleLengthForSelected(node: PathNode, selected: { index: number; hole?: number }[]): number {
+  const lengths: number[] = [];
+  for (const sel of selected) {
+    const pts = sel.hole == null ? node.points : (node.holes?.[sel.hole] ?? []);
+    const p = pts[sel.index];
+    if (!p) continue;
+    if (p.in) lengths.push(Math.hypot(p.in.x, p.in.y));
+    if (p.out) lengths.push(Math.hypot(p.out.x, p.out.y));
+  }
+  if (lengths.length === 0) return 0;
+  return Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length);
+}
+
 function avgHandleLengthForRing(node: PathNode, hole: number | null): number {
   const pts = hole == null ? node.points : (node.holes?.[hole] ?? []);
   const lengths = collectHandleLengths(pts);
@@ -91,12 +104,13 @@ function avgHandleLengthForRing(node: PathNode, hole: number | null): number {
   return Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length);
 }
 
-function bulkSetHandleLength(node: PathNode, target: number, scope: "all" | "outer" | number = "all") {
+function bulkSetHandleLength(node: PathNode, target: number, scope: "all" | "outer" | number | { index: number; hole?: number }[] = "all") {
   const len = Math.max(0, Math.round(target));
   const s = useDesign.getState();
   const mirrorPoints = s.mirrorPoints ?? {};
-  const applyToRing = (pts: PathPoint[], hole?: number) =>
+  const applyToRing = (pts: PathPoint[], hole?: number, onlyIndices?: Set<number>) =>
     pts.map((p, index) => {
+      if (onlyIndices && !onlyIndices.has(index)) return p;
       const mirrorKey = `${node.id}:${hole ?? ""}:${index}`;
       const mir = !!mirrorPoints[mirrorKey];
       const scaleOrSeed = (h: { x: number; y: number } | null | undefined) => {
@@ -122,6 +136,21 @@ function bulkSetHandleLength(node: PathNode, target: number, scope: "all" | "out
       }
       return { ...p, in: nextIn, out: nextOut };
     });
+  if (Array.isArray(scope)) {
+    const byHole = new Map<number | null, Set<number>>();
+    for (const p of scope) {
+      const h = p.hole ?? null;
+      if (!byHole.has(h)) byHole.set(h, new Set());
+      byHole.get(h)!.add(p.index);
+    }
+    const nextPoints = byHole.has(null) ? applyToRing(node.points, undefined, byHole.get(null)) : node.points;
+    const nextHoles = (node.holes ?? []).map((ring, h) =>
+      byHole.has(h) ? applyToRing(ring, h, byHole.get(h)) : ring
+    );
+    s.commit();
+    s.replaceNode(node.id, { ...node, points: nextPoints, holes: nextHoles.length ? nextHoles : node.holes }, false);
+    return;
+  }
   const applyOuter = scope === "all" || scope === "outer";
   const nextPoints = applyOuter ? applyToRing(node.points) : node.points;
   const nextHoles = (node.holes ?? []).map((ring, h) => {
@@ -136,6 +165,7 @@ export function PathFields({ node }: { node: PathNode }) {
   const pointListRef = useRef<HTMLDivElement>(null);
   const holeListRef = useRef<HTMLDivElement>(null);
   const hit = useDesign((s) => s.pathEditHit);
+  const pointSel = useDesign((s) => s.pathPointSelection ?? []);
   const holes = node.holes ?? [];
 
   useEffect(() => {
@@ -287,6 +317,8 @@ export function PathFields({ node }: { node: PathNode }) {
   }, []);
 
   const activeOuter = hit && hit.hole == null ? hit.index : -1;
+  const isSelected = (index: number, hole?: number) =>
+    pointSel.some((p) => p.index === index && (p.hole ?? null) === (hole ?? null));
 
   return (
     <Section title="Path">
@@ -350,6 +382,22 @@ export function PathFields({ node }: { node: PathNode }) {
           </span>
           <span className="text-[9px] text-ink-dim/70">bulk</span>
         </div>
+        {pointSel.length > 1 && (
+          <div className="flex items-center gap-2 text-[10px] text-ink-dim">
+            <span title="Average length of handles on multi-selected points (Shift-click points to select)">Sel</span>
+            <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
+            <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select.">
+              <NumField
+                className="field font-mono text-[11px] w-14"
+                value={avgHandleLengthForSelected(node, pointSel)}
+                min={0}
+                aria-label="bulk handle length selected"
+                onCommit={(n) => bulkSetHandleLength(node, n, pointSel)}
+              />
+            </span>
+            <span className="text-[9px] text-phosphor/80">{pointSel.length}</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 text-[10px] text-ink-dim">
           <span title="Average length of outer path handles">Outer</span>
           <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForRing(node, null)}</span>
@@ -366,7 +414,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         <div ref={pointListRef} data-point-list className="max-h-56 space-y-1 overflow-auto scrollbar-thin">
           {node.points.map((pt, i) => (
-            <PointRow key={`p-${i}`} nodeId={node.id} index={i} point={pt} active={activeOuter === i} />
+            <PointRow key={`p-${i}`} nodeId={node.id} index={i} point={pt} active={activeOuter === i || isSelected(i)} />
           ))}
         </div>
         {holes.length > 0 && (
@@ -420,7 +468,7 @@ export function PathFields({ node }: { node: PathNode }) {
                     index={i}
                     point={pt}
                     hole={h}
-                    active={hit?.hole === h && hit.index === i}
+                    active={hit?.hole === h && hit.index === i || isSelected(i, h)}
                   />
                 ))}
               </div>

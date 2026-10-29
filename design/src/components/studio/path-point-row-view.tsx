@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useEffect } from "react";
 import { useDesign } from "@/lib/design/store";
-import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint } from "@/lib/design/path-actions";
+import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint, togglePathPointSelection } from "@/lib/design/path-actions";
 import { mirrorHandle } from "@/lib/design/path-curve";
 import { isPath } from "@/lib/design/types";
 import {
@@ -352,7 +352,14 @@ export function PointRow({
   const outLen = point.out ? Math.round(Math.hypot(point.out.x, point.out.y)) : 0;
   return (
     <div data-point={key} className={cn("rounded-[8px] border px-2 py-1.5", active ? "border-phosphor/60 bg-phosphor/10" : "border-border")}>
-      <button type="button" className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim" onClick={() => setPathEditHit({ index, arm: "anchor", hole })}>
+      <button type="button" className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim" onClick={(e) => {
+        if (e.shiftKey) {
+          togglePathPointSelection(index, hole);
+        } else {
+          setPathEditHit({ index, arm: "anchor", hole });
+          useDesign.setState({ pathPointSelection: [{ index, hole }] });
+        }
+      }}>
         <span className="font-mono text-ink">{String(index + 1).padStart(2, "0")}</span>
         <span>{hole == null ? "outer" : `hole ${hole + 1}`} · {point.smooth === false ? "corner" : "smooth"}</span>
       </button>

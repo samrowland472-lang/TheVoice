@@ -55,6 +55,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   paletteOpen: false,
   printMarks: false,
   pathEditHit: null,
+  pathPointSelection: [] as { index: number; hole?: number }[],
   showTangentLengths: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-tangent-lengths") !== "0",
   showPerGlyphTicks: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-per-glyph-ticks") !== "0",
   showWeightTickThickness: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-weight-tick-thickness") !== "0",
@@ -270,7 +271,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
         else cur.add(id);
       }
       set({ selection: [...cur] });
-    } else set({ selection: ids, pathEditHit: null });
+    } else set({ selection: ids, pathEditHit: null, pathPointSelection: [] });
   },
   commit: () => {
     const { doc, past } = get();

@@ -73,8 +73,10 @@
 
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
+- Path inspector: multi-select points (shift-click) for bulk length on the selected set only. Shift-click point headers in the inspector or anchors on the canvas to build a selection. When two or more points are selected a Sel average and NumField appear; committing sets handle lengths only on those points (direction preserved, zero seeds horizontal, Mirror honored). Single clicks still focus one point. Verified typecheck, build, and browser smoke.
+
 ## Iteration
-2026-10-28 22:10 GMT — Path inspector: per-ring handle length averages and bulk set. Verified typecheck, build, and browser smoke.
+2026-10-29 01:10 GMT — Path inspector: multi-select points (shift-click) for bulk length on the selected set only. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: multi-select points (shift-click) for bulk length on the selected set only.
 - Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover.
+- Path inspector: multi-select points keyboard bulk length nudge.
