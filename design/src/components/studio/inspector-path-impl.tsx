@@ -60,7 +60,7 @@ import {
 } from "@/lib/design/path-prev-hole-tab";
 import { useDesign } from "@/lib/design/store";
 import type { PathNode, PathPoint } from "@/lib/design/types";
-import { mirrorHandle } from "@/lib/design/path-curve";
+import { mirrorHandle, autoSmoothPoint } from "@/lib/design/path-curve";
 import { cn } from "@/lib/utils";
 import { Section } from "./inspector-parts";
 import { NumField } from "./num-field";
@@ -129,6 +129,42 @@ function bulkSetMirror(node: PathNode, selected: { index: number; hole?: number 
       setPathPointHandles(node.id, sel.index, { in: mirrored }, sel.hole);
     }
   }
+}
+
+function countSmoothSelected(node: PathNode, selected: { index: number; hole?: number }[]): { on: number; total: number } {
+  let on = 0;
+  let total = 0;
+  for (const sel of selected) {
+    total++;
+    const pts = sel.hole == null ? node.points : (node.holes?.[sel.hole] ?? []);
+    const p = pts[sel.index];
+    if (p && p.smooth !== false) on++;
+  }
+  return { on, total };
+}
+
+function bulkSetSmooth(node: PathNode, selected: { index: number; hole?: number }[], smooth: boolean) {
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, Set<number>>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, new Set());
+    byHole.get(h)!.add(p.index);
+  }
+  const applyToRing = (pts: PathPoint[], hole: number | null, indices: Set<number>) => {
+    const closed = hole == null ? node.closed : true;
+    return pts.map((p, index) => {
+      if (!indices.has(index)) return p;
+      if (smooth) return autoSmoothPoint(pts, index, closed);
+      return { ...p, smooth: false };
+    });
+  };
+  const nextPoints = byHole.has(null) ? applyToRing(node.points, null, byHole.get(null)!) : node.points;
+  const nextHoles = (node.holes ?? []).map((ring, h) =>
+    byHole.has(h) ? applyToRing(ring, h, byHole.get(h)!) : ring
+  );
+  s.commit();
+  s.replaceNode(node.id, { ...node, points: nextPoints, holes: nextHoles.length ? nextHoles : node.holes }, false);
 }
 
 function avgHandleLengthForRing(node: PathNode, hole: number | null): number {
@@ -438,7 +474,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         {pointSel.length > 1 && (
           <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points.">Sel</span>
+            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles).">Sel</span>
             <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
             {(() => {
               const { on, total } = countMirroredSelected(node, pointSel, mirrorPoints ?? {});
@@ -455,6 +491,24 @@ export function PathFields({ node }: { node: PathNode }) {
                   onClick={() => bulkSetMirror(node, pointSel, !allOn)}
                 >
                   {mixed ? "Mix" : "Mir"}
+                </button>
+              );
+            })()}
+            {(() => {
+              const { on, total } = countSmoothSelected(node, pointSel);
+              const mixed = on > 0 && on < total;
+              const allSmooth = on === total && total > 0;
+              return (
+                <button
+                  type="button"
+                  className={cn(
+                    "h-5 rounded-[4px] px-1.5 text-[9px] tracking-wide",
+                    allSmooth ? "bg-phosphor/15 text-phosphor" : mixed ? "border border-phosphor/40 text-phosphor" : "border border-border text-ink-dim",
+                  )}
+                  title={mixed ? "Mixed Smooth — click to make all selected points Smooth (auto handles)" : allSmooth ? "Smooth for selected points — click to set Corner" : "Corner for selected points — click to set Smooth (auto handles)"}
+                  onClick={() => bulkSetSmooth(node, pointSel, !allSmooth)}
+                >
+                  {mixed ? "Mix" : allSmooth ? "Sm" : "Cr"}
                 </button>
               );
             })()}
