@@ -5,6 +5,7 @@ import {
   selectPathHole,
   setHoleFillRule,
   setPathClosed,
+  setPathPointHandles,
 } from "@/lib/design/path-actions";
 import {
   offsetSelectedPath,
@@ -97,6 +98,39 @@ function avgHandleLengthForSelected(node: PathNode, selected: { index: number; h
   return Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length);
 }
 
+
+function countMirroredSelected(node: PathNode, selected: { index: number; hole?: number }[], mirrorPoints: Record<string, boolean> = {}): { on: number; total: number } {
+  let on = 0;
+  let total = 0;
+  for (const sel of selected) {
+    total++;
+    const key = `${node.id}:${sel.hole ?? ""}:${sel.index}`;
+    if (mirrorPoints[key]) on++;
+  }
+  return { on, total };
+}
+
+function bulkSetMirror(node: PathNode, selected: { index: number; hole?: number }[], value: boolean) {
+  const s = useDesign.getState();
+  const setMirrorPoint = s.setMirrorPoint;
+  for (const sel of selected) {
+    const key = `${node.id}:${sel.hole ?? ""}:${sel.index}`;
+    setMirrorPoint(key, value);
+    if (!value) continue;
+    const pts = sel.hole == null ? node.points : (node.holes?.[sel.hole] ?? []);
+    const p = pts[sel.index];
+    if (!p) continue;
+    const src = p.in ?? p.out;
+    if (!src) continue;
+    const mirrored = mirrorHandle(src);
+    if (p.in) {
+      setPathPointHandles(node.id, sel.index, { out: mirrored }, sel.hole);
+    } else if (p.out) {
+      setPathPointHandles(node.id, sel.index, { in: mirrored }, sel.hole);
+    }
+  }
+}
+
 function avgHandleLengthForRing(node: PathNode, hole: number | null): number {
   const pts = hole == null ? node.points : (node.holes?.[hole] ?? []);
   const lengths = collectHandleLengths(pts);
@@ -166,6 +200,7 @@ export function PathFields({ node }: { node: PathNode }) {
   const holeListRef = useRef<HTMLDivElement>(null);
   const hit = useDesign((s) => s.pathEditHit);
   const pointSel = useDesign((s) => s.pathPointSelection ?? []);
+  const mirrorPoints = useDesign((s) => s.mirrorPoints);
   const holes = node.holes ?? [];
 
   useEffect(() => {
@@ -403,8 +438,26 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         {pointSel.length > 1 && (
           <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing.">Sel</span>
+            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points.">Sel</span>
             <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
+            {(() => {
+              const { on, total } = countMirroredSelected(node, pointSel, mirrorPoints ?? {});
+              const mixed = on > 0 && on < total;
+              const allOn = on === total && total > 0;
+              return (
+                <button
+                  type="button"
+                  className={cn(
+                    "h-5 rounded-[4px] px-1.5 text-[9px] tracking-wide",
+                    allOn ? "bg-phosphor/15 text-phosphor" : mixed ? "border border-phosphor/40 text-phosphor" : "border border-border text-ink-dim",
+                  )}
+                  title={mixed ? "Mixed Mirror — click to turn Mirror on for all selected points" : allOn ? "Mirror on for selected points — click to turn off" : "Mirror off for selected points — click to turn on (and mirror opposite handles)"}
+                  onClick={() => bulkSetMirror(node, pointSel, !allOn)}
+                >
+                  {mixed ? "Mix" : "Mir"}
+                </button>
+              );
+            })()}
             <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select. Arrow keys nudge the bulk length by 1 (Shift for 10).">
               <NumField
                 className="field font-mono text-[11px] w-14"

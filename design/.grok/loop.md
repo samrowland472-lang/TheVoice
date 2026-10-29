@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: multi-select Mirror bulk toggle. With two or more points selected (Shift-click), a Mir button next to the Sel average shows on/off/mixed state. Clicking sets Mirror for all selected points (and mirrors the opposite handle when turning on). Persists via the existing per-point localStorage memory. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
+
 - Type rhythm overlay: density factor double-click reset to 1. Double-clicking the Den factor slider or the density preview thumbnail resets the scale factor to 1.0 (and clears a density-only ghost). Tooltips on the Den button, slider, and thumbnail mention the reset. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor live canvas preview while scrubbing the factor slider. Scrubbing the Den factor (or Arrow-nudging it) temporarily shows the phosphor density ghosts on the selected type; the ticks update live with the factor. Clears on pointer-up or blur if the ghost was only for the preview. Canvas redraws on factor changes. Tooltip updated. Verified typecheck, build, and browser smoke.
 - Path inspector: multi-select points keyboard bulk length nudge. With two or more points selected (Shift-click), Arrow keys nudge the bulk handle length by 1 px (Shift for 10) when not typing in a field. Direction is preserved, zero handles seed horizontal, Mirror is honored. Sel tooltip mentions the shortcut. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note on mobile).
@@ -78,8 +80,8 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-29 14:07 GMT — Type rhythm overlay: density factor double-click reset to 1. Verified typecheck, build, and browser smoke.
+2026-10-29 18:10 GMT — Path inspector: multi-select Mirror bulk toggle. Verified typecheck, build, and browser smoke.
 ## Next recommended
+- Path inspector: multi-select Mirror bulk toggle (done).
 - Type rhythm overlay: density factor double-click reset (done).
-- Type rhythm overlay: density factor live preview while scrubbing the factor slider (done).
 - Path inspector: multi-select points keyboard bulk length nudge (done).
