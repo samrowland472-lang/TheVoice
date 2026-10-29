@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: multi-select points keyboard bulk length nudge. With two or more points selected (Shift-click), Arrow keys nudge the bulk handle length by 1 px (Shift for 10) when not typing in a field. Direction is preserved, zero handles seed horizontal, Mirror is honored. Sel tooltip mentions the shortcut. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note on mobile).
 - Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover. Hovering the density thumbnail temporarily shows the phosphor rhythm density ghosts on the selected type on the canvas (using the current factor). Clears on leave if it was the only ghost. Tooltip updated. Verified typecheck, build, and browser smoke.
 - Path inspector: per-ring handle length averages and bulk set. Outer and each hole show their own average length plus a compact NumField that sets only that ring's handles (direction preserved, zero seeds horizontal, Mirror honored). Global All bulk remains. Verified typecheck, build, and browser smoke.
 - Type rhythm overlay: density factor visual density preview thumbnail. When Den is on, a compact phosphor SVG thumbnail beside the factor slider and NumField shows a live sample of density ticks (spacing scales with 1/factor). Tooltip mentions the preview. Verified typecheck, build, and browser smoke.
@@ -74,10 +75,8 @@
 
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
-- Path inspector: multi-select points (shift-click) for bulk length on the selected set only. Shift-click point headers in the inspector or anchors on the canvas to build a selection. When two or more points are selected a Sel average and NumField appear; committing sets handle lengths only on those points (direction preserved, zero seeds horizontal, Mirror honored). Single clicks still focus one point. Verified typecheck, build, and browser smoke.
-
 ## Iteration
-2026-10-29 04:15 GMT — Type rhythm overlay: density factor live canvas ghost preview on thumbnail hover. Verified typecheck, build, and browser smoke.
+2026-10-29 08:15 GMT — Path inspector: multi-select points keyboard bulk length nudge. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: multi-select points keyboard bulk length nudge.
 - Type rhythm overlay: density factor live preview while scrubbing the factor slider.
+- Path inspector: multi-select points keyboard bulk length nudge (done).

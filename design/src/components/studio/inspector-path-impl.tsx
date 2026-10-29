@@ -316,6 +316,25 @@ export function PathFields({ node }: { node: PathNode }) {
     return () => document.removeEventListener("keydown", onKey, true);
   }, []);
 
+  useEffect(() => {
+    if (pointSel.length < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown" && e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const step = e.shiftKey ? 10 : 1;
+      const dir = e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 : -1;
+      const cur = avgHandleLengthForSelected(node, pointSel);
+      const next = Math.max(0, cur + dir * step);
+      bulkSetHandleLength(node, next, pointSel);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [pointSel, node]);
+
   const activeOuter = hit && hit.hole == null ? hit.index : -1;
   const isSelected = (index: number, hole?: number) =>
     pointSel.some((p) => p.index === index && (p.hole ?? null) === (hole ?? null));
@@ -384,9 +403,9 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         {pointSel.length > 1 && (
           <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-            <span title="Average length of handles on multi-selected points (Shift-click points to select)">Sel</span>
+            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing.">Sel</span>
             <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
-            <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select.">
+            <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select. Arrow keys nudge the bulk length by 1 (Shift for 10).">
               <NumField
                 className="field font-mono text-[11px] w-14"
                 value={avgHandleLengthForSelected(node, pointSel)}
