@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: multi-select delete points (Del). With two or more points selected (Shift-click), a Del button appears next to Zro. Clicking removes all selected points. Holes left with fewer than 3 points are dropped; the whole path is removed if fewer than 2 points remain. Selection clears after. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
+
 - Path inspector: multi-select handle axis bulk set (Hz / Vt). With two or more points selected (Shift-click), Hz and Vt buttons appear next to Sm/Cr. Clicking sets all selected points’ handles to horizontal or vertical (length preserved, zero handles left alone, Mirror honored). Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
 
 - Path inspector: multi-select zero handles (Zro). With two or more points selected (Shift-click), a Zro button appears next to Vt. Clicking sets all handles on the selected points to length 0 (removes arms). Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
@@ -86,8 +88,9 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-30 05:05 GMT — Path inspector: multi-select zero handles (Zro). Verified typecheck, build, and browser smoke.
+2026-10-30 08:15 GMT — Path inspector: multi-select delete points (Del). Verified typecheck, build, and browser smoke.
 ## Next recommended
+- Path inspector: multi-select delete points (Del) (done).
 - Path inspector: multi-select zero handles (Zro) (done).
 - Path inspector: multi-select handle axis bulk set (Hz / Vt) (done).
 - Path inspector: multi-select Smooth/Corner bulk toggle (done).

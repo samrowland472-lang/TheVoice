@@ -6,6 +6,7 @@ import {
   setHoleFillRule,
   setPathClosed,
   setPathPointHandles,
+  setPathPointSelection,
 } from "@/lib/design/path-actions";
 import {
   offsetSelectedPath,
@@ -165,6 +166,53 @@ function bulkSetSmooth(node: PathNode, selected: { index: number; hole?: number 
   );
   s.commit();
   s.replaceNode(node.id, { ...node, points: nextPoints, holes: nextHoles.length ? nextHoles : node.holes }, false);
+}
+
+function bulkDeletePoints(node: PathNode, selected: { index: number; hole?: number }[]) {
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, Set<number>>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, new Set());
+    byHole.get(h)!.add(p.index);
+  }
+  let nextPoints = node.points;
+  if (byHole.has(null)) {
+    const drop = byHole.get(null)!;
+    nextPoints = node.points.filter((_, i) => !drop.has(i));
+  }
+  let nextHoles = node.holes ?? [];
+  const holeIndices = [...byHole.keys()].filter((h): h is number => h !== null).sort((a, b) => b - a);
+  for (const h of holeIndices) {
+    const drop = byHole.get(h)!;
+    const ring = nextHoles[h];
+    if (!ring) continue;
+    const kept = ring.filter((_, i) => !drop.has(i));
+    if (kept.length < 3) {
+      nextHoles = nextHoles.filter((_, i) => i !== h);
+    } else {
+      nextHoles = nextHoles.map((r, i) => (i === h ? kept : r));
+    }
+  }
+  if (nextPoints.length < 2) {
+    s.commit();
+    s.select([node.id]);
+    s.removeSelected();
+    setPathPointSelection([]);
+    return;
+  }
+  s.commit();
+  s.replaceNode(
+    node.id,
+    {
+      ...node,
+      points: nextPoints,
+      holes: nextHoles.length ? nextHoles : undefined,
+      closed: nextPoints.length >= 3 ? node.closed : false,
+    },
+    false,
+  );
+  setPathPointSelection([]);
 }
 
 function bulkSetHandleAxis(node: PathNode, selected: { index: number; hole?: number }[], axis: "h" | "v") {
@@ -515,7 +563,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         {pointSel.length > 1 && (
           <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles). Hz/Vt set handle axes. Zro zeros all handles.">Sel</span>
+            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles). Hz/Vt set handle axes. Zro zeros all handles. Del removes the selected points.">Sel</span>
             <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
             {(() => {
               const { on, total } = countMirroredSelected(node, pointSel, mirrorPoints ?? {});
@@ -576,6 +624,14 @@ export function PathFields({ node }: { node: PathNode }) {
               onClick={() => bulkSetHandleLength(node, 0, pointSel)}
             >
               Zro
+            </button>
+            <button
+              type="button"
+              className="h-5 rounded-[4px] border border-border px-1.5 text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+              title="Delete all selected points (Shift-click to multi-select). Holes with fewer than 3 points left are removed. The path is removed if fewer than 2 points remain."
+              onClick={() => bulkDeletePoints(node, pointSel)}
+            >
+              Del
             </button>
             <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select. Arrow keys nudge the bulk length by 1 (Shift for 10).">
               <NumField
