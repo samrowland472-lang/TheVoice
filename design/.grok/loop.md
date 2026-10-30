@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: multi-select reverse relative order of selected points within a consecutive run only (Run). With two or more points selected (Shift-click), a Run button appears next to Ord. Clicking reverses the relative order only inside each consecutive run of selected points (non-adjacent selected points stay in separate runs and are not mixed). Unselected siblings stay put. In/out handles swap so local curves reverse. Mirror flags follow the points. Selection indices remain valid. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
+
 - Layers: multi-select reverse stacking order (Rev). With two or more layers selected, a Rev button appears next to Duplicate. Clicking reverses the relative stacking order of the selected layers within each shared parent (unselected siblings stay in place; later-in-array becomes earlier). Preference is not stored; order is committed immediately. Tooltip explains the action. Verified typecheck, build, and browser smoke.
 
 - Type inspector: reverse type baseline / leading direction toggle (Rev). A Rev button in the Rhythm strip toggles reverse leading. When on, canvas rhythm baselines and ticks stack from the bottom of the text box (first line at the bottom); strip baseline and density ticks flip vertical emphasis to match. Preference persists in localStorage. Tooltip explains the action. Verified typecheck, build, and browser smoke.
@@ -97,10 +99,12 @@
 
 - Type inspector: baseline alignment toggle (Hng / Alp / Mid). In the Rhythm strip, three buttons set the canvas textBaseline (hanging / alphabetic / middle). Preference persists in localStorage. Rhythm ghosts and the strip ticks follow the chosen baseline. SVG export uses the matching dominant-baseline. Tooltip explains each mode. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note on mobile).
 
+- Path inspector: multi-select reverse relative order of selected points within a consecutive run only (Run). With two or more points selected (Shift-click), a Run button appears next to Ord. Clicking reverses the relative order only inside each consecutive run of selected points (non-adjacent selected points stay in separate runs and are not mixed). Unselected siblings stay put. In/out handles swap so local curves reverse. Mirror flags follow the points. Selection indices remain valid. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
+
 ## Iteration
-2026-10-30 21:07 GMT — Type inspector: baseline alignment toggle (Hng / Alp / Mid). Verified typecheck, build, and browser smoke.
+2026-10-30 22:05 GMT — Path inspector: multi-select reverse relative order of selected points within a consecutive run only (Run). Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: multi-select reverse relative order of selected points within a consecutive run only.
+- Path inspector: keyboard nudge for multi-select reverse order.
+- Path inspector: multi-select reverse relative order of selected points within a consecutive run only (done).
 - Type inspector: baseline alignment toggle (done).
 - Layers: multi-select reverse stacking order (done).
-- Path inspector: keyboard nudge for multi-select reverse order.

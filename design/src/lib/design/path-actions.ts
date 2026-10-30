@@ -495,3 +495,93 @@ export function reverseRelativeSelectedPoints(
   }
   return true;
 }
+
+/** Reverse relative order within each consecutive run of multi-selected points.
+ * Non-consecutive selected points form separate runs; each run of length >= 2 is reversed independently.
+ * Unselected points and isolated selected points stay put. Handles and Mirror flags follow as in reverseRelativeSelectedPoints. */
+export function reverseConsecutiveRunsSelectedPoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+): boolean {
+  if (selected.length < 2) return false;
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  let nextPoints = node.points.slice();
+  let nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+  const mirrorMoves: { from: string; to: string; value: boolean }[] = [];
+  const mirrorPoints = s.mirrorPoints || {};
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+
+    // group into consecutive runs
+    const runs: number[][] = [];
+    let current: number[] = [indices[0]!];
+    for (let i = 1; i < indices.length; i++) {
+      if (indices[i]! === indices[i - 1]! + 1) {
+        current.push(indices[i]!);
+      } else {
+        if (current.length >= 2) runs.push(current);
+        current = [indices[i]!];
+      }
+    }
+    if (current.length >= 2) runs.push(current);
+
+    for (const run of runs) {
+      const picked = run.map((i) => ring[i]).filter(Boolean);
+      if (picked.length !== run.length) continue;
+      const reversed = picked.slice().reverse().map((p) => ({
+        ...p,
+        in: p.out ?? null,
+        out: p.in ?? null,
+      }));
+      for (let k = 0; k < run.length; k++) {
+        ring[run[k]!] = reversed[k]!;
+      }
+      // mirror flags follow the points
+      for (let k = 0; k < run.length; k++) {
+        const fromIdx = run[k]!;
+        const toIdx = run[run.length - 1 - k]!;
+        if (fromIdx === toIdx) continue;
+        const fromKey = `${node.id}:${h ?? ""}:${fromIdx}`;
+        const toKey = `${node.id}:${h ?? ""}:${toIdx}`;
+        const value = !!mirrorPoints[fromKey];
+        mirrorMoves.push({ from: fromKey, to: toKey, value });
+      }
+      changed = true;
+    }
+  }
+  if (!changed) return false;
+  s.commit();
+  s.replaceNode(
+    node.id,
+    {
+      ...node,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  // apply mirror moves (two-pass to avoid overwrite)
+  if (mirrorMoves.length) {
+    const temp: Record<string, boolean> = {};
+    for (const m of mirrorMoves) temp[m.to] = m.value;
+    const setMirrorPoint = s.setMirrorPoint;
+    for (const m of mirrorMoves) {
+      if (temp[m.to] !== undefined) {
+        setMirrorPoint(m.to, temp[m.to]!);
+      }
+    }
+  }
+  return true;
+}
