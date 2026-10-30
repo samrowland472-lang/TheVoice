@@ -32,6 +32,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * When weightTickThickness is true, density and per-glyph ticks scale thickness and height with the ghosted font weight.
  * When glyphDensityScale is true, intermediate density and average-advance tick spacing scale with the ghosted font size (denser for larger type).
  * densityScaleFactor multiplies that spacing (1 = default densification, higher = denser ticks).
+ * When reverseLeading is true, the vertical stack of leading lines and baseline ticks is reversed (first line at the bottom).
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -42,6 +43,7 @@ export function drawTypeRhythmGhosts(
   weightTickThickness = true,
   glyphDensityScale = true,
   densityScaleFactor = 1,
+  reverseLeading = false,
 ) {
   const phosphor = "rgba(63,198,255,0.85)";
   const phosphorSoft = "rgba(63,198,255,0.35)";
@@ -65,6 +67,11 @@ export function drawTypeRhythmGhosts(
     const { lines, lineHeight, startY } = layoutTextLines(n, measure);
     if (!lines.length) continue;
 
+    const lineY = (i: number) => {
+      const idx = reverseLeading ? lines.length - 1 - i : i;
+      return n.y + startY + idx * lineHeight + n.fontSize * 0.8; // near baseline
+    };
+
     ctx.save();
     ctx.strokeStyle = phosphor;
     // Slightly thicker lines when weight is being ghosted
@@ -74,7 +81,7 @@ export function drawTypeRhythmGhosts(
 
     // Leading lines — one per line, spanning the text box width
     for (let i = 0; i < lines.length; i++) {
-      const y = n.y + startY + i * lineHeight + n.fontSize * 0.8; // near baseline
+      const y = lineY(i);
       ctx.beginPath();
       ctx.moveTo(n.x, y);
       ctx.lineTo(n.x + n.w, y);
@@ -86,7 +93,7 @@ export function drawTypeRhythmGhosts(
       const tickLen = Math.max(7 / zoom, 5);
       ctx.lineWidth = Math.max(1.4 / zoom, 1);
       for (let i = 0; i < lines.length; i++) {
-        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        const y = lineY(i);
         ctx.beginPath();
         // left tick
         ctx.moveTo(n.x, y - tickLen / 2);
@@ -104,7 +111,7 @@ export function drawTypeRhythmGhosts(
       const densityStep = Math.max(n.fontSize * 0.55 / densityFactor, 8 / zoom);
       ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
       for (let i = 0; i < lines.length; i++) {
-        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        const y = lineY(i);
         // center mid-line tick
         const midX = n.x + n.w / 2;
         ctx.beginPath();
@@ -134,7 +141,7 @@ export function drawTypeRhythmGhosts(
       const densityStep = Math.max(lineHeight * 0.65 / densityFactor, 10 / zoom);
       ctx.lineWidth = Math.max(1.1 / zoom, 0.8);
       for (let i = 0; i < lines.length; i++) {
-        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        const y = lineY(i);
         const midX = n.x + n.w / 2;
         ctx.beginPath();
         ctx.moveTo(midX, y - midTick / 2);
@@ -177,7 +184,7 @@ export function drawTypeRhythmGhosts(
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i] || "";
         if (!line) continue;
-        const y = n.y + startY + i * lineHeight + n.fontSize * 0.8;
+        const y = lineY(i);
         const tracking = n.letterSpacing || 0;
         const usePerGlyph = preferPerGlyph ? line.length <= PER_GLYPH_MAX : line.length <= SHORT;
 

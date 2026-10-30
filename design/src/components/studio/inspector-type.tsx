@@ -149,6 +149,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
   const setShowGlyphDensityScale = useDesign((s) => s.setShowGlyphDensityScale);
   const glyphDensityScaleFactor = useDesign((s) => s.glyphDensityScaleFactor);
   const setGlyphDensityScaleFactor = useDesign((s) => s.setGlyphDensityScaleFactor);
+  const reverseTypeLeading = useDesign((s) => s.reverseTypeLeading);
+  const setReverseTypeLeading = useDesign((s) => s.setReverseTypeLeading);
   const ghosted = applyTypeGhost(node, typeGhost);
 
   useEffect(() => {
@@ -181,13 +183,15 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
 
     // Left and right baseline ticks
     const tickH = 7;
+    const up = reverseTypeLeading ? tickH * 0.35 : tickH;
+    const down = reverseTypeLeading ? tickH : tickH * 0.35;
     ctx.beginPath();
-    ctx.moveTo(left, y - tickH);
-    ctx.lineTo(left, y + tickH * 0.35);
+    ctx.moveTo(left, y - up);
+    ctx.lineTo(left, y + down);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(right, y - tickH);
-    ctx.lineTo(right, y + tickH * 0.35);
+    ctx.moveTo(right, y - up);
+    ctx.lineTo(right, y + down);
     ctx.stroke();
 
     // Mid-line center tick
@@ -239,6 +243,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
       }
       ctx.lineWidth = 0.7 * wFactor;
       const tickH = 4.2 * Math.pow(wFactor, 0.5);
+      const tUp = reverseTypeLeading ? tickH * 0.28 : tickH;
+      const tDown = reverseTypeLeading ? tickH : tickH * 0.28;
       if (usePerGlyph) {
         let cum = 0;
         for (let g = 0; g < sample.length; g++) {
@@ -246,8 +252,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
           const tickX = left + 4 + cum + chW * 0.5;
           if (tickX > left && tickX < right) {
             ctx.beginPath();
-            ctx.moveTo(tickX, y - tickH);
-            ctx.lineTo(tickX, y + tickH * 0.28);
+            ctx.moveTo(tickX, y - tUp);
+            ctx.lineTo(tickX, y + tDown);
             ctx.stroke();
           }
           cum += chW + (g < sample.length - 1 ? tracking * 0.85 : 0);
@@ -260,14 +266,14 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
         );
         for (let x = left + advance * 0.35; x < right - 3; x += advance) {
           ctx.beginPath();
-          ctx.moveTo(x, y - tickH);
-          ctx.lineTo(x, y + tickH * 0.28);
+          ctx.moveTo(x, y - tUp);
+          ctx.lineTo(x, y + tDown);
           ctx.stroke();
         }
       }
       ctx.restore();
     }
-  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks, showWeightTickThickness, showGlyphDensityScale, glyphDensityScaleFactor]);
+  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks, showWeightTickThickness, showGlyphDensityScale, glyphDensityScaleFactor, reverseTypeLeading]);
 
   return (
     <div className="mt-2">
@@ -399,6 +405,18 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
             onClick={() => setShowPerGlyphTicks(!showPerGlyphTicks)}
           >
             Glyph
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              reverseTypeLeading ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={reverseTypeLeading}
+            title="Reverse leading direction: stack rhythm baselines from the bottom of the text box (first line at bottom). Ticks in the strip flip to match."
+            onClick={() => setReverseTypeLeading(!reverseTypeLeading)}
+          >
+            Rev
           </button>
         </div>
       </div>
