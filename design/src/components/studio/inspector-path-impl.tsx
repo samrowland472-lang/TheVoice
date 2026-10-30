@@ -7,6 +7,7 @@ import {
   setPathClosed,
   setPathPointHandles,
   setPathPointSelection,
+  reverseSelectedPath,
 } from "@/lib/design/path-actions";
 import {
   offsetSelectedPath,
@@ -545,6 +546,15 @@ export function PathFields({ node }: { node: PathNode }) {
             onClick={() => simplifySelectedPath()}
           >
             Simplify
+          </button>
+          <button
+            type="button"
+            data-path-exit="Rev"
+            className="h-8 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            title="Reverse path direction (flips point order and swaps in/out handles so curves stay continuous). Clears point selection."
+            onClick={() => reverseSelectedPath()}
+          >
+            Rev
           </button>
         </div>
         <div className="flex items-center gap-2 text-[10px] text-ink-dim">

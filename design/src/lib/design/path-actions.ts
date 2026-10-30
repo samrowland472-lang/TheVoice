@@ -393,3 +393,31 @@ export function deletePathPoint(id: string, index: number, hole?: number) {
   s.replaceNode(id, { ...n, holes: (n.holes ?? []).map((h, i) => (i === hole ? nextHole : h)) }, false);
   setPathEditHit({ index: Math.min(index, nextHole.length - 1), arm: "anchor", hole });
 }
+
+/** Reverse path direction: flip point order and swap in/out handles so curves stay continuous. */
+export function reverseSelectedPath(): boolean {
+  const s = useDesign.getState();
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  if (!n || n.points.length < 2) return false;
+  const reverseRing = (pts: PathPoint[]): PathPoint[] =>
+    pts.slice().reverse().map((p) => ({
+      ...p,
+      in: p.out ?? null,
+      out: p.in ?? null,
+    }));
+  s.commit();
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: reverseRing(n.points),
+      holes: n.holes?.map(reverseRing),
+    },
+    false,
+  );
+  setPathPointSelection([]);
+  setPathEditHit(null);
+  return true;
+}
