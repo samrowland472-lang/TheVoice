@@ -20,7 +20,7 @@ import { expandMovePlaces, getNudgeCue, keyboardSnapNudge, nudgeSelection, nudge
 import { setStudioStatus } from "./studio-status";
 import type { GuideSet } from "./snap";
 import { isGroup } from "./types";
-import { applyLayerDrop, makeGroup, nudgeLayer, ungroup, withDescendants, type LayerDrop } from "./groups";
+import { applyLayerDrop, makeGroup, nudgeLayer, reverseSelectedStacking, ungroup, withDescendants, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
 import type { StrokeGhost } from "./stroke-ghost";
@@ -349,6 +349,14 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const { doc } = get();
     if (!doc) return;
     const next = nudgeLayer(doc.nodes, id, dir);
+    if (!next) return;
+    get().commit();
+    set({ doc: { ...doc, nodes: next }, dirty: true });
+  },
+  reverseStacking: () => {
+    const { doc, selection } = get();
+    if (!doc || selection.length < 2) return;
+    const next = reverseSelectedStacking(doc.nodes, selection);
     if (!next) return;
     get().commit();
     set({ doc: { ...doc, nodes: next }, dirty: true });

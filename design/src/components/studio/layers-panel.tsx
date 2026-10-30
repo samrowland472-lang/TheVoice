@@ -194,6 +194,16 @@ export function LayersPanel() {
           >
             Duplicate
           </button>
+          {selection.length >= 2 && (
+            <button
+              type="button"
+              className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink"
+              onClick={() => useDesign.getState().reverseStacking()}
+              title="Reverse stacking order of selected layers (within each parent)"
+            >
+              Rev
+            </button>
+          )}
         </div>
         {isolateSnapshot ? (
           <button

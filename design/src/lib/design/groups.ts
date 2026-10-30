@@ -208,3 +208,40 @@ export function nudgeLayer(nodes: DesignNode[], id: string, dir: "up" | "down"):
   next[b] = tmp;
   return next;
 }
+
+/** Reverse relative stacking order of selected layers that share a parent.
+ * Unselected siblings stay put. Selected among themselves reverse (later becomes earlier).
+ * Returns null if nothing changed.
+ */
+export function reverseSelectedStacking(nodes: DesignNode[], ids: string[]): DesignNode[] | null {
+  if (!ids || ids.length < 2) return null;
+  const selected = new Set(ids);
+  const byParent = new Map<string | undefined, DesignNode[]>();
+  for (const n of nodes) {
+    if (selected.has(n.id)) {
+      const key = n.parentId;
+      const list = byParent.get(key) ?? [];
+      list.push(n);
+      byParent.set(key, list);
+    }
+  }
+  let changed = false;
+  const next = nodes.slice();
+  for (const group of byParent.values()) {
+    if (group.length < 2) continue;
+    const positions: number[] = [];
+    for (const n of group) {
+      const p = next.findIndex((x) => x.id === n.id);
+      if (p < 0) continue;
+      positions.push(p);
+    }
+    if (positions.length < 2) continue;
+    positions.sort((a, b) => a - b);
+    const reversed = [...group].reverse();
+    for (let i = 0; i < positions.length; i++) {
+      next[positions[i]] = reversed[i]!;
+    }
+    changed = true;
+  }
+  return changed ? next : null;
+}

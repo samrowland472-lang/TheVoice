@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Layers: multi-select reverse stacking order (Rev). With two or more layers selected, a Rev button appears next to Duplicate. Clicking reverses the relative stacking order of the selected layers within each shared parent (unselected siblings stay in place; later-in-array becomes earlier). Preference is not stored; order is committed immediately. Tooltip explains the action. Verified typecheck, build, and browser smoke.
+
 - Type inspector: reverse type baseline / leading direction toggle (Rev). A Rev button in the Rhythm strip toggles reverse leading. When on, canvas rhythm baselines and ticks stack from the bottom of the text box (first line at the bottom); strip baseline and density ticks flip vertical emphasis to match. Preference persists in localStorage. Tooltip explains the action. Verified typecheck, build, and browser smoke.
 
 - Path inspector: multi-select reverse relative order of selected points (Ord). With two or more points selected (Shift-click), an Ord button appears next to Del. Clicking reverses the relative order of the selected points among their slots (unselected points stay put), swaps each point’s in/out handles so local curves reverse, and moves Mirror flags with the points. Selection indices remain valid. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
@@ -94,9 +96,9 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-30 19:11 GMT — Type inspector: reverse type baseline / leading direction toggle (Rev). Verified typecheck, build, and browser smoke.
+2026-10-30 20:06 GMT — Layers: multi-select reverse stacking order (Rev). Verified typecheck, build, and browser smoke.
 ## Next recommended
 - Type inspector: reverse type baseline or leading direction toggle (done).
-- Layers: multi-select reverse stacking order.
+- Layers: multi-select reverse stacking order (done).
 - Path inspector: multi-select reverse relative order of selected points within a consecutive run only.
 - Type inspector: baseline alignment toggle (hanging / alphabetic / middle).
