@@ -151,6 +151,8 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
   const setGlyphDensityScaleFactor = useDesign((s) => s.setGlyphDensityScaleFactor);
   const reverseTypeLeading = useDesign((s) => s.reverseTypeLeading);
   const setReverseTypeLeading = useDesign((s) => s.setReverseTypeLeading);
+  const typeBaseline = useDesign((s) => s.typeBaseline);
+  const setTypeBaseline = useDesign((s) => s.setTypeBaseline);
   const ghosted = applyTypeGhost(node, typeGhost);
 
   useEffect(() => {
@@ -418,6 +420,21 @@ export function TypeRhythmPreview({ node }: { node: TextNode }) {
           >
             Rev
           </button>
+          {(["hanging", "alphabetic", "middle"] as const).map((b) => (
+            <button
+              key={b}
+              type="button"
+              className={cn(
+                "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+                typeBaseline === b ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+              )}
+              aria-pressed={typeBaseline === b}
+              title={`Baseline alignment: ${b}. Changes how type sits relative to the line y (hanging ≈ top, alphabetic, middle). Rhythm ticks follow the chosen baseline.`}
+              onClick={() => setTypeBaseline(b)}
+            >
+              {b === "hanging" ? "Hng" : b === "alphabetic" ? "Alp" : "Mid"}
+            </button>
+          ))}
         </div>
       </div>
       <canvas

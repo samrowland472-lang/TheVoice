@@ -4,6 +4,7 @@ import { applyFontFace } from "./fonts";
 import { pathNode } from "./node-factory";
 import { simplifyPolyline, toPathPoints, type Vec } from "./path-offset";
 import type { PathNode, PathPoint, TextNode } from "./types";
+import { useDesign } from "./store";
 
 export type Ring = Vec[];
 
@@ -216,7 +217,8 @@ export function nestContours(rings: Ring[]): GlyphContour[] {
 function paintText(ctx: CanvasRenderingContext2D, n: TextNode, ox: number, oy: number) {
   applyFontFace(ctx, n);
   ctx.textAlign = n.align === "center" ? "center" : n.align === "right" ? "right" : "left";
-  ctx.textBaseline = "top";
+  const baseline = useDesign.getState().typeBaseline ?? "hanging";
+  ctx.textBaseline = baseline;
   ctx.fillStyle = "#fff";
   const lines = n.text.split("\n");
   const lh = n.fontSize * n.lineHeight;

@@ -127,6 +127,8 @@ export function CanvasStage() {
   const selection = useDesign((s) => s.selection);
   const strokeGhost = useDesign((s) => s.strokeGhost);
   const typeGhost = useDesign((s) => s.typeGhost);
+  const typeBaseline = useDesign((s) => s.typeBaseline);
+  const reverseTypeLeading = useDesign((s) => s.reverseTypeLeading);
   const glyphDensityScaleFactor = useDesign((s) => s.glyphDensityScaleFactor);
   const booleanPreview = useDesign((s) => s.booleanPreview);
   const pathEditHit = useDesign((s) => s.pathEditHit);
@@ -386,7 +388,8 @@ export function CanvasStage() {
         const densityScale = useDesign.getState().showGlyphDensityScale;
         const densityFactor = useDesign.getState().glyphDensityScaleFactor;
         const reverseLeading = useDesign.getState().reverseTypeLeading;
-        drawTypeRhythmGhosts(ctx, selectedNodes, typeGhost, viewport.zoom, preferPerGlyph, weightTicks, densityScale, densityFactor, reverseLeading);
+        const typeBaseline = useDesign.getState().typeBaseline;
+        drawTypeRhythmGhosts(ctx, selectedNodes, typeGhost, viewport.zoom, preferPerGlyph, weightTicks, densityScale, densityFactor, reverseLeading, typeBaseline);
       }
       if (strokeGhost && selection.length) {
         const selectedNodes = doc.nodes.filter((n) => selection.includes(n.id));
@@ -517,7 +520,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, showTangentLengths, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost, typeGhost, glyphDensityScaleFactor]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, showTangentLengths, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost, typeGhost, glyphDensityScaleFactor, typeBaseline, reverseTypeLeading]);
 
   useEffect(() => {
     const wrap = wrapRef.current;

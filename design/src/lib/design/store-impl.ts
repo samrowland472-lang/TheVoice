@@ -61,6 +61,11 @@ export const useDesign = create<any>((set: any, get: any) => ({
   showWeightTickThickness: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-weight-tick-thickness") !== "0",
   showGlyphDensityScale: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-glyph-density-scale") !== "0",
   reverseTypeLeading: typeof localStorage !== "undefined" && localStorage.getItem("voice-design-reverse-type-leading") === "1",
+  typeBaseline: (() => {
+    if (typeof localStorage === "undefined") return "hanging" as const;
+    const raw = localStorage.getItem("voice-design-type-baseline");
+    return raw === "alphabetic" || raw === "middle" ? raw : "hanging";
+  })(),
   glyphDensityScaleFactor: (() => {
     if (typeof localStorage === "undefined") return 1;
     const raw = localStorage.getItem("voice-design-glyph-density-factor");
@@ -133,6 +138,10 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setReverseTypeLeading: (v: boolean) => {
     if (typeof localStorage !== "undefined") localStorage.setItem("voice-design-reverse-type-leading", v ? "1" : "0");
     set({ reverseTypeLeading: v });
+  },
+  setTypeBaseline: (v: "hanging" | "alphabetic" | "middle") => {
+    if (typeof localStorage !== "undefined") localStorage.setItem("voice-design-type-baseline", v);
+    set({ typeBaseline: v });
   },
   setGlyphDensityScaleFactor: (v: number) => {
     const next = Math.max(0.4, Math.min(2.5, Number.isFinite(v) ? v : 1));

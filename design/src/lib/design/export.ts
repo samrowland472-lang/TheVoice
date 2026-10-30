@@ -6,6 +6,7 @@ import { drawPrintMarks, resolveBleed } from "./print-marks";
 import { drawDocument } from "./render";
 import { canvasShadowParams } from "./shadow";
 import { layoutTextLines, measureTracked } from "./text-layout";
+import { useDesign } from "./store";
 import type { DesignDocument, DesignNode, GroupNode, PathNode, PathPoint, Shadow, ShapeNode, TextNode } from "./types";
 import { isGroup } from "./types";
 import {
@@ -268,7 +269,8 @@ export function svgTextMarkup(t: TextNode, fill: string, prefix = ""): string {
     })
     .join("");
   const clip = ` clip-path="url(#${svgTextClipId(t.id, prefix)})"`;
-  return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="hanging"${tracking}${styleAttr}${svgOpacityAttr(t)}${shadowAttr(t, prefix)}${clip}>${tspans}</text>`;
+  const baseline = useDesign.getState().typeBaseline ?? "hanging";
+  return `<text fill="${esc(fill)}" font-size="${t.fontSize}" font-family="${family}" font-weight="${weight}" text-anchor="${anchor}" dominant-baseline="${baseline}"${tracking}${styleAttr}${svgOpacityAttr(t)}${shadowAttr(t, prefix)}${clip}>${tspans}</text>`;
 }
 
 function svgLeafMarkup(n: DesignNode, prefix: string): string {

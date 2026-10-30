@@ -5,6 +5,7 @@ import { tracePath } from "./path-curve";
 import { canvasShadowParams } from "./shadow";
 import { arrowPoints } from "./shape-to-path";
 import { layoutTextLines } from "./text-layout";
+import { useDesign } from "./store";
 import { isGradient, isGroup, isImage, isPaint, isPath, isText, type DesignDocument, type DesignNode, type Fill, type GroupNode, type Shadow, type Viewport } from "./types";
 
 const imageCache = new Map<string, HTMLImageElement>();
@@ -113,7 +114,8 @@ function fillSilhouette(ctx: CanvasRenderingContext2D, n: DesignNode) {
   if (isText(n)) {
     applyFontFace(ctx, n);
     ctx.textAlign = n.align === "center" ? "center" : n.align === "right" ? "right" : "left";
-    ctx.textBaseline = "top";
+    const baseline = useDesign.getState().typeBaseline ?? "hanging";
+    ctx.textBaseline = baseline;
     const measure = (s: string) => ctx.measureText(s).width;
     const { lines, lineHeight, startY } = layoutTextLines(n, measure);
     ctx.beginPath();

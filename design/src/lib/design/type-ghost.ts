@@ -33,6 +33,7 @@ export function applyTypeGhost(n: TextNode, ghost: TypeGhost): TextNode {
  * When glyphDensityScale is true, intermediate density and average-advance tick spacing scale with the ghosted font size (denser for larger type).
  * densityScaleFactor multiplies that spacing (1 = default densification, higher = denser ticks).
  * When reverseLeading is true, the vertical stack of leading lines and baseline ticks is reversed (first line at the bottom).
+ * typeBaseline shifts the reference y of each line so ticks match the canvas textBaseline (hanging / alphabetic / middle).
  */
 export function drawTypeRhythmGhosts(
   ctx: CanvasRenderingContext2D,
@@ -44,6 +45,7 @@ export function drawTypeRhythmGhosts(
   glyphDensityScale = true,
   densityScaleFactor = 1,
   reverseLeading = false,
+  typeBaseline: "hanging" | "alphabetic" | "middle" = "hanging",
 ) {
   const phosphor = "rgba(63,198,255,0.85)";
   const phosphorSoft = "rgba(63,198,255,0.35)";
@@ -67,9 +69,13 @@ export function drawTypeRhythmGhosts(
     const { lines, lineHeight, startY } = layoutTextLines(n, measure);
     if (!lines.length) continue;
 
+    const em = n.fontSize;
+    // Tick sits on the chosen textBaseline relative to the line's reference y (the y passed to fillText).
+    const baselineShift = typeBaseline === "alphabetic" ? em * 0.8 : typeBaseline === "middle" ? em * 0.5 : em * 0.12;
+
     const lineY = (i: number) => {
       const idx = reverseLeading ? lines.length - 1 - i : i;
-      return n.y + startY + idx * lineHeight + n.fontSize * 0.8; // near baseline
+      return n.y + startY + idx * lineHeight + baselineShift;
     };
 
     ctx.save();

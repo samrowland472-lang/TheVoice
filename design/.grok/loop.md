@@ -95,10 +95,12 @@
 
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
+- Type inspector: baseline alignment toggle (Hng / Alp / Mid). In the Rhythm strip, three buttons set the canvas textBaseline (hanging / alphabetic / middle). Preference persists in localStorage. Rhythm ghosts and the strip ticks follow the chosen baseline. SVG export uses the matching dominant-baseline. Tooltip explains each mode. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note on mobile).
+
 ## Iteration
-2026-10-30 20:06 GMT — Layers: multi-select reverse stacking order (Rev). Verified typecheck, build, and browser smoke.
+2026-10-30 21:07 GMT — Type inspector: baseline alignment toggle (Hng / Alp / Mid). Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Type inspector: reverse type baseline or leading direction toggle (done).
-- Layers: multi-select reverse stacking order (done).
 - Path inspector: multi-select reverse relative order of selected points within a consecutive run only.
-- Type inspector: baseline alignment toggle (hanging / alphabetic / middle).
+- Type inspector: baseline alignment toggle (done).
+- Layers: multi-select reverse stacking order (done).
+- Path inspector: keyboard nudge for multi-select reverse order.
