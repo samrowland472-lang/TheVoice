@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: multi-select reverse relative order of selected points (Ord). With two or more points selected (Shift-click), an Ord button appears next to Del. Clicking reverses the relative order of the selected points among their slots (unselected points stay put), swaps each point’s in/out handles so local curves reverse, and moves Mirror flags with the points. Selection indices remain valid. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
+
 - Path inspector: Rev button reverses path direction. Clicking Rev flips the order of points on the outer path and any holes, and swaps each point’s in/out handles so the curves remain continuous. Point selection is cleared. Tooltip explains the action. Verified typecheck, build, and browser smoke.
 
 - Path inspector: multi-select delete points (Del). With two or more points selected (Shift-click), a Del button appears next to Zro. Clicking removes all selected points. Holes left with fewer than 3 points are dropped; the whole path is removed if fewer than 2 points remain. Selection clears after. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
@@ -90,9 +92,9 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-30 12:07 GMT — Path inspector: Rev reverses path direction. Verified typecheck, build, and browser smoke.
+2026-10-30 18:07 GMT — Path inspector: multi-select reverse relative order of selected points (Ord). Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: Rev reverses path direction (done).
-- Path inspector: multi-select reverse relative order of selected points.
+- Path inspector: multi-select reverse relative order of selected points (done).
 - Type inspector: reverse type baseline or leading direction toggle.
 - Layers: multi-select reverse stacking order.
+- Path inspector: multi-select reverse relative order of selected points within a consecutive run only.

@@ -421,3 +421,77 @@ export function reverseSelectedPath(): boolean {
   setPathEditHit(null);
   return true;
 }
+
+/** Reverse relative order of multi-selected points (same slots, points reordered among themselves).
+ * Swaps in/out handles so local curves reverse with the order. Selection indices stay valid.
+ * Mirror flags follow the points. */
+export function reverseRelativeSelectedPoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+): boolean {
+  if (selected.length < 2) return false;
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  let nextPoints = node.points.slice();
+  let nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+  const mirrorMoves: { from: string; to: string; value: boolean }[] = [];
+  const mirrorPoints = s.mirrorPoints || {};
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+    const picked = indices.map((i) => ring[i]).filter(Boolean);
+    if (picked.length !== indices.length) continue;
+    const reversed = picked.slice().reverse().map((p) => ({
+      ...p,
+      in: p.out ?? null,
+      out: p.in ?? null,
+    }));
+    for (let k = 0; k < indices.length; k++) {
+      ring[indices[k]!] = reversed[k]!;
+    }
+    // mirror flags follow the points
+    for (let k = 0; k < indices.length; k++) {
+      const fromIdx = indices[k]!;
+      const toIdx = indices[indices.length - 1 - k]!;
+      if (fromIdx === toIdx) continue;
+      const fromKey = `${node.id}:${h ?? ""}:${fromIdx}`;
+      const toKey = `${node.id}:${h ?? ""}:${toIdx}`;
+      const value = !!mirrorPoints[fromKey];
+      mirrorMoves.push({ from: fromKey, to: toKey, value });
+    }
+    changed = true;
+  }
+  if (!changed) return false;
+  s.commit();
+  s.replaceNode(
+    node.id,
+    {
+      ...node,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  // apply mirror moves (two-pass to avoid overwrite)
+  if (mirrorMoves.length) {
+    const temp: Record<string, boolean> = {};
+    for (const m of mirrorMoves) temp[m.to] = m.value;
+    const setMirrorPoint = s.setMirrorPoint;
+    for (const m of mirrorMoves) {
+      if (temp[m.to] !== undefined) {
+        setMirrorPoint(m.to, temp[m.to]!);
+      }
+    }
+  }
+  return true;
+}
