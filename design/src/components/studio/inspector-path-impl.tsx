@@ -515,7 +515,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         {pointSel.length > 1 && (
           <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles). Hz/Vt set handle axes.">Sel</span>
+            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles). Hz/Vt set handle axes. Zro zeros all handles.">Sel</span>
             <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
             {(() => {
               const { on, total } = countMirroredSelected(node, pointSel, mirrorPoints ?? {});
@@ -568,6 +568,14 @@ export function PathFields({ node }: { node: PathNode }) {
               onClick={() => bulkSetHandleAxis(node, pointSel, "v")}
             >
               Vt
+            </button>
+            <button
+              type="button"
+              className="h-5 rounded-[4px] border border-border px-1.5 text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+              title="Zero all handles on selected points (sets length to 0, removes arms)"
+              onClick={() => bulkSetHandleLength(node, 0, pointSel)}
+            >
+              Zro
             </button>
             <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select. Arrow keys nudge the bulk length by 1 (Shift for 10).">
               <NumField
