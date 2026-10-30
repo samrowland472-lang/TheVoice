@@ -167,6 +167,47 @@ function bulkSetSmooth(node: PathNode, selected: { index: number; hole?: number 
   s.replaceNode(node.id, { ...node, points: nextPoints, holes: nextHoles.length ? nextHoles : node.holes }, false);
 }
 
+function bulkSetHandleAxis(node: PathNode, selected: { index: number; hole?: number }[], axis: "h" | "v") {
+  const s = useDesign.getState();
+  const mirrorPoints = s.mirrorPoints ?? {};
+  const byHole = new Map<number | null, Set<number>>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, new Set());
+    byHole.get(h)!.add(p.index);
+  }
+  const applyToRing = (pts: PathPoint[], hole: number | null, indices: Set<number>) => {
+    return pts.map((p, index) => {
+      if (!indices.has(index)) return p;
+      const key = `${node.id}:${hole ?? ""}:${index}`;
+      const mir = !!mirrorPoints[key];
+      const axisify = (h: { x: number; y: number } | null | undefined) => {
+        if (!h) return h;
+        const len = Math.hypot(h.x, h.y);
+        if (len < 0.5) return h;
+        return axis === "h" ? { x: Math.sign(h.x || 1) * len, y: 0 } : { x: 0, y: Math.sign(h.y || 1) * len };
+      };
+      let nextIn = axisify(p.in);
+      let nextOut = axisify(p.out);
+      if (mir) {
+        if (nextIn && !nextOut) nextOut = mirrorHandle(nextIn);
+        else if (nextOut && !nextIn) nextIn = mirrorHandle(nextOut);
+        else if (nextIn && nextOut) {
+          // prefer in as source for consistency
+          nextOut = mirrorHandle(nextIn);
+        }
+      }
+      return { ...p, in: nextIn, out: nextOut };
+    });
+  };
+  const nextPoints = byHole.has(null) ? applyToRing(node.points, null, byHole.get(null)!) : node.points;
+  const nextHoles = (node.holes ?? []).map((ring, h) =>
+    byHole.has(h) ? applyToRing(ring, h, byHole.get(h)!) : ring
+  );
+  s.commit();
+  s.replaceNode(node.id, { ...node, points: nextPoints, holes: nextHoles.length ? nextHoles : node.holes }, false);
+}
+
 function avgHandleLengthForRing(node: PathNode, hole: number | null): number {
   const pts = hole == null ? node.points : (node.holes?.[hole] ?? []);
   const lengths = collectHandleLengths(pts);
@@ -474,7 +515,7 @@ export function PathFields({ node }: { node: PathNode }) {
         </div>
         {pointSel.length > 1 && (
           <div className="flex items-center gap-2 text-[10px] text-ink-dim">
-            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles).">Sel</span>
+            <span title="Average length of handles on multi-selected points (Shift-click points to select). Arrow keys nudge bulk length by 1 (Shift for 10) when not typing. Mir toggles Mirror on all selected points. Sm toggles Smooth on all selected points (auto-smooths handles). Hz/Vt set handle axes.">Sel</span>
             <span className="font-mono text-phosphor tabular-nums">{avgHandleLengthForSelected(node, pointSel)}</span>
             {(() => {
               const { on, total } = countMirroredSelected(node, pointSel, mirrorPoints ?? {});
@@ -512,6 +553,22 @@ export function PathFields({ node }: { node: PathNode }) {
                 </button>
               );
             })()}
+            <button
+              type="button"
+              className="h-5 rounded-[4px] border border-border px-1.5 text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+              title="Set handles on selected points to horizontal (preserve length, honor Mirror)"
+              onClick={() => bulkSetHandleAxis(node, pointSel, "h")}
+            >
+              Hz
+            </button>
+            <button
+              type="button"
+              className="h-5 rounded-[4px] border border-border px-1.5 text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+              title="Set handles on selected points to vertical (preserve length, honor Mirror)"
+              onClick={() => bulkSetHandleAxis(node, pointSel, "v")}
+            >
+              Vt
+            </button>
             <span title="Set handle lengths on the selected points only. Direction is preserved; zero handles seed a horizontal arm. Mirror is honored. Shift-click points to multi-select. Arrow keys nudge the bulk length by 1 (Shift for 10).">
               <NumField
                 className="field font-mono text-[11px] w-14"

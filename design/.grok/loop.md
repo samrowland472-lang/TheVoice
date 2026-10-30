@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: multi-select handle axis bulk set (Hz / Vt). With two or more points selected (Shift-click), Hz and Vt buttons appear next to Sm/Cr. Clicking sets all selected points’ handles to horizontal or vertical (length preserved, zero handles left alone, Mirror honored). Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
+
 - Path inspector: multi-select Smooth/Corner bulk toggle. With two or more points selected (Shift-click), a Sm/Cr/Mix button next to Mir shows the state. Clicking sets all selected points to Smooth (auto handles) or Corner. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
 
 - Path inspector: multi-select Mirror bulk toggle. With two or more points selected (Shift-click), a Mir button next to the Sel average shows on/off/mixed state. Clicking sets Mirror for all selected points (and mirrors the opposite handle when turning on). Persists via the existing per-point localStorage memory. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
@@ -82,8 +84,9 @@
 - Layers Type quick strip Alt+T cycle now includes family (size → weight → tracking → leading → family). Shift+Alt+T cycles in reverse. Family opens its select; other fields still commit on cycle. Tooltip mentions both directions.
 
 ## Iteration
-2026-10-29 22:05 GMT — Path inspector: multi-select Smooth/Corner bulk toggle. Verified typecheck, build, and browser smoke.
+2026-10-30 01:10 GMT — Path inspector: multi-select handle axis bulk set (Hz / Vt). Verified typecheck, build, and browser smoke.
 ## Next recommended
+- Path inspector: multi-select handle axis bulk set (Hz / Vt) (done).
 - Path inspector: multi-select Smooth/Corner bulk toggle (done).
 - Path inspector: multi-select Mirror bulk toggle (done).
 - Type rhythm overlay: density factor double-click reset (done).
