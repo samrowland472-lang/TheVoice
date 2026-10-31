@@ -55,19 +55,28 @@ function stamp(x0: number, y0: number, x1: number, y1: number) {
   const ctx = session.canvas.getContext("2d");
   if (!ctx) return;
   const color = brush.color || state.color || "#0a0d0c";
-  // Pressure scales size (and a touch of opacity). Tilt is accepted but not yet applied.
+  // Pressure scales size (and a touch of opacity). Tilt flattens dabs into ellipses.
   const pressure = session.pressure;
   const liveSize = Math.max(1, brush.size * (0.2 + 0.8 * pressure));
   const liveOpacity = brush.opacity * (0.55 + 0.45 * pressure);
-  // Tilt stubs: keep values on the session for future ellipse / directional scatter.
-  void session.tiltX;
-  void session.tiltY;
   const aPoints = mirrorPoints(x0 - layer.x, y0 - layer.y, layer.w, layer.h, brush.symmetry);
   const bPoints = mirrorPoints(x1 - layer.x, y1 - layer.y, layer.w, layer.h, brush.symmetry);
   for (let i = 0; i < aPoints.length; i++) {
     const a = aPoints[i]!;
     const b = bPoints[i] ?? a;
-    strokeSegment(ctx, a.x, a.y, b.x, b.y, liveSize, color, def, liveOpacity);
+    strokeSegment(
+      ctx,
+      a.x,
+      a.y,
+      b.x,
+      b.y,
+      liveSize,
+      color,
+      def,
+      liveOpacity,
+      session.tiltX,
+      session.tiltY,
+    );
   }
   const url = session.canvas.toDataURL("image/png");
   state.replaceNode(session.nodeId, { ...layer, bitmap: url }, false);
@@ -133,4 +142,16 @@ export function endPaintStroke() {
 
 export function isPainting() {
   return session != null;
+}
+
+
+/** Live pressure from the active stroke (1 when idle or mouse). */
+export function getStrokePressure(): number {
+  return session?.pressure ?? 1;
+}
+
+/** Live tilt magnitude (degrees) from the active stroke. */
+export function getStrokeTilt(): number {
+  if (!session) return 0;
+  return Math.min(90, Math.hypot(session.tiltX, session.tiltY));
 }

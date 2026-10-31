@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T09:09:59Z
+
+**Done:** Tilt now flattens paint dabs into ellipses (aspect and rotation follow pointer tilt). Live brush cursor matches the tilted shape and pressure-scaled size. Bottom hint shows live pressure % and tilt ° while painting. Mouse still paints full circular strength.
+
+**Next recommended:** Directional scatter based on tilt angle, or a persistent pressure/tilt readout in the Brush inspector while a stroke is active.
+
 ## Iteration 2026-10-31T08:12:00Z
 
 **Done:** Stroke engine now accepts pointer pressure and tilt. Size and opacity scale with pressure (mouse / non-pen still paints at full strength). Tilt is stored on the session as a stub for future ellipse / directional scatter. Inspector Brush tip preview shows a compact Sp % readout under the tip.

@@ -37,7 +37,7 @@ import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
 import { drawAlignCommitEcho, drawAlignPreview, getAlignCommitEcho, getAlignPreview, subscribeAlignCommitEcho, subscribeAlignPreview } from "@/lib/design/align-preview";
-import { beginPaintStroke, continuePaintStroke, endPaintStroke, isPainting } from "@/lib/design/paint-stroke";
+import { beginPaintStroke, continuePaintStroke, endPaintStroke, getStrokePressure, getStrokeTilt, isPainting } from "@/lib/design/paint-stroke";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -543,32 +543,38 @@ export function CanvasStage() {
         }
       }
     }
-    // Live brush / eraser cursor matching current size + hardness
+    // Live brush / eraser cursor matching current size + hardness (+ tilt ellipse while painting)
     if (!present && (tool === "brush" || tool === "eraser") && hoverRef.current) {
       const h = hoverRef.current;
-      const r = Math.max(1, brush.size / 2);
+      const pressure = isPainting() ? getStrokePressure() : 1;
+      const tilt = isPainting() ? getStrokeTilt() : 0;
+      const liveSize = Math.max(1, brush.size * (0.2 + 0.8 * pressure));
+      const r = liveSize / 2;
       const hard = Math.max(0.05, Math.min(1, brush.hardness ?? 0.5));
       const inner = r * hard;
+      const aspect = Math.max(0.32, 1 - (tilt / 90) * 0.62);
       ctx.save();
       ctx.strokeStyle = tool === "eraser" ? "rgba(255,140,140,0.9)" : "rgba(63,198,255,0.95)";
       ctx.lineWidth = 1.4 / Math.max(viewport.zoom, 0.01);
+      ctx.translate(h.x, h.y);
+      if (tilt > 2) ctx.scale(1, aspect);
       ctx.beginPath();
-      ctx.arc(h.x, h.y, r, 0, Math.PI * 2);
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
       ctx.stroke();
       if (hard < 0.95) {
         ctx.setLineDash([3 / viewport.zoom, 2 / viewport.zoom]);
         ctx.beginPath();
-        ctx.arc(h.x, h.y, inner, 0, Math.PI * 2);
+        ctx.arc(0, 0, inner, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
       }
       // Crosshair
       const arm = Math.max(4, r * 0.25) / Math.max(viewport.zoom, 0.01);
       ctx.beginPath();
-      ctx.moveTo(h.x - arm, h.y);
-      ctx.lineTo(h.x + arm, h.y);
-      ctx.moveTo(h.x, h.y - arm);
-      ctx.lineTo(h.x, h.y + arm);
+      ctx.moveTo(-arm, 0);
+      ctx.lineTo(arm, 0);
+      ctx.moveTo(0, -arm);
+      ctx.lineTo(0, arm);
       ctx.stroke();
       ctx.restore();
     }
@@ -599,7 +605,11 @@ export function CanvasStage() {
     if (s.tool === "brush" || s.tool === "eraser") {
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
-      void beginPaintStroke(d.x, d.y).then(() => setHoverTick((n) => n + 1));
+      void beginPaintStroke(d.x, d.y, {
+        pressure: e.pressure,
+        tiltX: e.tiltX,
+        tiltY: e.tiltY,
+      }).then(() => setHoverTick((n) => n + 1));
       return;
     }
     if (s.showTangentLengths && s.selection.length === 1) {
@@ -781,7 +791,11 @@ export function CanvasStage() {
     const d = clientDoc(e);
     hoverRef.current = d;
     if (isPainting()) {
-      continuePaintStroke(d.x, d.y);
+      continuePaintStroke(d.x, d.y, {
+        pressure: e.pressure,
+        tiltX: e.tiltX,
+        tiltY: e.tiltY,
+      });
       setHoverTick((n) => n + 1);
       return;
     }
@@ -1108,11 +1122,13 @@ export function CanvasStage() {
       {tool === "brush" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
           Drag to paint · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
+          {isPainting() ? ` · press ${Math.round(getStrokePressure() * 100)}% · tilt ${Math.round(getStrokeTilt())}°` : ""}
         </div>
       )}
       {tool === "eraser" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
           Drag to erase · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
+          {isPainting() ? ` · press ${Math.round(getStrokePressure() * 100)}%` : ""}
         </div>
       )}
     </div>

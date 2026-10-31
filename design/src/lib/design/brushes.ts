@@ -33,31 +33,46 @@ function dab(
   hardness: number,
   color: string,
   grain: boolean,
+  tiltX = 0,
+  tiltY = 0,
 ) {
   const r = size / 2;
+  const tiltMag = Math.min(90, Math.hypot(tiltX, tiltY));
+  const aspect = Math.max(0.32, 1 - (tiltMag / 90) * 0.62);
+  const angle = Math.atan2(tiltY, tiltX);
+
+  ctx.save();
+  ctx.translate(x, y);
+  if (tiltMag > 2) {
+    ctx.rotate(angle);
+    ctx.scale(1, aspect);
+  }
+
   if (hardness >= 0.92) {
     ctx.beginPath();
     ctx.fillStyle = color;
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fill();
-    return;
+  } else {
+    const g = ctx.createRadialGradient(0, 0, r * hardness, 0, 0, r);
+    g.addColorStop(0, color);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
   }
-  const g = ctx.createRadialGradient(x, y, r * hardness, x, y, r);
-  g.addColorStop(0, color);
-  g.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
-  ctx.fill();
+
   if (grain && r > 3) {
     ctx.globalAlpha *= 0.18;
     for (let i = 0; i < 6; i++) {
       const ox = (Math.random() - 0.5) * r;
       const oy = (Math.random() - 0.5) * r;
       ctx.fillStyle = color;
-      ctx.fillRect(x + ox, y + oy, 1.2, 1.2);
+      ctx.fillRect(ox, oy, 1.2, 1.2);
     }
   }
+  ctx.restore();
 }
 
 export function strokeSegment(
@@ -70,6 +85,8 @@ export function strokeSegment(
   color: string,
   brush: BrushDef,
   opacity: number,
+  tiltX = 0,
+  tiltY = 0,
 ) {
   const dist = Math.hypot(x1 - x0, y1 - y0);
   const step = Math.max(1, size * brush.spacing);
@@ -86,7 +103,7 @@ export function strokeSegment(
       ctx.fillStyle = color;
       ctx.fillRect(Math.round(x / p) * p, Math.round(y / p) * p, p, p);
     } else {
-      dab(ctx, x, y, size, brush.hardness, color, brush.grain);
+      dab(ctx, x, y, size, brush.hardness, color, brush.grain, tiltX, tiltY);
     }
   }
   ctx.restore();
