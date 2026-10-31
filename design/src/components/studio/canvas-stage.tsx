@@ -1053,7 +1053,7 @@ export function CanvasStage() {
     <div
       ref={wrapRef}
       data-inspector-rail={inspectorRail ? "1" : "0"}
-      className="pasteboard relative min-h-0 flex-1 touch-none overflow-hidden"
+      className="pasteboard absolute inset-0 touch-none overflow-hidden"
       style={tool === "brush" || tool === "eraser" ? { cursor: "none" } : undefined}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

@@ -15,6 +15,32 @@ type StrokeSession = {
 
 let session: StrokeSession | null = null;
 
+const strokeListeners = new Set<() => void>();
+/** Stable key for useSyncExternalStore: painting|pressure|tiltX|tiltY */
+let strokeLiveKey = "0|1|0|0";
+
+function refreshStrokeLive() {
+  if (!session) {
+    strokeLiveKey = "0|1|0|0";
+  } else {
+    strokeLiveKey = `1|${session.pressure.toFixed(3)}|${session.tiltX.toFixed(1)}|${session.tiltY.toFixed(1)}`;
+  }
+  for (const fn of strokeListeners) fn();
+}
+
+/** Subscribe to live pressure / tilt changes during a stroke. */
+export function subscribeStrokeLive(fn: () => void) {
+  strokeListeners.add(fn);
+  return () => {
+    strokeListeners.delete(fn);
+  };
+}
+
+/** Snapshot key of the active stroke (idle is full pressure, no tilt). */
+export function getStrokeLiveKey(): string {
+  return strokeLiveKey;
+}
+
 function loadBitmap(canvas: HTMLCanvasElement, bitmap: string): Promise<void> {
   return new Promise((resolve) => {
     if (!bitmap) {
@@ -110,6 +136,7 @@ export async function beginPaintStroke(
     tiltY: pointer?.tiltY ?? 0,
   };
   stamp(docX, docY, docX, docY);
+  refreshStrokeLive();
   return true;
 }
 
@@ -124,10 +151,12 @@ export function continuePaintStroke(docX: number, docY: number, pointer?: Stroke
   if (!prev) {
     session.lastWorld = { x: docX, y: docY };
     stamp(docX, docY, docX, docY);
+    refreshStrokeLive();
     return;
   }
   stamp(prev.x, prev.y, docX, docY);
   session.lastWorld = { x: docX, y: docY };
+  refreshStrokeLive();
 }
 
 export function endPaintStroke() {
@@ -138,6 +167,7 @@ export function endPaintStroke() {
     state.replaceNode(session.nodeId, layer, true);
   }
   session = null;
+  refreshStrokeLive();
 }
 
 export function isPainting() {
@@ -154,4 +184,10 @@ export function getStrokePressure(): number {
 export function getStrokeTilt(): number {
   if (!session) return 0;
   return Math.min(90, Math.hypot(session.tiltX, session.tiltY));
+}
+
+/** Live tilt axes (degrees). Zero when idle. */
+export function getStrokeTiltAxes(): { tiltX: number; tiltY: number } {
+  if (!session) return { tiltX: 0, tiltY: 0 };
+  return { tiltX: session.tiltX, tiltY: session.tiltY };
 }

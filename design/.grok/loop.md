@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T11:11:35Z
+
+**Done:** Brush tip preview in the inspector now scales with live stroke pressure and flattens into a tilt-matched ellipse (same size/opacity curve and aspect as the dab engine). The Stroke readout under Hard / Space stays in sync for the whole stroke, not only on inspector re-renders. Also fixed the canvas stage so it fills its parent — pointer hits reach the paint surface again instead of falling through a zero-height pasteboard.
+
+**Next recommended:** Scatter direction indicator in the tip preview, or a small spacing readout next to the tip that tracks the live dab interval.
+
 ## Iteration 2026-10-31T10:10:38Z
 
 **Done:** Scatter is now directional with pen tilt. When the stylus is tilted, random dab offsets stretch along the tilt axis and compress across it (strength scales with tilt magnitude). Upright pen and mouse keep isotropic scatter. Works with existing scatter presets (pencil, charcoal, spray, watercolor).

@@ -37,7 +37,7 @@ import {
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { BrushTipPreview } from "./brush-preview";
-import { getStrokePressure, getStrokeTilt, isPainting } from "@/lib/design/paint-stroke";
+import { getStrokeLiveKey, subscribeStrokeLive } from "@/lib/design/paint-stroke";
 import { MixedInk } from "./mixed-ink";
 import { MixedBlendLegend } from "./mixed-ink-chips";
 import { MixedType } from "./mixed-type";
@@ -735,6 +735,17 @@ function DistributeButton({
   );
 }
 
+function useStrokeLive() {
+  const key = useSyncExternalStore(subscribeStrokeLive, getStrokeLiveKey, getStrokeLiveKey);
+  const parts = key.split("|");
+  return {
+    painting: parts[0] === "1",
+    pressure: Number(parts[1]) || 1,
+    tiltX: Number(parts[2]) || 0,
+    tiltY: Number(parts[3]) || 0,
+  };
+}
+
 function PaintBrushControls() {
   const color = useDesign((s) => s.color);
   const brush = useDesign((s) => s.brush);
@@ -743,6 +754,7 @@ function PaintBrushControls() {
   const spacing = brush.spacing ?? 0.12;
   const hardPct = Math.round(hardness * 100);
   const spacePct = Math.round(spacing * 100);
+  const live = useStrokeLive();
 
   return (
     <section className="space-y-2 border-b border-border px-3 py-3">
@@ -755,7 +767,12 @@ function PaintBrushControls() {
               {spacePct}%
             </div>
           </div>
-          <BrushTipPreview brush={{ ...brush, color: brush.color || color || "#0a0d0c" }} />
+          <BrushTipPreview
+            brush={{ ...brush, color: brush.color || color || "#0a0d0c" }}
+            pressure={live.pressure}
+            tiltX={live.tiltX}
+            tiltY={live.tiltY}
+          />
         </div>
       </div>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">
@@ -790,9 +807,10 @@ function PaintBrushControls() {
 }
 
 function LivePressureTilt() {
-  const painting = isPainting();
-  const press = Math.round(getStrokePressure() * 100);
-  const tilt = Math.round(getStrokeTilt());
+  const live = useStrokeLive();
+  const painting = live.painting;
+  const press = Math.round(live.pressure * 100);
+  const tilt = Math.round(Math.min(90, Math.hypot(live.tiltX, live.tiltY)));
   return (
     <div
       className={cn(

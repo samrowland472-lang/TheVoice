@@ -38,7 +38,19 @@ export function BrushPreview({ brush }: { brush: BrushSettings }) {
   );
 }
 
-export function BrushTipPreview({ brush }: { brush: BrushSettings }) {
+export function BrushTipPreview({
+  brush,
+  pressure = 1,
+  tiltX = 0,
+  tiltY = 0,
+}: {
+  brush: BrushSettings;
+  /** Live stroke pressure 0–1. Scales tip size and opacity like the dab engine. */
+  pressure?: number;
+  /** Live stylus tilt axes (degrees). Flattens the tip into a rotated ellipse. */
+  tiltX?: number;
+  tiltY?: number;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -54,38 +66,49 @@ export function BrushTipPreview({ brush }: { brush: BrushSettings }) {
     ctx.fillRect(0, 0, w, h);
 
     const hardness = Math.max(0.05, Math.min(1, brush.hardness ?? 0.5));
-    const size = Math.max(8, Math.min(brush.size, w * 0.72));
+    const press = Math.max(0, Math.min(1, pressure));
+    // Match stroke engine: size 0.2–1.0 of nominal, opacity softens with light pressure
+    const size = Math.max(4, Math.min(brush.size * (0.2 + 0.8 * press), w * 0.72));
     const r = size / 2;
     const cx = w / 2;
     const cy = h / 2;
     const color = brush.color || "#0a0d0c";
+    const liveAlpha = Math.max(0.22, brush.opacity * (0.55 + 0.45 * press));
+    const tiltMag = Math.min(90, Math.hypot(tiltX, tiltY));
+    const aspect = Math.max(0.32, 1 - (tiltMag / 90) * 0.62);
+    const angle = Math.atan2(tiltY, tiltX);
 
     ctx.save();
-    ctx.globalAlpha = Math.max(0.25, brush.opacity);
+    ctx.globalAlpha = liveAlpha;
+    ctx.translate(cx, cy);
+    if (tiltMag > 2) {
+      ctx.rotate(angle);
+      ctx.scale(1, aspect);
+    }
     if (hardness >= 0.92) {
       ctx.beginPath();
       ctx.fillStyle = color;
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      const g = ctx.createRadialGradient(cx, cy, r * hardness, cx, cy, r);
+      const g = ctx.createRadialGradient(0, 0, r * hardness, 0, 0, r);
       g.addColorStop(0, color);
       g.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Hard-core ring so the live hardness is obvious
+    // Hard-core ring so the live hardness is obvious (follows tilt ellipse)
     ctx.globalAlpha = 0.55;
     ctx.strokeStyle = "rgba(180, 220, 200, 0.7)";
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 2]);
     ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(1, r * hardness), 0, Math.PI * 2);
+    ctx.arc(0, 0, Math.max(1, r * hardness), 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
-  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id]);
+  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, pressure, tiltX, tiltY]);
 
   return (
     <canvas
