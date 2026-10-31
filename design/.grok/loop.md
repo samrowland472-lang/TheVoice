@@ -1,5 +1,5 @@
-## Iteration 2026-10-31T04:12:00Z
+## Iteration 2026-10-31T04:25:00Z
 
-**Done:** Brush tool now paints. Selecting Brush or Eraser shows a live stroke preview swatch in the dock (size, flow, hardness, colour). Dragging on the artboard creates or updates a Paint layer, stamping the current brush (including mirror modes) into its bitmap. setBrush is wired so brush presets apply hardness and spacing; a colour picker sits beside size and flow.
+**Done:** Brush dock now exposes Hard and Space sliders (hardness + dab spacing). Live values override the preset defaults in both the stroke preview swatch and on-canvas paint stamps, so soft airbrush / dense pixel / sparse spray all respond immediately without changing the preset name.
 
-**Next recommended:** Expose hardness and spacing as direct inspector controls on the dock, or add a brush cursor that matches the live size while painting.
+**Next recommended:** Brush cursor that matches live size while painting, or hardness/spacing in a compact inspector section when a Paint layer is selected.
