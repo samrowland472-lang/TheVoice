@@ -37,7 +37,9 @@ import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
 import { drawAlignCommitEcho, drawAlignPreview, getAlignCommitEcho, getAlignPreview, subscribeAlignCommitEcho, subscribeAlignPreview } from "@/lib/design/align-preview";
-import { beginPaintStroke, continuePaintStroke, endPaintStroke, getStrokePressure, getStrokeTilt, isPainting } from "@/lib/design/paint-stroke";
+import { brushById } from "@/lib/design/brushes";
+import { beginPaintStroke, continuePaintStroke, endPaintStroke, getStrokePressure, getStrokeTilt, getStrokeTiltAxes, isPainting, subscribeStrokeLive, getStrokeLiveKey } from "@/lib/design/paint-stroke";
+import { BrushTipPreview } from "./brush-preview";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -143,6 +145,7 @@ export function CanvasStage() {
   const distributePreview = useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
   const alignPreview = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
   const alignEcho = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
+  const strokeLiveKey = useSyncExternalStore(subscribeStrokeLive, getStrokeLiveKey, getStrokeLiveKey);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -1120,9 +1123,20 @@ export function CanvasStage() {
         </div>
       )}
       {tool === "brush" && !present && (
-        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag to paint · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
-          {isPainting() ? ` · press ${Math.round(getStrokePressure() * 100)}% · tilt ${Math.round(getStrokeTilt())}°` : ""}
+        <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] tracking-wide text-phosphor/70">
+          <BrushTipPreview
+            brush={brush}
+            pressure={isPainting() ? getStrokePressure() : 1}
+            tiltX={isPainting() ? getStrokeTiltAxes().tiltX : 0}
+            tiltY={isPainting() ? getStrokeTiltAxes().tiltY : 0}
+          />
+          <span>
+            Drag to paint · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
+            {isPainting() ? ` · press ${Math.round(getStrokePressure() * 100)}% · tilt ${Math.round(getStrokeTilt())}°` : ""}
+            {brushById(brush.id).scatter > 0 && isPainting() && getStrokeTilt() > 2
+              ? ` · scatter ${Math.round((Math.atan2(getStrokeTiltAxes().tiltY, getStrokeTiltAxes().tiltX) * 180) / Math.PI)}°`
+              : ""}
+          </span>
         </div>
       )}
       {tool === "eraser" && !present && (

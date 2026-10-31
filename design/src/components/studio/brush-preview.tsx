@@ -182,6 +182,23 @@ export function BrushTipPreview({
       ctx.lineTo(2.5, 0);
       ctx.stroke();
       ctx.restore();
+
+      // Upright angle readout at the end of the long axis
+      const angleDeg = Math.round((angle * 180) / Math.PI);
+      const label = `${angleDeg}°`;
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "#7dffb3";
+      ctx.font = "bold 7px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const lx = cx + Math.cos(angle) * (halfAlong + 8);
+      const ly = cy + Math.sin(angle) * (halfAlong + 8);
+      // Keep label inside canvas
+      const clampedX = Math.max(10, Math.min(w - 10, lx));
+      const clampedY = Math.max(8, Math.min(h - 8, ly));
+      ctx.fillText(label, clampedX, clampedY);
+      ctx.restore();
     }
 
     // Spacing-density tick marks under the tip: visualize live dab interval
