@@ -1,5 +1,5 @@
-## Iteration 2026-10-31T02:10:00Z
+## Iteration 2026-10-31T03:05:00Z
 
-**Done:** Fixed broken `inspector-path-impl.tsx` (was a placeholder "see previous"). Path point fields now render from the existing PathInspector. Single-selected paths show a dedicated Path section in the Inspector with point count, open/close, smooth/corner, drop last, and per-point X/Y, smooth toggle, and delete. Tab-order chrome remains in the wrapper.
+**Done:** Extended Path Inspector with hole support. Single-selected paths now list holes (cutouts) with per-hole point counts, Even-odd / Nonzero fill rule toggles, delete, and editable X/Y + smooth/corner per hole point. "Add hole" inserts a centered rectangle cutout. Outer points and hole points carry `data-point` / `data-path-axis` so the existing path-point-tab keyboard helpers can walk points and holes. Tab-order chrome in the wrapper continues to drive the crossings.
 
-**Next recommended:** Extend path inspector with hole support (add/remove holes, fill rule per hole) and wire the existing path-point-tab accessibility helpers so keyboard navigation across points and holes works end-to-end. Or deepen paint/brush tools.
+**Next recommended:** Wire remaining path-point-tab edge cases (fill/delete header crossings when holes have no point fields) or deepen brush/paint stroke preview in the inspector.
