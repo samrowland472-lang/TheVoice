@@ -422,6 +422,9 @@ export function Inspector() {
               <MixedGeometry nodes={selectedNodes} />
             </section>
           )}
+          {selectedNodes.length === 1 && node.kind === "paint" && (
+            <PaintBrushControls />
+          )}
           {selectedNodes.length === 1 && <ImageAdjust node={node} />}
           {selectedNodes.length > 1 && <MixedFilters nodes={selectedNodes} />}
           {texts.length === 1 && (
@@ -727,5 +730,46 @@ function DistributeButton({
     >
       {label}
     </button>
+  );
+}
+
+function PaintBrushControls() {
+  const brush = useDesign((s) => s.brush);
+  const setBrush = useDesign((s) => s.setBrush);
+  const hardness = brush.hardness ?? 0.5;
+  const spacing = brush.spacing ?? 0.12;
+  const hardPct = Math.round(hardness * 100);
+  const spacePct = Math.round(spacing * 100);
+
+  return (
+    <section className="space-y-2 border-b border-border px-3 py-3">
+      <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Brush</div>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        Hard {hardPct}
+        <input
+          type="range"
+          className="range-phosphor flex-1"
+          min={0.05}
+          max={1}
+          step={0.05}
+          value={hardness}
+          aria-label="Brush hardness"
+          onChange={(e) => setBrush({ hardness: Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        Space {spacePct}
+        <input
+          type="range"
+          className="range-phosphor flex-1"
+          min={0.04}
+          max={0.5}
+          step={0.02}
+          value={spacing}
+          aria-label="Brush spacing"
+          onChange={(e) => setBrush({ spacing: Number(e.target.value) })}
+        />
+      </label>
+    </section>
   );
 }

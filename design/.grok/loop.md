@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T06:08:14Z
+
+**Done:** When a Paint layer is selected, the inspector now shows a compact Brush section with Hard and Space sliders. Values stay in sync with the dock and live stroke engine so hardness and dab spacing can be tuned without leaving the layer context.
+
+**Next recommended:** Pressure and tilt stubs in the stroke engine, or a small live brush tip preview in the inspector Brush section.
+
 ## Iteration 2026-10-31T05:08:16Z
 
 **Done:** Brush and eraser now show a live cursor that matches the current size and hardness. The outer ring is the full brush diameter, the dashed inner ring marks the hard core, and a crosshair sits at the tip. System cursor is hidden while the tool is active so the size preview stays accurate. Hint text includes hardness.
