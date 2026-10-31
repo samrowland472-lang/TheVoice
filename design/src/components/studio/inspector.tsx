@@ -755,6 +755,11 @@ function PaintBrushControls() {
   const hardPct = Math.round(hardness * 100);
   const spacePct = Math.round(spacing * 100);
   const live = useStrokeLive();
+  // Dab interval matches the stroke engine: step = max(1, liveSize * spacing)
+  // liveSize scales 0.2–1.0 with pressure (full strength when not painting).
+  const press = live.painting ? live.pressure : 1;
+  const liveSize = Math.max(1, brush.size * (0.2 + 0.8 * press));
+  const dabPx = Math.max(1, Math.round(liveSize * spacing));
 
   return (
     <section className="space-y-2 border-b border-border px-3 py-3">
@@ -765,6 +770,16 @@ function PaintBrushControls() {
             <div className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">Space</div>
             <div className="font-mono text-[13px] text-phosphor tabular-nums" data-brush-space-readout="">
               {spacePct}%
+            </div>
+            <div
+              className={cn(
+                "font-mono text-[11px] tabular-nums",
+                live.painting ? "text-phosphor" : "text-ink-faint",
+              )}
+              data-brush-dab-interval=""
+              title="Live dab interval (pressure-scaled spacing)"
+            >
+              {dabPx} px
             </div>
           </div>
           <BrushTipPreview

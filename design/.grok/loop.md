@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T13:07:59Z
+
+**Done:** Brush inspector Space readout now includes a live dab-interval in pixels next to the tip. It tracks the same pressure-scaled spacing the stroke engine uses (step = max(1, liveSize × spacing)), glowing phosphor while a stroke is active and falling back to full-pressure idle value otherwise. Matches the dab engine exactly.
+
+**Next recommended:** Grain / noise toggle preview in the tip, or a small spacing-density tick marks under the tip that show the live dab interval visually.
+
 ## Iteration 2026-10-31T12:06:00Z
 
 **Done:** Brush tip preview now shows a scatter direction indicator when the selected brush has scatter and the pen is tilted. A phosphor cross (longer along the tilt axis, shorter across) appears over the tip, scaled to the live size, scatter strength, and tilt magnitude — matching the directional offset used by the dab engine. Upright or zero-scatter brushes stay clean.
