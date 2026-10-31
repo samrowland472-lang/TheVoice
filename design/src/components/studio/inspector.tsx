@@ -37,6 +37,7 @@ import {
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { BrushTipPreview } from "./brush-preview";
+import { getStrokePressure, getStrokeTilt, isPainting } from "@/lib/design/paint-stroke";
 import { MixedInk } from "./mixed-ink";
 import { MixedBlendLegend } from "./mixed-ink-chips";
 import { MixedType } from "./mixed-type";
@@ -783,6 +784,26 @@ function PaintBrushControls() {
           onChange={(e) => setBrush({ spacing: Number(e.target.value) })}
         />
       </label>
+      <LivePressureTilt />
     </section>
+  );
+}
+
+function LivePressureTilt() {
+  const painting = isPainting();
+  const press = Math.round(getStrokePressure() * 100);
+  const tilt = Math.round(getStrokeTilt());
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 border-t border-border/60 pt-2 font-mono text-[10px] tabular-nums tracking-wide",
+        painting ? "text-phosphor" : "text-ink-faint",
+      )}
+      data-brush-live=""
+    >
+      <span className="uppercase">Stroke</span>
+      <span>press {painting ? `${press}%` : "—"}</span>
+      <span>tilt {painting ? `${tilt}°` : "—"}</span>
+    </div>
   );
 }

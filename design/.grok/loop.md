@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T10:07:49Z
+
+**Done:** Brush inspector now shows a persistent Stroke readout for live pressure % and tilt ° while a paint stroke is active (phosphor when painting, dashes when idle). It sits under the Hard / Space sliders and updates with the stroke session.
+
+**Next recommended:** Directional scatter based on tilt angle, or a live pressure-scaled tip preview in the inspector.
+
 ## Iteration 2026-10-31T09:09:59Z
 
 **Done:** Tilt now flattens paint dabs into ellipses (aspect and rotation follow pointer tilt). Live brush cursor matches the tilted shape and pressure-scaled size. Bottom hint shows live pressure % and tilt ° while painting. Mouse still paints full circular strength.
