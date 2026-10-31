@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T16:05:00Z
+
+**Done:** Brush inspector now shows a live hardness Core readout (px) next to the tip preview. It reports the solid core diameter matching the dashed ring in the tip (pressure-scaled size × hardness), updating with the Hard slider, brush size, and live stroke pressure. Phosphor numbers, no emoji chrome.
+
+**Next recommended:** Live scatter-strength indicator while the pen is tilted, or a small numeric hardness % inside/beside the tip core.
+
 ## Iteration 2026-10-31T15:08:03Z
 
 **Done:** Brush inspector now has a Grain toggle that overrides the preset. Speckles appear in the tip preview and in live strokes when grain is on (pencil, charcoal, spray, watercolor presets start with grain; others start off). Switching brushes clears the override so the new preset applies until toggled. Phosphor checkbox, no emoji chrome.

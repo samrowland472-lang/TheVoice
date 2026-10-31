@@ -763,26 +763,43 @@ function PaintBrushControls() {
   const press = live.painting ? live.pressure : 1;
   const liveSize = Math.max(1, brush.size * (0.2 + 0.8 * press));
   const dabPx = Math.max(1, Math.round(liveSize * spacing));
+  // Hardness core diameter (matches tip preview hard-core ring: size * hardness)
+  const corePx = Math.max(1, Math.round(liveSize * hardness));
 
   return (
     <section className="space-y-2 border-b border-border px-3 py-3">
       <div className="flex items-center justify-between gap-2">
         <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Brush</div>
         <div className="flex items-center gap-2">
-          <div className="text-right leading-tight">
-            <div className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">Space</div>
-            <div className="font-mono text-[13px] text-phosphor tabular-nums" data-brush-space-readout="">
-              {spacePct}%
+          <div className="text-right leading-tight space-y-0.5">
+            <div>
+              <div className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">Space</div>
+              <div className="font-mono text-[13px] text-phosphor tabular-nums" data-brush-space-readout="">
+                {spacePct}%
+              </div>
+              <div
+                className={cn(
+                  "font-mono text-[11px] tabular-nums",
+                  live.painting ? "text-phosphor" : "text-ink-faint",
+                )}
+                data-brush-dab-interval=""
+                title="Live dab interval (pressure-scaled spacing)"
+              >
+                {dabPx} px
+              </div>
             </div>
-            <div
-              className={cn(
-                "font-mono text-[11px] tabular-nums",
-                live.painting ? "text-phosphor" : "text-ink-faint",
-              )}
-              data-brush-dab-interval=""
-              title="Live dab interval (pressure-scaled spacing)"
-            >
-              {dabPx} px
+            <div>
+              <div className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">Core</div>
+              <div
+                className={cn(
+                  "font-mono text-[13px] tabular-nums",
+                  live.painting ? "text-phosphor" : "text-phosphor",
+                )}
+                data-brush-core-readout=""
+                title="Live hardness core diameter (pressure-scaled)"
+              >
+                {corePx} px
+              </div>
             </div>
           </div>
           <BrushTipPreview
