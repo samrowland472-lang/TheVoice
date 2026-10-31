@@ -8,7 +8,7 @@ type StrokeSession = {
   lastWorld: { x: number; y: number } | null;
   /** Last pressure sample (0–1). Mouse / non-pen defaults to 1. */
   pressure: number;
-  /** Stub: pointer tilt in degrees (−90…90). Reserved for future ellipse / scatter. */
+  /** Pointer tilt in degrees (−90…90). Drives dab ellipse and directional scatter. */
   tiltX: number;
   tiltY: number;
 };

@@ -91,13 +91,36 @@ export function strokeSegment(
   const dist = Math.hypot(x1 - x0, y1 - y0);
   const step = Math.max(1, size * brush.spacing);
   const n = Math.max(1, Math.ceil(dist / step));
+  // Directional scatter: bias random offset along the tilt axis when the pen is tilted.
+  // isotropic fallback when tilt is near zero (mouse / upright pen).
+  const tiltMag = Math.min(90, Math.hypot(tiltX, tiltY));
+  const tiltAngle = Math.atan2(tiltY, tiltX);
+  const dirX = Math.cos(tiltAngle);
+  const dirY = Math.sin(tiltAngle);
+  const perpX = -dirY;
+  const perpY = dirX;
+  // Along tilt: stronger; across: weaker. Strength ramps with tilt magnitude.
+  const alongScale = 0.55 + (tiltMag / 90) * 1.15;
+  const acrossScale = Math.max(0.12, 1 - (tiltMag / 90) * 0.75);
   ctx.save();
   ctx.globalCompositeOperation = brush.mix;
   ctx.globalAlpha = opacity * brush.opacity;
   for (let i = 0; i <= n; i++) {
     const t = i / n;
-    const x = x0 + (x1 - x0) * t + (Math.random() - 0.5) * brush.scatter * (size * 0.15);
-    const y = y0 + (y1 - y0) * t + (Math.random() - 0.5) * brush.scatter * (size * 0.15);
+    const scatterAmp = brush.scatter * (size * 0.15);
+    let sx: number;
+    let sy: number;
+    if (tiltMag > 2 && brush.scatter > 0) {
+      const along = (Math.random() - 0.5) * scatterAmp * alongScale;
+      const across = (Math.random() - 0.5) * scatterAmp * acrossScale;
+      sx = dirX * along + perpX * across;
+      sy = dirY * along + perpY * across;
+    } else {
+      sx = (Math.random() - 0.5) * scatterAmp;
+      sy = (Math.random() - 0.5) * scatterAmp;
+    }
+    const x = x0 + (x1 - x0) * t + sx;
+    const y = y0 + (y1 - y0) * t + sy;
     if (brush.id === "pixel") {
       const p = Math.max(2, Math.round(size / 4) * 4);
       ctx.fillStyle = color;
