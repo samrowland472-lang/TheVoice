@@ -15,7 +15,12 @@ export function BrushPreview({ brush }: { brush: BrushSettings }) {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "rgba(10, 13, 12, 0.35)";
     ctx.fillRect(0, 0, w, h);
-    const def = brushById(brush.id);
+    const base = brushById(brush.id);
+    const def = {
+      ...base,
+      hardness: brush.hardness ?? base.hardness,
+      spacing: brush.spacing ?? base.spacing,
+    };
     const size = Math.max(4, Math.min(brush.size, h * 0.7));
     const y = h / 2;
     strokeSegment(ctx, 12, y, w - 12, y, size, brush.color || "#0a0d0c", def, brush.opacity);

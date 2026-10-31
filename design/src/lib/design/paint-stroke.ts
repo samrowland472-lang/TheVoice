@@ -32,7 +32,13 @@ function stamp(x0: number, y0: number, x1: number, y1: number) {
   const state = useDesign.getState();
   const brush: BrushSettings = state.brush;
   const id = state.tool === "eraser" ? "eraser" : brush.id;
-  const def = brushById(id);
+  const base = brushById(id);
+  // Live hardness / spacing from the dock override the preset defaults
+  const def = {
+    ...base,
+    hardness: brush.hardness ?? base.hardness,
+    spacing: brush.spacing ?? base.spacing,
+  };
   const layer = state.doc?.nodes.find((n) => n.id === session!.nodeId);
   if (!layer || layer.kind !== "paint") return;
   const ctx = session.canvas.getContext("2d");
