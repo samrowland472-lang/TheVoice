@@ -37,6 +37,7 @@ import { drawSmartGuides, nodesInMarquee, smartSnap, type GuideSet } from "@/lib
 import { getInspectorRail, subscribeInspectorRail } from "@/lib/design/inspector-rail";
 import { drawDistributePreview, getDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
 import { drawAlignCommitEcho, drawAlignPreview, getAlignCommitEcho, getAlignPreview, subscribeAlignCommitEcho, subscribeAlignPreview } from "@/lib/design/align-preview";
+import { beginPaintStroke, continuePaintStroke, endPaintStroke, isPainting } from "@/lib/design/paint-stroke";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
@@ -566,6 +567,12 @@ export function CanvasStage() {
     }
     const s = useDesign.getState();
     const d = clientDoc(e);
+    if (s.tool === "brush" || s.tool === "eraser") {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      void beginPaintStroke(d.x, d.y).then(() => setHoverTick((n) => n + 1));
+      return;
+    }
     if (s.showTangentLengths && s.selection.length === 1) {
       const selected = s.doc?.nodes.find((n) => n.id === s.selection[0]);
       if (selected && isPath(selected)) {
@@ -744,6 +751,11 @@ export function CanvasStage() {
     const s = useDesign.getState();
     const d = clientDoc(e);
     hoverRef.current = d;
+    if (isPainting()) {
+      continuePaintStroke(d.x, d.y);
+      setHoverTick((n) => n + 1);
+      return;
+    }
     if (s.tool === "knife") {
       if (knifeRef.current) {
         knifeRef.current.bx = d.x;
@@ -862,6 +874,11 @@ export function CanvasStage() {
   }
 
   function onPointerUp(e: React.PointerEvent) {
+    if (isPainting()) {
+      endPaintStroke();
+      setHoverTick((n) => n + 1);
+      return;
+    }
     const mq = marqueeRef.current;
     if (mq) {
       const s = useDesign.getState();

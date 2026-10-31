@@ -4,6 +4,7 @@ import { campaignPageName, campaignPages } from "./campaign";
 import { formatById } from "./formats";
 import { uid } from "./id";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
+import { brushById } from "./brushes";
 import { bakePaintIfSized, bakePaintNode, paintNeedsBake } from "./paint-bake";
 import {
   deleteDoc,
@@ -273,6 +274,17 @@ export const useDesign = create<any>((set: any, get: any) => ({
     set({ index: loadIndex(), doc: doc?.id === id ? null : doc });
   },
   setTool: (tool) => set({ tool, editingText: null }),
+  setBrush: (patch) => {
+    const cur = get().brush;
+    const next = { ...cur, ...patch };
+    if (patch.id && patch.id !== cur.id) {
+      const def = brushById(patch.id);
+      next.hardness = def.hardness;
+      next.spacing = def.spacing;
+    }
+    if (patch.color == null && patch.id) next.color = get().color || cur.color;
+    set({ brush: next });
+  },
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
   setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
   setTypeGhost: (ghost: TypeGhost) => set({ typeGhost: ghost }),

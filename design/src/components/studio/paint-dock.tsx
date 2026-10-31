@@ -1,16 +1,21 @@
 import { BRUSHES } from "@/lib/design/brushes";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
+import { BrushPreview } from "./brush-preview";
 
 export function PaintDock() {
   const tool = useDesign((s) => s.tool);
   const brush = useDesign((s) => s.brush);
   const setBrush = useDesign((s) => s.setBrush);
+  const color = useDesign((s) => s.color);
 
   if (tool !== "brush" && tool !== "eraser") return null;
 
+  const liveColor = brush.color || color || "#0a0d0c";
+
   return (
     <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface px-3 py-2">
+      <BrushPreview brush={{ ...brush, color: liveColor }} />
       <div className="flex gap-1 overflow-x-auto">
         {BRUSHES.filter((b) => (tool === "eraser" ? b.id === "eraser" : b.id !== "eraser")).map((b) => (
           <button
@@ -47,6 +52,16 @@ export function PaintDock() {
           step={0.05}
           value={brush.opacity}
           onChange={(e) => setBrush({ opacity: Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        Color
+        <input
+          type="color"
+          className="h-7 w-8 cursor-pointer rounded-[6px] border border-border bg-transparent"
+          value={liveColor}
+          aria-label="Brush colour"
+          onChange={(e) => setBrush({ color: e.target.value })}
         />
       </label>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">

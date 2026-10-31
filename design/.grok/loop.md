@@ -1,5 +1,5 @@
-## Iteration 2026-10-31T03:05:00Z
+## Iteration 2026-10-31T04:12:00Z
 
-**Done:** Extended Path Inspector with hole support. Single-selected paths now list holes (cutouts) with per-hole point counts, Even-odd / Nonzero fill rule toggles, delete, and editable X/Y + smooth/corner per hole point. "Add hole" inserts a centered rectangle cutout. Outer points and hole points carry `data-point` / `data-path-axis` so the existing path-point-tab keyboard helpers can walk points and holes. Tab-order chrome in the wrapper continues to drive the crossings.
+**Done:** Brush tool now paints. Selecting Brush or Eraser shows a live stroke preview swatch in the dock (size, flow, hardness, colour). Dragging on the artboard creates or updates a Paint layer, stamping the current brush (including mirror modes) into its bitmap. setBrush is wired so brush presets apply hardness and spacing; a colour picker sits beside size and flow.
 
-**Next recommended:** Wire remaining path-point-tab edge cases (fill/delete header crossings when holes have no point fields) or deepen brush/paint stroke preview in the inspector.
+**Next recommended:** Expose hardness and spacing as direct inspector controls on the dock, or add a brush cursor that matches the live size while painting.
