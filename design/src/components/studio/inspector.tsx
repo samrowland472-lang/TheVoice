@@ -36,6 +36,7 @@ import {
 } from "@/lib/design/align-preview";
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
+import { BrushTipPreview } from "./brush-preview";
 import { MixedInk } from "./mixed-ink";
 import { MixedBlendLegend } from "./mixed-ink-chips";
 import { MixedType } from "./mixed-type";
@@ -734,6 +735,7 @@ function DistributeButton({
 }
 
 function PaintBrushControls() {
+  const color = useDesign((s) => s.color);
   const brush = useDesign((s) => s.brush);
   const setBrush = useDesign((s) => s.setBrush);
   const hardness = brush.hardness ?? 0.5;
@@ -743,7 +745,10 @@ function PaintBrushControls() {
 
   return (
     <section className="space-y-2 border-b border-border px-3 py-3">
-      <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Brush</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Brush</div>
+        <BrushTipPreview brush={{ ...brush, color: brush.color || color || "#0a0d0c" }} />
+      </div>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">
         Hard {hardPct}
         <input

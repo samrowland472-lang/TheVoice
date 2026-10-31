@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T07:10:01Z
+
+**Done:** Paint layer inspector Brush section now includes a live circular tip preview. It shows the current size (scaled), hardness (solid core vs soft radial falloff), color, and opacity, with a dashed hard-core ring so the live hardness is obvious at a glance. Updates immediately with the Hard slider and dock values.
+
+**Next recommended:** Pressure and tilt stubs in the stroke engine, or a small spacing readout next to the tip preview.
+
 ## Iteration 2026-10-31T06:08:14Z
 
 **Done:** When a Paint layer is selected, the inspector now shows a compact Brush section with Hard and Space sliders. Values stay in sync with the dock and live stroke engine so hardness and dab spacing can be tuned without leaving the layer context.
