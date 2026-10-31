@@ -105,9 +105,11 @@ export function BrushTipPreview({
     ctx.strokeStyle = "rgba(180, 220, 200, 0.7)";
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 2]);
+    const coreR = Math.max(1, r * hardness);
     ctx.beginPath();
-    ctx.arc(0, 0, Math.max(1, r * hardness), 0, Math.PI * 2);
+    ctx.arc(0, 0, coreR, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.setLineDash([]);
 
     // Grain / noise speckles when the brush (or its override) has grain (matches dab engine)
     const hasGrain = brush.grain ?? brushById(brush.id).grain;
@@ -129,6 +131,20 @@ export function BrushTipPreview({
       }
     }
     ctx.restore();
+
+    // Small numeric hardness % inside the tip (upright, centered) when core is large enough
+    const coreR2 = Math.max(1, r * hardness);
+    if (coreR2 >= 7) {
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "#7dffb3";
+      ctx.font = "bold 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const pct = Math.round(hardness * 100);
+      ctx.fillText(`${pct}`, cx, cy);
+      ctx.restore();
+    }
 
     // Scatter direction indicator: elongated phosphor mark along the tilt axis
     // when the brush has scatter and the pen is tilted. Length tracks scatter strength × tilt.

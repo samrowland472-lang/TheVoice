@@ -806,6 +806,13 @@ function PaintBrushControls() {
               >
                 {corePx} px
               </div>
+              <div
+                className="font-mono text-[11px] tabular-nums text-phosphor"
+                data-brush-hard-pct=""
+                title="Hardness percentage (solid core fraction)"
+              >
+                {hardPct}%
+              </div>
             </div>
             {scatter > 0 && (
               <div>
