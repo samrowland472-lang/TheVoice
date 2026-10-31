@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: live order preview ghost supports opposite direction. Holding Alt with two or more points selected draws a phosphor dashed ghost of the +1 relative order cycle. Holding Shift+Alt draws the -1 (previous) cycle instead. Releasing Alt clears the ghost. Alt+Left/Right still commits the rotate. Tooltips on Sel and Ord mention both directions. Verified typecheck, build, and browser smoke (content visible; no console errors).
+
 - Path inspector: live order preview ghost while Alt is held on multi-select. Holding Alt with two or more points selected draws a phosphor dashed ghost of the path after a +1 relative order cycle (anchors marked with dots). Releasing Alt clears the ghost. Alt+Left/Right still commits the rotate. Tooltips on Sel and Ord mention the preview. Verified typecheck, build, and browser smoke (content visible; no console errors).
 
 - Path inspector: keyboard nudge for multi-select reverse order. With two or more points selected (Shift-click), Alt+Left/Right cycles the relative order of the selected points among their slots by one step (handles and Mirror flags follow). Plain Arrow keys still nudge bulk handle length. Sel and Ord tooltips mention the shortcut. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note).
@@ -108,9 +110,9 @@
 - Path inspector: live order preview ghost while Alt is held on multi-select. Holding Alt with two or more points selected draws a phosphor dashed ghost of the path after a +1 relative order cycle (anchors marked with dots). Releasing Alt clears the ghost. Alt+Left/Right still commits the rotate. Tooltips on Sel and Ord mention the preview. Verified typecheck, build, and browser smoke (content visible; no console errors).
 
 ## Iteration
-2026-10-31 00:15 GMT — Path inspector: live order preview ghost while Alt is held on multi-select. Verified typecheck, build, and browser smoke.
+2026-10-31 01:05 GMT — Path inspector: live order preview ghost for opposite direction (Shift+Alt). Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: show live order preview ghost for the opposite direction (Alt+Shift or similar) while Alt is held.
+- Path inspector: show live order preview ghost for the opposite direction (done).
 - Path inspector: multi-select reverse relative order of selected points within a consecutive run only (done).
 - Type inspector: baseline alignment toggle (done).
 - Layers: multi-select reverse stacking order (done).
