@@ -12,6 +12,8 @@ export function PaintDock() {
   if (tool !== "brush" && tool !== "eraser") return null;
 
   const liveColor = brush.color || color || "#0a0d0c";
+  const hardnessPct = Math.round((brush.hardness ?? 0.5) * 100);
+  const spacingPct = Math.round((brush.spacing ?? 0.12) * 100);
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface px-3 py-2">
@@ -52,6 +54,32 @@ export function PaintDock() {
           step={0.05}
           value={brush.opacity}
           onChange={(e) => setBrush({ opacity: Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        Hard {hardnessPct}
+        <input
+          type="range"
+          className="range-phosphor w-20"
+          min={0.05}
+          max={1}
+          step={0.05}
+          value={brush.hardness ?? 0.5}
+          aria-label="Brush hardness"
+          onChange={(e) => setBrush({ hardness: Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        Space {spacingPct}
+        <input
+          type="range"
+          className="range-phosphor w-16"
+          min={0.04}
+          max={1}
+          step={0.02}
+          value={brush.spacing ?? 0.12}
+          aria-label="Brush spacing"
+          onChange={(e) => setBrush({ spacing: Number(e.target.value) })}
         />
       </label>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">
