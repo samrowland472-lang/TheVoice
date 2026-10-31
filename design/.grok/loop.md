@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T08:12:08Z
+
+**Done:** Paint layer inspector Brush section now shows a compact Space % readout immediately beside the live tip preview. The number updates with the Space slider (and dock) in phosphor mono, so dab spacing is readable at a glance without scanning the slider labels.
+
+**Next recommended:** Pressure and tilt stubs in the stroke engine, or a small visual dab-spacing indicator under the tip preview.
+
 ## Iteration 2026-10-31T07:10:01Z
 
 **Done:** Paint layer inspector Brush section now includes a live circular tip preview. It shows the current size (scaled), hardness (solid core vs soft radial falloff), color, and opacity, with a dashed hard-core ring so the live hardness is obvious at a glance. Updates immediately with the Hard slider and dock values.

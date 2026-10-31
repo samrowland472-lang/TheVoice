@@ -747,7 +747,15 @@ function PaintBrushControls() {
     <section className="space-y-2 border-b border-border px-3 py-3">
       <div className="flex items-center justify-between gap-2">
         <div className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">Brush</div>
-        <BrushTipPreview brush={{ ...brush, color: brush.color || color || "#0a0d0c" }} />
+        <div className="flex items-center gap-2">
+          <div className="text-right leading-tight">
+            <div className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">Space</div>
+            <div className="font-mono text-[13px] text-phosphor tabular-nums" data-brush-space-readout="">
+              {spacePct}%
+            </div>
+          </div>
+          <BrushTipPreview brush={{ ...brush, color: brush.color || color || "#0a0d0c" }} />
+        </div>
       </div>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">
         Hard {hardPct}
