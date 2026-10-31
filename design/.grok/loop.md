@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T12:06:00Z
+
+**Done:** Brush tip preview now shows a scatter direction indicator when the selected brush has scatter and the pen is tilted. A phosphor cross (longer along the tilt axis, shorter across) appears over the tip, scaled to the live size, scatter strength, and tilt magnitude — matching the directional offset used by the dab engine. Upright or zero-scatter brushes stay clean.
+
+**Next recommended:** Live dab-interval readout (px) next to the tip that tracks pressure-scaled spacing during a stroke, or a small grain/noise toggle preview in the tip.
+
 ## Iteration 2026-10-31T11:11:35Z
 
 **Done:** Brush tip preview in the inspector now scales with live stroke pressure and flattens into a tilt-matched ellipse (same size/opacity curve and aspect as the dab engine). The Stroke readout under Hard / Space stays in sync for the whole stroke, not only on inspector re-renders. Also fixed the canvas stage so it fills its parent — pointer hits reach the paint surface again instead of falling through a zero-height pasteboard.

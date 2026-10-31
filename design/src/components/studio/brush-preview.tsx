@@ -108,6 +108,44 @@ export function BrushTipPreview({
     ctx.arc(0, 0, Math.max(1, r * hardness), 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
+
+    // Scatter direction indicator: elongated phosphor mark along the tilt axis
+    // when the brush has scatter and the pen is tilted. Length tracks scatter strength × tilt.
+    const base = brushById(brush.id);
+    const scatter = base.scatter;
+    if (scatter > 0 && tiltMag > 2) {
+      const alongScale = 0.55 + (tiltMag / 90) * 1.15;
+      const acrossScale = Math.max(0.12, 1 - (tiltMag / 90) * 0.75);
+      const amp = scatter * (size * 0.15) * 0.65;
+      const halfAlong = Math.min(w * 0.42, amp * alongScale * 0.55);
+      const halfAcross = Math.min(w * 0.28, amp * acrossScale * 0.4);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.globalAlpha = 0.75;
+      ctx.strokeStyle = "#7dffb3";
+      ctx.lineWidth = 1.25;
+      ctx.setLineDash([2.5, 2]);
+      // Long axis (scatter stretches along tilt)
+      ctx.beginPath();
+      ctx.moveTo(-halfAlong, 0);
+      ctx.lineTo(halfAlong, 0);
+      ctx.stroke();
+      // Short axis (compressed across tilt)
+      ctx.beginPath();
+      ctx.moveTo(0, -halfAcross);
+      ctx.lineTo(0, halfAcross);
+      ctx.stroke();
+      // Center tick
+      ctx.setLineDash([]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-2.5, 0);
+      ctx.lineTo(2.5, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
   }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, pressure, tiltX, tiltY]);
 
   return (
