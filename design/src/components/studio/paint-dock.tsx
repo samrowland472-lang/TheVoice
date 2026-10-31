@@ -14,6 +14,9 @@ export function PaintDock() {
   const liveColor = brush.color || color || "#0a0d0c";
   const hardnessPct = Math.round((brush.hardness ?? 0.5) * 100);
   const spacingPct = Math.round((brush.spacing ?? 0.12) * 100);
+  const baseScatter = BRUSHES.find((b) => b.id === brush.id)?.scatter ?? 0;
+  const liveScatter = brush.scatter ?? baseScatter;
+  const scatterLabel = liveScatter < 0.05 ? "Off" : liveScatter.toFixed(1);
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface px-3 py-2">
@@ -80,6 +83,19 @@ export function PaintDock() {
           value={brush.spacing ?? 0.12}
           aria-label="Brush spacing"
           onChange={(e) => setBrush({ spacing: Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        Scatter {scatterLabel}
+        <input
+          type="range"
+          className="range-phosphor w-20"
+          min={0}
+          max={3}
+          step={0.1}
+          value={liveScatter}
+          aria-label="Brush scatter strength"
+          onChange={(e) => setBrush({ scatter: Number(e.target.value) })}
         />
       </label>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">

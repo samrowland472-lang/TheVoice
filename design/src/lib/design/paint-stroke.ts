@@ -75,6 +75,7 @@ function stamp(x0: number, y0: number, x1: number, y1: number) {
     ...base,
     hardness: brush.hardness ?? base.hardness,
     spacing: brush.spacing ?? base.spacing,
+    scatter: brush.scatter ?? base.scatter,
     grain: brush.grain ?? base.grain,
   };
   const layer = state.doc?.nodes.find((n) => n.id === session!.nodeId);

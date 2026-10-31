@@ -20,13 +20,14 @@ export function BrushPreview({ brush }: { brush: BrushSettings }) {
       ...base,
       hardness: brush.hardness ?? base.hardness,
       spacing: brush.spacing ?? base.spacing,
+      scatter: brush.scatter ?? base.scatter,
       grain: brush.grain ?? base.grain,
     };
     const size = Math.max(4, Math.min(brush.size, h * 0.7));
     const y = h / 2;
     strokeSegment(ctx, 12, y, w - 12, y, size, brush.color || "#0a0d0c", def, brush.opacity);
     strokeSegment(ctx, 18, y - 6, w - 18, y + 6, size * 0.55, brush.color || "#0a0d0c", def, brush.opacity * 0.8);
-  }, [brush.id, brush.size, brush.opacity, brush.color, brush.hardness, brush.spacing, brush.grain]);
+  }, [brush.id, brush.size, brush.opacity, brush.color, brush.hardness, brush.spacing, brush.scatter, brush.grain]);
 
   return (
     <canvas
@@ -149,7 +150,7 @@ export function BrushTipPreview({
     // Scatter direction indicator: elongated phosphor mark along the tilt axis
     // when the brush has scatter and the pen is tilted. Length tracks scatter strength × tilt.
     const base = brushById(brush.id);
-    const scatter = base.scatter;
+    const scatter = brush.scatter ?? base.scatter;
     if (scatter > 0 && tiltMag > 2) {
       const alongScale = 0.55 + (tiltMag / 90) * 1.15;
       const acrossScale = Math.max(0.12, 1 - (tiltMag / 90) * 0.75);
@@ -231,7 +232,7 @@ export function BrushTipPreview({
     ctx.lineTo(startX + rulerW, baseY);
     ctx.stroke();
     ctx.restore();
-  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, brush.spacing, brush.grain, pressure, tiltX, tiltY]);
+  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, brush.spacing, brush.scatter, brush.grain, pressure, tiltX, tiltY]);
 
   return (
     <canvas

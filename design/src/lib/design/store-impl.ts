@@ -44,7 +44,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   rulers: true,
   safeArea: false,
   brand: loadBrand(),
-  brush: { id: "ink", size: 16, opacity: 1, hardness: 0.95, spacing: 0.12, color: "#0a0d0c", symmetry: "none" },
+  brush: { id: "ink", size: 16, opacity: 1, hardness: 0.95, spacing: 0.12, scatter: 0, color: "#0a0d0c", symmetry: "none" },
   color: "#0a0d0c",
   editingText: null,
   dirty: false,
@@ -281,6 +281,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
       const def = brushById(patch.id);
       next.hardness = def.hardness;
       next.spacing = def.spacing;
+      next.scatter = def.scatter;
       // Clear grain override so the new preset's grain applies until toggled.
       delete next.grain;
     }
