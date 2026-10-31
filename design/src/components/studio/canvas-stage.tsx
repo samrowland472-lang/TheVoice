@@ -543,8 +543,37 @@ export function CanvasStage() {
         }
       }
     }
+    // Live brush / eraser cursor matching current size + hardness
+    if (!present && (tool === "brush" || tool === "eraser") && hoverRef.current) {
+      const h = hoverRef.current;
+      const r = Math.max(1, brush.size / 2);
+      const hard = Math.max(0.05, Math.min(1, brush.hardness ?? 0.5));
+      const inner = r * hard;
+      ctx.save();
+      ctx.strokeStyle = tool === "eraser" ? "rgba(255,140,140,0.9)" : "rgba(63,198,255,0.95)";
+      ctx.lineWidth = 1.4 / Math.max(viewport.zoom, 0.01);
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      if (hard < 0.95) {
+        ctx.setLineDash([3 / viewport.zoom, 2 / viewport.zoom]);
+        ctx.beginPath();
+        ctx.arc(h.x, h.y, inner, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // Crosshair
+      const arm = Math.max(4, r * 0.25) / Math.max(viewport.zoom, 0.01);
+      ctx.beginPath();
+      ctx.moveTo(h.x - arm, h.y);
+      ctx.lineTo(h.x + arm, h.y);
+      ctx.moveTo(h.x, h.y - arm);
+      ctx.lineTo(h.x, h.y + arm);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, showTangentLengths, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost, typeGhost, pathOrderGhost, glyphDensityScaleFactor, typeBaseline, reverseTypeLeading]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, showTangentLengths, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost, typeGhost, pathOrderGhost, glyphDensityScaleFactor, typeBaseline, reverseTypeLeading, brush.size, brush.hardness]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -1011,10 +1040,15 @@ export function CanvasStage() {
       ref={wrapRef}
       data-inspector-rail={inspectorRail ? "1" : "0"}
       className="pasteboard relative min-h-0 flex-1 touch-none overflow-hidden"
+      style={tool === "brush" || tool === "eraser" ? { cursor: "none" } : undefined}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
+      onPointerLeave={() => {
+        hoverRef.current = null;
+        setHoverTick((n) => n + 1);
+      }}
     >
       <canvas ref={mainRef} className="absolute inset-0" />
       {lengthEditor && !present && (
@@ -1073,12 +1107,12 @@ export function CanvasStage() {
       )}
       {tool === "brush" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag to paint · [ ] resize · size {brush.size} · flow {Math.round(brush.opacity * 100)}
+          Drag to paint · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
         </div>
       )}
       {tool === "eraser" && !present && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] tracking-wide text-phosphor/70">
-          Drag to erase · [ ] resize · size {brush.size} · flow {Math.round(brush.opacity * 100)}
+          Drag to erase · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
         </div>
       )}
     </div>
