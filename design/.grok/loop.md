@@ -1,8 +1,8 @@
-## Iteration 2026-10-31T08:12:08Z
+## Iteration 2026-10-31T08:12:00Z
 
-**Done:** Paint layer inspector Brush section now shows a compact Space % readout immediately beside the live tip preview. The number updates with the Space slider (and dock) in phosphor mono, so dab spacing is readable at a glance without scanning the slider labels.
+**Done:** Stroke engine now accepts pointer pressure and tilt. Size and opacity scale with pressure (mouse / non-pen still paints at full strength). Tilt is stored on the session as a stub for future ellipse / directional scatter. Inspector Brush tip preview shows a compact Sp % readout under the tip.
 
-**Next recommended:** Pressure and tilt stubs in the stroke engine, or a small visual dab-spacing indicator under the tip preview.
+**Next recommended:** Apply tilt to dab ellipse or directional scatter, or a live pressure indicator while painting with a pen.
 
 ## Iteration 2026-10-31T07:10:01Z
 
