@@ -1133,9 +1133,16 @@ export function CanvasStage() {
           <span>
             Drag to paint · [ ] resize · size {brush.size} · hard {Math.round((brush.hardness ?? 0.5) * 100)} · flow {Math.round(brush.opacity * 100)}
             {isPainting() ? ` · press ${Math.round(getStrokePressure() * 100)}% · tilt ${Math.round(getStrokeTilt())}°` : ""}
-            {brushById(brush.id).scatter > 0 && isPainting() && getStrokeTilt() > 2
-              ? ` · scatter ${Math.round((Math.atan2(getStrokeTiltAxes().tiltY, getStrokeTiltAxes().tiltX) * 180) / Math.PI)}°`
-              : ""}
+            {(() => {
+              const live = brush.scatter ?? brushById(brush.id).scatter;
+              if (live < 0.05) return "";
+              const strength = live.toFixed(1);
+              const angle =
+                isPainting() && getStrokeTilt() > 2
+                  ? ` · ${Math.round((Math.atan2(getStrokeTiltAxes().tiltY, getStrokeTiltAxes().tiltX) * 180) / Math.PI)}°`
+                  : "";
+              return ` · scatter ${strength}${angle}`;
+            })()}
           </span>
         </div>
       )}
