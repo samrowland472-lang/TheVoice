@@ -107,6 +107,26 @@ export function BrushTipPreview({
     ctx.beginPath();
     ctx.arc(0, 0, Math.max(1, r * hardness), 0, Math.PI * 2);
     ctx.stroke();
+
+    // Grain / noise speckles when the brush preset has grain (matches dab engine)
+    const baseForGrain = brushById(brush.id);
+    if (baseForGrain.grain && r > 4) {
+      ctx.globalAlpha = liveAlpha * 0.22;
+      ctx.fillStyle = color;
+      // Deterministic speckles so the tip doesn't flicker on re-render
+      const seeds = [
+        [0.18, -0.12],
+        [-0.22, 0.08],
+        [0.05, 0.19],
+        [-0.08, -0.21],
+        [0.14, 0.04],
+      ];
+      for (const [sx, sy] of seeds) {
+        const ox = sx * r * 0.75;
+        const oy = sy * r * 0.75;
+        ctx.fillRect(ox - 0.6, oy - 0.6, 1.2, 1.2);
+      }
+    }
     ctx.restore();
 
     // Scatter direction indicator: elongated phosphor mark along the tilt axis
@@ -146,7 +166,38 @@ export function BrushTipPreview({
       ctx.stroke();
       ctx.restore();
     }
-  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, pressure, tiltX, tiltY]);
+
+    // Spacing-density tick marks under the tip: visualize live dab interval
+    // step = max(1, liveSize * spacing). Draw a short phosphor ruler at the bottom.
+    const spacing = brush.spacing ?? 0.12;
+    const liveSize = size; // already pressure-scaled
+    const dabStep = Math.max(1, liveSize * spacing);
+    // Scale ticks to fit ~40px of ruler; show ~3–5 marks depending on density
+    const rulerW = 40;
+    const marks = Math.max(2, Math.min(6, Math.round(rulerW / Math.max(4, dabStep * 0.55))));
+    const gap = rulerW / (marks - 1);
+    ctx.save();
+    ctx.strokeStyle = "#7dffb3";
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.7;
+    const baseY = h - 5;
+    const startX = cx - rulerW / 2;
+    for (let i = 0; i < marks; i++) {
+      const x = startX + i * gap;
+      const tall = i === 0 || i === marks - 1 || i === Math.floor(marks / 2);
+      ctx.beginPath();
+      ctx.moveTo(x, baseY - (tall ? 4 : 2.5));
+      ctx.lineTo(x, baseY);
+      ctx.stroke();
+    }
+    // Thin baseline
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.moveTo(startX, baseY);
+    ctx.lineTo(startX + rulerW, baseY);
+    ctx.stroke();
+    ctx.restore();
+  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, brush.spacing, pressure, tiltX, tiltY]);
 
   return (
     <canvas

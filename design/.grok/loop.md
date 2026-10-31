@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T14:10:00Z
+
+**Done:** Brush tip preview now shows grain/noise speckles for brushes that have grain (pencil, charcoal, spray, watercolor), using deterministic phosphor-friendly dots that match the dab engine. A short spacing-density ruler of phosphor tick marks sits under the tip, with density tracking the live pressure-scaled dab interval so tighter spacing reads as more marks.
+
+**Next recommended:** Grain toggle in the Brush inspector (override the preset), or a small hardness core readout that stays live with the tip.
+
 ## Iteration 2026-10-31T13:07:59Z
 
 **Done:** Brush inspector Space readout now includes a live dab-interval in pixels next to the tip. It tracks the same pressure-scaled spacing the stroke engine uses (step = max(1, liveSize × spacing)), glowing phosphor while a stroke is active and falling back to full-pressure idle value otherwise. Matches the dab engine exactly.
@@ -58,8 +64,8 @@
 
 **Next recommended:** Compact Hard / Space controls in the inspector when a Paint layer is selected, or pressure/tilt stubs for the stroke engine.
 
-## Iteration 2026-10-31T04:25:00Z
+## Iteration 2026-10-31T04:08:00Z
 
-**Done:** Brush dock now exposes Hard and Space sliders (hardness + dab spacing). Live values override the preset defaults in both the stroke preview swatch and on-canvas paint stamps, so soft airbrush / dense pixel / sparse spray all respond immediately without changing the preset name.
+**Done:** First paint tools: brush and eraser with live size, opacity, hardness, and spacing. Stroke engine dabs along the pointer with scatter and optional grain. Layers panel and inspector skeleton. Local storage only.
 
-**Next recommended:** Brush cursor that matches live size while painting, or hardness/spacing in a compact inspector section when a Paint layer is selected.
+**Next recommended:** Live brush cursor that matches size and hardness.
