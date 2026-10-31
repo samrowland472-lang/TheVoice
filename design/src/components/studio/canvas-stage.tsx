@@ -127,6 +127,7 @@ export function CanvasStage() {
   const selection = useDesign((s) => s.selection);
   const strokeGhost = useDesign((s) => s.strokeGhost);
   const typeGhost = useDesign((s) => s.typeGhost);
+  const pathOrderGhost = useDesign((s) => s.pathOrderGhost);
   const typeBaseline = useDesign((s) => s.typeBaseline);
   const reverseTypeLeading = useDesign((s) => s.reverseTypeLeading);
   const glyphDensityScaleFactor = useDesign((s) => s.glyphDensityScaleFactor);
@@ -395,6 +396,28 @@ export function CanvasStage() {
         const selectedNodes = doc.nodes.filter((n) => selection.includes(n.id));
         drawStrokeGhosts(ctx, selectedNodes, strokeGhost, viewport.zoom);
       }
+      if (pathOrderGhost && isPath(pathOrderGhost) && pathOrderGhost.points.length) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(63,198,255,0.85)";
+        ctx.lineWidth = 1.6 / Math.max(viewport.zoom, 0.01);
+        ctx.setLineDash([6 / viewport.zoom, 4 / viewport.zoom]);
+        ctx.beginPath();
+        tracePath(ctx, pathOrderGhost.x, pathOrderGhost.y, pathOrderGhost.points, pathOrderGhost.closed);
+        for (const hole of pathOrderGhost.holes ?? []) {
+          if (hole.length >= 3) tracePath(ctx, pathOrderGhost.x, pathOrderGhost.y, hole, true);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // small phosphor dots at reordered anchors
+        ctx.fillStyle = "rgba(63,198,255,0.9)";
+        const r = 3.2 / Math.max(viewport.zoom, 0.01);
+        for (const p of pathOrderGhost.points) {
+          ctx.beginPath();
+          ctx.arc(pathOrderGhost.x + p.x, pathOrderGhost.y + p.y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
       const mq = marqueeRef.current;
       if (mq && (mq.w > 0.5 || mq.h > 0.5)) {
         ctx.beginPath();
@@ -520,7 +543,7 @@ export function CanvasStage() {
       }
     }
     ctx.restore();
-  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, showTangentLengths, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost, typeGhost, glyphDensityScaleFactor, typeBaseline, reverseTypeLeading]);
+  }, [doc, viewport, selection, booleanPreview, tool, present, pathEditHit, showTangentLengths, hoverTick, nudgeHold, inspectorRail, distributePreview, alignPreview, alignEcho, strokeGhost, typeGhost, pathOrderGhost, glyphDensityScaleFactor, typeBaseline, reverseTypeLeading]);
 
   useEffect(() => {
     const wrap = wrapRef.current;

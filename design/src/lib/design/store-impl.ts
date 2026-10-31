@@ -22,7 +22,7 @@ import type { GuideSet } from "./snap";
 import { isGroup } from "./types";
 import { applyLayerDrop, makeGroup, nudgeLayer, reverseSelectedStacking, ungroup, withDescendants, type LayerDrop } from "./groups";
 import { applyIsolate } from "./layers-isolate";
-import type { BrandKit, DesignDocument, DesignNode, Tool, Viewport } from "./types";
+import type { BrandKit, DesignDocument, DesignNode, PathNode, Tool, Viewport } from "./types";
 import type { StrokeGhost } from "./stroke-ghost";
 
 const MAX_HISTORY = 60;
@@ -86,6 +86,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   alignTarget: "selection",
   strokeGhost: null as StrokeGhost | null,
   typeGhost: null as TypeGhost | null,
+  pathOrderGhost: null as PathNode | null,
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id) => {
     const doc = loadDoc(id);
@@ -275,6 +276,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
   setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
   setTypeGhost: (ghost: TypeGhost) => set({ typeGhost: ghost }),
+  setPathOrderGhost: (ghost: PathNode | null) => set({ pathOrderGhost: ghost }),
   requestFit: () => set({ viewIntent: { type: "fit" } }),
   requestZoom: (zoom: number) => set({ viewIntent: { type: "zoom", zoom } }),
   select: (ids, additive) => {

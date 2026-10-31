@@ -1,6 +1,8 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Path inspector: live order preview ghost while Alt is held on multi-select. Holding Alt with two or more points selected draws a phosphor dashed ghost of the path after a +1 relative order cycle (anchors marked with dots). Releasing Alt clears the ghost. Alt+Left/Right still commits the rotate. Tooltips on Sel and Ord mention the preview. Verified typecheck, build, and browser smoke (content visible; no console errors).
+
 - Path inspector: keyboard nudge for multi-select reverse order. With two or more points selected (Shift-click), Alt+Left/Right cycles the relative order of the selected points among their slots by one step (handles and Mirror flags follow). Plain Arrow keys still nudge bulk handle length. Sel and Ord tooltips mention the shortcut. Verified typecheck, build, and browser smoke (content visible; pre-existing hydration note).
 
 - Path inspector: multi-select reverse relative order of selected points within a consecutive run only (Run). With two or more points selected (Shift-click), a Run button appears next to Ord. Clicking reverses the relative order only inside each consecutive run of selected points (non-adjacent selected points stay in separate runs and are not mixed). Unselected siblings stay put. In/out handles swap so local curves reverse. Mirror flags follow the points. Selection indices remain valid. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
@@ -103,11 +105,12 @@
 
 - Path inspector: multi-select reverse relative order of selected points within a consecutive run only (Run). With two or more points selected (Shift-click), a Run button appears next to Ord. Clicking reverses the relative order only inside each consecutive run of selected points (non-adjacent selected points stay in separate runs and are not mixed). Unselected siblings stay put. In/out handles swap so local curves reverse. Mirror flags follow the points. Selection indices remain valid. Tooltip on Sel mentions it. Verified typecheck, build, and browser smoke.
 
+- Path inspector: live order preview ghost while Alt is held on multi-select. Holding Alt with two or more points selected draws a phosphor dashed ghost of the path after a +1 relative order cycle (anchors marked with dots). Releasing Alt clears the ghost. Alt+Left/Right still commits the rotate. Tooltips on Sel and Ord mention the preview. Verified typecheck, build, and browser smoke (content visible; no console errors).
+
 ## Iteration
-2026-10-30 23:07 GMT — Path inspector: keyboard nudge for multi-select reverse order (Alt+Left/Right cycles selected points among their slots). Verified typecheck, build, and browser smoke.
+2026-10-31 00:15 GMT — Path inspector: live order preview ghost while Alt is held on multi-select. Verified typecheck, build, and browser smoke.
 ## Next recommended
-- Path inspector: keyboard nudge for multi-select reverse order (done).
+- Path inspector: show live order preview ghost for the opposite direction (Alt+Shift or similar) while Alt is held.
 - Path inspector: multi-select reverse relative order of selected points within a consecutive run only (done).
 - Type inspector: baseline alignment toggle (done).
 - Layers: multi-select reverse stacking order (done).
-- Path inspector: show live order preview ghost while Alt is held on multi-select.

@@ -586,6 +586,47 @@ export function reverseConsecutiveRunsSelectedPoints(
   return true;
 }
 
+/** Compute a rotated relative order preview without committing. Direction +1 cycles points to next higher selected slot. */
+export function computeRotatedRelativePoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+  direction: 1 | -1,
+): PathNode | null {
+  if (selected.length < 2) return null;
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  const nextPoints = node.points.slice();
+  const nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+    const picked = indices.map((i) => ring[i]).filter(Boolean);
+    if (picked.length !== indices.length) continue;
+    const rotated = direction === 1
+      ? [...picked.slice(1), picked[0]]
+      : [picked[picked.length - 1], ...picked.slice(0, -1)];
+    for (let k = 0; k < indices.length; k++) {
+      ring[indices[k]!] = rotated[k]!;
+    }
+    changed = true;
+  }
+  if (!changed) return null;
+  return {
+    ...node,
+    points: nextPoints,
+    holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+  };
+}
+
 /** Rotate relative order of multi-selected points by one step among their slots.
  * Direction +1 moves each point to the next higher selected index (cycling); -1 the opposite.
  * Handles stay with the points. Mirror flags follow the points. Selection indices remain valid.
