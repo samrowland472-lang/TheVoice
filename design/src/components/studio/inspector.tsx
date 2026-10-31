@@ -765,6 +765,12 @@ function PaintBrushControls() {
   const dabPx = Math.max(1, Math.round(liveSize * spacing));
   // Hardness core diameter (matches tip preview hard-core ring: size * hardness)
   const corePx = Math.max(1, Math.round(liveSize * hardness));
+  // Live scatter strength: matches stroke engine directional amp (along-axis when tilted)
+  const scatter = base.scatter;
+  const tiltMag = Math.min(90, Math.hypot(live.tiltX, live.tiltY));
+  const alongScale = scatter > 0 ? 0.55 + (tiltMag / 90) * 1.15 : 0;
+  const scatterAmp = scatter * (liveSize * 0.15);
+  const scatPx = Math.max(0, Math.round(scatterAmp * alongScale));
 
   return (
     <section className="space-y-2 border-b border-border px-3 py-3">
@@ -801,6 +807,21 @@ function PaintBrushControls() {
                 {corePx} px
               </div>
             </div>
+            {scatter > 0 && (
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">Scat</div>
+                <div
+                  className={cn(
+                    "font-mono text-[13px] tabular-nums",
+                    live.painting && tiltMag > 2 ? "text-phosphor" : "text-ink-faint",
+                  )}
+                  data-brush-scatter-readout=""
+                  title="Live scatter strength (along-axis when tilted, pressure-scaled)"
+                >
+                  {scatPx} px
+                </div>
+              </div>
+            )}
           </div>
           <BrushTipPreview
             brush={{ ...brush, color: brush.color || color || "#0a0d0c" }}
