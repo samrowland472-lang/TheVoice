@@ -11,10 +11,11 @@
 - Polished scatter angle readout: live BrushTipPreview in brush status shows phosphor cross + degree label when scatter brushes are tilted; status line echoes the scatter angle.
 - Scatter strength slider in the paint dock: live override of preset scatter (0–3), applied to strokes, tip preview cross length, and stroke preview. Switching brushes resets to the preset value.
 - Scatter status echo now shows the live strength number (e.g. “scatter 1.2”) beside the tilt angle while painting; strength is omitted when the override is off.
+- Scatter tip preview now draws the live strength number (phosphor, upright) on the short axis of the cross when the pen is tilted.
 
 ## Iteration
-2026-10-31T22:10:00Z — Scatter status echo now reports the live strength number next to the tilt angle. Typecheck, build, and browser-smoke green.
+2026-10-31T23:05:00Z — Scatter tip preview now shows the live strength number on the phosphor cross (short-axis end). Typecheck, build, and browser-smoke green.
 
 ## Next recommended
 - Deepen path point tab-order or knife cut feedback.
-- Or polish the scatter tip preview so the strength number also appears on the phosphor cross.
+- Or add a faint strength tick to the cross even at low tilt.

@@ -200,6 +200,21 @@ export function BrushTipPreview({
       const clampedY = Math.max(8, Math.min(h - 8, ly));
       ctx.fillText(label, clampedX, clampedY);
       ctx.restore();
+
+      // Scatter strength number on the short axis end (upright, phosphor)
+      const strengthLabel = scatter.toFixed(1);
+      const sx = cx + Math.cos(angle + Math.PI / 2) * (halfAcross + 7);
+      const sy = cy + Math.sin(angle + Math.PI / 2) * (halfAcross + 7);
+      const sClampedX = Math.max(10, Math.min(w - 10, sx));
+      const sClampedY = Math.max(8, Math.min(h - 8, sy));
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = "#7dffb3";
+      ctx.font = "bold 6.5px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(strengthLabel, sClampedX, sClampedY);
+      ctx.restore();
     }
 
     // Spacing-density tick marks under the tip: visualize live dab interval
