@@ -40,6 +40,8 @@ import { MixedInk } from "./mixed-ink";
 import { MixedBlendLegend } from "./mixed-ink-chips";
 import { MixedType } from "./mixed-type";
 import { MixedPathDash } from "./mixed-path-dash";
+import { PathFields } from "./inspector-path";
+import type { PathNode } from "@/lib/design/types";
 import { MixedGeometry } from "./mixed-geometry";
 import { FillEditor, Field, ShadowEditor } from "./inspector-parts";
 import { TextFields } from "./inspector-type";
@@ -408,6 +410,11 @@ export function Inspector() {
           {outlines.length > 0 && (
             <section className="border-b border-border px-3 py-3">
               <MixedPathDash nodes={outlines} />
+            </section>
+          )}
+          {selectedNodes.length === 1 && node.kind === "path" && (
+            <section className="border-b border-border px-3 py-3" data-path-inspector>
+              <PathFields node={node as PathNode} />
             </section>
           )}
           {selectedNodes.length > 1 && (
