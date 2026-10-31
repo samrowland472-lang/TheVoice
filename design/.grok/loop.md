@@ -1,3 +1,9 @@
+## Iteration 2026-10-31T15:08:03Z
+
+**Done:** Brush inspector now has a Grain toggle that overrides the preset. Speckles appear in the tip preview and in live strokes when grain is on (pencil, charcoal, spray, watercolor presets start with grain; others start off). Switching brushes clears the override so the new preset applies until toggled. Phosphor checkbox, no emoji chrome.
+
+**Next recommended:** Hardness core numeric readout next to the tip, or a live scatter-strength indicator while the pen is tilted.
+
 ## Iteration 2026-10-31T14:10:00Z
 
 **Done:** Brush tip preview now shows grain/noise speckles for brushes that have grain (pencil, charcoal, spray, watercolor), using deterministic phosphor-friendly dots that match the dab engine. A short spacing-density ruler of phosphor tick marks sits under the tip, with density tracking the live pressure-scaled dab interval so tighter spacing reads as more marks.

@@ -240,6 +240,8 @@ export interface BrushSettings {
   opacity: number;
   hardness: number;
   spacing: number;
+  /** Optional grain override. When unset, the brush preset decides. */
+  grain?: boolean;
   color: string;
   symmetry: "none" | "x" | "y" | "xy" | "radial";
 }

@@ -37,6 +37,7 @@ import {
 import type { BlendMode, TextNode } from "@/lib/design/types";
 import { NumField } from "./num-field";
 import { BrushTipPreview } from "./brush-preview";
+import { brushById } from "@/lib/design/brushes";
 import { getStrokeLiveKey, subscribeStrokeLive } from "@/lib/design/paint-stroke";
 import { MixedInk } from "./mixed-ink";
 import { MixedBlendLegend } from "./mixed-ink-chips";
@@ -754,6 +755,8 @@ function PaintBrushControls() {
   const spacing = brush.spacing ?? 0.12;
   const hardPct = Math.round(hardness * 100);
   const spacePct = Math.round(spacing * 100);
+  const base = brushById(brush.id);
+  const hasGrain = brush.grain ?? base.grain;
   const live = useStrokeLive();
   // Dab interval matches the stroke engine: step = max(1, liveSize * spacing)
   // liveSize scales 0.2–1.0 with pressure (full strength when not painting).
@@ -815,6 +818,19 @@ function PaintBrushControls() {
           aria-label="Brush spacing"
           onChange={(e) => setBrush({ spacing: Number(e.target.value) })}
         />
+      </label>
+      <label className="flex items-center gap-2 text-[11px] text-ink-dim">
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5 accent-[var(--color-phosphor)]"
+          checked={hasGrain}
+          onChange={(e) => setBrush({ grain: e.target.checked })}
+          aria-label="Brush grain"
+        />
+        Grain
+        <span className="font-mono text-[9px] text-ink-faint">
+          {brush.grain == null ? "(preset)" : brush.grain ? "on" : "off"}
+        </span>
       </label>
       <LivePressureTilt />
     </section>

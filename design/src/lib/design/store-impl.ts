@@ -281,6 +281,8 @@ export const useDesign = create<any>((set: any, get: any) => ({
       const def = brushById(patch.id);
       next.hardness = def.hardness;
       next.spacing = def.spacing;
+      // Clear grain override so the new preset's grain applies until toggled.
+      delete next.grain;
     }
     if (patch.color == null && patch.id) next.color = get().color || cur.color;
     set({ brush: next });

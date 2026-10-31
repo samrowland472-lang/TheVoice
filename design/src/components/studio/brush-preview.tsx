@@ -20,12 +20,13 @@ export function BrushPreview({ brush }: { brush: BrushSettings }) {
       ...base,
       hardness: brush.hardness ?? base.hardness,
       spacing: brush.spacing ?? base.spacing,
+      grain: brush.grain ?? base.grain,
     };
     const size = Math.max(4, Math.min(brush.size, h * 0.7));
     const y = h / 2;
     strokeSegment(ctx, 12, y, w - 12, y, size, brush.color || "#0a0d0c", def, brush.opacity);
     strokeSegment(ctx, 18, y - 6, w - 18, y + 6, size * 0.55, brush.color || "#0a0d0c", def, brush.opacity * 0.8);
-  }, [brush.id, brush.size, brush.opacity, brush.color, brush.hardness, brush.spacing]);
+  }, [brush.id, brush.size, brush.opacity, brush.color, brush.hardness, brush.spacing, brush.grain]);
 
   return (
     <canvas
@@ -108,9 +109,9 @@ export function BrushTipPreview({
     ctx.arc(0, 0, Math.max(1, r * hardness), 0, Math.PI * 2);
     ctx.stroke();
 
-    // Grain / noise speckles when the brush preset has grain (matches dab engine)
-    const baseForGrain = brushById(brush.id);
-    if (baseForGrain.grain && r > 4) {
+    // Grain / noise speckles when the brush (or its override) has grain (matches dab engine)
+    const hasGrain = brush.grain ?? brushById(brush.id).grain;
+    if (hasGrain && r > 4) {
       ctx.globalAlpha = liveAlpha * 0.22;
       ctx.fillStyle = color;
       // Deterministic speckles so the tip doesn't flicker on re-render
@@ -197,7 +198,7 @@ export function BrushTipPreview({
     ctx.lineTo(startX + rulerW, baseY);
     ctx.stroke();
     ctx.restore();
-  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, brush.spacing, pressure, tiltX, tiltY]);
+  }, [brush.size, brush.opacity, brush.color, brush.hardness, brush.id, brush.spacing, brush.grain, pressure, tiltX, tiltY]);
 
   return (
     <canvas
