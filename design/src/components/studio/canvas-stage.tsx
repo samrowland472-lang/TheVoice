@@ -21,7 +21,7 @@ import {
   togglePathPointSelection,
 } from "@/lib/design/path-actions";
 import { asEditablePath } from "@/lib/design/shape-to-path";
-import { knifeStrokePreview } from "@/lib/design/path-cut";
+import { knifeStrokePreview, knifePreviewPoint } from "@/lib/design/path-cut";
 import { hitResizeHandle, type ResizeHandle } from "@/lib/design/box-resize";
 import {
   drawPathNodeTangents,
@@ -99,6 +99,7 @@ export default function CanvasStage() {
   const pathPointSelection = useDesign((s) => s.pathPointSelection);
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
+  const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
   const setViewport = useDesign((s) => s.setViewport);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -164,7 +165,8 @@ export default function CanvasStage() {
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke]);
+    else if (knifeHover) drawKnifeHover(ctx, knifeHover, viewport, dpr);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -241,6 +243,7 @@ export default function CanvasStage() {
     if (tool === "knife" && e.button === 0) {
       drag.current = { type: "knife", startX: docPt.x, startY: docPt.y };
       setKnifeStroke({ ax: docPt.x, ay: docPt.y, bx: docPt.x, by: docPt.y });
+      setKnifeHover(null);
       setStudioStatus("Knife · drag to cut");
       return;
     }
@@ -416,11 +419,46 @@ export default function CanvasStage() {
   }
 
   function onPointerMove(e: React.PointerEvent) {
-    if (!doc || !drag.current) return;
+    if (!doc) return;
     const rect = canvasRef.current!.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const docPt = screenToDoc(sx, sy, viewport);
+
+    // Knife hover preview (point cut) when not dragging
+    if (tool === "knife" && !drag.current) {
+      let best: { x: number; y: number; dist: number } | null = null;
+      const preferred = selection[0];
+      const paths: DesignNode[] = [];
+      for (const n of doc.nodes) {
+        if (!n.visible || n.locked) continue;
+        const p = asEditablePath(n);
+        if (p && p.points.length >= 2) paths.push(p);
+      }
+      const ordered = preferred
+        ? [paths.find((n) => n.id === preferred), ...paths.filter((n) => n.id !== preferred)].filter(Boolean) as DesignNode[]
+        : paths;
+      for (const n of ordered) {
+        const p = asEditablePath(n);
+        if (!p) continue;
+        const local = pathWorldToLocal(p, docPt.x, docPt.y);
+        const mark = knifePreviewPoint(p, local.x, local.y, viewport.zoom);
+        if (mark) {
+          const d = Math.hypot(mark.x - docPt.x, mark.y - docPt.y);
+          if (!best || d < best.dist) best = { x: mark.x, y: mark.y, dist: d };
+        }
+      }
+      if (best && best.dist < 20 / viewport.zoom) {
+        setKnifeHover(best);
+        setStudioStatus("Knife · cut here");
+      } else {
+        setKnifeHover(null);
+        setStudioStatus("Knife · drag to cut");
+      }
+      return;
+    }
+
+    if (!drag.current) return;
     const d = drag.current;
 
     if (d.type === "pan") {
@@ -885,6 +923,36 @@ function drawKnifeStroke(
     ctx.lineTo(m.x, m.y + r * 0.7);
     ctx.stroke();
   }
+
+  ctx.restore();
+}
+
+function drawKnifeHover(
+  ctx: CanvasRenderingContext2D,
+  mark: { x: number; y: number },
+  vp: Viewport,
+  dpr: number,
+) {
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+
+  const r = 5 / vp.zoom;
+  ctx.fillStyle = "rgba(63, 198, 255, 0.35)";
+  ctx.strokeStyle = "#3fc6ff";
+  ctx.lineWidth = 1.25 / vp.zoom;
+  ctx.beginPath();
+  ctx.arc(mark.x, mark.y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // small cross
+  ctx.beginPath();
+  ctx.moveTo(mark.x - r * 0.8, mark.y);
+  ctx.lineTo(mark.x + r * 0.8, mark.y);
+  ctx.moveTo(mark.x, mark.y - r * 0.8);
+  ctx.lineTo(mark.x, mark.y + r * 0.8);
+  ctx.stroke();
 
   ctx.restore();
 }
