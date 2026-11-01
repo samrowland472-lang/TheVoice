@@ -7,7 +7,8 @@ import { setStudioStatus, holdStudioStatus, releaseStudioStatus } from "@/lib/de
 import { hitTop } from "@/lib/design/hit";
 import { nodeBounds } from "@/lib/design/layer-groups";
 import { nodesInMarquee } from "@/lib/design/marquee-nodes";
-import { nodeWorldAabb } from "@/lib/design/snap";
+import { nodeWorldAabb, smartSnap, type GuideSet } from "@/lib/design/snap";
+import { expandMovePlaces } from "@/lib/design/group-transform";
 import type { DesignNode, PathNode, Viewport } from "@/lib/design/types";
 import { isPath } from "@/lib/design/types";
 
@@ -43,8 +44,14 @@ export default function CanvasStage() {
   });
   const panRef = useRef<{ startX: number; startY: number; vx: number; vy: number } | null>(null);
   const marqueeRef = useRef<MarqueeState | null>(null);
+  const moveRef = useRef<{
+    start: { x: number; y: number };
+    originals: { id: string; x: number; y: number }[];
+    committed: boolean;
+  } | null>(null);
   const [hoverMark, setHoverMark] = useState<{ x: number; y: number } | null>(null);
   const [marqueeTick, setMarqueeTick] = useState(0);
+  const [liveGuides, setLiveGuides] = useState<GuideSet | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
 
   const doc = useDesign((s) => s.doc);
@@ -210,9 +217,35 @@ export default function CanvasStage() {
       ctx.restore();
     }
 
+    // Live smart-guide lines while dragging selected layers
+    if (liveGuides && doc) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.strokeStyle = "rgba(200,247,197,0.85)";
+      ctx.lineWidth = 1;
+      ctx.shadowColor = "#c8f7c5";
+      ctx.shadowBlur = 6;
+      ctx.setLineDash([4, 3]);
+      for (const gx of liveGuides.x) {
+        const sx = gx * viewport.zoom + viewport.x;
+        ctx.beginPath();
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, size.h);
+        ctx.stroke();
+      }
+      for (const gy of liveGuides.y) {
+        const sy = gy * viewport.zoom + viewport.y;
+        ctx.beginPath();
+        ctx.moveTo(0, sy);
+        ctx.lineTo(size.w, sy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     if (hoverMark) drawMark(hoverMark.x, hoverMark.y);
     for (const m of dragRef.current.marks) drawMark(m.x, m.y, true);
-  }, [doc, viewport, size, statusTick, hoverMark, tool, selection, marqueeTick]);
+  }, [doc, viewport, size, statusTick, hoverMark, tool, selection, marqueeTick, liveGuides]);
 
   const localFromEvent = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -242,9 +275,21 @@ export default function CanvasStage() {
       const hit = hitTop(doc.nodes, w.x, w.y);
       const additive = e.shiftKey || e.metaKey || e.ctrlKey;
       if (hit) {
-        select([hit.id], additive);
-        setStudioStatus(additive ? "Selection updated" : `Selected ${hit.kind}`);
+        const already = selection.includes(hit.id);
+        if (additive) {
+          select([hit.id], true);
+        } else if (!already) {
+          select([hit.id], false);
+        }
+        // Start a move of the (possibly updated) selection
+        const sel = useDesign.getState().selection;
+        const originals = doc.nodes
+          .filter((n) => sel.includes(n.id))
+          .map((n) => ({ id: n.id, x: n.x, y: n.y }));
+        moveRef.current = { start: w, originals, committed: false };
         marqueeRef.current = null;
+        setLiveGuides(null);
+        setStudioStatus(additive ? "Selection updated · drag to move" : already ? "Drag to move · smart guides" : `Selected ${hit.kind} · drag to move`);
       } else {
         // Start pasteboard marquee
         marqueeRef.current = {
@@ -272,6 +317,50 @@ export default function CanvasStage() {
       const dx = e.clientX - panRef.current.startX;
       const dy = e.clientY - panRef.current.startY;
       setViewport({ x: panRef.current.vx + dx, y: panRef.current.vy + dy });
+      return;
+    }
+
+    if (tool === "select" && moveRef.current) {
+      const mv = moveRef.current;
+      const rawDx = w.x - mv.start.x;
+      const rawDy = w.y - mv.start.y;
+      if (!mv.committed && (Math.abs(rawDx) > 0.4 || Math.abs(rawDy) > 0.4)) {
+        useDesign.getState().commit();
+        mv.committed = true;
+      }
+      // Proposed positions after raw drag
+      const byId = new Map(doc.nodes.map((n) => [n.id, n]));
+      const proposedMoving: DesignNode[] = [];
+      for (const o of mv.originals) {
+        const n = byId.get(o.id);
+        if (!n) continue;
+        proposedMoving.push({ ...n, x: o.x + rawDx, y: o.y + rawDy } as DesignNode);
+      }
+      const others = doc.nodes.filter((n) => !mv.originals.some((o) => o.id === n.id));
+      const artboard = { width: doc.width, height: doc.height };
+      const thresh = Math.max(2, 7 / Math.max(0.25, viewport.zoom));
+      const { dx, dy, guides } = smartSnap(proposedMoving, others, artboard, thresh);
+      const finalDx = rawDx + dx;
+      const finalDy = rawDy + dy;
+      const places = mv.originals.map((o) => ({ id: o.id, x: o.x + finalDx, y: o.y + finalDy }));
+      const expanded = expandMovePlaces(doc.nodes, places);
+      const placeMap = new Map(expanded.map((pl) => [pl.id, pl]));
+      useDesign.getState().mapNodes(
+        expanded.map((pl) => pl.id),
+        (n) => {
+          const pl = placeMap.get(n.id);
+          return pl ? { ...n, x: pl.x, y: pl.y } : n;
+        },
+        false,
+      );
+      setLiveGuides(guides.x.length || guides.y.length ? guides : null);
+      const snapped = Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05;
+      setStudioStatus(
+        snapped
+          ? `Move · snapped · Δ ${finalDx.toFixed(1)}, ${finalDy.toFixed(1)}`
+          : `Move · Δ ${finalDx.toFixed(1)}, ${finalDy.toFixed(1)}`,
+      );
+      setMarqueeTick((t) => t + 1);
       return;
     }
 
@@ -357,6 +446,17 @@ export default function CanvasStage() {
       }
       marqueeRef.current = null;
       setMarqueeTick((t) => t + 1);
+      return;
+    }
+
+    if (moveRef.current) {
+      const mv = moveRef.current;
+      moveRef.current = null;
+      setLiveGuides(null);
+      setMarqueeTick((t) => t + 1);
+      if (mv.committed) {
+        holdStudioStatus("Layer moved");
+      }
       return;
     }
 

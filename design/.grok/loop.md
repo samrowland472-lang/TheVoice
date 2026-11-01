@@ -21,9 +21,9 @@
 - Marquee select on the canvas: drag empty board to draw a phosphor marquee; intersects layers by default; Alt switches to contain mode with corner ticks; Shift/meta adds to selection; live count in status strip; click without drag still clears.
 
 ## Iteration
-2026-11-01T06:14:42Z — Marquee select on the canvas stage. Drag on empty board draws phosphor marquee (intersect or Alt-contain), previews hit layers, commits via nodesInMarquee (group-aware). Typecheck, build, browser-smoke green (hasCanvas true).
+2026-11-01T07:07:51Z — Drag-move selected layers with smart guides. Click a layer (or additive) then drag; smartSnap locks to edges/centers/artboard; phosphor dashed guides draw live; groups carry descendants. Typecheck, build, browser-smoke green (hasCanvas true).
 
 ## Next recommended
-- Drag-move selected layers on the canvas with smart guides.
+- Resize handles on selected layers with live smart guides.
 - Or polish knife residual fade curve / core brighten.
 - Or deepen path point editing on the live canvas.
