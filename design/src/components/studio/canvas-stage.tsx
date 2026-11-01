@@ -9,14 +9,20 @@ import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
 import { nodeCenter, degToRad } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
-import type { DesignNode, Tool, Viewport } from "@/lib/design/types";
+import type { DesignNode, Tool, Viewport, PathNode } from "@/lib/design/types";
+import { isPath } from "@/lib/design/types";
+import { appendPenPoint, editPathHit, setPathClosed } from "@/lib/design/path-actions";
+import { hitPathNode, pathWorldToLocal } from "@/lib/design/path-edit";
+import { drawPathNodeTangents } from "@/lib/design/path-edit";
+import { nearPenClose } from "@/lib/design/path-curve";
 
 type DragKind =
   | { type: "move"; id: string; startX: number; startY: number; ox: number; oy: number }
   | { type: "resize"; id: string; handle: Handle; startX: number; startY: number; orig: DesignNode }
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
   | { type: "pan"; startX: number; startY: number; vx: number; vy: number }
-  | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null };
+  | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null }
+  | { type: "path-point"; id: string; hit: import("@/lib/design/path-edit").PathEditHit };
 
 function snap15(deg: number, force: boolean) {
   if (!force) return deg;
@@ -39,6 +45,7 @@ export default function CanvasStage() {
   const selection = useDesign((s) => s.selection);
   const tool = useDesign((s) => s.tool);
   const viewport = useDesign((s) => s.viewport);
+  const pathEditHit = useDesign((s) => s.pathEditHit);
   const color = useDesign((s) => s.color);
   const viewIntent = useDesign((s) => s.viewIntent);
   const setViewport = useDesign((s) => s.setViewport);
@@ -107,7 +114,8 @@ export default function CanvasStage() {
     if (!ctx) return;
     drawDocument(ctx, doc, { dpr, viewport });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr);
-  }, [doc, selection, viewport]);
+    drawPathPoints(ctx, doc.nodes, selection, viewport, dpr, pathEditHit);
+  }, [doc, selection, viewport, pathEditHit]);
 
   // Resize observer
   useEffect(() => {
@@ -128,6 +136,7 @@ export default function CanvasStage() {
       if (!ctx) return;
       drawDocument(ctx, doc, { dpr, viewport });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr);
+      drawPathPoints(ctx, doc.nodes, selection, viewport, dpr, pathEditHit);
     });
     ro.observe(wrap);
     return () => ro.disconnect();
@@ -177,6 +186,34 @@ export default function CanvasStage() {
         drag.current = { type: "move", id: hit.id, startX: docPt.x, startY: docPt.y, ox: hit.x, oy: hit.y };
       } else if (!e.shiftKey) {
         select([]);
+      }
+      return;
+    }
+
+    // Pen tool — continue path or move points
+    if (tool === "pen") {
+      const selNode = selection.length === 1 ? doc.nodes.find((n) => n.id === selection[0]) : null;
+      if (selNode && isPath(selNode) && !selNode.closed && selNode.points.length >= 3) {
+        const first = selNode.points[0]!;
+        const local = pathWorldToLocal(selNode, docPt.x, docPt.y);
+        if (nearPenClose(local.x, local.y, first.x, first.y, viewport.zoom)) {
+          setPathClosed(selNode.id, true);
+          setStudioStatus("Path closed");
+          return;
+        }
+      }
+      if (selNode && isPath(selNode)) {
+        const hit = hitPathNode(selNode, docPt.x, docPt.y, viewport.zoom);
+        if (hit) {
+          drag.current = { type: "path-point", id: selNode.id, hit };
+          setStudioStatus("Move path point");
+          return;
+        }
+      }
+      const id = appendPenPoint(docPt.x, docPt.y);
+      if (id) {
+        select([id]);
+        setStudioStatus("Pen point");
       }
       return;
     }
@@ -242,6 +279,15 @@ export default function CanvasStage() {
       const w = Math.max(8, Math.abs(docPt.x - d.startX));
       const h = Math.max(8, Math.abs(docPt.y - d.startY));
       updateNodes([d.id], { x, y, w, h: d.tool === "line" ? Math.max(4, h) : h });
+      return;
+    }
+
+    if (d.type === "path-point") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (n && isPath(n)) {
+        const local = pathWorldToLocal(n, docPt.x, docPt.y);
+        editPathHit(d.id, d.hit, local.x, local.y, !e.shiftKey);
+      }
     }
   }
 
@@ -337,6 +383,26 @@ function drawSelection(
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawPathPoints(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+  active: import("@/lib/design/path-edit").PathEditHit | null,
+) {
+  const selected = nodes.filter((n) => selection.includes(n.id) && n.visible && isPath(n));
+  if (!selected.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  for (const n of selected) {
+    drawPathNodeTangents(ctx, n as PathNode, vp.zoom, active);
   }
   ctx.restore();
 }
