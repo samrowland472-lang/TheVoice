@@ -8,9 +8,10 @@ import { hitTop } from "@/lib/design/hit";
 import { nodeBounds } from "@/lib/design/layer-groups";
 import { nodesInMarquee } from "@/lib/design/marquee-nodes";
 import { nodeWorldAabb, smartSnap, type GuideSet } from "@/lib/design/snap";
-import { expandMovePlaces } from "@/lib/design/group-transform";
+import { expandMovePlaces, scaleNodeInFrame, groupTransformIds, groupBox } from "@/lib/design/group-transform";
+import { hitResizeHandle, resizeBox, mapNodeToBox, type ResizeHandle, type Box } from "@/lib/design/box-resize";
 import type { DesignNode, PathNode, Viewport } from "@/lib/design/types";
-import { isPath } from "@/lib/design/types";
+import { isPath, isGroup } from "@/lib/design/types";
 
 type ResidualMark = { x: number; y: number; born: number };
 
@@ -49,10 +50,17 @@ export default function CanvasStage() {
     originals: { id: string; x: number; y: number }[];
     committed: boolean;
   } | null>(null);
+  const resizeRef = useRef<{
+    id: string;
+    handle: ResizeHandle;
+    originalBox: Box;
+    committed: boolean;
+  } | null>(null);
   const [hoverMark, setHoverMark] = useState<{ x: number; y: number } | null>(null);
   const [marqueeTick, setMarqueeTick] = useState(0);
   const [liveGuides, setLiveGuides] = useState<GuideSet | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
+  const [hoverCursor, setHoverCursor] = useState<string | null>(null);
 
   const doc = useDesign((s) => s.doc);
   const viewport = useDesign((s) => s.viewport);
@@ -156,6 +164,48 @@ export default function CanvasStage() {
         const sw = b.w * viewport.zoom;
         const sh = b.h * viewport.zoom;
         ctx.strokeRect(sx - 1, sy - 1, sw + 2, sh + 2);
+      }
+      ctx.restore();
+    }
+
+    // Resize handles (phosphor squares on selected layers)
+    if (tool === "select" && selection.length && doc && !moveRef.current && !resizeRef.current) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const hs = 5; // screen px half-ish
+      for (const id of selection) {
+        const n = doc.nodes.find((nn) => nn.id === id);
+        if (!n || n.locked) continue;
+        const b = n.kind === "group" ? (groupBox(doc.nodes, id) || nodeBounds(n)) : nodeBounds(n);
+        for (const h of ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const) {
+          const pt = (() => {
+            const midX = b.x + b.w / 2;
+            const midY = b.y + b.h / 2;
+            const right = b.x + b.w;
+            const bottom = b.y + b.h;
+            switch (h) {
+              case "nw": return { x: b.x, y: b.y };
+              case "n": return { x: midX, y: b.y };
+              case "ne": return { x: right, y: b.y };
+              case "e": return { x: right, y: midY };
+              case "se": return { x: right, y: bottom };
+              case "s": return { x: midX, y: bottom };
+              case "sw": return { x: b.x, y: bottom };
+              case "w": return { x: b.x, y: midY };
+            }
+          })();
+          const sx = pt.x * viewport.zoom + viewport.x;
+          const sy = pt.y * viewport.zoom + viewport.y;
+          ctx.fillStyle = "#0b0f0c";
+          ctx.strokeStyle = "#c8f7c5";
+          ctx.lineWidth = 1.4;
+          ctx.shadowColor = "#c8f7c5";
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.rect(sx - hs / 2, sy - hs / 2, hs, hs);
+          ctx.fill();
+          ctx.stroke();
+        }
       }
       ctx.restore();
     }
@@ -272,6 +322,32 @@ export default function CanvasStage() {
     }
 
     if (tool === "select") {
+      // Prefer resize handles on the current selection
+      let handleHit: { id: string; handle: ResizeHandle; box: Box } | null = null;
+      for (const id of [...selection].reverse()) {
+        const n = doc.nodes.find((nn) => nn.id === id);
+        if (!n || n.locked) continue;
+        const b = n.kind === "group" ? (groupBox(doc.nodes, id) || nodeBounds(n)) : nodeBounds(n);
+        const h = hitResizeHandle(b, w.x, w.y, viewport.zoom);
+        if (h) {
+          handleHit = { id, handle: h, box: b };
+          break;
+        }
+      }
+      if (handleHit) {
+        resizeRef.current = {
+          id: handleHit.id,
+          handle: handleHit.handle,
+          originalBox: { ...handleHit.box },
+          committed: false,
+        };
+        moveRef.current = null;
+        marqueeRef.current = null;
+        setLiveGuides(null);
+        setStudioStatus("Drag handle to resize · Shift locks aspect · smart guides");
+        return;
+      }
+
       const hit = hitTop(doc.nodes, w.x, w.y);
       const additive = e.shiftKey || e.metaKey || e.ctrlKey;
       if (hit) {
@@ -317,6 +393,150 @@ export default function CanvasStage() {
       const dx = e.clientX - panRef.current.startX;
       const dy = e.clientY - panRef.current.startY;
       setViewport({ x: panRef.current.vx + dx, y: panRef.current.vy + dy });
+      return;
+    }
+
+    // Hover cursor for resize handles
+    if (tool === "select" && !resizeRef.current && !moveRef.current && !marqueeRef.current && selection.length) {
+      let cur: string | null = null;
+      for (const id of [...selection].reverse()) {
+        const n = doc.nodes.find((nn) => nn.id === id);
+        if (!n || n.locked) continue;
+        const b = n.kind === "group" ? (groupBox(doc.nodes, id) || nodeBounds(n)) : nodeBounds(n);
+        const h = hitResizeHandle(b, w.x, w.y, viewport.zoom);
+        if (h) {
+          cur =
+            h === "nw" || h === "se"
+              ? "nwse-resize"
+              : h === "ne" || h === "sw"
+                ? "nesw-resize"
+                : h === "n" || h === "s"
+                  ? "ns-resize"
+                  : "ew-resize";
+          break;
+        }
+      }
+      if (cur !== hoverCursor) setHoverCursor(cur);
+    } else if (hoverCursor) {
+      setHoverCursor(null);
+    }
+
+    if (tool === "select" && resizeRef.current) {
+      const rz = resizeRef.current;
+      const raw = resizeBox(rz.originalBox, rz.handle, w.x, w.y, e.shiftKey);
+      // Smart snap the active edges
+      const others = doc.nodes
+        .filter((n) => n.visible && n.id !== rz.id && !groupTransformIds(doc.nodes, rz.id).includes(n.id))
+        .map(nodeWorldAabb);
+      const artboard = { width: doc.width, height: doc.height };
+      const thresh = Math.max(2, 7 / Math.max(0.25, viewport.zoom));
+      const candsX = [0, artboard.width / 2, artboard.width];
+      const candsY = [0, artboard.height / 2, artboard.height];
+      for (const o of others) {
+        candsX.push(o.x, o.x + o.w / 2, o.x + o.w);
+        candsY.push(o.y, o.y + o.h / 2, o.y + o.h);
+      }
+      let { x, y, w: bw, h: bh } = raw;
+      const guides: GuideSet = { x: [], y: [] };
+      const snapSide = (val: number, cands: number[]) => {
+        let best = Infinity;
+        let to = val;
+        for (const c of cands) {
+          const d = Math.abs(val - c);
+          if (d < best && d < thresh) {
+            best = d;
+            to = c;
+          }
+        }
+        return best < thresh ? to : null;
+      };
+      if (rz.handle.includes("w")) {
+        const s = snapSide(x, candsX);
+        if (s != null) {
+          const dx = s - x;
+          x += dx;
+          bw -= dx;
+          guides.x.push(s);
+        }
+      }
+      if (rz.handle.includes("e")) {
+        const right = x + bw;
+        const s = snapSide(right, candsX);
+        if (s != null) {
+          bw = s - x;
+          guides.x.push(s);
+        }
+      }
+      if (rz.handle.includes("n")) {
+        const s = snapSide(y, candsY);
+        if (s != null) {
+          const dy = s - y;
+          y += dy;
+          bh -= dy;
+          guides.y.push(s);
+        }
+      }
+      if (rz.handle.includes("s")) {
+        const bottom = y + bh;
+        const s = snapSide(bottom, candsY);
+        if (s != null) {
+          bh = s - y;
+          guides.y.push(s);
+        }
+      }
+      // Also snap centers when mid-edge handles are used
+      if (rz.handle === "n" || rz.handle === "s") {
+        const mid = x + bw / 2;
+        const s = snapSide(mid, candsX);
+        if (s != null && guides.x.length === 0) {
+          const dx = s - mid;
+          x += dx;
+          guides.x.push(s);
+        }
+      }
+      if (rz.handle === "e" || rz.handle === "w") {
+        const mid = y + bh / 2;
+        const s = snapSide(mid, candsY);
+        if (s != null && guides.y.length === 0) {
+          const dy = s - mid;
+          y += dy;
+          guides.y.push(s);
+        }
+      }
+      bw = Math.max(1, bw);
+      bh = Math.max(1, bh);
+      const toBox: Box = { x, y, w: bw, h: bh };
+      if (!rz.committed && (Math.abs(w.x - rz.originalBox.x) > 0.4 || Math.abs(w.y - rz.originalBox.y) > 0.4 || Math.abs(bw - rz.originalBox.w) > 0.4 || Math.abs(bh - rz.originalBox.h) > 0.4)) {
+        useDesign.getState().commit();
+        rz.committed = true;
+      }
+      const st = useDesign.getState();
+      const target = st.doc.nodes.find((nn) => nn.id === rz.id);
+      if (target && isGroup(target)) {
+        const ids = groupTransformIds(st.doc.nodes, rz.id);
+        st.mapNodes(
+          ids,
+          (n) => {
+            if (n.id === rz.id) return { ...n, x: toBox.x, y: toBox.y, w: toBox.w, h: toBox.h };
+            return scaleNodeInFrame(n, rz.originalBox, toBox);
+          },
+          false,
+        );
+      } else {
+        st.mapNodes(
+          [rz.id],
+          (n) => mapNodeToBox(n, rz.originalBox, toBox),
+          false,
+        );
+      }
+      setLiveGuides(guides.x.length || guides.y.length ? guides : null);
+      const snapped = guides.x.length > 0 || guides.y.length > 0;
+      setStudioStatus(
+        snapped
+          ? `Resize · snapped · ${bw.toFixed(0)} × ${bh.toFixed(0)}`
+          : `Resize · ${bw.toFixed(0)} × ${bh.toFixed(0)}`,
+      );
+      setMarqueeTick((t) => t + 1);
       return;
     }
 
@@ -449,6 +669,17 @@ export default function CanvasStage() {
       return;
     }
 
+    if (resizeRef.current) {
+      const rz = resizeRef.current;
+      resizeRef.current = null;
+      setLiveGuides(null);
+      setMarqueeTick((t) => t + 1);
+      if (rz.committed) {
+        holdStudioStatus("Layer resized");
+      }
+      return;
+    }
+
     if (moveRef.current) {
       const mv = moveRef.current;
       moveRef.current = null;
@@ -516,7 +747,7 @@ export default function CanvasStage() {
     <div
       ref={containerRef}
       className="relative h-full w-full overflow-hidden bg-[#0b0f0c]"
-      style={{ cursor: tool === "hand" ? "grab" : tool === "select" ? "default" : "crosshair" }}
+      style={{ cursor: hoverCursor || (tool === "hand" ? "grab" : tool === "select" ? "default" : "crosshair") }}
     >
       <canvas
         ref={canvasRef}
