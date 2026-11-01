@@ -773,6 +773,124 @@ export function rotateSelectedPathPoints(
   setStudioStatus(`Rotated ${coords.length} points · ${Math.round(angleDeg)}°`);
   return true;
 }
+
+type ScaleHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+
+/** Scale multi-selected path points (and their Bézier handles) from the original bbox.
+ * Fixed edge/corner is the opposite of the dragged handle. Shift locks aspect. Alt scales from center.
+ * basePoints/baseHoles for live drag from original. Returns true if applied.
+ */
+export function scaleSelectedPathPoints(
+  handle: ScaleHandle,
+  mouseLocalX: number,
+  mouseLocalY: number,
+  shiftKey: boolean,
+  altKey: boolean,
+  basePoints?: PathPoint[],
+  baseHoles?: PathPoint[][],
+): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const points = basePoints ?? n.points;
+  const holes = baseHoles ?? n.holes;
+
+  const tempN: PathNode = { ...n, points, holes };
+  const coords = selectedPointCoords(tempN, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const origW = Math.max(1e-6, maxX - minX);
+  const origH = Math.max(1e-6, maxY - minY);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+
+  // Fixed point (opposite)
+  let fixedX = cx;
+  let fixedY = cy;
+  if (!altKey) {
+    if (handle.includes("w")) fixedX = maxX;
+    else if (handle.includes("e")) fixedX = minX;
+    if (handle.includes("n")) fixedY = maxY;
+    else if (handle.includes("s")) fixedY = minY;
+  }
+
+  // Compute scale from mouse position relative to fixed
+  let sx = 1;
+  let sy = 1;
+  const involvesX = handle === "e" || handle === "w" || handle === "ne" || handle === "nw" || handle === "se" || handle === "sw";
+  const involvesY = handle === "n" || handle === "s" || handle === "ne" || handle === "nw" || handle === "se" || handle === "sw";
+
+  if (involvesX) {
+    const origDist = Math.abs((handle.includes("w") ? minX : maxX) - fixedX);
+    const newDist = Math.abs(mouseLocalX - fixedX);
+    sx = origDist > 1e-6 ? newDist / origDist : 1;
+  }
+  if (involvesY) {
+    const origDist = Math.abs((handle.includes("n") ? minY : maxY) - fixedY);
+    const newDist = Math.abs(mouseLocalY - fixedY);
+    sy = origDist > 1e-6 ? newDist / origDist : 1;
+  }
+
+  if (shiftKey) {
+    if (involvesX && involvesY) {
+      const scale = Math.max(sx, sy);
+      sx = scale;
+      sy = scale;
+    } else if (involvesX) {
+      sy = sx;
+    } else if (involvesY) {
+      sx = sy;
+    }
+  }
+
+  // Clamp tiny
+  sx = Math.max(0.01, sx);
+  sy = Math.max(0.01, sy);
+
+  const nextPoints = points.map(clonePathPoint);
+  const nextHoles = holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const dx = p.x - fixedX;
+    const dy = p.y - fixedY;
+    const nx = fixedX + dx * sx;
+    const ny = fixedY + dy * sy;
+    const scaleH = (h: { x: number; y: number } | null | undefined) => {
+      if (!h) return h ?? null;
+      return { x: h.x * sx, y: h.y * sy };
+    };
+    ring[sel.index] = { ...p, x: nx, y: ny, in: scaleH(p.in), out: scaleH(p.out) };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  const pct = Math.round(((sx + sy) / 2) * 100);
+  setStudioStatus(`Scaled ${coords.length} points · ${pct}%`);
+  return true;
+}
+
 export function nudgeSelectedPathPoints(dx: number, dy: number): boolean {
   const s = useDesign.getState();
   const doc = s.doc;

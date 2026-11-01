@@ -14,10 +14,12 @@ import {
   editPathHit,
   joinSelectedPathToNearest,
   rotateSelectedPathPoints,
+  scaleSelectedPathPoints,
   setPathEditHit,
   setPathPointSelection,
   togglePathPointSelection,
 } from "@/lib/design/path-actions";
+import { hitResizeHandle, type ResizeHandle } from "@/lib/design/box-resize";
 import {
   drawPathNodeTangents,
   hitPathNode,
@@ -55,6 +57,13 @@ type DragKind =
       startAngle: number;
       cx: number;
       cy: number;
+      basePoints: PathPoint[];
+      baseHoles?: PathPoint[][];
+    }
+  | {
+      type: "path-points-scale";
+      id: string;
+      handle: ResizeHandle;
       basePoints: PathPoint[];
       baseHoles?: PathPoint[][];
     };
@@ -271,6 +280,31 @@ export default function CanvasStage() {
               setStudioStatus("Rotate path points");
               return;
             }
+
+            // Scale handles on the group bounding box (local space after node rotation)
+            const box = {
+              x: n.x + minX - pad,
+              y: n.y + minY - pad,
+              w: maxX - minX + pad * 2,
+              h: maxY - minY + pad * 2,
+            };
+            // Transform docPt into the node's local frame (undo rotation)
+            const localPt = n.rotation
+              ? rotatePoint(docPt.x, docPt.y, nc.x, nc.y, -n.rotation)
+              : docPt;
+            const scaleHit = hitResizeHandle(box, localPt.x, localPt.y, viewport.zoom);
+            if (scaleHit) {
+              drag.current = {
+                type: "path-points-scale",
+                id: n.id,
+                handle: scaleHit,
+                basePoints: n.points.map((p) => ({ ...p, in: p.in ? { ...p.in } : p.in, out: p.out ? { ...p.out } : p.out })),
+                baseHoles: n.holes?.map((ring) => ring.map((p) => ({ ...p, in: p.in ? { ...p.in } : p.in, out: p.out ? { ...p.out } : p.out }))),
+              };
+              commit();
+              setStudioStatus("Scale path points");
+              return;
+            }
           }
         }
       }
@@ -394,6 +428,27 @@ export default function CanvasStage() {
       let deg = ((ang - d.startAngle) * 180) / Math.PI;
       deg = snap15(deg, e.shiftKey);
       rotateSelectedPathPoints(deg, d.basePoints, d.baseHoles);
+      return;
+    }
+    if (d.type === "path-points-scale") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || !isPath(n)) return;
+      const nc = nodeCenter(n);
+      const localPt = n.rotation
+        ? rotatePoint(docPt.x, docPt.y, nc.x, nc.y, -n.rotation)
+        : docPt;
+      // local relative to node origin for the scale function
+      const mouseLocalX = localPt.x - n.x;
+      const mouseLocalY = localPt.y - n.y;
+      scaleSelectedPathPoints(
+        d.handle,
+        mouseLocalX,
+        mouseLocalY,
+        e.shiftKey,
+        e.altKey,
+        d.basePoints,
+        d.baseHoles,
+      );
       return;
     }
     if (d.type === "rotate") {
@@ -646,6 +701,30 @@ function drawSelection(
           ctx.setLineDash([5 / vp.zoom, 4 / vp.zoom]);
           ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
           ctx.setLineDash([]);
+
+          // Scale handles (corners + mid-edges)
+          const size = 8 / vp.zoom;
+          const half = size / 2;
+          const boxX = minX - pad;
+          const boxY = minY - pad;
+          const boxW = maxX - minX + pad * 2;
+          const boxH = maxY - minY + pad * 2;
+          const handles: [number, number][] = [
+            [boxX, boxY],
+            [boxX + boxW / 2, boxY],
+            [boxX + boxW, boxY],
+            [boxX + boxW, boxY + boxH / 2],
+            [boxX + boxW, boxY + boxH],
+            [boxX + boxW / 2, boxY + boxH],
+            [boxX, boxY + boxH],
+            [boxX, boxY + boxH / 2],
+          ];
+          ctx.fillStyle = "#06170f";
+          ctx.strokeStyle = "#3fc6ff";
+          for (const [hx, hy] of handles) {
+            ctx.fillRect(hx - half, hy - half, size, size);
+            ctx.strokeRect(hx - half, hy - half, size, size);
+          }
 
           // Shared rotation handle at top center of the group box
           const lcx = (minX + maxX) / 2;
