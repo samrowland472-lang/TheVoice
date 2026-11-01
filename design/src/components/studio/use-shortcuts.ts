@@ -5,6 +5,7 @@ import {
   cornerLastPenPoint,
   jumpPathHole,
   jumpPathHolePoint,
+  nudgeSelectedPathPoints,
   stepPathHole,
   stepPathHolePoint,
 } from "@/lib/design/path-actions";
@@ -307,6 +308,14 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
         arrows.add(e.key);
         const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
         const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
+        // Prefer path-point nudge when points are selected on a single path
+        if (
+          s.selection.length === 1 &&
+          (s.pathPointSelection?.length || s.pathEditHit) &&
+          nudgeSelectedPathPoints(dx, dy)
+        ) {
+          return;
+        }
         // Alt is the fine step and the snap bypass, matching a drag.
         useDesign.getState().translateSelected(dx, dy, { snap: s.snap && !e.altKey });
       }

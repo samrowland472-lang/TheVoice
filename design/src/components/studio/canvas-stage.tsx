@@ -14,6 +14,8 @@ import {
   editPathHit,
   joinSelectedPathToNearest,
   setPathEditHit,
+  setPathPointSelection,
+  togglePathPointSelection,
 } from "@/lib/design/path-actions";
 import {
   drawPathNodeTangents,
@@ -62,6 +64,7 @@ export default function CanvasStage() {
   const color = useDesign((s) => s.color);
   const viewIntent = useDesign((s) => s.viewIntent);
   const pathEditHit = useDesign((s) => s.pathEditHit);
+  const pathPointSelection = useDesign((s) => s.pathPointSelection);
   const setViewport = useDesign((s) => s.setViewport);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -124,8 +127,8 @@ export default function CanvasStage() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
-    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit);
-  }, [doc, selection, viewport, pathEditHit]);
+    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -146,11 +149,11 @@ export default function CanvasStage() {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
-      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit);
+      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -204,7 +207,19 @@ export default function CanvasStage() {
         if (!isPath(n) || !n.points.length) continue;
         const hit = hitPathNode(n, docPt.x, docPt.y, viewport.zoom);
         if (hit) {
-          setPathEditHit(hit);
+          if (e.shiftKey && hit.arm === "anchor") {
+            togglePathPointSelection(hit.index, hit.hole);
+            setStudioStatus(`Path points · ${useDesign.getState().pathPointSelection.length} selected`);
+          } else {
+            setPathEditHit(hit);
+            if (hit.arm === "anchor") {
+              setPathPointSelection([{ index: hit.index, hole: hit.hole }]);
+            } else {
+              setPathPointSelection([]);
+            }
+            const arm = hit.arm === "anchor" ? "anchor" : hit.arm;
+            setStudioStatus(`Path ${arm}${hit.hole != null ? ` · hole ${hit.hole + 1}` : ""}`);
+          }
           drag.current = {
             type: "path-point",
             id: n.id,
@@ -212,8 +227,6 @@ export default function CanvasStage() {
             keepSmooth: !e.altKey,
             started: false,
           };
-          const arm = hit.arm === "anchor" ? "anchor" : hit.arm;
-          setStudioStatus(`Path ${arm}${hit.hole != null ? ` · hole ${hit.hole + 1}` : ""}`);
           return;
         }
       }
@@ -393,6 +406,7 @@ function drawSelection(
   vp: Viewport,
   dpr: number,
   pathEditHit: PathEditHit | null,
+  pathPointSelection: { index: number; hole?: number }[] = [],
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (!selected.length) return;
@@ -404,6 +418,32 @@ function drawSelection(
   for (const n of selected) {
     if (isPath(n) && n.points.length) {
       drawPathNodeTangents(ctx, n, vp.zoom, pathEditHit, false);
+      // Multi-selected point highlights (phosphor fill)
+      if (pathPointSelection.length > 1) {
+        ctx.save();
+        const c = nodeCenter(n);
+        if (n.rotation) {
+          ctx.translate(c.x, c.y);
+          ctx.rotate(degToRad(n.rotation));
+          ctx.translate(-c.x, -c.y);
+        }
+        ctx.fillStyle = "rgba(63,198,255,0.9)";
+        ctx.strokeStyle = "#7ee0ff";
+        const r = 4.5 / vp.zoom;
+        for (const sel of pathPointSelection) {
+          const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+          const pt = ring?.[sel.index];
+          if (!pt) continue;
+          const ax = n.x + pt.x;
+          const ay = n.y + pt.y;
+          ctx.beginPath();
+          ctx.arc(ax, ay, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.lineWidth = 1 / vp.zoom;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
       continue;
     }
     ctx.save();

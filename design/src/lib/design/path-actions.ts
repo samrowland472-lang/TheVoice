@@ -1,11 +1,12 @@
 import { dropHole, setHoleFillRule as stampHoleFillRule, type PathFillRule } from "./fill-rule";
-import { applyPathEdit, type PathEditHit } from "./path-edit";
+import { applyPathEdit, clonePathPoint, type PathEditHit } from "./path-edit";
 import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
 import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
 import { pathNode } from "./node-factory";
 import { applyKnifePointToPath, applyKnifeStrokeToPath } from "./knife-apply";
 import { asEditablePath } from "./shape-to-path";
 import { useDesign } from "./store";
+import { setStudioStatus } from "./studio-status";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
 
@@ -700,5 +701,58 @@ export function rotateRelativeSelectedPoints(
       }
     }
   }
+  return true;
+}
+
+/** Nudge selected path points (or the active edit hit) by world-space delta. Returns true if applied. */
+export function nudgeSelectedPathPoints(dx: number, dy: number): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc || (dx === 0 && dy === 0)) return false;
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = doc.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+
+  const pointsToMove = (s.pathPointSelection?.length
+    ? s.pathPointSelection
+    : s.pathEditHit
+      ? [{ index: s.pathEditHit.index, hole: s.pathEditHit.hole }]
+      : []) as { index: number; hole?: number }[];
+  if (!pointsToMove.length) return false;
+
+  // World delta → local (undo rotation)
+  let ldx = dx;
+  let ldy = dy;
+  if (n.rotation) {
+    const rad = (-n.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    ldx = dx * cos - dy * sin;
+    ldy = dx * sin + dy * cos;
+  }
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const pt of pointsToMove) {
+    const ring = pt.hole == null ? nextPoints : nextHoles?.[pt.hole];
+    if (!ring || pt.index < 0 || pt.index >= ring.length) continue;
+    const p = ring[pt.index]!;
+    ring[pt.index] = { ...p, x: p.x + ldx, y: p.y + ldy };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  const count = pointsToMove.length;
+  setStudioStatus(`Nudged ${count} point${count > 1 ? "s" : ""}`);
   return true;
 }
