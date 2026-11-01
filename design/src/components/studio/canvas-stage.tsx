@@ -13,12 +13,15 @@ import {
   appendPenPoint,
   editPathHit,
   joinSelectedPathToNearest,
+  knifeCutStroke,
   rotateSelectedPathPoints,
   scaleSelectedPathPoints,
   setPathEditHit,
   setPathPointSelection,
   togglePathPointSelection,
 } from "@/lib/design/path-actions";
+import { asEditablePath } from "@/lib/design/shape-to-path";
+import { knifeStrokePreview } from "@/lib/design/path-cut";
 import { hitResizeHandle, type ResizeHandle } from "@/lib/design/box-resize";
 import {
   drawPathNodeTangents,
@@ -66,7 +69,8 @@ type DragKind =
       handle: ResizeHandle;
       basePoints: PathPoint[];
       baseHoles?: PathPoint[][];
-    };
+    }
+  | { type: "knife"; startX: number; startY: number; endX?: number; endY?: number };
 
 function snap15(deg: number, force: boolean) {
   if (!force) return deg;
@@ -94,6 +98,7 @@ export default function CanvasStage() {
   const pathEditHit = useDesign((s) => s.pathEditHit);
   const pathPointSelection = useDesign((s) => s.pathPointSelection);
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const setViewport = useDesign((s) => s.setViewport);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -158,7 +163,8 @@ export default function CanvasStage() {
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee]);
+    if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -180,10 +186,12 @@ export default function CanvasStage() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
+      if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
+      if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -226,6 +234,14 @@ export default function CanvasStage() {
           setStudioStatus(`Point ${n.points.length}`);
         }
       }
+      return;
+    }
+
+    // Knife tool: live stroke cut
+    if (tool === "knife" && e.button === 0) {
+      drag.current = { type: "knife", startX: docPt.x, startY: docPt.y };
+      setKnifeStroke({ ax: docPt.x, ay: docPt.y, bx: docPt.x, by: docPt.y });
+      setStudioStatus("Knife · drag to cut");
       return;
     }
 
@@ -411,6 +427,12 @@ export default function CanvasStage() {
       setViewport({ x: d.vx + (sx - d.startX), y: d.vy + (sy - d.startY) });
       return;
     }
+    if (d.type === "knife") {
+      d.endX = docPt.x;
+      d.endY = docPt.y;
+      setKnifeStroke({ ax: d.startX, ay: d.startY, bx: docPt.x, by: docPt.y });
+      return;
+    }
     if (d.type === "move") {
       const dx = docPt.x - d.startX;
       const dy = docPt.y - d.startY;
@@ -507,6 +529,14 @@ export default function CanvasStage() {
     const d = drag.current;
     drag.current = null;
     setMarquee(null);
+    if (d?.type === "knife") {
+      const bx = d.endX ?? d.startX;
+      const by = d.endY ?? d.startY;
+      const ok = knifeCutStroke(d.startX, d.startY, bx, by, viewport.zoom);
+      setStudioStatus(ok ? "Knife · cut" : "Knife · miss");
+      setKnifeStroke(null);
+      return;
+    }
     if (d?.type === "create" && d.id && d.tool !== "text") {
       setTool("select");
     }
@@ -783,5 +813,78 @@ function drawSelection(
     ctx.stroke();
     ctx.restore();
   }
+  ctx.restore();
+}
+
+function drawKnifeStroke(
+  ctx: CanvasRenderingContext2D,
+  stroke: { ax: number; ay: number; bx: number; by: number },
+  doc: { nodes: DesignNode[] },
+  vp: Viewport,
+  dpr: number,
+) {
+  const { ax, ay, bx, by } = stroke;
+  const dist = Math.hypot(bx - ax, by - ay);
+  if (dist < 1) return;
+
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+
+  // Live cut line
+  ctx.strokeStyle = "#3fc6ff";
+  ctx.lineWidth = 1.5 / vp.zoom;
+  ctx.setLineDash([6 / vp.zoom, 4 / vp.zoom]);
+  ctx.beginPath();
+  ctx.moveTo(ax, ay);
+  ctx.lineTo(bx, by);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Cut marks on paths the stroke crosses
+  const preferred = useDesign.getState().selection[0];
+  const paths: DesignNode[] = [];
+  for (const n of doc.nodes) {
+    if (!n.visible || n.locked) continue;
+    const p = asEditablePath(n);
+    if (p && p.points.length >= 2) paths.push(p);
+  }
+  const ordered = preferred
+    ? [paths.find((n) => n.id === preferred), ...paths.filter((n) => n.id !== preferred)].filter(Boolean) as DesignNode[]
+    : paths;
+
+  const marks: { x: number; y: number }[] = [];
+  const seen = new Set<string>();
+  for (const n of ordered) {
+    const p = asEditablePath(n);
+    if (!p) continue;
+    const prev = knifeStrokePreview(p, ax, ay, bx, by);
+    for (const m of prev.marks) {
+      const key = `${m.x.toFixed(1)},${m.y.toFixed(1)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      marks.push(m);
+    }
+  }
+
+  const r = 4 / vp.zoom;
+  ctx.fillStyle = "#3fc6ff";
+  ctx.strokeStyle = "#06170f";
+  ctx.lineWidth = 1 / vp.zoom;
+  for (const m of marks) {
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // small cross
+    ctx.beginPath();
+    ctx.moveTo(m.x - r * 0.7, m.y);
+    ctx.lineTo(m.x + r * 0.7, m.y);
+    ctx.moveTo(m.x, m.y - r * 0.7);
+    ctx.lineTo(m.x, m.y + r * 0.7);
+    ctx.stroke();
+  }
+
   ctx.restore();
 }
