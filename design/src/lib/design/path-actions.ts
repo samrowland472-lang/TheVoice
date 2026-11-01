@@ -777,7 +777,7 @@ export function rotateSelectedPathPoints(
 type ScaleHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 /** Scale multi-selected path points (and their Bézier handles) from the original bbox.
- * Fixed edge/corner is the opposite of the dragged handle. Shift locks aspect. Alt scales from center.
+ * Fixed edge/corner is the opposite of the dragged handle. Drag past the fixed point to flip (negative scale). Shift locks aspect (signs follow the cursor half-planes). Alt scales from center.
  * basePoints/baseHoles for live drag from original. Returns true if applied.
  */
 export function scaleSelectedPathPoints(
@@ -825,33 +825,37 @@ export function scaleSelectedPathPoints(
     else if (handle.includes("s")) fixedY = minY;
   }
 
-  // Compute scale from mouse position relative to fixed
+  // Compute signed scale from mouse position relative to fixed (negative = flip)
   let sx = 1;
   let sy = 1;
   const involvesX = handle === "e" || handle === "w" || handle === "ne" || handle === "nw" || handle === "se" || handle === "sw";
   const involvesY = handle === "n" || handle === "s" || handle === "ne" || handle === "nw" || handle === "se" || handle === "sw";
 
   if (involvesX) {
-    const origDist = Math.abs((handle.includes("w") ? minX : maxX) - fixedX);
-    const newDist = Math.abs(mouseLocalX - fixedX);
-    sx = origDist > 1e-6 ? newDist / origDist : 1;
+    const handleOrigX = handle.includes("w") ? minX : maxX;
+    const origDelta = handleOrigX - fixedX;
+    const newDelta = mouseLocalX - fixedX;
+    sx = Math.abs(origDelta) > 1e-6 ? newDelta / origDelta : 1;
   }
   if (involvesY) {
-    const origDist = Math.abs((handle.includes("n") ? minY : maxY) - fixedY);
-    const newDist = Math.abs(mouseLocalY - fixedY);
-    sy = origDist > 1e-6 ? newDist / origDist : 1;
+    const handleOrigY = handle.includes("n") ? minY : maxY;
+    const origDelta = handleOrigY - fixedY;
+    const newDelta = mouseLocalY - fixedY;
+    sy = Math.abs(origDelta) > 1e-6 ? newDelta / origDelta : 1;
   }
 
   if (shiftKey) {
     if (involvesX && involvesY) {
-      // Better aspect lock: scale by diagonal distance so the handle tracks the mouse more closely while staying uniform
+      // Aspect lock: uniform magnitude from diagonal, signs from which side of the fixed point the cursor is on
       const origDiag = Math.hypot(origW, origH);
       const mouseDx = mouseLocalX - fixedX;
       const mouseDy = mouseLocalY - fixedY;
       const mouseDiag = Math.hypot(mouseDx, mouseDy);
-      const scale = origDiag > 1e-6 ? mouseDiag / origDiag : 1;
-      sx = scale;
-      sy = scale;
+      const mag = origDiag > 1e-6 ? mouseDiag / origDiag : 1;
+      const signX = Math.sign(sx) || 1;
+      const signY = Math.sign(sy) || 1;
+      sx = mag * signX;
+      sy = mag * signY;
     } else if (involvesX) {
       sy = sx;
     } else if (involvesY) {
@@ -859,9 +863,13 @@ export function scaleSelectedPathPoints(
     }
   }
 
-  // Clamp tiny
-  sx = Math.max(0.01, sx);
-  sy = Math.max(0.01, sy);
+  // Clamp magnitude, preserve sign (allows flip)
+  const clamp = (v: number) => {
+    const s = Math.sign(v) || 1;
+    return s * Math.max(0.01, Math.abs(v));
+  };
+  sx = clamp(sx);
+  sy = clamp(sy);
 
   const nextPoints = points.map(clonePathPoint);
   const nextHoles = holes?.map((ring) => ring.map(clonePathPoint));
@@ -891,9 +899,10 @@ export function scaleSelectedPathPoints(
     },
     false,
   );
-  const pct = Math.round(((sx + sy) / 2) * 100);
+  const pct = Math.round(((Math.abs(sx) + Math.abs(sy)) / 2) * 100);
   const lock = shiftKey ? " · aspect" : "";
-  setStudioStatus(`Scaled ${coords.length} points · ${pct}%${lock}`);
+  const flip = sx < 0 || sy < 0 ? " · flip" : "";
+  setStudioStatus(`Scaled ${coords.length} points · ${pct}%${lock}${flip}`);
   return true;
 }
 

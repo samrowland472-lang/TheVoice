@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Flip support on path-point group scale handles. Dragging a corner or edge handle past the fixed point (or center with Alt) now produces negative scale, flipping the selected points and their Bézier handles. Aspect lock (Shift) preserves the sign of each axis from the cursor’s half-planes while using diagonal magnitude for uniform scale. Status strip notes “flip” when any axis is negative and “aspect” when locked. Builds on the shared rotation handle, multi-select, group box, and aspect-lock diagonal. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Improved aspect-lock for path-point group scale handles. Shift on corner handles now scales uniformly by diagonal mouse distance (tracks the cursor more closely while preserving proportions). Edge handles still mirror. Status strip notes “aspect” when locked. Builds on the shared rotation handle, multi-select, and group box. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Scale handles on path-point group bounding box. When 2+ anchors are multi-selected on a single path, the phosphor group box gains corner and mid-edge scale handles (small squares). Dragging scales the selected points and their Bézier handles around the opposite edge/corner (or center with Alt). Shift locks uniform scale. Status strip reports the percentage. Builds on the shared rotation handle, multi-select, and group box. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Shared rotation handle on path-point group bounding box. When 2+ anchors are multi-selected on a single path, the phosphor group box gains a rotation handle (line + circle) at the top center. Dragging it rotates the selected points (and their Bézier handles) around the selection center in local space. Shift snaps to 15°. Status strip reports the angle. Builds on multi-select, marquee, nudge, and align. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -9,9 +10,9 @@
 - Iteration: Path point multi-select + Nudge. Shift-click anchors toggles selection (phosphor fills when 2+). Arrow keys nudge the selected points (or the active edit hit) in local space instead of the whole path. Status strip reports count. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-01T17:05Z — Improved aspect-lock for path-point scale handles (diagonal distance on corners with Shift).
+2026-11-01T18:06Z — Flip support on path-point scale handles (negative scale when dragging past fixed point; aspect signs preserved).
 
 ## Next recommended
 - Knife tool live stroke on canvas.
 - Or: path point alignment handles / live preview while scrubbing.
-- Or: flip support on scale handles (negative scale).
+- Or: better visual feedback for flipped group box (e.g. crossed handles or reverse arrows).
