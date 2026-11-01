@@ -4,6 +4,8 @@ import { drawDocument, screenToDoc } from "@/lib/design/render";
 import { knifeCutStroke, knifeCutAt } from "@/lib/design/path-actions";
 import { knifeStrokePreview, knifePreviewPoint } from "@/lib/design/path-cut";
 import { setStudioStatus, holdStudioStatus, releaseStudioStatus } from "@/lib/design/studio-status";
+import { hitTop } from "@/lib/design/hit";
+import { nodeBounds } from "@/lib/design/layer-groups";
 import type { DesignNode, PathNode, Viewport } from "@/lib/design/types";
 import { isPath } from "@/lib/design/types";
 
@@ -22,6 +24,7 @@ export default function CanvasStage() {
     last: null,
     marks: [],
   });
+  const panRef = useRef<{ startX: number; startY: number; vx: number; vy: number } | null>(null);
   const [hoverMark, setHoverMark] = useState<{ x: number; y: number } | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
 
@@ -29,6 +32,8 @@ export default function CanvasStage() {
   const viewport = useDesign((s) => s.viewport);
   const tool = useDesign((s) => s.tool);
   const selection = useDesign((s) => s.selection);
+  const select = useDesign((s) => s.select);
+  const setViewport = useDesign((s) => s.setViewport);
 
   const statusTick = useSyncExternalStore(
     (cb) => {
@@ -108,9 +113,30 @@ export default function CanvasStage() {
       ctx.restore();
     };
 
+    // Selection outlines (phosphor)
+    if (selection.length && doc) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.strokeStyle = "#c8f7c5";
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = "#c8f7c5";
+      ctx.shadowBlur = 6;
+      for (const id of selection) {
+        const n = doc.nodes.find((nn) => nn.id === id);
+        if (!n) continue;
+        const b = nodeBounds(n);
+        const sx = b.x * viewport.zoom + viewport.x;
+        const sy = b.y * viewport.zoom + viewport.y;
+        const sw = b.w * viewport.zoom;
+        const sh = b.h * viewport.zoom;
+        ctx.strokeRect(sx - 1, sy - 1, sw + 2, sh + 2);
+      }
+      ctx.restore();
+    }
+
     if (hoverMark) drawMark(hoverMark.x, hoverMark.y);
     for (const m of dragRef.current.marks) drawMark(m.x, m.y, true);
-  }, [doc, viewport, size, statusTick, hoverMark, tool]);
+  }, [doc, viewport, size, statusTick, hoverMark, tool, selection]);
 
   const localFromEvent = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -119,19 +145,48 @@ export default function CanvasStage() {
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!doc || tool !== "knife") return;
+    if (!doc) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const p = localFromEvent(e);
     const w = screenToDoc(p.x, p.y, viewport);
-    dragRef.current = { start: w, last: w, marks: [] };
-    setHoverMark(null);
-    releaseStudioStatus();
+
+    if (tool === "knife") {
+      dragRef.current = { start: w, last: w, marks: [] };
+      setHoverMark(null);
+      releaseStudioStatus();
+      return;
+    }
+
+    if (tool === "hand") {
+      panRef.current = { startX: e.clientX, startY: e.clientY, vx: viewport.x, vy: viewport.y };
+      return;
+    }
+
+    if (tool === "select") {
+      const hit = hitTop(doc.nodes, w.x, w.y);
+      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+      if (hit) {
+        select([hit.id], additive);
+        setStudioStatus(additive ? "Selection updated" : `Selected ${hit.kind}`);
+      } else if (!additive) {
+        select([], false);
+        setStudioStatus("Selection cleared");
+      }
+    }
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!doc) return;
     const p = localFromEvent(e);
     const w = screenToDoc(p.x, p.y, viewport);
+
+    if (tool === "hand" && panRef.current) {
+      const dx = e.clientX - panRef.current.startX;
+      const dy = e.clientY - panRef.current.startY;
+      setViewport({ x: panRef.current.vx + dx, y: panRef.current.vy + dy });
+      return;
+    }
+
     if (tool === "knife") {
       if (dragRef.current.start) {
         const a = dragRef.current.start;
@@ -172,6 +227,9 @@ export default function CanvasStage() {
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
+    if (panRef.current) {
+      panRef.current = null;
+    }
     if (!doc || tool !== "knife") return;
     const p = localFromEvent(e);
     const w = screenToDoc(p.x, p.y, viewport);
@@ -199,6 +257,23 @@ export default function CanvasStage() {
     residualRef.current = [...residualRef.current];
   };
 
+  const onWheel = (e: React.WheelEvent) => {
+    if (!doc) return;
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const nextZoom = Math.min(8, Math.max(0.05, viewport.zoom * factor));
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    // Zoom toward cursor
+    const wx = (sx - viewport.x) / viewport.zoom;
+    const wy = (sy - viewport.y) / viewport.zoom;
+    const nx = sx - wx * nextZoom;
+    const ny = sy - wy * nextZoom;
+    setViewport({ zoom: nextZoom, x: nx, y: ny });
+  };
+
   if (!doc) {
     return (
       <div className="flex h-full items-center justify-center text-ink-dim font-mono text-xs">
@@ -208,7 +283,11 @@ export default function CanvasStage() {
   }
 
   return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-[#0b0f0c]">
+    <div
+      ref={containerRef}
+      className="relative h-full w-full overflow-hidden bg-[#0b0f0c]"
+      style={{ cursor: tool === "hand" ? "grab" : tool === "select" ? "default" : "crosshair" }}
+    >
       <canvas
         ref={canvasRef}
         className="block h-full w-full touch-none"
@@ -216,6 +295,7 @@ export default function CanvasStage() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onWheel={onWheel}
       />
     </div>
   );

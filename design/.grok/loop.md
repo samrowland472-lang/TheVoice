@@ -17,11 +17,12 @@
 - Stronger knife cut-point phosphor: soft outer glow, bright core, thin white cross on both stroke-drag marks and hover snap points so cut locations read clearly on the canvas.
 - Deepened path point tab-order navigation: focus-visible phosphor rings on fields and buttons; focusing a point header, X/Y field, or action (Smooth/Corner/Delete) selects the point on the canvas so keyboard travel stays in sync with the artboard.
 - Restored full CanvasStage: live document drawing via drawDocument, knife tool with live cut-count status, hover snap phosphor crosses, and residual cut marks that linger ~1.6 s after a successful cut (soft outer glow + thin white cross that fades).
+- Select, hand, and zoom on the canvas stage: click to select (shift for additive) with phosphor selection outlines; hand drag pans the viewport; wheel zooms toward the cursor.
 
 ## Iteration
-2026-11-01T04:10:00Z — Restored CanvasStage from placeholder. Live artboard drawing, knife stroke/hover phosphor marks, and residual lingering cut points after a successful path cut. Typecheck, build, and browser-smoke green (hasCanvas true).
+2026-11-01T05:05:32Z — Deepened select / hand / zoom on the restored canvas stage. Click selects with phosphor outlines, hand pans, wheel zooms toward cursor. Typecheck, build, and browser-smoke green (hasCanvas true).
 
 ## Next recommended
-- Knife cut residual marks that linger briefly after a successful cut (now shipped; polish fade curve or add core brighten if desired).
-- Or polish the scatter tip further (e.g. live strength tick length while dragging the slider).
-- Or deepen select/hand/zoom on the restored canvas stage.
+- Marquee select on the canvas (drag rectangle to multi-select).
+- Or polish knife residual fade curve / core brighten.
+- Or deepen path point editing on the live canvas.
