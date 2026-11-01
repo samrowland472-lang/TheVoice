@@ -1,12 +1,12 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: CanvasStage restored. Selection box, 8 resize handles, and rotation handle (Shift snaps to 15°). Move, resize, rotate, pan, zoom, and basic shape/text create all live on the canvas. Status strip shows live rotation angle. Typecheck + build + browser-smoke clean. Phosphor handles on ground.
-- Iteration: Pen tool on canvas. Click to place / continue open path points, click near first point to close, drag existing points to move them. Path anchors and tangents draw on selected paths. Status strip confirms. Typecheck + build + browser-smoke clean.
+- Iteration: Canvas path point editing. Select a path → phosphor anchors + cubic handles draw on canvas. Drag anchors or in/out handles (Alt breaks smooth). Pen tool continues open paths, closes on near-first-point snap, joins to nearest open end. Status strip reports point / handle. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-01T11:15Z — Pen tool canvas point place / continue / move / close.
+2026-11-01T11:15Z — Path point editing + pen continue on CanvasStage.
 
 ## Next recommended
 - Multi-select marquee + group bounding box with shared rotation.
-- Or: pen tool cubic handle dragging on canvas (in/out arms).
+- Or: knife tool live stroke on canvas.
+- Or: path point multi-select + Nudge.
