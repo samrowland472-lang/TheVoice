@@ -41,7 +41,7 @@ import { brushById } from "@/lib/design/brushes";
 import { beginPaintStroke, continuePaintStroke, endPaintStroke, getStrokePressure, getStrokeTilt, getStrokeTiltAxes, isPainting, subscribeStrokeLive, getStrokeLiveKey } from "@/lib/design/paint-stroke";
 import { BrushTipPreview } from "./brush-preview";
 import { useDesign } from "@/lib/design/store";
-import { setStudioStatus } from "@/lib/design/studio-status";
+import { holdStudioStatus, setStudioStatus } from "@/lib/design/studio-status";
 import { isGroup, isPath } from "@/lib/design/types";
 import type { DesignNode } from "@/lib/design/types";
 import { GroupNameChip } from "./group-name-chip";
@@ -642,6 +642,7 @@ export function CanvasStage() {
       e.preventDefault();
       e.currentTarget.setPointerCapture(e.pointerId);
       knifeRef.current = { ax: d.x, ay: d.y, bx: d.x, by: d.y };
+      setStudioStatus("Knife · drag to cut");
       setHoverTick((n) => n + 1);
       return;
     }
@@ -806,6 +807,26 @@ export function CanvasStage() {
       if (knifeRef.current) {
         knifeRef.current.bx = d.x;
         knifeRef.current.by = d.y;
+        const stroke = knifeRef.current;
+        let cutCount = 0;
+        let pathCount = 0;
+        for (const node of s.doc?.nodes ?? []) {
+          if (!isPath(node) || !node.visible || node.locked) continue;
+          const preview = knifeStrokePreview(node, stroke.ax, stroke.ay, stroke.bx, stroke.by);
+          if (preview.marks.length) {
+            pathCount += 1;
+            cutCount += preview.marks.length;
+          }
+        }
+        if (cutCount > 0) {
+          setStudioStatus(
+            `Knife · ${cutCount} cut${cutCount === 1 ? "" : "s"} across ${pathCount} path${pathCount === 1 ? "" : "s"}`,
+          );
+        } else {
+          setStudioStatus("Knife · drag to cut");
+        }
+      } else {
+        setStudioStatus("Knife · drag across a path");
       }
       setHoverTick((n) => n + 1);
       return;
@@ -975,8 +996,10 @@ export function CanvasStage() {
     const knife = knifeRef.current;
     if (knife) {
       const s = useDesign.getState();
-      knifeCutStroke(knife.ax, knife.ay, knife.bx, knife.by, s.viewport.zoom);
+      const cut = knifeCutStroke(knife.ax, knife.ay, knife.bx, knife.by, s.viewport.zoom);
       knifeRef.current = null;
+      if (cut) holdStudioStatus("Path cut");
+      else setStudioStatus("Knife · no cut");
       setHoverTick((n) => n + 1);
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
