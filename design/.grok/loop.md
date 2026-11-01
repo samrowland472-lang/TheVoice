@@ -12,10 +12,11 @@
 - Scatter strength slider in the paint dock: live override of preset scatter (0–3), applied to strokes, tip preview cross length, and stroke preview. Switching brushes resets to the preset value.
 - Scatter status echo now shows the live strength number (e.g. “scatter 1.2”) beside the tilt angle while painting; strength is omitted when the override is off.
 - Scatter tip preview now draws the live strength number (phosphor, upright) on the short axis of the cross when the pen is tilted.
+- Brush tip preview shows a faint isotropic strength tick + number even at rest / low tilt, so the scatter override is readable before the pen leans.
 
 ## Iteration
-2026-10-31T23:05:00Z — Scatter tip preview now shows the live strength number on the phosphor cross (short-axis end). Typecheck, build, and browser-smoke green.
+2026-11-01T00:10:00Z — Brush tip preview now shows a faint strength tick and number when scatter is on but the pen is not tilted. Typecheck, build, and browser-smoke green.
 
 ## Next recommended
 - Deepen path point tab-order or knife cut feedback.
-- Or add a faint strength tick to the cross even at low tilt.
+- Or polish the scatter tip further (e.g. live strength tick length while dragging the slider).

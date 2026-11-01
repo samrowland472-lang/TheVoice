@@ -149,6 +149,7 @@ export function BrushTipPreview({
 
     // Scatter direction indicator: elongated phosphor mark along the tilt axis
     // when the brush has scatter and the pen is tilted. Length tracks scatter strength × tilt.
+    // At low / no tilt a faint isotropic strength tick still appears so the override is visible before the pen leans.
     const base = brushById(brush.id);
     const scatter = brush.scatter ?? base.scatter;
     if (scatter > 0 && tiltMag > 2) {
@@ -214,6 +215,46 @@ export function BrushTipPreview({
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(strengthLabel, sClampedX, sClampedY);
+      ctx.restore();
+    } else if (scatter > 0) {
+      // Faint isotropic strength tick — visible even before tilt so the scatter override is readable at rest.
+      const amp = Math.min(w * 0.28, scatter * (size * 0.12) * 0.5);
+      const half = Math.max(3, amp * 0.45);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = "#7dffb3";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([1.5, 1.5]);
+      // Short cross, length tracks strength
+      ctx.beginPath();
+      ctx.moveTo(-half, 0);
+      ctx.lineTo(half, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -half);
+      ctx.lineTo(0, half);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 0.45;
+      ctx.lineWidth = 1.25;
+      // Tiny center tick
+      ctx.beginPath();
+      ctx.moveTo(-1.5, 0);
+      ctx.lineTo(1.5, 0);
+      ctx.stroke();
+      ctx.restore();
+
+      // Faint strength number just above the tip (upright)
+      const strengthLabel = scatter.toFixed(1);
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = "#7dffb3";
+      ctx.font = "bold 6px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const labelY = Math.max(8, cy - half - 6);
+      ctx.fillText(strengthLabel, cx, labelY);
       ctx.restore();
     }
 
