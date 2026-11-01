@@ -303,12 +303,32 @@ export function CanvasStage() {
           }
         }
         for (const p of marks) {
+          const r = 6 / viewport.zoom;
+          const arm = 9 / viewport.zoom;
+          // Stronger phosphor cut mark: filled diamond + cross arms
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(Math.PI / 4);
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 4 / viewport.zoom, 0, Math.PI * 2);
+          ctx.moveTo(0, -r);
+          ctx.lineTo(r, 0);
+          ctx.lineTo(0, r);
+          ctx.lineTo(-r, 0);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(63,198,255,0.95)";
           ctx.fill();
+          ctx.strokeStyle = "rgba(126,224,255,0.9)";
+          ctx.lineWidth = 1.6 / viewport.zoom;
+          ctx.stroke();
+          ctx.restore();
+          // Cross arms for extra phosphor emphasis
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 7 / viewport.zoom, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(63,198,255,0.7)";
+          ctx.moveTo(p.x - arm, p.y);
+          ctx.lineTo(p.x + arm, p.y);
+          ctx.moveTo(p.x, p.y - arm);
+          ctx.lineTo(p.x, p.y + arm);
+          ctx.strokeStyle = "rgba(63,198,255,0.85)";
+          ctx.lineWidth = 1.2 / viewport.zoom;
           ctx.stroke();
         }
       } else if (hover) {
