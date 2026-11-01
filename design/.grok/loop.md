@@ -15,11 +15,12 @@
 - Scatter tip preview now draws the live strength number (phosphor, upright) on the short axis of the cross when the pen is tilted.
 - Brush tip preview shows a faint isotropic strength tick + number even at rest / low tilt, so the scatter override is readable before the pen leans.
 - Stronger knife cut-point phosphor: soft outer glow, bright core, thin white cross on both stroke-drag marks and hover snap points so cut locations read clearly on the canvas.
+- Deepened path point tab-order navigation: focus-visible phosphor rings on fields and buttons; focusing a point header, X/Y field, or action (Smooth/Corner/Delete) selects the point on the canvas so keyboard travel stays in sync with the artboard.
 
 ## Iteration
-2026-11-01T02:08:00Z — Stronger knife cut-point phosphor (glow + core + cross) for drag marks and hover snap. Typecheck, build, and browser-smoke green.
+2026-11-01T03:10:00Z — Deepened path point tab-order: phosphor focus rings + canvas selection on focus for point controls (headers, axes, Smooth/Delete). Typecheck, build, and browser-smoke green.
 
 ## Next recommended
-- Deepen path point tab-order navigation.
+- Knife cut residual marks that linger briefly after a successful cut.
 - Or polish the scatter tip further (e.g. live strength tick length while dragging the slider).
-- Or knife cut residual marks that linger briefly after a successful cut.
+- Or restore full canvas-stage (currently a placeholder).

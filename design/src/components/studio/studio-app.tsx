@@ -15,7 +15,7 @@ import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { CommandPalette, type CommandItem } from "./command-palette";
 import { AiPanel } from "./ai-panel";
-import { CanvasStage } from "./canvas-stage";
+import CanvasStage from "./canvas-stage";
 import { RulerLayer } from "./ruler-layer";
 import { Inspector } from "./inspector";
 import { LayersPanel } from "./layers-panel";

@@ -27,7 +27,7 @@ import { screenToDoc } from "@/lib/design/render";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { CanvasStage } from "./canvas-stage";
+import CanvasStage from "./canvas-stage";
 import { PresentChipRail } from "./present-chip-menu";
 import { PresentNotesJump } from "./present-notes-jump";
 import {

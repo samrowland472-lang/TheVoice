@@ -196,6 +196,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                   <button
                     type="button"
                     className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim"
+                    onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                     onClick={() => setPathEditHit({ index: i, arm: "anchor" })}
                   >
                     <span className="font-mono text-ink">{String(i + 1).padStart(2, "0")}</span>
@@ -207,6 +208,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                       value={Math.round(pt.x)}
                       aria-label={`point ${i + 1} x`}
                       data-path-axis="x"
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                       onCommit={(n) => patchPoint(i, { ...pt, x: n })}
                     />
                     <NumField
@@ -214,6 +216,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                       value={Math.round(pt.y)}
                       aria-label={`point ${i + 1} y`}
                       data-path-axis="y"
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                       onCommit={(n) => patchPoint(i, { ...pt, y: n })}
                     />
                   </div>
@@ -224,6 +227,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                         "h-7 rounded-[8px] text-[10px]",
                         pt.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
                       )}
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                       onClick={() => toggleSmooth(i)}
                     >
                       {pt.smooth !== false ? "Corner" : "Smooth"}
@@ -231,6 +235,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                     <button
                       type="button"
                       className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                       onClick={() => deletePoint(i)}
                     >
                       Delete
@@ -270,6 +275,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                       <button
                         type="button"
                         className="flex min-w-0 flex-1 items-center justify-between text-left text-[10px] text-ink-dim"
+                        onFocus={() => setPathEditHit({ index: 0, arm: "anchor", hole: h })}
                         onClick={() => setPathEditHit({ index: 0, arm: "anchor", hole: h })}
                       >
                         <span className="font-mono text-ink">Hole {String(h + 1).padStart(2, "0")}</span>
@@ -328,6 +334,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                                 value={Math.round(pt.x)}
                                 aria-label={`hole ${h + 1} point ${i + 1} x`}
                                 data-path-axis="x"
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
                                 onCommit={(n) => patchHolePoint(h, i, { ...pt, x: n })}
                               />
                               <NumField
@@ -335,6 +342,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                                 value={Math.round(pt.y)}
                                 aria-label={`hole ${h + 1} point ${i + 1} y`}
                                 data-path-axis="y"
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
                                 onCommit={(n) => patchHolePoint(h, i, { ...pt, y: n })}
                               />
                             </div>
@@ -345,6 +353,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                                   "h-6 rounded-[6px] text-[9px]",
                                   pt.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
                                 )}
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
                                 onClick={() => toggleHoleSmooth(h, i)}
                               >
                                 {pt.smooth !== false ? "Corner" : "Smooth"}
@@ -352,6 +361,7 @@ export function PathInspector({ node }: { node: PathNode }) {
                               <button
                                 type="button"
                                 className="h-6 rounded-[6px] border border-border text-[9px] text-ink-dim hover:border-phosphor hover:text-ink"
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
                                 onClick={() => deleteHolePoint(h, i)}
                               >
                                 Delete
