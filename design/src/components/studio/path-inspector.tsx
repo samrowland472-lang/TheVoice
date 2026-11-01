@@ -1,5 +1,5 @@
 import { autoSmoothPoint, smoothPathCorners } from "@/lib/design/path-curve";
-import { setPathEditHit } from "@/lib/design/path-actions";
+import { alignSelectedPathPoints, distributeSelectedPathPoints, setPathEditHit } from "@/lib/design/path-actions";
 import { dropHole, holeFillRule, pathFillRule, setHoleFillRule, type PathFillRule } from "@/lib/design/fill-rule";
 import { useDesign } from "@/lib/design/store";
 import type { PathNode, PathPoint } from "@/lib/design/types";
@@ -29,6 +29,7 @@ function ringBounds(points: PathPoint[]) {
 
 export function PathInspector({ node }: { node: PathNode }) {
   const hit = useDesign((s) => s.pathEditHit);
+  const pointSel = useDesign((s) => s.pathPointSelection);
   const outerActive = hit && hit.hole == null ? hit.index : -1;
   const holes = node.holes ?? [];
 
@@ -180,6 +181,27 @@ export function PathInspector({ node }: { node: PathNode }) {
             Drop last
           </button>
         </div>
+        {pointSel.length >= 2 && (
+          <div className="space-y-1">
+            <div className="text-[10px] text-ink-dim">
+              {pointSel.length} points selected · align / distribute
+            </div>
+            <div className="grid grid-cols-3 gap-1">
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("left")} title="Align selected points left">L</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("center")} title="Align selected points center">C</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("right")} title="Align selected points right">R</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("top")} title="Align selected points top">T</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("middle")} title="Align selected points middle">M</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("bottom")} title="Align selected points bottom">B</button>
+            </div>
+            {pointSel.length >= 3 && (
+              <div className="grid grid-cols-2 gap-1">
+                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => distributeSelectedPathPoints("h")} title="Distribute selected points horizontally">Dist H</button>
+                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => distributeSelectedPathPoints("v")} title="Distribute selected points vertically">Dist V</button>
+              </div>
+            )}
+          </div>
+        )}
         <Field label="Points">
           <ul className="max-h-56 space-y-1 overflow-auto scrollbar-thin">
             {node.points.map((pt, i) => {

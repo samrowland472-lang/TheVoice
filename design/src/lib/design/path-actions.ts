@@ -756,3 +756,126 @@ export function nudgeSelectedPathPoints(dx: number, dy: number): boolean {
   setStudioStatus(`Nudged ${count} point${count > 1 ? "s" : ""}`);
   return true;
 }
+
+type AlignEdge = "left" | "center" | "right" | "top" | "middle" | "bottom";
+type DistAxis = "h" | "v";
+
+function selectedPointCoords(
+  n: PathNode,
+  selected: { index: number; hole?: number }[],
+): { sel: { index: number; hole?: number }; x: number; y: number }[] {
+  const out: { sel: { index: number; hole?: number }; x: number; y: number }[] = [];
+  for (const sel of selected) {
+    const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+    const p = ring?.[sel.index];
+    if (p) out.push({ sel, x: p.x, y: p.y });
+  }
+  return out;
+}
+
+/** Align multi-selected path points to the selection bounds (local space). */
+export function alignSelectedPathPoints(edge: AlignEdge): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+
+  let targetX: number | null = null;
+  let targetY: number | null = null;
+  if (edge === "left") targetX = minX;
+  else if (edge === "center") targetX = midX;
+  else if (edge === "right") targetX = maxX;
+  else if (edge === "top") targetY = minY;
+  else if (edge === "middle") targetY = midY;
+  else if (edge === "bottom") targetY = maxY;
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const next = { ...p };
+    if (targetX != null) next.x = targetX;
+    if (targetY != null) next.y = targetY;
+    ring[sel.index] = next;
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Aligned ${coords.length} points · ${edge}`);
+  return true;
+}
+
+/** Distribute multi-selected path points evenly between extremes (local space). Needs 3+. */
+export function distributeSelectedPathPoints(axis: DistAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) return false;
+
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start = axis === "h" ? first.x : first.y;
+  const end = axis === "h" ? last.x : last.y;
+  const step = (end - start) / (sorted.length - 1);
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  sorted.forEach((item, i) => {
+    const ring = item.sel.hole == null ? nextPoints : nextHoles?.[item.sel.hole];
+    if (!ring) return;
+    const p = ring[item.sel.index];
+    if (!p) return;
+    const next = { ...p };
+    if (axis === "h") next.x = start + step * i;
+    else next.y = start + step * i;
+    ring[item.sel.index] = next;
+  });
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Distributed ${coords.length} points · ${axis === "h" ? "horizontal" : "vertical"}`);
+  return true;
+}
