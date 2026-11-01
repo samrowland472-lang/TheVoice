@@ -776,6 +776,8 @@ export function rotateSelectedPathPoints(
 
 type ScaleHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
+export let lastPathScale = { sx: 1, sy: 1 };
+
 /** Scale multi-selected path points (and their Bézier handles) from the original bbox.
  * Fixed edge/corner is the opposite of the dragged handle. Drag past the fixed point to flip (negative scale). Shift locks aspect (signs follow the cursor half-planes). Alt scales from center.
  * basePoints/baseHoles for live drag from original. Returns true if applied.
@@ -870,6 +872,8 @@ export function scaleSelectedPathPoints(
   };
   sx = clamp(sx);
   sy = clamp(sy);
+
+  lastPathScale = { sx, sy };
 
   const nextPoints = points.map(clonePathPoint);
   const nextHoles = holes?.map((ring) => ring.map(clonePathPoint));

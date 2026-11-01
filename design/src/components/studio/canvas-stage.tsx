@@ -14,6 +14,7 @@ import {
   editPathHit,
   joinSelectedPathToNearest,
   knifeCutStroke,
+  lastPathScale,
   rotateSelectedPathPoints,
   scaleSelectedPathPoints,
   setPathEditHit,
@@ -100,6 +101,7 @@ export default function CanvasStage() {
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
+  const [scaleFlip, setScaleFlip] = useState<{ x: boolean; y: boolean } | null>(null);
   const setViewport = useDesign((s) => s.setViewport);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -162,11 +164,11 @@ export default function CanvasStage() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
-    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
+    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -187,13 +189,13 @@ export default function CanvasStage() {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
-      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
+      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip);
       if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
       if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -517,6 +519,7 @@ export default function CanvasStage() {
         d.basePoints,
         d.baseHoles,
       );
+      setScaleFlip({ x: lastPathScale.sx < 0, y: lastPathScale.sy < 0 });
       return;
     }
     if (d.type === "rotate") {
@@ -575,6 +578,7 @@ export default function CanvasStage() {
     const d = drag.current;
     drag.current = null;
     setMarquee(null);
+    setScaleFlip(null);
     if (d?.type === "knife") {
       const bx = d.endX ?? d.startX;
       const by = d.endY ?? d.startY;
@@ -726,6 +730,7 @@ function drawSelection(
   dpr: number,
   pathEditHit: PathEditHit | null,
   pathPointSelection: { index: number; hole?: number }[] = [],
+  scaleFlip: { x: boolean; y: boolean } | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (!selected.length) return;
@@ -778,6 +783,25 @@ function drawSelection(
           ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
           ctx.setLineDash([]);
 
+          // Flip feedback: crossed diagonals when any axis is negative
+          if (scaleFlip && (scaleFlip.x || scaleFlip.y)) {
+            ctx.save();
+            ctx.strokeStyle = "#ff6b6b";
+            ctx.lineWidth = 1.5 / vp.zoom;
+            ctx.setLineDash([]);
+            const bx = minX - pad;
+            const by = minY - pad;
+            const bw = maxX - minX + pad * 2;
+            const bh = maxY - minY + pad * 2;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx + bw, by + bh);
+            ctx.moveTo(bx + bw, by);
+            ctx.lineTo(bx, by + bh);
+            ctx.stroke();
+            ctx.restore();
+          }
+
           // Scale handles (corners + mid-edges)
           const size = 8 / vp.zoom;
           const half = size / 2;
@@ -800,6 +824,17 @@ function drawSelection(
           for (const [hx, hy] of handles) {
             ctx.fillRect(hx - half, hy - half, size, size);
             ctx.strokeRect(hx - half, hy - half, size, size);
+            // Cross the handle if flipped
+            if (scaleFlip && (scaleFlip.x || scaleFlip.y)) {
+              ctx.strokeStyle = "#ff6b6b";
+              ctx.beginPath();
+              ctx.moveTo(hx - half + 1 / vp.zoom, hy - half + 1 / vp.zoom);
+              ctx.lineTo(hx + half - 1 / vp.zoom, hy + half - 1 / vp.zoom);
+              ctx.moveTo(hx + half - 1 / vp.zoom, hy - half + 1 / vp.zoom);
+              ctx.lineTo(hx - half + 1 / vp.zoom, hy + half - 1 / vp.zoom);
+              ctx.stroke();
+              ctx.strokeStyle = "#3fc6ff";
+            }
           }
 
           // Shared rotation handle at top center of the group box
