@@ -474,7 +474,9 @@ export default function CanvasStage() {
       const len = Math.hypot(dx, dy);
       const ang = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
       const lenStr = len < 10 ? len.toFixed(1) : Math.round(len).toString();
-      setStudioStatus(`Knife · ${lenStr}px · ${Math.round(ang)}°`);
+      const cuts = knifeCutCount(d.startX, d.startY, docPt.x, docPt.y, doc.nodes);
+      const cutStr = cuts === 0 ? "miss" : cuts === 1 ? "1 cut" : `${cuts} cuts`;
+      setStudioStatus(`Knife · ${lenStr}px · ${Math.round(ang)}° · ${cutStr}`);
       return;
     }
     if (d.type === "move") {
@@ -858,6 +860,39 @@ function drawSelection(
     ctx.restore();
   }
   ctx.restore();
+}
+
+
+/** Count unique cut marks a knife stroke would make on visible editable paths. */
+function knifeCutCount(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  nodes: DesignNode[],
+): number {
+  const preferred = useDesign.getState().selection[0];
+  const paths: DesignNode[] = [];
+  for (const n of nodes) {
+    if (!n.visible || n.locked) continue;
+    const ep = asEditablePath(n);
+    if (ep && ep.points.length >= 2) paths.push(ep);
+  }
+  const ordered = preferred
+    ? ([paths.find((n) => n.id === preferred), ...paths.filter((n) => n.id !== preferred)].filter(Boolean) as DesignNode[])
+    : paths;
+
+  const seen = new Set<string>();
+  for (const n of ordered) {
+    const ep = asEditablePath(n);
+    if (!ep) continue;
+    const prev = knifeStrokePreview(ep, ax, ay, bx, by);
+    for (const m of prev.marks) {
+      const key = `${m.x.toFixed(1)},${m.y.toFixed(1)}`;
+      seen.add(key);
+    }
+  }
+  return seen.size;
 }
 
 function drawKnifeStroke(
