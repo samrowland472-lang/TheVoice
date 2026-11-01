@@ -19,10 +19,12 @@
 - Restored full CanvasStage: live document drawing via drawDocument, knife tool with live cut-count status, hover snap phosphor crosses, and residual cut marks that linger ~1.6 s after a successful cut (soft outer glow + thin white cross that fades).
 - Select, hand, and zoom on the canvas stage: click to select (shift for additive) with phosphor selection outlines; hand drag pans the viewport; wheel zooms toward the cursor.
 
+- Marquee select on the canvas: drag a rectangle in the select tool to multi-select intersecting nodes (shift for additive). Live phosphor dashed rect + count status; click still selects single nodes.
+
 ## Iteration
-2026-11-01T05:05:32Z — Deepened select / hand / zoom on the restored canvas stage. Click selects with phosphor outlines, hand pans, wheel zooms toward cursor. Typecheck, build, and browser-smoke green (hasCanvas true).
+2026-11-01T06:09:11Z — Added marquee select on the canvas stage. Drag a rectangle in the select tool to select intersecting nodes (shift additive). Phosphor dashed overlay + live count status. Click still selects. Typecheck, build, and browser-smoke green (hasCanvas true).
 
 ## Next recommended
-- Marquee select on the canvas (drag rectangle to multi-select).
-- Or polish knife residual fade curve / core brighten.
-- Or deepen path point editing on the live canvas.
+- Polish knife residual fade curve / core brighten.
+- Or deepen path point editing on the live canvas (drag points).
+- Or move/resize handles on selected nodes.

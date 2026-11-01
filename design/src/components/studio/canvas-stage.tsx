@@ -6,6 +6,7 @@ import { knifeStrokePreview, knifePreviewPoint } from "@/lib/design/path-cut";
 import { setStudioStatus, holdStudioStatus, releaseStudioStatus } from "@/lib/design/studio-status";
 import { hitTop } from "@/lib/design/hit";
 import { nodeBounds } from "@/lib/design/layer-groups";
+import { nodesInMarquee } from "@/lib/design/marquee-nodes";
 import type { DesignNode, PathNode, Viewport } from "@/lib/design/types";
 import { isPath } from "@/lib/design/types";
 
@@ -25,6 +26,8 @@ export default function CanvasStage() {
     marks: [],
   });
   const panRef = useRef<{ startX: number; startY: number; vx: number; vy: number } | null>(null);
+  const marqueeRef = useRef<{ start: { x: number; y: number }; current: { x: number; y: number }; additive: boolean } | null>(null);
+  const [marquee, setMarquee] = useState<{ start: { x: number; y: number }; current: { x: number; y: number } } | null>(null);
   const [hoverMark, setHoverMark] = useState<{ x: number; y: number } | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
 
@@ -134,9 +137,33 @@ export default function CanvasStage() {
       ctx.restore();
     }
 
+    // Marquee select rectangle (phosphor)
+    if (marquee) {
+      const { start, current } = marquee;
+      const x1 = Math.min(start.x, current.x);
+      const y1 = Math.min(start.y, current.y);
+      const x2 = Math.max(start.x, current.x);
+      const y2 = Math.max(start.y, current.y);
+      const sx = x1 * viewport.zoom + viewport.x;
+      const sy = y1 * viewport.zoom + viewport.y;
+      const sw = (x2 - x1) * viewport.zoom;
+      const sh = (y2 - y1) * viewport.zoom;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.strokeStyle = "#c8f7c5";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.shadowColor = "#c8f7c5";
+      ctx.shadowBlur = 4;
+      ctx.strokeRect(sx, sy, sw, sh);
+      ctx.fillStyle = "rgba(200, 247, 197, 0.08)";
+      ctx.fillRect(sx, sy, sw, sh);
+      ctx.restore();
+    }
+
     if (hoverMark) drawMark(hoverMark.x, hoverMark.y);
     for (const m of dragRef.current.marks) drawMark(m.x, m.y, true);
-  }, [doc, viewport, size, statusTick, hoverMark, tool, selection]);
+  }, [doc, viewport, size, statusTick, hoverMark, tool, selection, marquee]);
 
   const localFromEvent = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -163,15 +190,10 @@ export default function CanvasStage() {
     }
 
     if (tool === "select") {
-      const hit = hitTop(doc.nodes, w.x, w.y);
       const additive = e.shiftKey || e.metaKey || e.ctrlKey;
-      if (hit) {
-        select([hit.id], additive);
-        setStudioStatus(additive ? "Selection updated" : `Selected ${hit.kind}`);
-      } else if (!additive) {
-        select([], false);
-        setStudioStatus("Selection cleared");
-      }
+      marqueeRef.current = { start: w, current: w, additive };
+      setMarquee(null);
+      // Immediate click handled on up if no drag
     }
   };
 
@@ -224,11 +246,61 @@ export default function CanvasStage() {
         setHoverMark(best);
       }
     }
+
+    if (tool === "select" && marqueeRef.current) {
+      const start = marqueeRef.current.start;
+      const dx = Math.abs(w.x - start.x);
+      const dy = Math.abs(w.y - start.y);
+      if (dx > 2 || dy > 2) {
+        marqueeRef.current.current = w;
+        setMarquee({ start, current: w });
+        const box = {
+          x: Math.min(start.x, w.x),
+          y: Math.min(start.y, w.y),
+          w: Math.abs(w.x - start.x),
+          h: Math.abs(w.y - start.y),
+        };
+        const count = nodesInMarquee(doc.nodes, box).length;
+        setStudioStatus(count ? `Marquee · ${count} node${count === 1 ? "" : "s"}` : "Marquee");
+      }
+    }
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
     if (panRef.current) {
       panRef.current = null;
+    }
+    if (!doc) return;
+    if (tool === "select" && marqueeRef.current) {
+      const mq = marqueeRef.current;
+      marqueeRef.current = null;
+      setMarquee(null);
+      const p = localFromEvent(e);
+      const w = screenToDoc(p.x, p.y, viewport);
+      const dx = Math.abs(w.x - mq.start.x);
+      const dy = Math.abs(w.y - mq.start.y);
+      if (dx > 4 || dy > 4) {
+        const box = {
+          x: Math.min(mq.start.x, w.x),
+          y: Math.min(mq.start.y, w.y),
+          w: Math.abs(w.x - mq.start.x),
+          h: Math.abs(w.y - mq.start.y),
+        };
+        const ids = nodesInMarquee(doc.nodes, box, "intersect");
+        select(ids, mq.additive);
+        setStudioStatus(ids.length ? `Selected ${ids.length}` : "Selection cleared");
+      } else {
+        // Click select
+        const hit = hitTop(doc.nodes, w.x, w.y);
+        if (hit) {
+          select([hit.id], mq.additive);
+          setStudioStatus(mq.additive ? "Selection updated" : `Selected ${hit.kind}`);
+        } else if (!mq.additive) {
+          select([], false);
+          setStudioStatus("Selection cleared");
+        }
+      }
+      return;
     }
     if (!doc || tool !== "knife") return;
     const p = localFromEvent(e);
