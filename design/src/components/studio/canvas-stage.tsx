@@ -34,6 +34,43 @@ function marqueeBox(a: { x: number; y: number }, b: { x: number; y: number }) {
   return { x, y, w, h };
 }
 
+/** Rotation handle sits above the local top-center, orbiting with current rotation. */
+function rotationHandlePoint(box: Box, rotation: number, zoom: number) {
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  const offset = 28 / Math.max(zoom, 0.01);
+  const hx = 0;
+  const hy = -box.h / 2 - offset;
+  const rad = ((rotation || 0) * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  return { x: cx + hx * cos - hy * sin, y: cy + hx * sin + hy * cos };
+}
+
+function hitRotationHandle(box: Box, rotation: number, x: number, y: number, zoom: number): boolean {
+  const p = rotationHandlePoint(box, rotation, zoom);
+  const r = 8 / Math.max(zoom, 0.01);
+  return Math.hypot(x - p.x, y - p.y) <= r;
+}
+
+/** Angle so that pointing straight up (negative Y) is 0°. */
+function angleFromCenter(cx: number, cy: number, x: number, y: number): number {
+  const deg = (Math.atan2(y - cy, x - cx) * 180) / Math.PI;
+  let a = deg + 90;
+  while (a > 180) a -= 360;
+  while (a < -180) a += 360;
+  return a;
+}
+
+function snapRotation(angle: number, free: boolean): { angle: number; snapped: boolean } {
+  if (free) return { angle, snapped: false };
+  const step = 15;
+  const nearest = Math.round(angle / step) * step;
+  const d = Math.abs(angle - nearest);
+  if (d <= 3.5) return { angle: nearest, snapped: true };
+  return { angle, snapped: false };
+}
+
 export default function CanvasStage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,9 +93,16 @@ export default function CanvasStage() {
     originalBox: Box;
     committed: boolean;
   } | null>(null);
+  const rotateRef = useRef<{
+    id: string;
+    originalRotation: number;
+    center: { x: number; y: number };
+    committed: boolean;
+  } | null>(null);
   const [hoverMark, setHoverMark] = useState<{ x: number; y: number } | null>(null);
   const [marqueeTick, setMarqueeTick] = useState(0);
   const [liveGuides, setLiveGuides] = useState<GuideSet | null>(null);
+  const [rotateGuide, setRotateGuide] = useState<{ cx: number; cy: number; angle: number; snapped: boolean } | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
   const [hoverCursor, setHoverCursor] = useState<string | null>(null);
 
@@ -169,7 +213,7 @@ export default function CanvasStage() {
     }
 
     // Resize handles (phosphor squares on selected layers)
-    if (tool === "select" && selection.length && doc && !moveRef.current && !resizeRef.current) {
+    if (tool === "select" && selection.length && doc && !moveRef.current && !resizeRef.current && !rotateRef.current) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const hs = 5; // screen px half-ish
@@ -206,6 +250,44 @@ export default function CanvasStage() {
           ctx.fill();
           ctx.stroke();
         }
+      }
+      ctx.restore();
+    }
+
+    // Rotation handle (phosphor circle above selection, orbits with rotation)
+    if (tool === "select" && selection.length && doc && !moveRef.current && !resizeRef.current && !rotateRef.current) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Topmost selected unlocked
+      for (const id of [...selection].reverse()) {
+        const n = doc.nodes.find((nn) => nn.id === id);
+        if (!n || n.locked) continue;
+        const b = n.kind === "group" ? (groupBox(doc.nodes, id) || nodeBounds(n)) : nodeBounds(n);
+        const pt = rotationHandlePoint(b, n.rotation || 0, viewport.zoom);
+        const sx = pt.x * viewport.zoom + viewport.x;
+        const sy = pt.y * viewport.zoom + viewport.y;
+        const cx = (b.x + b.w / 2) * viewport.zoom + viewport.x;
+        const cy = (b.y + b.h / 2) * viewport.zoom + viewport.y;
+        // Connecting line
+        ctx.strokeStyle = "rgba(200,247,197,0.55)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 2]);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(sx, sy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Handle circle
+        ctx.fillStyle = "#0b0f0c";
+        ctx.strokeStyle = "#c8f7c5";
+        ctx.lineWidth = 1.6;
+        ctx.shadowColor = "#c8f7c5";
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        break;
       }
       ctx.restore();
     }
@@ -293,9 +375,43 @@ export default function CanvasStage() {
       ctx.restore();
     }
 
+    // Live rotation guide (dashed ray from center)
+    if (rotateGuide && doc) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const { cx, cy, angle, snapped } = rotateGuide;
+      const rad = ((angle - 90) * Math.PI) / 180; // match angleFromCenter
+      const len = 48 / Math.max(viewport.zoom, 0.01) * viewport.zoom; // screen-ish
+      const sx = cx * viewport.zoom + viewport.x;
+      const sy = cy * viewport.zoom + viewport.y;
+      const ex = sx + Math.cos(rad) * 56;
+      const ey = sy + Math.sin(rad) * 56;
+      ctx.strokeStyle = snapped ? "rgba(200,247,197,0.95)" : "rgba(200,247,197,0.7)";
+      ctx.lineWidth = snapped ? 1.4 : 1;
+      ctx.shadowColor = "#c8f7c5";
+      ctx.shadowBlur = snapped ? 8 : 4;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      // Center cross when snapped to cardinal
+      if (snapped && (Math.abs(angle % 90) < 0.5 || Math.abs((angle % 90) - 90) < 0.5)) {
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx - 10, sy);
+        ctx.lineTo(sx + 10, sy);
+        ctx.moveTo(sx, sy - 10);
+        ctx.lineTo(sx, sy + 10);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     if (hoverMark) drawMark(hoverMark.x, hoverMark.y);
     for (const m of dragRef.current.marks) drawMark(m.x, m.y, true);
-  }, [doc, viewport, size, statusTick, hoverMark, tool, selection, marqueeTick, liveGuides]);
+  }, [doc, viewport, size, statusTick, hoverMark, tool, selection, marqueeTick, liveGuides, rotateGuide]);
 
   const localFromEvent = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -322,6 +438,28 @@ export default function CanvasStage() {
     }
 
     if (tool === "select") {
+      // Prefer rotation handle (outside the box)
+      for (const id of [...selection].reverse()) {
+        const n = doc.nodes.find((nn) => nn.id === id);
+        if (!n || n.locked) continue;
+        const b = n.kind === "group" ? (groupBox(doc.nodes, id) || nodeBounds(n)) : nodeBounds(n);
+        if (hitRotationHandle(b, n.rotation || 0, w.x, w.y, viewport.zoom)) {
+          rotateRef.current = {
+            id,
+            originalRotation: n.rotation || 0,
+            center: { x: b.x + b.w / 2, y: b.y + b.h / 2 },
+            committed: false,
+          };
+          resizeRef.current = null;
+          moveRef.current = null;
+          marqueeRef.current = null;
+          setLiveGuides(null);
+          setRotateGuide(null);
+          setStudioStatus("Drag to rotate · Shift free · snaps to 15°");
+          return;
+        }
+      }
+
       // Prefer resize handles on the current selection
       let handleHit: { id: string; handle: ResizeHandle; box: Box } | null = null;
       for (const id of [...selection].reverse()) {
@@ -396,13 +534,17 @@ export default function CanvasStage() {
       return;
     }
 
-    // Hover cursor for resize handles
-    if (tool === "select" && !resizeRef.current && !moveRef.current && !marqueeRef.current && selection.length) {
+    // Hover cursor for rotation / resize handles
+    if (tool === "select" && !resizeRef.current && !rotateRef.current && !moveRef.current && !marqueeRef.current && selection.length) {
       let cur: string | null = null;
       for (const id of [...selection].reverse()) {
         const n = doc.nodes.find((nn) => nn.id === id);
         if (!n || n.locked) continue;
         const b = n.kind === "group" ? (groupBox(doc.nodes, id) || nodeBounds(n)) : nodeBounds(n);
+        if (hitRotationHandle(b, n.rotation || 0, w.x, w.y, viewport.zoom)) {
+          cur = "grab";
+          break;
+        }
         const h = hitResizeHandle(b, w.x, w.y, viewport.zoom);
         if (h) {
           cur =
@@ -419,6 +561,21 @@ export default function CanvasStage() {
       if (cur !== hoverCursor) setHoverCursor(cur);
     } else if (hoverCursor) {
       setHoverCursor(null);
+    }
+
+    if (tool === "select" && rotateRef.current) {
+      const rt = rotateRef.current;
+      const raw = angleFromCenter(rt.center.x, rt.center.y, w.x, w.y);
+      const { angle, snapped } = snapRotation(raw, e.shiftKey);
+      if (!rt.committed && Math.abs(angle - rt.originalRotation) > 0.4) {
+        useDesign.getState().commit();
+        rt.committed = true;
+      }
+      useDesign.getState().updateNodes([rt.id], { rotation: angle }, false);
+      setRotateGuide({ cx: rt.center.x, cy: rt.center.y, angle, snapped });
+      const label = snapped ? `Rotate · ${angle.toFixed(0)}° (snap)` : `Rotate · ${angle.toFixed(1)}°`;
+      setStudioStatus(label);
+      return;
     }
 
     if (tool === "select" && resizeRef.current) {
@@ -666,6 +823,17 @@ export default function CanvasStage() {
       }
       marqueeRef.current = null;
       setMarqueeTick((t) => t + 1);
+      return;
+    }
+
+    if (rotateRef.current) {
+      const rt = rotateRef.current;
+      rotateRef.current = null;
+      setRotateGuide(null);
+      setMarqueeTick((t) => t + 1);
+      if (rt.committed) {
+        holdStudioStatus("Layer rotated");
+      }
       return;
     }
 
