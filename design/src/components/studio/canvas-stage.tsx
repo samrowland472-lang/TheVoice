@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDesign } from "@/lib/design/store";
 import {
   drawDocument,
@@ -6,7 +6,7 @@ import {
   screenToDoc,
 } from "@/lib/design/render";
 import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
-import { nodeCenter, degToRad } from "@/lib/design/geometry";
+import { nodeCenter, degToRad, rotatePoint } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import {
@@ -25,6 +25,7 @@ import {
 import { closePathWithCubic, nearPenClose } from "@/lib/design/path-curve";
 import { isPath, type DesignNode, type Tool, type Viewport } from "@/lib/design/types";
 import type { PathEditHit } from "@/lib/design/path-edit";
+import { nodesInMarquee } from "@/lib/design/marquee-nodes";
 
 type DragKind =
   | { type: "move"; id: string; startX: number; startY: number; ox: number; oy: number }
@@ -38,6 +39,14 @@ type DragKind =
       hit: PathEditHit;
       keepSmooth: boolean;
       started: boolean;
+    }
+  | {
+      type: "marquee";
+      startX: number;
+      startY: number;
+      endX: number;
+      endY: number;
+      additive: boolean;
     };
 
 function snap15(deg: number, force: boolean) {
@@ -65,6 +74,7 @@ export default function CanvasStage() {
   const viewIntent = useDesign((s) => s.viewIntent);
   const pathEditHit = useDesign((s) => s.pathEditHit);
   const pathPointSelection = useDesign((s) => s.pathPointSelection);
+  const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const setViewport = useDesign((s) => s.setViewport);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -128,7 +138,8 @@ export default function CanvasStage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection]);
+    if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -272,8 +283,16 @@ export default function CanvasStage() {
         }
         drag.current = { type: "move", id: hit.id, startX: docPt.x, startY: docPt.y, ox: hit.x, oy: hit.y };
       } else {
-        select([]);
-        setPathEditHit(null);
+        // Start marquee on empty canvas (click-drag selects; pure click clears)
+        drag.current = {
+          type: "marquee",
+          startX: docPt.x,
+          startY: docPt.y,
+          endX: docPt.x,
+          endY: docPt.y,
+          additive: e.shiftKey || e.metaKey || e.ctrlKey,
+        };
+        setMarquee({ x1: docPt.x, y1: docPt.y, x2: docPt.x, y2: docPt.y });
       }
       return;
     }
@@ -332,6 +351,11 @@ export default function CanvasStage() {
       }
       return;
     }
+    if (d.type === "marquee") {
+      drag.current = { ...d, endX: docPt.x, endY: docPt.y };
+      setMarquee({ x1: d.startX, y1: d.startY, x2: docPt.x, y2: docPt.y });
+      return;
+    }
     if (d.type === "create") {
       const x0 = Math.min(d.startX, docPt.x);
       const y0 = Math.min(d.startY, docPt.y);
@@ -358,11 +382,80 @@ export default function CanvasStage() {
   function onPointerUp() {
     const d = drag.current;
     drag.current = null;
+    setMarquee(null);
     if (d?.type === "create" && d.id && d.tool !== "text") {
       setTool("select");
     }
     if (d?.type === "path-point") {
       // final state already live; nothing to commit again
+    }
+    if (d?.type === "marquee") {
+      const dx = Math.abs(d.endX - d.startX);
+      const dy = Math.abs(d.endY - d.startY);
+      if (dx < 3 && dy < 3) {
+        // Pure click on empty: clear
+        if (!d.additive) {
+          select([]);
+          setPathEditHit(null);
+          setPathPointSelection([]);
+        }
+        return;
+      }
+      const minX = Math.min(d.startX, d.endX);
+      const minY = Math.min(d.startY, d.endY);
+      const maxX = Math.max(d.startX, d.endX);
+      const maxY = Math.max(d.startY, d.endY);
+      const mq = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+
+      // Prefer path-point marquee when a single path is selected
+      if (selection.length === 1) {
+        const n = doc?.nodes.find((x) => x.id === selection[0]);
+        if (n && isPath(n)) {
+          const picked: { index: number; hole?: number }[] = [];
+          const c = nodeCenter(n);
+          const consider = (ring: typeof n.points, hole?: number) => {
+            ring.forEach((pt, index) => {
+              const localWx = n.x + pt.x;
+              const localWy = n.y + pt.y;
+              const world = n.rotation
+                ? rotatePoint(localWx, localWy, c.x, c.y, n.rotation)
+                : { x: localWx, y: localWy };
+              if (world.x >= minX && world.x <= maxX && world.y >= minY && world.y <= maxY) {
+                picked.push({ index, hole });
+              }
+            });
+          };
+          consider(n.points);
+          (n.holes ?? []).forEach((ring, hole) => consider(ring, hole));
+          if (d.additive) {
+            const cur = useDesign.getState().pathPointSelection ?? [];
+            const key = (p: { index: number; hole?: number }) => `${p.hole ?? ""}:${p.index}`;
+            const seen = new Set(cur.map(key));
+            for (const p of picked) if (!seen.has(key(p))) cur.push(p);
+            setPathPointSelection(cur);
+          } else {
+            setPathPointSelection(picked);
+          }
+          if (picked.length) {
+            setPathEditHit({ index: picked[0]!.index, arm: "anchor", hole: picked[0]!.hole });
+          }
+          setStudioStatus(`Marquee · ${picked.length} path point${picked.length === 1 ? "" : "s"}`);
+          return;
+        }
+      }
+
+      // Otherwise select nodes
+      const ids = nodesInMarquee(doc?.nodes ?? [], mq, "intersect");
+      if (d.additive) {
+        const cur = new Set(selection);
+        for (const id of ids) cur.add(id);
+        select(Array.from(cur));
+      } else {
+        select(ids);
+      }
+      setPathEditHit(null);
+      setPathPointSelection([]);
+      setStudioStatus(`Marquee · ${ids.length} layer${ids.length === 1 ? "" : "s"}`);
     }
   }
 
@@ -399,6 +492,32 @@ export default function CanvasStage() {
   );
 }
 
+function drawMarquee(
+  ctx: CanvasRenderingContext2D,
+  mq: { x1: number; y1: number; x2: number; y2: number },
+  vp: Viewport,
+  dpr: number,
+) {
+  const x = Math.min(mq.x1, mq.x2);
+  const y = Math.min(mq.y1, mq.y2);
+  const w = Math.abs(mq.x2 - mq.x1);
+  const h = Math.abs(mq.y2 - mq.y1);
+  if (w < 1 && h < 1) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  ctx.strokeStyle = "#3fc6ff";
+  ctx.fillStyle = "rgba(63,198,255,0.08)";
+  ctx.lineWidth = 1 / vp.zoom;
+  ctx.setLineDash([4 / vp.zoom, 3 / vp.zoom]);
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawSelection(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
@@ -430,17 +549,34 @@ function drawSelection(
         ctx.fillStyle = "rgba(63,198,255,0.9)";
         ctx.strokeStyle = "#7ee0ff";
         const r = 4.5 / vp.zoom;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         for (const sel of pathPointSelection) {
           const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
           const pt = ring?.[sel.index];
           if (!pt) continue;
           const ax = n.x + pt.x;
           const ay = n.y + pt.y;
+          // world for box (rotation already applied by the save/restore transform above? wait)
+          // The transform is around center, so points are drawn in rotated space.
+          // For box we want axis-aligned in the current (rotated) context? Or world.
+          // Simpler: compute local min/max then draw in the transformed space.
+          minX = Math.min(minX, ax);
+          minY = Math.min(minY, ay);
+          maxX = Math.max(maxX, ax);
+          maxY = Math.max(maxY, ay);
           ctx.beginPath();
           ctx.arc(ax, ay, r, 0, Math.PI * 2);
           ctx.fill();
           ctx.lineWidth = 1 / vp.zoom;
           ctx.stroke();
+        }
+        if (Number.isFinite(minX) && pathPointSelection.length > 1) {
+          const pad = 6 / vp.zoom;
+          ctx.strokeStyle = "#3fc6ff";
+          ctx.lineWidth = 1 / vp.zoom;
+          ctx.setLineDash([5 / vp.zoom, 4 / vp.zoom]);
+          ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
+          ctx.setLineDash([]);
         }
         ctx.restore();
       }
