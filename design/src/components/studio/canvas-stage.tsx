@@ -469,6 +469,12 @@ export default function CanvasStage() {
       d.endX = docPt.x;
       d.endY = docPt.y;
       setKnifeStroke({ ax: d.startX, ay: d.startY, bx: docPt.x, by: docPt.y });
+      const dx = docPt.x - d.startX;
+      const dy = docPt.y - d.startY;
+      const len = Math.hypot(dx, dy);
+      const ang = ((Math.atan2(dy, dx) * 180) / Math.PI + 360) % 360;
+      const lenStr = len < 10 ? len.toFixed(1) : Math.round(len).toString();
+      setStudioStatus(`Knife · ${lenStr}px · ${Math.round(ang)}°`);
       return;
     }
     if (d.type === "move") {

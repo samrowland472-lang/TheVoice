@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Knife stroke live length + angle readout. While dragging the Knife tool, the status strip shows the stroke length in px and the angle in degrees (0–360 from horizontal). Short strokes show one decimal; longer ones round. Builds on the existing live dashed cut line and cut marks. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Knife point-cut live preview. With the Knife tool active, hovering over an editable path shows a phosphor cut mark (soft circle + cross) at the nearest segment the click would open. Status strip reads “Knife · cut here” while in range, otherwise “Knife · drag to cut”. The mark clears when a drag starts. Builds on the existing knifePreviewPoint backend and the live stroke. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Knife tool live stroke on canvas. With the Knife tool active, drag across the artboard draws a phosphor dashed cut line. Intersections with editable paths show phosphor cut marks (circles + crosses). On release the stroke cuts every crossed path (preferred selection first), splitting contours and selecting the results. Short drags fall back to a point cut. Status strip reports “Knife · drag to cut”, then “Knife · cut” or “Knife · miss”. Builds on the existing knifeCutStroke / knifeStrokePreview backend. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Flip support on path-point group scale handles. Dragging a corner or edge handle past the fixed point (or center with Alt) now produces negative scale, flipping the selected points and their Bézier handles. Aspect lock (Shift) preserves the sign of each axis from the cursor’s half-planes while using diagonal magnitude for uniform scale. Status strip notes “flip” when any axis is negative and “aspect” when locked. Builds on the shared rotation handle, multi-select, group box, and aspect-lock diagonal. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -12,9 +13,9 @@
 - Iteration: Path point multi-select + Nudge. Shift-click anchors toggles selection (phosphor fills when 2+). Arrow keys nudge the selected points (or the active edit hit) in local space instead of the whole path. Status strip reports count. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-01T20:05Z — Knife point-cut live preview (hover marks before drag).
+2026-11-01T21:10Z — Knife stroke live length + angle readout.
 
 ## Next recommended
 - Path point alignment handles / live preview while scrubbing.
 - Or: better visual feedback for flipped group box (e.g. crossed handles or reverse arrows).
-- Or: knife stroke live length or angle readout in the status strip.
+- Or: knife stroke live cut count in the status strip.
