@@ -13,6 +13,7 @@ import {
   appendPenPoint,
   editPathHit,
   joinSelectedPathToNearest,
+  rotateSelectedPathPoints,
   setPathEditHit,
   setPathPointSelection,
   togglePathPointSelection,
@@ -23,7 +24,7 @@ import {
   pathWorldToLocal,
 } from "@/lib/design/path-edit";
 import { closePathWithCubic, nearPenClose } from "@/lib/design/path-curve";
-import { isPath, type DesignNode, type Tool, type Viewport } from "@/lib/design/types";
+import { isPath, type DesignNode, type PathPoint, type Tool, type Viewport } from "@/lib/design/types";
 import type { PathEditHit } from "@/lib/design/path-edit";
 import { nodesInMarquee } from "@/lib/design/marquee-nodes";
 
@@ -47,6 +48,15 @@ type DragKind =
       endX: number;
       endY: number;
       additive: boolean;
+    }
+  | {
+      type: "path-points-rotate";
+      id: string;
+      startAngle: number;
+      cx: number;
+      cy: number;
+      basePoints: PathPoint[];
+      baseHoles?: PathPoint[][];
     };
 
 function snap15(deg: number, force: boolean) {
@@ -213,6 +223,58 @@ export default function CanvasStage() {
     if (tool === "select") {
       const selected = doc.nodes.filter((n) => selection.includes(n.id));
 
+      // Path points group rotation handle (when 2+ points selected on a single path)
+      if (selection.length === 1 && pathPointSelection.length > 1) {
+        const n = selected[0];
+        if (n && isPath(n)) {
+          const coords: { x: number; y: number }[] = [];
+          for (const sel of pathPointSelection) {
+            const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+            const pt = ring?.[sel.index];
+            if (pt) coords.push({ x: pt.x, y: pt.y });
+          }
+          if (coords.length > 1) {
+            const xs = coords.map((c) => c.x);
+            const ys = coords.map((c) => c.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            const lcx = (minX + maxX) / 2;
+            const lcy = (minY + maxY) / 2;
+            // Handle in local: top center of bbox, offset up
+            const pad = 6 / viewport.zoom;
+            const handleLocalX = n.x + lcx;
+            const handleLocalY = n.y + minY - pad - 28 / viewport.zoom;
+            // Convert to world (apply node rotation around node center)
+            const nc = nodeCenter(n);
+            const worldHandle = n.rotation
+              ? rotatePoint(handleLocalX, handleLocalY, nc.x, nc.y, n.rotation)
+              : { x: handleLocalX, y: handleLocalY };
+            const worldCenter = n.rotation
+              ? rotatePoint(n.x + lcx, n.y + lcy, nc.x, nc.y, n.rotation)
+              : { x: n.x + lcx, y: n.y + lcy };
+            const dist = Math.hypot(docPt.x - worldHandle.x, docPt.y - worldHandle.y);
+            const hitR = 18 / viewport.zoom;
+            if (dist <= hitR + 4 / viewport.zoom) {
+              const ang = Math.atan2(docPt.y - worldCenter.y, docPt.x - worldCenter.x);
+              drag.current = {
+                type: "path-points-rotate",
+                id: n.id,
+                startAngle: ang,
+                cx: worldCenter.x,
+                cy: worldCenter.y,
+                basePoints: n.points.map((p) => ({ ...p, in: p.in ? { ...p.in } : p.in, out: p.out ? { ...p.out } : p.out })),
+                baseHoles: n.holes?.map((ring) => ring.map((p) => ({ ...p, in: p.in ? { ...p.in } : p.in, out: p.out ? { ...p.out } : p.out }))),
+              };
+              commit();
+              setStudioStatus("Rotate path points");
+              return;
+            }
+          }
+        }
+      }
+
       // Path point / handle hit on selected path first
       for (const n of selected) {
         if (!isPath(n) || !n.points.length) continue;
@@ -325,6 +387,13 @@ export default function CanvasStage() {
       const local = localDelta(d.orig, docPt.x - d.startX, docPt.y - d.startY);
       const patch = applyHandle(d.orig, d.handle, local.dx, local.dy);
       updateNodes([d.id], patch, false);
+      return;
+    }
+    if (d.type === "path-points-rotate") {
+      const ang = Math.atan2(docPt.y - d.cy, docPt.x - d.cx);
+      let deg = ((ang - d.startAngle) * 180) / Math.PI;
+      deg = snap15(deg, e.shiftKey);
+      rotateSelectedPathPoints(deg, d.basePoints, d.baseHoles);
       return;
     }
     if (d.type === "rotate") {
@@ -577,6 +646,20 @@ function drawSelection(
           ctx.setLineDash([5 / vp.zoom, 4 / vp.zoom]);
           ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
           ctx.setLineDash([]);
+
+          // Shared rotation handle at top center of the group box
+          const lcx = (minX + maxX) / 2;
+          const top = minY - pad;
+          const ry = top - 28 / vp.zoom;
+          ctx.beginPath();
+          ctx.moveTo(lcx, top);
+          ctx.lineTo(lcx, ry);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(lcx, ry, 7 / vp.zoom, 0, Math.PI * 2);
+          ctx.fillStyle = "#06170f";
+          ctx.fill();
+          ctx.stroke();
         }
         ctx.restore();
       }

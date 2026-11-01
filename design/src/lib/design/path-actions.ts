@@ -704,7 +704,75 @@ export function rotateRelativeSelectedPoints(
   return true;
 }
 
-/** Nudge selected path points (or the active edit hit) by world-space delta. Returns true if applied. */
+/** Rotate multi-selected path points (and their handles) around the selection center by angleDeg.
+ * If basePoints/baseHoles are provided, rotate from those (for live drag from original).
+ * Returns true if applied.
+ */
+export function rotateSelectedPathPoints(
+  angleDeg: number,
+  basePoints?: PathPoint[],
+  baseHoles?: PathPoint[][],
+): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1 || Math.abs(angleDeg) < 0.01) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const points = basePoints ?? n.points;
+  const holes = baseHoles ?? n.holes;
+
+  // Build a temporary node for coord lookup
+  const tempN: PathNode = { ...n, points, holes };
+  const coords = selectedPointCoords(tempN, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  const nextPoints = points.map(clonePathPoint);
+  const nextHoles = holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const nx = cx + dx * cos - dy * sin;
+    const ny = cy + dx * sin + dy * cos;
+    const rotH = (h: { x: number; y: number } | null | undefined) => {
+      if (!h) return h ?? null;
+      return { x: h.x * cos - h.y * sin, y: h.x * sin + h.y * cos };
+    };
+    ring[sel.index] = { ...p, x: nx, y: ny, in: rotH(p.in), out: rotH(p.out) };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Rotated ${coords.length} points · ${Math.round(angleDeg)}°`);
+  return true;
+}
 export function nudgeSelectedPathPoints(dx: number, dy: number): boolean {
   const s = useDesign.getState();
   const doc = s.doc;
