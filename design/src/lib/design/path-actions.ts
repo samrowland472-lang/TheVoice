@@ -844,7 +844,12 @@ export function scaleSelectedPathPoints(
 
   if (shiftKey) {
     if (involvesX && involvesY) {
-      const scale = Math.max(sx, sy);
+      // Better aspect lock: scale by diagonal distance so the handle tracks the mouse more closely while staying uniform
+      const origDiag = Math.hypot(origW, origH);
+      const mouseDx = mouseLocalX - fixedX;
+      const mouseDy = mouseLocalY - fixedY;
+      const mouseDiag = Math.hypot(mouseDx, mouseDy);
+      const scale = origDiag > 1e-6 ? mouseDiag / origDiag : 1;
       sx = scale;
       sy = scale;
     } else if (involvesX) {
@@ -887,7 +892,8 @@ export function scaleSelectedPathPoints(
     false,
   );
   const pct = Math.round(((sx + sy) / 2) * 100);
-  setStudioStatus(`Scaled ${coords.length} points · ${pct}%`);
+  const lock = shiftKey ? " · aspect" : "";
+  setStudioStatus(`Scaled ${coords.length} points · ${pct}%${lock}`);
   return true;
 }
 
