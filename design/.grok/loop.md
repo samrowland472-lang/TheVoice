@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Reverse-arrow indicators on individual flipped axes. While scaling multi-selected path points, the group box draws phosphor-red inward arrowheads on only the flipped axis (horizontal for X, vertical for Y). Both-axes still crosses the scale handles. Status strip reports “flip X”, “flip Y”, or “flip XY”. Builds on the existing flip support and group box. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Live path-split preview for knife. While dragging the Knife tool, ghost dashed outlines show the open contours the stroke would produce. Status strip appends the piece count when more than one. Builds on the existing live cut line, marks, length/angle, and cut count. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: On-canvas path-point alignment handles. With 2+ anchors multi-selected on a single path, the phosphor group box gains four outward mid-edge circles (left/right/top/bottom). Hovering one shows the live ghost-circle + dashed-line align preview; clicking or dragging commits the snap to that edge. Status strip reports the preview and the result. Builds on the existing multi-select group box, scale/rotation handles, and inspector align preview. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Path point align/distribute live preview. Hovering the L/C/R T/M/B or Dist H/V buttons in the Path inspector shows phosphor ghost circles and dashed lines on the canvas from each selected point to its target position. Status strip reports the preview. Click still commits the alignment. Builds on the existing multi-select point tools. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -18,9 +19,9 @@
 - Iteration: Path point multi-select + Nudge. Shift-click anchors toggles selection (phosphor fills when 2+). Arrow keys nudge the selected points (or the active edit hit) in local space instead of the whole path. Status strip reports count. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-02T10:07Z — Live path-split preview for knife.
+2026-11-02T13:10Z — Reverse-arrow indicators on individual flipped axes.
 
 ## Next recommended
-- Better reverse-arrow indicators on individual flipped axes.
-- Or: on-canvas distribute handles.
+- On-canvas distribute handles.
 - Or: knife hover single-split ghost.
+- Or: inspector live numeric preview for path points.

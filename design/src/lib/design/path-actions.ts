@@ -905,7 +905,10 @@ export function scaleSelectedPathPoints(
   );
   const pct = Math.round(((Math.abs(sx) + Math.abs(sy)) / 2) * 100);
   const lock = shiftKey ? " · aspect" : "";
-  const flip = sx < 0 || sy < 0 ? " · flip" : "";
+  let flip = "";
+  if (sx < 0 && sy < 0) flip = " · flip XY";
+  else if (sx < 0) flip = " · flip X";
+  else if (sy < 0) flip = " · flip Y";
   setStudioStatus(`Scaled ${coords.length} points · ${pct}%${lock}${flip}`);
   return true;
 }

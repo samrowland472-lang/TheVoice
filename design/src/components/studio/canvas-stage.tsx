@@ -928,22 +928,53 @@ function drawSelection(
           ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
           ctx.setLineDash([]);
 
-          // Flip feedback: crossed diagonals when any axis is negative
+          // Flip feedback: reverse-arrow indicators on individual flipped axes
           if (scaleFlip && (scaleFlip.x || scaleFlip.y)) {
             ctx.save();
             ctx.strokeStyle = "#ff6b6b";
+            ctx.fillStyle = "#ff6b6b";
             ctx.lineWidth = 1.5 / vp.zoom;
             ctx.setLineDash([]);
             const bx = minX - pad;
             const by = minY - pad;
             const bw = maxX - minX + pad * 2;
             const bh = maxY - minY + pad * 2;
-            ctx.beginPath();
-            ctx.moveTo(bx, by);
-            ctx.lineTo(bx + bw, by + bh);
-            ctx.moveTo(bx + bw, by);
-            ctx.lineTo(bx, by + bh);
-            ctx.stroke();
+            const cx = bx + bw / 2;
+            const cy = by + bh / 2;
+            const arrowLen = Math.min(bw, bh) * 0.25;
+            const head = 6 / vp.zoom;
+
+            function drawArrowhead(ax: number, ay: number, angle: number) {
+              ctx.beginPath();
+              ctx.moveTo(ax, ay);
+              ctx.lineTo(ax + Math.cos(angle + 2.4) * head, ay + Math.sin(angle + 2.4) * head);
+              ctx.lineTo(ax + Math.cos(angle - 2.4) * head, ay + Math.sin(angle - 2.4) * head);
+              ctx.closePath();
+              ctx.fill();
+            }
+
+            if (scaleFlip.x) {
+              // Horizontal reverse arrows (pointing inward)
+              const left = cx - arrowLen;
+              const right = cx + arrowLen;
+              ctx.beginPath();
+              ctx.moveTo(left + head * 0.6, cy);
+              ctx.lineTo(right - head * 0.6, cy);
+              ctx.stroke();
+              drawArrowhead(left, cy, Math.PI); // pointing left
+              drawArrowhead(right, cy, 0); // pointing right
+            }
+            if (scaleFlip.y) {
+              // Vertical reverse arrows (pointing inward)
+              const top = cy - arrowLen;
+              const bot = cy + arrowLen;
+              ctx.beginPath();
+              ctx.moveTo(cx, top + head * 0.6);
+              ctx.lineTo(cx, bot - head * 0.6);
+              ctx.stroke();
+              drawArrowhead(cx, top, -Math.PI / 2); // pointing up
+              drawArrowhead(cx, bot, Math.PI / 2); // pointing down
+            }
             ctx.restore();
           }
 
@@ -969,8 +1000,8 @@ function drawSelection(
           for (const [hx, hy] of handles) {
             ctx.fillRect(hx - half, hy - half, size, size);
             ctx.strokeRect(hx - half, hy - half, size, size);
-            // Cross the handle if flipped
-            if (scaleFlip && (scaleFlip.x || scaleFlip.y)) {
+            // Cross the handle if both axes flipped
+            if (scaleFlip && scaleFlip.x && scaleFlip.y) {
               ctx.strokeStyle = "#ff6b6b";
               ctx.beginPath();
               ctx.moveTo(hx - half + 1 / vp.zoom, hy - half + 1 / vp.zoom);
