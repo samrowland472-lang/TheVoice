@@ -14,11 +14,13 @@ import {
   alignSelectedPathPoints,
   appendPenPoint,
   clearPathPointAlignPreview,
+  distributeSelectedPathPoints,
   editPathHit,
   joinSelectedPathToNearest,
   knifeCutStroke,
   lastPathScale,
   previewAlignSelectedPathPoints,
+  previewDistributeSelectedPathPoints,
   rotateSelectedPathPoints,
   scaleSelectedPathPoints,
   setPathEditHit,
@@ -80,6 +82,11 @@ type DragKind =
       type: "path-points-align";
       id: string;
       edge: AlignEdge;
+    }
+  | {
+      type: "path-points-dist";
+      id: string;
+      axis: "h" | "v";
     }
   | { type: "knife"; startX: number; startY: number; endX?: number; endY?: number };
 
@@ -358,6 +365,27 @@ export default function CanvasStage() {
                 return;
               }
             }
+
+            // Distribute handles (further out, 3+ points)
+            if (pathPointSelection.length >= 3) {
+              const distOff = 32 / viewport.zoom;
+              const distHitR = 14 / viewport.zoom;
+              const distHandles: { x: number; y: number; axis: "h" | "v" }[] = [
+                { x: box.x - distOff, y: box.y + box.h / 2, axis: "h" },
+                { x: box.x + box.w + distOff, y: box.y + box.h / 2, axis: "h" },
+                { x: box.x + box.w / 2, y: box.y - distOff, axis: "v" },
+                { x: box.x + box.w / 2, y: box.y + box.h + distOff, axis: "v" },
+              ];
+              for (const dh of distHandles) {
+                const d = Math.hypot(localPt.x - dh.x, localPt.y - dh.y);
+                if (d <= distHitR) {
+                  previewDistributeSelectedPathPoints(dh.axis);
+                  drag.current = { type: "path-points-dist", id: n.id, axis: dh.axis };
+                  setStudioStatus(`Distribute ${dh.axis === "h" ? "H" : "V"} · drag to apply`);
+                  return;
+                }
+              }
+            }
           }
         }
       }
@@ -537,6 +565,27 @@ export default function CanvasStage() {
           }
           if (hitEdge) {
             previewAlignSelectedPathPoints(hitEdge);
+          } else if (pathPointSelection.length >= 3) {
+            const distOff = 32 / viewport.zoom;
+            const distHitR = 14 / viewport.zoom;
+            const distHandles: { x: number; y: number; axis: "h" | "v" }[] = [
+              { x: box.x - distOff, y: box.y + box.h / 2, axis: "h" },
+              { x: box.x + box.w + distOff, y: box.y + box.h / 2, axis: "h" },
+              { x: box.x + box.w / 2, y: box.y - distOff, axis: "v" },
+              { x: box.x + box.w / 2, y: box.y + box.h + distOff, axis: "v" },
+            ];
+            let hitAxis: "h" | "v" | null = null;
+            for (const dh of distHandles) {
+              if (Math.hypot(localPt.x - dh.x, localPt.y - dh.y) <= distHitR) {
+                hitAxis = dh.axis;
+                break;
+              }
+            }
+            if (hitAxis) {
+              previewDistributeSelectedPathPoints(hitAxis);
+            } else {
+              clearPathPointAlignPreview();
+            }
           } else {
             clearPathPointAlignPreview();
           }
@@ -592,6 +641,10 @@ export default function CanvasStage() {
       return;
     }
     if (d.type === "path-points-align") {
+      // Preview already set on down; nothing to update during drag
+      return;
+    }
+    if (d.type === "path-points-dist") {
       // Preview already set on down; nothing to update during drag
       return;
     }
@@ -676,6 +729,11 @@ export default function CanvasStage() {
     setScaleFlip(null);
     if (d?.type === "path-points-align") {
       alignSelectedPathPoints(d.edge);
+      clearPathPointAlignPreview();
+      return;
+    }
+    if (d?.type === "path-points-dist") {
+      distributeSelectedPathPoints(d.axis);
       clearPathPointAlignPreview();
       return;
     }
@@ -1044,6 +1102,26 @@ function drawSelection(
             ctx.arc(a.x, a.y, ar, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+          }
+
+          // Distribute handles (further out, only when 3+ points): small squares
+          if (pathPointSelection.length >= 3) {
+            const distOff = 32 / vp.zoom;
+            const ds = 6 / vp.zoom;
+            const halfDs = ds / 2;
+            const dists = [
+              { x: boxX - distOff, y: boxY + boxH / 2 }, // left H
+              { x: boxX + boxW + distOff, y: boxY + boxH / 2 }, // right H
+              { x: boxX + boxW / 2, y: boxY - distOff }, // top V
+              { x: boxX + boxW / 2, y: boxY + boxH + distOff }, // bottom V
+            ];
+            ctx.fillStyle = "#3fc6ff";
+            ctx.strokeStyle = "#06170f";
+            ctx.lineWidth = 1 / vp.zoom;
+            for (const d of dists) {
+              ctx.fillRect(d.x - halfDs, d.y - halfDs, ds, ds);
+              ctx.strokeRect(d.x - halfDs, d.y - halfDs, ds, ds);
+            }
           }
         }
         ctx.restore();
