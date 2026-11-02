@@ -30,6 +30,12 @@ const MAX_HISTORY = 60;
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | { type: "fit-sel" } | null;
 
+export type PathPointAlignPreview = {
+  nodeId: string;
+  edge: string;
+  points: { index: number; hole?: number; fromX: number; fromY: number; toX: number; toY: number }[];
+} | null;
+
 export const useDesign = create<any>((set: any, get: any) => ({
   index: [],
   doc: null,
@@ -88,6 +94,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   strokeGhost: null as StrokeGhost | null,
   typeGhost: null as TypeGhost | null,
   pathOrderGhost: null as PathNode | null,
+  pathPointAlignPreview: null as PathPointAlignPreview,
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id) => {
     const doc = loadDoc(id);
@@ -290,6 +297,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   },
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
   setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
+  setPathPointAlignPreview: (preview: PathPointAlignPreview) => set({ pathPointAlignPreview: preview }),
   setTypeGhost: (ghost: TypeGhost) => set({ typeGhost: ghost }),
   setPathOrderGhost: (ghost: PathNode | null) => set({ pathOrderGhost: ghost }),
   requestFit: () => set({ viewIntent: { type: "fit" } }),

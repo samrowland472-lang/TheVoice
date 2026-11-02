@@ -1037,6 +1037,69 @@ export function alignSelectedPathPoints(edge: AlignEdge): boolean {
   return true;
 }
 
+/** Compute align positions for live preview (does not commit). */
+export function previewAlignSelectedPathPoints(edge: AlignEdge): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+  let targetX: number | null = null;
+  let targetY: number | null = null;
+  if (edge === "left") targetX = minX;
+  else if (edge === "center") targetX = midX;
+  else if (edge === "right") targetX = maxX;
+  else if (edge === "top") targetY = minY;
+  else if (edge === "middle") targetY = midY;
+  else if (edge === "bottom") targetY = maxY;
+  const points = coords.map((c) => ({
+    index: c.sel.index,
+    hole: c.sel.hole,
+    fromX: c.x,
+    fromY: c.y,
+    toX: targetX != null ? targetX : c.x,
+    toY: targetY != null ? targetY : c.y,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge,
+    points,
+  });
+  setStudioStatus(`Preview · Align ${edge} · ${points.length} points`);
+  return true;
+}
+
+export function clearPathPointAlignPreview() {
+  const s = useDesign.getState();
+  s.setPathPointAlignPreview?.(null);
+  // status will be overwritten by normal hover or leave
+}
+
+
 /** Distribute multi-selected path points evenly between extremes (local space). Needs 3+. */
 export function distributeSelectedPathPoints(axis: DistAxis): boolean {
   const s = useDesign.getState();
@@ -1084,3 +1147,50 @@ export function distributeSelectedPathPoints(axis: DistAxis): boolean {
   setStudioStatus(`Distributed ${coords.length} points · ${axis === "h" ? "horizontal" : "vertical"}`);
   return true;
 }
+
+/** Compute distribute positions for live preview (does not commit). */
+export function previewDistributeSelectedPathPoints(axis: DistAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start = axis === "h" ? first.x : first.y;
+  const end = axis === "h" ? last.x : last.y;
+  const step = (end - start) / (sorted.length - 1);
+  const points = sorted.map((item, i) => ({
+    index: item.sel.index,
+    hole: item.sel.hole,
+    fromX: item.x,
+    fromY: item.y,
+    toX: axis === "h" ? start + step * i : item.x,
+    toY: axis === "v" ? start + step * i : item.y,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge: axis === "h" ? "dist-h" : "dist-v",
+    points,
+  });
+  setStudioStatus(`Preview · Dist ${axis === "h" ? "H" : "V"} · ${points.length} points`);
+  return true;
+}
+

@@ -1,5 +1,5 @@
 import { autoSmoothPoint, smoothPathCorners } from "@/lib/design/path-curve";
-import { alignSelectedPathPoints, distributeSelectedPathPoints, setPathEditHit } from "@/lib/design/path-actions";
+import { alignSelectedPathPoints, distributeSelectedPathPoints, previewAlignSelectedPathPoints, previewDistributeSelectedPathPoints, clearPathPointAlignPreview, setPathEditHit } from "@/lib/design/path-actions";
 import { dropHole, holeFillRule, pathFillRule, setHoleFillRule, type PathFillRule } from "@/lib/design/fill-rule";
 import { useDesign } from "@/lib/design/store";
 import type { PathNode, PathPoint } from "@/lib/design/types";
@@ -186,18 +186,18 @@ export function PathInspector({ node }: { node: PathNode }) {
             <div className="text-[10px] text-ink-dim">
               {pointSel.length} points selected · align / distribute
             </div>
-            <div className="grid grid-cols-3 gap-1">
-              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("left")} title="Align selected points left">L</button>
-              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("center")} title="Align selected points center">C</button>
-              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("right")} title="Align selected points right">R</button>
-              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("top")} title="Align selected points top">T</button>
-              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("middle")} title="Align selected points middle">M</button>
-              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => alignSelectedPathPoints("bottom")} title="Align selected points bottom">B</button>
+            <div className="grid grid-cols-3 gap-1" onMouseLeave={() => clearPathPointAlignPreview()}>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("left"); }} onMouseEnter={() => previewAlignSelectedPathPoints("left")} title="Align selected points left">L</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("center"); }} onMouseEnter={() => previewAlignSelectedPathPoints("center")} title="Align selected points center">C</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("right"); }} onMouseEnter={() => previewAlignSelectedPathPoints("right")} title="Align selected points right">R</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("top"); }} onMouseEnter={() => previewAlignSelectedPathPoints("top")} title="Align selected points top">T</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("middle"); }} onMouseEnter={() => previewAlignSelectedPathPoints("middle")} title="Align selected points middle">M</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("bottom"); }} onMouseEnter={() => previewAlignSelectedPathPoints("bottom")} title="Align selected points bottom">B</button>
             </div>
             {pointSel.length >= 3 && (
-              <div className="grid grid-cols-2 gap-1">
-                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => distributeSelectedPathPoints("h")} title="Distribute selected points horizontally">Dist H</button>
-                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => distributeSelectedPathPoints("v")} title="Distribute selected points vertically">Dist V</button>
+              <div className="grid grid-cols-2 gap-1" onMouseLeave={() => clearPathPointAlignPreview()}>
+                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); distributeSelectedPathPoints("h"); }} onMouseEnter={() => previewDistributeSelectedPathPoints("h")} title="Distribute selected points horizontally">Dist H</button>
+                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); distributeSelectedPathPoints("v"); }} onMouseEnter={() => previewDistributeSelectedPathPoints("v")} title="Distribute selected points vertically">Dist V</button>
               </div>
             )}
           </div>
