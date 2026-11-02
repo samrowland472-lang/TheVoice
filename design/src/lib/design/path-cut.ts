@@ -374,3 +374,37 @@ export function strokeHitsCompound(
   });
   return out;
 }
+
+/** Resulting open contours a knife stroke would produce on this path (local space). */
+export function knifeSplitPieces(
+  n: PathNode,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+): PathPoint[][] {
+  const a = { x: ax - n.x, y: ay - n.y };
+  const b = { x: bx - n.x, y: by - n.y };
+  const pieces: PathPoint[][] = [];
+  for (const part of explodeTwistedPath(n)) {
+    const hits = strokeHitsCompound(part, a, b);
+    if (!hits.length) continue;
+    const groups = new Map<number | string, SegmentHit[]>();
+    for (const h of hits) {
+      const key = h.hole == null ? "outer" : h.hole;
+      const arr = groups.get(key) ?? [];
+      arr.push(h.hit);
+      groups.set(key, arr);
+    }
+    for (const [key, hitList] of groups) {
+      const ring = key === "outer" ? part.points : (part.holes?.[Number(key)] ?? []);
+      if (ring.length < 2) continue;
+      const closed = key === "outer" ? part.closed : true;
+      const result = cutContourMany(ring, closed, hitList);
+      for (const piece of result) {
+        if (piece.length >= 2) pieces.push(piece);
+      }
+    }
+  }
+  return pieces;
+}

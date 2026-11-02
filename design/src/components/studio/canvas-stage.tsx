@@ -27,7 +27,7 @@ import {
   type AlignEdge,
 } from "@/lib/design/path-actions";
 import { asEditablePath } from "@/lib/design/shape-to-path";
-import { knifeStrokePreview, knifePreviewPoint } from "@/lib/design/path-cut";
+import { knifeStrokePreview, knifePreviewPoint, knifeSplitPieces } from "@/lib/design/path-cut";
 import { hitResizeHandle, type ResizeHandle } from "@/lib/design/box-resize";
 import {
   drawPathNodeTangents,
@@ -562,7 +562,14 @@ export default function CanvasStage() {
       const lenStr = len < 10 ? len.toFixed(1) : Math.round(len).toString();
       const cuts = knifeCutCount(d.startX, d.startY, docPt.x, docPt.y, doc.nodes);
       const cutStr = cuts === 0 ? "miss" : cuts === 1 ? "1 cut" : `${cuts} cuts`;
-      setStudioStatus(`Knife · ${lenStr}px · ${Math.round(ang)}° · ${cutStr}`);
+      let pieces = 0;
+      for (const n of doc.nodes) {
+        if (!n.visible || n.locked) continue;
+        const ep = asEditablePath(n);
+        if (ep) pieces += knifeSplitPieces(ep, d.startX, d.startY, docPt.x, docPt.y).length;
+      }
+      const pieceStr = pieces > 1 ? ` · ${pieces} pieces` : "";
+      setStudioStatus(`Knife · ${lenStr}px · ${Math.round(ang)}° · ${cutStr}${pieceStr}`);
       return;
     }
     if (d.type === "move") {
@@ -1156,6 +1163,28 @@ function drawKnifeStroke(
     ctx.lineTo(m.x, m.y + r * 0.7);
     ctx.stroke();
   }
+
+  // Live path-split preview: ghost outlines of the resulting pieces
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+  ctx.lineWidth = 1.25 / vp.zoom;
+  ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  for (const n of ordered) {
+    const p = asEditablePath(n);
+    if (!p) continue;
+    const pieces = knifeSplitPieces(p, ax, ay, bx, by);
+    for (const piece of pieces) {
+      if (piece.length < 2) continue;
+      ctx.beginPath();
+      const first = piece[0]!;
+      ctx.moveTo(n.x + first.x, n.y + first.y);
+      for (let i = 1; i < piece.length; i++) {
+        const pt = piece[i]!;
+        ctx.lineTo(n.x + pt.x, n.y + pt.y);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]);
 
   ctx.restore();
 }
