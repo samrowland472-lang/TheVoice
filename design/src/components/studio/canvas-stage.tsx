@@ -11,16 +11,20 @@ import { nodeCenter, degToRad, rotatePoint } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import {
+  alignSelectedPathPoints,
   appendPenPoint,
+  clearPathPointAlignPreview,
   editPathHit,
   joinSelectedPathToNearest,
   knifeCutStroke,
   lastPathScale,
+  previewAlignSelectedPathPoints,
   rotateSelectedPathPoints,
   scaleSelectedPathPoints,
   setPathEditHit,
   setPathPointSelection,
   togglePathPointSelection,
+  type AlignEdge,
 } from "@/lib/design/path-actions";
 import { asEditablePath } from "@/lib/design/shape-to-path";
 import { knifeStrokePreview, knifePreviewPoint } from "@/lib/design/path-cut";
@@ -71,6 +75,11 @@ type DragKind =
       handle: ResizeHandle;
       basePoints: PathPoint[];
       baseHoles?: PathPoint[][];
+    }
+  | {
+      type: "path-points-align";
+      id: string;
+      edge: AlignEdge;
     }
   | { type: "knife"; startX: number; startY: number; endX?: number; endY?: number };
 
@@ -330,6 +339,25 @@ export default function CanvasStage() {
               setStudioStatus("Scale path points");
               return;
             }
+
+            // Alignment handles (outward mid-edge circles)
+            const alignOff = 16 / viewport.zoom;
+            const alignHitR = 14 / viewport.zoom;
+            const alignHandles: { x: number; y: number; edge: AlignEdge }[] = [
+              { x: box.x - alignOff, y: box.y + box.h / 2, edge: "left" },
+              { x: box.x + box.w + alignOff, y: box.y + box.h / 2, edge: "right" },
+              { x: box.x + box.w / 2, y: box.y - alignOff, edge: "top" },
+              { x: box.x + box.w / 2, y: box.y + box.h + alignOff, edge: "bottom" },
+            ];
+            for (const ah of alignHandles) {
+              const d = Math.hypot(localPt.x - ah.x, localPt.y - ah.y);
+              if (d <= alignHitR) {
+                previewAlignSelectedPathPoints(ah.edge);
+                drag.current = { type: "path-points-align", id: n.id, edge: ah.edge };
+                setStudioStatus(`Align ${ah.edge} · drag to snap`);
+                return;
+              }
+            }
           }
         }
       }
@@ -464,6 +492,58 @@ export default function CanvasStage() {
       return;
     }
 
+    // Alignment handle hover preview (select tool, multi path points)
+    if (tool === "select" && !drag.current && selection.length === 1 && pathPointSelection.length > 1) {
+      const n = doc.nodes.find((x) => x.id === selection[0]);
+      if (n && isPath(n)) {
+        const coords: { x: number; y: number }[] = [];
+        for (const sel of pathPointSelection) {
+          const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+          const pt = ring?.[sel.index];
+          if (pt) coords.push({ x: pt.x, y: pt.y });
+        }
+        if (coords.length > 1) {
+          const xs = coords.map((c) => c.x);
+          const ys = coords.map((c) => c.y);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+          const pad = 6 / viewport.zoom;
+          const box = {
+            x: n.x + minX - pad,
+            y: n.y + minY - pad,
+            w: maxX - minX + pad * 2,
+            h: maxY - minY + pad * 2,
+          };
+          const nc = nodeCenter(n);
+          const localPt = n.rotation
+            ? rotatePoint(docPt.x, docPt.y, nc.x, nc.y, -n.rotation)
+            : docPt;
+          const alignOff = 16 / viewport.zoom;
+          const hitR = 14 / viewport.zoom;
+          const alignHandles: { x: number; y: number; edge: AlignEdge }[] = [
+            { x: box.x - alignOff, y: box.y + box.h / 2, edge: "left" },
+            { x: box.x + box.w + alignOff, y: box.y + box.h / 2, edge: "right" },
+            { x: box.x + box.w / 2, y: box.y - alignOff, edge: "top" },
+            { x: box.x + box.w / 2, y: box.y + box.h + alignOff, edge: "bottom" },
+          ];
+          let hitEdge: AlignEdge | null = null;
+          for (const ah of alignHandles) {
+            if (Math.hypot(localPt.x - ah.x, localPt.y - ah.y) <= hitR) {
+              hitEdge = ah.edge;
+              break;
+            }
+          }
+          if (hitEdge) {
+            previewAlignSelectedPathPoints(hitEdge);
+          } else {
+            clearPathPointAlignPreview();
+          }
+        }
+      }
+    }
+
     if (!drag.current) return;
     const d = drag.current;
 
@@ -502,6 +582,10 @@ export default function CanvasStage() {
       let deg = ((ang - d.startAngle) * 180) / Math.PI;
       deg = snap15(deg, e.shiftKey);
       rotateSelectedPathPoints(deg, d.basePoints, d.baseHoles);
+      return;
+    }
+    if (d.type === "path-points-align") {
+      // Preview already set on down; nothing to update during drag
       return;
     }
     if (d.type === "path-points-scale") {
@@ -583,6 +667,11 @@ export default function CanvasStage() {
     drag.current = null;
     setMarquee(null);
     setScaleFlip(null);
+    if (d?.type === "path-points-align") {
+      alignSelectedPathPoints(d.edge);
+      clearPathPointAlignPreview();
+      return;
+    }
     if (d?.type === "knife") {
       const bx = d.endX ?? d.startX;
       const by = d.endY ?? d.startY;
@@ -899,6 +988,25 @@ function drawSelection(
           ctx.fillStyle = "#06170f";
           ctx.fill();
           ctx.stroke();
+
+          // Alignment handles: small phosphor circles outward from mid-edges
+          const alignOff = 16 / vp.zoom;
+          const ar = 5 / vp.zoom;
+          const aligns = [
+            { x: boxX - alignOff, y: boxY + boxH / 2 },
+            { x: boxX + boxW + alignOff, y: boxY + boxH / 2 },
+            { x: boxX + boxW / 2, y: boxY - alignOff },
+            { x: boxX + boxW / 2, y: boxY + boxH + alignOff },
+          ];
+          ctx.fillStyle = "#3fc6ff";
+          ctx.strokeStyle = "#06170f";
+          ctx.lineWidth = 1 / vp.zoom;
+          for (const a of aligns) {
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, ar, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
         }
         ctx.restore();
       }

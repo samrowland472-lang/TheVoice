@@ -962,7 +962,7 @@ export function nudgeSelectedPathPoints(dx: number, dy: number): boolean {
   return true;
 }
 
-type AlignEdge = "left" | "center" | "right" | "top" | "middle" | "bottom";
+export type AlignEdge = "left" | "center" | "right" | "top" | "middle" | "bottom";
 type DistAxis = "h" | "v";
 
 function selectedPointCoords(
