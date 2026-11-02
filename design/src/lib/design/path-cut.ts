@@ -260,6 +260,22 @@ export function knifePreviewPoint(n: PathNode, lx: number, ly: number, zoom: num
   return hit ? { x: hit.x, y: hit.y } : null;
 }
 
+export function knifePointSplitPieces(
+  n: PathNode,
+  lx: number,
+  ly: number,
+  zoom: number,
+): PathPoint[][] {
+  const preview = knifePreviewLobe(n, lx, ly, zoom);
+  if (!preview) return [];
+  const found = hitCompoundSegment(preview.lobe, lx, ly, zoom);
+  if (!found) return [];
+  const ring = found.hole == null ? preview.lobe.points : preview.lobe.holes?.[found.hole];
+  if (!ring || ring.length < 2) return [];
+  const closed = found.hole == null ? preview.lobe.closed : true;
+  return cutContourMany(ring, closed, [found.hit]);
+}
+
 /** Nearest planar lobe under the pointer — the ring a click-cut would open. */
 export function knifePreviewLobe(
   n: PathNode,

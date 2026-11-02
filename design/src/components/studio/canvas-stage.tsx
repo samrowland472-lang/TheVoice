@@ -29,7 +29,7 @@ import {
   type AlignEdge,
 } from "@/lib/design/path-actions";
 import { asEditablePath } from "@/lib/design/shape-to-path";
-import { knifeStrokePreview, knifePreviewPoint, knifeSplitPieces } from "@/lib/design/path-cut";
+import { knifeStrokePreview, knifePreviewPoint, knifeSplitPieces, knifePointSplitPieces } from "@/lib/design/path-cut";
 import { hitResizeHandle, type ResizeHandle } from "@/lib/design/box-resize";
 import {
   drawPathNodeTangents,
@@ -186,7 +186,7 @@ export default function CanvasStage() {
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
-    else if (knifeHover) drawKnifeHover(ctx, knifeHover, viewport, dpr);
+    else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
   }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview]);
 
   useEffect(() => {
@@ -512,7 +512,30 @@ export default function CanvasStage() {
       }
       if (best && best.dist < 20 / viewport.zoom) {
         setKnifeHover(best);
-        setStudioStatus("Knife · cut here");
+        let pieceNote = "";
+        // Compute piece count for status (same path logic as draw)
+        const preferred = selection[0];
+        const paths: DesignNode[] = [];
+        for (const n of doc.nodes) {
+          if (!n.visible || n.locked) continue;
+          const p = asEditablePath(n);
+          if (p && p.points.length >= 2) paths.push(p);
+        }
+        const ordered = preferred
+          ? [paths.find((n) => n.id === preferred), ...paths.filter((n) => n.id !== preferred)].filter(Boolean) as DesignNode[]
+          : paths;
+        for (const n of ordered) {
+          const p = asEditablePath(n);
+          if (!p) continue;
+          const local = pathWorldToLocal(p, best.x, best.y);
+          const pieces = knifePointSplitPieces(p, local.x, local.y, viewport.zoom);
+          const valid = pieces.filter((pc) => pc.length >= 2).length;
+          if (valid > 1) {
+            pieceNote = ` · ${valid} pieces`;
+            break;
+          }
+        }
+        setStudioStatus(`Knife · cut here${pieceNote}`);
       } else {
         setKnifeHover(null);
         setStudioStatus("Knife · drag to cut");
@@ -1301,6 +1324,7 @@ function drawKnifeStroke(
 function drawKnifeHover(
   ctx: CanvasRenderingContext2D,
   mark: { x: number; y: number },
+  doc: { nodes: DesignNode[] },
   vp: Viewport,
   dpr: number,
 ) {
@@ -1324,6 +1348,40 @@ function drawKnifeHover(
   ctx.moveTo(mark.x, mark.y - r * 0.8);
   ctx.lineTo(mark.x, mark.y + r * 0.8);
   ctx.stroke();
+
+  // Single-split ghost outlines for the point cut
+  const preferred = useDesign.getState().selection[0];
+  const paths: DesignNode[] = [];
+  for (const n of doc.nodes) {
+    if (!n.visible || n.locked) continue;
+    const p = asEditablePath(n);
+    if (p && p.points.length >= 2) paths.push(p);
+  }
+  const ordered = preferred
+    ? [paths.find((n) => n.id === preferred), ...paths.filter((n) => n.id !== preferred)].filter(Boolean) as DesignNode[]
+    : paths;
+
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+  ctx.lineWidth = 1.25 / vp.zoom;
+  ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  for (const n of ordered) {
+    const p = asEditablePath(n);
+    if (!p) continue;
+    const local = pathWorldToLocal(p, mark.x, mark.y);
+    const pieces = knifePointSplitPieces(p, local.x, local.y, vp.zoom);
+    for (const piece of pieces) {
+      if (piece.length < 2) continue;
+      ctx.beginPath();
+      const first = piece[0]!;
+      ctx.moveTo(n.x + first.x, n.y + first.y);
+      for (let i = 1; i < piece.length; i++) {
+        const pt = piece[i]!;
+        ctx.lineTo(n.x + pt.x, n.y + pt.y);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]);
 
   ctx.restore();
 }
