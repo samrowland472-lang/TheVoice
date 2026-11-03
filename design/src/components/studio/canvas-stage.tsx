@@ -15,6 +15,8 @@ import {
   appendPenPoint,
   clearPathPointAlignPreview,
   distributeSelectedPathPoints,
+  flipSelectedPathPoints,
+  previewFlipSelectedPathPoints,
   editPathHit,
   joinSelectedPathToNearest,
   knifeCutStroke,
@@ -87,6 +89,11 @@ type DragKind =
       type: "path-points-dist";
       id: string;
       axis: "h" | "v";
+    }
+  | {
+      type: "path-points-flip";
+      id: string;
+      axis: "x" | "y" | "xy";
     }
   | { type: "knife"; startX: number; startY: number; endX?: number; endY?: number };
 
@@ -389,6 +396,25 @@ export default function CanvasStage() {
                 }
               }
             }
+
+            // Flip handles (further out): H on left/right, V on top/bottom, XY on corners optional
+            const flipOff = 48 / viewport.zoom;
+            const flipHitR = 14 / viewport.zoom;
+            const flipHandles: { x: number; y: number; axis: "x" | "y" }[] = [
+              { x: box.x - flipOff, y: box.y + box.h / 2, axis: "x" },
+              { x: box.x + box.w + flipOff, y: box.y + box.h / 2, axis: "x" },
+              { x: box.x + box.w / 2, y: box.y - flipOff, axis: "y" },
+              { x: box.x + box.w / 2, y: box.y + box.h + flipOff, axis: "y" },
+            ];
+            for (const fh of flipHandles) {
+              const d = Math.hypot(localPt.x - fh.x, localPt.y - fh.y);
+              if (d <= flipHitR) {
+                previewFlipSelectedPathPoints(fh.axis);
+                drag.current = { type: "path-points-flip", id: n.id, axis: fh.axis };
+                setStudioStatus(`Flip ${fh.axis.toUpperCase()} · drag to apply`);
+                return;
+              }
+            }
           }
         }
       }
@@ -591,29 +617,52 @@ export default function CanvasStage() {
           }
           if (hitEdge) {
             previewAlignSelectedPathPoints(hitEdge);
-          } else if (pathPointSelection.length >= 3) {
-            const distOff = 32 / viewport.zoom;
-            const distHitR = 14 / viewport.zoom;
-            const distHandles: { x: number; y: number; axis: "h" | "v" }[] = [
-              { x: box.x - distOff, y: box.y + box.h / 2, axis: "h" },
-              { x: box.x + box.w + distOff, y: box.y + box.h / 2, axis: "h" },
-              { x: box.x + box.w / 2, y: box.y - distOff, axis: "v" },
-              { x: box.x + box.w / 2, y: box.y + box.h + distOff, axis: "v" },
-            ];
-            let hitAxis: "h" | "v" | null = null;
-            for (const dh of distHandles) {
-              if (Math.hypot(localPt.x - dh.x, localPt.y - dh.y) <= distHitR) {
-                hitAxis = dh.axis;
-                break;
+          } else {
+            let handled = false;
+            if (pathPointSelection.length >= 3) {
+              const distOff = 32 / viewport.zoom;
+              const distHitR = 14 / viewport.zoom;
+              const distHandles: { x: number; y: number; axis: "h" | "v" }[] = [
+                { x: box.x - distOff, y: box.y + box.h / 2, axis: "h" },
+                { x: box.x + box.w + distOff, y: box.y + box.h / 2, axis: "h" },
+                { x: box.x + box.w / 2, y: box.y - distOff, axis: "v" },
+                { x: box.x + box.w / 2, y: box.y + box.h + distOff, axis: "v" },
+              ];
+              let hitAxis: "h" | "v" | null = null;
+              for (const dh of distHandles) {
+                if (Math.hypot(localPt.x - dh.x, localPt.y - dh.y) <= distHitR) {
+                  hitAxis = dh.axis;
+                  break;
+                }
+              }
+              if (hitAxis) {
+                previewDistributeSelectedPathPoints(hitAxis);
+                handled = true;
               }
             }
-            if (hitAxis) {
-              previewDistributeSelectedPathPoints(hitAxis);
-            } else {
-              clearPathPointAlignPreview();
+            if (!handled) {
+              // Flip handles (further out)
+              const flipOff = 48 / viewport.zoom;
+              const flipHitR = 14 / viewport.zoom;
+              const flipHandles: { x: number; y: number; axis: "x" | "y" }[] = [
+                { x: box.x - flipOff, y: box.y + box.h / 2, axis: "x" },
+                { x: box.x + box.w + flipOff, y: box.y + box.h / 2, axis: "x" },
+                { x: box.x + box.w / 2, y: box.y - flipOff, axis: "y" },
+                { x: box.x + box.w / 2, y: box.y + box.h + flipOff, axis: "y" },
+              ];
+              let hitFlip: "x" | "y" | null = null;
+              for (const fh of flipHandles) {
+                if (Math.hypot(localPt.x - fh.x, localPt.y - fh.y) <= flipHitR) {
+                  hitFlip = fh.axis;
+                  break;
+                }
+              }
+              if (hitFlip) {
+                previewFlipSelectedPathPoints(hitFlip);
+              } else {
+                clearPathPointAlignPreview();
+              }
             }
-          } else {
-            clearPathPointAlignPreview();
           }
         }
       }
@@ -760,6 +809,11 @@ export default function CanvasStage() {
     }
     if (d?.type === "path-points-dist") {
       distributeSelectedPathPoints(d.axis);
+      clearPathPointAlignPreview();
+      return;
+    }
+    if (d?.type === "path-points-flip") {
+      flipSelectedPathPoints(d.axis);
       clearPathPointAlignPreview();
       return;
     }
@@ -1202,6 +1256,59 @@ function drawSelection(
               ctx.fillRect(d.x - halfDs, d.y - halfDs, ds, ds);
               ctx.strokeRect(d.x - halfDs, d.y - halfDs, ds, ds);
             }
+          }
+
+          // Flip handles (further out): small diamonds with reverse arrows
+          const flipOff = 48 / vp.zoom;
+          const fs = 7 / vp.zoom;
+          const flips = [
+            { x: boxX - flipOff, y: boxY + boxH / 2, axis: "x" },
+            { x: boxX + boxW + flipOff, y: boxY + boxH / 2, axis: "x" },
+            { x: boxX + boxW / 2, y: boxY - flipOff, axis: "y" },
+            { x: boxX + boxW / 2, y: boxY + boxH + flipOff, axis: "y" },
+          ];
+          ctx.fillStyle = "#3fc6ff";
+          ctx.strokeStyle = "#06170f";
+          ctx.lineWidth = 1 / vp.zoom;
+          for (const f of flips) {
+            // diamond
+            ctx.beginPath();
+            ctx.moveTo(f.x, f.y - fs);
+            ctx.lineTo(f.x + fs, f.y);
+            ctx.lineTo(f.x, f.y + fs);
+            ctx.lineTo(f.x - fs, f.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            // simple reverse arrows inside
+            ctx.strokeStyle = "#06170f";
+            ctx.lineWidth = 1.2 / vp.zoom;
+            const al = 3.5 / vp.zoom;
+            if (f.axis === "x") {
+              ctx.beginPath();
+              ctx.moveTo(f.x - al, f.y);
+              ctx.lineTo(f.x + al, f.y);
+              ctx.moveTo(f.x - al + 1.2 / vp.zoom, f.y - 1.5 / vp.zoom);
+              ctx.lineTo(f.x - al, f.y);
+              ctx.lineTo(f.x - al + 1.2 / vp.zoom, f.y + 1.5 / vp.zoom);
+              ctx.moveTo(f.x + al - 1.2 / vp.zoom, f.y - 1.5 / vp.zoom);
+              ctx.lineTo(f.x + al, f.y);
+              ctx.lineTo(f.x + al - 1.2 / vp.zoom, f.y + 1.5 / vp.zoom);
+              ctx.stroke();
+            } else {
+              ctx.beginPath();
+              ctx.moveTo(f.x, f.y - al);
+              ctx.lineTo(f.x, f.y + al);
+              ctx.moveTo(f.x - 1.5 / vp.zoom, f.y - al + 1.2 / vp.zoom);
+              ctx.lineTo(f.x, f.y - al);
+              ctx.lineTo(f.x + 1.5 / vp.zoom, f.y - al + 1.2 / vp.zoom);
+              ctx.moveTo(f.x - 1.5 / vp.zoom, f.y + al - 1.2 / vp.zoom);
+              ctx.lineTo(f.x, f.y + al);
+              ctx.lineTo(f.x + 1.5 / vp.zoom, f.y + al - 1.2 / vp.zoom);
+              ctx.stroke();
+            }
+            ctx.strokeStyle = "#06170f";
+            ctx.lineWidth = 1 / vp.zoom;
           }
         }
         ctx.restore();

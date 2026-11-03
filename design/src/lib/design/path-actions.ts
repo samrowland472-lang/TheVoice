@@ -1239,3 +1239,108 @@ export function clearPathPointNumericPreview() {
   const s = useDesign.getState();
   s.setPathPointNumericPreview?.(null);
 }
+
+type FlipAxis = "x" | "y" | "xy";
+
+/** Flip multi-selected path points (and their Bézier handles) around the selection center.
+ * axis "x" mirrors horizontally (sx=-1), "y" vertically, "xy" both.
+ * Returns true if applied.
+ */
+export function flipSelectedPathPoints(axis: FlipAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+
+  const sx = axis === "y" ? 1 : -1;
+  const sy = axis === "x" ? 1 : -1;
+
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const nx = cx + dx * sx;
+    const ny = cy + dy * sy;
+    const scaleH = (h: { x: number; y: number } | null | undefined) => {
+      if (!h) return h ?? null;
+      return { x: h.x * sx, y: h.y * sy };
+    };
+    ring[sel.index] = { ...p, x: nx, y: ny, in: scaleH(p.in), out: scaleH(p.out) };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  const label = axis === "xy" ? "XY" : axis.toUpperCase();
+  setStudioStatus(`Flipped ${coords.length} points · ${label}`);
+  return true;
+}
+
+/** Compute flip positions for live preview (does not commit). */
+export function previewFlipSelectedPathPoints(axis: FlipAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const sx = axis === "y" ? 1 : -1;
+  const sy = axis === "x" ? 1 : -1;
+  const points = coords.map((item) => ({
+    index: item.sel.index,
+    hole: item.sel.hole,
+    fromX: item.x,
+    fromY: item.y,
+    toX: cx + (item.x - cx) * sx,
+    toY: cy + (item.y - cy) * sy,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge: `flip-${axis}`,
+    points,
+  });
+  setStudioStatus(`Preview · Flip ${axis === "xy" ? "XY" : axis.toUpperCase()} · ${points.length} points`);
+  return true;
+}
