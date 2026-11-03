@@ -36,9 +36,10 @@ import { hitResizeHandle, type ResizeHandle } from "@/lib/design/box-resize";
 import {
   drawPathNodeTangents,
   hitPathNode,
+  hitPathLengthLabel,
   pathWorldToLocal,
 } from "@/lib/design/path-edit";
-import { closePathWithCubic, nearPenClose } from "@/lib/design/path-curve";
+import { closePathWithCubic, nearPenClose, mirrorHandle } from "@/lib/design/path-curve";
 import { isPath, type DesignNode, type DesignDocument, type PathPoint, type Tool, type Viewport } from "@/lib/design/types";
 import type { PathEditHit } from "@/lib/design/path-edit";
 import { nodesInMarquee } from "@/lib/design/marquee-nodes";
@@ -95,6 +96,15 @@ type DragKind =
       id: string;
       axis: "x" | "y" | "xy";
     }
+  | {
+      type: "path-handle-length";
+      id: string;
+      index: number;
+      arm: "in" | "out";
+      hole?: number;
+      baseVec: { x: number; y: number };
+      started: boolean;
+    }
   | { type: "knife"; startX: number; startY: number; endX?: number; endY?: number };
 
 function snap15(deg: number, force: boolean) {
@@ -125,6 +135,7 @@ export default function CanvasStage() {
   const pathPointAlignPreview = useDesign((s) => s.pathPointAlignPreview);
   const pathPointNumericPreview = useDesign((s) => s.pathPointNumericPreview);
   const pathPointHandleNumericPreview = useDesign((s) => s.pathPointHandleNumericPreview);
+  const showTangentLengths = useDesign((s) => s.showTangentLengths);
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
@@ -191,14 +202,14 @@ export default function CanvasStage() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
-    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip);
+    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -219,7 +230,7 @@ export default function CanvasStage() {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
-      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip);
+      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
@@ -228,7 +239,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -421,6 +432,36 @@ export default function CanvasStage() {
                 setStudioStatus(`Flip ${fh.axis.toUpperCase()} · drag to apply`);
                 return;
               }
+            }
+          }
+        }
+      }
+
+      // On-canvas length label drag (when Len mode / showTangentLengths)
+      if (showTangentLengths && pathEditHit) {
+        for (const n of selected) {
+          if (!isPath(n) || !n.points.length) continue;
+          const labelHit = hitPathLengthLabel(n, docPt.x, docPt.y, viewport.zoom, pathEditHit);
+          if (
+            labelHit &&
+            labelHit.index === pathEditHit.index &&
+            (labelHit.hole ?? undefined) === (pathEditHit.hole ?? undefined)
+          ) {
+            const ring = labelHit.hole == null ? n.points : (n.holes?.[labelHit.hole] ?? []);
+            const pt = ring[labelHit.index];
+            const h = labelHit.arm === "in" ? pt?.in : pt?.out;
+            if (h && (Math.abs(h.x) > 0.2 || Math.abs(h.y) > 0.2)) {
+              drag.current = {
+                type: "path-handle-length",
+                id: n.id,
+                index: labelHit.index,
+                arm: labelHit.arm,
+                hole: labelHit.hole,
+                baseVec: { x: h.x, y: h.y },
+                started: false,
+              };
+              setStudioStatus(`Length ${labelHit.arm} · ${labelHit.length}`);
+              return;
             }
           }
         }
@@ -762,6 +803,53 @@ export default function CanvasStage() {
       deg = snap15(deg, e.shiftKey);
       updateNodes([d.id], { rotation: deg }, false);
       setStudioStatus(`Rotate ${Math.round(deg)}°`);
+      return;
+    }
+    if (d.type === "path-handle-length") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || !isPath(n)) return;
+      if (!d.started) {
+        commit();
+        drag.current = { ...d, started: true };
+      }
+      const ring = d.hole == null ? n.points : (n.holes?.[d.hole] ?? []);
+      const pt = ring[d.index];
+      if (!pt) return;
+      const ax = n.x + pt.x;
+      const ay = n.y + pt.y;
+      const c = nodeCenter(n);
+      const worldAnchor = n.rotation ? rotatePoint(ax, ay, c.x, c.y, n.rotation) : { x: ax, y: ay };
+      const dx = docPt.x - worldAnchor.x;
+      const dy = docPt.y - worldAnchor.y;
+      const newLen = Math.max(0, Math.hypot(dx, dy));
+      const baseLen = Math.hypot(d.baseVec.x, d.baseVec.y) || 1;
+      const scale = newLen / baseLen;
+      const next = { x: d.baseVec.x * scale, y: d.baseVec.y * scale };
+      const s = useDesign.getState();
+      const mirrorKey = `${d.id}:${d.hole ?? ""}:${d.index}`;
+      const mir = !!(s.mirrorPoints && s.mirrorPoints[mirrorKey]);
+      const nextPt = { ...pt };
+      if (mir) {
+        const mirrored = mirrorHandle(next);
+        if (d.arm === "in") {
+          nextPt.in = next;
+          nextPt.out = mirrored;
+        } else {
+          nextPt.out = next;
+          nextPt.in = mirrored;
+        }
+      } else {
+        if (d.arm === "in") nextPt.in = next;
+        else nextPt.out = next;
+      }
+      const nextRing = ring.map((p, i) => (i === d.index ? nextPt : p));
+      const nextNode =
+        d.hole == null
+          ? { ...n, points: nextRing }
+          : { ...n, holes: (n.holes ?? []).map((h, i) => (i === d.hole ? nextRing : h)) };
+      replaceNode(d.id, nextNode, false);
+      setPathEditHit({ index: d.index, arm: d.arm, hole: d.hole });
+      setStudioStatus(`Length ${d.arm} · ${Math.round(newLen)}`);
       return;
     }
     if (d.type === "path-point") {
@@ -1139,6 +1227,7 @@ function drawSelection(
   pathEditHit: PathEditHit | null,
   pathPointSelection: { index: number; hole?: number }[] = [],
   scaleFlip: { x: boolean; y: boolean } | null = null,
+  showLengths = false,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (!selected.length) return;
@@ -1149,7 +1238,7 @@ function drawSelection(
   const phosphor = "#3fc6ff";
   for (const n of selected) {
     if (isPath(n) && n.points.length) {
-      drawPathNodeTangents(ctx, n, vp.zoom, pathEditHit, false);
+      drawPathNodeTangents(ctx, n, vp.zoom, pathEditHit, showLengths);
       // Multi-selected point highlights (phosphor fill)
       if (pathPointSelection.length > 1) {
         ctx.save();
