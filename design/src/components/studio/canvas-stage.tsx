@@ -400,14 +400,18 @@ export default function CanvasStage() {
               }
             }
 
-            // Flip handles (further out): H on left/right, V on top/bottom, XY on corners optional
+            // Flip handles (further out): H on left/right, V on top/bottom, XY on corners
             const flipOff = 48 / viewport.zoom;
             const flipHitR = 14 / viewport.zoom;
-            const flipHandles: { x: number; y: number; axis: "x" | "y" }[] = [
+            const flipHandles: { x: number; y: number; axis: "x" | "y" | "xy" }[] = [
               { x: box.x - flipOff, y: box.y + box.h / 2, axis: "x" },
               { x: box.x + box.w + flipOff, y: box.y + box.h / 2, axis: "x" },
               { x: box.x + box.w / 2, y: box.y - flipOff, axis: "y" },
               { x: box.x + box.w / 2, y: box.y + box.h + flipOff, axis: "y" },
+              { x: box.x - flipOff, y: box.y - flipOff, axis: "xy" },
+              { x: box.x + box.w + flipOff, y: box.y - flipOff, axis: "xy" },
+              { x: box.x - flipOff, y: box.y + box.h + flipOff, axis: "xy" },
+              { x: box.x + box.w + flipOff, y: box.y + box.h + flipOff, axis: "xy" },
             ];
             for (const fh of flipHandles) {
               const d = Math.hypot(localPt.x - fh.x, localPt.y - fh.y);
@@ -644,16 +648,20 @@ export default function CanvasStage() {
               }
             }
             if (!handled) {
-              // Flip handles (further out)
+              // Flip handles (further out): H on left/right, V on top/bottom, XY on corners
               const flipOff = 48 / viewport.zoom;
               const flipHitR = 14 / viewport.zoom;
-              const flipHandles: { x: number; y: number; axis: "x" | "y" }[] = [
+              const flipHandles: { x: number; y: number; axis: "x" | "y" | "xy" }[] = [
                 { x: box.x - flipOff, y: box.y + box.h / 2, axis: "x" },
                 { x: box.x + box.w + flipOff, y: box.y + box.h / 2, axis: "x" },
                 { x: box.x + box.w / 2, y: box.y - flipOff, axis: "y" },
                 { x: box.x + box.w / 2, y: box.y + box.h + flipOff, axis: "y" },
+                { x: box.x - flipOff, y: box.y - flipOff, axis: "xy" },
+                { x: box.x + box.w + flipOff, y: box.y - flipOff, axis: "xy" },
+                { x: box.x - flipOff, y: box.y + box.h + flipOff, axis: "xy" },
+                { x: box.x + box.w + flipOff, y: box.y + box.h + flipOff, axis: "xy" },
               ];
-              let hitFlip: "x" | "y" | null = null;
+              let hitFlip: "x" | "y" | "xy" | null = null;
               for (const fh of flipHandles) {
                 if (Math.hypot(localPt.x - fh.x, localPt.y - fh.y) <= flipHitR) {
                   hitFlip = fh.axis;
@@ -1321,14 +1329,18 @@ function drawSelection(
             }
           }
 
-          // Flip handles (further out): small diamonds with reverse arrows
+          // Flip handles (further out): small diamonds with reverse arrows; corners are XY
           const flipOff = 48 / vp.zoom;
           const fs = 7 / vp.zoom;
           const flips = [
-            { x: boxX - flipOff, y: boxY + boxH / 2, axis: "x" },
-            { x: boxX + boxW + flipOff, y: boxY + boxH / 2, axis: "x" },
-            { x: boxX + boxW / 2, y: boxY - flipOff, axis: "y" },
-            { x: boxX + boxW / 2, y: boxY + boxH + flipOff, axis: "y" },
+            { x: boxX - flipOff, y: boxY + boxH / 2, axis: "x" as const },
+            { x: boxX + boxW + flipOff, y: boxY + boxH / 2, axis: "x" as const },
+            { x: boxX + boxW / 2, y: boxY - flipOff, axis: "y" as const },
+            { x: boxX + boxW / 2, y: boxY + boxH + flipOff, axis: "y" as const },
+            { x: boxX - flipOff, y: boxY - flipOff, axis: "xy" as const },
+            { x: boxX + boxW + flipOff, y: boxY - flipOff, axis: "xy" as const },
+            { x: boxX - flipOff, y: boxY + boxH + flipOff, axis: "xy" as const },
+            { x: boxX + boxW + flipOff, y: boxY + boxH + flipOff, axis: "xy" as const },
           ];
           ctx.fillStyle = "#3fc6ff";
           ctx.strokeStyle = "#06170f";
@@ -1343,7 +1355,7 @@ function drawSelection(
             ctx.closePath();
             ctx.fill();
             ctx.stroke();
-            // simple reverse arrows inside
+            // simple reverse arrows or X inside
             ctx.strokeStyle = "#06170f";
             ctx.lineWidth = 1.2 / vp.zoom;
             const al = 3.5 / vp.zoom;
@@ -1358,7 +1370,7 @@ function drawSelection(
               ctx.lineTo(f.x + al, f.y);
               ctx.lineTo(f.x + al - 1.2 / vp.zoom, f.y + 1.5 / vp.zoom);
               ctx.stroke();
-            } else {
+            } else if (f.axis === "y") {
               ctx.beginPath();
               ctx.moveTo(f.x, f.y - al);
               ctx.lineTo(f.x, f.y + al);
@@ -1368,6 +1380,15 @@ function drawSelection(
               ctx.moveTo(f.x - 1.5 / vp.zoom, f.y + al - 1.2 / vp.zoom);
               ctx.lineTo(f.x, f.y + al);
               ctx.lineTo(f.x + 1.5 / vp.zoom, f.y + al - 1.2 / vp.zoom);
+              ctx.stroke();
+            } else {
+              // XY: small X
+              const xl = 2.8 / vp.zoom;
+              ctx.beginPath();
+              ctx.moveTo(f.x - xl, f.y - xl);
+              ctx.lineTo(f.x + xl, f.y + xl);
+              ctx.moveTo(f.x + xl, f.y - xl);
+              ctx.lineTo(f.x - xl, f.y + xl);
               ctx.stroke();
             }
             ctx.strokeStyle = "#06170f";
