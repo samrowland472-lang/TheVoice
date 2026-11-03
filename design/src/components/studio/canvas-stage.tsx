@@ -1634,31 +1634,52 @@ function drawKnifeStroke(
   }
 
   // Live path-split preview: ghost outlines of the resulting pieces + multi-lobe labels
+  // with a light explode offset that grows with stroke length so pieces separate visually.
   ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
   ctx.lineWidth = 1.25 / vp.zoom;
   ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
-  const labeled: { cx: number; cy: number; label: string }[] = [];
+  const labeled: { cx: number; cy: number; ox: number; oy: number; label: string }[] = [];
   let pieceIdx = 1;
+  const cutMidX = (ax + bx) / 2;
+  const cutMidY = (ay + by) / 2;
+  const explode = Math.min(22 / vp.zoom, Math.max(0, dist - 8) * 0.18);
   for (const n of ordered) {
     const p = asEditablePath(n);
     if (!p) continue;
     const pieces = knifeSplitPieces(p, ax, ay, bx, by);
     for (const piece of pieces) {
       if (piece.length < 2) continue;
+      let sx = 0, sy = 0;
+      for (const pt of piece) {
+        sx += pt.x; sy += pt.y;
+      }
+      const cnt = piece.length;
+      const localCx = sx / cnt;
+      const localCy = sy / cnt;
+      const worldCx = n.x + localCx;
+      const worldCy = n.y + localCy;
+      let ox = 0, oy = 0;
+      if (explode > 0.5) {
+        const dx = worldCx - cutMidX;
+        const dy = worldCy - cutMidY;
+        const len = Math.hypot(dx, dy) || 1;
+        ox = (dx / len) * explode;
+        oy = (dy / len) * explode;
+      }
       ctx.beginPath();
       const first = piece[0]!;
-      ctx.moveTo(n.x + first.x, n.y + first.y);
-      let sx = first.x, sy = first.y, cnt = 1;
+      ctx.moveTo(n.x + first.x + ox, n.y + first.y + oy);
       for (let i = 1; i < piece.length; i++) {
         const pt = piece[i]!;
-        ctx.lineTo(n.x + pt.x, n.y + pt.y);
-        sx += pt.x; sy += pt.y; cnt++;
+        ctx.lineTo(n.x + pt.x + ox, n.y + pt.y + oy);
       }
       ctx.stroke();
-      // centroid in world space for label (multi-lobe piece marker)
+      // centroid in world space for label (exploded when multi-piece)
       labeled.push({
-        cx: n.x + sx / cnt,
-        cy: n.y + sy / cnt,
+        cx: worldCx,
+        cy: worldCy,
+        ox,
+        oy,
         label: String(pieceIdx++),
       });
     }
@@ -1667,23 +1688,40 @@ function drawKnifeStroke(
 
   // Phosphor piece labels when a drag produces multiple pieces (multi-lobe or multi-cut)
   if (labeled.length > 1) {
-    ctx.font = `${Math.max(9, 11 / vp.zoom)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.font = `${Math.max(10, 12 / vp.zoom)}px ui-sans-serif, system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     for (const lab of labeled) {
-      const pad = 5 / vp.zoom;
+      const lx = lab.cx + lab.ox;
+      const ly = lab.cy + lab.oy;
+      // faint original-to-exploded connector
+      if (Math.hypot(lab.ox, lab.oy) > 2 / vp.zoom) {
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+        ctx.lineWidth = 0.75 / vp.zoom;
+        ctx.setLineDash([2 / vp.zoom, 2 / vp.zoom]);
+        ctx.beginPath();
+        ctx.moveTo(lab.cx, lab.cy);
+        ctx.lineTo(lx, ly);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      const pad = 6 / vp.zoom;
       const tw = ctx.measureText(lab.label).width;
       const bw = tw + pad * 2;
-      const bh = 14 / vp.zoom;
-      ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+      const bh = 16 / vp.zoom;
+      ctx.fillStyle = "rgba(6, 23, 15, 0.88)";
       ctx.strokeStyle = "#3fc6ff";
-      ctx.lineWidth = 1 / vp.zoom;
+      ctx.lineWidth = 1.25 / vp.zoom;
       ctx.beginPath();
-      ctx.roundRect(lab.cx - bw / 2, lab.cy - bh / 2, bw, bh, 3 / vp.zoom);
+      ctx.roundRect(lx - bw / 2, ly - bh / 2, bw, bh, 4 / vp.zoom);
       ctx.fill();
       ctx.stroke();
+      // small phosphor core
       ctx.fillStyle = "#3fc6ff";
-      ctx.fillText(lab.label, lab.cx, lab.cy);
+      ctx.beginPath();
+      ctx.arc(lx, ly, 1.5 / vp.zoom, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText(lab.label, lx, ly);
     }
   }
 
@@ -1733,6 +1771,8 @@ function drawKnifeHover(
   ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
   ctx.lineWidth = 1.25 / vp.zoom;
   ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  const hoverLabeled: { cx: number; cy: number; label: string }[] = [];
+  let hIdx = 1;
   for (const n of ordered) {
     const p = asEditablePath(n);
     if (!p) continue;
@@ -1740,17 +1780,54 @@ function drawKnifeHover(
     const pieces = knifePointSplitPieces(p, local.x, local.y, vp.zoom);
     for (const piece of pieces) {
       if (piece.length < 2) continue;
+      let sx = 0, sy = 0;
+      for (const pt of piece) { sx += pt.x; sy += pt.y; }
+      const cnt = piece.length;
+      const worldCx = n.x + sx / cnt;
+      const worldCy = n.y + sy / cnt;
+      // small static explode for hover multi-piece so labels don't stack
+      let ox = 0, oy = 0;
+      if (pieces.length > 1) {
+        const dx = worldCx - mark.x;
+        const dy = worldCy - mark.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const e = 10 / vp.zoom;
+        ox = (dx / len) * e;
+        oy = (dy / len) * e;
+      }
       ctx.beginPath();
       const first = piece[0]!;
-      ctx.moveTo(n.x + first.x, n.y + first.y);
+      ctx.moveTo(n.x + first.x + ox, n.y + first.y + oy);
       for (let i = 1; i < piece.length; i++) {
         const pt = piece[i]!;
-        ctx.lineTo(n.x + pt.x, n.y + pt.y);
+        ctx.lineTo(n.x + pt.x + ox, n.y + pt.y + oy);
       }
       ctx.stroke();
+      hoverLabeled.push({ cx: worldCx + ox, cy: worldCy + oy, label: String(hIdx++) });
     }
   }
   ctx.setLineDash([]);
+
+  if (hoverLabeled.length > 1) {
+    ctx.font = `${Math.max(9, 11 / vp.zoom)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const lab of hoverLabeled) {
+      const pad = 5 / vp.zoom;
+      const tw = ctx.measureText(lab.label).width;
+      const bw = tw + pad * 2;
+      const bh = 14 / vp.zoom;
+      ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+      ctx.strokeStyle = "#3fc6ff";
+      ctx.lineWidth = 1 / vp.zoom;
+      ctx.beginPath();
+      ctx.roundRect(lab.cx - bw / 2, lab.cy - bh / 2, bw, bh, 3 / vp.zoom);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#3fc6ff";
+      ctx.fillText(lab.label, lab.cx, lab.cy);
+    }
+  }
 
   ctx.restore();
 }

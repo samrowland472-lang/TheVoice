@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Knife multi-lobe piece labels polish / explode animation. While dragging the Knife tool, ghost outlines of multi-piece results now explode outward from the cut midpoint (offset grows with stroke length), with faint connectors and slightly larger phosphor badges at the exploded centroids. Hover point-cut preview also shows numbered badges and a light explode when a cut yields more than one piece. Status strip unchanged. Builds on existing knife stroke ghosts, knifeSplitPieces, and phosphor chrome. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: On-canvas length nudge for path handles (Len mode). When showTangentLengths is enabled, active path-point handles draw their phosphor length labels on the canvas. Dragging a length label scales the handle vector (preserving direction) around the anchor; mirrored handles stay in sync. Status strip reports the live length. Builds on the existing length label hit-test, tangent drawing, keyboard length nudge, and path-point edit. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: On-canvas XY flip handles for path-point group. When 2+ anchors are multi-selected on a single path, the phosphor group box gains four further-out corner diamonds (with an X glyph) in addition to the existing mid-edge X/Y flip diamonds. Hovering a corner shows the live ghost-circle + dashed-line flip preview around the selection center for both axes; clicking or dragging commits the double mirror (points and Bézier handles). Status strip reports “Flip XY”. Builds on the existing multi-select group box, mid-edge flip handles, and scale flip support. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Live numeric preview for path-point handles (in/out). While editing a handle’s X, Y, or length field in the Path inspector, a phosphor ghost circle and dashed line appear on the canvas from the anchor to the proposed tip (with a small axis cross for X/Y). The status strip reports the preview value and delta. Committing or escaping clears the ghost. Builds on the existing point X/Y numeric preview, handle NumFields, and phosphor chrome. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -8,9 +9,9 @@
 - Iteration: On-canvas flip handles for path-point group. When 2+ anchors are multi-selected on a single path, the phosphor group box gains four further-out mid-edge diamonds (left/right for X, top/bottom for Y) with reverse-arrow glyphs. Hovering shows the live ghost-circle + dashed-line flip preview around the selection center; clicking or dragging commits the mirror (points and Bézier handles). Status strip reports the axis. Builds on the existing multi-select group box, align/distribute handles, and scale flip support. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-03T18:05Z — On-canvas length nudge for path handles (Len mode).
+2026-11-03T21:08Z — Knife multi-lobe piece labels polish / explode animation.
 
 ## Next recommended
-- Knife multi-lobe piece labels polish / explode animation.
-- Or: path-point handle length nudge on-canvas (when Len mode).
-- Or: on-canvas rotate handle for path-point group (already has shared, but polish).
+- Path-point handle length nudge on-canvas polish (when Len mode).
+- Or: on-canvas rotate handle for path-point group.
+- Or: knife explode polish / piece order animation.
