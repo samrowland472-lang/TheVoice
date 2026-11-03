@@ -36,6 +36,17 @@ export type PathPointAlignPreview = {
   points: { index: number; hole?: number; fromX: number; fromY: number; toX: number; toY: number }[];
 } | null;
 
+export type PathPointNumericPreview = {
+  nodeId: string;
+  index: number;
+  hole?: number;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  axis: "x" | "y";
+} | null;
+
 export const useDesign = create<any>((set: any, get: any) => ({
   index: [],
   doc: null,
@@ -95,6 +106,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   typeGhost: null as TypeGhost | null,
   pathOrderGhost: null as PathNode | null,
   pathPointAlignPreview: null as PathPointAlignPreview,
+  pathPointNumericPreview: null as PathPointNumericPreview,
   hydrate: () => set({ index: loadIndex(), brand: loadBrand() }),
   open: (id) => {
     const doc = loadDoc(id);
@@ -298,6 +310,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
   setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
   setPathPointAlignPreview: (preview: PathPointAlignPreview) => set({ pathPointAlignPreview: preview }),
+  setPathPointNumericPreview: (preview: PathPointNumericPreview) => set({ pathPointNumericPreview: preview }),
   setTypeGhost: (ghost: TypeGhost) => set({ typeGhost: ghost }),
   setPathOrderGhost: (ghost: PathNode | null) => set({ pathOrderGhost: ghost }),
   requestFit: () => set({ viewIntent: { type: "fit" } }),

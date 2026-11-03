@@ -1197,3 +1197,45 @@ export function previewDistributeSelectedPathPoints(axis: DistAxis): boolean {
   return true;
 }
 
+
+/** Live numeric preview for a single path point while editing X/Y in the inspector. */
+export function setPathPointNumericPreview(
+  nodeId: string,
+  index: number,
+  hole: number | undefined,
+  toX: number,
+  toY: number,
+  axis: "x" | "y",
+): boolean {
+  const s = useDesign.getState();
+  const n = s.doc?.nodes.find((x) => x.id === nodeId);
+  if (!n || !isPath(n)) {
+    s.setPathPointNumericPreview?.(null);
+    return false;
+  }
+  const pts = hole == null ? n.points : (n.holes?.[hole] ?? null);
+  if (!pts || !pts[index]) {
+    s.setPathPointNumericPreview?.(null);
+    return false;
+  }
+  const cur = pts[index]!;
+  s.setPathPointNumericPreview?.({
+    nodeId,
+    index,
+    hole,
+    fromX: cur.x,
+    fromY: cur.y,
+    toX,
+    toY,
+    axis,
+  });
+  const delta = axis === "x" ? toX - cur.x : toY - cur.y;
+  const sign = delta >= 0 ? "+" : "";
+  setStudioStatus(`Preview · Point ${index + 1} ${axis.toUpperCase()} ${Math.round(axis === "x" ? toX : toY)} (${sign}${Math.round(delta)})`);
+  return true;
+}
+
+export function clearPathPointNumericPreview() {
+  const s = useDesign.getState();
+  s.setPathPointNumericPreview?.(null);
+}

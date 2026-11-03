@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Inspector live numeric preview for path points. While editing a path point’s X or Y field in the Path inspector, a phosphor ghost circle and dashed line appear on the canvas at the proposed position (with a small axis cross). The status strip reports the preview value and delta. Committing or escaping clears the ghost. Builds on the existing NumField, path-point rows, and phosphor align/distribute previews. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Knife hover single-split ghost. With the Knife tool active, hovering a path (point-cut range) now draws phosphor dashed ghost outlines of the open contours a click would produce, matching the stroke split preview. Status strip appends the piece count when more than one. Builds on the existing knife hover mark, knifePreviewLobe, and cutContourMany. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: On-canvas distribute handles. When 3+ anchors are multi-selected on a single path, the phosphor group box gains four further-out mid-edge squares (left/right for H, top/bottom for V). Hovering shows the live ghost-circle + dashed-line distribute preview; clicking or dragging commits the even spacing. Status strip reports the preview and the result. Builds on the existing multi-select group box, align handles, and inspector Dist buttons. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Reverse-arrow indicators on individual flipped axes. While scaling multi-selected path points, the group box draws phosphor-red inward arrowheads on only the flipped axis (horizontal for X, vertical for Y). Both-axes still crosses the scale handles. Status strip reports “flip X”, “flip Y”, or “flip XY”. Builds on the existing flip support and group box. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -21,9 +22,9 @@
 - Iteration: Path point multi-select + Nudge. Shift-click anchors toggles selection (phosphor fills when 2+). Arrow keys nudge the selected points (or the active edit hit) in local space instead of the whole path. Status strip reports count. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-02T21:10Z — Knife hover single-split ghost.
+2026-11-03T00:10Z — Inspector live numeric preview for path points.
 
 ## Next recommended
-- Inspector live numeric preview for path points.
-- Or: on-canvas flip handles for path-point group.
+- On-canvas flip handles for path-point group.
 - Or: knife drag multi-lobe piece labels.
+- Or: live numeric preview for path point handles (in/out).

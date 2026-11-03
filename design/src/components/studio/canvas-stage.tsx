@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDesign } from "@/lib/design/store";
-import type { PathPointAlignPreview } from "@/lib/design/store-impl";
+import type { PathPointAlignPreview, PathPointNumericPreview } from "@/lib/design/store-impl";
 import {
   drawDocument,
   fitViewport,
@@ -116,6 +116,7 @@ export default function CanvasStage() {
   const pathEditHit = useDesign((s) => s.pathEditHit);
   const pathPointSelection = useDesign((s) => s.pathPointSelection);
   const pathPointAlignPreview = useDesign((s) => s.pathPointAlignPreview);
+  const pathPointNumericPreview = useDesign((s) => s.pathPointNumericPreview);
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
@@ -184,10 +185,11 @@ export default function CanvasStage() {
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
+    if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -210,12 +212,13 @@ export default function CanvasStage() {
       drawDocument(ctx, doc, { viewport, dpr });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
+    if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
       if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
       if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -944,6 +947,60 @@ function drawPathPointAlignPreview(
     ctx.fill();
     ctx.stroke();
   }
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawPathPointNumericPreview(
+  ctx: CanvasRenderingContext2D,
+  preview: NonNullable<PathPointNumericPreview>,
+  doc: DesignDocument,
+  vp: Viewport,
+  dpr: number,
+) {
+  const n = doc.nodes.find((x) => x.id === preview.nodeId);
+  if (!n || !isPath(n)) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const c = nodeCenter(n);
+  if (n.rotation) {
+    ctx.translate(c.x, c.y);
+    ctx.rotate(degToRad(n.rotation));
+    ctx.translate(-c.x, -c.y);
+  }
+  const phosphor = "#3fc6ff";
+  ctx.strokeStyle = phosphor;
+  ctx.fillStyle = "rgba(63,198,255,0.45)";
+  ctx.lineWidth = 1 / vp.zoom;
+  ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  const r = 6 / vp.zoom;
+  const fx = n.x + preview.fromX;
+  const fy = n.y + preview.fromY;
+  const tx = n.x + preview.toX;
+  const ty = n.y + preview.toY;
+  // dashed line from current to proposed
+  ctx.beginPath();
+  ctx.moveTo(fx, fy);
+  ctx.lineTo(tx, ty);
+  ctx.stroke();
+  // ghost circle at proposed
+  ctx.beginPath();
+  ctx.arc(tx, ty, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // small cross at proposed for axis emphasis
+  const cross = 4 / vp.zoom;
+  ctx.beginPath();
+  if (preview.axis === "x") {
+    ctx.moveTo(tx - cross, ty);
+    ctx.lineTo(tx + cross, ty);
+  } else {
+    ctx.moveTo(tx, ty - cross);
+    ctx.lineTo(tx, ty + cross);
+  }
+  ctx.stroke();
   ctx.setLineDash([]);
   ctx.restore();
 }

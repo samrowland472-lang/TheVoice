@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useEffect } from "react";
 import { useDesign } from "@/lib/design/store";
-import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint, togglePathPointSelection } from "@/lib/design/path-actions";
+import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint, togglePathPointSelection, setPathPointNumericPreview, clearPathPointNumericPreview } from "@/lib/design/path-actions";
 import { mirrorHandle } from "@/lib/design/path-curve";
 import { isPath } from "@/lib/design/types";
 import {
@@ -364,8 +364,8 @@ export function PointRow({
         <span>{hole == null ? "outer" : `hole ${hole + 1}`} · {point.smooth === false ? "corner" : "smooth"}</span>
       </button>
       <div className="grid grid-cols-2 gap-1">
-        <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, n, point.y, hole)} onKeyDown={(e) => onAxis(e, "x")} />
-        <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => setPathEditHit({ index, arm: "anchor", hole })} onCommit={(n) => setPathPointPosition(nodeId, index, point.x, n, hole)} onKeyDown={(e) => onAxis(e, "y")} />
+        <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => { clearPathPointNumericPreview(); setPathEditHit({ index, arm: "anchor", hole }); }} onDraft={(n) => { if (n == null) { clearPathPointNumericPreview(); return; } setPathPointNumericPreview(nodeId, index, hole, n, point.y, "x"); }} onCommit={(n) => { clearPathPointNumericPreview(); setPathPointPosition(nodeId, index, n, point.y, hole); }} onKeyDown={(e) => onAxis(e, "x")} />
+        <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => { clearPathPointNumericPreview(); setPathEditHit({ index, arm: "anchor", hole }); }} onDraft={(n) => { if (n == null) { clearPathPointNumericPreview(); return; } setPathPointNumericPreview(nodeId, index, hole, point.x, n, "y"); }} onCommit={(n) => { clearPathPointNumericPreview(); setPathPointPosition(nodeId, index, point.x, n, hole); }} onKeyDown={(e) => onAxis(e, "y")} />
       </div>
       {hasHandles && (
         <div className="mt-1 space-y-1 text-[9px] text-ink-dim">

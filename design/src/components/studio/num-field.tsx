@@ -8,6 +8,7 @@ export function NumField({
   value,
   mixed = false,
   onCommit,
+  onDraft,
   onFocus,
   onKeyDown,
   min,
@@ -20,6 +21,7 @@ export function NumField({
   value: number;
   mixed?: boolean;
   onCommit: (n: number) => void;
+  onDraft?: (n: number | null) => void;
   onFocus?: () => void;
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
   min?: number;
@@ -68,10 +70,23 @@ export function NumField({
         e.currentTarget.select();
         onFocus?.();
       }}
-      onChange={(e) => setDraft(e.target.value)}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setDraft(raw);
+        if (onDraft) {
+          const t = raw.trim();
+          if (t === "" || t === "-" || t === "." || t === "-.") {
+            onDraft(null);
+          } else {
+            const n = Number(t);
+            onDraft(Number.isFinite(n) ? n : null);
+          }
+        }
+      }}
       onBlur={(e) => {
         setFocused(false);
         commit(e.target.value);
+        onDraft?.(null);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
@@ -81,6 +96,7 @@ export function NumField({
         }
         if (e.key === "Escape") {
           setDraft(mixed ? "" : formatNum(value));
+          onDraft?.(null);
           e.currentTarget.blur();
         }
         onKeyDown?.(e);
