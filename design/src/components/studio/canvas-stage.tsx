@@ -1460,10 +1460,12 @@ function drawKnifeStroke(
     ctx.stroke();
   }
 
-  // Live path-split preview: ghost outlines of the resulting pieces
+  // Live path-split preview: ghost outlines of the resulting pieces + multi-lobe labels
   ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
   ctx.lineWidth = 1.25 / vp.zoom;
   ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  const labeled: { cx: number; cy: number; label: string }[] = [];
+  let pieceIdx = 1;
   for (const n of ordered) {
     const p = asEditablePath(n);
     if (!p) continue;
@@ -1473,14 +1475,44 @@ function drawKnifeStroke(
       ctx.beginPath();
       const first = piece[0]!;
       ctx.moveTo(n.x + first.x, n.y + first.y);
+      let sx = first.x, sy = first.y, cnt = 1;
       for (let i = 1; i < piece.length; i++) {
         const pt = piece[i]!;
         ctx.lineTo(n.x + pt.x, n.y + pt.y);
+        sx += pt.x; sy += pt.y; cnt++;
       }
       ctx.stroke();
+      // centroid in world space for label (multi-lobe piece marker)
+      labeled.push({
+        cx: n.x + sx / cnt,
+        cy: n.y + sy / cnt,
+        label: String(pieceIdx++),
+      });
     }
   }
   ctx.setLineDash([]);
+
+  // Phosphor piece labels when a drag produces multiple pieces (multi-lobe or multi-cut)
+  if (labeled.length > 1) {
+    ctx.font = `${Math.max(9, 11 / vp.zoom)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (const lab of labeled) {
+      const pad = 5 / vp.zoom;
+      const tw = ctx.measureText(lab.label).width;
+      const bw = tw + pad * 2;
+      const bh = 14 / vp.zoom;
+      ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+      ctx.strokeStyle = "#3fc6ff";
+      ctx.lineWidth = 1 / vp.zoom;
+      ctx.beginPath();
+      ctx.roundRect(lab.cx - bw / 2, lab.cy - bh / 2, bw, bh, 3 / vp.zoom);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#3fc6ff";
+      ctx.fillText(lab.label, lab.cx, lab.cy);
+    }
+  }
 
   ctx.restore();
 }
