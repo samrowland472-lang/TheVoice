@@ -1240,6 +1240,53 @@ export function clearPathPointNumericPreview() {
   s.setPathPointNumericPreview?.(null);
 }
 
+/** Live numeric preview for a path-point handle (in/out) while editing X/Y or length in the inspector. */
+export function setPathPointHandleNumericPreview(
+  nodeId: string,
+  index: number,
+  hole: number | undefined,
+  arm: "in" | "out",
+  toX: number,
+  toY: number,
+  axis: "x" | "y" | "len",
+): boolean {
+  const s = useDesign.getState();
+  const n = s.doc?.nodes.find((x) => x.id === nodeId);
+  if (!n || !isPath(n)) {
+    s.setPathPointHandleNumericPreview?.(null);
+    return false;
+  }
+  const pts = hole == null ? n.points : (n.holes?.[hole] ?? null);
+  if (!pts || !pts[index]) {
+    s.setPathPointHandleNumericPreview?.(null);
+    return false;
+  }
+  const pt = pts[index]!;
+  const cur = arm === "in" ? (pt.in ?? { x: 0, y: 0 }) : (pt.out ?? { x: 0, y: 0 });
+  s.setPathPointHandleNumericPreview?.({
+    nodeId,
+    index,
+    hole,
+    arm,
+    fromX: cur.x,
+    fromY: cur.y,
+    toX,
+    toY,
+    axis,
+  });
+  const delta = axis === "x" ? toX - cur.x : axis === "y" ? toY - cur.y : Math.hypot(toX, toY) - Math.hypot(cur.x, cur.y);
+  const sign = delta >= 0 ? "+" : "";
+  const label = axis === "len" ? "len" : axis.toUpperCase();
+  const shown = axis === "len" ? Math.round(Math.hypot(toX, toY)) : Math.round(axis === "x" ? toX : toY);
+  setStudioStatus(`Preview · Handle ${arm} ${label} ${shown} (${sign}${Math.round(delta)})`);
+  return true;
+}
+
+export function clearPathPointHandleNumericPreview() {
+  const s = useDesign.getState();
+  s.setPathPointHandleNumericPreview?.(null);
+}
+
 type FlipAxis = "x" | "y" | "xy";
 
 /** Flip multi-selected path points (and their Bézier handles) around the selection center.

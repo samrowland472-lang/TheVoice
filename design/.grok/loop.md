@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Live numeric preview for path-point handles (in/out). While editing a handle’s X, Y, or length field in the Path inspector, a phosphor ghost circle and dashed line appear on the canvas from the anchor to the proposed tip (with a small axis cross for X/Y). The status strip reports the preview value and delta. Committing or escaping clears the ghost. Builds on the existing point X/Y numeric preview, handle NumFields, and phosphor chrome. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Knife drag multi-lobe piece labels. While dragging the Knife tool, ghost outlines of the resulting open contours now carry numbered phosphor badges (1, 2, …) at each piece’s centroid whenever a stroke produces more than one piece. The badges use the same cyan phosphor fill and dark plate as the rest of the canvas chrome. Status strip continues to report length, angle, cut count, and piece count. Builds on the existing knife stroke ghost outlines, knifeSplitPieces / explodeTwistedPath multi-lobe handling, and hover single-split preview. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: On-canvas flip handles for path-point group. When 2+ anchors are multi-selected on a single path, the phosphor group box gains four further-out mid-edge diamonds (left/right for X, top/bottom for Y) with reverse-arrow glyphs. Hovering shows the live ghost-circle + dashed-line flip preview around the selection center; clicking or dragging commits the mirror (points and Bézier handles). Status strip reports the axis. Builds on the existing multi-select group box, align/distribute handles, and scale flip support. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Inspector live numeric preview for path points. While editing a path point’s X or Y field in the Path inspector, a phosphor ghost circle and dashed line appear on the canvas at the proposed position (with a small axis cross). The status strip reports the preview value and delta. Committing or escaping clears the ghost. Builds on the existing NumField, path-point rows, and phosphor align/distribute previews. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -24,9 +25,9 @@
 - Iteration: Path point multi-select + Nudge. Shift-click anchors toggles selection (phosphor fills when 2+). Arrow keys nudge the selected points (or the active edit hit) in local space instead of the whole path. Status strip reports count. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-03T07:10Z — Knife drag multi-lobe piece labels.
+2026-11-03T11:08Z — Live numeric preview for path-point handles (in/out).
 
 ## Next recommended
-- Live numeric preview for path point handles (in/out).
-- Or: on-canvas XY flip handle (corner).
-- Or: knife drag multi-lobe piece labels already shipped — next knife depth or path-point numeric handles.
+- On-canvas XY flip handle (corner).
+- Or: knife multi-lobe piece labels polish / explode animation.
+- Or: path-point handle length nudge on-canvas (when Len mode).

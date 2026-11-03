@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useEffect } from "react";
 import { useDesign } from "@/lib/design/store";
-import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint, togglePathPointSelection, setPathPointNumericPreview, clearPathPointNumericPreview } from "@/lib/design/path-actions";
+import { setPathEditHit, setPathPointPosition, setPathPointHandles, setPathPointSmooth, deletePathPoint, togglePathPointSelection, setPathPointNumericPreview, clearPathPointNumericPreview, setPathPointHandleNumericPreview, clearPathPointHandleNumericPreview } from "@/lib/design/path-actions";
 import { mirrorHandle } from "@/lib/design/path-curve";
 import { isPath } from "@/lib/design/types";
 import {
@@ -364,8 +364,8 @@ export function PointRow({
         <span>{hole == null ? "outer" : `hole ${hole + 1}`} · {point.smooth === false ? "corner" : "smooth"}</span>
       </button>
       <div className="grid grid-cols-2 gap-1">
-        <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => { clearPathPointNumericPreview(); setPathEditHit({ index, arm: "anchor", hole }); }} onDraft={(n) => { if (n == null) { clearPathPointNumericPreview(); return; } setPathPointNumericPreview(nodeId, index, hole, n, point.y, "x"); }} onCommit={(n) => { clearPathPointNumericPreview(); setPathPointPosition(nodeId, index, n, point.y, hole); }} onKeyDown={(e) => onAxis(e, "x")} />
-        <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => { clearPathPointNumericPreview(); setPathEditHit({ index, arm: "anchor", hole }); }} onDraft={(n) => { if (n == null) { clearPathPointNumericPreview(); return; } setPathPointNumericPreview(nodeId, index, hole, point.x, n, "y"); }} onCommit={(n) => { clearPathPointNumericPreview(); setPathPointPosition(nodeId, index, point.x, n, hole); }} onKeyDown={(e) => onAxis(e, "y")} />
+        <NumField className="field font-mono" value={Math.round(point.x)} aria-label={`${label} x`} data-path-axis="x" onFocus={() => { clearPathPointNumericPreview(); clearPathPointHandleNumericPreview(); setPathEditHit({ index, arm: "anchor", hole }); }} onDraft={(n) => { if (n == null) { clearPathPointNumericPreview(); return; } setPathPointNumericPreview(nodeId, index, hole, n, point.y, "x"); }} onCommit={(n) => { clearPathPointNumericPreview(); setPathPointPosition(nodeId, index, n, point.y, hole); }} onKeyDown={(e) => onAxis(e, "x")} />
+        <NumField className="field font-mono" value={Math.round(point.y)} aria-label={`${label} y`} data-path-axis="y" onFocus={() => { clearPathPointNumericPreview(); clearPathPointHandleNumericPreview(); setPathEditHit({ index, arm: "anchor", hole }); }} onDraft={(n) => { if (n == null) { clearPathPointNumericPreview(); return; } setPathPointNumericPreview(nodeId, index, hole, point.x, n, "y"); }} onCommit={(n) => { clearPathPointNumericPreview(); setPathPointPosition(nodeId, index, point.x, n, hole); }} onKeyDown={(e) => onAxis(e, "y")} />
       </div>
       {hasHandles && (
         <div className="mt-1 space-y-1 text-[9px] text-ink-dim">
@@ -377,16 +377,26 @@ export function PointRow({
               value={Math.round(point.in?.x ?? 0)}
               aria-label={`${label} in x`}
               tabIndex={-1}
-              onFocus={() => highlightArm("in")}
-              onCommit={(n) => commitHandle("in", "x", n)}
+              onFocus={() => { clearPathPointHandleNumericPreview(); highlightArm("in"); }}
+              onDraft={(n) => {
+                if (n == null) { clearPathPointHandleNumericPreview(); return; }
+                const cur = point.in ?? { x: 0, y: 0 };
+                setPathPointHandleNumericPreview(nodeId, index, hole, "in", n, cur.y, "x");
+              }}
+              onCommit={(n) => { clearPathPointHandleNumericPreview(); commitHandle("in", "x", n); }}
             />
             <NumField
               className="field font-mono text-[11px]"
               value={Math.round(point.in?.y ?? 0)}
               aria-label={`${label} in y`}
               tabIndex={-1}
-              onFocus={() => highlightArm("in")}
-              onCommit={(n) => commitHandle("in", "y", n)}
+              onFocus={() => { clearPathPointHandleNumericPreview(); highlightArm("in"); }}
+              onDraft={(n) => {
+                if (n == null) { clearPathPointHandleNumericPreview(); return; }
+                const cur = point.in ?? { x: 0, y: 0 };
+                setPathPointHandleNumericPreview(nodeId, index, hole, "in", cur.x, n, "y");
+              }}
+              onCommit={(n) => { clearPathPointHandleNumericPreview(); commitHandle("in", "y", n); }}
             />
             {showTangentLengths && (
               <NumField
@@ -395,8 +405,22 @@ export function PointRow({
                 min={0}
                 aria-label={`${label} in length`}
                 tabIndex={-1}
-                onFocus={() => highlightArm("in")}
-                onCommit={(n) => commitLength("in", n)}
+                onFocus={() => { clearPathPointHandleNumericPreview(); highlightArm("in"); }}
+                onDraft={(n) => {
+                  if (n == null) { clearPathPointHandleNumericPreview(); return; }
+                  const cur = point.in ?? { x: 0, y: 0 };
+                  const len = Math.hypot(cur.x, cur.y);
+                  const target = Math.max(0, n);
+                  let next = { x: 0, y: 0 };
+                  if (len > 0.001) {
+                    const scale = target / len;
+                    next = { x: cur.x * scale, y: cur.y * scale };
+                  } else if (target > 0) {
+                    next = { x: -target, y: 0 };
+                  }
+                  setPathPointHandleNumericPreview(nodeId, index, hole, "in", next.x, next.y, "len");
+                }}
+                onCommit={(n) => { clearPathPointHandleNumericPreview(); commitLength("in", n); }}
               />
             )}
           </div>
@@ -407,16 +431,26 @@ export function PointRow({
               value={Math.round(point.out?.x ?? 0)}
               aria-label={`${label} out x`}
               tabIndex={-1}
-              onFocus={() => highlightArm("out")}
-              onCommit={(n) => commitHandle("out", "x", n)}
+              onFocus={() => { clearPathPointHandleNumericPreview(); highlightArm("out"); }}
+              onDraft={(n) => {
+                if (n == null) { clearPathPointHandleNumericPreview(); return; }
+                const cur = point.out ?? { x: 0, y: 0 };
+                setPathPointHandleNumericPreview(nodeId, index, hole, "out", n, cur.y, "x");
+              }}
+              onCommit={(n) => { clearPathPointHandleNumericPreview(); commitHandle("out", "x", n); }}
             />
             <NumField
               className="field font-mono text-[11px]"
               value={Math.round(point.out?.y ?? 0)}
               aria-label={`${label} out y`}
               tabIndex={-1}
-              onFocus={() => highlightArm("out")}
-              onCommit={(n) => commitHandle("out", "y", n)}
+              onFocus={() => { clearPathPointHandleNumericPreview(); highlightArm("out"); }}
+              onDraft={(n) => {
+                if (n == null) { clearPathPointHandleNumericPreview(); return; }
+                const cur = point.out ?? { x: 0, y: 0 };
+                setPathPointHandleNumericPreview(nodeId, index, hole, "out", cur.x, n, "y");
+              }}
+              onCommit={(n) => { clearPathPointHandleNumericPreview(); commitHandle("out", "y", n); }}
             />
             {showTangentLengths && (
               <NumField
@@ -425,8 +459,22 @@ export function PointRow({
                 min={0}
                 aria-label={`${label} out length`}
                 tabIndex={-1}
-                onFocus={() => highlightArm("out")}
-                onCommit={(n) => commitLength("out", n)}
+                onFocus={() => { clearPathPointHandleNumericPreview(); highlightArm("out"); }}
+                onDraft={(n) => {
+                  if (n == null) { clearPathPointHandleNumericPreview(); return; }
+                  const cur = point.out ?? { x: 0, y: 0 };
+                  const len = Math.hypot(cur.x, cur.y);
+                  const target = Math.max(0, n);
+                  let next = { x: 0, y: 0 };
+                  if (len > 0.001) {
+                    const scale = target / len;
+                    next = { x: cur.x * scale, y: cur.y * scale };
+                  } else if (target > 0) {
+                    next = { x: target, y: 0 };
+                  }
+                  setPathPointHandleNumericPreview(nodeId, index, hole, "out", next.x, next.y, "len");
+                }}
+                onCommit={(n) => { clearPathPointHandleNumericPreview(); commitLength("out", n); }}
               />
             )}
           </div>
