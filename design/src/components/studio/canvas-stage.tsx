@@ -140,6 +140,7 @@ export default function CanvasStage() {
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
   const [scaleFlip, setScaleFlip] = useState<{ x: boolean; y: boolean } | null>(null);
+  const [rotateAngle, setRotateAngle] = useState<number | null>(null);
   const setViewport = useDesign((s) => s.setViewport);
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -202,14 +203,14 @@ export default function CanvasStage() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
-    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths);
+    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
     if (marquee) drawMarquee(ctx, marquee, viewport, dpr);
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -230,7 +231,7 @@ export default function CanvasStage() {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
-      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths);
+      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
@@ -239,7 +240,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -343,6 +344,7 @@ export default function CanvasStage() {
               };
               commit();
               setStudioStatus("Rotate path points");
+              setRotateAngle(0);
               return;
             }
 
@@ -765,6 +767,7 @@ export default function CanvasStage() {
       let deg = ((ang - d.startAngle) * 180) / Math.PI;
       deg = snap15(deg, e.shiftKey);
       rotateSelectedPathPoints(deg, d.basePoints, d.baseHoles);
+      setRotateAngle(deg);
       return;
     }
     if (d.type === "path-points-align") {
@@ -901,6 +904,7 @@ export default function CanvasStage() {
     drag.current = null;
     setMarquee(null);
     setScaleFlip(null);
+    setRotateAngle(null);
     if (d?.type === "path-points-align") {
       alignSelectedPathPoints(d.edge);
       clearPathPointAlignPreview();
@@ -1228,6 +1232,7 @@ function drawSelection(
   pathPointSelection: { index: number; hole?: number }[] = [],
   scaleFlip: { x: boolean; y: boolean } | null = null,
   showLengths = false,
+  rotateAngle: number | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (!selected.length) return;
@@ -1378,6 +1383,37 @@ function drawSelection(
           ctx.fillStyle = "#06170f";
           ctx.fill();
           ctx.stroke();
+
+          // Live angle badge while rotating the path-point group
+          if (rotateAngle != null) {
+            const label = `${Math.round(rotateAngle)}°`;
+            const offX = 22 / vp.zoom;
+            const lx = lcx + offX;
+            const ly = ry;
+            ctx.save();
+            ctx.font = `${Math.max(9, 11 / vp.zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            const pad = 5 / vp.zoom;
+            const tw = ctx.measureText(label).width;
+            const bw = tw + pad * 2;
+            const bh = 14 / vp.zoom;
+            ctx.fillStyle = "rgba(6, 23, 15, 0.95)";
+            ctx.strokeStyle = "#7ee0ff";
+            ctx.lineWidth = 1.5 / vp.zoom;
+            ctx.beginPath();
+            ctx.roundRect(lx - bw / 2, ly - bh / 2, bw, bh, 3 / vp.zoom);
+            ctx.fill();
+            ctx.stroke();
+            // small phosphor core
+            ctx.fillStyle = "#3fc6ff";
+            ctx.beginPath();
+            ctx.arc(lx, ly, 1.2 / vp.zoom, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#7ee0ff";
+            ctx.fillText(label, lx, ly);
+            ctx.restore();
+          }
 
           // Alignment handles: small phosphor circles outward from mid-edges
           const alignOff = 16 / vp.zoom;
