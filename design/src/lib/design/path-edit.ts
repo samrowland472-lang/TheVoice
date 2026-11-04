@@ -129,8 +129,6 @@ export function hitPathLengthLabel(
 ): { index: number; arm: "in" | "out"; hole?: number; labelX: number; labelY: number; length: number } | null {
   if (!active) return null;
   const c = nodeCenter(n);
-  const off = 10 / zoom;
-  const hitR = 16 / zoom;
 
   function checkRing(
     pts: PathPoint[],
@@ -158,8 +156,11 @@ export function hitPathLengthLabel(
         const len = Math.hypot(dx, dy) || 1;
         const ux = dx / len;
         const uy = dy / len;
+        const off = 14 / zoom;
         const lx = vh.x + ux * off;
         const ly = vh.y + uy * off;
+        // Badge is roughly 28-40px wide; use a generous hit radius
+        const hitR = 18 / zoom;
         if (Math.hypot(wx - lx, wy - ly) <= hitR) {
           return { index: i, arm, hole, labelX: lx, labelY: ly, length: Math.round(len) };
         }

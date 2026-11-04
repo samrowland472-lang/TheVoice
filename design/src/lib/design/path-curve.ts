@@ -288,13 +288,33 @@ export function drawPathTangents(
         const len = Math.hypot(h.x, h.y) || 1;
         const ux = h.x / len;
         const uy = h.y / len;
+        const off = 14 / zoom;
+        const lx = hx + ux * off;
+        const ly = hy + uy * off;
+        const label = String(length);
         ctx.save();
-        ctx.fillStyle = "#7ee0ff";
-        ctx.font = `${11 / zoom}px "IBM Plex Mono", ui-monospace, monospace`;
-        ctx.textAlign = "left";
+        ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+        ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        const off = 10 / zoom;
-        ctx.fillText(`${length}`, hx + ux * off, hy + uy * off);
+        const pad = 5 / zoom;
+        const tw = ctx.measureText(label).width;
+        const bw = tw + pad * 2;
+        const bh = 14 / zoom;
+        // Phosphor plate badge for the live length
+        ctx.fillStyle = hot ? "rgba(6, 23, 15, 0.95)" : "rgba(6, 23, 15, 0.88)";
+        ctx.strokeStyle = hot ? "#7ee0ff" : "#3fc6ff";
+        ctx.lineWidth = (hot ? 1.5 : 1) / zoom;
+        ctx.beginPath();
+        ctx.roundRect(lx - bw / 2, ly - bh / 2, bw, bh, 3 / zoom);
+        ctx.fill();
+        ctx.stroke();
+        // small phosphor core
+        ctx.fillStyle = "#3fc6ff";
+        ctx.beginPath();
+        ctx.arc(lx, ly, 1.2 / zoom, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#7ee0ff";
+        ctx.fillText(label, lx, ly);
         ctx.restore();
       }
       ctx.beginPath();
