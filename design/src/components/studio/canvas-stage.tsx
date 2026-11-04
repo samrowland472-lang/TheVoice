@@ -1671,14 +1671,23 @@ function drawKnifeStroke(
 
   // Live path-split preview: ghost outlines of the resulting pieces + multi-lobe labels
   // with a light explode offset that grows with stroke length so pieces separate visually.
+  // Pieces are ordered by angle around the cut midpoint and explode with a staggered factor
+  // so later pieces push further out (piece-order animation).
   ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
   ctx.lineWidth = 1.25 / vp.zoom;
   ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
-  const labeled: { cx: number; cy: number; ox: number; oy: number; label: string }[] = [];
-  let pieceIdx = 1;
+  type PieceInfo = {
+    worldCx: number;
+    worldCy: number;
+    piece: { x: number; y: number }[];
+    nodeX: number;
+    nodeY: number;
+    angle: number;
+  };
+  const allPieces: PieceInfo[] = [];
   const cutMidX = (ax + bx) / 2;
   const cutMidY = (ay + by) / 2;
-  const explode = Math.min(22 / vp.zoom, Math.max(0, dist - 8) * 0.18);
+  const baseExplode = Math.min(22 / vp.zoom, Math.max(0, dist - 8) * 0.18);
   for (const n of ordered) {
     const p = asEditablePath(n);
     if (!p) continue;
@@ -1694,32 +1703,47 @@ function drawKnifeStroke(
       const localCy = sy / cnt;
       const worldCx = n.x + localCx;
       const worldCy = n.y + localCy;
-      let ox = 0, oy = 0;
-      if (explode > 0.5) {
-        const dx = worldCx - cutMidX;
-        const dy = worldCy - cutMidY;
-        const len = Math.hypot(dx, dy) || 1;
-        ox = (dx / len) * explode;
-        oy = (dy / len) * explode;
-      }
-      ctx.beginPath();
-      const first = piece[0]!;
-      ctx.moveTo(n.x + first.x + ox, n.y + first.y + oy);
-      for (let i = 1; i < piece.length; i++) {
-        const pt = piece[i]!;
-        ctx.lineTo(n.x + pt.x + ox, n.y + pt.y + oy);
-      }
-      ctx.stroke();
-      // centroid in world space for label (exploded when multi-piece)
-      labeled.push({
-        cx: worldCx,
-        cy: worldCy,
-        ox,
-        oy,
-        label: String(pieceIdx++),
+      const ang = Math.atan2(worldCy - cutMidY, worldCx - cutMidX);
+      allPieces.push({
+        worldCx,
+        worldCy,
+        piece,
+        nodeX: n.x,
+        nodeY: n.y,
+        angle: ang,
       });
     }
   }
+  // Order pieces angularly around the cut so labels feel sequential
+  allPieces.sort((a, b) => a.angle - b.angle);
+  const labeled: { cx: number; cy: number; ox: number; oy: number; label: string }[] = [];
+  allPieces.forEach((info, idx) => {
+    const stagger = allPieces.length > 1 ? 0.65 + 0.55 * (idx / Math.max(1, allPieces.length - 1)) : 1;
+    const explode = baseExplode * stagger;
+    let ox = 0, oy = 0;
+    if (explode > 0.5) {
+      const dx = info.worldCx - cutMidX;
+      const dy = info.worldCy - cutMidY;
+      const len = Math.hypot(dx, dy) || 1;
+      ox = (dx / len) * explode;
+      oy = (dy / len) * explode;
+    }
+    ctx.beginPath();
+    const first = info.piece[0]!;
+    ctx.moveTo(info.nodeX + first.x + ox, info.nodeY + first.y + oy);
+    for (let i = 1; i < info.piece.length; i++) {
+      const pt = info.piece[i]!;
+      ctx.lineTo(info.nodeX + pt.x + ox, info.nodeY + pt.y + oy);
+    }
+    ctx.stroke();
+    labeled.push({
+      cx: info.worldCx,
+      cy: info.worldCy,
+      ox,
+      oy,
+      label: String(idx + 1),
+    });
+  });
   ctx.setLineDash([]);
 
   // Phosphor piece labels when a drag produces multiple pieces (multi-lobe or multi-cut)
@@ -1792,7 +1816,7 @@ function drawKnifeHover(
   ctx.lineTo(mark.x, mark.y + r * 0.8);
   ctx.stroke();
 
-  // Single-split ghost outlines for the point cut
+  // Single-split ghost outlines for the point cut, ordered by angle with light staggered explode
   const preferred = useDesign.getState().selection[0];
   const paths: DesignNode[] = [];
   for (const n of doc.nodes) {
@@ -1807,8 +1831,15 @@ function drawKnifeHover(
   ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
   ctx.lineWidth = 1.25 / vp.zoom;
   ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
-  const hoverLabeled: { cx: number; cy: number; label: string }[] = [];
-  let hIdx = 1;
+  type HoverPiece = {
+    worldCx: number;
+    worldCy: number;
+    piece: { x: number; y: number }[];
+    nodeX: number;
+    nodeY: number;
+    angle: number;
+  };
+  const hoverPieces: HoverPiece[] = [];
   for (const n of ordered) {
     const p = asEditablePath(n);
     if (!p) continue;
@@ -1821,27 +1852,40 @@ function drawKnifeHover(
       const cnt = piece.length;
       const worldCx = n.x + sx / cnt;
       const worldCy = n.y + sy / cnt;
-      // small static explode for hover multi-piece so labels don't stack
-      let ox = 0, oy = 0;
-      if (pieces.length > 1) {
-        const dx = worldCx - mark.x;
-        const dy = worldCy - mark.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const e = 10 / vp.zoom;
-        ox = (dx / len) * e;
-        oy = (dy / len) * e;
-      }
-      ctx.beginPath();
-      const first = piece[0]!;
-      ctx.moveTo(n.x + first.x + ox, n.y + first.y + oy);
-      for (let i = 1; i < piece.length; i++) {
-        const pt = piece[i]!;
-        ctx.lineTo(n.x + pt.x + ox, n.y + pt.y + oy);
-      }
-      ctx.stroke();
-      hoverLabeled.push({ cx: worldCx + ox, cy: worldCy + oy, label: String(hIdx++) });
+      const ang = Math.atan2(worldCy - mark.y, worldCx - mark.x);
+      hoverPieces.push({
+        worldCx,
+        worldCy,
+        piece,
+        nodeX: n.x,
+        nodeY: n.y,
+        angle: ang,
+      });
     }
   }
+  hoverPieces.sort((a, b) => a.angle - b.angle);
+  const hoverLabeled: { cx: number; cy: number; label: string }[] = [];
+  hoverPieces.forEach((info, idx) => {
+    const stagger = hoverPieces.length > 1 ? 0.7 + 0.5 * (idx / Math.max(1, hoverPieces.length - 1)) : 1;
+    let ox = 0, oy = 0;
+    if (hoverPieces.length > 1) {
+      const dx = info.worldCx - mark.x;
+      const dy = info.worldCy - mark.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const e = (10 / vp.zoom) * stagger;
+      ox = (dx / len) * e;
+      oy = (dy / len) * e;
+    }
+    ctx.beginPath();
+    const first = info.piece[0]!;
+    ctx.moveTo(info.nodeX + first.x + ox, info.nodeY + first.y + oy);
+    for (let i = 1; i < info.piece.length; i++) {
+      const pt = info.piece[i]!;
+      ctx.lineTo(info.nodeX + pt.x + ox, info.nodeY + pt.y + oy);
+    }
+    ctx.stroke();
+    hoverLabeled.push({ cx: info.worldCx + ox, cy: info.worldCy + oy, label: String(idx + 1) });
+  });
   ctx.setLineDash([]);
 
   if (hoverLabeled.length > 1) {
