@@ -1,6 +1,7 @@
 # The Voice Design — loop
 
 ## Done
+- Iteration: Length badge hover preview before drag (Len mode). When showTangentLengths is on and a single path is selected, hovering a path-point handle (in or out) now draws a semi-transparent phosphor plate badge with the live length, offset past the tip, and reports the length in the status strip. The preview clears on mouse-out or pointer-up. Active (selected) handles still use the full opaque badge. Builds on existing length label drawing, hitPathNode, and phosphor chrome. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Knife explode polish / piece order animation. While dragging the Knife tool (or hovering a point cut that yields multiple pieces), ghost outlines and phosphor badges are now ordered angularly around the cut midpoint. Explode offsets are staggered so later pieces in the sequence push further out, giving a clearer piece-order reading. Connectors and badges remain. Status strip unchanged. Builds on existing knife stroke ghosts, knifeSplitPieces / knifePointSplitPieces, and phosphor chrome. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: On-canvas rotate handle polish for path-point group (live angle badge). While dragging the group rotation handle (2+ path points selected on one path), a phosphor plate badge appears beside the handle showing the live rotation angle in degrees (dark rounded rect + cyan border/text/core). The badge updates as you drag (15° snap with Shift) and clears on release. Status strip continues to report the angle. Builds on the existing path-points-rotate drag, group box chrome, and length badge style. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 - Iteration: Path-point handle length nudge on-canvas polish (Len mode). Active path-point handles now draw their live lengths as phosphor plate badges (dark rounded rect + cyan border/text/core) offset past the tip, matching knife piece labels. Hit targets are larger and centered on the badge. Dragging still scales the handle (mirrored when enabled) and the badge updates live. Status strip reports the length. Builds on the existing length label hit-test, tangent drawing, and phosphor chrome. Typecheck + build + browser-smoke clean (canvas live, no page errors).
@@ -12,9 +13,9 @@
 - Iteration: On-canvas flip handles for path-point group. When 2+ anchors are multi-selected on a single path, the phosphor group box gains four further-out mid-edge diamonds (left/right for X, top/bottom for Y) with reverse-arrow glyphs. Hovering shows the live ghost-circle + dashed-line flip preview around the selection center; clicking or dragging commits the mirror (points and Bézier handles). Status strip reports the axis. Builds on the existing multi-select group box, align/distribute handles, and scale flip support. Typecheck + build + browser-smoke clean (canvas live, no page errors).
 
 ## Iteration
-2026-11-04T07:10Z — Knife explode polish / piece order animation.
+2026-11-04T11:08Z — Length badge hover preview before drag.
 
 ## Next recommended
-- Length badge hover preview before drag.
-- Or: on-canvas rotate handle hover preview (ghost arc).
+- On-canvas rotate handle hover preview (ghost arc).
 - Or: knife piece connector fade with stagger.
+- Or: length badge hit-target enlarge on hover.
