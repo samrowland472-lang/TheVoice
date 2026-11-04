@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: On-canvas rotate handle hover preview (ghost arc). Restored canvas-stage after placeholder overwrite; multi-select path points now shows a phosphor ghost arc (soft fill + arrowheads) around the selection center when hovering the group rotation handle. Live angle badge still appears while dragging.
+- Iteration: On-canvas scale handle hover preview (ghost box + marker). When 2+ path points are selected, hovering a group scale handle now shows a soft phosphor ghost bounding box (dashed outline + fill) with a highlighted corner/edge marker and cross, matching the rotate arc treatment. Cleared on drag start and pointer up.
 
 ## Next recommended
-- On-canvas scale handle hover preview (ghost box or corner markers) for path-point group, matching the rotate arc treatment.
+- On-canvas distribute/flip handle hover previews (ghost guides or arrows) for path-point group, extending the same phosphor hover language.
