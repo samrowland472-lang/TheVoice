@@ -147,6 +147,8 @@ export default function CanvasStage() {
     radius: number;
   } | null>(null);
   const [scaleHover, setScaleHover] = useState<ResizeHandle | null>(null);
+  const [distHover, setDistHover] = useState<"h" | "v" | null>(null);
+  const [flipHover, setFlipHover] = useState<"x" | "y" | "xy" | null>(null);
   const [lengthHover, setLengthHover] = useState<{
     nodeId: string;
     index: number;
@@ -367,9 +369,121 @@ export default function CanvasStage() {
       }
     }
 
+    if ((distHover || flipHover) && selection.length === 1 && pathPointSelection.length > 1) {
+      const n = doc.nodes.find((x) => x.id === selection[0]);
+      if (n && isPath(n)) {
+        const coords: { x: number; y: number }[] = [];
+        for (const sel of pathPointSelection) {
+          const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+          const pt = ring?.[sel.index];
+          if (pt) coords.push({ x: pt.x, y: pt.y });
+        }
+        if (coords.length > 1) {
+          const xs = coords.map((c) => c.x);
+          const ys = coords.map((c) => c.y);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+          const pad = 6 / viewport.zoom;
+          const boxX = n.x + minX - pad;
+          const boxY = n.y + minY - pad;
+          const boxW = maxX - minX + pad * 2;
+          const boxH = maxY - minY + pad * 2;
+          const zoom = viewport.zoom;
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.translate(viewport.x, viewport.y);
+          ctx.scale(zoom, zoom);
+          const nc = nodeCenter(n);
+          if (n.rotation) {
+            ctx.translate(nc.x, nc.y);
+            ctx.rotate(degToRad(n.rotation));
+            ctx.translate(-nc.x, -nc.y);
+          }
+          const cx = boxX + boxW / 2;
+          const cy = boxY + boxH / 2;
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+          ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
+          ctx.lineWidth = 1.6 / zoom;
+          ctx.setLineDash([5 / zoom, 4 / zoom]);
+          if (distHover === "h") {
+            // Horizontal distribute guide with arrowheads
+            const y = cy;
+            ctx.beginPath();
+            ctx.moveTo(boxX - 8 / zoom, y);
+            ctx.lineTo(boxX + boxW + 8 / zoom, y);
+            ctx.stroke();
+            // Arrowheads
+            const al = 7 / zoom;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(boxX - 8 / zoom, y);
+            ctx.lineTo(boxX - 8 / zoom + al, y - 2.5 / zoom);
+            ctx.lineTo(boxX - 8 / zoom + al, y + 2.5 / zoom);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(boxX + boxW + 8 / zoom, y);
+            ctx.lineTo(boxX + boxW + 8 / zoom - al, y - 2.5 / zoom);
+            ctx.lineTo(boxX + boxW + 8 / zoom - al, y + 2.5 / zoom);
+            ctx.closePath();
+            ctx.fill();
+          } else if (distHover === "v") {
+            const x = cx;
+            ctx.beginPath();
+            ctx.moveTo(x, boxY - 8 / zoom);
+            ctx.lineTo(x, boxY + boxH + 8 / zoom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const al = 7 / zoom;
+            ctx.beginPath();
+            ctx.moveTo(x, boxY - 8 / zoom);
+            ctx.lineTo(x - 2.5 / zoom, boxY - 8 / zoom + al);
+            ctx.lineTo(x + 2.5 / zoom, boxY - 8 / zoom + al);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x, boxY + boxH + 8 / zoom);
+            ctx.lineTo(x - 2.5 / zoom, boxY + boxH + 8 / zoom - al);
+            ctx.lineTo(x + 2.5 / zoom, boxY + boxH + 8 / zoom - al);
+            ctx.closePath();
+            ctx.fill();
+          }
+          if (flipHover === "x" || flipHover === "xy") {
+            // Vertical mirror line for X flip
+            ctx.beginPath();
+            ctx.moveTo(cx, boxY - 10 / zoom);
+            ctx.lineTo(cx, boxY + boxH + 10 / zoom);
+            ctx.stroke();
+          }
+          if (flipHover === "y" || flipHover === "xy") {
+            // Horizontal mirror line for Y flip
+            ctx.beginPath();
+            ctx.moveTo(boxX - 10 / zoom, cy);
+            ctx.lineTo(boxX + boxW + 10 / zoom, cy);
+            ctx.stroke();
+          }
+          if (flipHover === "xy") {
+            // Small cross at center
+            ctx.setLineDash([]);
+            const xl = 6 / zoom;
+            ctx.beginPath();
+            ctx.moveTo(cx - xl, cy - xl);
+            ctx.lineTo(cx + xl, cy + xl);
+            ctx.moveTo(cx + xl, cy - xl);
+            ctx.lineTo(cx - xl, cy + xl);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+      }
+    }
+
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -535,11 +649,118 @@ export default function CanvasStage() {
       }
     }
 
+    if ((distHover || flipHover) && selection.length === 1 && pathPointSelection.length > 1) {
+      const n = doc.nodes.find((x) => x.id === selection[0]);
+      if (n && isPath(n)) {
+        const coords: { x: number; y: number }[] = [];
+        for (const sel of pathPointSelection) {
+          const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+          const pt = ring?.[sel.index];
+          if (pt) coords.push({ x: pt.x, y: pt.y });
+        }
+        if (coords.length > 1) {
+          const xs = coords.map((c) => c.x);
+          const ys = coords.map((c) => c.y);
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+          const pad = 6 / viewport.zoom;
+          const boxX = n.x + minX - pad;
+          const boxY = n.y + minY - pad;
+          const boxW = maxX - minX + pad * 2;
+          const boxH = maxY - minY + pad * 2;
+          const zoom = viewport.zoom;
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.translate(viewport.x, viewport.y);
+          ctx.scale(zoom, zoom);
+          const nc = nodeCenter(n);
+          if (n.rotation) {
+            ctx.translate(nc.x, nc.y);
+            ctx.rotate(degToRad(n.rotation));
+            ctx.translate(-nc.x, -nc.y);
+          }
+          const cx = boxX + boxW / 2;
+          const cy = boxY + boxH / 2;
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+          ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
+          ctx.lineWidth = 1.6 / zoom;
+          ctx.setLineDash([5 / zoom, 4 / zoom]);
+          if (distHover === "h") {
+            const y = cy;
+            ctx.beginPath();
+            ctx.moveTo(boxX - 8 / zoom, y);
+            ctx.lineTo(boxX + boxW + 8 / zoom, y);
+            ctx.stroke();
+            const al = 7 / zoom;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(boxX - 8 / zoom, y);
+            ctx.lineTo(boxX - 8 / zoom + al, y - 2.5 / zoom);
+            ctx.lineTo(boxX - 8 / zoom + al, y + 2.5 / zoom);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(boxX + boxW + 8 / zoom, y);
+            ctx.lineTo(boxX + boxW + 8 / zoom - al, y - 2.5 / zoom);
+            ctx.lineTo(boxX + boxW + 8 / zoom - al, y + 2.5 / zoom);
+            ctx.closePath();
+            ctx.fill();
+          } else if (distHover === "v") {
+            const x = cx;
+            ctx.beginPath();
+            ctx.moveTo(x, boxY - 8 / zoom);
+            ctx.lineTo(x, boxY + boxH + 8 / zoom);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const al = 7 / zoom;
+            ctx.beginPath();
+            ctx.moveTo(x, boxY - 8 / zoom);
+            ctx.lineTo(x - 2.5 / zoom, boxY - 8 / zoom + al);
+            ctx.lineTo(x + 2.5 / zoom, boxY - 8 / zoom + al);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x, boxY + boxH + 8 / zoom);
+            ctx.lineTo(x - 2.5 / zoom, boxY + boxH + 8 / zoom - al);
+            ctx.lineTo(x + 2.5 / zoom, boxY + boxH + 8 / zoom - al);
+            ctx.closePath();
+            ctx.fill();
+          }
+          if (flipHover === "x" || flipHover === "xy") {
+            ctx.beginPath();
+            ctx.moveTo(cx, boxY - 10 / zoom);
+            ctx.lineTo(cx, boxY + boxH + 10 / zoom);
+            ctx.stroke();
+          }
+          if (flipHover === "y" || flipHover === "xy") {
+            ctx.beginPath();
+            ctx.moveTo(boxX - 10 / zoom, cy);
+            ctx.lineTo(boxX + boxW + 10 / zoom, cy);
+            ctx.stroke();
+          }
+          if (flipHover === "xy") {
+            ctx.setLineDash([]);
+            const xl = 6 / zoom;
+            ctx.beginPath();
+            ctx.moveTo(cx - xl, cy - xl);
+            ctx.lineTo(cx + xl, cy + xl);
+            ctx.moveTo(cx + xl, cy - xl);
+            ctx.lineTo(cx - xl, cy + xl);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+      }
+    }
+
       if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -709,6 +930,8 @@ export default function CanvasStage() {
                   previewDistributeSelectedPathPoints(dh.axis);
                   drag.current = { type: "path-points-dist", id: n.id, axis: dh.axis };
                   setStudioStatus(`Distribute ${dh.axis === "h" ? "H" : "V"} · drag to apply`);
+                  setDistHover(null);
+                  setFlipHover(null);
                   return;
                 }
               }
@@ -733,6 +956,8 @@ export default function CanvasStage() {
                 previewFlipSelectedPathPoints(fh.axis);
                 drag.current = { type: "path-points-flip", id: n.id, axis: fh.axis };
                 setStudioStatus(`Flip ${fh.axis.toUpperCase()} · drag to apply`);
+                setDistHover(null);
+                setFlipHover(null);
                 return;
               }
             }
@@ -1108,6 +1333,8 @@ export default function CanvasStage() {
           }
           if (hitEdge) {
             previewAlignSelectedPathPoints(hitEdge);
+            setDistHover(null);
+            setFlipHover(null);
           } else {
             let handled = false;
             if (pathPointSelection.length >= 3) {
@@ -1128,7 +1355,11 @@ export default function CanvasStage() {
               }
               if (hitAxis) {
                 previewDistributeSelectedPathPoints(hitAxis);
+                setDistHover(hitAxis);
+                setFlipHover(null);
                 handled = true;
+              } else if (distHover) {
+                setDistHover(null);
               }
             }
             if (!handled) {
@@ -1154,13 +1385,20 @@ export default function CanvasStage() {
               }
               if (hitFlip) {
                 previewFlipSelectedPathPoints(hitFlip);
+                setFlipHover(hitFlip);
+                setDistHover(null);
               } else {
                 clearPathPointAlignPreview();
+                if (flipHover) setFlipHover(null);
+                if (distHover) setDistHover(null);
               }
             }
           }
         }
       }
+    } else {
+      if (distHover) setDistHover(null);
+      if (flipHover) setFlipHover(null);
     }
 
     if (!drag.current) return;
@@ -1349,6 +1587,8 @@ export default function CanvasStage() {
     setLengthHover(null);
     setRotateHover(null);
     setScaleHover(null);
+    setDistHover(null);
+    setFlipHover(null);
     if (d?.type === "path-points-align") {
       alignSelectedPathPoints(d.edge);
       clearPathPointAlignPreview();
