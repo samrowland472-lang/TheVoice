@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: On-canvas distribute visual indicators beyond the squares. Distribute handles (further out, 3+ path points) now show equal-spacing tick marks inside the phosphor squares (three short vertical ticks for H, horizontal for V). Hovering a distribute handle draws the center guide line with arrowheads plus equal-spacing tick marks at the projected positions of the selected points. Functional point-position previews and apply-on-drag remain. Extends the existing L/R/T/B and center/middle align handles.
+- Iteration: On-canvas distribute visual indicators beyond the squares. Path-point group distribute handles (3+ points) now show equal-gap triple dots oriented to the axis (H/V) instead of blank phosphor squares. Hovering a distribute handle draws equal-spacing ticks along the dashed guide (one tick per selected point) in addition to the existing dual arrowheads. Live distribute preview (inspector Dist H/V or handle drag arm) also draws a phosphor spine with ticks connecting the target ghost positions. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Polish knife explode residual feedback (connector strength or post-cut residual ghost), or add on-canvas scale/rotate visual polish for path-point group.
+- Polish knife explode residual feedback, or add gap-size badges on distribute hover ticks when zoom allows.
