@@ -43,6 +43,13 @@ import { closePathWithCubic, nearPenClose, mirrorHandle } from "@/lib/design/pat
 import { isPath, type DesignNode, type DesignDocument, type PathPoint, type Tool, type Viewport } from "@/lib/design/types";
 import type { PathEditHit } from "@/lib/design/path-edit";
 import { nodesInMarquee } from "@/lib/design/marquee-nodes";
+import {
+  drawDistHandle,
+  drawEqualGapTicks,
+  drawDistTargetSpine,
+  drawGapBadges,
+} from "@/lib/design/path-point-dist-indicators";
+import { formatDistributeGap } from "@/lib/design/distribute-preview";
 
 type DragKind =
   | { type: "move"; id: string; startX: number; startY: number; ox: number; oy: number }
@@ -409,7 +416,7 @@ export default function CanvasStage() {
           ctx.lineWidth = 1.6 / zoom;
           ctx.setLineDash([5 / zoom, 4 / zoom]);
           if (distHover === "h") {
-            // Horizontal distribute guide with arrowheads
+            // Horizontal distribute guide with arrowheads + equal-spacing ticks
             const y = cy;
             ctx.beginPath();
             ctx.moveTo(boxX - 8 / zoom, y);
@@ -430,6 +437,17 @@ export default function CanvasStage() {
             ctx.lineTo(boxX + boxW + 8 / zoom - al, y + 2.5 / zoom);
             ctx.closePath();
             ctx.fill();
+            // Equal spacing ticks + gap badges
+            if (coords.length >= 3) {
+              const sortedX = coords.map((c) => c.x).sort((a, b) => a - b);
+              const start = n.x + sortedX[0]!;
+              const end = n.x + sortedX[sortedX.length - 1]!;
+              const gap = (end - start) / (sortedX.length - 1);
+              drawEqualGapTicks(ctx, "h", start, y - 1, end - start, 2, coords.length, zoom);
+              if (gap > 0.5) {
+                drawGapBadges(ctx, "h", start, y - 1, end - start, 2, coords.length, zoom, formatDistributeGap(gap));
+              }
+            }
           } else if (distHover === "v") {
             const x = cx;
             ctx.beginPath();
@@ -450,24 +468,16 @@ export default function CanvasStage() {
             ctx.lineTo(x + 2.5 / zoom, boxY + boxH + 8 / zoom - al);
             ctx.closePath();
             ctx.fill();
-            // Equal spacing ticks along the line (from sorted point ys)
+            // Equal spacing ticks + gap badges
             if (coords.length >= 3) {
-              const sortedY = coords.map(c => c.y).sort((a, b) => a - b);
-              const start = n.y + sortedY[0];
-              const end = n.y + sortedY[sortedY.length - 1];
-              const step = (end - start) / (sortedY.length - 1);
-              ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
-              ctx.lineWidth = 1.2 / zoom;
-              for (let i = 0; i < sortedY.length; i++) {
-                const ty = start + step * i;
-                const th = 4 / zoom;
-                ctx.beginPath();
-                ctx.moveTo(x - th, ty);
-                ctx.lineTo(x + th, ty);
-                ctx.stroke();
+              const sortedY = coords.map((c) => c.y).sort((a, b) => a - b);
+              const start = n.y + sortedY[0]!;
+              const end = n.y + sortedY[sortedY.length - 1]!;
+              const gap = (end - start) / (sortedY.length - 1);
+              drawEqualGapTicks(ctx, "v", x - 1, start, 2, end - start, coords.length, zoom);
+              if (gap > 0.5) {
+                drawGapBadges(ctx, "v", x - 1, start, 2, end - start, coords.length, zoom, formatDistributeGap(gap));
               }
-              ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-              ctx.lineWidth = 1.6 / zoom;
             }
           }
           if (flipHover === "x" || flipHover === "xy") {
@@ -832,24 +842,16 @@ export default function CanvasStage() {
             ctx.lineTo(boxX + boxW + 8 / zoom - al, y + 2.5 / zoom);
             ctx.closePath();
             ctx.fill();
-            // Equal spacing ticks along the line (from sorted point xs)
+            // Equal spacing ticks + gap badges
             if (coords.length >= 3) {
-              const sortedX = coords.map(c => c.x).sort((a, b) => a - b);
-              const start = n.x + sortedX[0];
-              const end = n.x + sortedX[sortedX.length - 1];
-              const step = (end - start) / (sortedX.length - 1);
-              ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
-              ctx.lineWidth = 1.2 / zoom;
-              for (let i = 0; i < sortedX.length; i++) {
-                const tx = start + step * i;
-                const th = 4 / zoom;
-                ctx.beginPath();
-                ctx.moveTo(tx, y - th);
-                ctx.lineTo(tx, y + th);
-                ctx.stroke();
+              const sortedX = coords.map((c) => c.x).sort((a, b) => a - b);
+              const start = n.x + sortedX[0]!;
+              const end = n.x + sortedX[sortedX.length - 1]!;
+              const gap = (end - start) / (sortedX.length - 1);
+              drawEqualGapTicks(ctx, "h", start, y - 1, end - start, 2, coords.length, zoom);
+              if (gap > 0.5) {
+                drawGapBadges(ctx, "h", start, y - 1, end - start, 2, coords.length, zoom, formatDistributeGap(gap));
               }
-              ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-              ctx.lineWidth = 1.6 / zoom;
             }
           } else if (distHover === "v") {
             const x = cx;
@@ -871,24 +873,16 @@ export default function CanvasStage() {
             ctx.lineTo(x + 2.5 / zoom, boxY + boxH + 8 / zoom - al);
             ctx.closePath();
             ctx.fill();
-            // Equal spacing ticks along the line (from sorted point ys)
+            // Equal spacing ticks + gap badges
             if (coords.length >= 3) {
-              const sortedY = coords.map(c => c.y).sort((a, b) => a - b);
-              const start = n.y + sortedY[0];
-              const end = n.y + sortedY[sortedY.length - 1];
-              const step = (end - start) / (sortedY.length - 1);
-              ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
-              ctx.lineWidth = 1.2 / zoom;
-              for (let i = 0; i < sortedY.length; i++) {
-                const ty = start + step * i;
-                const th = 4 / zoom;
-                ctx.beginPath();
-                ctx.moveTo(x - th, ty);
-                ctx.lineTo(x + th, ty);
-                ctx.stroke();
+              const sortedY = coords.map((c) => c.y).sort((a, b) => a - b);
+              const start = n.y + sortedY[0]!;
+              const end = n.y + sortedY[sortedY.length - 1]!;
+              const gap = (end - start) / (sortedY.length - 1);
+              drawEqualGapTicks(ctx, "v", x - 1, start, 2, end - start, coords.length, zoom);
+              if (gap > 0.5) {
+                drawGapBadges(ctx, "v", x - 1, start, 2, end - start, coords.length, zoom, formatDistributeGap(gap));
               }
-              ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-              ctx.lineWidth = 1.6 / zoom;
             }
           }
           if (flipHover === "x" || flipHover === "xy") {
@@ -2057,11 +2051,13 @@ function drawPathPointAlignPreview(
   ctx.lineWidth = 1 / vp.zoom;
   ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
   const r = 5 / vp.zoom;
+  const targets: { x: number; y: number }[] = [];
   for (const pt of preview.points) {
     const fx = n.x + pt.fromX;
     const fy = n.y + pt.fromY;
     const tx = n.x + pt.toX;
     const ty = n.y + pt.toY;
+    targets.push({ x: tx, y: ty });
     // dashed line from current to target
     ctx.beginPath();
     ctx.moveTo(fx, fy);
@@ -2074,6 +2070,11 @@ function drawPathPointAlignPreview(
     ctx.stroke();
   }
   ctx.setLineDash([]);
+  // Phosphor spine for distribute previews
+  if (preview.edge === "dist-h" || preview.edge === "dist-v") {
+    const axis = preview.edge === "dist-h" ? "h" : "v";
+    drawDistTargetSpine(ctx, axis, targets, vp.zoom);
+  }
   ctx.restore();
 }
 
@@ -2420,46 +2421,17 @@ function drawSelection(
             }
           }
 
-          // Distribute handles (further out, only when 3+ points): squares with spacing marks
+          // Distribute handles (further out, only when 3+ points): squares with triple-dot motifs
           if (pathPointSelection.length >= 3) {
             const distOff = 32 / vp.zoom;
-            const ds = 7 / vp.zoom;
-            const halfDs = ds / 2;
             const dists = [
               { x: boxX - distOff, y: boxY + boxH / 2, axis: "h" as const }, // left H
               { x: boxX + boxW + distOff, y: boxY + boxH / 2, axis: "h" as const }, // right H
               { x: boxX + boxW / 2, y: boxY - distOff, axis: "v" as const }, // top V
               { x: boxX + boxW / 2, y: boxY + boxH + distOff, axis: "v" as const }, // bottom V
             ];
-            ctx.fillStyle = "#3fc6ff";
-            ctx.strokeStyle = "#06170f";
-            ctx.lineWidth = 1 / vp.zoom;
             for (const d of dists) {
-              ctx.fillRect(d.x - halfDs, d.y - halfDs, ds, ds);
-              ctx.strokeRect(d.x - halfDs, d.y - halfDs, ds, ds);
-              // Inner equal-spacing marks
-              ctx.strokeStyle = "#06170f";
-              ctx.lineWidth = 1.1 / vp.zoom;
-              const m = 1.8 / vp.zoom;
-              if (d.axis === "h") {
-                // three short vertical ticks for horizontal distribute
-                for (const ox of [-2.2, 0, 2.2]) {
-                  ctx.beginPath();
-                  ctx.moveTo(d.x + ox / vp.zoom, d.y - m);
-                  ctx.lineTo(d.x + ox / vp.zoom, d.y + m);
-                  ctx.stroke();
-                }
-              } else {
-                // three short horizontal ticks for vertical distribute
-                for (const oy of [-2.2, 0, 2.2]) {
-                  ctx.beginPath();
-                  ctx.moveTo(d.x - m, d.y + oy / vp.zoom);
-                  ctx.lineTo(d.x + m, d.y + oy / vp.zoom);
-                  ctx.stroke();
-                }
-              }
-              ctx.strokeStyle = "#06170f";
-              ctx.lineWidth = 1 / vp.zoom;
+              drawDistHandle(ctx, d.x, d.y, d.axis, vp.zoom);
             }
           }
 
