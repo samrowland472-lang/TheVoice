@@ -56,6 +56,90 @@ export function formatDistributeGap(size: number): string {
  * Even gap between geometry boxes. First and last stay put; the middle shifts.
  * Returns null until three unlocked roots can share a gap.
  */
+export function planDistributeWithGap(
+  nodes: DesignNode[],
+  ids: string[],
+  axis: DistributeAxis,
+  gap: number,
+): DistributePlan | null {
+  const roots = distributeRoots(nodes, ids);
+  if (roots.length < 3) return null;
+  const items = roots.map((n) => ({ n, box: geometryBox(n) }));
+  items.sort((a, b) => (axis === "h" ? a.box.x - b.box.x : a.box.y - b.box.y));
+  const first = items[0]!.box;
+  const last = items[items.length - 1]!.box;
+  const start0 = axis === "h" ? first.x : first.y;
+  const end0 = axis === "h" ? last.x + last.w : last.y + last.h;
+  const center = (start0 + end0) / 2;
+  const total = items.reduce((sum, item) => sum + (axis === "h" ? item.box.w : item.box.h), 0);
+  const span = Math.max(0, gap) * (items.length - 1) + total;
+  const start = center - span / 2;
+
+  const deltas: DistributePlan["deltas"] = [];
+  const ghosts: DistributeGhost[] = [];
+  const ticks: DistributeTick[] = [];
+  let cursor = start;
+  const placed: DistributeGhost[] = [];
+  for (const item of items) {
+    const dx = axis === "h" ? cursor - item.box.x : 0;
+    const dy = axis === "v" ? cursor - item.box.y : 0;
+    deltas.push({ id: item.n.id, dx, dy });
+    const ghost = {
+      x: item.box.x + dx,
+      y: item.box.y + dy,
+      w: item.box.w,
+      h: item.box.h,
+      stay: false,
+    };
+    ghosts.push(ghost);
+    placed.push(ghost);
+    cursor += (axis === "h" ? item.box.w : item.box.h) + Math.max(0, gap);
+  }
+  for (let i = 0; i < placed.length - 1; i++) {
+    const a = placed[i]!;
+    const b = placed[i + 1]!;
+    if (axis === "h") {
+      ticks.push({
+        axis: "x",
+        a: a.x + a.w,
+        b: b.x,
+        mid: (a.y + a.h / 2 + b.y + b.h / 2) / 2,
+        size: gap,
+      });
+    } else {
+      ticks.push({
+        axis: "y",
+        a: a.y + a.h,
+        b: b.y,
+        mid: (a.x + a.w / 2 + b.x + b.w / 2) / 2,
+        size: gap,
+      });
+    }
+  }
+  return { axis, gap, ids: roots.map((n) => n.id), deltas, ghosts, ticks };
+}
+
+export function setLiveDistributePreview(axis: DistributeAxis, gap: number): DistributePlan | null {
+  const doc = useDesign.getState().doc;
+  const selection = useDesign.getState().selection;
+  if (!doc) return null;
+  const plan = planDistributeWithGap(doc.nodes, selection, axis, gap);
+  if (!plan) {
+    preview = null;
+    emit();
+    return null;
+  }
+  preview = plan;
+  emit();
+  const way = axis === "h" ? "across" : "down";
+  holdStudioStatus(`Gap ${formatDistributeGap(gap)} px ${way} · drag to snap · release to apply`);
+  return plan;
+}
+
+/**
+ * Even gap between geometry boxes. First and last stay put; the middle shifts.
+ * Returns null until three unlocked roots can share a gap.
+ */
 export function planDistribute(nodes: DesignNode[], ids: string[], axis: DistributeAxis): DistributePlan | null {
   const roots = distributeRoots(nodes, ids);
   if (roots.length < 3) return null;

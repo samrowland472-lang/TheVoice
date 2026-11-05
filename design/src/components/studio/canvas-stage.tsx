@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
 import type { PathPointAlignPreview, PathPointNumericPreview, PathPointHandleNumericPreview } from "@/lib/design/store-impl";
 import {
@@ -51,7 +51,7 @@ import {
   drawDistTargetSpine,
   drawGapBadges,
 } from "@/lib/design/path-point-dist-indicators";
-import { formatDistributeGap } from "@/lib/design/distribute-preview";
+import { formatDistributeGap, getDistributePreview, drawDistributePreview, setLiveDistributePreview, commitDistributePreview, subscribeDistributePreview } from "@/lib/design/distribute-preview";
 
 type DragKind =
   | { type: "move"; id: string; startX: number; startY: number; ox: number; oy: number }
@@ -104,6 +104,13 @@ type DragKind =
       initialGap: number;
     }
   | {
+      type: "layer-dist";
+      axis: "h" | "v";
+      center: number;
+      count: number;
+      total: number;
+    }
+  | {
       type: "path-points-flip";
       id: string;
       axis: "x" | "y" | "xy";
@@ -153,6 +160,7 @@ export default function CanvasStage() {
   const pathPointNumericPreview = useDesign((s) => s.pathPointNumericPreview);
   const pathPointHandleNumericPreview = useDesign((s) => s.pathPointHandleNumericPreview);
   const showTangentLengths = useDesign((s) => s.showTangentLengths);
+  const distributePreview = useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
@@ -239,6 +247,15 @@ export default function CanvasStage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
+    const distPlan = getDistributePreview();
+    if (distPlan) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(viewport.x, viewport.y);
+      ctx.scale(viewport.zoom, viewport.zoom);
+      drawDistributePreview(ctx, distPlan, viewport.zoom);
+      ctx.restore();
+    }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
@@ -626,7 +643,7 @@ export default function CanvasStage() {
 
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -648,6 +665,15 @@ export default function CanvasStage() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
+    const distPlan = getDistributePreview();
+    if (distPlan) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(viewport.x, viewport.y);
+      ctx.scale(viewport.zoom, viewport.zoom);
+      drawDistributePreview(ctx, distPlan, viewport.zoom);
+      ctx.restore();
+    }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
@@ -1250,6 +1276,48 @@ export default function CanvasStage() {
         }
       }
 
+      // Layer distribute handles (3+ selected layers, no path points)
+      if (selection.length >= 3 && pathPointSelection.length === 0) {
+        const roots = doc.nodes.filter((n) => selection.includes(n.id) && !n.locked && n.visible);
+        if (roots.length >= 3) {
+          const boxes = roots.map((n) => ({ n, box: { x: n.x, y: n.y, w: n.w, h: n.h } }));
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const { box } of boxes) {
+            minX = Math.min(minX, box.x);
+            minY = Math.min(minY, box.y);
+            maxX = Math.max(maxX, box.x + box.w);
+            maxY = Math.max(maxY, box.y + box.h);
+          }
+          const ux = minX, uy = minY, uw = maxX - minX, uh = maxY - minY;
+          const distOff = 36 / viewport.zoom;
+          const distHitR = 16 / viewport.zoom;
+          const distHandles: { x: number; y: number; axis: "h" | "v" }[] = [
+            { x: ux - distOff, y: uy + uh / 2, axis: "h" },
+            { x: ux + uw + distOff, y: uy + uh / 2, axis: "h" },
+            { x: ux + uw / 2, y: uy - distOff, axis: "v" },
+            { x: ux + uw / 2, y: uy + uh + distOff, axis: "v" },
+          ];
+          for (const dh of distHandles) {
+            const d = Math.hypot(docPt.x - dh.x, docPt.y - dh.y);
+            if (d <= distHitR) {
+              const axis = dh.axis;
+              const sorted = boxes.slice().sort((a, b) => (axis === "h" ? a.box.x - b.box.x : a.box.y - b.box.y));
+              const first = sorted[0]!.box;
+              const last = sorted[sorted.length - 1]!.box;
+              const start0 = axis === "h" ? first.x : first.y;
+              const end0 = axis === "h" ? last.x + last.w : last.y + last.h;
+              const center = (start0 + end0) / 2;
+              const total = sorted.reduce((s, item) => s + (axis === "h" ? item.box.w : item.box.h), 0);
+              const initialGap = sorted.length > 1 ? ((end0 - start0) - total) / (sorted.length - 1) : 0;
+              setLiveDistributePreview(axis, Math.max(0, initialGap));
+              drag.current = { type: "layer-dist", axis, center, count: sorted.length, total };
+              setStudioStatus(`Gap ${formatDistributeGap(Math.max(0, initialGap))} · drag to snap`);
+              return;
+            }
+          }
+        }
+      }
+
       // On-canvas length label drag (when Len mode / showTangentLengths)
       if (showTangentLengths && pathEditHit) {
         for (const n of selected) {
@@ -1764,6 +1832,15 @@ export default function CanvasStage() {
       previewDistributeWithGap(d.axis, snapped);
       return;
     }
+    if (d.type === "layer-dist") {
+      const mouse = d.axis === "h" ? docPt.x : docPt.y;
+      const halfSpan = Math.abs(mouse - d.center);
+      const proposedSpan = halfSpan * 2;
+      const proposedGap = d.count > 1 ? (proposedSpan - d.total) / (d.count - 1) : 0;
+      const snapped = snapGap(Math.max(0, proposedGap), e.shiftKey);
+      setLiveDistributePreview(d.axis, snapped);
+      return;
+    }
     if (d.type === "path-points-scale") {
       const n = doc.nodes.find((x) => x.id === d.id);
       if (!n || !isPath(n)) return;
@@ -1917,6 +1994,10 @@ export default function CanvasStage() {
       }
       applyDistributeWithGap(d.axis, finalGap);
       clearPathPointAlignPreview();
+      return;
+    }
+    if (d?.type === "layer-dist") {
+      commitDistributePreview();
       return;
     }
     if (d?.type === "path-points-flip") {
@@ -2599,6 +2680,48 @@ function drawSelection(
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+  }
+  // Layer distribute handles for 3+ selected layers
+  if (selection.length >= 3 && pathPointSelection.length === 0) {
+    const roots = nodes.filter((n) => selection.includes(n.id) && !n.locked && n.visible);
+    if (roots.length >= 3) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const n of roots) {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + n.w);
+        maxY = Math.max(maxY, n.y + n.h);
+      }
+      const ux = minX, uy = minY, uw = maxX - minX, uh = maxY - minY;
+      const distOff = 36 / vp.zoom;
+      const distHandles: { x: number; y: number; axis: "h" | "v" }[] = [
+        { x: ux - distOff, y: uy + uh / 2, axis: "h" },
+        { x: ux + uw + distOff, y: uy + uh / 2, axis: "h" },
+        { x: ux + uw / 2, y: uy - distOff, axis: "v" },
+        { x: ux + uw / 2, y: uy + uh + distOff, axis: "v" },
+      ];
+      const hs = 9 / vp.zoom;
+      ctx.fillStyle = "#3fc6ff";
+      ctx.strokeStyle = "#06170f";
+      ctx.lineWidth = 1 / vp.zoom;
+      for (const dh of distHandles) {
+        ctx.fillRect(dh.x - hs / 2, dh.y - hs / 2, hs, hs);
+        ctx.strokeRect(dh.x - hs / 2, dh.y - hs / 2, hs, hs);
+        // triple-dot motif
+        ctx.fillStyle = "#06170f";
+        const ds = 1.6 / vp.zoom;
+        if (dh.axis === "h") {
+          ctx.fillRect(dh.x - ds * 2.2, dh.y - ds / 2, ds, ds);
+          ctx.fillRect(dh.x - ds / 2, dh.y - ds / 2, ds, ds);
+          ctx.fillRect(dh.x + ds * 1.2, dh.y - ds / 2, ds, ds);
+        } else {
+          ctx.fillRect(dh.x - ds / 2, dh.y - ds * 2.2, ds, ds);
+          ctx.fillRect(dh.x - ds / 2, dh.y - ds / 2, ds, ds);
+          ctx.fillRect(dh.x - ds / 2, dh.y + ds * 1.2, ds, ds);
+        }
+        ctx.fillStyle = "#3fc6ff";
+      }
+    }
   }
   ctx.restore();
 }
