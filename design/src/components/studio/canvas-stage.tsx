@@ -450,6 +450,25 @@ export default function CanvasStage() {
             ctx.lineTo(x + 2.5 / zoom, boxY + boxH + 8 / zoom - al);
             ctx.closePath();
             ctx.fill();
+            // Equal spacing ticks along the line (from sorted point ys)
+            if (coords.length >= 3) {
+              const sortedY = coords.map(c => c.y).sort((a, b) => a - b);
+              const start = n.y + sortedY[0];
+              const end = n.y + sortedY[sortedY.length - 1];
+              const step = (end - start) / (sortedY.length - 1);
+              ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+              ctx.lineWidth = 1.2 / zoom;
+              for (let i = 0; i < sortedY.length; i++) {
+                const ty = start + step * i;
+                const th = 4 / zoom;
+                ctx.beginPath();
+                ctx.moveTo(x - th, ty);
+                ctx.lineTo(x + th, ty);
+                ctx.stroke();
+              }
+              ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+              ctx.lineWidth = 1.6 / zoom;
+            }
           }
           if (flipHover === "x" || flipHover === "xy") {
             // Vertical mirror line for X flip
@@ -792,11 +811,13 @@ export default function CanvasStage() {
           ctx.lineWidth = 1.6 / zoom;
           ctx.setLineDash([5 / zoom, 4 / zoom]);
           if (distHover === "h") {
+            // Horizontal distribute guide with arrowheads + equal-spacing ticks
             const y = cy;
             ctx.beginPath();
             ctx.moveTo(boxX - 8 / zoom, y);
             ctx.lineTo(boxX + boxW + 8 / zoom, y);
             ctx.stroke();
+            // Arrowheads
             const al = 7 / zoom;
             ctx.setLineDash([]);
             ctx.beginPath();
@@ -811,6 +832,25 @@ export default function CanvasStage() {
             ctx.lineTo(boxX + boxW + 8 / zoom - al, y + 2.5 / zoom);
             ctx.closePath();
             ctx.fill();
+            // Equal spacing ticks along the line (from sorted point xs)
+            if (coords.length >= 3) {
+              const sortedX = coords.map(c => c.x).sort((a, b) => a - b);
+              const start = n.x + sortedX[0];
+              const end = n.x + sortedX[sortedX.length - 1];
+              const step = (end - start) / (sortedX.length - 1);
+              ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+              ctx.lineWidth = 1.2 / zoom;
+              for (let i = 0; i < sortedX.length; i++) {
+                const tx = start + step * i;
+                const th = 4 / zoom;
+                ctx.beginPath();
+                ctx.moveTo(tx, y - th);
+                ctx.lineTo(tx, y + th);
+                ctx.stroke();
+              }
+              ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+              ctx.lineWidth = 1.6 / zoom;
+            }
           } else if (distHover === "v") {
             const x = cx;
             ctx.beginPath();
@@ -831,6 +871,25 @@ export default function CanvasStage() {
             ctx.lineTo(x + 2.5 / zoom, boxY + boxH + 8 / zoom - al);
             ctx.closePath();
             ctx.fill();
+            // Equal spacing ticks along the line (from sorted point ys)
+            if (coords.length >= 3) {
+              const sortedY = coords.map(c => c.y).sort((a, b) => a - b);
+              const start = n.y + sortedY[0];
+              const end = n.y + sortedY[sortedY.length - 1];
+              const step = (end - start) / (sortedY.length - 1);
+              ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+              ctx.lineWidth = 1.2 / zoom;
+              for (let i = 0; i < sortedY.length; i++) {
+                const ty = start + step * i;
+                const th = 4 / zoom;
+                ctx.beginPath();
+                ctx.moveTo(x - th, ty);
+                ctx.lineTo(x + th, ty);
+                ctx.stroke();
+              }
+              ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+              ctx.lineWidth = 1.6 / zoom;
+            }
           }
           if (flipHover === "x" || flipHover === "xy") {
             ctx.beginPath();
@@ -2361,16 +2420,16 @@ function drawSelection(
             }
           }
 
-          // Distribute handles (further out, only when 3+ points): small squares
+          // Distribute handles (further out, only when 3+ points): squares with spacing marks
           if (pathPointSelection.length >= 3) {
             const distOff = 32 / vp.zoom;
-            const ds = 6 / vp.zoom;
+            const ds = 7 / vp.zoom;
             const halfDs = ds / 2;
             const dists = [
-              { x: boxX - distOff, y: boxY + boxH / 2 }, // left H
-              { x: boxX + boxW + distOff, y: boxY + boxH / 2 }, // right H
-              { x: boxX + boxW / 2, y: boxY - distOff }, // top V
-              { x: boxX + boxW / 2, y: boxY + boxH + distOff }, // bottom V
+              { x: boxX - distOff, y: boxY + boxH / 2, axis: "h" as const }, // left H
+              { x: boxX + boxW + distOff, y: boxY + boxH / 2, axis: "h" as const }, // right H
+              { x: boxX + boxW / 2, y: boxY - distOff, axis: "v" as const }, // top V
+              { x: boxX + boxW / 2, y: boxY + boxH + distOff, axis: "v" as const }, // bottom V
             ];
             ctx.fillStyle = "#3fc6ff";
             ctx.strokeStyle = "#06170f";
@@ -2378,6 +2437,29 @@ function drawSelection(
             for (const d of dists) {
               ctx.fillRect(d.x - halfDs, d.y - halfDs, ds, ds);
               ctx.strokeRect(d.x - halfDs, d.y - halfDs, ds, ds);
+              // Inner equal-spacing marks
+              ctx.strokeStyle = "#06170f";
+              ctx.lineWidth = 1.1 / vp.zoom;
+              const m = 1.8 / vp.zoom;
+              if (d.axis === "h") {
+                // three short vertical ticks for horizontal distribute
+                for (const ox of [-2.2, 0, 2.2]) {
+                  ctx.beginPath();
+                  ctx.moveTo(d.x + ox / vp.zoom, d.y - m);
+                  ctx.lineTo(d.x + ox / vp.zoom, d.y + m);
+                  ctx.stroke();
+                }
+              } else {
+                // three short horizontal ticks for vertical distribute
+                for (const oy of [-2.2, 0, 2.2]) {
+                  ctx.beginPath();
+                  ctx.moveTo(d.x - m, d.y + oy / vp.zoom);
+                  ctx.lineTo(d.x + m, d.y + oy / vp.zoom);
+                  ctx.stroke();
+                }
+              }
+              ctx.strokeStyle = "#06170f";
+              ctx.lineWidth = 1 / vp.zoom;
             }
           }
 

@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: On-canvas center and middle align handles for path-point group. When 2+ path points are selected, additional phosphor circles appear further out (offset 24) on the sides for center (vertical midline) and on the top/bottom for middle (horizontal midline). Hovering shows a soft phosphor dashed guide line at the group center with dual inward arrows. Drag or click applies the align (same as inspector C/M). Extends the existing L/R/T/B edge guides. Cleared on drag start and pointer up. Functional point-position previews remain.
+- Iteration: On-canvas distribute visual indicators beyond the squares. Distribute handles (further out, 3+ path points) now show equal-spacing tick marks inside the phosphor squares (three short vertical ticks for H, horizontal for V). Hovering a distribute handle draws the center guide line with arrowheads plus equal-spacing tick marks at the projected positions of the selected points. Functional point-position previews and apply-on-drag remain. Extends the existing L/R/T/B and center/middle align handles.
 
 ## Next recommended
-- Polish knife explode residual feedback, or add on-canvas distribute visual indicators beyond the squares.
+- Polish knife explode residual feedback (connector strength or post-cut residual ghost), or add on-canvas scale/rotate visual polish for path-point group.
