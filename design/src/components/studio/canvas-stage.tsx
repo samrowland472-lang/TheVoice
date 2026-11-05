@@ -149,6 +149,7 @@ export default function CanvasStage() {
   const [scaleHover, setScaleHover] = useState<ResizeHandle | null>(null);
   const [distHover, setDistHover] = useState<"h" | "v" | null>(null);
   const [flipHover, setFlipHover] = useState<"x" | "y" | "xy" | null>(null);
+  const [alignHover, setAlignHover] = useState<"left" | "right" | "top" | "bottom" | null>(null);
   const [lengthHover, setLengthHover] = useState<{
     nodeId: string;
     index: number;
@@ -220,7 +221,7 @@ export default function CanvasStage() {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
-    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle);
+    drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
@@ -369,7 +370,7 @@ export default function CanvasStage() {
       }
     }
 
-    if ((distHover || flipHover) && selection.length === 1 && pathPointSelection.length > 1) {
+    if ((distHover || flipHover || alignHover) && selection.length === 1 && pathPointSelection.length > 1) {
       const n = doc.nodes.find((x) => x.id === selection[0]);
       if (n && isPath(n)) {
         const coords: { x: number; y: number }[] = [];
@@ -475,6 +476,69 @@ export default function CanvasStage() {
             ctx.lineTo(cx - xl, cy + xl);
             ctx.stroke();
           }
+          if (alignHover) {
+            // Ghost edge guide for align
+            ctx.setLineDash([5 / zoom, 4 / zoom]);
+            const tick = 6 / zoom;
+            const al = 7 / zoom;
+            if (alignHover === "left") {
+              const x = boxX;
+              ctx.beginPath();
+              ctx.moveTo(x, boxY - 10 / zoom);
+              ctx.lineTo(x, boxY + boxH + 10 / zoom);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing right)
+              ctx.beginPath();
+              ctx.moveTo(x, cy);
+              ctx.lineTo(x + al, cy - 2.5 / zoom);
+              ctx.lineTo(x + al, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "right") {
+              const x = boxX + boxW;
+              ctx.beginPath();
+              ctx.moveTo(x, boxY - 10 / zoom);
+              ctx.lineTo(x, boxY + boxH + 10 / zoom);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing left)
+              ctx.beginPath();
+              ctx.moveTo(x, cy);
+              ctx.lineTo(x - al, cy - 2.5 / zoom);
+              ctx.lineTo(x - al, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "top") {
+              const y = boxY;
+              ctx.beginPath();
+              ctx.moveTo(boxX - 10 / zoom, y);
+              ctx.lineTo(boxX + boxW + 10 / zoom, y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing down)
+              ctx.beginPath();
+              ctx.moveTo(cx, y);
+              ctx.lineTo(cx - 2.5 / zoom, y + al);
+              ctx.lineTo(cx + 2.5 / zoom, y + al);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "bottom") {
+              const y = boxY + boxH;
+              ctx.beginPath();
+              ctx.moveTo(boxX - 10 / zoom, y);
+              ctx.lineTo(boxX + boxW + 10 / zoom, y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing up)
+              ctx.beginPath();
+              ctx.moveTo(cx, y);
+              ctx.lineTo(cx - 2.5 / zoom, y - al);
+              ctx.lineTo(cx + 2.5 / zoom, y - al);
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
           ctx.setLineDash([]);
           ctx.restore();
         }
@@ -483,7 +547,7 @@ export default function CanvasStage() {
 
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -504,7 +568,7 @@ export default function CanvasStage() {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
-      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle);
+      drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
     if (pathPointNumericPreview) drawPathPointNumericPreview(ctx, pathPointNumericPreview, doc, viewport, dpr);
     if (pathPointHandleNumericPreview) drawPathPointHandleNumericPreview(ctx, pathPointHandleNumericPreview, doc, viewport, dpr);
@@ -649,7 +713,7 @@ export default function CanvasStage() {
       }
     }
 
-    if ((distHover || flipHover) && selection.length === 1 && pathPointSelection.length > 1) {
+    if ((distHover || flipHover || alignHover) && selection.length === 1 && pathPointSelection.length > 1) {
       const n = doc.nodes.find((x) => x.id === selection[0]);
       if (n && isPath(n)) {
         const coords: { x: number; y: number }[] = [];
@@ -750,6 +814,69 @@ export default function CanvasStage() {
             ctx.lineTo(cx - xl, cy + xl);
             ctx.stroke();
           }
+          if (alignHover) {
+            // Ghost edge guide for align
+            ctx.setLineDash([5 / zoom, 4 / zoom]);
+            const tick = 6 / zoom;
+            const al = 7 / zoom;
+            if (alignHover === "left") {
+              const x = boxX;
+              ctx.beginPath();
+              ctx.moveTo(x, boxY - 10 / zoom);
+              ctx.lineTo(x, boxY + boxH + 10 / zoom);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing right)
+              ctx.beginPath();
+              ctx.moveTo(x, cy);
+              ctx.lineTo(x + al, cy - 2.5 / zoom);
+              ctx.lineTo(x + al, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "right") {
+              const x = boxX + boxW;
+              ctx.beginPath();
+              ctx.moveTo(x, boxY - 10 / zoom);
+              ctx.lineTo(x, boxY + boxH + 10 / zoom);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing left)
+              ctx.beginPath();
+              ctx.moveTo(x, cy);
+              ctx.lineTo(x - al, cy - 2.5 / zoom);
+              ctx.lineTo(x - al, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "top") {
+              const y = boxY;
+              ctx.beginPath();
+              ctx.moveTo(boxX - 10 / zoom, y);
+              ctx.lineTo(boxX + boxW + 10 / zoom, y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing down)
+              ctx.beginPath();
+              ctx.moveTo(cx, y);
+              ctx.lineTo(cx - 2.5 / zoom, y + al);
+              ctx.lineTo(cx + 2.5 / zoom, y + al);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "bottom") {
+              const y = boxY + boxH;
+              ctx.beginPath();
+              ctx.moveTo(boxX - 10 / zoom, y);
+              ctx.lineTo(boxX + boxW + 10 / zoom, y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows (pointing up)
+              ctx.beginPath();
+              ctx.moveTo(cx, y);
+              ctx.lineTo(cx - 2.5 / zoom, y - al);
+              ctx.lineTo(cx + 2.5 / zoom, y - al);
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
           ctx.setLineDash([]);
           ctx.restore();
         }
@@ -760,7 +887,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -932,6 +1059,7 @@ export default function CanvasStage() {
                   setStudioStatus(`Distribute ${dh.axis === "h" ? "H" : "V"} · drag to apply`);
                   setDistHover(null);
                   setFlipHover(null);
+                  setAlignHover(null);
                   return;
                 }
               }
@@ -958,6 +1086,7 @@ export default function CanvasStage() {
                 setStudioStatus(`Flip ${fh.axis.toUpperCase()} · drag to apply`);
                 setDistHover(null);
                 setFlipHover(null);
+                setAlignHover(null);
                 return;
               }
             }
@@ -1333,9 +1462,11 @@ export default function CanvasStage() {
           }
           if (hitEdge) {
             previewAlignSelectedPathPoints(hitEdge);
+            setAlignHover(hitEdge as "left" | "right" | "top" | "bottom");
             setDistHover(null);
             setFlipHover(null);
           } else {
+            if (alignHover) setAlignHover(null);
             let handled = false;
             if (pathPointSelection.length >= 3) {
               const distOff = 32 / viewport.zoom;
@@ -1357,6 +1488,7 @@ export default function CanvasStage() {
                 previewDistributeSelectedPathPoints(hitAxis);
                 setDistHover(hitAxis);
                 setFlipHover(null);
+                setAlignHover(null);
                 handled = true;
               } else if (distHover) {
                 setDistHover(null);
@@ -1387,10 +1519,12 @@ export default function CanvasStage() {
                 previewFlipSelectedPathPoints(hitFlip);
                 setFlipHover(hitFlip);
                 setDistHover(null);
+                setAlignHover(null);
               } else {
                 clearPathPointAlignPreview();
                 if (flipHover) setFlipHover(null);
                 if (distHover) setDistHover(null);
+                if (alignHover) setAlignHover(null);
               }
             }
           }
@@ -1399,6 +1533,7 @@ export default function CanvasStage() {
     } else {
       if (distHover) setDistHover(null);
       if (flipHover) setFlipHover(null);
+      if (alignHover) setAlignHover(null);
     }
 
     if (!drag.current) return;
@@ -1589,6 +1724,7 @@ export default function CanvasStage() {
     setScaleHover(null);
     setDistHover(null);
     setFlipHover(null);
+    setAlignHover(null);
     if (d?.type === "path-points-align") {
       alignSelectedPathPoints(d.edge);
       clearPathPointAlignPreview();
@@ -1917,6 +2053,7 @@ function drawSelection(
   scaleFlip: { x: boolean; y: boolean } | null = null,
   showLengths = false,
   rotateAngle: number | null = null,
+  alignHover: "left" | "right" | "top" | "bottom" | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (!selected.length) return;
@@ -2103,19 +2240,30 @@ function drawSelection(
           const alignOff = 16 / vp.zoom;
           const ar = 5 / vp.zoom;
           const aligns = [
-            { x: boxX - alignOff, y: boxY + boxH / 2 },
-            { x: boxX + boxW + alignOff, y: boxY + boxH / 2 },
-            { x: boxX + boxW / 2, y: boxY - alignOff },
-            { x: boxX + boxW / 2, y: boxY + boxH + alignOff },
+            { x: boxX - alignOff, y: boxY + boxH / 2, edge: "left" as const },
+            { x: boxX + boxW + alignOff, y: boxY + boxH / 2, edge: "right" as const },
+            { x: boxX + boxW / 2, y: boxY - alignOff, edge: "top" as const },
+            { x: boxX + boxW / 2, y: boxY + boxH + alignOff, edge: "bottom" as const },
           ];
           ctx.fillStyle = "#3fc6ff";
           ctx.strokeStyle = "#06170f";
           ctx.lineWidth = 1 / vp.zoom;
           for (const a of aligns) {
+            const r = a.edge === alignHover ? ar * 1.6 : ar;
             ctx.beginPath();
-            ctx.arc(a.x, a.y, ar, 0, Math.PI * 2);
+            ctx.arc(a.x, a.y, r, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
+            if (a.edge === alignHover) {
+              // extra phosphor ring
+              ctx.strokeStyle = "rgba(63,198,255,0.9)";
+              ctx.lineWidth = 1.5 / vp.zoom;
+              ctx.beginPath();
+              ctx.arc(a.x, a.y, r + 2 / vp.zoom, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.strokeStyle = "#06170f";
+              ctx.lineWidth = 1 / vp.zoom;
+            }
           }
 
           // Distribute handles (further out, only when 3+ points): small squares
