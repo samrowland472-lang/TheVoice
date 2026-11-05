@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: On-canvas align handle hover previews (ghost edge guides) for path-point group. When 2+ path points are selected, hovering an align handle (L/R/T/B) now shows a soft phosphor dashed edge guide line at the target edge of the group box (vertical for left/right, horizontal for top/bottom) with short inward ticks. Extends the same phosphor hover language as distribute arrows, flip mirror lines, scale ghost box and rotate arc. Cleared on drag start and pointer up. Functional point-position previews (dashed move lines + ghost circles) remain.
+- Iteration: On-canvas center and middle align handles for path-point group. When 2+ path points are selected, additional phosphor circles appear further out (offset 24) on the sides for center (vertical midline) and on the top/bottom for middle (horizontal midline). Hovering shows a soft phosphor dashed guide line at the group center with dual inward arrows. Drag or click applies the align (same as inspector C/M). Extends the existing L/R/T/B edge guides. Cleared on drag start and pointer up. Functional point-position previews remain.
 
 ## Next recommended
-- On-canvas center/middle align handles (or inspector parity) for path-point group, or polish knife explode residual feedback.
+- Polish knife explode residual feedback, or add on-canvas distribute visual indicators beyond the squares.

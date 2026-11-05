@@ -149,7 +149,7 @@ export default function CanvasStage() {
   const [scaleHover, setScaleHover] = useState<ResizeHandle | null>(null);
   const [distHover, setDistHover] = useState<"h" | "v" | null>(null);
   const [flipHover, setFlipHover] = useState<"x" | "y" | "xy" | null>(null);
-  const [alignHover, setAlignHover] = useState<"left" | "right" | "top" | "bottom" | null>(null);
+  const [alignHover, setAlignHover] = useState<AlignEdge | null>(null);
   const [lengthHover, setLengthHover] = useState<{
     nodeId: string;
     index: number;
@@ -509,6 +509,26 @@ export default function CanvasStage() {
               ctx.lineTo(x - al, cy + 2.5 / zoom);
               ctx.closePath();
               ctx.fill();
+            } else if (alignHover === "center") {
+              const x = boxX + boxW / 2;
+              ctx.beginPath();
+              ctx.moveTo(x, boxY - 10 / zoom);
+              ctx.lineTo(x, boxY + boxH + 10 / zoom);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows from both sides
+              ctx.beginPath();
+              ctx.moveTo(x - al, cy);
+              ctx.lineTo(x, cy - 2.5 / zoom);
+              ctx.lineTo(x, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(x + al, cy);
+              ctx.lineTo(x, cy - 2.5 / zoom);
+              ctx.lineTo(x, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
             } else if (alignHover === "top") {
               const y = boxY;
               ctx.beginPath();
@@ -535,6 +555,26 @@ export default function CanvasStage() {
               ctx.moveTo(cx, y);
               ctx.lineTo(cx - 2.5 / zoom, y - al);
               ctx.lineTo(cx + 2.5 / zoom, y - al);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "middle") {
+              const y = boxY + boxH / 2;
+              ctx.beginPath();
+              ctx.moveTo(boxX - 10 / zoom, y);
+              ctx.lineTo(boxX + boxW + 10 / zoom, y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows from both sides
+              ctx.beginPath();
+              ctx.moveTo(cx, y - al);
+              ctx.lineTo(cx - 2.5 / zoom, y);
+              ctx.lineTo(cx + 2.5 / zoom, y);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(cx, y + al);
+              ctx.lineTo(cx - 2.5 / zoom, y);
+              ctx.lineTo(cx + 2.5 / zoom, y);
               ctx.closePath();
               ctx.fill();
             }
@@ -847,6 +887,26 @@ export default function CanvasStage() {
               ctx.lineTo(x - al, cy + 2.5 / zoom);
               ctx.closePath();
               ctx.fill();
+            } else if (alignHover === "center") {
+              const x = boxX + boxW / 2;
+              ctx.beginPath();
+              ctx.moveTo(x, boxY - 10 / zoom);
+              ctx.lineTo(x, boxY + boxH + 10 / zoom);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows from both sides
+              ctx.beginPath();
+              ctx.moveTo(x - al, cy);
+              ctx.lineTo(x, cy - 2.5 / zoom);
+              ctx.lineTo(x, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(x + al, cy);
+              ctx.lineTo(x, cy - 2.5 / zoom);
+              ctx.lineTo(x, cy + 2.5 / zoom);
+              ctx.closePath();
+              ctx.fill();
             } else if (alignHover === "top") {
               const y = boxY;
               ctx.beginPath();
@@ -873,6 +933,26 @@ export default function CanvasStage() {
               ctx.moveTo(cx, y);
               ctx.lineTo(cx - 2.5 / zoom, y - al);
               ctx.lineTo(cx + 2.5 / zoom, y - al);
+              ctx.closePath();
+              ctx.fill();
+            } else if (alignHover === "middle") {
+              const y = boxY + boxH / 2;
+              ctx.beginPath();
+              ctx.moveTo(boxX - 10 / zoom, y);
+              ctx.lineTo(boxX + boxW + 10 / zoom, y);
+              ctx.stroke();
+              ctx.setLineDash([]);
+              // inward arrows from both sides
+              ctx.beginPath();
+              ctx.moveTo(cx, y - al);
+              ctx.lineTo(cx - 2.5 / zoom, y);
+              ctx.lineTo(cx + 2.5 / zoom, y);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(cx, y + al);
+              ctx.lineTo(cx - 2.5 / zoom, y);
+              ctx.lineTo(cx + 2.5 / zoom, y);
               ctx.closePath();
               ctx.fill();
             }
@@ -1022,14 +1102,19 @@ export default function CanvasStage() {
               return;
             }
 
-            // Alignment handles (outward mid-edge circles)
+            // Alignment handles (outward mid-edge circles + center/middle further out)
             const alignOff = 16 / viewport.zoom;
+            const centerOff = 24 / viewport.zoom;
             const alignHitR = 14 / viewport.zoom;
             const alignHandles: { x: number; y: number; edge: AlignEdge }[] = [
               { x: box.x - alignOff, y: box.y + box.h / 2, edge: "left" },
               { x: box.x + box.w + alignOff, y: box.y + box.h / 2, edge: "right" },
               { x: box.x + box.w / 2, y: box.y - alignOff, edge: "top" },
               { x: box.x + box.w / 2, y: box.y + box.h + alignOff, edge: "bottom" },
+              { x: box.x - centerOff, y: box.y + box.h / 2, edge: "center" },
+              { x: box.x + box.w + centerOff, y: box.y + box.h / 2, edge: "center" },
+              { x: box.x + box.w / 2, y: box.y - centerOff, edge: "middle" },
+              { x: box.x + box.w / 2, y: box.y + box.h + centerOff, edge: "middle" },
             ];
             for (const ah of alignHandles) {
               const d = Math.hypot(localPt.x - ah.x, localPt.y - ah.y);
@@ -1446,12 +1531,17 @@ export default function CanvasStage() {
             ? rotatePoint(docPt.x, docPt.y, nc.x, nc.y, -n.rotation)
             : docPt;
           const alignOff = 16 / viewport.zoom;
+          const centerOff = 24 / viewport.zoom;
           const hitR = 14 / viewport.zoom;
           const alignHandles: { x: number; y: number; edge: AlignEdge }[] = [
             { x: box.x - alignOff, y: box.y + box.h / 2, edge: "left" },
             { x: box.x + box.w + alignOff, y: box.y + box.h / 2, edge: "right" },
             { x: box.x + box.w / 2, y: box.y - alignOff, edge: "top" },
             { x: box.x + box.w / 2, y: box.y + box.h + alignOff, edge: "bottom" },
+            { x: box.x - centerOff, y: box.y + box.h / 2, edge: "center" },
+            { x: box.x + box.w + centerOff, y: box.y + box.h / 2, edge: "center" },
+            { x: box.x + box.w / 2, y: box.y - centerOff, edge: "middle" },
+            { x: box.x + box.w / 2, y: box.y + box.h + centerOff, edge: "middle" },
           ];
           let hitEdge: AlignEdge | null = null;
           for (const ah of alignHandles) {
@@ -1462,7 +1552,7 @@ export default function CanvasStage() {
           }
           if (hitEdge) {
             previewAlignSelectedPathPoints(hitEdge);
-            setAlignHover(hitEdge as "left" | "right" | "top" | "bottom");
+            setAlignHover(hitEdge);
             setDistHover(null);
             setFlipHover(null);
           } else {
@@ -2053,7 +2143,7 @@ function drawSelection(
   scaleFlip: { x: boolean; y: boolean } | null = null,
   showLengths = false,
   rotateAngle: number | null = null,
-  alignHover: "left" | "right" | "top" | "bottom" | null = null,
+  alignHover: AlignEdge | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (!selected.length) return;
@@ -2236,14 +2326,19 @@ function drawSelection(
             ctx.restore();
           }
 
-          // Alignment handles: small phosphor circles outward from mid-edges
+          // Alignment handles: small phosphor circles outward from mid-edges + center/middle
           const alignOff = 16 / vp.zoom;
+          const centerOff = 24 / vp.zoom;
           const ar = 5 / vp.zoom;
           const aligns = [
             { x: boxX - alignOff, y: boxY + boxH / 2, edge: "left" as const },
             { x: boxX + boxW + alignOff, y: boxY + boxH / 2, edge: "right" as const },
             { x: boxX + boxW / 2, y: boxY - alignOff, edge: "top" as const },
             { x: boxX + boxW / 2, y: boxY + boxH + alignOff, edge: "bottom" as const },
+            { x: boxX - centerOff, y: boxY + boxH / 2, edge: "center" as const },
+            { x: boxX + boxW + centerOff, y: boxY + boxH / 2, edge: "center" as const },
+            { x: boxX + boxW / 2, y: boxY - centerOff, edge: "middle" as const },
+            { x: boxX + boxW / 2, y: boxY + boxH + centerOff, edge: "middle" as const },
           ];
           ctx.fillStyle = "#3fc6ff";
           ctx.strokeStyle = "#06170f";
