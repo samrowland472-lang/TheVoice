@@ -23,6 +23,8 @@ import {
   lastPathScale,
   previewAlignSelectedPathPoints,
   previewDistributeSelectedPathPoints,
+  previewDistributeWithGap,
+  applyDistributeWithGap,
   rotateSelectedPathPoints,
   scaleSelectedPathPoints,
   setPathEditHit,
@@ -97,6 +99,9 @@ type DragKind =
       type: "path-points-dist";
       id: string;
       axis: "h" | "v";
+      center: number;
+      count: number;
+      initialGap: number;
     }
   | {
       type: "path-points-flip";
@@ -113,6 +118,11 @@ type DragKind =
       started: boolean;
     }
   | { type: "knife"; startX: number; startY: number; endX?: number; endY?: number };
+
+function snapGap(gap: number, shift: boolean): number {
+  const step = shift ? 5 : 1;
+  return Math.max(0, Math.round(gap / step) * step);
+}
 
 function snap15(deg: number, force: boolean) {
   if (!force) return deg;
@@ -1192,9 +1202,17 @@ export default function CanvasStage() {
               for (const dh of distHandles) {
                 const d = Math.hypot(localPt.x - dh.x, localPt.y - dh.y);
                 if (d <= distHitR) {
-                  previewDistributeSelectedPathPoints(dh.axis);
-                  drag.current = { type: "path-points-dist", id: n.id, axis: dh.axis };
-                  setStudioStatus(`Distribute ${dh.axis === "h" ? "H" : "V"} · drag to apply`);
+                  const sorted = coords.slice().sort((a, b) => (dh.axis === "h" ? a.x - b.x : a.y - b.y));
+                  const first = sorted[0]!;
+                  const last = sorted[sorted.length - 1]!;
+                  const start = dh.axis === "h" ? first.x : first.y;
+                  const end = dh.axis === "h" ? last.x : last.y;
+                  const center = (start + end) / 2;
+                  const count = sorted.length;
+                  const initialGap = count > 1 ? (end - start) / (count - 1) : 0;
+                  previewDistributeWithGap(dh.axis, initialGap);
+                  drag.current = { type: "path-points-dist", id: n.id, axis: dh.axis, center, count, initialGap };
+                  setStudioStatus(`Gap ${formatDistributeGap(initialGap)} · drag to snap`);
                   setDistHover(null);
                   setFlipHover(null);
                   setAlignHover(null);
@@ -1732,7 +1750,18 @@ export default function CanvasStage() {
       return;
     }
     if (d.type === "path-points-dist") {
-      // Preview already set on down; nothing to update during drag
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || !isPath(n)) return;
+      const nc = nodeCenter(n);
+      const localPt = n.rotation
+        ? rotatePoint(docPt.x, docPt.y, nc.x, nc.y, -n.rotation)
+        : docPt;
+      const mouseLocal = d.axis === "h" ? localPt.x - n.x : localPt.y - n.y;
+      const halfSpan = Math.abs(mouseLocal - d.center);
+      const proposedSpan = halfSpan * 2;
+      const proposedGap = d.count > 1 ? proposedSpan / (d.count - 1) : 0;
+      const snapped = snapGap(proposedGap, e.shiftKey);
+      previewDistributeWithGap(d.axis, snapped);
       return;
     }
     if (d.type === "path-points-scale") {
@@ -1874,7 +1903,19 @@ export default function CanvasStage() {
       return;
     }
     if (d?.type === "path-points-dist") {
-      distributeSelectedPathPoints(d.axis);
+      // Use the last preview gap; recompute from current mouse if needed, but since preview is set, apply with the gap from status or store last
+      // For simplicity, recompute the snapped gap from the final mouse position (but we don't have it here easily)
+      // Instead, extract gap from the preview if possible, or store it. For now, apply with initial if no move, but better to track.
+      // Since previewDistributeWithGap sets the preview, we can compute gap from the preview points.
+      const preview = useDesign.getState().pathPointAlignPreview;
+      let finalGap = d.initialGap;
+      if (preview && preview.points.length >= 2 && (preview.edge === "dist-h" || preview.edge === "dist-v")) {
+        const sorted = preview.points.slice().sort((a, b) => (d.axis === "h" ? a.toX - b.toX : a.toY - b.toY));
+        const start = d.axis === "h" ? sorted[0]!.toX : sorted[0]!.toY;
+        const end = d.axis === "h" ? sorted[sorted.length - 1]!.toX : sorted[sorted.length - 1]!.toY;
+        finalGap = (end - start) / (sorted.length - 1);
+      }
+      applyDistributeWithGap(d.axis, finalGap);
       clearPathPointAlignPreview();
       return;
     }
@@ -2074,6 +2115,21 @@ function drawPathPointAlignPreview(
   if (preview.edge === "dist-h" || preview.edge === "dist-v") {
     const axis = preview.edge === "dist-h" ? "h" : "v";
     drawDistTargetSpine(ctx, axis, targets, vp.zoom);
+    // Live gap badges on the target spine
+    if (targets.length >= 3) {
+      const sorted = targets.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+      const start = axis === "h" ? sorted[0]!.x : sorted[0]!.y;
+      const end = axis === "h" ? sorted[sorted.length - 1]!.x : sorted[sorted.length - 1]!.y;
+      const gap = (end - start) / (sorted.length - 1);
+      if (gap > 0.5) {
+        const mid = sorted.reduce((s, p) => s + (axis === "h" ? p.y : p.x), 0) / sorted.length;
+        if (axis === "h") {
+          drawGapBadges(ctx, "h", start, mid - 1, end - start, 2, targets.length, vp.zoom, formatDistributeGap(gap));
+        } else {
+          drawGapBadges(ctx, "v", mid - 1, start, 2, end - start, targets.length, vp.zoom, formatDistributeGap(gap));
+        }
+      }
+    }
   }
   ctx.restore();
 }

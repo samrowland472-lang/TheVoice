@@ -9,6 +9,7 @@ import { useDesign } from "./store";
 import { setStudioStatus } from "./studio-status";
 import type { PathNode, PathPoint } from "./types";
 import { isPath } from "./types";
+import { formatDistributeGap } from "./distribute-preview";
 
 export function cornerLastPenPoint(): boolean {
   const s = useDesign.getState();
@@ -1197,6 +1198,105 @@ export function previewDistributeSelectedPathPoints(axis: DistAxis): boolean {
   return true;
 }
 
+/** Preview distribute with a specific gap, centered on current extremes. */
+export function previewDistributeWithGap(axis: DistAxis, gap: number): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start0 = axis === "h" ? first.x : first.y;
+  const end0 = axis === "h" ? last.x : last.y;
+  const center = (start0 + end0) / 2;
+  const count = sorted.length;
+  const span = Math.max(0, gap) * (count - 1);
+  const start = center - span / 2;
+  const points = sorted.map((item, i) => ({
+    index: item.sel.index,
+    hole: item.sel.hole,
+    fromX: item.x,
+    fromY: item.y,
+    toX: axis === "h" ? start + gap * i : item.x,
+    toY: axis === "v" ? start + gap * i : item.y,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge: axis === "h" ? "dist-h" : "dist-v",
+    points,
+  });
+  setStudioStatus(`Gap ${formatDistributeGap(gap)} · ${axis === "h" ? "H" : "V"}`);
+  return true;
+}
+
+/** Apply distribute with a specific gap, centered on current extremes. */
+export function applyDistributeWithGap(axis: DistAxis, gap: number): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) return false;
+
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start0 = axis === "h" ? first.x : first.y;
+  const end0 = axis === "h" ? last.x : last.y;
+  const center = (start0 + end0) / 2;
+  const count = sorted.length;
+  const span = Math.max(0, gap) * (count - 1);
+  const start = center - span / 2;
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  sorted.forEach((item, i) => {
+    const ring = item.sel.hole == null ? nextPoints : nextHoles?.[item.sel.hole];
+    if (!ring) return;
+    const p = ring[item.sel.index];
+    if (!p) return;
+    const next = { ...p };
+    if (axis === "h") next.x = start + gap * i;
+    else next.y = start + gap * i;
+    ring[item.sel.index] = next;
+  });
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Distributed · gap ${formatDistributeGap(gap)} · ${axis === "h" ? "horizontal" : "vertical"}`);
+  return true;
+}
 
 /** Live numeric preview for a single path point while editing X/Y in the inspector. */
 export function setPathPointNumericPreview(
