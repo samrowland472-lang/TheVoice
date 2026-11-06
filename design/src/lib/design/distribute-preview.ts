@@ -132,7 +132,8 @@ export function setLiveDistributePreview(axis: DistributeAxis, gap: number): Dis
   preview = plan;
   emit();
   const way = axis === "h" ? "across" : "down";
-  holdStudioStatus(`Gap ${formatDistributeGap(gap)} px ${way} · drag to snap · release to apply`);
+  const label = gap <= 1.5 ? `Flush · ${formatDistributeGap(gap)} px` : `Gap ${formatDistributeGap(gap)} px ${way}`;
+  holdStudioStatus(`${label} · drag to snap · release to apply`);
   return plan;
 }
 
@@ -283,9 +284,12 @@ export function distributeMoveCount(plan: DistributePlan): number {
   return plan.ghosts.filter((g) => !g.stay).length;
 }
 
-/** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed. */
+/** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
+ *  Near-zero gaps collapse the tick lines into a single flush contact mark and
+ *  lift the label clear of the packed stack so the read stays clean. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number) {
   const z = Math.max(zoom, 0.01);
+  const flush = plan.gap <= 1.5;
   ctx.save();
   ctx.lineWidth = 1.2 / z;
   ctx.font = `${10 / z}px "IBM Plex Mono", ui-monospace, monospace`;
@@ -311,37 +315,67 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
     ctx.lineTo(g.x + g.w, g.y + pin);
     ctx.stroke();
     ctx.fillStyle = "rgba(63,198,255,0.95)";
-    ctx.fillText("stay", g.x + g.w / 2, g.y - 9 / z);
+    // Push the stay tag further out when the stack is flush so it doesn't sit on the next ghost.
+    const stayLift = flush ? 16 / z : 9 / z;
+    ctx.fillText("stay", g.x + g.w / 2, g.y - stayLift);
   }
   ctx.setLineDash([]);
   ctx.strokeStyle = "rgba(63,198,255,0.92)";
   ctx.fillStyle = "rgba(63,198,255,0.95)";
   const tick = 5 / z;
   const way = plan.axis === "h" ? "across" : "down";
-  const label = `${formatDistributeGap(plan.gap)} px ${way}`;
+  const label = flush ? `flush · ${formatDistributeGap(plan.gap)} px` : `${formatDistributeGap(plan.gap)} px ${way}`;
   ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
-  plan.ticks.forEach((s, index) => {
-    ctx.beginPath();
-    if (s.axis === "x") {
-      ctx.moveTo(s.a, s.mid);
-      ctx.lineTo(s.b, s.mid);
-      ctx.moveTo(s.a, s.mid - tick);
-      ctx.lineTo(s.a, s.mid + tick);
-      ctx.moveTo(s.b, s.mid - tick);
-      ctx.lineTo(s.b, s.mid + tick);
-    } else {
-      ctx.moveTo(s.mid, s.a);
-      ctx.lineTo(s.mid, s.b);
-      ctx.moveTo(s.mid - tick, s.a);
-      ctx.lineTo(s.mid + tick, s.a);
-      ctx.moveTo(s.mid - tick, s.b);
-      ctx.lineTo(s.mid + tick, s.b);
+
+  if (flush) {
+    // Contact diamonds at each ghost junction instead of zero-length ticks.
+    const diamond = 3.2 / z;
+    for (const s of plan.ticks) {
+      const cx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid;
+      const cy = s.axis === "x" ? s.mid : (s.a + s.b) / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - diamond);
+      ctx.lineTo(cx + diamond, cy);
+      ctx.lineTo(cx, cy + diamond);
+      ctx.lineTo(cx - diamond, cy);
+      ctx.closePath();
+      ctx.stroke();
     }
-    ctx.stroke();
-    if (index !== Math.floor((plan.ticks.length - 1) / 2)) return;
-    const lx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid + 14 / z;
-    const ly = s.axis === "x" ? s.mid - 12 / z : (s.a + s.b) / 2;
-    ctx.fillText(label, lx, ly);
-  });
+    // One clear label above/beside the whole pack.
+    if (plan.ghosts.length) {
+      const gs = plan.ghosts;
+      const minX = Math.min(...gs.map((g) => g.x));
+      const maxX = Math.max(...gs.map((g) => g.x + g.w));
+      const minY = Math.min(...gs.map((g) => g.y));
+      const maxY = Math.max(...gs.map((g) => g.y + g.h));
+      const lx = plan.axis === "h" ? (minX + maxX) / 2 : maxX + 18 / z;
+      const ly = plan.axis === "h" ? minY - 22 / z : (minY + maxY) / 2;
+      ctx.fillText(label, lx, ly);
+    }
+  } else {
+    plan.ticks.forEach((s, index) => {
+      ctx.beginPath();
+      if (s.axis === "x") {
+        ctx.moveTo(s.a, s.mid);
+        ctx.lineTo(s.b, s.mid);
+        ctx.moveTo(s.a, s.mid - tick);
+        ctx.lineTo(s.a, s.mid + tick);
+        ctx.moveTo(s.b, s.mid - tick);
+        ctx.lineTo(s.b, s.mid + tick);
+      } else {
+        ctx.moveTo(s.mid, s.a);
+        ctx.lineTo(s.mid, s.b);
+        ctx.moveTo(s.mid - tick, s.a);
+        ctx.lineTo(s.mid + tick, s.a);
+        ctx.moveTo(s.mid - tick, s.b);
+        ctx.lineTo(s.mid + tick, s.b);
+      }
+      ctx.stroke();
+      if (index !== Math.floor((plan.ticks.length - 1) / 2)) return;
+      const lx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid + 14 / z;
+      const ly = s.axis === "x" ? s.mid - 12 / z : (s.a + s.b) / 2;
+      ctx.fillText(label, lx, ly);
+    });
+  }
   ctx.restore();
 }

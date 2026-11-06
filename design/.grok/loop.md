@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added live on-canvas gap numeric label that follows the cursor during layer and path-point distribute drags. Phosphor plate + mono text updates with snapped gap (Shift for 5px steps). Status also refreshes live. Previous residual knife feedback remains. Phosphor-on-ground, no emoji chrome.
+- Iteration: Tightened distribute ghost positioning when the gap is dragged near zero. Flush contacts (diamonds) replace collapsed zero-length ticks, the pack label lifts clear of the stack, stay tags push out, and the live cursor plate offsets further with a "flush" read. Status matches. Phosphor-on-ground, no emoji chrome. Previous residual knife feedback remains.
 
 ## Next recommended
-- Polish residual fade timing or tighten distribute ghost positioning when gap is dragged near zero.
+- Polish residual fade timing (longer hold + smoother ease-out) or add a subtle contact pulse on the flush diamonds.

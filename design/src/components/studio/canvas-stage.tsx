@@ -675,9 +675,15 @@ export default function CanvasStage() {
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
       const z = Math.max(viewport.zoom, 0.01);
-      const lx = distCursorLabel.x + 14 / z;
-      const ly = distCursorLabel.y - 18 / z;
-      const text = `${formatDistributeGap(distCursorLabel.gap)} px`;
+      // Near-zero gaps pack the ghosts tight — push the live plate further clear.
+      const flush = distCursorLabel.gap <= 1.5;
+      const ox = (flush ? 22 : 14) / z;
+      const oy = (flush ? 28 : 18) / z;
+      const lx = distCursorLabel.x + ox;
+      const ly = distCursorLabel.y - oy;
+      const text = flush
+        ? `flush · ${formatDistributeGap(distCursorLabel.gap)} px`
+        : `${formatDistributeGap(distCursorLabel.gap)} px`;
       ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
@@ -1887,7 +1893,7 @@ export default function CanvasStage() {
       const snapped = snapGap(proposedGap, e.shiftKey);
       previewDistributeWithGap(d.axis, snapped);
       setDistCursorLabel({ x: docPt.x, y: docPt.y, gap: snapped, axis: d.axis });
-      setStudioStatus(`Gap ${formatDistributeGap(snapped)} · drag to snap`);
+      setStudioStatus(snapped <= 1.5 ? `Flush · ${formatDistributeGap(snapped)} px · drag to snap` : `Gap ${formatDistributeGap(snapped)} · drag to snap`);
       return;
     }
     if (d.type === "layer-dist") {
@@ -1898,7 +1904,7 @@ export default function CanvasStage() {
       const snapped = snapGap(Math.max(0, proposedGap), e.shiftKey);
       setLiveDistributePreview(d.axis, snapped);
       setDistCursorLabel({ x: docPt.x, y: docPt.y, gap: snapped, axis: d.axis });
-      setStudioStatus(`Gap ${formatDistributeGap(snapped)} · drag to snap`);
+      setStudioStatus(snapped <= 1.5 ? `Flush · ${formatDistributeGap(snapped)} px · drag to snap` : `Gap ${formatDistributeGap(snapped)} · drag to snap`);
       return;
     }
     if (d.type === "path-points-scale") {
