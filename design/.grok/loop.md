@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Softened the flush-contact inner ring (thinner stroke, lower alpha) and added a very subtle second echo arc that lags the primary pulse by a ~66° phase offset. The arc is short, smaller-radius, and quieter so the junction gains depth without competing with the diamond, glow, or peak sparks. Previous outer pulse, glow, sparks, and label lift remain. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a faint counter-arc on the opposite side of the flush-contact diamond. Quieter alpha, slightly larger radius, shorter sweep so it balances the phase-lagged lag arc and gives the junction bilateral depth without competing with the diamond, glow, or sparks. Previous softened ring, lag arc, glow, and peak sparks remain. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Add a faint counter-arc on the opposite side of the diamond, or let the lag arc slowly rotate with the pulse phase for a more organic living contact.
+- Let the lag and counter arcs slowly rotate with a shared slow phase so the contact feels more organic and living, or add a third even-fainter orbital spark that trails the pulse.

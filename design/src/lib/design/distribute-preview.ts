@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, and tiny peak sparks when the pulse peaks. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side, and tiny peak sparks when the pulse peaks. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -385,6 +385,18 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       const lagSweep = Math.PI * 0.38;
       ctx.beginPath();
       ctx.arc(cx, cy, lagR, lagStart, lagStart + lagSweep);
+      ctx.stroke();
+      // Faint counter-arc on the opposite side of the diamond.
+      // Quieter alpha, slightly larger radius, shorter sweep so it balances the lag without competing.
+      const counterScale = 0.28 + 0.14 * (1 - pulse);
+      const counterR = diamond * counterScale;
+      const counterAlpha = (alpha * 0.11 * (0.45 + 0.55 * pulse)).toFixed(3);
+      ctx.strokeStyle = `rgba(63,198,255,${counterAlpha})`;
+      ctx.lineWidth = 0.28 / z;
+      const counterStart = lagStart + Math.PI;
+      const counterSweep = Math.PI * 0.32;
+      ctx.beginPath();
+      ctx.arc(cx, cy, counterR, counterStart, counterStart + counterSweep);
       ctx.stroke();
       ctx.lineWidth = 1.2 / z;
       // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.
