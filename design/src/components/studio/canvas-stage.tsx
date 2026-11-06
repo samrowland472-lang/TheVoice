@@ -169,6 +169,7 @@ export default function CanvasStage() {
   const [flushPulse, setFlushPulse] = useState(0);
   const [flushPulseLag, setFlushPulseLag] = useState(0);
   const [flushPulseRotate, setFlushPulseRotate] = useState(0);
+  const [flushPulseSlow, setFlushPulseSlow] = useState(0);
   const [scaleFlip, setScaleFlip] = useState<{ x: boolean; y: boolean } | null>(null);
   const [rotateAngle, setRotateAngle] = useState<number | null>(null);
   const [rotateHover, setRotateHover] = useState<{
@@ -263,6 +264,7 @@ export default function CanvasStage() {
       setFlushPulse(0);
       setFlushPulseLag(0);
       setFlushPulseRotate(0);
+      setFlushPulseSlow(0);
       return;
     }
     let raf = 0;
@@ -273,6 +275,9 @@ export default function CanvasStage() {
       setFlushPulseLag(0.5 + 0.5 * Math.sin(t - 1.15));
       // Shared slow phase so lag and counter arcs orbit together
       setFlushPulseRotate((performance.now() * 0.00055) % (Math.PI * 2));
+      // Second slower harmonic so the diamond breathes on two timescales
+      const tSlow = performance.now() * 0.0016;
+      setFlushPulseSlow(0.5 + 0.5 * Math.sin(tSlow));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -304,7 +309,7 @@ export default function CanvasStage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
-      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag, flushPulseRotate);
+      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow);
       ctx.restore();
     }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
@@ -729,7 +734,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -757,7 +762,7 @@ export default function CanvasStage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
-      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag, flushPulseRotate);
+      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow);
       ctx.restore();
     }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
@@ -1142,7 +1147,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
