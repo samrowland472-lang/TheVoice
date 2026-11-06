@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a faint radial glow behind each mark. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -340,6 +340,19 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
     for (const s of plan.ticks) {
       const cx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid;
       const cy = s.axis === "x" ? s.mid : (s.a + s.b) / 2;
+      // Faint radial glow behind the contact diamond so the junction breathes.
+      const glowR = diamond * 3.6;
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+      grad.addColorStop(0, `rgba(63,198,255,${(alpha * 0.32).toFixed(3)})`);
+      grad.addColorStop(0.4, `rgba(63,198,255,${(alpha * 0.12).toFixed(3)})`);
+      grad.addColorStop(1, "rgba(63,198,255,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+      ctx.fill();
+      // Diamond itself
+      ctx.strokeStyle = `rgba(63,198,255,${alpha.toFixed(3)})`;
+      ctx.fillStyle = `rgba(63,198,255,${(alpha * 0.22).toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(cx, cy - diamond);
       ctx.lineTo(cx + diamond, cy);
@@ -349,16 +362,16 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.fill();
       ctx.stroke();
     }
-    // One clear label above/beside the whole pack.
+    // One clear label above/beside the whole pack, lifted further on flush.
     if (plan.ghosts.length) {
       const gs = plan.ghosts;
       const minX = Math.min(...gs.map((g) => g.x));
       const maxX = Math.max(...gs.map((g) => g.x + g.w));
       const minY = Math.min(...gs.map((g) => g.y));
       const maxY = Math.max(...gs.map((g) => g.y + g.h));
-      const lx = plan.axis === "h" ? (minX + maxX) / 2 : maxX + 18 / z;
-      const ly = plan.axis === "h" ? minY - 22 / z : (minY + maxY) / 2;
-      ctx.fillStyle = "rgba(63,198,255,0.95)";
+      const lx = plan.axis === "h" ? (minX + maxX) / 2 : maxX + 22 / z;
+      const ly = plan.axis === "h" ? minY - 30 / z : (minY + maxY) / 2;
+      ctx.fillStyle = "rgba(63,198,255,0.96)";
       ctx.fillText(label, lx, ly);
     }
   } else {
