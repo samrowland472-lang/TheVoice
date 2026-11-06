@@ -287,8 +287,8 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, and tiny peak sparks when the pulse peaks. */
-export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0) {
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, and tiny peak sparks when the pulse peaks. */
+export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
   ctx.save();
@@ -364,13 +364,27 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.fill();
       ctx.stroke();
       // Faint inner ring — secondary pulse echo that breathes opposite the outer diamond so contact reads as a living junction.
+      // Softened stroke: thinner line, lower alpha so it never competes with the diamond or sparks.
       const echoScale = 0.38 + 0.22 * (1 - pulse);
       const echoR = diamond * echoScale;
-      const echoAlpha = (alpha * 0.42 * (0.55 + 0.45 * pulse)).toFixed(3);
+      const echoAlpha = (alpha * 0.28 * (0.5 + 0.5 * pulse)).toFixed(3);
       ctx.strokeStyle = `rgba(63,198,255,${echoAlpha})`;
-      ctx.lineWidth = 0.65 / z;
+      ctx.lineWidth = 0.42 / z;
       ctx.beginPath();
       ctx.arc(cx, cy, echoR, 0, Math.PI * 2);
+      ctx.stroke();
+      // Very subtle second echo arc — lags the primary pulse by a phase offset so the junction has depth.
+      // Smaller radius, even lower alpha, only a short arc so it reads as a trailing breath rather than a full ring.
+      const lagScale = 0.22 + 0.16 * (1 - pulseLag);
+      const lagR = diamond * lagScale;
+      const lagAlpha = (alpha * 0.16 * (0.4 + 0.6 * pulseLag)).toFixed(3);
+      ctx.strokeStyle = `rgba(63,198,255,${lagAlpha})`;
+      ctx.lineWidth = 0.32 / z;
+      // Short arc centred on the top peak, sweeping ~70° so it feels directional and quiet.
+      const lagStart = -Math.PI * 0.72;
+      const lagSweep = Math.PI * 0.38;
+      ctx.beginPath();
+      ctx.arc(cx, cy, lagR, lagStart, lagStart + lagSweep);
       ctx.stroke();
       ctx.lineWidth = 1.2 / z;
       // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.

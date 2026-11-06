@@ -167,6 +167,7 @@ export default function CanvasStage() {
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
   const [knifeResidual, setKnifeResidual] = useState<KnifeResidual | null>(null);
   const [flushPulse, setFlushPulse] = useState(0);
+  const [flushPulseLag, setFlushPulseLag] = useState(0);
   const [scaleFlip, setScaleFlip] = useState<{ x: boolean; y: boolean } | null>(null);
   const [rotateAngle, setRotateAngle] = useState<number | null>(null);
   const [rotateHover, setRotateHover] = useState<{
@@ -259,12 +260,15 @@ export default function CanvasStage() {
     const plan = distributePreview;
     if (!plan || plan.gap > 1.5) {
       setFlushPulse(0);
+      setFlushPulseLag(0);
       return;
     }
     let raf = 0;
     const tick = () => {
       const t = performance.now() * 0.004;
       setFlushPulse(0.5 + 0.5 * Math.sin(t));
+      // Phase lag ~66° so the second echo trails the primary breath
+      setFlushPulseLag(0.5 + 0.5 * Math.sin(t - 1.15));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -296,7 +300,7 @@ export default function CanvasStage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
-      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse);
+      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag);
       ctx.restore();
     }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
@@ -721,7 +725,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -749,7 +753,7 @@ export default function CanvasStage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
-      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse);
+      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag);
       ctx.restore();
     }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
@@ -1134,7 +1138,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;

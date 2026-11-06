@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint inner ring (secondary pulse echo) inside each flush-contact diamond. The ring breathes opposite the outer diamond (size contracts as the diamond expands) with lower alpha so the junction reads as a living contact without competing with the glow or peak sparks. Previous glow, sparks, label lift, and outer pulse remain. Phosphor-on-ground, no emoji chrome.
+- Iteration: Softened the flush-contact inner ring (thinner stroke, lower alpha) and added a very subtle second echo arc that lags the primary pulse by a ~66° phase offset. The arc is short, smaller-radius, and quieter so the junction gains depth without competing with the diamond, glow, or peak sparks. Previous outer pulse, glow, sparks, and label lift remain. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Soften the inner ring stroke further or add a very subtle second echo arc that lags the primary pulse by a phase offset.
+- Add a faint counter-arc on the opposite side of the diamond, or let the lag arc slowly rotate with the pulse phase for a more organic living contact.
