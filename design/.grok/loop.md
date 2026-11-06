@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Restored full canvas-stage (live gap numeric on layer distribute drag handles was present) and integrated knife residual: after a successful cut, phosphor piece outlines with numbered labels linger ~520ms with fade. Status reports piece count when >1. Point-only taps use the same residual path. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added live on-canvas gap numeric label that follows the cursor during layer and path-point distribute drags. Phosphor plate + mono text updates with snapped gap (Shift for 5px steps). Status also refreshes live. Previous residual knife feedback remains. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Polish residual fade timing or add on-canvas gap numeric label that updates live under the cursor during distribute drag.
+- Polish residual fade timing or tighten distribute ghost positioning when gap is dragged near zero.

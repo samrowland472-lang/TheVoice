@@ -175,6 +175,12 @@ export default function CanvasStage() {
   } | null>(null);
   const [scaleHover, setScaleHover] = useState<ResizeHandle | null>(null);
   const [distHover, setDistHover] = useState<"h" | "v" | null>(null);
+  const [distCursorLabel, setDistCursorLabel] = useState<{
+    x: number;
+    y: number;
+    gap: number;
+    axis: "h" | "v";
+  } | null>(null);
   const [flipHover, setFlipHover] = useState<"x" | "y" | "xy" | null>(null);
   const [alignHover, setAlignHover] = useState<AlignEdge | null>(null);
   const [lengthHover, setLengthHover] = useState<{
@@ -663,7 +669,35 @@ export default function CanvasStage() {
     if (knifeStroke) drawKnifeStroke(ctx, knifeStroke, doc, viewport, dpr);
     else if (knifeHover) drawKnifeHover(ctx, knifeHover, doc, viewport, dpr);
     if (knifeResidual) drawKnifeResidual(ctx, knifeResidual, viewport, dpr);
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview]);
+    if (distCursorLabel) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(viewport.x, viewport.y);
+      ctx.scale(viewport.zoom, viewport.zoom);
+      const z = Math.max(viewport.zoom, 0.01);
+      const lx = distCursorLabel.x + 14 / z;
+      const ly = distCursorLabel.y - 18 / z;
+      const text = `${formatDistributeGap(distCursorLabel.gap)} px`;
+      ctx.font = `${11 / z}px "IBM Plex Mono", ui-monospace, monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const metrics = ctx.measureText(text);
+      const padX = 5 / z;
+      const padY = 3 / z;
+      const bw = metrics.width + padX * 2;
+      const bh = 14 / z;
+      ctx.fillStyle = "rgba(6, 23, 15, 0.78)";
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+      ctx.lineWidth = 1 / z;
+      ctx.beginPath();
+      ctx.roundRect(lx - padX, ly - bh / 2, bw, bh, 3 / z);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+      ctx.fillText(text, lx, ly);
+      ctx.restore();
+    }
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -1258,6 +1292,7 @@ export default function CanvasStage() {
                   const initialGap = count > 1 ? (end - start) / (count - 1) : 0;
                   previewDistributeWithGap(dh.axis, initialGap);
                   drag.current = { type: "path-points-dist", id: n.id, axis: dh.axis, center, count, initialGap };
+                  setDistCursorLabel({ x: docPt.x, y: docPt.y, gap: Math.max(0, initialGap), axis: dh.axis });
                   setStudioStatus(`Gap ${formatDistributeGap(initialGap)} · drag to snap`);
                   setDistHover(null);
                   setFlipHover(null);
@@ -1331,6 +1366,7 @@ export default function CanvasStage() {
               const initialGap = sorted.length > 1 ? ((end0 - start0) - total) / (sorted.length - 1) : 0;
               setLiveDistributePreview(axis, Math.max(0, initialGap));
               drag.current = { type: "layer-dist", axis, center, count: sorted.length, total };
+              setDistCursorLabel({ x: docPt.x, y: docPt.y, gap: Math.max(0, initialGap), axis });
               setStudioStatus(`Gap ${formatDistributeGap(Math.max(0, initialGap))} · drag to snap`);
               return;
             }
@@ -1850,6 +1886,8 @@ export default function CanvasStage() {
       const proposedGap = d.count > 1 ? proposedSpan / (d.count - 1) : 0;
       const snapped = snapGap(proposedGap, e.shiftKey);
       previewDistributeWithGap(d.axis, snapped);
+      setDistCursorLabel({ x: docPt.x, y: docPt.y, gap: snapped, axis: d.axis });
+      setStudioStatus(`Gap ${formatDistributeGap(snapped)} · drag to snap`);
       return;
     }
     if (d.type === "layer-dist") {
@@ -1859,6 +1897,8 @@ export default function CanvasStage() {
       const proposedGap = d.count > 1 ? (proposedSpan - d.total) / (d.count - 1) : 0;
       const snapped = snapGap(Math.max(0, proposedGap), e.shiftKey);
       setLiveDistributePreview(d.axis, snapped);
+      setDistCursorLabel({ x: docPt.x, y: docPt.y, gap: snapped, axis: d.axis });
+      setStudioStatus(`Gap ${formatDistributeGap(snapped)} · drag to snap`);
       return;
     }
     if (d.type === "path-points-scale") {
@@ -1992,6 +2032,7 @@ export default function CanvasStage() {
     setRotateHover(null);
     setScaleHover(null);
     setDistHover(null);
+    setDistCursorLabel(null);
     setFlipHover(null);
     setAlignHover(null);
     if (d?.type === "path-points-align") {
