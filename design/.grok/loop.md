@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Polished knife residual fade. Duration lengthened to 880ms with a longer full-opacity hold (to 48%), then a cosine ease-out that stays readable longer before settling smoothly to zero. Phosphor-on-ground, no emoji chrome. Previous distribute flush diamonds remain.
+- Iteration: Added subtle contact pulse on flush diamonds when distribute gap is near zero. Diamonds scale 0.88–1.12 and opacity breathes 0.72–1.0 on a soft sine so the contact marks feel alive while the stack is packed. Phosphor-on-ground, no emoji chrome. Previous knife residual fade and distribute ghosts remain.
 
 ## Next recommended
-- Add a subtle contact pulse on the flush diamonds when the distribute gap is near zero, or polish the pack label lift further.
+- Polish the pack label lift further on flush, or add a faint radial glow behind the contact diamonds.

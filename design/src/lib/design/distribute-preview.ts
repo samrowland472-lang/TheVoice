@@ -286,8 +286,9 @@ export function distributeMoveCount(plan: DistributePlan): number {
 
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
- *  lift the label clear of the packed stack so the read stays clean. */
-export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number) {
+ *  lift the label clear of the packed stack so the read stays clean.
+ *  Flush diamonds pulse subtly so contact reads as alive. */
+export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
   ctx.save();
@@ -329,7 +330,13 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
 
   if (flush) {
     // Contact diamonds at each ghost junction instead of zero-length ticks.
-    const diamond = 3.2 / z;
+    // Subtle pulse: scale 0.88–1.12, opacity 0.72–1.0 so contact feels alive.
+    const base = 3.2 / z;
+    const scale = 0.88 + 0.24 * pulse;
+    const diamond = base * scale;
+    const alpha = 0.72 + 0.28 * pulse;
+    ctx.strokeStyle = `rgba(63,198,255,${alpha.toFixed(3)})`;
+    ctx.fillStyle = `rgba(63,198,255,${(alpha * 0.18).toFixed(3)})`;
     for (const s of plan.ticks) {
       const cx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid;
       const cy = s.axis === "x" ? s.mid : (s.a + s.b) / 2;
@@ -339,6 +346,7 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.lineTo(cx, cy + diamond);
       ctx.lineTo(cx - diamond, cy);
       ctx.closePath();
+      ctx.fill();
       ctx.stroke();
     }
     // One clear label above/beside the whole pack.
@@ -350,6 +358,7 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       const maxY = Math.max(...gs.map((g) => g.y + g.h));
       const lx = plan.axis === "h" ? (minX + maxX) / 2 : maxX + 18 / z;
       const ly = plan.axis === "h" ? minY - 22 / z : (minY + maxY) / 2;
+      ctx.fillStyle = "rgba(63,198,255,0.95)";
       ctx.fillText(label, lx, ly);
     }
   } else {
