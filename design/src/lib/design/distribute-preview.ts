@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a faint radial glow behind each mark. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow and tiny peak sparks when the pulse peaks. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -340,11 +340,13 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
     for (const s of plan.ticks) {
       const cx = s.axis === "x" ? (s.a + s.b) / 2 : s.mid;
       const cy = s.axis === "x" ? s.mid : (s.a + s.b) / 2;
-      // Faint radial glow behind the contact diamond so the junction breathes.
-      const glowR = diamond * 3.6;
+      // Softer radial glow — larger radius, gentler multi-stop falloff so the junction breathes without a hard halo.
+      const glowR = diamond * 5.4;
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-      grad.addColorStop(0, `rgba(63,198,255,${(alpha * 0.32).toFixed(3)})`);
-      grad.addColorStop(0.4, `rgba(63,198,255,${(alpha * 0.12).toFixed(3)})`);
+      grad.addColorStop(0, `rgba(63,198,255,${(alpha * 0.22).toFixed(3)})`);
+      grad.addColorStop(0.18, `rgba(63,198,255,${(alpha * 0.14).toFixed(3)})`);
+      grad.addColorStop(0.45, `rgba(63,198,255,${(alpha * 0.05).toFixed(3)})`);
+      grad.addColorStop(0.75, `rgba(63,198,255,${(alpha * 0.012).toFixed(3)})`);
       grad.addColorStop(1, "rgba(63,198,255,0)");
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -361,6 +363,35 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+      // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.
+      if (pulse > 0.55) {
+        const sparkStrength = Math.min(1, (pulse - 0.55) / 0.45);
+        const sparkLen = (1.6 + 2.4 * sparkStrength) / z;
+        const sparkAlpha = (0.45 + 0.55 * sparkStrength).toFixed(3);
+        ctx.strokeStyle = `rgba(63,198,255,${sparkAlpha})`;
+        ctx.lineWidth = (0.7 + 0.6 * sparkStrength) / z;
+        ctx.lineCap = "round";
+        const peaks = [
+          [cx, cy - diamond],
+          [cx + diamond, cy],
+          [cx, cy + diamond],
+          [cx - diamond, cy],
+        ];
+        for (const [px, py] of peaks) {
+          // Direction outward from center
+          const dx = px - cx;
+          const dy = py - cy;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px + ux * sparkLen, py + uy * sparkLen);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 1.2 / z;
+        ctx.lineCap = "butt";
+      }
     }
     // One clear label above/beside the whole pack, lifted further on flush.
     if (plan.ghosts.length) {
