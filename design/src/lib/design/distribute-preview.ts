@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow and tiny peak sparks when the pulse peaks. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, and tiny peak sparks when the pulse peaks. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -363,6 +363,16 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+      // Faint inner ring — secondary pulse echo that breathes opposite the outer diamond so contact reads as a living junction.
+      const echoScale = 0.38 + 0.22 * (1 - pulse);
+      const echoR = diamond * echoScale;
+      const echoAlpha = (alpha * 0.42 * (0.55 + 0.45 * pulse)).toFixed(3);
+      ctx.strokeStyle = `rgba(63,198,255,${echoAlpha})`;
+      ctx.lineWidth = 0.65 / z;
+      ctx.beginPath();
+      ctx.arc(cx, cy, echoR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 1.2 / z;
       // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.
       if (pulse > 0.55) {
         const sparkStrength = Math.min(1, (pulse - 0.55) / 0.45);
