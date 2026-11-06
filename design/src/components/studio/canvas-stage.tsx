@@ -168,6 +168,7 @@ export default function CanvasStage() {
   const [knifeResidual, setKnifeResidual] = useState<KnifeResidual | null>(null);
   const [flushPulse, setFlushPulse] = useState(0);
   const [flushPulseLag, setFlushPulseLag] = useState(0);
+  const [flushPulseRotate, setFlushPulseRotate] = useState(0);
   const [scaleFlip, setScaleFlip] = useState<{ x: boolean; y: boolean } | null>(null);
   const [rotateAngle, setRotateAngle] = useState<number | null>(null);
   const [rotateHover, setRotateHover] = useState<{
@@ -261,6 +262,7 @@ export default function CanvasStage() {
     if (!plan || plan.gap > 1.5) {
       setFlushPulse(0);
       setFlushPulseLag(0);
+      setFlushPulseRotate(0);
       return;
     }
     let raf = 0;
@@ -269,6 +271,8 @@ export default function CanvasStage() {
       setFlushPulse(0.5 + 0.5 * Math.sin(t));
       // Phase lag ~66° so the second echo trails the primary breath
       setFlushPulseLag(0.5 + 0.5 * Math.sin(t - 1.15));
+      // Shared slow phase so lag and counter arcs orbit together
+      setFlushPulseRotate((performance.now() * 0.00055) % (Math.PI * 2));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -300,7 +304,7 @@ export default function CanvasStage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
-      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag);
+      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag, flushPulseRotate);
       ctx.restore();
     }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
@@ -753,7 +757,7 @@ export default function CanvasStage() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.translate(viewport.x, viewport.y);
       ctx.scale(viewport.zoom, viewport.zoom);
-      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag);
+      drawDistributePreview(ctx, distPlan, viewport.zoom, flushPulse, flushPulseLag, flushPulseRotate);
       ctx.restore();
     }
     if (pathPointAlignPreview) drawPathPointAlignPreview(ctx, pathPointAlignPreview, doc, viewport, dpr);
