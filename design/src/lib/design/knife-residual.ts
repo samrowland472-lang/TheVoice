@@ -116,7 +116,7 @@ export function collectKnifeResidual(
     midX: cutMidX,
     midY: cutMidY,
     t0: performance.now(),
-    duration: 520,
+    duration: 880,
   };
 }
 
@@ -129,8 +129,14 @@ export function drawKnifeResidual(
   const age = performance.now() - residual.t0;
   if (age >= residual.duration) return;
   const t = age / residual.duration;
-  const alpha = t < 0.35 ? 1 : Math.max(0, 1 - (t - 0.35) / 0.65);
-  if (alpha < 0.02) return;
+  const hold = 0.48;
+  let alpha = 1;
+  if (t > hold) {
+    const fade = Math.min(1, (t - hold) / (1 - hold));
+    // Cosine ease-out: stays readable longer, then settles smoothly to zero.
+    alpha = Math.cos(fade * Math.PI / 2);
+  }
+  if (alpha < 0.015) return;
 
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

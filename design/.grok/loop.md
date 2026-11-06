@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Tightened distribute ghost positioning when the gap is dragged near zero. Flush contacts (diamonds) replace collapsed zero-length ticks, the pack label lifts clear of the stack, stay tags push out, and the live cursor plate offsets further with a "flush" read. Status matches. Phosphor-on-ground, no emoji chrome. Previous residual knife feedback remains.
+- Iteration: Polished knife residual fade. Duration lengthened to 880ms with a longer full-opacity hold (to 48%), then a cosine ease-out that stays readable longer before settling smoothly to zero. Phosphor-on-ground, no emoji chrome. Previous distribute flush diamonds remain.
 
 ## Next recommended
-- Polish residual fade timing (longer hold + smoother ease-out) or add a subtle contact pulse on the flush diamonds.
+- Add a subtle contact pulse on the flush diamonds when the distribute gap is near zero, or polish the pack label lift further.
