@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, a faint rotating cross-hair that only appears near peak pulse, subtle vertical companion flares that respond to the primary breath, a quiet outer dashed ring that slowly expands and fades on the peak, a faint inner diamond echo that pulses opposite the outer scale, a subtle phase-offset inner diamond that trails the primary breath by a small delay, soft radial tick marks that briefly appear on the diamond vertices at peak, a soft rotational offset on the trailing inner diamond so it reads as a delayed nested echo, and a faint secondary pair of radial ticks that appear slightly after the primary ones. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, a faint rotating cross-hair that only appears near peak pulse, subtle vertical companion flares that respond to the primary breath, a quiet outer dashed ring that slowly expands and fades on the peak, a faint inner diamond echo that pulses opposite the outer scale, a subtle phase-offset inner diamond that trails the primary breath by a small delay, soft radial tick marks that briefly appear on the diamond vertices at peak, a soft rotational offset on the trailing inner diamond so it reads as a delayed nested echo, and a faint secondary pair of radial ticks that appear slightly after the primary ones, plus a quiet vertical secondary tick pair that lags even further via the trail pulse. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -626,6 +626,36 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
           ctx.beginPath();
           ctx.moveTo(startX, startY);
           ctx.lineTo(startX + ux * secLen, startY + uy * secLen);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 1.2 / z;
+        ctx.lineCap = "butt";
+      }
+      // Quiet vertical secondary tick pair that lags even further.
+      // Uses the trail pulse so they appear a beat after the horizontal echo — shorter still, only the vertical vertices, so the settling feels sequential and nested.
+      if (pulseTrail > 0.72) {
+        const trailStrength = Math.min(1, (pulseTrail - 0.72) / 0.28);
+        const trailLen = (0.7 + 0.9 * trailStrength) / z;
+        const trailGap = 3.2 / z;
+        const trailAlpha = (0.10 + 0.14 * trailStrength).toFixed(3);
+        ctx.strokeStyle = `rgba(63,198,255,${trailAlpha})`;
+        ctx.lineWidth = (0.22 + 0.14 * trailStrength) / z;
+        ctx.lineCap = "round";
+        const trailPeaks = [
+          [cx, cy - diamond],
+          [cx, cy + diamond],
+        ];
+        for (const [px, py] of trailPeaks) {
+          const dx = px - cx;
+          const dy = py - cy;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          const startX = px + ux * trailGap;
+          const startY = py + uy * trailGap;
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(startX + ux * trailLen, startY + uy * trailLen);
           ctx.stroke();
         }
         ctx.lineWidth = 1.2 / z;
