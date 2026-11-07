@@ -231,8 +231,9 @@ function diamondPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: n
 /**
  * Draw the live distribute preview.
  * When the gap collapses to a flush (near-zero), a lag diamond breathes with
- * overshoot, phase-offset inner diamond, vertex flares, and a quiet secondary
- * after-image on the trailing inner diamond.
+ * overshoot, phase-offset inner diamond, vertex flares, a quiet secondary
+ * after-image on the trailing inner diamond, and soft radial tick length
+ * modulation that recedes with the slow breath.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -370,25 +371,28 @@ export function drawDistributePreview(
   diamondPath(ctx, cx, cy, inner * 0.62, innerRot + 0.4);
   ctx.stroke();
 
-  // Radial ticks + vertical secondary ticks
-  ctx.globalAlpha = 0.4;
+  // Radial ticks — soft length modulation tied to the slow breath.
+  // Primary ticks recede slightly when the inner diamond after-image / echo is brightest.
+  const recede = 0.94 + 0.06 * (1 - flushPulseSlow); // 1.00 → 0.94 as slow breath peaks
+  ctx.globalAlpha = 0.4 * (0.85 + 0.15 * (1 - flushPulseSlow));
   ctx.lineWidth = 0.9 / z;
   for (let i = 0; i < 4; i++) {
     const a = rot + (i * Math.PI) / 2;
     const r0 = primary * 0.55;
-    const r1 = primary * 1.12;
+    const r1 = primary * 1.12 * recede;
     ctx.beginPath();
     ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
     ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
     ctx.stroke();
   }
-  // Vertical secondary ticks
-  ctx.globalAlpha = 0.28;
+  // Vertical secondary ticks — same quiet recede so the family stays coherent
+  ctx.globalAlpha = 0.28 * (0.88 + 0.12 * (1 - flushPulseSlow));
+  const vRecede = 0.96 + 0.04 * (1 - flushPulseSlow);
   ctx.beginPath();
-  ctx.moveTo(cx, cy - primary * 1.2);
-  ctx.lineTo(cx, cy - primary * 0.85);
-  ctx.moveTo(cx, cy + primary * 0.85);
-  ctx.lineTo(cx, cy + primary * 1.2);
+  ctx.moveTo(cx, cy - primary * 1.2 * vRecede);
+  ctx.lineTo(cx, cy - primary * 0.85 * vRecede);
+  ctx.moveTo(cx, cy + primary * 0.85 * vRecede);
+  ctx.lineTo(cx, cy + primary * 1.2 * vRecede);
   ctx.stroke();
 
   // Rotating cross-hair
