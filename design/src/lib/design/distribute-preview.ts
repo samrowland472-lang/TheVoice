@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, and soft bilateral glow flares that brighten with the slow harmonic. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, and a faint rotating cross-hair that only appears near peak pulse. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -437,6 +437,26 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.beginPath();
       ctx.arc(cx + flareOffset, cy, flareR, 0, Math.PI * 2);
       ctx.fill();
+      // Faint rotating cross-hair that only appears near peak pulse.
+      // Thin phosphor arms slowly turn so the junction briefly reads as aligned.
+      if (pulse > 0.72) {
+        const crossStrength = Math.min(1, (pulse - 0.72) / 0.28);
+        const crossAlpha = (0.18 + 0.32 * crossStrength).toFixed(3);
+        const crossLen = diamond * (1.28 + 0.22 * crossStrength);
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(pulseRotate);
+        ctx.strokeStyle = `rgba(63,198,255,${crossAlpha})`;
+        ctx.lineWidth = (0.5 + 0.22 * crossStrength) / z;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(-crossLen, 0);
+        ctx.lineTo(crossLen, 0);
+        ctx.moveTo(0, -crossLen);
+        ctx.lineTo(0, crossLen);
+        ctx.stroke();
+        ctx.restore();
+      }
       // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.
       if (pulse > 0.55) {
         const sparkStrength = Math.min(1, (pulse - 0.55) / 0.45);
