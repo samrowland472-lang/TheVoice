@@ -240,7 +240,8 @@ function diamondPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: n
  * and a single quiet companion spark on the trailing vertex when the trail phase is high,
  * with a very subtle radial breathing so the spark lives with the slow breath of the lag family,
  * a very soft radial halo that fades with the same breath,
- * and a quiet secondary tick that only lengthens on the trailing side of the outer ring when the trail phase peaks.
+ * and a quiet secondary tick that only lengthens on the trailing side of the outer ring when the trail phase peaks,
+ * plus a faint trailing after-image of the companion spark that appears only when the trail phase is high.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -366,6 +367,28 @@ export function drawDistributePreview(
     ctx.beginPath();
     ctx.arc(sparkX, sparkY, haloBreath / z, 0, Math.PI * 2);
     ctx.fill();
+
+    // Faint trailing after-image of the companion spark itself — only when trail phase is high
+    // Offset opposite the motion so it reads as lag behind the spark
+    if (flushPulseTrail > 0.68) {
+      const trailPeak = Math.min(1, (flushPulseTrail - 0.68) / 0.32);
+      const offset = (3.2 + 1.6 * trailPeak) / z;
+      const trailSparkX = sparkX - Math.cos(trailAngle) * offset;
+      const trailSparkY = sparkY - Math.sin(trailAngle) * offset;
+      ctx.globalAlpha = sparkA * 0.38 * trailPeak * (0.7 + 0.3 * flushPulseSlow);
+      ctx.beginPath();
+      ctx.arc(trailSparkX, trailSparkY, (sparkBreath * 0.62) / z, 0, Math.PI * 2);
+      ctx.fillStyle = PHOSPHOR;
+      ctx.fill();
+      // Even softer secondary halo on the after-image at absolute peak of trail + slow breath
+      if (flushPulseTrail > 0.82 && flushPulseSlow > 0.6) {
+        const peak = Math.min(1, (flushPulseTrail - 0.82) / 0.18) * Math.min(1, (flushPulseSlow - 0.6) / 0.4);
+        ctx.globalAlpha = sparkA * 0.18 * peak;
+        ctx.beginPath();
+        ctx.arc(trailSparkX, trailSparkY, (sparkBreath * 1.15) / z, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 
   // Trailing after-image of the primary
