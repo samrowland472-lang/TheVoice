@@ -238,7 +238,8 @@ function diamondPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: n
  * rotational lag so the ring trails the primary diamond by a few degrees,
  * soft opacity modulation so the lag feels more present at peak breath,
  * and a single quiet companion spark on the trailing vertex when the trail phase is high,
- * with a very subtle radial breathing so the spark lives with the slow breath of the lag family.
+ * with a very subtle radial breathing so the spark lives with the slow breath of the lag family,
+ * and a very soft radial halo that fades with the same breath.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -357,6 +358,12 @@ export function drawDistributePreview(
     ctx.beginPath();
     ctx.arc(sparkX, sparkY, sparkBreath / z, 0, Math.PI * 2);
     ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+    // Very soft radial halo that fades with the same breath
+    const haloBreath = sparkBreath * 1.75;
+    ctx.globalAlpha = sparkA * 0.32 * flushPulseSlow;
+    ctx.beginPath();
+    ctx.arc(sparkX, sparkY, haloBreath / z, 0, Math.PI * 2);
     ctx.fill();
   }
 
