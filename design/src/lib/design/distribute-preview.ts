@@ -235,7 +235,9 @@ function diamondPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: n
  * after-image on the trailing inner diamond, soft radial tick length
  * modulation that recedes with the slow breath, and a gentle scale pulse
  * on the outer dashed ring tied to the same slow breath, with a subtle
- * rotational lag so the ring trails the primary diamond by a few degrees.
+ * rotational lag so the ring trails the primary diamond by a few degrees,
+ * soft opacity modulation so the lag feels more present at peak breath,
+ * and a single quiet companion spark on the trailing vertex when the trail phase is high.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -325,16 +327,34 @@ export function drawDistributePreview(
   ctx.lineCap = "round";
 
   // Outer dashed ring — gentle scale pulse with the slow breath so the whole lag mark breathes as one family,
-  // plus a subtle rotational lag so it trails the primary diamond by a few degrees
+  // plus a subtle rotational lag so it trails the primary diamond by a few degrees.
+  // Soft opacity modulation so the lag feels more present at peak breath and high trail phase.
   const ringScale = 1.32 + 0.06 * flushPulseSlow; // 1.32 → 1.38 as slow breath peaks
   const ringLag = 0.09; // ~5 degrees trailing offset
-  ctx.globalAlpha = 0.22 + 0.18 * flushPulseSlow;
+  const ringRot = rot * 0.4 - ringLag;
+  const ringAlpha = 0.22 + 0.18 * flushPulseSlow + 0.14 * Math.max(0, flushPulseTrail - 0.25);
+  ctx.globalAlpha = Math.min(0.5, ringAlpha);
   ctx.strokeStyle = PHOSPHOR;
   ctx.lineWidth = 1 / z;
   ctx.setLineDash([3 / z, 5 / z]);
-  diamondPath(ctx, cx, cy, primary * ringScale, rot * 0.4 - ringLag);
+  diamondPath(ctx, cx, cy, primary * ringScale, ringRot);
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Single quiet companion spark on the trailing vertex of the outer ring when trail phase is high
+  if (flushPulseTrail > 0.52) {
+    // Trailing vertex: the left vertex of the lagged diamond (local angle π), most behind the motion
+    const trailAngle = ringRot + Math.PI;
+    const trailR = primary * ringScale * 0.98;
+    const sparkX = cx + Math.cos(trailAngle) * trailR;
+    const sparkY = cy + Math.sin(trailAngle) * trailR;
+    const sparkA = 0.16 * Math.min(1, (flushPulseTrail - 0.52) / 0.48);
+    ctx.globalAlpha = sparkA;
+    ctx.beginPath();
+    ctx.arc(sparkX, sparkY, 1.7 / z, 0, Math.PI * 2);
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+  }
 
   // Trailing after-image of the primary
   ctx.globalAlpha = 0.18 * (1 - flushPulse * 0.4);
