@@ -237,7 +237,8 @@ function diamondPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: n
  * on the outer dashed ring tied to the same slow breath, with a subtle
  * rotational lag so the ring trails the primary diamond by a few degrees,
  * soft opacity modulation so the lag feels more present at peak breath,
- * and a single quiet companion spark on the trailing vertex when the trail phase is high.
+ * and a single quiet companion spark on the trailing vertex when the trail phase is high,
+ * with a very subtle radial breathing so the spark lives with the slow breath of the lag family.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -341,7 +342,8 @@ export function drawDistributePreview(
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Single quiet companion spark on the trailing vertex of the outer ring when trail phase is high
+  // Single quiet companion spark on the trailing vertex of the outer ring when trail phase is high.
+  // Very subtle radial breathing so the spark lives with the slow breath of the lag family.
   if (flushPulseTrail > 0.52) {
     // Trailing vertex: the left vertex of the lagged diamond (local angle π), most behind the motion
     const trailAngle = ringRot + Math.PI;
@@ -349,9 +351,11 @@ export function drawDistributePreview(
     const sparkX = cx + Math.cos(trailAngle) * trailR;
     const sparkY = cy + Math.sin(trailAngle) * trailR;
     const sparkA = 0.16 * Math.min(1, (flushPulseTrail - 0.52) / 0.48);
+    // Soft radial breath: expands gently as the slow pulse peaks
+    const sparkBreath = 1.45 + 0.4 * flushPulseSlow;
     ctx.globalAlpha = sparkA;
     ctx.beginPath();
-    ctx.arc(sparkX, sparkY, 1.7 / z, 0, Math.PI * 2);
+    ctx.arc(sparkX, sparkY, sparkBreath / z, 0, Math.PI * 2);
     ctx.fillStyle = PHOSPHOR;
     ctx.fill();
   }
