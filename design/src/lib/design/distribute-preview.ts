@@ -287,8 +287,8 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, and a second slower harmonic so the diamond breathes on two timescales. */
-export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0) {
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, and a third even-fainter orbital spark that trails the pulse. */
+export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
   ctx.save();
@@ -398,6 +398,18 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       const counterSweep = Math.PI * 0.32;
       ctx.beginPath();
       ctx.arc(cx, cy, counterR, counterStart, counterStart + counterSweep);
+      ctx.stroke();
+      // Third even-fainter orbital spark that trails the pulse further.
+      // Smaller radius, shorter sweep, lowest alpha so it reads as a quiet trailing breath.
+      const trailScale = 0.16 + 0.10 * (1 - pulseTrail);
+      const trailR = diamond * trailScale;
+      const trailAlpha = (alpha * 0.065 * (0.35 + 0.65 * pulseTrail)).toFixed(3);
+      ctx.strokeStyle = `rgba(63,198,255,${trailAlpha})`;
+      ctx.lineWidth = 0.20 / z;
+      const trailStart = lagStart + Math.PI * 1.42 + pulseRotate * 0.35;
+      const trailSweep = Math.PI * 0.20;
+      ctx.beginPath();
+      ctx.arc(cx, cy, trailR, trailStart, trailStart + trailSweep);
       ctx.stroke();
       ctx.lineWidth = 1.2 / z;
       // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.
