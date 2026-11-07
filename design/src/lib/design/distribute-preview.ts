@@ -234,7 +234,8 @@ function diamondPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: n
  * overshoot, phase-offset inner diamond, vertex flares, a quiet secondary
  * after-image on the trailing inner diamond, soft radial tick length
  * modulation that recedes with the slow breath, and a gentle scale pulse
- * on the outer dashed ring tied to the same slow breath.
+ * on the outer dashed ring tied to the same slow breath, with a subtle
+ * rotational lag so the ring trails the primary diamond by a few degrees.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -323,13 +324,15 @@ export function drawDistributePreview(
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  // Outer dashed ring — gentle scale pulse with the slow breath so the whole lag mark breathes as one family
+  // Outer dashed ring — gentle scale pulse with the slow breath so the whole lag mark breathes as one family,
+  // plus a subtle rotational lag so it trails the primary diamond by a few degrees
   const ringScale = 1.32 + 0.06 * flushPulseSlow; // 1.32 → 1.38 as slow breath peaks
+  const ringLag = 0.09; // ~5 degrees trailing offset
   ctx.globalAlpha = 0.22 + 0.18 * flushPulseSlow;
   ctx.strokeStyle = PHOSPHOR;
   ctx.lineWidth = 1 / z;
   ctx.setLineDash([3 / z, 5 / z]);
-  diamondPath(ctx, cx, cy, primary * ringScale, rot * 0.4);
+  diamondPath(ctx, cx, cy, primary * ringScale, rot * 0.4 - ringLag);
   ctx.stroke();
   ctx.setLineDash([]);
 
