@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, a faint rotating cross-hair that only appears near peak pulse, subtle vertical companion flares that respond to the primary breath, a quiet outer dashed ring that slowly expands and fades on the peak, a faint inner diamond echo that pulses opposite the outer scale, and soft radial tick marks that briefly appear on the diamond vertices at peak. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, a faint rotating cross-hair that only appears near peak pulse, subtle vertical companion flares that respond to the primary breath, a quiet outer dashed ring that slowly expands and fades on the peak, a faint inner diamond echo that pulses opposite the outer scale, a subtle phase-offset inner diamond that trails the primary breath by a small delay, and soft radial tick marks that briefly appear on the diamond vertices at peak. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -377,6 +377,23 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.lineTo(cx + innerDiamond, cy);
       ctx.lineTo(cx, cy + innerDiamond);
       ctx.lineTo(cx - innerDiamond, cy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.lineWidth = 1.2 / z;
+      // Subtle phase-offset inner diamond that trails the primary breath by a small delay.
+      // Uses the lag pulse so it peaks slightly after the main diamond — quieter, a touch smaller, nested depth.
+      const lagInnerScale = 0.42 + 0.22 * (1 - pulseLag);
+      const lagInnerDiamond = diamond * lagInnerScale;
+      const lagInnerAlpha = (alpha * 0.18 * (0.4 + 0.6 * pulseLag)).toFixed(3);
+      ctx.strokeStyle = `rgba(63,198,255,${lagInnerAlpha})`;
+      ctx.lineWidth = 0.42 / z;
+      ctx.fillStyle = `rgba(63,198,255,${(parseFloat(lagInnerAlpha) * 0.08).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - lagInnerDiamond);
+      ctx.lineTo(cx + lagInnerDiamond, cy);
+      ctx.lineTo(cx, cy + lagInnerDiamond);
+      ctx.lineTo(cx - lagInnerDiamond, cy);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
