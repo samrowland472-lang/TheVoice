@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, and a faint rotating cross-hair that only appears near peak pulse. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, and a faint rotating cross-hair that only appears near peak pulse, plus subtle vertical companion flares that respond to the primary breath. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -436,6 +436,31 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.fillStyle = rightGrad;
       ctx.beginPath();
       ctx.arc(cx + flareOffset, cy, flareR, 0, Math.PI * 2);
+      ctx.fill();
+      // Subtle vertical companion flares that respond to the primary breath.
+      // Quiet top/bottom breaths so the junction has a vertical living edge that follows the main pulse.
+      const vFlareStrength = 0.18 + 0.82 * pulse;
+      const vFlareR = diamond * (0.68 + 0.26 * pulse);
+      const vFlareOffset = diamond * 0.66;
+      const vFlareInner = (alpha * 0.15 * vFlareStrength).toFixed(3);
+      const vFlareMid = (alpha * 0.048 * vFlareStrength).toFixed(3);
+      // Top
+      const topGrad = ctx.createRadialGradient(cx, cy - vFlareOffset, 0, cx, cy - vFlareOffset, vFlareR);
+      topGrad.addColorStop(0, `rgba(63,198,255,${vFlareInner})`);
+      topGrad.addColorStop(0.48, `rgba(63,198,255,${vFlareMid})`);
+      topGrad.addColorStop(1, "rgba(63,198,255,0)");
+      ctx.fillStyle = topGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy - vFlareOffset, vFlareR, 0, Math.PI * 2);
+      ctx.fill();
+      // Bottom
+      const botGrad = ctx.createRadialGradient(cx, cy + vFlareOffset, 0, cx, cy + vFlareOffset, vFlareR);
+      botGrad.addColorStop(0, `rgba(63,198,255,${vFlareInner})`);
+      botGrad.addColorStop(0.48, `rgba(63,198,255,${vFlareMid})`);
+      botGrad.addColorStop(1, "rgba(63,198,255,0)");
+      ctx.fillStyle = botGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy + vFlareOffset, vFlareR, 0, Math.PI * 2);
       ctx.fill();
       // Faint rotating cross-hair that only appears near peak pulse.
       // Thin phosphor arms slowly turn so the junction briefly reads as aligned.
