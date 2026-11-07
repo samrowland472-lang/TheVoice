@@ -253,6 +253,24 @@ export function drawDistributePreview(
       ctx.beginPath();
       ctx.arc(sx, sy, outerHalo, 0, Math.PI * 2);
       ctx.fill();
+
+      // Quiet counter-rotating inner tick — only while the peak halo is live
+      // so the lag family stays one coherent mark instead of discrete ticks
+      const counterAng = -rotate * 1.35 + Math.PI * 0.42;
+      const innerDist = sparkSize * 1.55;
+      const ix = Math.cos(counterAng) * innerDist;
+      const iy = Math.sin(counterAng) * innerDist;
+      const tickLen = (1.6 + 0.7 * peak) / z;
+      ctx.save();
+      ctx.translate(sx, sy);
+      ctx.beginPath();
+      ctx.moveTo(ix - Math.cos(counterAng) * tickLen, iy - Math.sin(counterAng) * tickLen);
+      ctx.lineTo(ix + Math.cos(counterAng) * tickLen, iy + Math.sin(counterAng) * tickLen);
+      ctx.strokeStyle = `rgba(180, 240, 255, ${0.16 * (peak - 0.75)})`;
+      ctx.lineWidth = 0.65 / z;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.restore();
     }
   }
 

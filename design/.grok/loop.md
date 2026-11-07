@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Second softer halo ring on the companion spark, visible only at the absolute peak of trail phase × slow breath. When both are near maximum the spark gains a wider, quieter outer radial halo so the lag mark stays one coherent family instead of discrete ticks. Previous faint trailing after-image, quiet secondary tick, soft radial halo, breathing, opacity modulation, trailing-vertex spark, rotational lag, scale pulse, and the rest of the flush diamond language stay intact. Phosphor-on-ground, no emoji chrome.
+- Iteration: Quiet counter-rotating inner tick on the companion spark, visible only while the peak halo is live. When trail phase × slow breath is at absolute maximum the spark gains a short, low-opacity tick that orbits opposite the main rotation, so the lag family stays one coherent mark instead of discrete ticks. Previous second softer outer halo, faint trailing after-image, quiet secondary tick, soft radial halo, breathing, opacity modulation, trailing-vertex spark, rotational lag, scale pulse, and the rest of the flush diamond language stay intact. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- A micro cross-fade of the secondary tick into the spark after-image so the trail side never feels like two separate marks, or a quiet counter-rotating inner tick that only appears while the peak halo is live.
+- Soften the counter-rotating tick with a micro cross-fade into the after-image so the trail side never reads as separate marks, or a second even quieter inner arc that appears only at the absolute peak of the outer halo.
