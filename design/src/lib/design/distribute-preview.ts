@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, and a third even-fainter orbital spark that trails the pulse. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, and soft bilateral glow flares that brighten with the slow harmonic. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -412,6 +412,31 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.arc(cx, cy, trailR, trailStart, trailStart + trailSweep);
       ctx.stroke();
       ctx.lineWidth = 1.2 / z;
+      // Soft bilateral glow flares that brighten with the slow harmonic.
+      // Quiet left/right breaths on the diamond flanks so the junction has a lateral living edge.
+      const flareStrength = 0.28 + 0.72 * pulseSlow;
+      const flareR = diamond * (0.95 + 0.35 * pulseSlow);
+      const flareOffset = diamond * 0.72;
+      const flareInner = (alpha * 0.26 * flareStrength).toFixed(3);
+      const flareMid = (alpha * 0.09 * flareStrength).toFixed(3);
+      // Left flank
+      const leftGrad = ctx.createRadialGradient(cx - flareOffset, cy, 0, cx - flareOffset, cy, flareR);
+      leftGrad.addColorStop(0, `rgba(63,198,255,${flareInner})`);
+      leftGrad.addColorStop(0.42, `rgba(63,198,255,${flareMid})`);
+      leftGrad.addColorStop(1, "rgba(63,198,255,0)");
+      ctx.fillStyle = leftGrad;
+      ctx.beginPath();
+      ctx.arc(cx - flareOffset, cy, flareR, 0, Math.PI * 2);
+      ctx.fill();
+      // Right flank
+      const rightGrad = ctx.createRadialGradient(cx + flareOffset, cy, 0, cx + flareOffset, cy, flareR);
+      rightGrad.addColorStop(0, `rgba(63,198,255,${flareInner})`);
+      rightGrad.addColorStop(0.42, `rgba(63,198,255,${flareMid})`);
+      rightGrad.addColorStop(1, "rgba(63,198,255,0)");
+      ctx.fillStyle = rightGrad;
+      ctx.beginPath();
+      ctx.arc(cx + flareOffset, cy, flareR, 0, Math.PI * 2);
+      ctx.fill();
       // Tiny contact sparks on the diamond peaks when the pulse is high — short bright ticks that flare with the peak.
       if (pulse > 0.55) {
         const sparkStrength = Math.min(1, (pulse - 0.55) / 0.45);
