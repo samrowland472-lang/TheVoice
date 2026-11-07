@@ -287,7 +287,7 @@ export function distributeMoveCount(plan: DistributePlan): number {
 /** Phosphor ghosts at the even positions. First and last stay solid; movers are dashed.
  *  Near-zero gaps collapse the tick lines into a single flush contact mark and
  *  lift the label clear of the packed stack so the read stays clean.
- *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, and a faint rotating cross-hair that only appears near peak pulse, plus subtle vertical companion flares that respond to the primary breath. */
+ *  Flush diamonds pulse subtly so contact reads as alive, with a soft multi-stop radial glow, a faint inner ring echo, a phase-lagged second echo arc, a quieter counter-arc on the opposite side that slowly orbits with a shared phase, tiny peak sparks when the pulse peaks, a second slower harmonic so the diamond breathes on two timescales, a third even-fainter orbital spark that trails the pulse, soft bilateral glow flares that brighten with the slow harmonic, a faint rotating cross-hair that only appears near peak pulse, subtle vertical companion flares that respond to the primary breath, and a quiet outer dashed ring that slowly expands and fades on the peak. */
 export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: DistributePlan, zoom: number, pulse = 0, pulseLag = 0, pulseRotate = 0, pulseSlow = 0, pulseTrail = 0) {
   const z = Math.max(zoom, 0.01);
   const flush = plan.gap <= 1.5;
@@ -462,6 +462,23 @@ export function drawDistributePreview(ctx: CanvasRenderingContext2D, plan: Distr
       ctx.beginPath();
       ctx.arc(cx, cy + vFlareOffset, vFlareR, 0, Math.PI * 2);
       ctx.fill();
+      // Quiet outer dashed ring that slowly expands and fades on the peak.
+      // Appears only near the top of the primary breath, expands outward, and dissolves so the contact mark feels like it releases a quiet pulse.
+      if (pulse > 0.62) {
+        const ringStrength = Math.min(1, (pulse - 0.62) / 0.38);
+        const ringScale = 1.35 + 0.95 * ringStrength;
+        const ringR = diamond * ringScale;
+        const ringAlpha = (alpha * 0.22 * (1 - ringStrength * 0.72)).toFixed(3);
+        ctx.save();
+        ctx.strokeStyle = `rgba(63,198,255,${ringAlpha})`;
+        ctx.lineWidth = (0.38 + 0.18 * (1 - ringStrength)) / z;
+        ctx.setLineDash([2.4 / z, 3.1 / z]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
       // Faint rotating cross-hair that only appears near peak pulse.
       // Thin phosphor arms slowly turn so the junction briefly reads as aligned.
       if (pulse > 0.72) {
