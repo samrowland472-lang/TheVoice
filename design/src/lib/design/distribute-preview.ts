@@ -249,6 +249,9 @@ export function drawDistributePreview(
     const oppBreathShared = 0.5 + 0.5 * Math.sin(slow * 3.4 + Math.PI * 0.7);
     const crest = Math.max(0, Math.min(1, (peak - 0.90) * 5)) * Math.max(0, Math.min(1, (oppBreathShared - 0.72) * 3.5));
     const familyExpand = 1 + 0.038 * crest;
+    // Faint rotational lag so the expanded family trails the primary breath
+    // as one continuous joint crest rather than a rigid overlay.
+    const familyLagRot = (lag - 0.5) * 0.18 * crest;
     if (peak > 0.82) {
       const outerHalo = sparkSize * (3.6 + 0.6 * peak) * familyExpand;
       const og = ctx.createRadialGradient(sx, sy, sparkSize * 1.4, sx, sy, outerHalo);
@@ -262,7 +265,7 @@ export function drawDistributePreview(
       // Quiet counter-rotating inner tick — only while the peak halo is live
       // so the lag family stays one coherent mark instead of discrete ticks.
       // Micro cross-fade into the after-image so the trail side never reads as separate marks.
-      const counterAng = -rotate * 1.35 + Math.PI * 0.42;
+      const counterAng = -rotate * 1.35 + Math.PI * 0.42 + familyLagRot;
       const innerDist = sparkSize * 1.55;
       const ix = Math.cos(counterAng) * innerDist;
       const iy = Math.sin(counterAng) * innerDist;
