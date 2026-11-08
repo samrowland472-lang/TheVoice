@@ -417,6 +417,36 @@ export function drawDistributePreview(
             ctx.stroke();
           }
         }
+
+        // Quiet fifth echo — only on the extreme trailing side of the fourth,
+        // at the absolute peak of the outer halo. Receives familyLagRot so it
+        // trails the joint crest as one continuous expanding breath. Micro taper
+        // of its own so the mark dissolves softly rather than ending hard.
+        if (peak > 0.975) {
+          const fifthAng = counterAng + Math.PI * 1.72 + familyLagRot;
+          const fifthBreath = 0.5 + 0.5 * Math.sin(slow * 2.2 + Math.PI * 0.9);
+          const fifthOpacity = 0.028 * (peak - 0.96) * fifthBreath;
+          const fifthR = sparkSize * (2.52 + 0.09 * fifthBreath) * familyExpand;
+          const fifthStart = fifthAng - 0.24;
+          const fifthEnd = fifthAng + 0.16;
+          // Micro taper: three short segments with decreasing opacity and width
+          // toward the extreme trailing end.
+          const fifthSegments = 3;
+          const fifthSpan = fifthEnd - fifthStart;
+          for (let s = 0; s < fifthSegments; s++) {
+            const t0 = s / fifthSegments;
+            const t1 = (s + 1) / fifthSegments;
+            const segStart = fifthStart + fifthSpan * t0;
+            const segEnd = fifthStart + fifthSpan * t1;
+            const taper = 1 - t0 * 0.52; // soft taper toward the trailing end
+            ctx.beginPath();
+            ctx.arc(0, 0, fifthR, segStart, segEnd);
+            ctx.strokeStyle = `rgba(120, 200, 255, ${fifthOpacity * taper})`;
+            ctx.lineWidth = (0.22 / z) * (0.68 + 0.32 * taper);
+            ctx.lineCap = "round";
+            ctx.stroke();
+          }
+        }
       }
       // Soft cross-fade bridge toward the trailing after-image
       if (trailPhase > 0.68 && fade > 0.15) {
