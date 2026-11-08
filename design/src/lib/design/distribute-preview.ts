@@ -287,6 +287,21 @@ export function drawDistributePreview(
         ctx.lineWidth = 0.4 / z;
         ctx.lineCap = "round";
         ctx.stroke();
+        // Faint trailing filament — only when the slow breath is near its own peak,
+        // so the quiet arc softens into the lag family as one continuous breath.
+        if (arcBreath > 0.82) {
+          const filamentBreath = (arcBreath - 0.82) / 0.18;
+          const filamentOpacity = 0.045 * filamentBreath * (peak - 0.88);
+          const filamentStart = arcEnd - 0.08;
+          const filamentEnd = arcEnd + 0.22;
+          const filamentR = arcR * (1.02 + 0.06 * filamentBreath);
+          ctx.beginPath();
+          ctx.arc(0, 0, filamentR, filamentStart, filamentEnd);
+          ctx.strokeStyle = `rgba(180, 240, 255, ${filamentOpacity})`;
+          ctx.lineWidth = 0.28 / z;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
       }
       // Soft cross-fade bridge toward the trailing after-image
       if (trailPhase > 0.68 && fade > 0.15) {
