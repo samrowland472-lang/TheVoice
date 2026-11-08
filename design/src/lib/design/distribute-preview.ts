@@ -117,8 +117,10 @@ export function commitDistributePreview(): void {
 /** Phosphor flush diamond with lag companion spark and peak halo.
  * Continuous expanding breath: primary diamond, nested marks and denary breath
  * on the thirteenth, quiet fourteenth at the absolute extreme trail with
- * even quieter undenary breath, and quiet fifteenth mark at the extreme.
- * All family members inherit familyLagRot. Phosphor-on-ground.
+ * even quieter undenary breath, quiet fifteenth mark at the extreme with
+ * even quieter duodenary breath, and quiet sixteenth mark at the absolute
+ * extreme trail of the joint crest. All family members inherit familyLagRot.
+ * Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -362,6 +364,26 @@ export function drawDistributePreview(
     ctx.moveTo(r15 * 0.96, -1.2 / z);
     ctx.lineTo(r15 * 1.04, 0);
     ctx.lineTo(r15 * 0.96, 1.2 / z);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Duodenary breath — even quieter on the fifteenth
+  if (fifteenthPeak > 0.06) {
+    taper(halfW * 0.08 * breath, Math.PI * 0.12, Math.PI * 0.32, 0.09, 0.022 * fifteenthPeak * slow);
+  }
+
+  // Quiet sixteenth mark only at the absolute extreme trail of the joint crest
+  const sixteenthPeak = Math.max(0, trail - 0.94) * 6.8;
+  if (sixteenthPeak > 0.02) {
+    ctx.save();
+    ctx.globalAlpha = 0.08 * sixteenthPeak;
+    ctx.rotate(familyLagRot * 0.05);
+    ctx.strokeStyle = "rgba(63, 198, 255, 1)";
+    ctx.lineWidth = 0.18 / z;
+    const r16 = halfW * breath * 1.29;
+    ctx.beginPath();
+    ctx.arc(r16, 0, 1.4 / z, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
