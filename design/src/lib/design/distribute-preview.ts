@@ -357,6 +357,25 @@ export function drawDistributePreview(
             }
           }
         }
+
+        // Quiet fourth echo — only at absolute peak of the outer halo.
+        // A faint opposing arc that completes the lag family as one continuous
+        // expanding breath rather than discrete marks. Shares the familyExpand
+        // so it participates in the joint crest pulse.
+        if (peak > 0.96) {
+          const echoAng = counterAng + Math.PI * 1.35;
+          const echoBreath = 0.5 + 0.5 * Math.sin(slow * 2.7 + Math.PI * 0.4);
+          const echoOpacity = 0.038 * (peak - 0.94) * echoBreath;
+          const echoR = sparkSize * (2.35 + 0.12 * echoBreath) * familyExpand;
+          const echoStart = echoAng - 0.32;
+          const echoEnd = echoAng + 0.22;
+          ctx.beginPath();
+          ctx.arc(0, 0, echoR, echoStart, echoEnd);
+          ctx.strokeStyle = `rgba(140, 210, 255, ${echoOpacity})`;
+          ctx.lineWidth = 0.26 / z;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
       }
       // Soft cross-fade bridge toward the trailing after-image
       if (trailPhase > 0.68 && fade > 0.15) {
