@@ -322,18 +322,34 @@ export function drawDistributePreview(
 
           // Faint opposing filament — only when the third arc’s own breath is near peak,
           // so the continuous breath softens further into one fluid lag family.
+          // Micro taper + secondary slower breath so it dissolves even more softly.
           if (oppBreath > 0.85) {
             const oppFilamentBreath = (oppBreath - 0.85) / 0.15;
-            const oppFilamentOpacity = 0.032 * oppFilamentBreath * (peak - 0.92);
+            // Secondary slower breath for extra softness into the trail phase
+            const secondaryBreath = 0.5 + 0.5 * Math.sin(slow * 2.1 + Math.PI * 1.3);
+            const softFactor = 0.65 + 0.35 * secondaryBreath;
+            const oppFilamentOpacity = 0.032 * oppFilamentBreath * (peak - 0.92) * softFactor;
             const oppFilamentStart = oppStart - 0.12;
             const oppFilamentEnd = oppStart + 0.18;
             const oppFilamentR = oppR * (0.96 - 0.04 * oppFilamentBreath);
-            ctx.beginPath();
-            ctx.arc(0, 0, oppFilamentR, oppFilamentStart, oppFilamentEnd);
-            ctx.strokeStyle = `rgba(140, 210, 255, ${oppFilamentOpacity})`;
-            ctx.lineWidth = 0.22 / z;
-            ctx.lineCap = "round";
-            ctx.stroke();
+
+            // Micro taper: three short segments with decreasing opacity and width
+            // so the filament dissolves softly rather than ending abruptly.
+            const segments = 3;
+            const totalSpan = oppFilamentEnd - oppFilamentStart;
+            for (let s = 0; s < segments; s++) {
+              const t0 = s / segments;
+              const t1 = (s + 1) / segments;
+              const segStart = oppFilamentStart + totalSpan * t0;
+              const segEnd = oppFilamentStart + totalSpan * t1;
+              const taper = 1 - t0 * 0.55; // soft taper toward the trailing end
+              ctx.beginPath();
+              ctx.arc(0, 0, oppFilamentR, segStart, segEnd);
+              ctx.strokeStyle = `rgba(140, 210, 255, ${oppFilamentOpacity * taper})`;
+              ctx.lineWidth = (0.22 / z) * (0.7 + 0.3 * taper);
+              ctx.lineCap = "round";
+              ctx.stroke();
+            }
           }
         }
       }
