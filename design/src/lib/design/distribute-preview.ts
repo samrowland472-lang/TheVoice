@@ -649,10 +649,13 @@ export function drawDistributePreview(
 
                         // Quiet twelfth mark — only at the absolute extreme trail of the
                         // joint crest. Inherits familyLagRot so the extreme trail continues
-                        // as one continuous expanding breath. Soft micro-taper segments.
+                        // as one continuous expanding breath. Softened further with an even
+                        // quieter nonary breath of its own. Soft micro-taper segments.
                         if (eleventhBreath > 0.88 && eleventhOctonaryBreath > 0.52 && peak > 0.997) {
                           const twelfthBreath = 0.5 + 0.5 * Math.sin(slow * 0.09 + Math.PI * 0.0);
-                          const twelfthOpacity = 0.0008 * fifthFilamentBreath * (peak - 0.995) * twelfthBreath * eleventhSoft;
+                          const twelfthNonaryBreath = 0.5 + 0.5 * Math.sin(slow * 0.07 + Math.PI * 0.002);
+                          const twelfthSoft = 0.42 + 0.58 * twelfthNonaryBreath;
+                          const twelfthOpacity = 0.0008 * fifthFilamentBreath * (peak - 0.995) * twelfthBreath * eleventhSoft * twelfthSoft;
                           const twelfthStart = eleventhEnd - 0.007;
                           const twelfthEnd = eleventhEnd + 0.012 + familyLagRot * 0.1;
                           const twelfthR = eleventhR * (1.0007 + 0.004 * fifthFilamentBreath);
@@ -670,6 +673,32 @@ export function drawDistributePreview(
                             ctx.lineWidth = (0.03 / z) * (0.35 + 0.65 * taper);
                             ctx.lineCap = "round";
                             ctx.stroke();
+                          }
+
+                          // Quiet thirteenth mark — only at the absolute extreme trail of the
+                          // joint crest. Inherits familyLagRot so the extreme trail continues
+                          // as one continuous expanding breath. Soft micro-taper segments.
+                          if (twelfthBreath > 0.90 && twelfthNonaryBreath > 0.50 && peak > 0.998) {
+                            const thirteenthBreath = 0.5 + 0.5 * Math.sin(slow * 0.06 + Math.PI * 0.0);
+                            const thirteenthOpacity = 0.0005 * fifthFilamentBreath * (peak - 0.996) * thirteenthBreath * twelfthSoft;
+                            const thirteenthStart = twelfthEnd - 0.005;
+                            const thirteenthEnd = twelfthEnd + 0.008 + familyLagRot * 0.07;
+                            const thirteenthR = twelfthR * (1.0005 + 0.0025 * fifthFilamentBreath);
+                            const thirteenthSegments = 2;
+                            const thirteenthSpan = thirteenthEnd - thirteenthStart;
+                            for (let s = 0; s < thirteenthSegments; s++) {
+                              const t0 = s / thirteenthSegments;
+                              const t1 = (s + 1) / thirteenthSegments;
+                              const segStart = thirteenthStart + thirteenthSpan * t0;
+                              const segEnd = thirteenthStart + thirteenthSpan * t1;
+                              const taper = 1 - t0 * 0.86;
+                              ctx.beginPath();
+                              ctx.arc(0, 0, thirteenthR, segStart, segEnd);
+                              ctx.strokeStyle = `rgba(30, 110, 255, ${thirteenthOpacity * taper})`;
+                              ctx.lineWidth = (0.022 / z) * (0.3 + 0.7 * taper);
+                              ctx.lineCap = "round";
+                              ctx.stroke();
+                            }
                           }
                         }
                       }
