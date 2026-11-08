@@ -255,21 +255,38 @@ export function drawDistributePreview(
       ctx.fill();
 
       // Quiet counter-rotating inner tick — only while the peak halo is live
-      // so the lag family stays one coherent mark instead of discrete ticks
+      // so the lag family stays one coherent mark instead of discrete ticks.
+      // Micro cross-fade into the after-image so the trail side never reads as separate marks.
       const counterAng = -rotate * 1.35 + Math.PI * 0.42;
       const innerDist = sparkSize * 1.55;
       const ix = Math.cos(counterAng) * innerDist;
       const iy = Math.sin(counterAng) * innerDist;
       const tickLen = (1.6 + 0.7 * peak) / z;
+      const fade = Math.min(1, (peak - 0.82) / 0.12);
       ctx.save();
       ctx.translate(sx, sy);
+      // Primary tick
       ctx.beginPath();
       ctx.moveTo(ix - Math.cos(counterAng) * tickLen, iy - Math.sin(counterAng) * tickLen);
       ctx.lineTo(ix + Math.cos(counterAng) * tickLen, iy + Math.sin(counterAng) * tickLen);
-      ctx.strokeStyle = `rgba(180, 240, 255, ${0.16 * (peak - 0.75)})`;
+      ctx.strokeStyle = `rgba(180, 240, 255, ${0.16 * (peak - 0.75) * (1 - fade * 0.35)})`;
       ctx.lineWidth = 0.65 / z;
       ctx.lineCap = "round";
       ctx.stroke();
+      // Soft cross-fade bridge toward the trailing after-image
+      if (trailPhase > 0.68 && fade > 0.15) {
+        const lagDx = Math.cos(trailAng) * trailDist * 0.18;
+        const lagDy = Math.sin(trailAng) * trailDist * 0.18;
+        const bridgeX = ix * (1 - fade * 0.4) + lagDx * fade * 0.4;
+        const bridgeY = iy * (1 - fade * 0.4) + lagDy * fade * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(ix * 0.7, iy * 0.7);
+        ctx.lineTo(bridgeX, bridgeY);
+        ctx.strokeStyle = `rgba(126, 224, 255, ${0.11 * fade * (peak - 0.8)})`;
+        ctx.lineWidth = 0.45 / z;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
       ctx.restore();
     }
   }
