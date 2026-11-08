@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Softened the counter-rotating inner tick with a micro cross-fade into the after-image. At absolute peak the tick gains a faint bridge stroke that blends toward the trailing after-image, so the lag family reads as one coherent mark instead of discrete ticks. Previous quiet counter-rotating tick, second softer outer halo, faint trailing after-image, quiet secondary tick, soft radial halo, breathing, opacity modulation, trailing-vertex spark, rotational lag, scale pulse, and the rest of the flush diamond language stay intact. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a second even quieter inner arc that appears only at the absolute peak of the outer halo, with a slow opacity pulse so the trail side breathes as a single gesture. The cross-fade bridge also gains a matching slow breath. Previous micro cross-fade into the after-image, quiet counter-rotating tick, second softer outer halo, faint trailing after-image, quiet secondary tick, soft radial halo, breathing, opacity modulation, trailing-vertex spark, rotational lag, scale pulse, and the rest of the flush diamond language stay intact. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Add a second even quieter inner arc that appears only at the absolute peak of the outer halo, or a slow opacity pulse on the cross-fade bridge so the trail side breathes as a single gesture.
+- Soften the quiet inner arc with a faint trailing filament that only appears when the slow breath is near its own peak, or add a third even lower-opacity counter-arc that drifts opposite the first so the lag family reads as one continuous breath.

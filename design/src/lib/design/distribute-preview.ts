@@ -273,6 +273,21 @@ export function drawDistributePreview(
       ctx.lineWidth = 0.65 / z;
       ctx.lineCap = "round";
       ctx.stroke();
+      // Second even quieter inner arc — only at absolute peak of the outer halo.
+      // Slow opacity pulse so the trail side breathes as a single gesture.
+      if (peak > 0.90) {
+        const arcBreath = 0.5 + 0.5 * Math.sin(slow * 4.2);
+        const arcOpacity = 0.09 * (peak - 0.88) * arcBreath;
+        const arcR = sparkSize * (1.85 + 0.25 * arcBreath);
+        const arcStart = counterAng - 0.55;
+        const arcEnd = counterAng + 0.38;
+        ctx.beginPath();
+        ctx.arc(0, 0, arcR, arcStart, arcEnd);
+        ctx.strokeStyle = `rgba(126, 224, 255, ${arcOpacity})`;
+        ctx.lineWidth = 0.4 / z;
+        ctx.lineCap = "round";
+        ctx.stroke();
+      }
       // Soft cross-fade bridge toward the trailing after-image
       if (trailPhase > 0.68 && fade > 0.15) {
         const lagDx = Math.cos(trailAng) * trailDist * 0.18;
@@ -282,7 +297,8 @@ export function drawDistributePreview(
         ctx.beginPath();
         ctx.moveTo(ix * 0.7, iy * 0.7);
         ctx.lineTo(bridgeX, bridgeY);
-        ctx.strokeStyle = `rgba(126, 224, 255, ${0.11 * fade * (peak - 0.8)})`;
+        const bridgeBreath = 0.65 + 0.35 * Math.sin(slow * 3.1);
+        ctx.strokeStyle = `rgba(126, 224, 255, ${0.11 * fade * (peak - 0.8) * bridgeBreath})`;
         ctx.lineWidth = 0.45 / z;
         ctx.lineCap = "round";
         ctx.stroke();
