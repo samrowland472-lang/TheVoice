@@ -244,8 +244,13 @@ export function drawDistributePreview(
 
     // Second, even softer halo ring — only at absolute peak of trail + slow breath
     const peak = trailPhase * breath;
+    // Faint radial pulse that briefly expands the entire lag family
+    // when both the outer halo peak and the opposing breath crest together.
+    const oppBreathShared = 0.5 + 0.5 * Math.sin(slow * 3.4 + Math.PI * 0.7);
+    const crest = Math.max(0, Math.min(1, (peak - 0.90) * 5)) * Math.max(0, Math.min(1, (oppBreathShared - 0.72) * 3.5));
+    const familyExpand = 1 + 0.038 * crest;
     if (peak > 0.82) {
-      const outerHalo = sparkSize * (3.6 + 0.6 * peak);
+      const outerHalo = sparkSize * (3.6 + 0.6 * peak) * familyExpand;
       const og = ctx.createRadialGradient(sx, sy, sparkSize * 1.4, sx, sy, outerHalo);
       og.addColorStop(0, `rgba(63, 198, 255, ${0.12 * (peak - 0.7)})`);
       og.addColorStop(1, "rgba(63, 198, 255, 0)");
@@ -278,7 +283,7 @@ export function drawDistributePreview(
       if (peak > 0.90) {
         const arcBreath = 0.5 + 0.5 * Math.sin(slow * 4.2);
         const arcOpacity = 0.09 * (peak - 0.88) * arcBreath;
-        const arcR = sparkSize * (1.85 + 0.25 * arcBreath);
+        const arcR = sparkSize * (1.85 + 0.25 * arcBreath) * familyExpand;
         const arcStart = counterAng - 0.55;
         const arcEnd = counterAng + 0.38;
         ctx.beginPath();
@@ -294,7 +299,7 @@ export function drawDistributePreview(
           const filamentOpacity = 0.045 * filamentBreath * (peak - 0.88);
           const filamentStart = arcEnd - 0.08;
           const filamentEnd = arcEnd + 0.22;
-          const filamentR = arcR * (1.02 + 0.06 * filamentBreath);
+          const filamentR = arcR * (1.02 + 0.06 * filamentBreath); // already expanded via arcR
           ctx.beginPath();
           ctx.arc(0, 0, filamentR, filamentStart, filamentEnd);
           ctx.strokeStyle = `rgba(180, 240, 255, ${filamentOpacity})`;
@@ -310,7 +315,7 @@ export function drawDistributePreview(
           const oppAng = counterAng + Math.PI * 0.92;
           const oppBreath = 0.5 + 0.5 * Math.sin(slow * 3.4 + Math.PI * 0.7);
           const oppOpacity = 0.055 * (peak - 0.92) * oppBreath;
-          const oppR = sparkSize * (2.15 + 0.18 * oppBreath);
+          const oppR = sparkSize * (2.15 + 0.18 * oppBreath) * familyExpand;
           const oppStart = oppAng - 0.42;
           const oppEnd = oppAng + 0.28;
           ctx.beginPath();
@@ -331,7 +336,7 @@ export function drawDistributePreview(
             const oppFilamentOpacity = 0.032 * oppFilamentBreath * (peak - 0.92) * softFactor;
             const oppFilamentStart = oppStart - 0.12;
             const oppFilamentEnd = oppStart + 0.18;
-            const oppFilamentR = oppR * (0.96 - 0.04 * oppFilamentBreath);
+            const oppFilamentR = oppR * (0.96 - 0.04 * oppFilamentBreath); // already expanded via oppR
 
             // Micro taper: three short segments with decreasing opacity and width
             // so the filament dissolves softly rather than ending abruptly.
