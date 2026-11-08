@@ -361,7 +361,8 @@ export function drawDistributePreview(
         // Quiet fourth echo — only at absolute peak of the outer halo.
         // A faint opposing arc that completes the lag family as one continuous
         // expanding breath rather than discrete marks. Shares the familyExpand
-        // so it participates in the joint crest pulse.
+        // so it participates in the joint crest pulse. Micro taper of its own
+        // so the arc dissolves softly into the crest instead of ending hard.
         if (peak > 0.96) {
           const echoAng = counterAng + Math.PI * 1.35;
           const echoBreath = 0.5 + 0.5 * Math.sin(slow * 2.7 + Math.PI * 0.4);
@@ -369,12 +370,23 @@ export function drawDistributePreview(
           const echoR = sparkSize * (2.35 + 0.12 * echoBreath) * familyExpand;
           const echoStart = echoAng - 0.32;
           const echoEnd = echoAng + 0.22;
-          ctx.beginPath();
-          ctx.arc(0, 0, echoR, echoStart, echoEnd);
-          ctx.strokeStyle = `rgba(140, 210, 255, ${echoOpacity})`;
-          ctx.lineWidth = 0.26 / z;
-          ctx.lineCap = "round";
-          ctx.stroke();
+          // Micro taper: three short segments with decreasing opacity and width
+          // toward the trailing end so the fourth echo softens into the joint breath.
+          const echoSegments = 3;
+          const echoSpan = echoEnd - echoStart;
+          for (let s = 0; s < echoSegments; s++) {
+            const t0 = s / echoSegments;
+            const t1 = (s + 1) / echoSegments;
+            const segStart = echoStart + echoSpan * t0;
+            const segEnd = echoStart + echoSpan * t1;
+            const taper = 1 - t0 * 0.48; // soft taper toward the trailing end
+            ctx.beginPath();
+            ctx.arc(0, 0, echoR, segStart, segEnd);
+            ctx.strokeStyle = `rgba(140, 210, 255, ${echoOpacity * taper})`;
+            ctx.lineWidth = (0.26 / z) * (0.72 + 0.28 * taper);
+            ctx.lineCap = "round";
+            ctx.stroke();
+          }
         }
       }
       // Soft cross-fade bridge toward the trailing after-image
