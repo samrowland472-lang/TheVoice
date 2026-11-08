@@ -565,10 +565,13 @@ export function drawDistributePreview(
 
                   // Quiet ninth mark — only at the absolute extreme trail of the
                   // joint crest. Inherits familyLagRot so the extreme trail continues
-                  // as one continuous expanding breath. Soft micro-taper segments.
+                  // as one continuous expanding breath. Softened further with an even
+                  // quieter senary breath of its own. Soft micro-taper segments.
                   if (eighthBreath > 0.82 && eighthQuinaryBreath > 0.6 && peak > 0.988) {
                     const ninthBreath = 0.5 + 0.5 * Math.sin(slow * 0.28 + Math.PI * 0.02);
-                    const ninthOpacity = 0.003 * fifthFilamentBreath * (peak - 0.986) * ninthBreath * eighthSoft;
+                    const ninthSenaryBreath = 0.5 + 0.5 * Math.sin(slow * 0.22 + Math.PI * 0.01);
+                    const ninthSoft = 0.5 + 0.5 * ninthSenaryBreath;
+                    const ninthOpacity = 0.003 * fifthFilamentBreath * (peak - 0.986) * ninthBreath * eighthSoft * ninthSoft;
                     const ninthStart = eighthEnd - 0.02;
                     const ninthEnd = eighthEnd + 0.035 + familyLagRot * 0.25;
                     const ninthR = eighthR * (1.002 + 0.01 * fifthFilamentBreath);
@@ -586,6 +589,32 @@ export function drawDistributePreview(
                       ctx.lineWidth = (0.07 / z) * (0.52 + 0.48 * taper);
                       ctx.lineCap = "round";
                       ctx.stroke();
+                    }
+
+                    // Quiet tenth mark — only at the absolute extreme trail of the
+                    // joint crest. Inherits familyLagRot so the extreme trail continues
+                    // as one continuous expanding breath. Soft micro-taper segments.
+                    if (ninthBreath > 0.84 && ninthSenaryBreath > 0.58 && peak > 0.992) {
+                      const tenthBreath = 0.5 + 0.5 * Math.sin(slow * 0.18 + Math.PI * 0.0);
+                      const tenthOpacity = 0.002 * fifthFilamentBreath * (peak - 0.99) * tenthBreath * ninthSoft;
+                      const tenthStart = ninthEnd - 0.015;
+                      const tenthEnd = ninthEnd + 0.025 + familyLagRot * 0.2;
+                      const tenthR = ninthR * (1.0015 + 0.008 * fifthFilamentBreath);
+                      const tenthSegments = 2;
+                      const tenthSpan = tenthEnd - tenthStart;
+                      for (let s = 0; s < tenthSegments; s++) {
+                        const t0 = s / tenthSegments;
+                        const t1 = (s + 1) / tenthSegments;
+                        const segStart = tenthStart + tenthSpan * t0;
+                        const segEnd = tenthStart + tenthSpan * t1;
+                        const taper = 1 - t0 * 0.8;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, tenthR, segStart, segEnd);
+                        ctx.strokeStyle = `rgba(60, 140, 255, ${tenthOpacity * taper})`;
+                        ctx.lineWidth = (0.055 / z) * (0.48 + 0.52 * taper);
+                        ctx.lineCap = "round";
+                        ctx.stroke();
+                      }
                     }
                   }
                 }
