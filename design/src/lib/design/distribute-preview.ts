@@ -508,10 +508,13 @@ export function drawDistributePreview(
 
               // Quiet seventh mark — only at the absolute extreme trail of the
               // joint crest. Inherits familyLagRot so the extreme trail continues
-              // as one continuous expanding breath. Soft micro-taper segments.
+              // as one continuous expanding breath. Softened further with an even
+              // quieter quaternary breath of its own. Soft micro-taper segments.
               if (sixthBreath > 0.78 && sixthTertiaryBreath > 0.65 && peak > 0.98) {
                 const seventhBreath = 0.5 + 0.5 * Math.sin(slow * 0.7 + Math.PI * 0.2);
-                const seventhOpacity = 0.007 * fifthFilamentBreath * (peak - 0.975) * seventhBreath * sixthSoft;
+                const seventhQuaternaryBreath = 0.5 + 0.5 * Math.sin(slow * 0.55 + Math.PI * 0.15);
+                const seventhSoft = 0.55 + 0.45 * seventhQuaternaryBreath;
+                const seventhOpacity = 0.006 * fifthFilamentBreath * (peak - 0.975) * seventhBreath * seventhSoft * sixthSoft;
                 const seventhStart = sixthEnd - 0.03;
                 const seventhEnd = sixthEnd + 0.06 + familyLagRot * 0.4;
                 const seventhR = sixthR * (1.004 + 0.015 * fifthFilamentBreath);
@@ -522,13 +525,40 @@ export function drawDistributePreview(
                   const t1 = (s + 1) / seventhSegments;
                   const segStart = seventhStart + seventhSpan * t0;
                   const segEnd = seventhStart + seventhSpan * t1;
-                  const taper = 1 - t0 * 0.6;
+                  const taper = 1 - t0 * 0.65;
                   ctx.beginPath();
                   ctx.arc(0, 0, seventhR, segStart, segEnd);
                   ctx.strokeStyle = `rgba(90, 170, 255, ${seventhOpacity * taper})`;
-                  ctx.lineWidth = (0.12 / z) * (0.65 + 0.35 * taper);
+                  ctx.lineWidth = (0.11 / z) * (0.62 + 0.38 * taper);
                   ctx.lineCap = "round";
                   ctx.stroke();
+                }
+
+                // Quiet eighth mark — only at the absolute extreme trail of the
+                // joint crest. Inherits familyLagRot so the extreme trail continues
+                // the joint crest as one continuous expanding breath. Soft micro-taper
+                // segments of its own.
+                if (seventhBreath > 0.8 && seventhQuaternaryBreath > 0.62 && peak > 0.985) {
+                  const eighthBreath = 0.5 + 0.5 * Math.sin(slow * 0.45 + Math.PI * 0.05);
+                  const eighthOpacity = 0.0045 * fifthFilamentBreath * (peak - 0.982) * eighthBreath * seventhSoft;
+                  const eighthStart = seventhEnd - 0.025;
+                  const eighthEnd = seventhEnd + 0.045 + familyLagRot * 0.32;
+                  const eighthR = seventhR * (1.003 + 0.012 * fifthFilamentBreath);
+                  const eighthSegments = 2;
+                  const eighthSpan = eighthEnd - eighthStart;
+                  for (let s = 0; s < eighthSegments; s++) {
+                    const t0 = s / eighthSegments;
+                    const t1 = (s + 1) / eighthSegments;
+                    const segStart = eighthStart + eighthSpan * t0;
+                    const segEnd = eighthStart + eighthSpan * t1;
+                    const taper = 1 - t0 * 0.7;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, eighthR, segStart, segEnd);
+                    ctx.strokeStyle = `rgba(80, 160, 255, ${eighthOpacity * taper})`;
+                    ctx.lineWidth = (0.09 / z) * (0.58 + 0.42 * taper);
+                    ctx.lineCap = "round";
+                    ctx.stroke();
+                  }
                 }
               }
             }
