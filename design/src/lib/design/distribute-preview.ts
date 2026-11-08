@@ -262,6 +262,32 @@ export function drawDistributePreview(
       ctx.arc(sx, sy, outerHalo, 0, Math.PI * 2);
       ctx.fill();
 
+      // Soft radial filament trail softening the outer halo edge.
+      // Short spokes that inherit familyLagRot so the edge trails the primary
+      // breath as one continuous expanding crest rather than a hard gradient falloff.
+      if (crest > 0.15) {
+        const trailCount = 6;
+        const baseLag = familyLagRot;
+        const trailOpacity = 0.055 * (peak - 0.75) * crest;
+        for (let t = 0; t < trailCount; t++) {
+          const spread = (t - (trailCount - 1) / 2) * 0.18;
+          const ang = baseLag + spread;
+          const startR = outerHalo * 0.88;
+          const endR = outerHalo * (1.04 + 0.03 * crest);
+          const x1 = sx + Math.cos(ang) * startR;
+          const y1 = sy + Math.sin(ang) * startR;
+          const x2 = sx + Math.cos(ang) * endR;
+          const y2 = sy + Math.sin(ang) * endR;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = `rgba(90, 190, 255, ${trailOpacity * (0.7 + 0.3 * Math.cos(spread))})`;
+          ctx.lineWidth = (0.22 / z) * (1 - Math.abs(spread) * 0.4);
+          ctx.lineCap = "round";
+          ctx.stroke();
+        }
+      }
+
       // Quiet counter-rotating inner tick — only while the peak halo is live
       // so the lag family stays one coherent mark instead of discrete ticks.
       // Micro cross-fade into the after-image so the trail side never reads as separate marks.
