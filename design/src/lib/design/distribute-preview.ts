@@ -319,6 +319,22 @@ export function drawDistributePreview(
           ctx.lineWidth = 0.32 / z;
           ctx.lineCap = "round";
           ctx.stroke();
+
+          // Faint opposing filament — only when the third arc’s own breath is near peak,
+          // so the continuous breath softens further into one fluid lag family.
+          if (oppBreath > 0.85) {
+            const oppFilamentBreath = (oppBreath - 0.85) / 0.15;
+            const oppFilamentOpacity = 0.032 * oppFilamentBreath * (peak - 0.92);
+            const oppFilamentStart = oppStart - 0.12;
+            const oppFilamentEnd = oppStart + 0.18;
+            const oppFilamentR = oppR * (0.96 - 0.04 * oppFilamentBreath);
+            ctx.beginPath();
+            ctx.arc(0, 0, oppFilamentR, oppFilamentStart, oppFilamentEnd);
+            ctx.strokeStyle = `rgba(140, 210, 255, ${oppFilamentOpacity})`;
+            ctx.lineWidth = 0.22 / z;
+            ctx.lineCap = "round";
+            ctx.stroke();
+          }
         }
       }
       // Soft cross-fade bridge toward the trailing after-image
