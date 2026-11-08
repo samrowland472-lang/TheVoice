@@ -446,6 +446,33 @@ export function drawDistributePreview(
             ctx.lineCap = "round";
             ctx.stroke();
           }
+
+          // Faint trailing filament of its own — softens the fifth echo further.
+          // Inherits familyLagRot so the extreme trail continues the joint crest
+          // as one continuous expanding breath. Only near the absolute peak.
+          if (fifthBreath > 0.88) {
+            const fifthFilamentBreath = (fifthBreath - 0.88) / 0.12;
+            const fifthFilamentOpacity = 0.022 * fifthFilamentBreath * (peak - 0.96);
+            const fifthFilamentStart = fifthEnd - 0.06;
+            const fifthFilamentEnd = fifthEnd + 0.14 + familyLagRot * 0.8;
+            const fifthFilamentR = fifthR * (1.01 + 0.04 * fifthFilamentBreath);
+            // Soft micro-taper segments so the filament dissolves into the crest.
+            const fifthFilSegments = 2;
+            const fifthFilSpan = fifthFilamentEnd - fifthFilamentStart;
+            for (let s = 0; s < fifthFilSegments; s++) {
+              const t0 = s / fifthFilSegments;
+              const t1 = (s + 1) / fifthFilSegments;
+              const segStart = fifthFilamentStart + fifthFilSpan * t0;
+              const segEnd = fifthFilamentStart + fifthFilSpan * t1;
+              const taper = 1 - t0 * 0.4;
+              ctx.beginPath();
+              ctx.arc(0, 0, fifthFilamentR, segStart, segEnd);
+              ctx.strokeStyle = `rgba(110, 190, 255, ${fifthFilamentOpacity * taper})`;
+              ctx.lineWidth = (0.18 / z) * (0.75 + 0.25 * taper);
+              ctx.lineCap = "round";
+              ctx.stroke();
+            }
+          }
         }
       }
       // Soft cross-fade bridge toward the trailing after-image
