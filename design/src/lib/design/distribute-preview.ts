@@ -168,11 +168,11 @@ function buildPlan(
 /** Phosphor flush diamond with lag companion spark and peak halo.
  * Continuous expanding breath: primary diamond, nested marks and denary breath
  * on the thirteenth, quiet fourteenth at the absolute extreme trail with
- * even quieter undenary breath, ... up through quiet twenty-ninth mark
+ * even quieter undenary breath, ... up through quiet thirtieth mark
  * only at the absolute extreme trail of the joint crest with even quieter
- * sexvigesimal breath, and now a quiet thirtieth mark only at the
+ * septenvigesimal breath, and now a quiet thirty-first mark only at the
  * absolute extreme trail of the joint crest with an even quieter
- * septenvigesimal breath of its own. All family members inherit familyLagRot.
+ * octovigesimal breath of its own. All family members inherit familyLagRot.
  * Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -236,14 +236,18 @@ export function drawDistributePreview(
     { idx: 28, size: 0.16, op: 0.028, breath: trail * 0.35 }, // quinquevigesimal breath — even quieter
     { idx: 29, size: 0.11, op: 0.016, breath: trail * 0.18 }, // sexvigesimal breath — even quieter still, absolute extreme trail
     { idx: 30, size: 0.07, op: 0.008, breath: trail * 0.09 }, // septenvigesimal breath — quietest yet, absolute extreme trail
+    { idx: 31, size: 0.045, op: 0.004, breath: trail * 0.045 }, // octovigesimal breath — even quieter, absolute extreme trail of the thirty-first
   ];
 
   for (const m of marks) {
-    // Only show higher marks when the driving breath is near peak
-    const peak = m.breath > 0.82;
+    // Only show higher marks when the driving breath is near its absolute peak.
+    // Extreme trail marks use a scaled breath, so normalize against their max.
+    const maxB = m.idx >= 28 ? (m.idx === 28 ? 0.35 : m.idx === 29 ? 0.18 : m.idx === 30 ? 0.09 : 0.045) : 1;
+    const rel = m.breath / maxB;
+    const peak = rel > 0.82;
     if (m.idx > 10 && !peak) continue;
-    const mScale = 1 + 0.04 * (m.breath - 0.5);
-    const alpha = m.op * (0.4 + 0.6 * m.breath);
+    const mScale = 1 + 0.04 * (rel - 0.5);
+    const alpha = m.op * (0.4 + 0.6 * rel);
     ctx.save();
     ctx.rotate(m.idx * 0.11);
     // Soft micro-taper segments for extreme trail
