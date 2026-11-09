@@ -118,8 +118,9 @@ export function commitDistributePreview(): void {
  * Continuous expanding breath: primary diamond, nested marks and denary breath
  * on the thirteenth, quiet fourteenth at the absolute extreme trail with
  * even quieter undenary breath, quiet fifteenth mark at the extreme with
- * even quieter duodenary breath, and quiet sixteenth mark at the absolute
- * extreme trail of the joint crest. All family members inherit familyLagRot.
+ * even quieter duodenary breath, quiet sixteenth mark at the absolute
+ * extreme trail of the joint crest with even quieter tridenary breath.
+ * All family members inherit familyLagRot.
  * Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -386,6 +387,11 @@ export function drawDistributePreview(
     ctx.arc(r16, 0, 1.4 / z, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
+  }
+
+  // Tridenary breath — even quieter on the sixteenth
+  if (sixteenthPeak > 0.05) {
+    taper(halfW * 0.055 * breath, Math.PI * 0.14, Math.PI * 0.28, 0.07, 0.014 * sixteenthPeak * slow);
   }
 
   ctx.restore();
