@@ -127,7 +127,8 @@ export function commitDistributePreview(): void {
  * with even quieter sexdenary breath, quiet twentieth mark only at the
  * absolute extreme trail of the joint crest with even quieter septendecimal breath,
  * quiet twenty-first mark only at the absolute extreme trail of the joint crest
- * with even quieter octodecimal breath.
+ * with even quieter octodecimal breath, quiet twenty-second mark only at the
+ * absolute extreme trail of the joint crest with even quieter novendecimal breath.
  * All family members inherit familyLagRot.
  * Phosphor-on-ground.
  */
@@ -510,6 +511,28 @@ export function drawDistributePreview(
   // Octodecimal breath — even quieter on the twenty-first
   if (twentyFirstPeak > 0.015) {
     taper(halfW * 0.01 * breath, Math.PI * 0.215, Math.PI * 0.225, 0.012, 0.0016 * twentyFirstPeak * slow);
+  }
+
+  // Quiet twenty-second mark only at the absolute extreme trail of the joint crest
+  const twentySecondPeak = Math.max(0, trail - 0.9993) * 18.5;
+  if (twentySecondPeak > 0.003) {
+    ctx.save();
+    ctx.globalAlpha = 0.0055 * twentySecondPeak;
+    ctx.rotate(familyLagRot * 0.0032);
+    ctx.strokeStyle = "rgba(63, 198, 255, 1)";
+    ctx.lineWidth = 0.022 / z;
+    const r22 = halfW * breath * 1.66;
+    ctx.beginPath();
+    ctx.moveTo(r22 * 0.994, -0.18 / z);
+    ctx.lineTo(r22 * 1.006, 0);
+    ctx.lineTo(r22 * 0.994, 0.18 / z);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Novendecimal breath — even quieter on the twenty-second
+  if (twentySecondPeak > 0.012) {
+    taper(halfW * 0.007 * breath, Math.PI * 0.218, Math.PI * 0.222, 0.008, 0.001 * twentySecondPeak * slow);
   }
 
   ctx.restore();
