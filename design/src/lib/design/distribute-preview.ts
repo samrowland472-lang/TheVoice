@@ -131,6 +131,8 @@ export function commitDistributePreview(): void {
  * absolute extreme trail of the joint crest with even quieter novendecimal breath,
  * quiet twenty-third mark only at the absolute extreme trail of the joint crest
  * with even quieter vigesimal breath.
+ * quiet twenty-fourth mark only at the absolute extreme trail of the joint crest
+ * with even quieter unvigesimal breath.
  * All family members inherit familyLagRot.
  * Phosphor-on-ground.
  */
@@ -557,6 +559,28 @@ export function drawDistributePreview(
   // Vigesimal breath — even quieter on the twenty-third
   if (twentyThirdPeak > 0.009) {
     taper(halfW * 0.0045 * breath, Math.PI * 0.2195, Math.PI * 0.2205, 0.005, 0.0006 * twentyThirdPeak * slow);
+  }
+
+  // Quiet twenty-fourth mark only at the absolute extreme trail of the joint crest
+  const twentyFourthPeak = Math.max(0, trail - 0.9998) * 24.0;
+  if (twentyFourthPeak > 0.0015) {
+    ctx.save();
+    ctx.globalAlpha = 0.0018 * twentyFourthPeak;
+    ctx.rotate(familyLagRot * 0.0010);
+    ctx.strokeStyle = "rgba(63, 198, 255, 1)";
+    ctx.lineWidth = 0.009 / z;
+    const r24 = halfW * breath * 1.78;
+    ctx.beginPath();
+    ctx.moveTo(r24 * 0.9975, -0.07 / z);
+    ctx.lineTo(r24 * 1.0025, 0);
+    ctx.lineTo(r24 * 0.9975, 0.07 / z);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Unvigesimal breath — even quieter on the twenty-fourth
+  if (twentyFourthPeak > 0.006) {
+    taper(halfW * 0.0028 * breath, Math.PI * 0.2202, Math.PI * 0.2208, 0.003, 0.00035 * twentyFourthPeak * slow);
   }
 
   ctx.restore();
