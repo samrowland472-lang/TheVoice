@@ -168,11 +168,11 @@ function buildPlan(
 /** Phosphor flush diamond with lag companion spark and peak halo.
  * Continuous expanding breath: primary diamond, nested marks and denary breath
  * on the thirteenth, quiet fourteenth at the absolute extreme trail with
- * even quieter undenary breath, ... up through quiet twenty-eighth mark
+ * even quieter undenary breath, ... up through quiet twenty-ninth mark
  * only at the absolute extreme trail of the joint crest with even quieter
- * quinquevigesimal breath, and now a quiet twenty-ninth mark only at the
+ * sexvigesimal breath, and now a quiet thirtieth mark only at the
  * absolute extreme trail of the joint crest with an even quieter
- * sexvigesimal breath of its own. All family members inherit familyLagRot.
+ * septenvigesimal breath of its own. All family members inherit familyLagRot.
  * Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -235,6 +235,7 @@ export function drawDistributePreview(
     { idx: 27, size: 0.22, op: 0.045, breath: trail * 0.6 },
     { idx: 28, size: 0.16, op: 0.028, breath: trail * 0.35 }, // quinquevigesimal breath — even quieter
     { idx: 29, size: 0.11, op: 0.016, breath: trail * 0.18 }, // sexvigesimal breath — even quieter still, absolute extreme trail
+    { idx: 30, size: 0.07, op: 0.008, breath: trail * 0.09 }, // septenvigesimal breath — quietest yet, absolute extreme trail
   ];
 
   for (const m of marks) {
