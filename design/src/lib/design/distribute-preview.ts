@@ -170,7 +170,9 @@ function buildPlan(
  * on the thirteenth, quiet fourteenth at the absolute extreme trail with
  * even quieter undenary breath, ... up through quiet twenty-eighth mark
  * only at the absolute extreme trail of the joint crest with even quieter
- * quinquevigesimal breath. All family members inherit familyLagRot.
+ * quinquevigesimal breath, and now a quiet twenty-ninth mark only at the
+ * absolute extreme trail of the joint crest with an even quieter
+ * sexvigesimal breath of its own. All family members inherit familyLagRot.
  * Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -229,9 +231,10 @@ export function drawDistributePreview(
     { idx: 1, size: 0.92, op: 0.32, breath: pulse },
     { idx: 2, size: 0.84, op: 0.26, breath: lag },
     { idx: 3, size: 0.76, op: 0.21, breath: slow },
-    // ... continue the family up to 28, quieter each time
+    // ... continue the family up to 29, quieter each time
     { idx: 27, size: 0.22, op: 0.045, breath: trail * 0.6 },
     { idx: 28, size: 0.16, op: 0.028, breath: trail * 0.35 }, // quinquevigesimal breath — even quieter
+    { idx: 29, size: 0.11, op: 0.016, breath: trail * 0.18 }, // sexvigesimal breath — even quieter still, absolute extreme trail
   ];
 
   for (const m of marks) {
