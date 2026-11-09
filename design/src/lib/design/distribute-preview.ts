@@ -465,6 +465,28 @@ export function drawDistributePreview(
     taper(halfW * 0.02 * breath, Math.PI * 0.20, Math.PI * 0.22, 0.025, 0.004 * nineteenthPeak * slow);
   }
 
+  // Quiet twentieth mark only at the absolute extreme trail of the joint crest
+  const twentiethPeak = Math.max(0, trail - 0.9975) * 14.0;
+  if (twentiethPeak > 0.006) {
+    ctx.save();
+    ctx.globalAlpha = 0.014 * twentiethPeak;
+    ctx.rotate(familyLagRot * 0.009);
+    ctx.strokeStyle = "rgba(63, 198, 255, 1)";
+    ctx.lineWidth = 0.05 / z;
+    const r20 = halfW * breath * 1.54;
+    ctx.beginPath();
+    ctx.moveTo(r20 * 0.99, -0.4 / z);
+    ctx.lineTo(r20 * 1.01, 0);
+    ctx.lineTo(r20 * 0.99, 0.4 / z);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Septendecimal breath — even quieter on the twentieth
+  if (twentiethPeak > 0.02) {
+    taper(halfW * 0.014 * breath, Math.PI * 0.21, Math.PI * 0.23, 0.018, 0.0025 * twentiethPeak * slow);
+  }
+
   ctx.restore();
 
   // Original ghost outlines (kept quiet so the diamond remains the focus)
