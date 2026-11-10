@@ -170,10 +170,10 @@ function buildPlan(
  * on the thirteenth, quiet fourteenth at the absolute extreme trail with
  * even quieter undenary breath, ... up through quiet thirty-eighth mark
  * only at the absolute extreme trail of the joint crest with even quieter
- * unseptuagintal breath, and now a quiet thirty-ninth mark only at the
- * absolute extreme trail of the joint crest with an even quieter
- * unseptuagintal-plus breath of its own. All family members inherit familyLagRot.
- * Phosphor-on-ground.
+ * unseptuagintal breath, quiet thirty-ninth mark with unseptuagintal-plus breath,
+ * and now a quiet fortieth mark only at the absolute extreme trail of the joint crest
+ * with an even quieter unseptuagintal-plus-plus breath of its own. All family members
+ * inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -245,12 +245,13 @@ export function drawDistributePreview(
     { idx: 37, size: 0.0028, op: 0.00006, breath: trail * 0.0007 }, // unsexagintal breath — even quieter still, absolute extreme trail of the thirty-seventh
     { idx: 38, size: 0.0017, op: 0.00003, breath: trail * 0.00035 }, // unseptuagintal breath — even quieter still, absolute extreme trail of the thirty-eighth
     { idx: 39, size: 0.00105, op: 0.000015, breath: trail * 0.000175 }, // unseptuagintal-plus breath — even quieter still, absolute extreme trail of the thirty-ninth
+    { idx: 40, size: 0.00065, op: 0.0000075, breath: trail * 0.0000875 }, // unseptuagintal-plus-plus breath — even quieter still, absolute extreme trail of the fortieth
   ];
 
   for (const m of marks) {
     // Only show higher marks when the driving breath is near its absolute peak.
     // Extreme trail marks use a scaled breath, so normalize against their max.
-    const maxB = m.idx >= 28 ? (m.idx === 28 ? 0.35 : m.idx === 29 ? 0.18 : m.idx === 30 ? 0.09 : m.idx === 31 ? 0.045 : m.idx === 32 ? 0.022 : m.idx === 33 ? 0.011 : m.idx === 34 ? 0.0055 : m.idx === 35 ? 0.00275 : m.idx === 36 ? 0.0014 : m.idx === 37 ? 0.0007 : m.idx === 38 ? 0.00035 : 0.000175) : 1;
+    const maxB = m.idx >= 28 ? (m.idx === 28 ? 0.35 : m.idx === 29 ? 0.18 : m.idx === 30 ? 0.09 : m.idx === 31 ? 0.045 : m.idx === 32 ? 0.022 : m.idx === 33 ? 0.011 : m.idx === 34 ? 0.0055 : m.idx === 35 ? 0.00275 : m.idx === 36 ? 0.0014 : m.idx === 37 ? 0.0007 : m.idx === 38 ? 0.00035 : m.idx === 39 ? 0.000175 : 0.0000875) : 1;
     const rel = m.breath / maxB;
     const peak = rel > 0.82;
     if (m.idx > 10 && !peak) continue;
