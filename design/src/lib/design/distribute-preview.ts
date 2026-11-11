@@ -187,7 +187,9 @@ function buildPlan(
  * and a quiet forty-seventh mark only at the absolute extreme trail of the joint crest
  * with an even quieter unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus breath of its own,
  * and a quiet forty-eighth mark only at the absolute extreme trail of the joint crest
- * with an even quieter unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath of its own. All family members
+ * with an even quieter unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath of its own,
+ * and a quiet forty-ninth mark only at the absolute extreme trail of the joint crest
+ * with an even quieter unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath of its own. All family members
  * inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -269,12 +271,13 @@ export function drawDistributePreview(
     { idx: 46, size: 0.000033, op: 0.00000011, breath: trail * 0.00000135 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-sixth
     { idx: 47, size: 0.00002, op: 0.000000055, breath: trail * 0.000000675 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-seventh
     { idx: 48, size: 0.000012, op: 0.000000027, breath: trail * 0.0000003375 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-eighth
+    { idx: 49, size: 0.000007, op: 0.000000013, breath: trail * 0.00000016875 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-ninth
   ];
 
   for (const m of marks) {
     // Only show higher marks when the driving breath is near its absolute peak.
     // Extreme trail marks use a scaled breath, so normalize against their max.
-    const maxB = m.idx >= 28 ? (m.idx === 28 ? 0.35 : m.idx === 29 ? 0.18 : m.idx === 30 ? 0.09 : m.idx === 31 ? 0.045 : m.idx === 32 ? 0.022 : m.idx === 33 ? 0.011 : m.idx === 34 ? 0.0055 : m.idx === 35 ? 0.00275 : m.idx === 36 ? 0.0014 : m.idx === 37 ? 0.0007 : m.idx === 38 ? 0.00035 : m.idx === 39 ? 0.000175 : m.idx === 40 ? 0.0000875 : m.idx === 41 ? 0.00004375 : m.idx === 42 ? 0.000021875 : m.idx === 43 ? 0.0000109 : m.idx === 44 ? 0.00000545 : m.idx === 45 ? 0.0000027 : m.idx === 46 ? 0.00000135 : m.idx === 47 ? 0.000000675 : 0.0000003375) : 1;
+    const maxB = m.idx >= 28 ? (m.idx === 28 ? 0.35 : m.idx === 29 ? 0.18 : m.idx === 30 ? 0.09 : m.idx === 31 ? 0.045 : m.idx === 32 ? 0.022 : m.idx === 33 ? 0.011 : m.idx === 34 ? 0.0055 : m.idx === 35 ? 0.00275 : m.idx === 36 ? 0.0014 : m.idx === 37 ? 0.0007 : m.idx === 38 ? 0.00035 : m.idx === 39 ? 0.000175 : m.idx === 40 ? 0.0000875 : m.idx === 41 ? 0.00004375 : m.idx === 42 ? 0.000021875 : m.idx === 43 ? 0.0000109 : m.idx === 44 ? 0.00000545 : m.idx === 45 ? 0.0000027 : m.idx === 46 ? 0.00000135 : m.idx === 47 ? 0.000000675 : m.idx === 48 ? 0.0000003375 : 0.00000016875) : 1;
     const rel = m.breath / maxB;
     const peak = rel > 0.82;
     if (m.idx > 10 && !peak) continue;
