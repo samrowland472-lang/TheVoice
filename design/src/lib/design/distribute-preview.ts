@@ -213,7 +213,7 @@ export function drawDistributePreview(
   cy /= plan.ghosts.length;
 
   const baseR = Math.max(18, 28 / zoom);
-  const familyLagRot = rotate; // all inherit
+  const familyLagRot = rotate;
 
   ctx.save();
   ctx.translate(cx, cy);
@@ -242,58 +242,23 @@ export function drawDistributePreview(
   ctx.fillStyle = `rgba(63, 198, 255, ${0.4 + 0.4 * trail})`;
   ctx.fill();
 
-  // Nested quieter marks — appear more strongly near peaks, with micro-taper
-  // Higher marks only near absolute peak of previous
+  // Subtle nested marks that stay visible — appear near peaks
   const marks = [
-    { idx: 1, size: 0.92, op: 0.32, breath: pulse },
-    { idx: 2, size: 0.84, op: 0.26, breath: lag },
-    { idx: 3, size: 0.76, op: 0.21, breath: slow },
-    // ... continue the family up to 29, quieter each time
-    { idx: 27, size: 0.22, op: 0.045, breath: trail * 0.6 },
-    { idx: 28, size: 0.16, op: 0.028, breath: trail * 0.35 }, // quinquevigesimal breath — even quieter
-    { idx: 29, size: 0.11, op: 0.016, breath: trail * 0.18 }, // sexvigesimal breath — even quieter still, absolute extreme trail
-    { idx: 30, size: 0.07, op: 0.008, breath: trail * 0.09 }, // septenvigesimal breath — quietest yet, absolute extreme trail
-    { idx: 31, size: 0.045, op: 0.004, breath: trail * 0.045 }, // octovigesimal breath — even quieter, absolute extreme trail of the thirty-first
-    { idx: 32, size: 0.028, op: 0.002, breath: trail * 0.022 }, // nonvigesimal breath — even quieter still, absolute extreme trail of the thirty-second
-    { idx: 33, size: 0.018, op: 0.001, breath: trail * 0.011 }, // trigesimal breath — even quieter still, absolute extreme trail of the thirty-third
-    { idx: 34, size: 0.011, op: 0.0005, breath: trail * 0.0055 }, // untrigesimal breath — even quieter still, absolute extreme trail of the thirty-fourth
-    { idx: 35, size: 0.007, op: 0.00025, breath: trail * 0.00275 }, // unquadragintal breath — even quieter still, absolute extreme trail of the thirty-fifth
-    { idx: 36, size: 0.0045, op: 0.00012, breath: trail * 0.0014 }, // unquinquagintal breath — even quieter still, absolute extreme trail of the thirty-sixth
-    { idx: 37, size: 0.0028, op: 0.00006, breath: trail * 0.0007 }, // unsexagintal breath — even quieter still, absolute extreme trail of the thirty-seventh
-    { idx: 38, size: 0.0017, op: 0.00003, breath: trail * 0.00035 }, // unseptuagintal breath — even quieter still, absolute extreme trail of the thirty-eighth
-    { idx: 39, size: 0.00105, op: 0.000015, breath: trail * 0.000175 }, // unseptuagintal-plus breath — even quieter still, absolute extreme trail of the thirty-ninth
-    { idx: 40, size: 0.00065, op: 0.0000075, breath: trail * 0.0000875 }, // unseptuagintal-plus-plus breath — even quieter still, absolute extreme trail of the fortieth
-    { idx: 41, size: 0.0004, op: 0.00000375, breath: trail * 0.00004375 }, // unseptuagintal-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-first
-    { idx: 42, size: 0.00025, op: 0.000001875, breath: trail * 0.000021875 }, // unseptuagintal-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-second
-    { idx: 43, size: 0.00015, op: 0.0000009, breath: trail * 0.0000109 }, // unseptuagintal-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-third
-    { idx: 44, size: 0.00009, op: 0.00000045, breath: trail * 0.00000545 }, // unseptuagintal-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-fourth
-    { idx: 45, size: 0.000055, op: 0.00000022, breath: trail * 0.0000027 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-fifth
-    { idx: 46, size: 0.000033, op: 0.00000011, breath: trail * 0.00000135 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-sixth
-    { idx: 47, size: 0.00002, op: 0.000000055, breath: trail * 0.000000675 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-seventh
-    { idx: 48, size: 0.000012, op: 0.000000027, breath: trail * 0.0000003375 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-eighth
-    { idx: 49, size: 0.000007, op: 0.000000013, breath: trail * 0.00000016875 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the forty-ninth
-    { idx: 50, size: 0.000004, op: 0.0000000065, breath: trail * 0.000000084375 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the fiftieth
-    { idx: 51, size: 0.0000024, op: 0.00000000325, breath: trail * 0.0000000421875 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the fifty-first
-    { idx: 52, size: 0.0000014, op: 0.0000000016, breath: trail * 0.000000021 }, // unseptuagintal-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus-plus breath — even quieter still, absolute extreme trail of the fifty-second
+    { idx: 1, size: 0.85, op: 0.35, breath: pulse },
+    { idx: 2, size: 0.62, op: 0.22, breath: lag },
+    { idx: 3, size: 0.48, op: 0.14, breath: slow },
+    { idx: 4, size: 0.36, op: 0.09, breath: trail },
   ];
 
   for (const m of marks) {
-    // Only show higher marks when the driving breath is near its absolute peak.
-    // Extreme trail marks use a scaled breath, so normalize against their max.
-    const maxB = m.idx >= 28 ? (m.idx === 28 ? 0.35 : m.idx === 29 ? 0.18 : m.idx === 30 ? 0.09 : m.idx === 31 ? 0.045 : m.idx === 32 ? 0.022 : m.idx === 33 ? 0.011 : m.idx === 34 ? 0.0055 : m.idx === 35 ? 0.00275 : m.idx === 36 ? 0.0014 : m.idx === 37 ? 0.0007 : m.idx === 38 ? 0.00035 : m.idx === 39 ? 0.000175 : m.idx === 40 ? 0.0000875 : m.idx === 41 ? 0.00004375 : m.idx === 42 ? 0.000021875 : m.idx === 43 ? 0.0000109 : m.idx === 44 ? 0.00000545 : m.idx === 45 ? 0.0000027 : m.idx === 46 ? 0.00000135 : m.idx === 47 ? 0.000000675 : m.idx === 48 ? 0.0000003375 : m.idx === 49 ? 0.00000016875 : m.idx === 50 ? 0.000000084375 : m.idx === 51 ? 0.0000000421875 : 0.000000021) : 1;
-    const rel = m.breath / maxB;
-    const peak = rel > 0.82;
-    if (m.idx > 10 && !peak) continue;
-    const mScale = 1 + 0.04 * (rel - 0.5);
-    const alpha = m.op * (0.4 + 0.6 * rel);
+    const rel = m.breath;
+    const peak = rel > 0.75;
+    if (!peak && m.idx > 2) continue;
+    const mScale = 1 + 0.05 * (rel - 0.5);
+    const alpha = m.op * (0.5 + 0.5 * rel);
     ctx.save();
-    ctx.rotate(m.idx * 0.11);
-    // Soft micro-taper segments for extreme trail
-    if (m.idx >= 20) {
-      drawMicroTaper(ctx, baseR * m.size * mScale, alpha, zoom, m.idx);
-    } else {
-      drawDiamond(ctx, baseR * m.size * mScale, `rgba(63, 198, 255, ${alpha})`, zoom);
-    }
+    ctx.rotate(m.idx * 0.18);
+    drawDiamond(ctx, baseR * m.size * mScale, `rgba(63, 198, 255, ${alpha})`, zoom);
     ctx.restore();
   }
 
@@ -310,19 +275,4 @@ function drawDiamond(ctx: CanvasRenderingContext2D, r: number, style: string, zo
   ctx.strokeStyle = style;
   ctx.lineWidth = Math.max(0.6, 1.1 / zoom);
   ctx.stroke();
-}
-
-function drawMicroTaper(ctx: CanvasRenderingContext2D, r: number, alpha: number, zoom: number, idx: number) {
-  // Soft micro-taper segments so the extreme trail continues as one continuous expanding breath
-  const segs = 4;
-  for (let i = 0; i < segs; i++) {
-    const a0 = (i / segs) * Math.PI * 2 + idx * 0.05;
-    const a1 = ((i + 0.72) / segs) * Math.PI * 2 + idx * 0.05;
-    const taper = 1 - i * 0.12;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * taper, a0, a1);
-    ctx.strokeStyle = `rgba(63, 198, 255, ${alpha * (1 - i * 0.15)})`;
-    ctx.lineWidth = Math.max(0.4, 0.7 / zoom);
-    ctx.stroke();
-  }
 }
