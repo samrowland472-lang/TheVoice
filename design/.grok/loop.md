@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Softened the fifth nested mark further (smaller size 0.16, lower op 0.028, tighter peak gate 0.86, reduced breath scale 0.48) and added a micro-taper on the trail spark so its radius and opacity ease near trail extremes. Extreme contact now reads as one continuous expanding breath. Primary diamond, lag companion, slow harmonic, and trail spark stay intact. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a faint radial falloff under the whole phosphor diamond family so the flush mark feels more grounded. Soft cyan gradient (0.042 → 0.016 → 0) out to 2.4× base radius sits under primary diamond, lag companion, slow harmonic, nested marks, and trail spark. Extreme contact still reads as one continuous expanding breath. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally add a faint radial falloff under the whole family so the flush diamond feels more grounded, or micro-adjust the outer slow harmonic opacity so the nested family stays quieter at rest.
+- Optionally micro-adjust the outer slow harmonic opacity so the nested family stays quieter at rest, or add a subtle contact bloom on the trail spark when it nears the diamond edge.

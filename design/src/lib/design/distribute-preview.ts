@@ -165,7 +165,7 @@ function buildPlan(
  * Continuous expanding breath: primary diamond, nested marks, and a quieter
  * fifth mark only near the absolute peak of the trail breath. Trail spark
  * carries a micro-taper so extreme contact reads as one continuous breath.
- * All family members inherit familyLagRot. Phosphor-on-ground.
+ * Faint radial falloff grounds the family. All members inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -192,6 +192,17 @@ export function drawDistributePreview(
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(familyLagRot);
+
+  // Faint radial falloff under the whole family so the flush diamond feels more grounded
+  const falloffR = baseR * 2.4;
+  const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, falloffR);
+  grad.addColorStop(0, "rgba(63, 198, 255, 0.042)");
+  grad.addColorStop(0.55, "rgba(63, 198, 255, 0.016)");
+  grad.addColorStop(1, "rgba(63, 198, 255, 0)");
+  ctx.beginPath();
+  ctx.arc(0, 0, falloffR, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
 
   const pScale = 1 + 0.18 * (pulse - 0.5);
   drawDiamond(ctx, baseR * pScale, `rgba(63, 198, 255, ${0.55 + 0.35 * pulse})`, zoom);
