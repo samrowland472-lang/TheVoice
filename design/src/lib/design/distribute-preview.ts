@@ -162,9 +162,10 @@ function buildPlan(
 }
 
 /** Phosphor flush diamond with lag companion spark and peak halo.
- * Continuous expanding breath: primary diamond, nested marks, and a quiet
- * fifth mark only near the absolute peak of the trail breath. All family
- * members inherit familyLagRot. Phosphor-on-ground.
+ * Continuous expanding breath: primary diamond, nested marks, and a quieter
+ * fifth mark only near the absolute peak of the trail breath. Trail spark
+ * carries a micro-taper so extreme contact reads as one continuous breath.
+ * All family members inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -206,27 +207,30 @@ export function drawDistributePreview(
 
   const tAng = trail * Math.PI * 2;
   const tR = baseR * 1.6;
+  // Micro-taper: spark radius eases smaller near trail extremes so contact reads continuous
+  const taper = 0.65 + 0.35 * Math.sin(trail * Math.PI);
+  const sparkR = (2.2 / zoom) * taper;
   ctx.beginPath();
-  ctx.arc(Math.cos(tAng) * tR, Math.sin(tAng) * tR, 2.2 / zoom, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(63, 198, 255, ${0.4 + 0.4 * trail})`;
+  ctx.arc(Math.cos(tAng) * tR, Math.sin(tAng) * tR, sparkR, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(63, 198, 255, ${(0.4 + 0.4 * trail) * (0.75 + 0.25 * taper)})`;
   ctx.fill();
 
-  // Quiet fifth mark only near absolute peak of the trail breath
+  // Quiet fifth mark only near absolute peak of the trail breath — softened further
   const marks = [
     { idx: 1, size: 0.85, op: 0.35, breath: pulse },
     { idx: 2, size: 0.62, op: 0.22, breath: lag },
     { idx: 3, size: 0.48, op: 0.14, breath: slow },
     { idx: 4, size: 0.36, op: 0.09, breath: trail },
-    { idx: 5, size: 0.22, op: 0.045, breath: trail * 0.55 },
+    { idx: 5, size: 0.16, op: 0.028, breath: trail * 0.48 },
   ];
 
   for (const m of marks) {
-    const maxB = m.idx === 5 ? 0.55 : 1;
+    const maxB = m.idx === 5 ? 0.48 : 1;
     const rel = m.breath / maxB;
-    const peak = rel > 0.78;
+    const peak = rel > (m.idx === 5 ? 0.86 : 0.78);
     if (m.idx > 2 && !peak) continue;
-    const mScale = 1 + 0.05 * (rel - 0.5);
-    const alpha = m.op * (0.5 + 0.5 * rel);
+    const mScale = 1 + 0.04 * (rel - 0.5);
+    const alpha = m.op * (0.45 + 0.55 * rel);
     ctx.save();
     ctx.rotate(m.idx * 0.18);
     drawDiamond(ctx, baseR * m.size * mScale, `rgba(63, 198, 255, ${alpha})`, zoom);
