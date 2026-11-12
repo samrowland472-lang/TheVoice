@@ -165,7 +165,8 @@ function buildPlan(
  * Continuous expanding breath: primary diamond, nested marks, and a quieter
  * fifth mark only near the absolute peak of the trail breath. Trail spark
  * carries a micro-taper so extreme contact reads as one continuous breath.
- * Faint radial falloff grounds the family. All members inherit familyLagRot. Phosphor-on-ground.
+ * Outer slow harmonic is quieter at rest. Trail spark gains a soft contact bloom
+ * near diamond points. Faint radial falloff grounds the family. All members inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -214,15 +215,33 @@ export function drawDistributePreview(
   ctx.restore();
 
   const sScale = 1 + 0.08 * (slow - 0.5);
-  drawDiamond(ctx, baseR * 1.35 * sScale, `rgba(63, 198, 255, ${0.12 + 0.1 * slow})`, zoom);
+  // Quieter outer slow harmonic so the nested family stays softer at rest
+  drawDiamond(ctx, baseR * 1.35 * sScale, `rgba(63, 198, 255, ${0.07 + 0.06 * slow})`, zoom);
 
   const tAng = trail * Math.PI * 2;
   const tR = baseR * 1.6;
   // Micro-taper: spark radius eases smaller near trail extremes so contact reads continuous
   const taper = 0.65 + 0.35 * Math.sin(trail * Math.PI);
   const sparkR = (2.2 / zoom) * taper;
+  const sparkX = Math.cos(tAng) * tR;
+  const sparkY = Math.sin(tAng) * tR;
+
+  // Subtle contact bloom when the trail spark nears a diamond point (cardinal angles)
+  const cardinal = Math.PI / 2;
+  const angDist = Math.min(
+    Math.abs(tAng % cardinal),
+    cardinal - Math.abs(tAng % cardinal),
+  );
+  const nearPoint = 1 - Math.min(1, angDist / (cardinal * 0.35));
+  const bloomR = sparkR * (2.4 + 1.2 * nearPoint);
+  const bloomA = (0.09 + 0.14 * nearPoint) * (0.6 + 0.4 * taper);
   ctx.beginPath();
-  ctx.arc(Math.cos(tAng) * tR, Math.sin(tAng) * tR, sparkR, 0, Math.PI * 2);
+  ctx.arc(sparkX, sparkY, bloomR, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(63, 198, 255, ${bloomA})`;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(sparkX, sparkY, sparkR, 0, Math.PI * 2);
   ctx.fillStyle = `rgba(63, 198, 255, ${(0.4 + 0.4 * trail) * (0.75 + 0.25 * taper)})`;
   ctx.fill();
 
