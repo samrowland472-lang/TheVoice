@@ -264,6 +264,32 @@ export function drawDistributePreview(
   drawDiamond(ctx, baseR * 0.72 * lScale, `rgba(63, 198, 255, ${0.28 + 0.22 * lag})`, zoom, strokeBreath);
   ctx.restore();
 
+  // Subtle trailing filament between the primary diamond and the lag companion.
+  // Soft tapered stroke that only breathes when the lag is close, dissolving into the ground.
+  const lagAng = 0.31;
+  const lagR = baseR * 0.72 * lScale;
+  const pX = Math.cos(lagAng) * primaryR * 0.78;
+  const pY = Math.sin(lagAng) * primaryR * 0.78;
+  const lX = Math.cos(lagAng) * lagR * 0.92;
+  const lY = Math.sin(lagAng) * lagR * 0.92;
+  const filamentA = 0.055 + 0.035 * Math.max(0, lag - 0.35);
+  const filamentGrad = ctx.createLinearGradient(pX, pY, lX, lY);
+  filamentGrad.addColorStop(0, `rgba(63, 198, 255, ${filamentA * 0.25})`);
+  filamentGrad.addColorStop(0.45, `rgba(63, 198, 255, ${filamentA})`);
+  filamentGrad.addColorStop(1, `rgba(63, 198, 255, ${filamentA * 0.15})`);
+  ctx.beginPath();
+  ctx.moveTo(pX, pY);
+  ctx.quadraticCurveTo(
+    Math.cos(lagAng) * (primaryR + lagR) * 0.42,
+    Math.sin(lagAng) * (primaryR + lagR) * 0.42,
+    lX,
+    lY,
+  );
+  ctx.strokeStyle = filamentGrad;
+  ctx.lineWidth = Math.max(0.45, 0.7 / zoom) * strokeBreath * 0.65;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
   const sScale = 1 + 0.08 * (slow - 0.5);
   // Quieter outer slow harmonic so the nested family stays softer at rest
   drawDiamond(ctx, baseR * 1.35 * sScale, `rgba(63, 198, 255, ${0.07 + 0.06 * slow})`, zoom, strokeBreath * 0.85);
