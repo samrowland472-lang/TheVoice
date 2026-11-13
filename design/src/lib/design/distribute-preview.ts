@@ -179,7 +179,8 @@ function buildPlan(
  * primary diamond now uses a soft radial gradient falloff. Fifth nested mark
  * carries a faint phase-offset shimmer only at absolute peak. A quieter echo
  * filament mirrors the primary trailing stroke on the opposite side of the lag
- * offset, dissolving fully into the ground. Phosphor-on-ground.
+ * offset, dissolving fully into the ground. Ground falloff quiets further at rest.
+ * Echo filament phase tightened so it tracks the primary more closely without competing. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -207,11 +208,13 @@ export function drawDistributePreview(
   ctx.translate(cx, cy);
   ctx.rotate(familyLagRot);
 
-  // Faint radial falloff under the whole family so the flush diamond feels more grounded
+  // Faint radial falloff under the whole family so the flush diamond feels more grounded.
+  // Quieter at rest so the ground only lifts when the pulse is active.
   const falloffR = baseR * 2.4;
+  const restQuiet = 0.28 + 0.72 * pulse;
   const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, falloffR);
-  grad.addColorStop(0, "rgba(63, 198, 255, 0.042)");
-  grad.addColorStop(0.55, "rgba(63, 198, 255, 0.016)");
+  grad.addColorStop(0, `rgba(63, 198, 255, ${0.042 * restQuiet})`);
+  grad.addColorStop(0.55, `rgba(63, 198, 255, ${0.016 * restQuiet})`);
   grad.addColorStop(1, "rgba(63, 198, 255, 0)");
   ctx.beginPath();
   ctx.arc(0, 0, falloffR, 0, Math.PI * 2);
@@ -294,26 +297,27 @@ export function drawDistributePreview(
 
   // Faint echo filament on the opposite side of the lag offset.
   // Quieter quadratic stroke that only appears when the lag is close, dissolving fully into the ground.
+  // Tighter phase: control point pulled closer so the echo tracks the primary filament more tightly.
   const echoAng = lagAng + Math.PI;
   const echoPX = Math.cos(echoAng) * primaryR * 0.72;
   const echoPY = Math.sin(echoAng) * primaryR * 0.72;
   const echoLX = Math.cos(echoAng) * lagR * 0.85;
   const echoLY = Math.sin(echoAng) * lagR * 0.85;
-  const echoA = 0.028 + 0.018 * Math.max(0, lag - 0.42);
+  const echoA = 0.022 + 0.014 * Math.max(0, lag - 0.48);
   const echoGrad = ctx.createLinearGradient(echoPX, echoPY, echoLX, echoLY);
-  echoGrad.addColorStop(0, `rgba(63, 198, 255, ${echoA * 0.18})`);
+  echoGrad.addColorStop(0, `rgba(63, 198, 255, ${echoA * 0.16})`);
   echoGrad.addColorStop(0.5, `rgba(63, 198, 255, ${echoA})`);
-  echoGrad.addColorStop(1, `rgba(63, 198, 255, ${echoA * 0.08})`);
+  echoGrad.addColorStop(1, `rgba(63, 198, 255, ${echoA * 0.06})`);
   ctx.beginPath();
   ctx.moveTo(echoPX, echoPY);
   ctx.quadraticCurveTo(
-    Math.cos(echoAng) * (primaryR + lagR) * 0.38,
-    Math.sin(echoAng) * (primaryR + lagR) * 0.38,
+    Math.cos(echoAng) * (primaryR + lagR) * 0.34,
+    Math.sin(echoAng) * (primaryR + lagR) * 0.34,
     echoLX,
     echoLY,
   );
   ctx.strokeStyle = echoGrad;
-  ctx.lineWidth = Math.max(0.35, 0.55 / zoom) * strokeBreath * 0.5;
+  ctx.lineWidth = Math.max(0.32, 0.5 / zoom) * strokeBreath * 0.48;
   ctx.lineCap = "round";
   ctx.stroke();
 

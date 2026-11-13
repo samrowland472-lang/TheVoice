@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint echo filament on the opposite side of the lag offset. Quieter quadratic stroke that only breathes when the lag is close, dissolving fully into the ground. Mirrors the primary trailing filament without competing. Phosphor-on-ground, no emoji chrome.
+- Iteration: Quieted the ground falloff further when the pulse is at rest so the family only lifts the ground when active. Tightened the echo filament phase (closer control, quieter threshold) so it tracks the primary trailing filament more closely without competing. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally quiet the ground falloff further when the pulse is at rest, or tighten the phase offset between the primary filament and its echo.
+- Optionally add a micro secondary taper on the primary filament matching the echo, or deepen the shared family breath on stroke width at extreme contact.
