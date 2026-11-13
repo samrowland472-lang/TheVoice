@@ -172,9 +172,10 @@ function buildPlan(
  * tighter family cohesion. Fifth nested mark quieted further and given a faint
  * phase offset so it never quite syncs with the primary. All members inherit
  * familyLagRot. Shared stroke-width breathing across the nested family, plus a
- * soft outer halo on the primary diamond at peak pulse. Micro secondary spark
+ * soft outer halo on the primary diamond at peak pulse.  * Micro secondary spark
  * trails the primary trail at a fixed phase lag, quieter and slightly inset.
- * Phosphor-on-ground.
+ * Secondary spark gains a faint radial pulse at peak contact so the lagged breath
+ * reads as continuous without competing with the lead spark. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -311,6 +312,28 @@ export function drawDistributePreview(
   ctx.arc(secX, secY, secSparkR, 0, Math.PI * 2);
   ctx.fillStyle = `rgba(63, 198, 255, ${(0.18 + 0.22 * trail) * (0.65 + 0.35 * Math.max(0, secTaper))})`;
   ctx.fill();
+
+  // Faint radial pulse on the secondary spark at peak contact
+  // Soft expanding bloom that only appears when the lagged spark nears a diamond point
+  const secCardinal = Math.PI / 2;
+  const secAngDist = Math.min(
+    Math.abs(secAng % secCardinal),
+    secCardinal - Math.abs(secAng % secCardinal),
+  );
+  const secNearPoint = 1 - Math.min(1, secAngDist / (secCardinal * 0.42));
+  if (secNearPoint > 0.58) {
+    const pulseScale = 0.65 + 0.35 * Math.sin(trail * Math.PI);
+    const pulseR = secSparkR * (1.65 + 1.1 * secNearPoint) * pulseScale;
+    const pulseA = 0.065 * ((secNearPoint - 0.58) / 0.42) * (0.55 + 0.45 * trail);
+    const pulseGrad = ctx.createRadialGradient(secX, secY, secSparkR * 0.4, secX, secY, pulseR);
+    pulseGrad.addColorStop(0, `rgba(63, 198, 255, ${pulseA * 1.25})`);
+    pulseGrad.addColorStop(0.55, `rgba(63, 198, 255, ${pulseA * 0.45})`);
+    pulseGrad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.beginPath();
+    ctx.arc(secX, secY, pulseR, 0, Math.PI * 2);
+    ctx.fillStyle = pulseGrad;
+    ctx.fill();
+  }
 
   // Quiet fifth mark only near absolute peak of the trail breath — softened further
   const marks = [
