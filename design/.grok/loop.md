@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint inner glow to the primary flush diamond that breathes with the pulse (soft filled diamond at 0.62·radius, alpha 0.045 + 0.055·pulse). Keeps the nested family grounded and phosphor-on-ground. No emoji chrome.
+- Iteration: Micro-adjusted the lag companion rotation offset from 0.4 to 0.31 for tighter family cohesion with the primary flush diamond. Quietened the fifth nested mark further (size 0.13, op 0.016) so it stays almost invisible near rest. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally micro-adjust the lag companion rotation offset for tighter family cohesion, or quiet the fifth nested mark further near rest.
+- Optionally add a subtle shared stroke-width breathing across the nested family, or soft outer halo on the primary diamond at peak pulse.

@@ -167,7 +167,9 @@ function buildPlan(
  * carries a micro-taper so extreme contact reads as one continuous breath.
  * Outer slow harmonic is quieter at rest. Trail spark gains a soft contact bloom
  * near diamond points. Faint radial falloff grounds the family. Primary diamond
- * carries a faint inner glow that breathes with the pulse. All members inherit familyLagRot. Phosphor-on-ground.
+ * carries a faint inner glow that breathes with the pulse. Lag companion rotation
+ * offset micro-adjusted for tighter family cohesion. Fifth nested mark quieted further.
+ * All members inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -223,7 +225,8 @@ export function drawDistributePreview(
 
   const lScale = 1 + 0.12 * (lag - 0.5);
   ctx.save();
-  ctx.rotate(0.4);
+  // Micro-adjusted rotation offset for tighter family cohesion with the primary diamond
+  ctx.rotate(0.31);
   drawDiamond(ctx, baseR * 0.72 * lScale, `rgba(63, 198, 255, ${0.28 + 0.22 * lag})`, zoom);
   ctx.restore();
 
@@ -264,7 +267,7 @@ export function drawDistributePreview(
     { idx: 2, size: 0.62, op: 0.22, breath: lag },
     { idx: 3, size: 0.48, op: 0.14, breath: slow },
     { idx: 4, size: 0.36, op: 0.09, breath: trail },
-    { idx: 5, size: 0.16, op: 0.028, breath: trail * 0.48 },
+    { idx: 5, size: 0.13, op: 0.016, breath: trail * 0.48 },
   ];
 
   for (const m of marks) {
