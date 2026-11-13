@@ -166,11 +166,13 @@ function buildPlan(
  * fifth mark only near the absolute peak of the trail breath. Trail spark
  * carries a micro-taper so extreme contact reads as one continuous breath.
  * Outer slow harmonic is quieter at rest. Trail spark gains a soft contact bloom
- * near diamond points. Faint radial falloff grounds the family. Primary diamond
- * carries a faint inner glow that breathes with the pulse. Lag companion rotation
- * offset micro-adjusted for tighter family cohesion. Fifth nested mark quieted further.
- * All members inherit familyLagRot. Shared stroke-width breathing across the nested
- * family, plus a soft outer halo on the primary diamond at peak pulse.
+ * near diamond points with a secondary inner taper for deeper contact. Faint
+ * radial falloff grounds the family. Primary diamond carries a faint inner glow
+ * that breathes with the pulse. Lag companion rotation offset micro-adjusted for
+ * tighter family cohesion. Fifth nested mark quieted further and given a faint
+ * phase offset so it never quite syncs with the primary. All members inherit
+ * familyLagRot. Shared stroke-width breathing across the nested family, plus a
+ * soft outer halo on the primary diamond at peak pulse.
  * Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -265,18 +267,30 @@ export function drawDistributePreview(
   const sparkY = Math.sin(tAng) * tR;
 
   // Subtle contact bloom when the trail spark nears a diamond point (cardinal angles)
+  // Secondary inner taper deepens the bloom so contact feels more continuous
   const cardinal = Math.PI / 2;
   const angDist = Math.min(
     Math.abs(tAng % cardinal),
     cardinal - Math.abs(tAng % cardinal),
   );
   const nearPoint = 1 - Math.min(1, angDist / (cardinal * 0.35));
-  const bloomR = sparkR * (2.4 + 1.2 * nearPoint);
-  const bloomA = (0.09 + 0.14 * nearPoint) * (0.6 + 0.4 * taper);
+  const innerTaper = 0.55 + 0.45 * Math.pow(nearPoint, 1.4);
+  const bloomR = sparkR * (2.4 + 1.2 * nearPoint) * (0.82 + 0.18 * innerTaper);
+  const bloomA = (0.09 + 0.14 * nearPoint) * (0.6 + 0.4 * taper) * (0.7 + 0.3 * innerTaper);
   ctx.beginPath();
   ctx.arc(sparkX, sparkY, bloomR, 0, Math.PI * 2);
   ctx.fillStyle = `rgba(63, 198, 255, ${bloomA})`;
   ctx.fill();
+
+  // Soft inner core of the bloom, tighter and brighter at peak contact
+  if (nearPoint > 0.35) {
+    const coreR = sparkR * (1.15 + 0.55 * nearPoint) * innerTaper;
+    const coreA = (0.12 + 0.18 * nearPoint) * innerTaper * (0.5 + 0.5 * taper);
+    ctx.beginPath();
+    ctx.arc(sparkX, sparkY, coreR, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(63, 198, 255, ${coreA})`;
+    ctx.fill();
+  }
 
   ctx.beginPath();
   ctx.arc(sparkX, sparkY, sparkR, 0, Math.PI * 2);
@@ -300,7 +314,9 @@ export function drawDistributePreview(
     const mScale = 1 + 0.04 * (rel - 0.5);
     const alpha = m.op * (0.45 + 0.55 * rel);
     ctx.save();
-    ctx.rotate(m.idx * 0.18);
+    // Faint phase offset on the fifth mark so it never quite syncs with the primary
+    const phaseOff = m.idx === 5 ? 0.11 + 0.04 * Math.sin(trail * Math.PI * 1.7) : 0;
+    ctx.rotate(m.idx * 0.18 + phaseOff);
     drawDiamond(ctx, baseR * m.size * mScale, `rgba(63, 198, 255, ${alpha})`, zoom, strokeBreath);
     ctx.restore();
   }
