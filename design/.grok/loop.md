@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Deepened the trail spark contact bloom with a secondary inner taper and soft core, and added a faint phase offset to the fifth nested mark so it never quite syncs with the primary. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a micro secondary spark trailing the primary trail at a fixed phase lag (0.42 rad), quieter and slightly inset so the contact family reads as a continuous breath without overlapping the lead spark. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally add a micro secondary spark trailing the primary trail at a fixed phase lag, or refine the outer halo falloff on the primary diamond.
+- Optionally refine the outer halo falloff on the primary diamond, or add a faint radial pulse to the secondary spark at peak contact.

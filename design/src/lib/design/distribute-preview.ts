@@ -172,7 +172,8 @@ function buildPlan(
  * tighter family cohesion. Fifth nested mark quieted further and given a faint
  * phase offset so it never quite syncs with the primary. All members inherit
  * familyLagRot. Shared stroke-width breathing across the nested family, plus a
- * soft outer halo on the primary diamond at peak pulse.
+ * soft outer halo on the primary diamond at peak pulse. Micro secondary spark
+ * trails the primary trail at a fixed phase lag, quieter and slightly inset.
  * Phosphor-on-ground.
  */
 export function drawDistributePreview(
@@ -295,6 +296,20 @@ export function drawDistributePreview(
   ctx.beginPath();
   ctx.arc(sparkX, sparkY, sparkR, 0, Math.PI * 2);
   ctx.fillStyle = `rgba(63, 198, 255, ${(0.4 + 0.4 * trail) * (0.75 + 0.25 * taper)})`;
+  ctx.fill();
+
+  // Micro secondary spark trailing the primary trail at a fixed phase lag
+  // Quieter, slightly inset, and phase-lagged so it never overlaps the lead contact
+  const lagPhase = 0.42;
+  const secAng = tAng - lagPhase;
+  const secR = tR * 0.86;
+  const secTaper = 0.55 + 0.45 * Math.sin((trail - lagPhase / (Math.PI * 2)) * Math.PI);
+  const secSparkR = (1.35 / zoom) * Math.max(0.4, secTaper);
+  const secX = Math.cos(secAng) * secR;
+  const secY = Math.sin(secAng) * secR;
+  ctx.beginPath();
+  ctx.arc(secX, secY, secSparkR, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(63, 198, 255, ${(0.18 + 0.22 * trail) * (0.65 + 0.35 * Math.max(0, secTaper))})`;
   ctx.fill();
 
   // Quiet fifth mark only near absolute peak of the trail breath — softened further
