@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint radial pulse to the micro secondary spark at peak contact. Soft expanding bloom appears only when the lagged spark nears a diamond point, so the trailing breath reads continuous without competing with the lead spark. Phosphor-on-ground, no emoji chrome.
+- Iteration: Softened the outer halo falloff on the primary flush diamond so the peak bloom dissolves through a radial gradient instead of a hard stroke. Added a faint phase-offset shimmer to the fifth nested mark that only appears at absolute peak, so the innermost mark breathes on its own micro-timescale. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally soften the outer halo falloff on the primary diamond, or add a faint phase-offset shimmer to the fifth nested mark at absolute peak.
+- Optionally add a subtle trailing filament between the primary diamond and the lag companion, or quiet the ground falloff further when the pulse is at rest.
