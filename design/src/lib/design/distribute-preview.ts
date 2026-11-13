@@ -177,7 +177,9 @@ function buildPlan(
  * Secondary spark gains a faint radial pulse at peak contact so the lagged breath
  * reads as continuous without competing with the lead spark. Outer halo on the
  * primary diamond now uses a soft radial gradient falloff. Fifth nested mark
- * carries a faint phase-offset shimmer only at absolute peak. Phosphor-on-ground.
+ * carries a faint phase-offset shimmer only at absolute peak. A quieter echo
+ * filament mirrors the primary trailing stroke on the opposite side of the lag
+ * offset, dissolving fully into the ground. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -287,6 +289,31 @@ export function drawDistributePreview(
   );
   ctx.strokeStyle = filamentGrad;
   ctx.lineWidth = Math.max(0.45, 0.7 / zoom) * strokeBreath * 0.65;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // Faint echo filament on the opposite side of the lag offset.
+  // Quieter quadratic stroke that only appears when the lag is close, dissolving fully into the ground.
+  const echoAng = lagAng + Math.PI;
+  const echoPX = Math.cos(echoAng) * primaryR * 0.72;
+  const echoPY = Math.sin(echoAng) * primaryR * 0.72;
+  const echoLX = Math.cos(echoAng) * lagR * 0.85;
+  const echoLY = Math.sin(echoAng) * lagR * 0.85;
+  const echoA = 0.028 + 0.018 * Math.max(0, lag - 0.42);
+  const echoGrad = ctx.createLinearGradient(echoPX, echoPY, echoLX, echoLY);
+  echoGrad.addColorStop(0, `rgba(63, 198, 255, ${echoA * 0.18})`);
+  echoGrad.addColorStop(0.5, `rgba(63, 198, 255, ${echoA})`);
+  echoGrad.addColorStop(1, `rgba(63, 198, 255, ${echoA * 0.08})`);
+  ctx.beginPath();
+  ctx.moveTo(echoPX, echoPY);
+  ctx.quadraticCurveTo(
+    Math.cos(echoAng) * (primaryR + lagR) * 0.38,
+    Math.sin(echoAng) * (primaryR + lagR) * 0.38,
+    echoLX,
+    echoLY,
+  );
+  ctx.strokeStyle = echoGrad;
+  ctx.lineWidth = Math.max(0.35, 0.55 / zoom) * strokeBreath * 0.5;
   ctx.lineCap = "round";
   ctx.stroke();
 
