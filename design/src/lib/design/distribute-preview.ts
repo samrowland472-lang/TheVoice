@@ -180,7 +180,7 @@ function buildPlan(
  * carries a faint phase-offset shimmer only at absolute peak. A quieter echo
  * filament mirrors the primary trailing stroke on the opposite side of the lag
  * offset, dissolving fully into the ground. Ground falloff quiets further at rest.
- * Echo filament phase tightened so it tracks the primary more closely without competing. Phosphor-on-ground.
+ * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -292,6 +292,27 @@ export function drawDistributePreview(
   );
   ctx.strokeStyle = filamentGrad;
   ctx.lineWidth = Math.max(0.45, 0.7 / zoom) * strokeBreath * 0.65;
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // Micro secondary taper on the primary filament matching the echo's tighter phase.
+  // Quieter inner stroke with a closer control point so the trailing edge thins more
+  // cleanly at contact without competing with the lead filament.
+  const microA = filamentA * 0.38;
+  const microGrad = ctx.createLinearGradient(pX, pY, lX, lY);
+  microGrad.addColorStop(0, `rgba(63, 198, 255, ${microA * 0.18})`);
+  microGrad.addColorStop(0.5, `rgba(63, 198, 255, ${microA})`);
+  microGrad.addColorStop(1, `rgba(63, 198, 255, ${microA * 0.08})`);
+  ctx.beginPath();
+  ctx.moveTo(pX, pY);
+  ctx.quadraticCurveTo(
+    Math.cos(lagAng) * (primaryR + lagR) * 0.31,
+    Math.sin(lagAng) * (primaryR + lagR) * 0.31,
+    lX,
+    lY,
+  );
+  ctx.strokeStyle = microGrad;
+  ctx.lineWidth = Math.max(0.28, 0.42 / zoom) * strokeBreath * 0.42;
   ctx.lineCap = "round";
   ctx.stroke();
 
