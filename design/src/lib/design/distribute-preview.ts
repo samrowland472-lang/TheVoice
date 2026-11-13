@@ -166,7 +166,8 @@ function buildPlan(
  * fifth mark only near the absolute peak of the trail breath. Trail spark
  * carries a micro-taper so extreme contact reads as one continuous breath.
  * Outer slow harmonic is quieter at rest. Trail spark gains a soft contact bloom
- * near diamond points. Faint radial falloff grounds the family. All members inherit familyLagRot. Phosphor-on-ground.
+ * near diamond points. Faint radial falloff grounds the family. Primary diamond
+ * carries a faint inner glow that breathes with the pulse. All members inherit familyLagRot. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -206,7 +207,19 @@ export function drawDistributePreview(
   ctx.fill();
 
   const pScale = 1 + 0.18 * (pulse - 0.5);
-  drawDiamond(ctx, baseR * pScale, `rgba(63, 198, 255, ${0.55 + 0.35 * pulse})`, zoom);
+  const primaryR = baseR * pScale;
+  // Faint inner glow that breathes with the pulse — softer fill inside the primary diamond
+  const glowR = primaryR * 0.62;
+  const glowA = 0.045 + 0.055 * pulse;
+  ctx.beginPath();
+  ctx.moveTo(0, -glowR);
+  ctx.lineTo(glowR, 0);
+  ctx.lineTo(0, glowR);
+  ctx.lineTo(-glowR, 0);
+  ctx.closePath();
+  ctx.fillStyle = `rgba(63, 198, 255, ${glowA})`;
+  ctx.fill();
+  drawDiamond(ctx, primaryR, `rgba(63, 198, 255, ${0.55 + 0.35 * pulse})`, zoom);
 
   const lScale = 1 + 0.12 * (lag - 0.5);
   ctx.save();
