@@ -258,6 +258,15 @@ export function drawDistributePreview(
     ctx.stroke();
     ctx.restore();
 
+    // Faint gap-value readout on the diamond once labels have dissolved
+    const readout = gap <= 0.2 ? "flush" : formatDistributeGap(gap);
+    ctx.globalAlpha = 0.42 * (0.55 + 0.45 * pulse);
+    ctx.fillStyle = PHOSPHOR;
+    ctx.font = `${Math.max(8, 10 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(readout, 0, size * 0.08);
+
     ctx.restore();
   }
 
