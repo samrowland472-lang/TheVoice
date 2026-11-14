@@ -151,6 +151,13 @@ export function commitDistributePreview() {
 
 const PHOSPHOR = "#3fc6ff";
 
+// Readout fade and breath constants — keep the diamond contact readable without competing chrome
+const READOUT_BASE_ALPHA = 0.42;
+const READOUT_PULSE_MIN = 0.55;
+const READOUT_PULSE_RANGE = 0.45;
+const READOUT_SCALE_BASE = 0.94;
+const READOUT_SCALE_PULSE = 0.06;
+
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
   plan: DistributePlan,
@@ -259,13 +266,20 @@ export function drawDistributePreview(
     ctx.restore();
 
     // Faint gap-value readout on the diamond once labels have dissolved
+    // Subtle scale pulse matches the primary diamond breath so contact stays readable
     const readout = gap <= 0.2 ? "flush" : formatDistributeGap(gap);
-    ctx.globalAlpha = 0.42 * (0.55 + 0.45 * pulse);
+    const readoutAlpha = READOUT_BASE_ALPHA * (READOUT_PULSE_MIN + READOUT_PULSE_RANGE * pulse);
+    const readoutScale = READOUT_SCALE_BASE + READOUT_SCALE_PULSE * pulse;
+    ctx.save();
+    ctx.translate(0, size * 0.08);
+    ctx.scale(readoutScale, readoutScale);
+    ctx.globalAlpha = readoutAlpha;
     ctx.fillStyle = PHOSPHOR;
     ctx.font = `${Math.max(8, 10 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(readout, 0, size * 0.08);
+    ctx.fillText(readout, 0, 0);
+    ctx.restore();
 
     ctx.restore();
   }
