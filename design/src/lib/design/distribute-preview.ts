@@ -359,6 +359,22 @@ export function drawDistributePreview(
 
     ctx.restore();
 
+    // Quiet outer counter-breath on the fifth-mark diamond — opposite rotation, slightly larger, dissolves with trail-fade
+    const outerScale = 1.16 + 0.04 * lag;
+    const counterLag = -familyLag * 1.35;
+    ctx.save();
+    ctx.rotate(counterLag);
+    ctx.beginPath();
+    ctx.moveTo(0, -size * 0.28 * bloom * outerScale);
+    ctx.lineTo(size * 0.18 * outerScale, 0);
+    ctx.lineTo(0, size * 0.28 * bloom * outerScale);
+    ctx.lineTo(-size * 0.18 * outerScale, 0);
+    ctx.closePath();
+    ctx.lineWidth = fifthBaseW * (0.42 + 0.38 * lag);
+    ctx.globalAlpha = 0.26 * pulse * lag * ringTrailFade;
+    ctx.stroke();
+    ctx.restore();
+
     // Faint gap-value readout on the diamond once labels have dissolved
     // Subtle scale pulse matches the primary diamond breath so contact stays readable
     // Matching lag-echo scale trails the primary using flushPulseLag
