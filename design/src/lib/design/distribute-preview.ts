@@ -218,20 +218,27 @@ export function drawDistributePreview(
     const bloom = DIAMOND_BLOOM_BASE + DIAMOND_BLOOM_PULSE * pulse;
     const lagBloom = DIAMOND_LAG_BLOOM_BASE + DIAMOND_LAG_BLOOM_PULSE * lag;
     const slowBloom = DIAMOND_SLOW_BLOOM_BASE + DIAMOND_SLOW_BLOOM_PULSE * slow;
+    // Shared trail-fade so the inner radial fill dissolves with the primary breath
+    const ringTrailFade = RING_TRAIL_FADE_BASE + RING_TRAIL_FADE_RANGE * pulse;
 
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rot * 0.15);
 
-    // Primary diamond breath
+    // Primary diamond breath with faint radial gradient fill that inherits trail-fade
     ctx.beginPath();
     ctx.moveTo(0, -size * bloom);
     ctx.lineTo(size * bloom * 0.7, 0);
     ctx.lineTo(0, size * bloom);
     ctx.lineTo(-size * bloom * 0.7, 0);
     ctx.closePath();
-    ctx.globalAlpha = 0.35 * pulse;
-    ctx.fillStyle = PHOSPHOR;
+    const r = size * bloom * 0.72;
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    grad.addColorStop(0, PHOSPHOR);
+    grad.addColorStop(0.45, PHOSPHOR);
+    grad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.globalAlpha = 0.28 * pulse * ringTrailFade;
+    ctx.fillStyle = grad;
     ctx.fill();
     ctx.globalAlpha = 0.7;
     ctx.stroke();
@@ -268,7 +275,6 @@ export function drawDistributePreview(
     ctx.fill();
 
     // Quiet phase-offset spark — inherits counter-rotation for a fourth micro-harmonic
-    const ringTrailFade = RING_TRAIL_FADE_BASE + RING_TRAIL_FADE_RANGE * pulse;
     const sparkAngle3 = rot * READOUT_COUNTER_ROT * 1.8 + Math.PI * 0.35;
     const sparkR3 = size * (0.48 + 0.12 * trail);
     const sx3 = Math.cos(sparkAngle3) * sparkR3;

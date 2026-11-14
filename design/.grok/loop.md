@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Modulated the diamond bloom falloff rings with the same trail-fade factor as the readout trails so they dissolve cleanly with the primary breath, and added a quiet phase-offset spark that inherits the counter-rotation for a fourth micro-harmonic. Phosphor-on-ground, no emoji.
+- Iteration: Added a faint radial gradient fill inside the primary flush-diamond that inherits the shared ring trail-fade so the contact bloom dissolves cleanly with the primary breath. Phosphor-on-ground, no emoji.
 
 ## Next recommended
-- Optionally add a faint radial gradient fill inside the primary diamond that also inherits the trail-fade, or a slow-orbiting micro-dot on the nested fifth mark.
+- Optionally add a slow-orbiting micro-dot on the nested fifth mark that also inherits the trail-fade, or a subtle inner counter-stroke on the gradient diamond.
