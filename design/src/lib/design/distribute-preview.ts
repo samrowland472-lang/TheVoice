@@ -244,6 +244,7 @@ export function drawDistributePreview(
     ctx.stroke();
 
     // Subtle inner counter-stroke on the gradient diamond that inherits trail-fade
+    // Slow pulse on stroke width so the counter-edge breathes without competing chrome
     ctx.save();
     ctx.rotate(-rot * 0.07);
     ctx.beginPath();
@@ -253,6 +254,8 @@ export function drawDistributePreview(
     ctx.lineTo(0, size * bloom * innerScale);
     ctx.lineTo(-size * bloom * 0.7 * innerScale, 0);
     ctx.closePath();
+    const baseW = 1 / zoom;
+    ctx.lineWidth = baseW * (0.85 + 0.3 * slow);
     ctx.globalAlpha = 0.22 * pulse * ringTrailFade;
     ctx.stroke();
     ctx.restore();
@@ -266,6 +269,16 @@ export function drawDistributePreview(
     ctx.arc(tx, ty, (1.7 / zoom) * (0.48 + 0.52 * trail), 0, Math.PI * 2);
     ctx.globalAlpha = 0.3 * trail * ringTrailFade;
     ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
+    // Nested trailing tick on a quieter opposite orbit — trails the primary counter-tick with shared trail-fade
+    const nestAngle = -rot * 0.18 + Math.PI * 0.55;
+    const nestR = size * bloom * 0.62;
+    const nx = Math.cos(nestAngle) * nestR;
+    const ny = Math.sin(nestAngle) * nestR * 0.58;
+    ctx.beginPath();
+    ctx.arc(nx, ny, (1.2 / zoom) * (0.4 + 0.6 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.18 * trail * ringTrailFade;
     ctx.fill();
 
     // Secondary lag echo (trails the primary)

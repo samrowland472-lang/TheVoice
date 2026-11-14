@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint counter-orbiting tick on the primary bloom of the gradient diamond that inherits the shared ring trail-fade and a quiet opposite drift so the contact treatment gains a micro-harmonic edge without competing chrome. Phosphor-on-ground, no emoji.
+- Iteration: Added a nested trailing tick on a quieter opposite orbit that trails the primary counter-orbiting tick, plus a slow pulse on the inner counter-stroke width so the contact treatment gains a second micro-harmonic edge without competing chrome. Phosphor-on-ground, no emoji.
 
 ## Next recommended
-- Optionally add a slow pulse on the inner stroke width of the counter-stroke, or a second nested tick that trails the primary counter-orbit.
+- Optionally add a phase-offset inner spark that trails the nested tick, or a soft radial bloom on the trailing tick itself.
