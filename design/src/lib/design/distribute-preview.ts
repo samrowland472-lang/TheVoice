@@ -176,6 +176,9 @@ const READOUT_SLOW_ALPHA = 0.09;
 // Trails dissolve with the primary breath so layered echos fade cleanly instead of lingering
 const READOUT_TRAIL_FADE_BASE = 0.38;
 const READOUT_TRAIL_FADE_RANGE = 0.62;
+// Rings share the same trail-fade so bloom falloff dissolves cleanly with the primary breath
+const RING_TRAIL_FADE_BASE = 0.42;
+const RING_TRAIL_FADE_RANGE = 0.58;
 // Subtle counter-rotation on the readout using flushPulseRotate so the text has a quiet opposite drift
 const READOUT_COUNTER_ROT = -0.045;
 
@@ -264,11 +267,22 @@ export function drawDistributePreview(
     ctx.globalAlpha = 0.55 * slow * trail;
     ctx.fill();
 
-    // Faint radial falloff rings
+    // Quiet phase-offset spark — inherits counter-rotation for a fourth micro-harmonic
+    const ringTrailFade = RING_TRAIL_FADE_BASE + RING_TRAIL_FADE_RANGE * pulse;
+    const sparkAngle3 = rot * READOUT_COUNTER_ROT * 1.8 + Math.PI * 0.35;
+    const sparkR3 = size * (0.48 + 0.12 * trail);
+    const sx3 = Math.cos(sparkAngle3) * sparkR3;
+    const sy3 = Math.sin(sparkAngle3) * sparkR3 * 0.7;
+    ctx.beginPath();
+    ctx.arc(sx3, sy3, (1.6 / zoom) * (0.4 + 0.6 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.28 * trail * ringTrailFade;
+    ctx.fill();
+
+    // Faint radial falloff rings — modulated by the same trail-fade factor as the readout trails
     for (let i = 1; i <= 3; i++) {
       ctx.beginPath();
       ctx.arc(0, 0, size * (0.3 + i * 0.18) * slowBloom, 0, Math.PI * 2);
-      ctx.globalAlpha = 0.12 / i * slow;
+      ctx.globalAlpha = (0.12 / i) * slow * ringTrailFade;
       ctx.stroke();
     }
 
