@@ -257,6 +257,17 @@ export function drawDistributePreview(
     ctx.stroke();
     ctx.restore();
 
+    // Faint counter-orbiting tick on the primary bloom that inherits trail-fade
+    const tickAngle = -rot * 0.22 + Math.PI * 0.3;
+    const tickR = size * bloom * 0.76;
+    const tx = Math.cos(tickAngle) * tickR;
+    const ty = Math.sin(tickAngle) * tickR * 0.62;
+    ctx.beginPath();
+    ctx.arc(tx, ty, (1.7 / zoom) * (0.48 + 0.52 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.3 * trail * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
     // Secondary lag echo (trails the primary)
     ctx.beginPath();
     ctx.moveTo(0, -size * lagBloom * 0.85);
