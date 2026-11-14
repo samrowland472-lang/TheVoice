@@ -180,7 +180,7 @@ function buildPlan(
  * carries a faint phase-offset shimmer only at absolute peak. A quieter echo
  * filament mirrors the primary trailing stroke on the opposite side of the lag
  * offset, dissolving fully into the ground. Ground falloff quiets further at rest.
- * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Micro secondary taper on the lagged stroke breath at extreme contact. Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands. Micro contact bloom on the contracted outer lag mark at peak core expansion. Phosphor-on-ground.
+ * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Micro secondary taper on the lagged stroke breath at extreme contact. Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands. Micro contact bloom on the contracted outer lag mark at peak core expansion. Counter-breath deepened with a faint phase offset on the slow harmonic so the outer companion trails the core more clearly. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -275,8 +275,10 @@ export function drawDistributePreview(
   ctx.save();
   // Micro-adjusted rotation offset for tighter family cohesion with the primary diamond
   ctx.rotate(0.31);
-  // Quiet counter-breath: outer lag companion contracts slightly as the core expands
-  const lagCounter = 1 - 0.045 * Math.max(0, pulse - 0.5);
+  // Quiet counter-breath deepened with a faint phase offset on the slow harmonic
+  // so the outer companion contracts a touch more as the slow cycle peaks, trailing the core.
+  const slowPhase = Math.sin(slow * Math.PI * 2 - 0.55);
+  const lagCounter = 1 - 0.045 * Math.max(0, pulse - 0.5) - 0.016 * Math.max(0, slowPhase);
   const companionR = baseR * 0.72 * lScale * lagCounter;
   drawDiamond(ctx, companionR, `rgba(63, 198, 255, ${0.28 + 0.22 * lag})`, zoom, strokeBreath);
   // Micro contact bloom on the contracted outer mark at peak core expansion.
@@ -284,7 +286,7 @@ export function drawDistributePreview(
   if (pulse > 0.68) {
     const bloomStr = Math.max(0, (pulse - 0.68) / 0.32) * (1 - lagCounter) * 12;
     const bloomR = companionR * (1.08 + 0.06 * bloomStr);
-    const bloomA = 0.035 * bloomStr;
+    const bloomA = 0.028 * bloomStr;
     const bloomGrad = ctx.createRadialGradient(0, 0, companionR * 0.6, 0, 0, bloomR);
     bloomGrad.addColorStop(0, `rgba(63, 198, 255, ${bloomA * 0.4})`);
     bloomGrad.addColorStop(0.7, `rgba(63, 198, 255, ${bloomA})`);
@@ -462,8 +464,9 @@ export function drawDistributePreview(
     const rel = m.breath / maxB;
     const peak = rel > (m.idx === 5 ? 0.86 : 0.78);
     if (m.idx > 2 && !peak) continue;
-    // Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands
-    const slowCounter = m.idx === 3 ? 0.055 * Math.max(0, pulse - 0.48) : 0;
+    // Quiet counter-breath on the outer slow harmonic, with a faint phase offset so it trails
+    const slowPhaseOff = Math.sin(slow * Math.PI * 2 - 0.4);
+    const slowCounter = m.idx === 3 ? 0.055 * Math.max(0, pulse - 0.48) + 0.012 * Math.max(0, slowPhaseOff) : 0;
     const mScale = 1 + 0.04 * (rel - 0.5) - slowCounter;
     const alpha = m.op * (0.45 + 0.55 * rel);
     ctx.save();

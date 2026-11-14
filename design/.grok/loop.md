@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a micro contact bloom on the contracted outer lag mark at peak core expansion. Soft radial fill appears only when the core is fully open and the companion has contracted, grounding the counter-breath without competing. Phosphor-on-ground, no emoji chrome.
+- Iteration: Deepened the counter-breath with a faint phase offset on the slow harmonic. Outer lag companion and nested slow mark now trail the core expansion more clearly, and bloom falloff is quieter at rest. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally deepen the counter-breath with a faint phase offset on the slow harmonic, or refine the bloom falloff for even quieter rest states.
+- Optionally add a micro secondary phase lag on the trail spark's contact bloom so the orbital spark trails the counter-breath more distinctly, or quiet the ground falloff further during slow-harmonic rest.
