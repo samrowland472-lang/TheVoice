@@ -304,6 +304,18 @@ export function drawDistributePreview(
     ctx.closePath();
     ctx.globalAlpha = 0.55 * pulse * lag;
     ctx.stroke();
+
+    // Slow-orbiting micro-dot on the nested fifth mark that inherits trail-fade
+    const microAngle = rot * 0.18 + Math.PI * 0.55;
+    const microR = size * 0.24 * bloom;
+    const mx = Math.cos(microAngle) * microR;
+    const my = Math.sin(microAngle) * microR * 0.62;
+    ctx.beginPath();
+    ctx.arc(mx, my, (1.35 / zoom) * (0.45 + 0.55 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.62 * trail * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
     ctx.restore();
 
     // Faint gap-value readout on the diamond once labels have dissolved

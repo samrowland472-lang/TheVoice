@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint radial gradient fill inside the primary flush-diamond that inherits the shared ring trail-fade so the contact bloom dissolves cleanly with the primary breath. Phosphor-on-ground, no emoji.
+- Iteration: Added a slow-orbiting micro-dot on the nested fifth mark that inherits the shared ring trail-fade so the contact treatment gains a quiet fifth harmonic without competing chrome. Phosphor-on-ground, no emoji.
 
 ## Next recommended
-- Optionally add a slow-orbiting micro-dot on the nested fifth mark that also inherits the trail-fade, or a subtle inner counter-stroke on the gradient diamond.
+- Optionally add a subtle inner counter-stroke on the gradient diamond that also inherits the trail-fade, or a faint counter-orbiting tick on the primary bloom.
