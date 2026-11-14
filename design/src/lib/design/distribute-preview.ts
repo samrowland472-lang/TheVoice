@@ -171,7 +171,7 @@ function buildPlan(
  * that breathes with the pulse. Lag companion rotation offset micro-adjusted for
  * tighter family cohesion. Fifth nested mark quieted further and given a faint
  * phase offset so it never quite syncs with the primary. All members inherit
- * familyLagRot. Shared stroke-width breathing across the nested family, plus a
+ * familyLagRot. Shared stroke-width breathing across the nested family deepens at extreme contact, plus a
  * soft outer halo on the primary diamond at peak pulse.  * Micro secondary spark
  * trails the primary trail at a fixed phase lag, quieter and slightly inset.
  * Secondary spark gains a faint radial pulse at peak contact so the lagged breath
@@ -224,9 +224,13 @@ export function drawDistributePreview(
   const pScale = 1 + 0.18 * (pulse - 0.5);
   const primaryR = baseR * pScale;
 
-  // Shared stroke-width breathing across the nested family
+  // Shared stroke-width breathing across the nested family.
+  // Amplitude deepens at extreme contact so the whole diamond family
+  // expands more clearly when pulse, lag, and slow harmonics peak together.
   const familyBreath = 0.45 * pulse + 0.35 * lag + 0.2 * slow;
-  const strokeBreath = 1 + 0.2 * (familyBreath - 0.5);
+  const extreme = Math.max(0, (familyBreath - 0.62) / 0.38);
+  const breathAmp = 0.2 + 0.14 * extreme;
+  const strokeBreath = 1 + breathAmp * (familyBreath - 0.5);
 
   // Softened outer halo falloff on the primary diamond at peak pulse.
   // Gradient fill instead of a hard stroke so the bloom dissolves more gradually.
