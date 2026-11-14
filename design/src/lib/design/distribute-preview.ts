@@ -243,6 +243,20 @@ export function drawDistributePreview(
     ctx.globalAlpha = 0.7;
     ctx.stroke();
 
+    // Subtle inner counter-stroke on the gradient diamond that inherits trail-fade
+    ctx.save();
+    ctx.rotate(-rot * 0.07);
+    ctx.beginPath();
+    const innerScale = 0.62;
+    ctx.moveTo(0, -size * bloom * innerScale);
+    ctx.lineTo(size * bloom * 0.7 * innerScale, 0);
+    ctx.lineTo(0, size * bloom * innerScale);
+    ctx.lineTo(-size * bloom * 0.7 * innerScale, 0);
+    ctx.closePath();
+    ctx.globalAlpha = 0.22 * pulse * ringTrailFade;
+    ctx.stroke();
+    ctx.restore();
+
     // Secondary lag echo (trails the primary)
     ctx.beginPath();
     ctx.moveTo(0, -size * lagBloom * 0.85);
