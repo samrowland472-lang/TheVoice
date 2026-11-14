@@ -375,6 +375,19 @@ export function drawDistributePreview(
     ctx.save();
     ctx.translate(0, size * 0.08);
     ctx.rotate(rot * READOUT_COUNTER_ROT);
+    // Soft radial highlight under the gap readout — dissolves with trail-fade
+    const hlR = size * 0.22;
+    const hlGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, hlR);
+    hlGrad.addColorStop(0, PHOSPHOR);
+    hlGrad.addColorStop(0.55, "rgba(63, 198, 255, 0.4)");
+    hlGrad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.22 * trailFade;
+    ctx.fillStyle = hlGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, hlR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
     // Slow harmonic — trails furthest so long holds feel layered; alpha fades with primary breath
     ctx.save();
     ctx.scale(readoutSlowScale, readoutSlowScale);
