@@ -373,6 +373,18 @@ export function drawDistributePreview(
     ctx.lineWidth = fifthBaseW * (0.42 + 0.38 * lag);
     ctx.globalAlpha = 0.26 * pulse * lag * ringTrailFade;
     ctx.stroke();
+
+    // Quieter secondary micro-dot on the outer counter-breath — opposite phase, smaller, dissolves with trail-fade
+    const outerMicroAngle = -rot * 0.14 + Math.PI * 1.15;
+    const outerMicroR = size * 0.26 * bloom * outerScale * 0.85;
+    const omx = Math.cos(outerMicroAngle) * outerMicroR;
+    const omy = Math.sin(outerMicroAngle) * outerMicroR * 0.58;
+    ctx.beginPath();
+    ctx.arc(omx, omy, (0.95 / zoom) * (0.35 + 0.45 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.18 * trail * lag * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
     ctx.restore();
 
     // Faint gap-value readout on the diamond once labels have dissolved
@@ -402,6 +414,20 @@ export function drawDistributePreview(
     ctx.fillStyle = hlGrad;
     ctx.beginPath();
     ctx.arc(0, 0, hlR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Faint trailing echo on the soft radial highlight — slightly larger, lag-scaled, dissolves with trail-fade
+    const echoR = hlR * (1.28 + 0.08 * lag);
+    const echoGrad = ctx.createRadialGradient(0, 0, hlR * 0.35, 0, 0, echoR);
+    echoGrad.addColorStop(0, "rgba(63, 198, 255, 0)");
+    echoGrad.addColorStop(0.4, "rgba(63, 198, 255, 0.22)");
+    echoGrad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.11 * lag * trailFade;
+    ctx.fillStyle = echoGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, echoR, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     // Slow harmonic — trails furthest so long holds feel layered; alpha fades with primary breath
