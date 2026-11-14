@@ -171,7 +171,7 @@ function buildPlan(
  * that breathes with the pulse. Lag companion rotation offset micro-adjusted for
  * tighter family cohesion. Fifth nested mark quieted further and given a faint
  * phase offset so it never quite syncs with the primary. All members inherit
- * familyLagRot. Shared stroke-width breathing across the nested family deepens at extreme contact, plus a
+ * familyLagRot. Shared stroke-width breathing across the nested family deepens at extreme contact with a faint phase lag so expansion trails the visual peak, plus a
  * soft outer halo on the primary diamond at peak pulse.  * Micro secondary spark
  * trails the primary trail at a fixed phase lag, quieter and slightly inset.
  * Secondary spark gains a faint radial pulse at peak contact so the lagged breath
@@ -227,10 +227,12 @@ export function drawDistributePreview(
   // Shared stroke-width breathing across the nested family.
   // Amplitude deepens at extreme contact so the whole diamond family
   // expands more clearly when pulse, lag, and slow harmonics peak together.
-  const familyBreath = 0.45 * pulse + 0.35 * lag + 0.2 * slow;
-  const extreme = Math.max(0, (familyBreath - 0.62) / 0.38);
+  // Faint phase lag on the stroke breath itself so the expansion trails the
+  // visual peak slightly and feels more organic.
+  const laggedFamily = 0.38 * pulse + 0.42 * lag + 0.2 * slow;
+  const extreme = Math.max(0, (laggedFamily - 0.62) / 0.38);
   const breathAmp = 0.2 + 0.14 * extreme;
-  const strokeBreath = 1 + breathAmp * (familyBreath - 0.5);
+  const strokeBreath = 1 + breathAmp * (laggedFamily - 0.5);
 
   // Softened outer halo falloff on the primary diamond at peak pulse.
   // Gradient fill instead of a hard stroke so the bloom dissolves more gradually.
@@ -453,7 +455,7 @@ export function drawDistributePreview(
       const shimRel = Math.max(0, (rel - 0.86) / 0.14);
       const shimPhase = 0.07 * Math.sin(trail * Math.PI * 2.3 + 0.4);
       ctx.rotate(shimPhase);
-      const shimAlpha = alpha * 0.42 * shimRel;
+      const shimAlpha = alpha * 0.28 * shimRel;
       const shimR = baseR * m.size * mScale * 1.18;
       drawDiamond(ctx, shimR, `rgba(63, 198, 255, ${shimAlpha})`, zoom, strokeBreath * 0.65);
     }

@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Deepened the shared family stroke-width breath at extreme contact so the nested diamond family expands more clearly when pulse, lag, and slow harmonics peak together. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a faint phase lag to the shared family stroke-width breath so the expansion trails the visual peak and feels more organic. Quietened the fifth nested mark shimmer further so it never crowds the primary. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally quiet the fifth nested mark shimmer further so it never crowds the primary, or add a faint phase lag to the deepened stroke breath so the expansion feels more organic.
+- Optionally add a micro secondary taper on the lagged stroke breath at extreme contact, or introduce a quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands.
