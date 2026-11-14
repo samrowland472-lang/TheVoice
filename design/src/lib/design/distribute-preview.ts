@@ -169,6 +169,10 @@ const READOUT_SCALE_PULSE = 0.06;
 const READOUT_LAG_SCALE_BASE = 0.91;
 const READOUT_LAG_SCALE_PULSE = 0.09;
 const READOUT_LAG_ALPHA = 0.16;
+// Slow-harmonic scale trails further using flushPulseSlow so the readout gains a third layered breath
+const READOUT_SLOW_SCALE_BASE = 0.87;
+const READOUT_SLOW_SCALE_PULSE = 0.13;
+const READOUT_SLOW_ALPHA = 0.09;
 
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -280,14 +284,27 @@ export function drawDistributePreview(
     // Faint gap-value readout on the diamond once labels have dissolved
     // Subtle scale pulse matches the primary diamond breath so contact stays readable
     // Matching lag-echo scale trails the primary using flushPulseLag
+    // Slow-harmonic scale trails further using flushPulseSlow for a third layered breath
     const readout = gap <= 0.2 ? "flush" : formatDistributeGap(gap);
     const readoutAlpha = READOUT_BASE_ALPHA * (READOUT_PULSE_MIN + READOUT_PULSE_RANGE * pulse);
     const readoutScale = READOUT_SCALE_BASE + READOUT_SCALE_PULSE * pulse;
     const readoutLagScale = READOUT_LAG_SCALE_BASE + READOUT_LAG_SCALE_PULSE * lag;
     const readoutLagAlpha = READOUT_LAG_ALPHA * lag;
+    const readoutSlowScale = READOUT_SLOW_SCALE_BASE + READOUT_SLOW_SCALE_PULSE * slow;
+    const readoutSlowAlpha = READOUT_SLOW_ALPHA * slow;
     const readoutFont = `${Math.max(8, 10 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
     ctx.save();
     ctx.translate(0, size * 0.08);
+    // Slow harmonic — trails furthest so long holds feel layered
+    ctx.save();
+    ctx.scale(readoutSlowScale, readoutSlowScale);
+    ctx.globalAlpha = readoutSlowAlpha;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.font = readoutFont;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(readout, 0, 0);
+    ctx.restore();
     // Lag echo — trails the primary scale so the text has a second harmonic
     ctx.save();
     ctx.scale(readoutLagScale, readoutLagScale);
