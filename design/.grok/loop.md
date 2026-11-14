@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a faint phase lag to the shared family stroke-width breath so the expansion trails the visual peak and feels more organic. Quietened the fifth nested mark shimmer further so it never crowds the primary. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a micro secondary taper on the lagged stroke breath at extreme contact so expansion thins cleanly instead of blooming wide. Introduced a quiet counter-breath on the outer slow harmonic and lag companion so the family contracts slightly as the core expands. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally add a micro secondary taper on the lagged stroke breath at extreme contact, or introduce a quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands.
+- Optionally deepen the counter-breath with a faint phase offset on the slow harmonic, or add a micro contact bloom on the contracted outer mark at peak core expansion.
