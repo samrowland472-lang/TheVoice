@@ -1,8 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Slow pulse on the inner stroke width of the counter-stroke (tied to the slow harmonic) plus a second nested tick that trails the primary counter-orbit. Both inherit trail-fade; phosphor-on-ground, no extra chrome.
-- Prior: Faint counter-orbiting tick on the primary bloom of the gradient diamond that inherits the shared ring trail-fade and a quiet opposite drift so the contact treatment gains a micro-harmonic edge without competing chrome.
+- Iteration: Restored distribute-preview after accidental placeholder wipe; lag-scaled stroke width on the nested fifth-mark (tied to phase lag) that inherits trail-fade. Phosphor-on-ground, no extra chrome.
+- Prior: Slow pulse on the inner stroke width of the counter-stroke (tied to the slow harmonic) plus a second nested tick that trails the primary counter-orbit. Both inherit trail-fade; phosphor-on-ground, no extra chrome.
 
 ## Next recommended
-- Optionally thicken the nested fifth-mark stroke with a matching lag-scaled width, or add a single soft radial highlight under the readout that dissolves with trail-fade.
+- Optionally add a single soft radial highlight under the gap readout that dissolves with trail-fade, or a quiet outer counter-breath on the fifth-mark diamond.
