@@ -151,12 +151,24 @@ export function commitDistributePreview() {
 
 const PHOSPHOR = "#3fc6ff";
 
+// Diamond bloom constants — primary, lag, and slow harmonics so the contact treatment stays tunable
+const DIAMOND_BLOOM_BASE = 0.65;
+const DIAMOND_BLOOM_PULSE = 0.35;
+const DIAMOND_LAG_BLOOM_BASE = 0.5;
+const DIAMOND_LAG_BLOOM_PULSE = 0.5;
+const DIAMOND_SLOW_BLOOM_BASE = 0.4;
+const DIAMOND_SLOW_BLOOM_PULSE = 0.6;
+
 // Readout fade and breath constants — keep the diamond contact readable without competing chrome
 const READOUT_BASE_ALPHA = 0.42;
 const READOUT_PULSE_MIN = 0.55;
 const READOUT_PULSE_RANGE = 0.45;
 const READOUT_SCALE_BASE = 0.94;
 const READOUT_SCALE_PULSE = 0.06;
+// Lag-echo scale trails the primary breath so the readout has a matching second harmonic
+const READOUT_LAG_SCALE_BASE = 0.91;
+const READOUT_LAG_SCALE_PULSE = 0.09;
+const READOUT_LAG_ALPHA = 0.16;
 
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -191,9 +203,9 @@ export function drawDistributePreview(
     const cx = (bounds.minX + bounds.maxX) / 2;
     const cy = (bounds.minY + bounds.maxY) / 2;
     const size = Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * 0.42;
-    const bloom = 0.65 + 0.35 * pulse;
-    const lagBloom = 0.5 + 0.5 * lag;
-    const slowBloom = 0.4 + 0.6 * slow;
+    const bloom = DIAMOND_BLOOM_BASE + DIAMOND_BLOOM_PULSE * pulse;
+    const lagBloom = DIAMOND_LAG_BLOOM_BASE + DIAMOND_LAG_BLOOM_PULSE * lag;
+    const slowBloom = DIAMOND_SLOW_BLOOM_BASE + DIAMOND_SLOW_BLOOM_PULSE * slow;
 
     ctx.save();
     ctx.translate(cx, cy);
@@ -267,15 +279,30 @@ export function drawDistributePreview(
 
     // Faint gap-value readout on the diamond once labels have dissolved
     // Subtle scale pulse matches the primary diamond breath so contact stays readable
+    // Matching lag-echo scale trails the primary using flushPulseLag
     const readout = gap <= 0.2 ? "flush" : formatDistributeGap(gap);
     const readoutAlpha = READOUT_BASE_ALPHA * (READOUT_PULSE_MIN + READOUT_PULSE_RANGE * pulse);
     const readoutScale = READOUT_SCALE_BASE + READOUT_SCALE_PULSE * pulse;
+    const readoutLagScale = READOUT_LAG_SCALE_BASE + READOUT_LAG_SCALE_PULSE * lag;
+    const readoutLagAlpha = READOUT_LAG_ALPHA * lag;
+    const readoutFont = `${Math.max(8, 10 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
     ctx.save();
     ctx.translate(0, size * 0.08);
+    // Lag echo — trails the primary scale so the text has a second harmonic
+    ctx.save();
+    ctx.scale(readoutLagScale, readoutLagScale);
+    ctx.globalAlpha = readoutLagAlpha;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.font = readoutFont;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(readout, 0, 0);
+    ctx.restore();
+    // Primary readout
     ctx.scale(readoutScale, readoutScale);
     ctx.globalAlpha = readoutAlpha;
     ctx.fillStyle = PHOSPHOR;
-    ctx.font = `${Math.max(8, 10 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.font = readoutFont;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(readout, 0, 0);
