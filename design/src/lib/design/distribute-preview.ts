@@ -180,7 +180,7 @@ function buildPlan(
  * carries a faint phase-offset shimmer only at absolute peak. A quieter echo
  * filament mirrors the primary trailing stroke on the opposite side of the lag
  * offset, dissolving fully into the ground. Ground falloff quiets further at rest.
- * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Micro secondary taper on the lagged stroke breath at extreme contact. Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands. Micro contact bloom on the contracted outer lag mark at peak core expansion. Counter-breath deepened with a faint phase offset on the slow harmonic so the outer companion trails the core more clearly. Phosphor-on-ground.
+ * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Micro secondary taper on the lagged stroke breath at extreme contact. Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands. Micro contact bloom on the contracted outer lag mark at peak core expansion. Counter-breath deepened with a faint phase offset on the slow harmonic so the outer companion trails the core more clearly. Trail spark contact bloom now carries a micro secondary phase lag so the orbital spark trails the counter-breath more distinctly. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -385,6 +385,11 @@ export function drawDistributePreview(
 
   // Subtle contact bloom when the trail spark nears a diamond point (cardinal angles)
   // Secondary inner taper deepens the bloom so contact feels more continuous
+  // Micro secondary phase lag on the bloom so the orbital spark trails the counter-breath more distinctly
+  const bloomLag = 0.085;
+  const bloomAng = tAng - bloomLag;
+  const bloomX = Math.cos(bloomAng) * tR;
+  const bloomY = Math.sin(bloomAng) * tR;
   const cardinal = Math.PI / 2;
   const angDist = Math.min(
     Math.abs(tAng % cardinal),
@@ -395,7 +400,7 @@ export function drawDistributePreview(
   const bloomR = sparkR * (2.4 + 1.2 * nearPoint) * (0.82 + 0.18 * innerTaper);
   const bloomA = (0.09 + 0.14 * nearPoint) * (0.6 + 0.4 * taper) * (0.7 + 0.3 * innerTaper);
   ctx.beginPath();
-  ctx.arc(sparkX, sparkY, bloomR, 0, Math.PI * 2);
+  ctx.arc(bloomX, bloomY, bloomR, 0, Math.PI * 2);
   ctx.fillStyle = `rgba(63, 198, 255, ${bloomA})`;
   ctx.fill();
 
@@ -404,7 +409,7 @@ export function drawDistributePreview(
     const coreR = sparkR * (1.15 + 0.55 * nearPoint) * innerTaper;
     const coreA = (0.12 + 0.18 * nearPoint) * innerTaper * (0.5 + 0.5 * taper);
     ctx.beginPath();
-    ctx.arc(sparkX, sparkY, coreR, 0, Math.PI * 2);
+    ctx.arc(bloomX, bloomY, coreR, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(63, 198, 255, ${coreA})`;
     ctx.fill();
   }
