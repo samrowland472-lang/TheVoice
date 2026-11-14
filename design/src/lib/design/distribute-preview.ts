@@ -226,6 +226,16 @@ export function drawDistributePreview(
     ctx.fillStyle = PHOSPHOR;
     ctx.fill();
 
+    // Second slower harmonic spark — inherits slow phase so long holds feel layered
+    const sparkAngle2 = rot * 0.35 + Math.PI * 1.4;
+    const sparkR2 = size * (0.72 + 0.18 * slow);
+    const sx2 = Math.cos(sparkAngle2) * sparkR2;
+    const sy2 = Math.sin(sparkAngle2) * sparkR2 * 0.55;
+    ctx.beginPath();
+    ctx.arc(sx2, sy2, (2.2 / zoom) * (0.5 + 0.5 * slow), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.55 * slow * trail;
+    ctx.fill();
+
     // Faint radial falloff rings
     for (let i = 1; i <= 3; i++) {
       ctx.beginPath();
@@ -251,22 +261,35 @@ export function drawDistributePreview(
     ctx.restore();
   }
 
-  // Simple gap ticks when not flush
+  // Gap-tick labels that fade into the flush diamond as contact approaches
   if (!flush && ghosts.length >= 2) {
-    ctx.globalAlpha = 0.45;
-    ctx.strokeStyle = PHOSPHOR;
-    // draw a couple of connection ticks
-    const mid = ghosts[Math.floor(ghosts.length / 2)];
-    if (mid) {
-      ctx.beginPath();
-      if (axis === "h") {
-        ctx.moveTo(mid.x + mid.w / 2, mid.y - 8 / zoom);
-        ctx.lineTo(mid.x + mid.w / 2, mid.y + mid.h + 8 / zoom);
-      } else {
-        ctx.moveTo(mid.x - 8 / zoom, mid.y + mid.h / 2);
-        ctx.lineTo(mid.x + mid.w + 8 / zoom, mid.y + mid.h / 2);
+    const labelFade = Math.max(0, Math.min(1, (gap - 1.5) / 10));
+    if (labelFade > 0.02) {
+      const mid = ghosts[Math.floor(ghosts.length / 2)];
+      if (mid) {
+        ctx.globalAlpha = 0.4 * labelFade;
+        ctx.strokeStyle = PHOSPHOR;
+        ctx.beginPath();
+        if (axis === "h") {
+          ctx.moveTo(mid.x + mid.w / 2, mid.y - 10 / zoom);
+          ctx.lineTo(mid.x + mid.w / 2, mid.y + mid.h + 10 / zoom);
+        } else {
+          ctx.moveTo(mid.x - 10 / zoom, mid.y + mid.h / 2);
+          ctx.lineTo(mid.x + mid.w + 10 / zoom, mid.y + mid.h / 2);
+        }
+        ctx.stroke();
+
+        // Soft label that dissolves as the diamond bloom takes over
+        const label = formatDistributeGap(gap);
+        ctx.globalAlpha = 0.75 * labelFade;
+        ctx.fillStyle = PHOSPHOR;
+        ctx.font = `${Math.max(9, 11 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const lx = axis === "h" ? mid.x + mid.w / 2 : mid.x + mid.w + 14 / zoom;
+        const ly = axis === "h" ? mid.y - 16 / zoom : mid.y + mid.h / 2;
+        ctx.fillText(label, lx, ly);
       }
-      ctx.stroke();
     }
   }
 
