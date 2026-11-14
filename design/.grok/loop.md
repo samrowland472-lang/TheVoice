@@ -1,7 +1,7 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Added a micro secondary taper on the lagged stroke breath at extreme contact so expansion thins cleanly instead of blooming wide. Introduced a quiet counter-breath on the outer slow harmonic and lag companion so the family contracts slightly as the core expands. Phosphor-on-ground, no emoji chrome.
+- Iteration: Added a micro contact bloom on the contracted outer lag mark at peak core expansion. Soft radial fill appears only when the core is fully open and the companion has contracted, grounding the counter-breath without competing. Phosphor-on-ground, no emoji chrome.
 
 ## Next recommended
-- Optionally deepen the counter-breath with a faint phase offset on the slow harmonic, or add a micro contact bloom on the contracted outer mark at peak core expansion.
+- Optionally deepen the counter-breath with a faint phase offset on the slow harmonic, or refine the bloom falloff for even quieter rest states.

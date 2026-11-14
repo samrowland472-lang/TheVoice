@@ -180,7 +180,7 @@ function buildPlan(
  * carries a faint phase-offset shimmer only at absolute peak. A quieter echo
  * filament mirrors the primary trailing stroke on the opposite side of the lag
  * offset, dissolving fully into the ground. Ground falloff quiets further at rest.
- * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Micro secondary taper on the lagged stroke breath at extreme contact. Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands. Phosphor-on-ground.
+ * Echo filament phase tightened so it tracks the primary more closely without competing. Micro secondary taper added on the primary filament matching the echo's closer control. Micro secondary taper on the lagged stroke breath at extreme contact. Quiet counter-breath on the outer slow harmonic so the family contracts slightly as the core expands. Micro contact bloom on the contracted outer lag mark at peak core expansion. Phosphor-on-ground.
  */
 export function drawDistributePreview(
   ctx: CanvasRenderingContext2D,
@@ -277,7 +277,23 @@ export function drawDistributePreview(
   ctx.rotate(0.31);
   // Quiet counter-breath: outer lag companion contracts slightly as the core expands
   const lagCounter = 1 - 0.045 * Math.max(0, pulse - 0.5);
-  drawDiamond(ctx, baseR * 0.72 * lScale * lagCounter, `rgba(63, 198, 255, ${0.28 + 0.22 * lag})`, zoom, strokeBreath);
+  const companionR = baseR * 0.72 * lScale * lagCounter;
+  drawDiamond(ctx, companionR, `rgba(63, 198, 255, ${0.28 + 0.22 * lag})`, zoom, strokeBreath);
+  // Micro contact bloom on the contracted outer mark at peak core expansion.
+  // Soft radial fill that appears only when the core is fully open and the companion has contracted.
+  if (pulse > 0.68) {
+    const bloomStr = Math.max(0, (pulse - 0.68) / 0.32) * (1 - lagCounter) * 12;
+    const bloomR = companionR * (1.08 + 0.06 * bloomStr);
+    const bloomA = 0.035 * bloomStr;
+    const bloomGrad = ctx.createRadialGradient(0, 0, companionR * 0.6, 0, 0, bloomR);
+    bloomGrad.addColorStop(0, `rgba(63, 198, 255, ${bloomA * 0.4})`);
+    bloomGrad.addColorStop(0.7, `rgba(63, 198, 255, ${bloomA})`);
+    bloomGrad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.beginPath();
+    ctx.arc(0, 0, bloomR, 0, Math.PI * 2);
+    ctx.fillStyle = bloomGrad;
+    ctx.fill();
+  }
   ctx.restore();
 
   // Subtle trailing filament between the primary diamond and the lag companion.
