@@ -462,6 +462,31 @@ export function drawDistributePreview(
     ctx.fill();
     ctx.restore();
 
+    // Sixth, quietest trailing micro-spark on the outer counter-breath — furthest offset, smallest, shares the same falloff and trail-fade
+    const outerSpark6Angle = -rot * 0.022 + Math.PI * 2.85;
+    const outerSpark6R = size * 0.10 * bloom * outerScale * 0.35;
+    const os6x = Math.cos(outerSpark6Angle) * outerSpark6R;
+    const os6y = Math.sin(outerSpark6Angle) * outerSpark6R * 0.26;
+    ctx.beginPath();
+    ctx.arc(os6x, os6y, (0.24 / zoom) * (0.12 + 0.18 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.011 * trail * lag * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
+    // Soft radial falloff under the sixth trailing micro-spark — inherits the same trail-fade
+    const falloff6R = (1.05 / zoom) * (0.20 + 0.28 * trail);
+    const falloff6Grad = ctx.createRadialGradient(os6x, os6y, 0, os6x, os6y, falloff6R);
+    falloff6Grad.addColorStop(0, PHOSPHOR);
+    falloff6Grad.addColorStop(0.38, "rgba(63, 198, 255, 0.04)");
+    falloff6Grad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.004 * trail * lag * ringTrailFade;
+    ctx.fillStyle = falloff6Grad;
+    ctx.beginPath();
+    ctx.arc(os6x, os6y, falloff6R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     ctx.restore();
 
     // Faint gap-value readout on the diamond once labels have dissolved
