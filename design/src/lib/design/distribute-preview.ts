@@ -398,6 +398,20 @@ export function drawDistributePreview(
     ctx.fillStyle = PHOSPHOR;
     ctx.fill();
 
+    // Soft radial falloff under the third opposite-phase spark — inherits the same trail-fade
+    const falloffR = (2.4 / zoom) * (0.42 + 0.58 * trail);
+    const falloffGrad = ctx.createRadialGradient(osx, osy, 0, osx, osy, falloffR);
+    falloffGrad.addColorStop(0, PHOSPHOR);
+    falloffGrad.addColorStop(0.55, "rgba(63, 198, 255, 0.18)");
+    falloffGrad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.038 * trail * lag * ringTrailFade;
+    ctx.fillStyle = falloffGrad;
+    ctx.beginPath();
+    ctx.arc(osx, osy, falloffR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     ctx.restore();
 
     // Faint gap-value readout on the diamond once labels have dissolved
