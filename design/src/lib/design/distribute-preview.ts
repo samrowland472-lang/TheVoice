@@ -437,6 +437,31 @@ export function drawDistributePreview(
     ctx.fill();
     ctx.restore();
 
+    // Fifth, even quieter trailing micro-spark on the outer counter-breath — furthest offset, smallest, shares the same falloff and trail-fade
+    const outerSpark5Angle = rot * 0.035 + Math.PI * 2.28;
+    const outerSpark5R = size * 0.13 * bloom * outerScale * 0.46;
+    const os5x = Math.cos(outerSpark5Angle) * outerSpark5R;
+    const os5y = Math.sin(outerSpark5Angle) * outerSpark5R * 0.31;
+    ctx.beginPath();
+    ctx.arc(os5x, os5y, (0.34 / zoom) * (0.16 + 0.24 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.021 * trail * lag * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
+    // Soft radial falloff under the fifth trailing micro-spark — inherits the same trail-fade
+    const falloff5R = (1.35 / zoom) * (0.26 + 0.36 * trail);
+    const falloff5Grad = ctx.createRadialGradient(os5x, os5y, 0, os5x, os5y, falloff5R);
+    falloff5Grad.addColorStop(0, PHOSPHOR);
+    falloff5Grad.addColorStop(0.42, "rgba(63, 198, 255, 0.07)");
+    falloff5Grad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.008 * trail * lag * ringTrailFade;
+    ctx.fillStyle = falloff5Grad;
+    ctx.beginPath();
+    ctx.arc(os5x, os5y, falloff5R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     ctx.restore();
 
     // Faint gap-value readout on the diamond once labels have dissolved
