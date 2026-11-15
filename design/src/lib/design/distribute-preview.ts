@@ -664,6 +664,31 @@ export function drawDistributePreview(
     ctx.fill();
     ctx.restore();
 
+    // Fourteenth, quietest trailing micro-spark on the outer counter-breath — furthest offset, smallest, shares the same falloff and trail-fade
+    const outerSpark14Angle = rot * 0.00035 + Math.PI * 8.15;
+    const outerSpark14R = size * 0.006 * bloom * outerScale * 0.024;
+    const os14x = Math.cos(outerSpark14Angle) * outerSpark14R;
+    const os14y = Math.sin(outerSpark14Angle) * outerSpark14R * 0.022;
+    ctx.beginPath();
+    ctx.arc(os14x, os14y, (0.011 / zoom) * (0.007 + 0.011 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.000035 * trail * lag * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
+    // Soft radial falloff under the fourteenth trailing micro-spark — inherits the same trail-fade
+    const falloff14R = (0.07 / zoom) * (0.012 + 0.022 * trail);
+    const falloff14Grad = ctx.createRadialGradient(os14x, os14y, 0, os14x, os14y, falloff14R);
+    falloff14Grad.addColorStop(0, PHOSPHOR);
+    falloff14Grad.addColorStop(0.07, "rgba(63, 198, 255, 0.0003)");
+    falloff14Grad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.000011 * trail * lag * ringTrailFade;
+    ctx.fillStyle = falloff14Grad;
+    ctx.beginPath();
+    ctx.arc(os14x, os14y, falloff14R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     ctx.restore();
 
     // Subtle scale pulse matches the primary diamond breath so contact stays readable

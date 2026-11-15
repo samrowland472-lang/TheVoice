@@ -1,7 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Quieter trailing thirteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
+- Iteration: Quieter trailing fourteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
+- Prior: Quieter trailing thirteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing twelfth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing eleventh micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing tenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
