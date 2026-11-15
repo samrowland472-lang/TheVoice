@@ -430,6 +430,21 @@ export function drawDistributePreview(
     ctx.arc(0, 0, echoR, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+
+    // Second, even fainter outer echo ring on the trailing highlight — larger still, more lag-scaled, dissolves with trail-fade
+    const outerEchoR = echoR * (1.35 + 0.12 * lag);
+    const outerEchoGrad = ctx.createRadialGradient(0, 0, echoR * 0.55, 0, 0, outerEchoR);
+    outerEchoGrad.addColorStop(0, "rgba(63, 198, 255, 0)");
+    outerEchoGrad.addColorStop(0.5, "rgba(63, 198, 255, 0.12)");
+    outerEchoGrad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.055 * lag * trailFade;
+    ctx.fillStyle = outerEchoGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, outerEchoR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     // Slow harmonic — trails furthest so long holds feel layered; alpha fades with primary breath
     ctx.save();
     ctx.scale(readoutSlowScale, readoutSlowScale);
