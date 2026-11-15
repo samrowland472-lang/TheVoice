@@ -1,7 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Quieter trailing twentieth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
+- Iteration: Quieter trailing twenty-first micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
+- Prior: Quieter trailing twentieth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing nineteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing eighteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing seventeenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
@@ -23,4 +24,4 @@
 - Prior: Lag-scaled stroke pulse on the outer counter-breath diamond itself (width breathes with lag + pulse, dissolves with trail-fade). Phosphor-on-ground, no extra chrome.
 
 ## Next recommended
-- Optionally add a twenty-first quieter trailing micro-spark that shares the same falloff and trail-fade.
+- Optionally add a twenty-second quieter trailing micro-spark that shares the same falloff and trail-fade.
