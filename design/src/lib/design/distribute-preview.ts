@@ -359,7 +359,7 @@ export function drawDistributePreview(
 
     ctx.restore();
 
-    // Quiet outer counter-breath on the fifth-mark diamond — opposite rotation, slightly larger, dissolves with trail-fade
+    // Quiet outer counter-breath on the fifth-mark diamond — opposite rotation, slightly larger, lag-scaled stroke pulse, dissolves with trail-fade
     const outerScale = 1.16 + 0.04 * lag;
     const counterLag = -familyLag * 1.35;
     ctx.save();
@@ -370,7 +370,9 @@ export function drawDistributePreview(
     ctx.lineTo(0, size * 0.28 * bloom * outerScale);
     ctx.lineTo(-size * 0.18 * outerScale, 0);
     ctx.closePath();
-    ctx.lineWidth = fifthBaseW * (0.42 + 0.38 * lag);
+    // Lag-scaled stroke pulse: width breathes with both lag phase and primary pulse
+    const outerStrokePulse = 0.82 + 0.36 * pulse;
+    ctx.lineWidth = fifthBaseW * (0.38 + 0.42 * lag) * outerStrokePulse;
     ctx.globalAlpha = 0.26 * pulse * lag * ringTrailFade;
     ctx.stroke();
 
