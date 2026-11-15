@@ -489,7 +489,33 @@ export function drawDistributePreview(
 
     ctx.restore();
 
-    // Faint gap-value readout on the diamond once labels have dissolved
+    // Seventh, quietest trailing micro-spark on the outer counter-breath — furthest offset, smallest, shares the same falloff and trail-fade
+    const outerSpark7Angle = rot * 0.012 + Math.PI * 3.45;
+    const outerSpark7R = size * 0.075 * bloom * outerScale * 0.28;
+    const os7x = Math.cos(outerSpark7Angle) * outerSpark7R;
+    const os7y = Math.sin(outerSpark7Angle) * outerSpark7R * 0.21;
+    ctx.beginPath();
+    ctx.arc(os7x, os7y, (0.16 / zoom) * (0.08 + 0.14 * trail), 0, Math.PI * 2);
+    ctx.globalAlpha = 0.005 * trail * lag * ringTrailFade;
+    ctx.fillStyle = PHOSPHOR;
+    ctx.fill();
+
+    // Soft radial falloff under the seventh trailing micro-spark — inherits the same trail-fade
+    const falloff7R = (0.82 / zoom) * (0.15 + 0.22 * trail);
+    const falloff7Grad = ctx.createRadialGradient(os7x, os7y, 0, os7x, os7y, falloff7R);
+    falloff7Grad.addColorStop(0, PHOSPHOR);
+    falloff7Grad.addColorStop(0.32, "rgba(63, 198, 255, 0.025)");
+    falloff7Grad.addColorStop(1, "rgba(63, 198, 255, 0)");
+    ctx.save();
+    ctx.globalAlpha = 0.0018 * trail * lag * ringTrailFade;
+    ctx.fillStyle = falloff7Grad;
+    ctx.beginPath();
+    ctx.arc(os7x, os7y, falloff7R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+
     // Subtle scale pulse matches the primary diamond breath so contact stays readable
     // Matching lag-echo scale trails the primary using flushPulseLag
     // Slow-harmonic scale trails further using flushPulseSlow for a third layered breath
