@@ -10,6 +10,7 @@ import {
   fitViewport,
   screenToDoc,
 } from "@/lib/design/render";
+import { drawStrokeGhosts } from "@/lib/design/stroke-ghost";
 import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
 import { nodeCenter, degToRad, rotatePoint } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
@@ -170,6 +171,7 @@ export default function CanvasStage() {
   const gradientAngleScrubId = useDesign((s) => s.gradientAngleScrubId);
   const sidesScrubId = useDesign((s) => s.sidesScrubId);
   const headScaleScrubId = useDesign((s) => s.headScaleScrubId);
+  const strokeGhost = useDesign((s) => s.strokeGhost);
   const tool = useDesign((s) => s.tool);
   const viewport = useDesign((s) => s.viewport);
   const color = useDesign((s) => s.color);
@@ -343,6 +345,16 @@ export default function CanvasStage() {
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
+    if (strokeGhost) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(viewport.x, viewport.y);
+      ctx.scale(viewport.zoom, viewport.zoom);
+      const outlines = doc.nodes.filter((n) => selection.includes(n.id));
+      drawStrokeGhosts(ctx, outlines, strokeGhost, viewport.zoom);
+      ctx.restore();
+      drawStrokeCapJoinChips(ctx, doc.nodes, strokeGhost, selection, viewport, dpr);
+    }
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -774,7 +786,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -811,6 +823,16 @@ export default function CanvasStage() {
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
+    if (strokeGhost) {
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.translate(viewport.x, viewport.y);
+      ctx.scale(viewport.zoom, viewport.zoom);
+      const outlines = doc.nodes.filter((n) => selection.includes(n.id));
+      drawStrokeGhosts(ctx, outlines, strokeGhost, viewport.zoom);
+      ctx.restore();
+      drawStrokeCapJoinChips(ctx, doc.nodes, strokeGhost, selection, viewport, dpr);
+    }
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -1202,7 +1224,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, strokeGhost]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -2548,6 +2570,68 @@ function drawPathPointHandleNumericPreview(
   ctx.restore();
 }
 
+
+
+function drawStrokeCapJoinChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  ghost: NonNullable<import("@/lib/design/stroke-ghost").StrokeGhost>,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  const hasCap = ghost.lineCap != null;
+  const hasJoin = ghost.lineJoin != null;
+  if (!hasCap && !hasJoin) return;
+  const targets = nodes.filter((n) => selection.includes(n.id) && n.visible && ["path", "rect", "ellipse", "line", "polygon", "star", "arrow"].includes(n.kind));
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    let label = "";
+    if (hasCap && hasJoin) {
+      label = `Cap ${title(ghost.lineCap!)} · Join ${title(ghost.lineJoin!)}`;
+    } else if (hasCap) {
+      label = `Cap ${title(ghost.lineCap!)}`;
+    } else {
+      label = `Join ${title(ghost.lineJoin!)}`;
+    }
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const chipH = 14 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.beginPath();
+    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+  }
+  ctx.restore();
+}
 
 function drawOpacityScrubEdge(
   ctx: CanvasRenderingContext2D,
