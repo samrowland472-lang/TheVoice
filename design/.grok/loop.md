@@ -1,30 +1,10 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Quieter trailing twenty-fourth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
+- Iteration: Refactored outer counter-breath micro-sparks into a single parameterized trail (6 diminishing sparks + soft radial falloffs, phosphor-on-ground). Removed ~500 lines of copy-pasted near-zero-alpha sparks that no longer rendered.
 - Prior: Quieter trailing twenty-third micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing twenty-second micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
 - Prior: Quieter trailing twenty-first micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing twentieth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing nineteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing eighteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing seventeenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing sixteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing fifteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing fourteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing thirteenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing twelfth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing eleventh micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing tenth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing ninth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing eighth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing seventh micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing sixth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing fifth micro-spark on the outer counter-breath diamond with its own soft radial falloff (furthest offset, smallest, shares trail-fade, phosphor-on-ground).
-- Prior: Quieter trailing fourth micro-spark on the outer counter-breath diamond with its own soft radial falloff (further offset, smaller, shares trail-fade, phosphor-on-ground).
-- Prior: Soft radial falloff under the third opposite-phase spark on the outer counter-breath diamond (inherits trail-fade, phosphor-on-ground).
-- Prior: Quieter opposite-phase third spark on the outer counter-breath diamond (further offset, smaller, dissolves with trail-fade). Phosphor-on-ground, no extra chrome.
-- Prior: Lag-scaled stroke pulse on the outer counter-breath diamond itself (width breathes with lag + pulse, dissolves with trail-fade). Phosphor-on-ground, no extra chrome.
 
 ## Next recommended
-- Optionally add a twenty-fifth quieter trailing micro-spark that shares the same falloff and trail-fade.
+- Canvas depth: tighten distribute flush diamond trail timing so sparks and lag stroke share one phase clock, or deepen layers panel opacity/drag feedback.
