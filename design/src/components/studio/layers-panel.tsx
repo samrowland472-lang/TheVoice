@@ -34,6 +34,7 @@ export function LayersPanel() {
   const previewMovers = alignPreview ? alignPreviewMoverIds(alignPreview) : [];
   const select = useDesign((s) => s.select);
   const updateNodes = useDesign((s) => s.updateNodes);
+  const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
   const toggleIsolate = useDesign((s) => s.toggleIsolate);
   const isolateSnapshot = useDesign((s) => s.isolateSnapshot);
   const reorder = useDesign((s) => s.reorder);
@@ -713,8 +714,16 @@ export function LayersPanel() {
                       const next = Number(e.target.value);
                       updateNodes([n.id], { opacity: next });
                     }}
-                    onPointerUp={() => useDesign.getState().commit()}
-                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setOpacityScrubId(n.id);
+                    }}
+                    onPointerUp={() => {
+                      setOpacityScrubId(null);
+                      useDesign.getState().commit();
+                    }}
+                    onPointerCancel={() => setOpacityScrubId(null)}
+                    onLostPointerCapture={() => setOpacityScrubId(null)}
                     title="Scrub layer opacity"
                   />
                 </div>
