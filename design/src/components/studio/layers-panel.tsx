@@ -243,13 +243,19 @@ export function LayersPanel() {
             <li key={n.id} data-layer-id={n.id} data-layer-kind={n.kind} className="relative">
               {before && (
                 <span
-                  className={cn("pointer-events-none absolute -top-px z-10 h-0.5 rounded-full", blocked ? "bg-ink-faint" : "bg-phosphor")}
+                  className={cn(
+                    "pointer-events-none absolute -top-px z-10 h-0.5 rounded-full",
+                    blocked ? "bg-ink-faint" : "bg-phosphor shadow-[0_0_8px_2px_var(--color-phosphor)]",
+                  )}
                   style={{ left: barLeft, right: 8 }}
                 />
               )}
               {after && (
                 <span
-                  className={cn("pointer-events-none absolute -bottom-px z-10 h-0.5 rounded-full", blocked ? "bg-ink-faint" : "bg-phosphor")}
+                  className={cn(
+                    "pointer-events-none absolute -bottom-px z-10 h-0.5 rounded-full",
+                    blocked ? "bg-ink-faint" : "bg-phosphor shadow-[0_0_8px_2px_var(--color-phosphor)]",
+                  )}
                   style={{ left: barLeft, right: 8 }}
                 />
               )}
@@ -258,7 +264,7 @@ export function LayersPanel() {
                   "group flex h-9 items-center gap-0.5 rounded-[8px] px-0.5 text-xs",
                   active ? "bg-phosphor/10 text-ink" : "text-ink-dim hover:bg-surface-alt",
                   dragging && "opacity-40",
-                  into && !blocked && "ring-1 ring-phosphor",
+                  into && !blocked && "ring-1 ring-phosphor shadow-[0_0_10px_1px_color-mix(in_srgb,var(--color-phosphor)_60%,transparent)]",
                   into && blocked && "ring-1 ring-ink-faint",
                 )}
                 style={{ paddingLeft: depth * 12 }}
