@@ -460,7 +460,7 @@ export function TypeAxes({ node }: { node: TextNode }) {
       {
         <Field label={`Optical ${Math.round(opszValue)}${node.opticalSize == null ? " · auto" : ""}`}>
           <div className="flex items-center gap-2">
-            <input type="range" className="range-phosphor min-w-0 flex-1" min={opsz.min} max={opsz.max} step={1} aria-label="type optical size" value={opszValue} onChange={(e) => updateNodes([node.id], { opticalSize: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} />
+            <input type="range" className="range-phosphor min-w-0 flex-1" min={opsz.min} max={opsz.max} step={1} aria-label="type optical size" value={opszValue} onChange={(e) => updateNodes([node.id], { opticalSize: Number(e.target.value) } as Partial<DesignNode>)} onPointerDown={() => useDesign.getState().setAxisScrubTag("opsz")} onPointerUp={() => { useDesign.getState().setAxisScrubTag(null); useDesign.getState().commit(); }} onPointerCancel={() => useDesign.getState().setAxisScrubTag(null)} onLostPointerCapture={() => useDesign.getState().setAxisScrubTag(null)} />
             <NumField className="field w-16 font-mono" value={opszValue} min={opsz.min} max={opsz.max} aria-label="type optical size" onCommit={(n) => updateNodes([node.id], { opticalSize: n } as Partial<DesignNode>, true)} />
           </div>
           <button type="button" className="mt-1 h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { useDesign.getState().commit(); const doc = useDesign.getState().doc; if (!doc) return; useDesign.setState({ doc: { ...doc, nodes: doc.nodes.map((n) => { if (n.id !== node.id || n.kind !== "text") return n; const next = { ...n }; delete next.opticalSize; return next; }) }, dirty: true }); }}>Auto from size</button>
@@ -469,7 +469,7 @@ export function TypeAxes({ node }: { node: TextNode }) {
       {wdth && (
         <Field label={`Width ${Math.round(wdthValue)}`}>
           <div className="flex items-center gap-2">
-            <input type="range" className="range-phosphor min-w-0 flex-1" min={wdth.min} max={wdth.max} step={1} aria-label="type width" value={wdthValue} onChange={(e) => updateNodes([node.id], { fontWidth: Number(e.target.value) } as Partial<DesignNode>)} onPointerUp={() => useDesign.getState().commit()} />
+            <input type="range" className="range-phosphor min-w-0 flex-1" min={wdth.min} max={wdth.max} step={1} aria-label="type width" value={wdthValue} onChange={(e) => updateNodes([node.id], { fontWidth: Number(e.target.value) } as Partial<DesignNode>)} onPointerDown={() => useDesign.getState().setAxisScrubTag("wdth")} onPointerUp={() => { useDesign.getState().setAxisScrubTag(null); useDesign.getState().commit(); }} onPointerCancel={() => useDesign.getState().setAxisScrubTag(null)} onLostPointerCapture={() => useDesign.getState().setAxisScrubTag(null)} />
             <NumField className="field w-16 font-mono" value={wdthValue} min={wdth.min} max={wdth.max} aria-label="type width" onCommit={(n) => updateNodes([node.id], { fontWidth: n } as Partial<DesignNode>, true)} />
           </div>
         </Field>

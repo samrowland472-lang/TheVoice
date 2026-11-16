@@ -114,7 +114,10 @@ export function MixedAxisSliders({
                 aria-label={mixed ? `${ui.aria} mixed` : ui.aria}
                 value={value}
                 onChange={(e) => patch(patchFor(tag, Number(e.target.value)), false)}
-                onPointerUp={() => useDesign.getState().commit()}
+                onPointerDown={() => useDesign.getState().setAxisScrubTag(tag)}
+                onPointerUp={() => { useDesign.getState().setAxisScrubTag(null); useDesign.getState().commit(); }}
+                onPointerCancel={() => useDesign.getState().setAxisScrubTag(null)}
+                onLostPointerCapture={() => useDesign.getState().setAxisScrubTag(null)}
               />
               <NumField
                 className="field w-16 font-mono"

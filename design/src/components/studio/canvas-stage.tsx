@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
+import { faceAxis, clampAxis, type FontAxisTag } from "@/lib/design/fonts";
+import { isText, type TextNode } from "@/lib/design/types";
+import { nodeAxisValue } from "./mixed-type-axes";
+
 import type { PathPointAlignPreview, PathPointNumericPreview, PathPointHandleNumericPreview } from "@/lib/design/store-impl";
 import {
   drawDocument,
@@ -152,6 +156,7 @@ export default function CanvasStage() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
   const opacityScrubId = useDesign((s) => s.opacityScrubId);
+  const axisScrubTag = useDesign((s) => s.axisScrubTag);
   const tool = useDesign((s) => s.tool);
   const viewport = useDesign((s) => s.viewport);
   const color = useDesign((s) => s.color);
@@ -311,6 +316,7 @@ export default function CanvasStage() {
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
     drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
+    drawAxisScrubChips(ctx, doc.nodes, axisScrubTag, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -742,7 +748,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -765,6 +771,7 @@ export default function CanvasStage() {
       drawDocument(ctx, doc, { viewport, dpr });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
     drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
+    drawAxisScrubChips(ctx, doc.nodes, axisScrubTag, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -1156,7 +1163,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -2483,6 +2490,74 @@ function drawOpacityScrubEdge(
     // Live percent chip near top-right of the node
     const pct = Math.round((n.opacity ?? 1) * 100);
     const label = `${pct}%`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const chipH = 14 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.beginPath();
+    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+  }
+  ctx.restore();
+}
+
+
+function drawAxisScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubTag: FontAxisTag | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  if (!scrubTag) return;
+  const labels: Record<string, string> = {
+    opsz: "Optical",
+    wdth: "Width",
+    slnt: "Slant",
+    ital: "Italic",
+    GRAD: "Grade",
+    SOFT: "Softness",
+    WONK: "Wonk",
+  };
+  const targets = nodes.filter((n): n is TextNode => isText(n) && selection.includes(n.id) && n.visible && Boolean(faceAxis(n.fontFamily, scrubTag)));
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const axis = faceAxis(n.fontFamily, scrubTag)!;
+    const raw = nodeAxisValue(n, scrubTag);
+    const clamped = scrubTag === "opsz"
+      ? clampAxis(axis, raw, n.fontSize)
+      : clampAxis(axis, raw);
+    const display = Math.round(clamped * 100) / 100;
+    const label = `${labels[scrubTag] ?? scrubTag} ${display}`;
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    // Live value chip near top-right
     ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";

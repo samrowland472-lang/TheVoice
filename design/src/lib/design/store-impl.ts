@@ -1,4 +1,5 @@
 import type { TypeGhost } from "./type-ghost";
+import type { FontAxisTag } from "./fonts";
 import { create } from "zustand";
 import { campaignPageName, campaignPages } from "./campaign";
 import { formatById } from "./formats";
@@ -80,6 +81,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   clipboard: [],
   opacityClipboard: null as number | null,
   opacityScrubId: null as string | null,
+  axisScrubTag: null as FontAxisTag | null,
   pasteCount: 1,
   present: false,
   viewIntent: null,
@@ -324,6 +326,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   setViewport: (v) => set({ viewport: { ...get().viewport, ...v } }),
   setStrokeGhost: (ghost: StrokeGhost) => set({ strokeGhost: ghost }),
   setOpacityScrubId: (id: string | null) => set({ opacityScrubId: id }),
+  setAxisScrubTag: (tag: FontAxisTag | null) => set({ axisScrubTag: tag }),
   setPathPointAlignPreview: (preview: PathPointAlignPreview) => set({ pathPointAlignPreview: preview }),
   setPathPointNumericPreview: (preview: PathPointNumericPreview) => set({ pathPointNumericPreview: preview }),
   setPathPointHandleNumericPreview: (preview: PathPointHandleNumericPreview) => set({ pathPointHandleNumericPreview: preview }),
