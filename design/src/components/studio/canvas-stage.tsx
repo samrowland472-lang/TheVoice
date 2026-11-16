@@ -2430,6 +2430,31 @@ function drawPathPointNumericPreview(
   }
   ctx.stroke();
   ctx.setLineDash([]);
+
+  // Live phosphor value chip next to the proposed point
+  const zoom = vp.zoom;
+  const val = Math.round(preview.axis === "x" ? preview.toX : preview.toY);
+  const label = `${preview.axis.toUpperCase()} ${val}`;
+  ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+  const tw = ctx.measureText(label).width;
+  const chipW = tw + 8 / zoom;
+  const chipH = 14 / zoom;
+  const pad = 6 / zoom;
+  let cx = tx + pad;
+  let cy = ty - pad;
+  // keep chip roughly on-canvas relative to node
+  ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+  ctx.lineWidth = 1 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+  ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+
   ctx.restore();
 }
 
@@ -2490,6 +2515,36 @@ function drawPathPointHandleNumericPreview(
     ctx.stroke();
   }
   ctx.setLineDash([]);
+
+  // Live phosphor value chip next to the proposed handle tip
+  const zoom = vp.zoom;
+  let label: string;
+  if (preview.axis === "len") {
+    const len = Math.round(Math.hypot(preview.toX, preview.toY));
+    label = `Len ${len}`;
+  } else {
+    const val = Math.round(preview.axis === "x" ? preview.toX : preview.toY);
+    label = `${preview.axis.toUpperCase()} ${val}`;
+  }
+  ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+  const tw = ctx.measureText(label).width;
+  const chipW = tw + 8 / zoom;
+  const chipH = 14 / zoom;
+  const pad = 5 / zoom;
+  const cx = tx + pad;
+  const cy = ty - pad;
+  ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+  ctx.lineWidth = 1 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+  ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+
   ctx.restore();
 }
 

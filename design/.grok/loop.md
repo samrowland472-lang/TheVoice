@@ -1,7 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Polished mixed type colour unify chips with phosphor-on-ground color dots (matching fill/stroke chips). Mixed type selections now show a live color swatch + label on each unify button so the source fill is visible at a glance. Phosphor-on-ground.
+- Iteration: Deepened path-point numeric previews with live phosphor value chips. While editing a path point X/Y (or handle X/Y/len) in the inspector, the canvas ghost shows a transient phosphor chip with the proposed value (e.g. “X 142”, “Len 86”) next to the proposed tip. Phosphor-on-ground.
+- Prior: Polished mixed type colour unify chips with phosphor-on-ground color dots (matching fill/stroke chips). Mixed type selections now show a live color swatch + label on each unify button so the source fill is visible at a glance. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for sides (polygon/star) and arrow head scale ranges in mixed path stroke inspector. Selected outline nodes show a transient phosphor outline and a live label (e.g. “Sides 6”, “Head 120%”) while the range is dragged; clears on pointer up. Multi-selection draws every applicable selected outline. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for dash, dash offset, and miter limit ranges in mixed path stroke inspector. Selected outline nodes show a transient phosphor outline and a live label (e.g. “Dash 12”, “Offset -8”, “Miter 6”) while the range is dragged; clears on pointer up. Multi-selection draws every applicable selected outline. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for remaining inspector ranges — rotation (single + mixed geometry), shadow offset X/Y and spread (ShadowEditor + mixed ink), stroke width (mixed path dash), and gradient angle. Selected nodes show a transient phosphor outline and a live label (e.g. “Rotate 45°”, “X 12”, “Spread 4”, “Width 8”, “Angle 135°”) while the range is dragged; clears on pointer up. Multi-selection draws every applicable selected node. Phosphor-on-ground.
@@ -14,4 +15,4 @@
 - Prior: Refactored outer counter-breath micro-sparks into a single parameterized trail (6 diminishing sparks + soft radial falloffs, phosphor-on-ground). Removed ~500 lines of copy-pasted near-zero-alpha sparks that no longer rendered.
 
 ## Next recommended
-- Deepen path-point numeric previews, or extend live scrub chips to line-cap / join toggles or other remaining ranges, or polish mixed ink chips further.
+- Extend live scrub chips to line-cap / join toggles or other remaining ranges, or polish mixed ink chips further, or deepen path handle length previews.
