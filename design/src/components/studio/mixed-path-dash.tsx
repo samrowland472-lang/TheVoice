@@ -281,10 +281,14 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               updateNodes(ids, { strokeDash: v });
               ghostStroke({ strokeDash: v });
             }}
+            onPointerDown={() => useDesign.getState().setStrokeDashScrubId(first.id)}
             onPointerUp={() => {
+              useDesign.getState().setStrokeDashScrubId(null);
               useDesign.getState().commit();
               ghostStroke(null);
             }}
+            onPointerCancel={() => useDesign.getState().setStrokeDashScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setStrokeDashScrubId(null)}
           />
           <NumField
             className="field w-16 font-mono"
@@ -332,10 +336,14 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               updateNodes(ids, { strokeDashOffset: v });
               ghostStroke({ strokeDashOffset: v });
             }}
+            onPointerDown={() => useDesign.getState().setStrokeDashOffsetScrubId(first.id)}
             onPointerUp={() => {
+              useDesign.getState().setStrokeDashOffsetScrubId(null);
               useDesign.getState().commit();
               ghostStroke(null);
             }}
+            onPointerCancel={() => useDesign.getState().setStrokeDashOffsetScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setStrokeDashOffsetScrubId(null)}
           />
           <NumField
             className="field w-16 font-mono"
@@ -502,10 +510,14 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
                 updateNodes(ids, { miterLimit: v });
                 ghostStroke({ miterLimit: v });
               }}
+              onPointerDown={() => useDesign.getState().setMiterLimitScrubId(first.id)}
               onPointerUp={() => {
+                useDesign.getState().setMiterLimitScrubId(null);
                 useDesign.getState().commit();
                 ghostStroke(null);
               }}
+              onPointerCancel={() => useDesign.getState().setMiterLimitScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setMiterLimitScrubId(null)}
             />
             <NumField
               className="field w-16 font-mono"

@@ -164,6 +164,9 @@ export default function CanvasStage() {
   const shadowOyScrubId = useDesign((s) => s.shadowOyScrubId);
   const shadowSpreadScrubId = useDesign((s) => s.shadowSpreadScrubId);
   const strokeWidthScrubId = useDesign((s) => s.strokeWidthScrubId);
+  const strokeDashScrubId = useDesign((s) => s.strokeDashScrubId);
+  const strokeDashOffsetScrubId = useDesign((s) => s.strokeDashOffsetScrubId);
+  const miterLimitScrubId = useDesign((s) => s.miterLimitScrubId);
   const gradientAngleScrubId = useDesign((s) => s.gradientAngleScrubId);
   const tool = useDesign((s) => s.tool);
   const viewport = useDesign((s) => s.viewport);
@@ -332,6 +335,9 @@ export default function CanvasStage() {
     drawShadowOyScrubChips(ctx, doc.nodes, shadowOyScrubId, selection, viewport, dpr);
     drawShadowSpreadScrubChips(ctx, doc.nodes, shadowSpreadScrubId, selection, viewport, dpr);
     drawStrokeWidthScrubChips(ctx, doc.nodes, strokeWidthScrubId, selection, viewport, dpr);
+    drawStrokeDashScrubChips(ctx, doc.nodes, strokeDashScrubId, selection, viewport, dpr);
+    drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
+    drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
@@ -764,7 +770,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, gradientAngleScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -795,6 +801,9 @@ export default function CanvasStage() {
     drawShadowOyScrubChips(ctx, doc.nodes, shadowOyScrubId, selection, viewport, dpr);
     drawShadowSpreadScrubChips(ctx, doc.nodes, shadowSpreadScrubId, selection, viewport, dpr);
     drawStrokeWidthScrubChips(ctx, doc.nodes, strokeWidthScrubId, selection, viewport, dpr);
+    drawStrokeDashScrubChips(ctx, doc.nodes, strokeDashScrubId, selection, viewport, dpr);
+    drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
+    drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
@@ -1187,7 +1196,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, gradientAngleScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -2855,6 +2864,66 @@ function drawStrokeWidthScrubChips(
     dpr,
     (n) => "strokeWidth" in n && typeof (n as { strokeWidth?: number }).strokeWidth === "number",
     (n) => `Width ${Math.round(((n as { strokeWidth?: number }).strokeWidth) ?? 0)}`,
+  );
+}
+
+function drawStrokeDashScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => "strokeDash" in n,
+    (n) => `Dash ${Math.round(((n as { strokeDash?: number }).strokeDash) ?? 0)}`,
+  );
+}
+
+function drawStrokeDashOffsetScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => "strokeDashOffset" in n,
+    (n) => `Offset ${Math.round(((n as { strokeDashOffset?: number }).strokeDashOffset) ?? 0)}`,
+  );
+}
+
+function drawMiterLimitScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => "miterLimit" in n,
+    (n) => `Miter ${Math.round(((n as { miterLimit?: number }).miterLimit) ?? 4)}`,
   );
 }
 
