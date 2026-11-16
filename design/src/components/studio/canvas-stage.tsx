@@ -310,7 +310,7 @@ export default function CanvasStage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
-    drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, viewport, dpr);
+    drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -764,7 +764,7 @@ export default function CanvasStage() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
-    drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, viewport, dpr);
+    drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -2452,49 +2452,55 @@ function drawOpacityScrubEdge(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
   scrubId: string | null,
+  selection: string[],
   vp: Viewport,
   dpr: number,
 ) {
   if (!scrubId) return;
-  const n = nodes.find((x) => x.id === scrubId && x.visible);
-  if (!n) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible)
+    : nodes.filter((n) => n.id === scrubId && n.visible);
+  if (!targets.length) return;
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.translate(vp.x, vp.y);
   ctx.scale(vp.zoom, vp.zoom);
   const zoom = vp.zoom;
-  const pad = 4 / zoom;
-  const x = n.x - pad;
-  const y = n.y - pad;
-  const w = n.w + pad * 2;
-  const h = n.h + pad * 2;
-  // Transient phosphor edge: soft outer + crisp inner
-  ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
-  ctx.lineWidth = 6 / zoom;
-  ctx.strokeRect(x, y, w, h);
-  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
-  ctx.lineWidth = 1.5 / zoom;
-  ctx.strokeRect(x, y, w, h);
-  // Live percent chip near top-right of the node
-  const pct = Math.round((n.opacity ?? 1) * 100);
-  const label = `${pct}%`;
-  ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "bottom";
-  const tw = ctx.measureText(label).width;
-  const chipW = tw + 8 / zoom;
-  const chipH = 14 / zoom;
-  const cx = x + w - chipW;
-  const cy = y - 2 / zoom;
-  ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-  ctx.lineWidth = 1 / zoom;
-  ctx.beginPath();
-  ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-  ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge: soft outer + crisp inner
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    // Live percent chip near top-right of the node
+    const pct = Math.round((n.opacity ?? 1) * 100);
+    const label = `${pct}%`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const chipH = 14 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.beginPath();
+    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+  }
   ctx.restore();
 }
 

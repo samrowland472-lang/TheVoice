@@ -1419,6 +1419,7 @@ function OpacityQuickStrip() {
   const selection = useDesign((s) => s.selection);
   const doc = useDesign((s) => s.doc);
   const updateNodes = useDesign((s) => s.updateNodes);
+  const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
   if (!doc || selection.length === 0) return null;
   const nodes = selection
     .map((id) => doc.nodes.find((n) => n.id === id))
@@ -1426,6 +1427,7 @@ function OpacityQuickStrip() {
   if (nodes.length === 0) return null;
   const mixed = new Set(nodes.map((n) => Math.round(n.opacity * 100))).size > 1;
   const value = mixed ? nodes[nodes.length - 1].opacity : nodes[0].opacity;
+  const scrubTarget = nodes[0]?.id ?? null;
   return (
     <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
       <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
@@ -1447,7 +1449,13 @@ function OpacityQuickStrip() {
             const next = Number(e.target.value);
             updateNodes(selection, { opacity: next });
           }}
-          onPointerUp={() => useDesign.getState().commit()}
+          onPointerDown={() => setOpacityScrubId(scrubTarget)}
+          onPointerUp={() => {
+            setOpacityScrubId(null);
+            useDesign.getState().commit();
+          }}
+          onPointerCancel={() => setOpacityScrubId(null)}
+          onLostPointerCapture={() => setOpacityScrubId(null)}
         />
         <NumField
           aria-label="Layer opacity percent"

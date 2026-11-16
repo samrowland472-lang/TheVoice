@@ -66,6 +66,7 @@ export function Inspector() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
   const updateNodes = useDesign((s) => s.updateNodes);
+  const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
   const rail = useSyncExternalStore(subscribeInspectorRail, getInspectorRail, getInspectorRail);
   const { live, echo, target } = useAlign();
   const distribute = useDistribute();
@@ -287,8 +288,15 @@ export function Inspector() {
                     max={1}
                     step={0.01}
                     value={node.opacity}
+                    data-opacity-range="inspector"
                     onChange={(e) => setOpacity(Number(e.target.value))}
-                    onPointerUp={() => useDesign.getState().commit()}
+                    onPointerDown={() => setOpacityScrubId(node.id)}
+                    onPointerUp={() => {
+                      setOpacityScrubId(null);
+                      useDesign.getState().commit();
+                    }}
+                    onPointerCancel={() => setOpacityScrubId(null)}
+                    onLostPointerCapture={() => setOpacityScrubId(null)}
                   />
                 </Field>
                 <Field label="Blend">
@@ -366,8 +374,15 @@ export function Inspector() {
                     step={0.01}
                     value={mixedOpacity ? 1 : selectedNodes[0]?.opacity ?? 1}
                     aria-label={mixedOpacity ? "opacity mixed" : "opacity"}
+                    data-opacity-range="inspector"
                     onChange={(e) => setOpacity(Number(e.target.value))}
-                    onPointerUp={() => useDesign.getState().commit()}
+                    onPointerDown={() => setOpacityScrubId(selectedNodes[0]?.id ?? null)}
+                    onPointerUp={() => {
+                      setOpacityScrubId(null);
+                      useDesign.getState().commit();
+                    }}
+                    onPointerCancel={() => setOpacityScrubId(null)}
+                    onLostPointerCapture={() => setOpacityScrubId(null)}
                   />
                 </Field>
                 <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>

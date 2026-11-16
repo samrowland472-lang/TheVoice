@@ -88,6 +88,7 @@ function MixedHexField({
 
 export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; brandColors: { name: string; hex: string }[]; ink: string }) {
   const updateNodes = useDesign((s) => s.updateNodes);
+  const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
   if (nodes.length < 2) return null;
   const ids = nodes.map((n) => n.id);
   const first = nodes[0]!;
@@ -167,7 +168,13 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           data-opacity-range="mixed"
           style={{ "--fill-opacity": String(first.opacity) } as CSSProperties}
           onChange={(e) => updateNodes(ids, { opacity: Number(e.target.value) })}
-          onPointerUp={() => useDesign.getState().commit()}
+          onPointerDown={() => setOpacityScrubId(first.id)}
+          onPointerUp={() => {
+            setOpacityScrubId(null);
+            useDesign.getState().commit();
+          }}
+          onPointerCancel={() => setOpacityScrubId(null)}
+          onLostPointerCapture={() => setOpacityScrubId(null)}
         />
         {mixedOpacity && <MixedOpacityChips nodes={nodes} />}
       </Field>
