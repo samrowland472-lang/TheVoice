@@ -246,10 +246,14 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               updateNodes(ids, { strokeWidth: v });
               ghostStroke({ strokeWidth: v });
             }}
+            onPointerDown={() => useDesign.getState().setStrokeWidthScrubId(first.id)}
             onPointerUp={() => {
+              useDesign.getState().setStrokeWidthScrubId(null);
               useDesign.getState().commit();
               ghostStroke(null);
             }}
+            onPointerCancel={() => useDesign.getState().setStrokeWidthScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setStrokeWidthScrubId(null)}
           />
           <NumField
             className="field w-16 font-mono"

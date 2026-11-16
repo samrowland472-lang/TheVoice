@@ -41,7 +41,13 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
             aria-label={mixedRotation ? "selection rotate mixed" : "selection rotate"}
             value={first.rotation}
             onChange={(e) => updateNodes(ids, { rotation: Number(e.target.value) })}
-            onPointerUp={() => useDesign.getState().commit()}
+            onPointerDown={() => useDesign.getState().setRotationScrubId(first.id)}
+            onPointerUp={() => {
+              useDesign.getState().setRotationScrubId(null);
+              useDesign.getState().commit();
+            }}
+            onPointerCancel={() => useDesign.getState().setRotationScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setRotationScrubId(null)}
           />
           <NumField
             className="field w-16 font-mono"

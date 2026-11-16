@@ -75,6 +75,13 @@ export function FillEditor({ node }: { node: DesignNode }) {
               onChange={(e) =>
                 updateNodes([node.id], { fill: { ...fill, angle: Number(e.target.value) } }, false)
               }
+              onPointerDown={() => useDesign.getState().setGradientAngleScrubId(node.id)}
+              onPointerUp={() => {
+                useDesign.getState().setGradientAngleScrubId(null);
+                useDesign.getState().commit();
+              }}
+              onPointerCancel={() => useDesign.getState().setGradientAngleScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setGradientAngleScrubId(null)}
             />
           </Field>
           {fill.stops.map((stop, i) => (
@@ -224,7 +231,13 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               value={mixedOx ? 0 : ghost.ox}
               aria-label={mixedOx ? "layer shadow x mixed" : "layer shadow x"}
               onChange={(e) => stampAll((cur) => stampShadowOx(cur, Number(e.target.value)))}
-              onPointerUp={commit}
+              onPointerDown={() => useDesign.getState().setShadowOxScrubId(nodes[0]?.id ?? null)}
+              onPointerUp={() => {
+                useDesign.getState().setShadowOxScrubId(null);
+                commit();
+              }}
+              onPointerCancel={() => useDesign.getState().setShadowOxScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setShadowOxScrubId(null)}
             />
           </Field>
           <Field label={mixedOy ? "Y \u00b7 mixed" : `Y ${ghost.oy}`}>
@@ -236,7 +249,13 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               value={mixedOy ? 0 : ghost.oy}
               aria-label={mixedOy ? "layer shadow y mixed" : "layer shadow y"}
               onChange={(e) => stampAll((cur) => stampShadowOy(cur, Number(e.target.value)))}
-              onPointerUp={commit}
+              onPointerDown={() => useDesign.getState().setShadowOyScrubId(nodes[0]?.id ?? null)}
+              onPointerUp={() => {
+                useDesign.getState().setShadowOyScrubId(null);
+                commit();
+              }}
+              onPointerCancel={() => useDesign.getState().setShadowOyScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setShadowOyScrubId(null)}
             />
           </Field>
           <Field label={mixedSpread ? "Spread \u00b7 mixed" : `Spread ${spread}`}>
@@ -248,7 +267,13 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               value={mixedSpread ? 0 : spread}
               aria-label={mixedSpread ? "layer shadow spread mixed" : "layer shadow spread"}
               onChange={(e) => stampAll((cur) => stampShadowSpread(cur, Number(e.target.value)))}
-              onPointerUp={commit}
+              onPointerDown={() => useDesign.getState().setShadowSpreadScrubId(nodes[0]?.id ?? null)}
+              onPointerUp={() => {
+                useDesign.getState().setShadowSpreadScrubId(null);
+                commit();
+              }}
+              onPointerCancel={() => useDesign.getState().setShadowSpreadScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setShadowSpreadScrubId(null)}
             />
           </Field>
           <Field label={mixedInset ? "Inset \u00b7 mixed" : inset ? "Inset" : "Drop"}>

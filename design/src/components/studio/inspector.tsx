@@ -274,7 +274,13 @@ export function Inspector() {
                     max={180}
                     value={node.rotation}
                     onChange={(e) => updateNodes([node.id], { rotation: Number(e.target.value) })}
-                    onPointerUp={() => useDesign.getState().commit()}
+                    onPointerDown={() => useDesign.getState().setRotationScrubId(node.id)}
+                    onPointerUp={() => {
+                      useDesign.getState().setRotationScrubId(null);
+                      useDesign.getState().commit();
+                    }}
+                    onPointerCancel={() => useDesign.getState().setRotationScrubId(null)}
+                    onLostPointerCapture={() => useDesign.getState().setRotationScrubId(null)}
                   />
                 </Field>
               </Section>
