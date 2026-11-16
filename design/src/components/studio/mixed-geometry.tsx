@@ -86,13 +86,25 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
               ghostRadius(r);
               updateNodes(ids, { radius: r });
             }}
-            onPointerDown={() => ghostRadius(first.radius)}
+            onPointerDown={() => {
+              ghostRadius(first.radius);
+              useDesign.getState().setRadiusScrubId(first.id);
+            }}
             onPointerUp={() => {
               ghostRadius(null);
+              useDesign.getState().setRadiusScrubId(null);
               useDesign.getState().commit();
             }}
-            onPointerLeave={() => ghostRadius(null)}
-            onBlur={() => ghostRadius(null)}
+            onPointerCancel={() => useDesign.getState().setRadiusScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setRadiusScrubId(null)}
+            onPointerLeave={() => {
+              ghostRadius(null);
+              useDesign.getState().setRadiusScrubId(null);
+            }}
+            onBlur={() => {
+              ghostRadius(null);
+              useDesign.getState().setRadiusScrubId(null);
+            }}
           />
           <NumField
             className="field w-16 font-mono"

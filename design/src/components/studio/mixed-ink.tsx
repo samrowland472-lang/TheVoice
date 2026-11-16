@@ -212,7 +212,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           {mixedColor && <MixedShadowColorChips nodes={nodes} />}
         </Field>
         <Field label={mixedBlur ? "Blur · mixed" : `Blur ${ghost.blur}`}>
-          <input type="range" className={cn("range-phosphor w-full", mixedBlur && "ghost opacity-70")} min={0} max={80} value={ghost.blur} aria-label={mixedBlur ? "selection shadow blur mixed ghost" : "selection shadow blur"} onChange={(e) => { const blur = Number(e.target.value); mapShadows((sh) => stampShadowBlur(sh, blur)); }} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="range" className={cn("range-phosphor w-full", mixedBlur && "ghost opacity-70")} min={0} max={80} value={ghost.blur} aria-label={mixedBlur ? "selection shadow blur mixed ghost" : "selection shadow blur"} onChange={(e) => { const blur = Number(e.target.value); mapShadows((sh) => stampShadowBlur(sh, blur)); }} onPointerDown={() => useDesign.getState().setShadowBlurScrubId(nodes[0]?.id ?? null)} onPointerUp={() => { useDesign.getState().setShadowBlurScrubId(null); useDesign.getState().commit(); }} onPointerCancel={() => useDesign.getState().setShadowBlurScrubId(null)} onLostPointerCapture={() => useDesign.getState().setShadowBlurScrubId(null)} />
           {mixedBlur && <MixedShadowBlurChips nodes={nodes} />}
         </Field>
         <Field label={mixedOx ? "X · mixed" : `X ${ghost.ox}`}>

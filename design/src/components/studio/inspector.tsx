@@ -344,8 +344,8 @@ export function Inspector() {
                 <Section title="Shape">
                   {node.kind === "ellipse" && <span className="text-[10px] text-ink-dim">Ellipse</span>}
                   {node.kind === "line" && <span className="text-[10px] text-ink-dim">Line</span>}
-                  {node.kind === "rect" && node.radius > 0 && (
-                    <Field label={`Radius ${node.radius}`}>
+                  {node.kind === "rect" && (
+                    <Field label={`Radius ${Math.round(node.radius)}`}>
                       <input
                         type="range"
                         className="range-phosphor w-full"
@@ -353,7 +353,13 @@ export function Inspector() {
                         max={Math.min(node.w, node.h) / 2}
                         value={node.radius}
                         onChange={(e) => updateNodes([node.id], { radius: Number(e.target.value) })}
-                        onPointerUp={() => useDesign.getState().commit()}
+                        onPointerDown={() => useDesign.getState().setRadiusScrubId(node.id)}
+                        onPointerUp={() => {
+                          useDesign.getState().setRadiusScrubId(null);
+                          useDesign.getState().commit();
+                        }}
+                        onPointerCancel={() => useDesign.getState().setRadiusScrubId(null)}
+                        onLostPointerCapture={() => useDesign.getState().setRadiusScrubId(null)}
                       />
                     </Field>
                   )}

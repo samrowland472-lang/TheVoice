@@ -198,7 +198,13 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               value={mixedBlur ? 0 : ghost.blur}
               aria-label={mixedBlur ? "layer shadow blur mixed" : "layer shadow blur"}
               onChange={(e) => stampAll((cur) => stampShadowBlur(cur, Number(e.target.value)))}
-              onPointerUp={commit}
+              onPointerDown={() => useDesign.getState().setShadowBlurScrubId(nodes[0]?.id ?? null)}
+              onPointerUp={() => {
+                useDesign.getState().setShadowBlurScrubId(null);
+                commit();
+              }}
+              onPointerCancel={() => useDesign.getState().setShadowBlurScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setShadowBlurScrubId(null)}
               onKeyDown={(e) => {
                 const curVal = mixedBlur ? 0 : ghost.blur;
                 const next = nextFromRangeKey(e, curVal, 0, 80, 1);
