@@ -70,18 +70,26 @@ export function MixedTypeColour({
         </button>
         {mixed && (
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {nodes.map((n) => (
-              <button
-                key={`type-fill-${n.id}`}
-                type="button"
-                className="flex h-6 items-center rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[120px] truncate"
-                title={`Unify type colour with ${n.name || "text"}: ${fillChipLabel(n.fill)}`}
-                aria-label={`Unify type colour with ${n.name || "text"}: ${fillChipLabel(n.fill)}`}
-                onClick={() => writeFill(n.fill)}
-              >
-                {fillChipLabel(n.fill)}
-              </button>
-            ))}
+            {nodes.map((n) => {
+              const nHex = solidOf(n.fill, ink);
+              const label = fillChipLabel(n.fill);
+              return (
+                <button
+                  key={`type-fill-${n.id}`}
+                  type="button"
+                  className="flex h-6 items-center gap-1 rounded-full border border-phosphor/40 bg-surface-alt px-1.5 font-mono text-[8px] text-phosphor max-w-[140px] truncate"
+                  title={`Unify type colour with ${n.name || "text"}: ${label}`}
+                  aria-label={`Unify type colour with ${n.name || "text"}: ${label}`}
+                  onClick={() => writeFill(n.fill)}
+                >
+                  <span
+                    className="size-3 shrink-0 rounded-full border border-phosphor/30"
+                    style={{ background: n.fill === "transparent" ? "transparent" : nHex }}
+                  />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         )}
       </Field>
