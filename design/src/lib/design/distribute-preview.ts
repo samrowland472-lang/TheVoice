@@ -162,6 +162,7 @@ export function drawDistributePreview(
     ctx.globalAlpha = 0.7;
     ctx.stroke();
     // Outer counter-breath diamond + parameterized trail (6 diminishing sparks)
+    // Sparks and lag stroke share one phase clock: both orbit relative to familyLag
     const outerScale = 1.16 + 0.04 * lag;
     const familyLag = rot * 0.08;
     ctx.rotate(-familyLag * 1.35);
@@ -178,8 +179,9 @@ export function drawDistributePreview(
     for (let i = 0; i < SPARK_COUNT; i++) {
       const t = i / (SPARK_COUNT - 1);
       const fade = Math.pow(1 - t, 1.35);
-      const angle = (i % 2 === 0 ? 1 : -1) * rot * (0.14 - t * 0.11) + Math.PI * (1.15 + t * 2.4);
-      const radius = size * bloom * outerScale * (0.26 - t * 0.14) * (0.85 - t * 0.35);
+      // Lock spark angles to the same familyLag rotation that drives the lag stroke
+      const angle = -familyLag * 1.35 + (i % 2 === 0 ? 1 : -1) * rot * (0.06 - t * 0.04) + Math.PI * (0.25 + t * 1.8);
+      const radius = size * bloom * outerScale * (0.26 - t * 0.14) * (0.85 - t * 0.35) * (0.92 + 0.16 * trail);
       const yScale = 0.58 - t * 0.2;
       const sx = Math.cos(angle) * radius;
       const sy = Math.sin(angle) * radius * yScale;
@@ -187,7 +189,8 @@ export function drawDistributePreview(
       if (sparkR < 0.15 / zoom) continue;
       ctx.beginPath();
       ctx.arc(sx, sy, sparkR, 0, Math.PI * 2);
-      ctx.globalAlpha = (0.18 * fade) * trail * lag;
+      // Soft radial falloff: closer sparks brighter, trail phase shared with lag
+      ctx.globalAlpha = (0.18 * fade) * trail * lag * (0.75 + 0.25 * (1 - t));
       ctx.fillStyle = PHOSPHOR;
       ctx.fill();
     }

@@ -271,17 +271,19 @@ export default function CanvasStage() {
     }
     let raf = 0;
     const tick = () => {
-      const t = performance.now() * 0.004;
-      setFlushPulse(0.5 + 0.5 * Math.sin(t));
-      // Phase lag ~66° so the second echo trails the primary breath
-      setFlushPulseLag(0.5 + 0.5 * Math.sin(t - 1.15));
+      // Shared phase clock: primary breath, lag stroke, and trail sparks derive from one phi
+      const phi = performance.now() * 0.004;
+      setFlushPulse(0.5 + 0.5 * Math.sin(phi));
+      // Lag stroke trails the primary by ~60°
+      const lagOffset = 1.05;
+      setFlushPulseLag(0.5 + 0.5 * Math.sin(phi - lagOffset));
       // Shared slow phase so lag and counter arcs orbit together
       setFlushPulseRotate((performance.now() * 0.00055) % (Math.PI * 2));
       // Second slower harmonic so the diamond breathes on two timescales
       const tSlow = performance.now() * 0.0016;
       setFlushPulseSlow(0.5 + 0.5 * Math.sin(tSlow));
-      // Third even later trail for the faint orbital spark
-      setFlushPulseTrail(0.5 + 0.5 * Math.sin(t - 2.35));
+      // Trail sparks share the same clock, only ~26° behind the lag stroke
+      setFlushPulseTrail(0.5 + 0.5 * Math.sin(phi - lagOffset - 0.45));
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
