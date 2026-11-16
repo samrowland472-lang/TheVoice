@@ -168,6 +168,8 @@ export default function CanvasStage() {
   const strokeDashOffsetScrubId = useDesign((s) => s.strokeDashOffsetScrubId);
   const miterLimitScrubId = useDesign((s) => s.miterLimitScrubId);
   const gradientAngleScrubId = useDesign((s) => s.gradientAngleScrubId);
+  const sidesScrubId = useDesign((s) => s.sidesScrubId);
+  const headScaleScrubId = useDesign((s) => s.headScaleScrubId);
   const tool = useDesign((s) => s.tool);
   const viewport = useDesign((s) => s.viewport);
   const color = useDesign((s) => s.color);
@@ -339,6 +341,8 @@ export default function CanvasStage() {
     drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
+    drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
+    drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -770,7 +774,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -805,6 +809,8 @@ export default function CanvasStage() {
     drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
+    drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
+    drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     const distPlan = getDistributePreview();
     if (distPlan) {
       ctx.save();
@@ -1196,7 +1202,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -2950,6 +2956,50 @@ function drawGradientAngleScrubChips(
     },
   );
 }
+
+function drawSidesScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => "sides" in n && typeof (n as { sides?: number }).sides === "number",
+    (n) => `Sides ${Math.round(((n as { sides?: number }).sides) ?? 5)}`,
+  );
+}
+
+function drawHeadScaleScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => "headScale" in n && typeof (n as { headScale?: number }).headScale === "number",
+    (n) => {
+      const h = ((n as { headScale?: number }).headScale) ?? 1;
+      return `Head ${Math.round(h * 100)}%`;
+    },
+  );
+}
+
 
 function drawSelection(
   ctx: CanvasRenderingContext2D,

@@ -567,10 +567,14 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
                 updateNodes(polyIds, { sides: v });
                 ghostStroke({ sides: v });
               }}
+              onPointerDown={() => useDesign.getState().setSidesScrubId(first.id)}
               onPointerUp={() => {
+                useDesign.getState().setSidesScrubId(null);
                 useDesign.getState().commit();
                 ghostStroke(null);
               }}
+              onPointerCancel={() => useDesign.getState().setSidesScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setSidesScrubId(null)}
             />
             <NumField
               className="field w-16 font-mono"
@@ -620,10 +624,14 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
                 updateNodes(arrowIds, { headScale: v });
                 ghostStroke({ headScale: v });
               }}
+              onPointerDown={() => useDesign.getState().setHeadScaleScrubId(first.id)}
               onPointerUp={() => {
+                useDesign.getState().setHeadScaleScrubId(null);
                 useDesign.getState().commit();
                 ghostStroke(null);
               }}
+              onPointerCancel={() => useDesign.getState().setHeadScaleScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setHeadScaleScrubId(null)}
             />
             <NumField
               className="field w-16 font-mono"
