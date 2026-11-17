@@ -8,6 +8,7 @@ import { isPath } from "./types";
 
 export type StrokeGhost = {
   strokeWidth?: number;
+  stroke?: string;
   strokeDash?: number;
   strokeDashOffset?: number;
   lineCap?: CanvasLineCap;
@@ -16,6 +17,8 @@ export type StrokeGhost = {
   headScale?: number;
   sides?: number;
   radius?: number;
+  fill?: import("./types").DesignNode["fill"];
+  opacity?: number;
   fillRule?: "evenodd" | "nonzero";
   shadowColor?: string;
   shadowBlur?: number;

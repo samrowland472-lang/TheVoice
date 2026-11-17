@@ -11,6 +11,7 @@ import {
   screenToDoc,
 } from "@/lib/design/render";
 import { drawStrokeGhosts } from "@/lib/design/stroke-ghost";
+import { fillChipLabel, strokeChipLabel } from "@/lib/design/ink";
 import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
 import { nodeCenter, degToRad, rotatePoint } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
@@ -2584,15 +2585,18 @@ function drawStrokeCapJoinChips(
   const hasJoin = ghost.lineJoin != null;
   const hasFillRule = ghost.fillRule != null;
   const hasInset = ghost.shadowInset != null;
-  if (!hasCap && !hasJoin && !hasFillRule && !hasInset) return;
+  const hasFill = ghost.fill != null;
+  const hasOpacity = ghost.opacity != null;
+  const hasStroke = ghost.stroke != null;
+  if (!hasCap && !hasJoin && !hasFillRule && !hasInset && !hasFill && !hasOpacity && !hasStroke) return;
 
   let targets = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (hasFillRule) {
     targets = targets.filter((n) => isPath(n) && (n.holes?.length ?? 0) > 0);
-  } else if (hasInset) {
-    // Shadow inset applies to any shadowed-capable node; keep all selected visible
+  } else if (hasInset || hasFill || hasOpacity) {
+    // Inset / fill / opacity apply to selected visible nodes
   } else {
-    // Cap / join: outline nodes
+    // Cap / join / stroke: outline nodes
     targets = targets.filter((n) => ["path", "rect", "ellipse", "line", "polygon", "star", "arrow"].includes(n.kind));
   }
   if (!targets.length) return;
@@ -2618,7 +2622,13 @@ function drawStrokeCapJoinChips(
 
     const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
     let label = "";
-    if (hasFillRule) {
+    if (hasFill) {
+      label = fillChipLabel(ghost.fill!);
+    } else if (hasOpacity) {
+      label = `${Math.round((ghost.opacity ?? 1) * 100)}%`;
+    } else if (hasStroke) {
+      label = strokeChipLabel(ghost.stroke!, ghost.strokeWidth ?? 1);
+    } else if (hasFillRule) {
       label = ghost.fillRule === "evenodd" ? "Even-odd" : "Nonzero";
     } else if (hasInset) {
       label = ghost.shadowInset ? "Inset" : "Drop";

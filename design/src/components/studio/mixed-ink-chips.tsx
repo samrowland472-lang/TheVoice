@@ -19,6 +19,10 @@ export function MixedFillChips({ nodes, ink }: { nodes: DesignNode[]; ink: strin
             title={`Unify fill with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify fill with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { fill: cloneFill(n.fill) }, true)}
+            onMouseEnter={() => useDesign.getState().setStrokeGhost({ fill: n.fill })}
+            onFocus={() => useDesign.getState().setStrokeGhost({ fill: n.fill })}
+            onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+            onBlur={() => useDesign.getState().setStrokeGhost(null)}
           >
             <span
               className="size-3 shrink-0 rounded-full border border-phosphor/30"
@@ -47,6 +51,10 @@ export function MixedStrokeChips({ nodes }: { nodes: DesignNode[] }) {
             title={`Unify stroke with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify stroke with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { stroke: n.stroke, strokeWidth: n.strokeWidth }, true)}
+            onMouseEnter={() => useDesign.getState().setStrokeGhost({ stroke: n.stroke, strokeWidth: n.strokeWidth })}
+            onFocus={() => useDesign.getState().setStrokeGhost({ stroke: n.stroke, strokeWidth: n.strokeWidth })}
+            onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+            onBlur={() => useDesign.getState().setStrokeGhost(null)}
           >
             <span
               className="size-3 shrink-0 rounded-full border border-phosphor/30"
@@ -77,6 +85,10 @@ export function MixedOpacityChips({ nodes }: { nodes: DesignNode[] }) {
             title={`Unify opacity with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify opacity with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { opacity: n.opacity }, true)}
+            onMouseEnter={() => useDesign.getState().setStrokeGhost({ opacity: n.opacity })}
+            onFocus={() => useDesign.getState().setStrokeGhost({ opacity: n.opacity })}
+            onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+            onBlur={() => useDesign.getState().setStrokeGhost(null)}
           >
             {label}
           </button>
