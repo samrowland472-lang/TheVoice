@@ -62,6 +62,10 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
                 patchImage(img.id, { filters: { ...filters, [f.key]: Number(e.target.value) } })
               }
               onPointerUp={() => useDesign.getState().commit()}
+              onMouseEnter={() => useDesign.getState().setFilterHoverKey(f.key)}
+              onFocus={() => useDesign.getState().setFilterHoverKey(f.key)}
+              onMouseLeave={() => useDesign.getState().setFilterHoverKey(null)}
+              onBlur={() => useDesign.getState().setFilterHoverKey(null)}
               onKeyDown={(e) => {
                 const next = nextFromRangeKey(e, value, f.min, f.max, f.step);
                 if (next != null) patchImage(img.id, { filters: { ...filters, [f.key]: next } }, true);

@@ -74,6 +74,10 @@ export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
               value={value}
               onChange={(e) => patchImageFilters(ids, { [f.key]: Number(e.target.value) })}
               onPointerUp={() => useDesign.getState().commit()}
+              onMouseEnter={() => useDesign.getState().setFilterHoverKey(f.key)}
+              onFocus={() => useDesign.getState().setFilterHoverKey(f.key)}
+              onMouseLeave={() => useDesign.getState().setFilterHoverKey(null)}
+              onBlur={() => useDesign.getState().setFilterHoverKey(null)}
               onKeyDown={(e) => {
                 const next = nextFromRangeKey(e, value, f.min, f.max, f.step);
                 if (next != null) {
@@ -95,6 +99,8 @@ export function MixedFilters({ nodes }: { nodes: DesignNode[] }) {
               title={`Unify full filters with ${n.name || "photo"}: ${filterChipLabel(n.filters)}`}
               aria-label={`Unify full filters with ${n.name || "photo"}: ${filterChipLabel(n.filters)}`}
               onClick={() => patchImageFilters(ids, cloneFilters(n.filters), true)}
+              onMouseEnter={() => useDesign.getState().setFilterHoverKey(null)} // chips stamp full stack; edge only via range for now
+              onFocus={() => useDesign.getState().setFilterHoverKey(null)}
             >
               {filterChipLabel(n.filters)}
             </button>

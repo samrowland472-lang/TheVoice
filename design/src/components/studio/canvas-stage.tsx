@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
 import { faceAxis, clampAxis, type FontAxisTag } from "@/lib/design/fonts";
-import { isText, type TextNode } from "@/lib/design/types";
+import { isText, type TextNode, type ImageNode, type PaintNode } from "@/lib/design/types";
 import { nodeAxisValue } from "./mixed-type-axes";
 
 import type { PathPointAlignPreview, PathPointNumericPreview, PathPointHandleNumericPreview } from "@/lib/design/store-impl";
@@ -159,6 +159,8 @@ export default function CanvasStage() {
   const selection = useDesign((s) => s.selection);
   const opacityScrubId = useDesign((s) => s.opacityScrubId);
   const axisScrubTag = useDesign((s) => s.axisScrubTag);
+  const axisHoverTag = useDesign((s) => s.axisHoverTag);
+  const filterHoverKey = useDesign((s) => s.filterHoverKey);
   const radiusScrubId = useDesign((s) => s.radiusScrubId);
   const shadowBlurScrubId = useDesign((s) => s.shadowBlurScrubId);
   const rotationScrubId = useDesign((s) => s.rotationScrubId);
@@ -333,6 +335,8 @@ export default function CanvasStage() {
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
     drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
     drawAxisScrubChips(ctx, doc.nodes, axisScrubTag, selection, viewport, dpr);
+    drawAxisHoverChips(ctx, doc.nodes, axisHoverTag, selection, viewport, dpr);
+    drawFilterHoverChips(ctx, doc.nodes, filterHoverKey, selection, viewport, dpr);
     drawRadiusScrubChips(ctx, doc.nodes, radiusScrubId, selection, viewport, dpr);
     drawShadowBlurScrubChips(ctx, doc.nodes, shadowBlurScrubId, selection, viewport, dpr);
     drawRotationScrubChips(ctx, doc.nodes, rotationScrubId, selection, viewport, dpr);
@@ -787,7 +791,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -811,6 +815,8 @@ export default function CanvasStage() {
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
     drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
     drawAxisScrubChips(ctx, doc.nodes, axisScrubTag, selection, viewport, dpr);
+    drawAxisHoverChips(ctx, doc.nodes, axisHoverTag, selection, viewport, dpr);
+    drawFilterHoverChips(ctx, doc.nodes, filterHoverKey, selection, viewport, dpr);
     drawRadiusScrubChips(ctx, doc.nodes, radiusScrubId, selection, viewport, dpr);
     drawShadowBlurScrubChips(ctx, doc.nodes, shadowBlurScrubId, selection, viewport, dpr);
     drawRotationScrubChips(ctx, doc.nodes, rotationScrubId, selection, viewport, dpr);
@@ -1225,7 +1231,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, strokeGhost]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -2780,6 +2786,82 @@ function drawAxisScrubChips(
       : clampAxis(axis, raw);
     const display = Math.round(clamped * 100) / 100;
     const label = `${labels[scrubTag] ?? scrubTag} ${display}`;
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    // Live value chip near top-right
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const chipH = 14 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.beginPath();
+    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+  }
+  ctx.restore();
+}
+
+function drawAxisHoverChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  hoverTag: FontAxisTag | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  if (!hoverTag) return;
+  // Reuse the scrub drawer so hover matches live drag feedback
+  drawAxisScrubChips(ctx, nodes, hoverTag, selection, vp, dpr);
+}
+
+function drawFilterHoverChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  hoverKey: "brightness" | "contrast" | "saturate" | "blur" | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  if (!hoverKey) return;
+  const labels: Record<string, string> = {
+    brightness: "Bright",
+    contrast: "Contrast",
+    saturate: "Saturate",
+    blur: "Blur",
+  };
+  const targets = nodes.filter(
+    (n) => selection.includes(n.id) && n.visible && (n.kind === "image" || n.kind === "paint"),
+  );
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const filters = (n as ImageNode | PaintNode).filters;
+    const raw = filters?.[hoverKey] ?? (hoverKey === "blur" ? 0 : 1);
+    const display = hoverKey === "blur" ? Math.round(raw) : Math.round(raw * 100);
+    const label = `${labels[hoverKey] ?? hoverKey} ${display}${hoverKey === "blur" ? "" : "%"}`;
     const pad = 4 / zoom;
     const x = n.x - pad;
     const y = n.y - pad;

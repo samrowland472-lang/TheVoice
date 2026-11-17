@@ -118,6 +118,10 @@ export function MixedAxisSliders({
                 onPointerUp={() => { useDesign.getState().setAxisScrubTag(null); useDesign.getState().commit(); }}
                 onPointerCancel={() => useDesign.getState().setAxisScrubTag(null)}
                 onLostPointerCapture={() => useDesign.getState().setAxisScrubTag(null)}
+                onMouseEnter={() => useDesign.getState().setAxisHoverTag(tag)}
+                onFocus={() => useDesign.getState().setAxisHoverTag(tag)}
+                onMouseLeave={() => { if (useDesign.getState().axisScrubTag !== tag) useDesign.getState().setAxisHoverTag(null); }}
+                onBlur={() => { if (useDesign.getState().axisScrubTag !== tag) useDesign.getState().setAxisHoverTag(null); }}
               />
               <NumField
                 className="field w-16 font-mono"
