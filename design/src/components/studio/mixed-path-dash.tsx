@@ -511,6 +511,10 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
                 ghostStroke({ miterLimit: v });
               }}
               onPointerDown={() => useDesign.getState().setMiterLimitScrubId(first.id)}
+              onMouseEnter={() => useDesign.getState().setPathDashHoverKey("miter")}
+              onFocus={() => useDesign.getState().setPathDashHoverKey("miter")}
+              onMouseLeave={() => { if (!useDesign.getState().miterLimitScrubId) useDesign.getState().setPathDashHoverKey(null); }}
+              onBlur={() => useDesign.getState().setPathDashHoverKey(null)}
               onPointerUp={() => {
                 useDesign.getState().setMiterLimitScrubId(null);
                 useDesign.getState().commit();
@@ -568,6 +572,10 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
                 ghostStroke({ sides: v });
               }}
               onPointerDown={() => useDesign.getState().setSidesScrubId(first.id)}
+              onMouseEnter={() => useDesign.getState().setPathDashHoverKey("sides")}
+              onFocus={() => useDesign.getState().setPathDashHoverKey("sides")}
+              onMouseLeave={() => { if (!useDesign.getState().sidesScrubId) useDesign.getState().setPathDashHoverKey(null); }}
+              onBlur={() => useDesign.getState().setPathDashHoverKey(null)}
               onPointerUp={() => {
                 useDesign.getState().setSidesScrubId(null);
                 useDesign.getState().commit();
@@ -625,6 +633,10 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
                 ghostStroke({ headScale: v });
               }}
               onPointerDown={() => useDesign.getState().setHeadScaleScrubId(first.id)}
+              onMouseEnter={() => useDesign.getState().setPathDashHoverKey("headScale")}
+              onFocus={() => useDesign.getState().setPathDashHoverKey("headScale")}
+              onMouseLeave={() => { if (!useDesign.getState().headScaleScrubId) useDesign.getState().setPathDashHoverKey(null); }}
+              onBlur={() => useDesign.getState().setPathDashHoverKey(null)}
               onPointerUp={() => {
                 useDesign.getState().setHeadScaleScrubId(null);
                 useDesign.getState().commit();
