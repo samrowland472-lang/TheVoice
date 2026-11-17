@@ -1,7 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Live phosphor edge + value chips for mixed fill, stroke, and opacity unify chips. Hovering or focusing a mixed fill, stroke, or opacity unify chip now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “#3fc6ff”, “#ff3c7a · 2”, “80%”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable selected node. Phosphor-on-ground.
+- Iteration: Live phosphor edge + value chips for mixed blend, visibility, and lock unify chips. Hovering or focusing a mixed blend, visibility, or lock unify chip (or blend legend) now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “Multiply”, “Shown”, “Locked”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable selected node. Phosphor-on-ground.
+- Prior: Live phosphor edge + value chips for mixed fill, stroke, and opacity unify chips. Hovering or focusing a mixed fill, stroke, or opacity unify chip now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “#3fc6ff”, “#ff3c7a · 2”, “80%”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable selected node. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for fill-rule and shadow-inset discrete toggles. Hovering or focusing a fill-rule unify chip (or the rule select) or a shadow-inset unify chip (or the inset checkbox) now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “Even-odd”, “Inset”, “Drop”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable node (holed paths for fill rule; all selected for inset). Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for line-cap and line-join toggles. Hovering or focusing a cap/join unify button or the cap select in the mixed path stroke inspector now draws a transient phosphor outline on selected outlines and a live chip (e.g. “Cap Round”, “Join Bevel”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable outline. Phosphor-on-ground.
 - Prior: Deepened path-point numeric previews with live phosphor value chips. While editing a path point X/Y (or handle X/Y/len) in the inspector, the canvas ghost shows a transient phosphor chip with the proposed value (e.g. “X 142”, “Len 86”) next to the proposed tip. Phosphor-on-ground.
@@ -18,4 +19,4 @@
 - Prior: Refactored outer counter-breath micro-sparks into a single parameterized trail (6 diminishing sparks + soft radial falloffs, phosphor-on-ground). Removed ~500 lines of copy-pasted near-zero-alpha sparks that no longer rendered.
 
 ## Next recommended
-- Deepen remaining path handle length previews or polish mixed blend/visibility/lock chips with the same phosphor hover ghosts.
+- Deepen remaining path handle length previews or polish mixed type axes / image-adjust chips with the same phosphor hover ghosts.

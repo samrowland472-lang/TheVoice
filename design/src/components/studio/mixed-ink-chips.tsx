@@ -150,6 +150,10 @@ export function MixedBlendChips({ nodes }: { nodes: DesignNode[] }) {
           title={`Unify blend with ${n.name || n.kind}: ${n.blend}`}
           aria-label={`Unify blend with ${n.name || n.kind}: ${n.blend}`}
           onClick={() => updateNodes(ids, { blend: n.blend as BlendMode }, true)}
+          onMouseEnter={() => useDesign.getState().setStrokeGhost({ blend: n.blend as BlendMode })}
+          onFocus={() => useDesign.getState().setStrokeGhost({ blend: n.blend as BlendMode })}
+          onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+          onBlur={() => useDesign.getState().setStrokeGhost(null)}
         >
           {n.blend}
         </button>
@@ -174,6 +178,10 @@ export function MixedBlendLegend({ nodes }: { nodes: DesignNode[] }) {
           title={`Unify blend to ${label} · ${count} layer${count === 1 ? "" : "s"}`}
           aria-label={`Set blend to ${label}`}
           onClick={() => updateNodes(ids, { blend: id }, true)}
+          onMouseEnter={() => useDesign.getState().setStrokeGhost({ blend: id })}
+          onFocus={() => useDesign.getState().setStrokeGhost({ blend: id })}
+          onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+          onBlur={() => useDesign.getState().setStrokeGhost(null)}
         >
           <span>{label}</span>
           <span className="text-phosphor/70">{count}</span>
@@ -206,6 +214,10 @@ export function MixedVisibilityChips({ nodes }: { nodes: DesignNode[] }) {
             title={`Unify visibility with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify visibility with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { visible: n.visible }, true)}
+            onMouseEnter={() => useDesign.getState().setStrokeGhost({ visible: n.visible })}
+            onFocus={() => useDesign.getState().setStrokeGhost({ visible: n.visible })}
+            onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+            onBlur={() => useDesign.getState().setStrokeGhost(null)}
           >
             {label}
           </button>
@@ -270,6 +282,10 @@ export function MixedLockChips({ nodes }: { nodes: DesignNode[] }) {
             title={`Unify lock with ${n.name || n.kind}: ${label}`}
             aria-label={`Unify lock with ${n.name || n.kind}: ${label}`}
             onClick={() => updateNodes(ids, { locked: n.locked }, true)}
+            onMouseEnter={() => useDesign.getState().setStrokeGhost({ locked: n.locked })}
+            onFocus={() => useDesign.getState().setStrokeGhost({ locked: n.locked })}
+            onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+            onBlur={() => useDesign.getState().setStrokeGhost(null)}
           >
             {label}
           </button>

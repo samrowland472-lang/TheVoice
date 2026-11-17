@@ -2588,13 +2588,28 @@ function drawStrokeCapJoinChips(
   const hasFill = ghost.fill != null;
   const hasOpacity = ghost.opacity != null;
   const hasStroke = ghost.stroke != null;
-  if (!hasCap && !hasJoin && !hasFillRule && !hasInset && !hasFill && !hasOpacity && !hasStroke) return;
+  const hasBlend = ghost.blend != null;
+  const hasVisible = ghost.visible != null;
+  const hasLocked = ghost.locked != null;
+  if (
+    !hasCap &&
+    !hasJoin &&
+    !hasFillRule &&
+    !hasInset &&
+    !hasFill &&
+    !hasOpacity &&
+    !hasStroke &&
+    !hasBlend &&
+    !hasVisible &&
+    !hasLocked
+  )
+    return;
 
   let targets = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (hasFillRule) {
     targets = targets.filter((n) => isPath(n) && (n.holes?.length ?? 0) > 0);
-  } else if (hasInset || hasFill || hasOpacity) {
-    // Inset / fill / opacity apply to selected visible nodes
+  } else if (hasInset || hasFill || hasOpacity || hasBlend || hasVisible || hasLocked) {
+    // Inset / fill / opacity / blend / visibility / lock apply to selected visible nodes
   } else {
     // Cap / join / stroke: outline nodes
     targets = targets.filter((n) => ["path", "rect", "ellipse", "line", "polygon", "star", "arrow"].includes(n.kind));
@@ -2632,6 +2647,20 @@ function drawStrokeCapJoinChips(
       label = ghost.fillRule === "evenodd" ? "Even-odd" : "Nonzero";
     } else if (hasInset) {
       label = ghost.shadowInset ? "Inset" : "Drop";
+    } else if (hasBlend) {
+      const mode = ghost.blend!;
+      const pretty =
+        mode === "source-over"
+          ? "Normal"
+          : mode
+              .split("-")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ");
+      label = pretty;
+    } else if (hasVisible) {
+      label = ghost.visible ? "Shown" : "Hidden";
+    } else if (hasLocked) {
+      label = ghost.locked ? "Locked" : "Open";
     } else if (hasCap && hasJoin) {
       label = `Cap ${title(ghost.lineCap!)} · Join ${title(ghost.lineJoin!)}`;
     } else if (hasCap) {

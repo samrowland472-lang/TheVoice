@@ -26,6 +26,9 @@ export type StrokeGhost = {
   shadowOy?: number;
   shadowSpread?: number;
   shadowInset?: boolean;
+  blend?: import("./types").BlendMode;
+  visible?: boolean;
+  locked?: boolean;
 } | null;
 
 function hasShadowPatch(ghost: NonNullable<StrokeGhost>) {
@@ -107,9 +110,11 @@ export function drawStrokeGhosts(
 ) {
   if (!ghost) return;
   const shadowing = hasShadowPatch(ghost);
+  const meta =
+    ghost.blend != null || ghost.visible != null || ghost.locked != null;
   for (const raw of nodes) {
     if (!raw.visible) continue;
-    if (!shadowing && !isOutlineNode(raw)) continue;
+    if (!shadowing && !meta && !isOutlineNode(raw)) continue;
     if (ghost.headScale != null && raw.kind !== "arrow") continue;
     if (ghost.sides != null && raw.kind !== "polygon" && raw.kind !== "star") continue;
     if (ghost.radius != null && raw.kind !== "rect") continue;
@@ -121,6 +126,18 @@ export function drawStrokeGhosts(
       ctx.translate(c.x, c.y);
       ctx.rotate(degToRad(n.rotation));
       ctx.translate(-c.x, -c.y);
+    }
+    if (meta && !shadowing && !isOutlineNode(n)) {
+      // Soft phosphor plate for non-outline meta previews (blend / vis / lock)
+      ctx.fillStyle = "rgba(63,198,255,0.18)";
+      ctx.globalAlpha = 0.9;
+      ctx.fillRect(n.x, n.y, n.w, n.h);
+      ctx.strokeStyle = "rgba(63,198,255,0.75)";
+      ctx.lineWidth = Math.max(1.2 / zoom, 1);
+      ctx.setLineDash([6 / zoom, 4 / zoom]);
+      ctx.strokeRect(n.x, n.y, n.w, n.h);
+      ctx.restore();
+      continue;
     }
     if (shadowing) {
       if (!traceShadowBody(ctx, n)) {
