@@ -344,6 +344,10 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             }}
             onPointerCancel={() => useDesign.getState().setStrokeDashOffsetScrubId(null)}
             onLostPointerCapture={() => useDesign.getState().setStrokeDashOffsetScrubId(null)}
+            onMouseEnter={() => useDesign.getState().setPathDashHoverKey("offset")}
+            onFocus={() => useDesign.getState().setPathDashHoverKey("offset")}
+            onMouseLeave={() => { if (!useDesign.getState().strokeDashOffsetScrubId) useDesign.getState().setPathDashHoverKey(null); }}
+            onBlur={() => useDesign.getState().setPathDashHoverKey(null)}
           />
           <NumField
             className="field w-16 font-mono"

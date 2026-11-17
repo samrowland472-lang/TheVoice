@@ -82,6 +82,10 @@ export function FillEditor({ node }: { node: DesignNode }) {
               }}
               onPointerCancel={() => useDesign.getState().setGradientAngleScrubId(null)}
               onLostPointerCapture={() => useDesign.getState().setGradientAngleScrubId(null)}
+              onMouseEnter={() => useDesign.getState().setGradientHoverKey("angle")}
+              onFocus={() => useDesign.getState().setGradientHoverKey("angle")}
+              onMouseLeave={() => { if (!useDesign.getState().gradientAngleScrubId) useDesign.getState().setGradientHoverKey(null); }}
+              onBlur={() => useDesign.getState().setGradientHoverKey(null)}
             />
           </Field>
           {fill.stops.map((stop, i) => (
