@@ -229,7 +229,17 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
         </Field>
         <Field label={mixedInset ? "Inset · mixed" : shadowInset(ghost) ? "Inset" : "Drop"}>
           <label className="flex items-center gap-2 text-[11px] text-ink-dim">
-            <input type="checkbox" className={cn(mixedInset && "ghost")} checked={shadowInset(ghost)} aria-label={mixedInset ? "selection shadow inset mixed ghost" : "selection shadow inset"} onChange={(e) => { const inset = e.target.checked; mapShadows((sh) => stampShadowInset(sh, inset), true); }} />
+            <input
+              type="checkbox"
+              className={cn(mixedInset && "ghost")}
+              checked={shadowInset(ghost)}
+              aria-label={mixedInset ? "selection shadow inset mixed ghost" : "selection shadow inset"}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ shadowInset: shadowInset(ghost) })}
+              onFocus={() => useDesign.getState().setStrokeGhost({ shadowInset: shadowInset(ghost) })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+              onChange={(e) => { const inset = e.target.checked; mapShadows((sh) => stampShadowInset(sh, inset), true); }}
+            />
             Inset
           </label>
           {mixedInset && <MixedShadowInsetChips nodes={nodes} />}

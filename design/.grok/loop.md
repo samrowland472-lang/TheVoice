@@ -1,7 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Live phosphor edge + value chips for line-cap and line-join toggles. Hovering or focusing a cap/join unify button or the cap select in the mixed path stroke inspector now draws a transient phosphor outline on selected outlines and a live chip (e.g. “Cap Round”, “Join Bevel”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable outline. Phosphor-on-ground.
+- Iteration: Live phosphor edge + value chips for fill-rule and shadow-inset discrete toggles. Hovering or focusing a fill-rule unify chip (or the rule select) or a shadow-inset unify chip (or the inset checkbox) now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “Even-odd”, “Inset”, “Drop”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable node (holed paths for fill rule; all selected for inset). Phosphor-on-ground.
+- Prior: Live phosphor edge + value chips for line-cap and line-join toggles. Hovering or focusing a cap/join unify button or the cap select in the mixed path stroke inspector now draws a transient phosphor outline on selected outlines and a live chip (e.g. “Cap Round”, “Join Bevel”) on the canvas. Clears on mouse leave / blur. Multi-selection draws every applicable outline. Phosphor-on-ground.
 - Prior: Deepened path-point numeric previews with live phosphor value chips. While editing a path point X/Y (or handle X/Y/len) in the inspector, the canvas ghost shows a transient phosphor chip with the proposed value (e.g. “X 142”, “Len 86”) next to the proposed tip. Phosphor-on-ground.
 - Prior: Polished mixed type colour unify chips with phosphor-on-ground color dots (matching fill/stroke chips). Mixed type selections now show a live color swatch + label on each unify button so the source fill is visible at a glance. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for sides (polygon/star) and arrow head scale ranges in mixed path stroke inspector. Selected outline nodes show a transient phosphor outline and a live label (e.g. “Sides 6”, “Head 120%”) while the range is dragged; clears on pointer up. Multi-selection draws every applicable selected outline. Phosphor-on-ground.
@@ -16,4 +17,4 @@
 - Prior: Refactored outer counter-breath micro-sparks into a single parameterized trail (6 diminishing sparks + soft radial falloffs, phosphor-on-ground). Removed ~500 lines of copy-pasted near-zero-alpha sparks that no longer rendered.
 
 ## Next recommended
-- Polish mixed ink chips further, deepen path handle length previews, or extend live chips to remaining discrete toggles (fill rule, shadow inset).
+- Polish mixed ink chips further or deepen remaining path handle length previews.

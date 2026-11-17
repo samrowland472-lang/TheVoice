@@ -81,6 +81,8 @@ export function MixedFillRule({ nodes }: { nodes: DesignNode[] }) {
           className="field"
           value={mixed ? "" : value}
           aria-label={mixed ? "path fill rule mixed" : "path fill rule"}
+          onFocus={() => ghostFillRule(mixed ? null : value)}
+          onBlur={() => ghostFillRule(null)}
           onChange={(e) => {
             const rule = e.target.value as "evenodd" | "nonzero";
             if (rule !== "evenodd" && rule !== "nonzero") return;

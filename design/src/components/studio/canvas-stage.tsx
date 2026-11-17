@@ -2582,9 +2582,21 @@ function drawStrokeCapJoinChips(
 ) {
   const hasCap = ghost.lineCap != null;
   const hasJoin = ghost.lineJoin != null;
-  if (!hasCap && !hasJoin) return;
-  const targets = nodes.filter((n) => selection.includes(n.id) && n.visible && ["path", "rect", "ellipse", "line", "polygon", "star", "arrow"].includes(n.kind));
+  const hasFillRule = ghost.fillRule != null;
+  const hasInset = ghost.shadowInset != null;
+  if (!hasCap && !hasJoin && !hasFillRule && !hasInset) return;
+
+  let targets = nodes.filter((n) => selection.includes(n.id) && n.visible);
+  if (hasFillRule) {
+    targets = targets.filter((n) => isPath(n) && (n.holes?.length ?? 0) > 0);
+  } else if (hasInset) {
+    // Shadow inset applies to any shadowed-capable node; keep all selected visible
+  } else {
+    // Cap / join: outline nodes
+    targets = targets.filter((n) => ["path", "rect", "ellipse", "line", "polygon", "star", "arrow"].includes(n.kind));
+  }
   if (!targets.length) return;
+
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.translate(vp.x, vp.y);
@@ -2603,15 +2615,21 @@ function drawStrokeCapJoinChips(
     ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
     ctx.lineWidth = 1.5 / zoom;
     ctx.strokeRect(x, y, w, h);
+
     const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
     let label = "";
-    if (hasCap && hasJoin) {
+    if (hasFillRule) {
+      label = ghost.fillRule === "evenodd" ? "Even-odd" : "Nonzero";
+    } else if (hasInset) {
+      label = ghost.shadowInset ? "Inset" : "Drop";
+    } else if (hasCap && hasJoin) {
       label = `Cap ${title(ghost.lineCap!)} · Join ${title(ghost.lineJoin!)}`;
     } else if (hasCap) {
       label = `Cap ${title(ghost.lineCap!)}`;
     } else {
       label = `Join ${title(ghost.lineJoin!)}`;
     }
+
     ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
