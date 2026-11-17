@@ -99,6 +99,10 @@ export function ImageAdjust({ node }: { node: DesignNode }) {
               patchImage(img.id, { crop: normalizeCrop({ ...crop, [key]: Number(e.target.value) }) })
             }
             onPointerUp={() => useDesign.getState().commit()}
+            onMouseEnter={() => useDesign.getState().setCropHoverKey(key)}
+            onFocus={() => useDesign.getState().setCropHoverKey(key)}
+            onMouseLeave={() => useDesign.getState().setCropHoverKey(null)}
+            onBlur={() => useDesign.getState().setCropHoverKey(null)}
             onKeyDown={(e) => {
               const next = nextFromRangeKey(e, value, 0.01, 1, 0.01);
               if (next != null) patchImage(img.id, { crop: normalizeCrop({ ...crop, [key]: next }) }, true);
