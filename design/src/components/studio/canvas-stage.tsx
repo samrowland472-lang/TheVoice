@@ -575,13 +575,10 @@ export default function CanvasStage() {
           if (distHover === "h") {
             // Horizontal distribute guide with arrowheads + equal-spacing ticks
             const y = cy;
-            ctx.beginPath();
-            ctx.moveTo(boxX - 8 / zoom, y);
-            ctx.lineTo(boxX + boxW + 8 / zoom, y);
-            ctx.stroke();
+            drawPhosphorGuideLine(ctx, boxX - 8 / zoom, y, boxX + boxW + 8 / zoom, y, zoom);
             // Arrowheads
             const al = 7 / zoom;
-            ctx.setLineDash([]);
+            ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
             ctx.beginPath();
             ctx.moveTo(boxX - 8 / zoom, y);
             ctx.lineTo(boxX - 8 / zoom + al, y - 2.5 / zoom);
@@ -607,12 +604,9 @@ export default function CanvasStage() {
             }
           } else if (distHover === "v") {
             const x = cx;
-            ctx.beginPath();
-            ctx.moveTo(x, boxY - 8 / zoom);
-            ctx.lineTo(x, boxY + boxH + 8 / zoom);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            drawPhosphorGuideLine(ctx, x, boxY - 8 / zoom, x, boxY + boxH + 8 / zoom, zoom);
             const al = 7 / zoom;
+            ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
             ctx.beginPath();
             ctx.moveTo(x, boxY - 8 / zoom);
             ctx.lineTo(x - 2.5 / zoom, boxY - 8 / zoom + al);
@@ -639,17 +633,11 @@ export default function CanvasStage() {
           }
           if (flipHover === "x" || flipHover === "xy") {
             // Vertical mirror line for X flip
-            ctx.beginPath();
-            ctx.moveTo(cx, boxY - 10 / zoom);
-            ctx.lineTo(cx, boxY + boxH + 10 / zoom);
-            ctx.stroke();
+            drawPhosphorGuideLine(ctx, cx, boxY - 10 / zoom, cx, boxY + boxH + 10 / zoom, zoom);
           }
           if (flipHover === "y" || flipHover === "xy") {
             // Horizontal mirror line for Y flip
-            ctx.beginPath();
-            ctx.moveTo(boxX - 10 / zoom, cy);
-            ctx.lineTo(boxX + boxW + 10 / zoom, cy);
-            ctx.stroke();
+            drawPhosphorGuideLine(ctx, boxX - 10 / zoom, cy, boxX + boxW + 10 / zoom, cy, zoom);
           }
           if (flipHover === "xy") {
             // Small cross at center
@@ -663,18 +651,13 @@ export default function CanvasStage() {
             ctx.stroke();
           }
           if (alignHover) {
-            // Ghost edge guide for align
-            ctx.setLineDash([5 / zoom, 4 / zoom]);
-            const tick = 6 / zoom;
+            // Ghost edge guide for align — soft outer dual phosphor rings matching tip / chip ghosts
             const al = 7 / zoom;
             if (alignHover === "left") {
               const x = boxX;
-              ctx.beginPath();
-              ctx.moveTo(x, boxY - 10 / zoom);
-              ctx.lineTo(x, boxY + boxH + 10 / zoom);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, x, boxY - 10 / zoom, x, boxY + boxH + 10 / zoom, zoom);
               // inward arrows (pointing right)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(x, cy);
               ctx.lineTo(x + al, cy - 2.5 / zoom);
@@ -683,12 +666,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "right") {
               const x = boxX + boxW;
-              ctx.beginPath();
-              ctx.moveTo(x, boxY - 10 / zoom);
-              ctx.lineTo(x, boxY + boxH + 10 / zoom);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, x, boxY - 10 / zoom, x, boxY + boxH + 10 / zoom, zoom);
               // inward arrows (pointing left)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(x, cy);
               ctx.lineTo(x - al, cy - 2.5 / zoom);
@@ -697,12 +677,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "center") {
               const x = boxX + boxW / 2;
-              ctx.beginPath();
-              ctx.moveTo(x, boxY - 10 / zoom);
-              ctx.lineTo(x, boxY + boxH + 10 / zoom);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, x, boxY - 10 / zoom, x, boxY + boxH + 10 / zoom, zoom);
               // inward arrows from both sides
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(x - al, cy);
               ctx.lineTo(x, cy - 2.5 / zoom);
@@ -717,12 +694,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "top") {
               const y = boxY;
-              ctx.beginPath();
-              ctx.moveTo(boxX - 10 / zoom, y);
-              ctx.lineTo(boxX + boxW + 10 / zoom, y);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, boxX - 10 / zoom, y, boxX + boxW + 10 / zoom, y, zoom);
               // inward arrows (pointing down)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(cx, y);
               ctx.lineTo(cx - 2.5 / zoom, y + al);
@@ -731,12 +705,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "bottom") {
               const y = boxY + boxH;
-              ctx.beginPath();
-              ctx.moveTo(boxX - 10 / zoom, y);
-              ctx.lineTo(boxX + boxW + 10 / zoom, y);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, boxX - 10 / zoom, y, boxX + boxW + 10 / zoom, y, zoom);
               // inward arrows (pointing up)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(cx, y);
               ctx.lineTo(cx - 2.5 / zoom, y - al);
@@ -745,12 +716,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "middle") {
               const y = boxY + boxH / 2;
-              ctx.beginPath();
-              ctx.moveTo(boxX - 10 / zoom, y);
-              ctx.lineTo(boxX + boxW + 10 / zoom, y);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, boxX - 10 / zoom, y, boxX + boxW + 10 / zoom, y, zoom);
               // inward arrows from both sides
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(cx, y - al);
               ctx.lineTo(cx - 2.5 / zoom, y);
@@ -1064,13 +1032,10 @@ export default function CanvasStage() {
           if (distHover === "h") {
             // Horizontal distribute guide with arrowheads + equal-spacing ticks
             const y = cy;
-            ctx.beginPath();
-            ctx.moveTo(boxX - 8 / zoom, y);
-            ctx.lineTo(boxX + boxW + 8 / zoom, y);
-            ctx.stroke();
+            drawPhosphorGuideLine(ctx, boxX - 8 / zoom, y, boxX + boxW + 8 / zoom, y, zoom);
             // Arrowheads
             const al = 7 / zoom;
-            ctx.setLineDash([]);
+            ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
             ctx.beginPath();
             ctx.moveTo(boxX - 8 / zoom, y);
             ctx.lineTo(boxX - 8 / zoom + al, y - 2.5 / zoom);
@@ -1096,12 +1061,9 @@ export default function CanvasStage() {
             }
           } else if (distHover === "v") {
             const x = cx;
-            ctx.beginPath();
-            ctx.moveTo(x, boxY - 8 / zoom);
-            ctx.lineTo(x, boxY + boxH + 8 / zoom);
-            ctx.stroke();
-            ctx.setLineDash([]);
+            drawPhosphorGuideLine(ctx, x, boxY - 8 / zoom, x, boxY + boxH + 8 / zoom, zoom);
             const al = 7 / zoom;
+            ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
             ctx.beginPath();
             ctx.moveTo(x, boxY - 8 / zoom);
             ctx.lineTo(x - 2.5 / zoom, boxY - 8 / zoom + al);
@@ -1149,18 +1111,13 @@ export default function CanvasStage() {
             ctx.stroke();
           }
           if (alignHover) {
-            // Ghost edge guide for align
-            ctx.setLineDash([5 / zoom, 4 / zoom]);
-            const tick = 6 / zoom;
+            // Ghost edge guide for align — soft outer dual phosphor rings matching tip / chip ghosts
             const al = 7 / zoom;
             if (alignHover === "left") {
               const x = boxX;
-              ctx.beginPath();
-              ctx.moveTo(x, boxY - 10 / zoom);
-              ctx.lineTo(x, boxY + boxH + 10 / zoom);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, x, boxY - 10 / zoom, x, boxY + boxH + 10 / zoom, zoom);
               // inward arrows (pointing right)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(x, cy);
               ctx.lineTo(x + al, cy - 2.5 / zoom);
@@ -1169,12 +1126,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "right") {
               const x = boxX + boxW;
-              ctx.beginPath();
-              ctx.moveTo(x, boxY - 10 / zoom);
-              ctx.lineTo(x, boxY + boxH + 10 / zoom);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, x, boxY - 10 / zoom, x, boxY + boxH + 10 / zoom, zoom);
               // inward arrows (pointing left)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(x, cy);
               ctx.lineTo(x - al, cy - 2.5 / zoom);
@@ -1183,12 +1137,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "center") {
               const x = boxX + boxW / 2;
-              ctx.beginPath();
-              ctx.moveTo(x, boxY - 10 / zoom);
-              ctx.lineTo(x, boxY + boxH + 10 / zoom);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, x, boxY - 10 / zoom, x, boxY + boxH + 10 / zoom, zoom);
               // inward arrows from both sides
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(x - al, cy);
               ctx.lineTo(x, cy - 2.5 / zoom);
@@ -1203,12 +1154,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "top") {
               const y = boxY;
-              ctx.beginPath();
-              ctx.moveTo(boxX - 10 / zoom, y);
-              ctx.lineTo(boxX + boxW + 10 / zoom, y);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, boxX - 10 / zoom, y, boxX + boxW + 10 / zoom, y, zoom);
               // inward arrows (pointing down)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(cx, y);
               ctx.lineTo(cx - 2.5 / zoom, y + al);
@@ -1217,12 +1165,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "bottom") {
               const y = boxY + boxH;
-              ctx.beginPath();
-              ctx.moveTo(boxX - 10 / zoom, y);
-              ctx.lineTo(boxX + boxW + 10 / zoom, y);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, boxX - 10 / zoom, y, boxX + boxW + 10 / zoom, y, zoom);
               // inward arrows (pointing up)
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(cx, y);
               ctx.lineTo(cx - 2.5 / zoom, y - al);
@@ -1231,12 +1176,9 @@ export default function CanvasStage() {
               ctx.fill();
             } else if (alignHover === "middle") {
               const y = boxY + boxH / 2;
-              ctx.beginPath();
-              ctx.moveTo(boxX - 10 / zoom, y);
-              ctx.lineTo(boxX + boxW + 10 / zoom, y);
-              ctx.stroke();
-              ctx.setLineDash([]);
+              drawPhosphorGuideLine(ctx, boxX - 10 / zoom, y, boxX + boxW + 10 / zoom, y, zoom);
               // inward arrows from both sides
+              ctx.fillStyle = "rgba(63, 198, 255, 0.12)";
               ctx.beginPath();
               ctx.moveTo(cx, y - al);
               ctx.lineTo(cx - 2.5 / zoom, y);
@@ -2730,6 +2672,44 @@ function drawPhosphorValueChip(
   ctx.stroke();
   ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
   ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+}
+
+/** Dual phosphor outer glow + main stroke for measurement guide lines (align, distribute, etc.). */
+function drawPhosphorGuideLine(
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  zoom: number,
+) {
+  // dual outer phosphor rings
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.setLineDash([5 / zoom, 4 / zoom]);
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
+  ctx.restore();
+
+  // main precise guide
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+  ctx.lineWidth = 1.6 / zoom;
+  ctx.setLineDash([5 / zoom, 4 / zoom]);
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function drawStrokeCapJoinChips(
