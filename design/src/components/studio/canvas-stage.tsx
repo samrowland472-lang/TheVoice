@@ -2531,6 +2531,20 @@ function drawPathPointNumericPreview(
   const pad = 6 / zoom;
   let cx = tx + pad;
   let cy = ty - pad;
+  // soft outer glow on the chip plate — dual phosphor rings matching tip ghosts
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx - 1.6 / zoom, cy - chipH - 1.6 / zoom, chipW + 3.2 / zoom, chipH + 3.2 / zoom, 4.2 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx - 3.2 / zoom, cy - chipH - 3.2 / zoom, chipW + 6.4 / zoom, chipH + 6.4 / zoom, 5.5 / zoom);
+  ctx.stroke();
+  ctx.restore();
   // keep chip roughly on-canvas relative to node
   ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
   ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
@@ -2650,6 +2664,20 @@ function drawPathPointHandleNumericPreview(
   const pad = 5 / zoom;
   const cx = tx + pad;
   const cy = ty - pad;
+  // soft outer glow on the chip plate — dual phosphor rings matching point and tip ghosts
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx - 1.6 / zoom, cy - chipH - 1.6 / zoom, chipW + 3.2 / zoom, chipH + 3.2 / zoom, 4.2 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx - 3.2 / zoom, cy - chipH - 3.2 / zoom, chipW + 6.4 / zoom, chipH + 6.4 / zoom, 5.5 / zoom);
+  ctx.stroke();
+  ctx.restore();
   ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
   ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
   ctx.lineWidth = 1 / zoom;
