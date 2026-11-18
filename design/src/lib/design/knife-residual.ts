@@ -144,9 +144,41 @@ export function drawKnifeResidual(
   ctx.scale(vp.zoom, vp.zoom);
   ctx.globalAlpha = alpha;
 
-  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-  ctx.lineWidth = 1.35 / vp.zoom;
-  ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  const zoom = vp.zoom;
+  // dual soft outer phosphor rings on residual piece outlines
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.setLineDash([4 / zoom, 3 / zoom]);
+  for (const piece of residual.pieces) {
+    if (piece.pts.length < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(piece.pts[0]!.x, piece.pts[0]!.y);
+    for (let i = 1; i < piece.pts.length; i++) {
+      const pt = piece.pts[i]!;
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = alpha * 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  for (const piece of residual.pieces) {
+    if (piece.pts.length < 2) continue;
+    ctx.beginPath();
+    ctx.moveTo(piece.pts[0]!.x, piece.pts[0]!.y);
+    for (let i = 1; i < piece.pts.length; i++) {
+      const pt = piece.pts[i]!;
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // main precise residual outlines
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.75)";
+  ctx.lineWidth = 1.4 / zoom;
+  ctx.setLineDash([3 / zoom, 3 / zoom]);
   for (const piece of residual.pieces) {
     if (piece.pts.length < 2) continue;
     ctx.beginPath();

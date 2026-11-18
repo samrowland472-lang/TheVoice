@@ -2298,14 +2298,33 @@ function drawMarquee(
   const w = Math.abs(mq.x2 - mq.x1);
   const h = Math.abs(mq.y2 - mq.y1);
   if (w < 1 && h < 1) return;
+  const zoom = vp.zoom;
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.translate(vp.x, vp.y);
-  ctx.scale(vp.zoom, vp.zoom);
-  ctx.strokeStyle = "#3fc6ff";
-  ctx.fillStyle = "rgba(63,198,255,0.08)";
-  ctx.lineWidth = 1 / vp.zoom;
-  ctx.setLineDash([4 / vp.zoom, 3 / vp.zoom]);
+  ctx.scale(zoom, zoom);
+
+  // dual soft outer phosphor rings matching measurement ghosts and value chips
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.setLineDash([5 / zoom, 4 / zoom]);
+  ctx.beginPath();
+  ctx.rect(x - 1.6 / zoom, y - 1.6 / zoom, w + 3.2 / zoom, h + 3.2 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  ctx.beginPath();
+  ctx.rect(x - 3.2 / zoom, y - 3.2 / zoom, w + 6.4 / zoom, h + 6.4 / zoom);
+  ctx.stroke();
+  ctx.restore();
+
+  // main precise marquee
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.fillStyle = "rgba(63,198,255,0.06)";
+  ctx.lineWidth = 1.4 / zoom;
+  ctx.setLineDash([4 / zoom, 3 / zoom]);
   ctx.beginPath();
   ctx.rect(x, y, w, h);
   ctx.fill();

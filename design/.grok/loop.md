@@ -1,9 +1,9 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Deepened axis ticks with dual soft outer phosphor rings (matching measurement ghosts and value chips) and switched ruler chrome to official phosphor cyan. Major ticks glow stronger; minors subtler. Phosphor-on-ground.
+- Iteration: Polished remaining transient overlays with dual soft outer phosphor rings — marquee selection rectangle, knife residual piece outlines (and their fade), and smart-guide snap indicators. Matching measurement ghosts and value chips. Phosphor-on-ground.
+- Prior: Deepened axis ticks with dual soft outer phosphor rings (matching measurement ghosts and value chips) and switched ruler chrome to official phosphor cyan. Major ticks glow stronger; minors subtler. Phosphor-on-ground.
 - Prior: Added soft outer glow (dual phosphor rings) to measurement ghosts — align, distribute, and flip preview guides — via shared drawPhosphorGuideLine helper, matching tip and value-chip ghosts. Phosphor-on-ground.
-- Prior: Added soft outer glow (dual phosphor rings) to remaining hover/scrub value chips — stroke, fill, opacity, blend, visibility, lock, cap/join, axis, filter, type, crop, radius, shadow, and live scrubs — via shared drawPhosphorValueChip helper, matching path-point and handle tip ghosts. Phosphor-on-ground.
 
 ## Next recommended
-- Polish remaining transient overlays (marquee selection, knife residual fade, snap indicators) with matching dual phosphor glow treatment.
+- Extend dual phosphor treatment to selection bounding boxes / resize handles and any remaining path-edit ghosts for full overlay consistency.

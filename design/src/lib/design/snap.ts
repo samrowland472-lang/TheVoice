@@ -277,18 +277,52 @@ export function nodesInMarquee(nodes: DesignNode[], mq: Box, mode: "intersect" |
   return nodes.filter((n) => n.visible && !n.locked && test(n, mq)).map((n) => n.id);
 }
 
-/** Phosphor smart-guides: full-span edge/center lines plus gap ticks. */
+/** Phosphor smart-guides: full-span edge/center lines plus gap ticks. Dual outer rings matching measurement ghosts. */
 export function drawSmartGuides(
   ctx: CanvasRenderingContext2D,
   guides: GuideSet,
   artboard: { width: number; height: number },
   zoom: number,
 ) {
-  const lw = 1.15 / zoom;
   ctx.save();
-  ctx.strokeStyle = "rgba(63,198,255,0.92)";
+
+  // dual soft outer phosphor rings
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.setLineDash([5 / zoom, 4 / zoom]);
+  for (const x of guides.x) {
+    ctx.beginPath();
+    ctx.moveTo(x, -12 / zoom);
+    ctx.lineTo(x, artboard.height + 12 / zoom);
+    ctx.stroke();
+  }
+  for (const y of guides.y) {
+    ctx.beginPath();
+    ctx.moveTo(-12 / zoom, y);
+    ctx.lineTo(artboard.width + 12 / zoom, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  for (const x of guides.x) {
+    ctx.beginPath();
+    ctx.moveTo(x, -12 / zoom);
+    ctx.lineTo(x, artboard.height + 12 / zoom);
+    ctx.stroke();
+  }
+  for (const y of guides.y) {
+    ctx.beginPath();
+    ctx.moveTo(-12 / zoom, y);
+    ctx.lineTo(artboard.width + 12 / zoom, y);
+    ctx.stroke();
+  }
+
+  // main precise guides
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "rgba(63,198,255,0.85)";
   ctx.fillStyle = "rgba(63,198,255,0.95)";
-  ctx.lineWidth = lw;
+  ctx.lineWidth = 1.4 / zoom;
   ctx.setLineDash([5 / zoom, 4 / zoom]);
   for (const x of guides.x) {
     ctx.beginPath();
