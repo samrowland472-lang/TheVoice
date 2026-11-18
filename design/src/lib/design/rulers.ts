@@ -185,7 +185,7 @@ export function drawRulers(
   ctx.fillStyle = "#121614";
   ctx.fillRect(0, 0, w, RULER);
   ctx.fillRect(0, 0, RULER, h);
-  ctx.strokeStyle = "rgba(196,255,77,0.22)";
+  ctx.strokeStyle = "rgba(63,198,255,0.28)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, RULER - 0.5);
@@ -194,8 +194,7 @@ export function drawRulers(
   ctx.lineTo(RULER - 0.5, h);
   ctx.stroke();
 
-  ctx.fillStyle = "rgba(196,255,77,0.55)";
-  ctx.strokeStyle = "rgba(196,255,77,0.35)";
+  ctx.fillStyle = "rgba(63,198,255,0.72)";
   ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace";
   ctx.textBaseline = "top";
 
@@ -203,16 +202,39 @@ export function drawRulers(
   const aw = doc.artboard.width;
   const ah = doc.artboard.height;
 
+  function drawPhosphorTick(fromX: number, fromY: number, toX: number, toY: number, major: boolean) {
+    // dual soft outer phosphor rings matching measurement ghosts
+    ctx.save();
+    ctx.globalAlpha = major ? 0.32 : 0.18;
+    ctx.strokeStyle = "rgba(63,198,255,0.9)";
+    ctx.lineWidth = major ? 2.4 : 1.6;
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
+    ctx.globalAlpha = major ? 0.14 : 0.08;
+    ctx.lineWidth = major ? 4.2 : 3.0;
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
+    ctx.restore();
+    // main precise tick
+    ctx.strokeStyle = major ? "rgba(63,198,255,0.85)" : "rgba(63,198,255,0.5)";
+    ctx.lineWidth = major ? 1.2 : 0.8;
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
+  }
+
   const x0 = Math.floor(docFromScreen(RULER, viewport.x, zoom) / step) * step;
   const x1 = docFromScreen(w, viewport.x, zoom);
   for (let v = x0; v <= x1 + step; v += step) {
     const sx = screenFromDoc(v, viewport.x, zoom);
     if (sx < RULER) continue;
     const major = Math.abs(v % (step * 5)) < 0.001 || Math.abs(v) < 0.001;
-    ctx.beginPath();
-    ctx.moveTo(sx + 0.5, major ? 4 : 10);
-    ctx.lineTo(sx + 0.5, RULER);
-    ctx.stroke();
+    drawPhosphorTick(sx + 0.5, major ? 4 : 10, sx + 0.5, RULER, major);
     if (major && v >= -0.5 && v <= aw + 0.5) {
       ctx.fillText(String(Math.round(v)), sx + 2, 3);
     }
@@ -225,10 +247,7 @@ export function drawRulers(
     const sy = screenFromDoc(v, viewport.y, zoom);
     if (sy < RULER) continue;
     const major = Math.abs(v % (step * 5)) < 0.001 || Math.abs(v) < 0.001;
-    ctx.beginPath();
-    ctx.moveTo(major ? 4 : 10, sy + 0.5);
-    ctx.lineTo(RULER, sy + 0.5);
-    ctx.stroke();
+    drawPhosphorTick(major ? 4 : 10, sy + 0.5, RULER, sy + 0.5, major);
     if (major && v >= -0.5 && v <= ah + 0.5) {
       ctx.save();
       ctx.translate(RULER - 3, sy + 2);
@@ -243,7 +262,7 @@ export function drawRulers(
 
   ctx.fillStyle = "#0c100e";
   ctx.fillRect(0, 0, RULER, RULER);
-  ctx.strokeStyle = "rgba(196,255,77,0.28)";
+  ctx.strokeStyle = "rgba(63,198,255,0.35)";
   ctx.strokeRect(0.5, 0.5, RULER - 1, RULER - 1);
   ctx.restore();
 }
