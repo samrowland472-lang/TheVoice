@@ -2691,7 +2691,46 @@ function drawPathPointHandleNumericPreview(
   ctx.restore();
 }
 
+/** Phosphor value chip with dual outer glow rings, matching path-point / handle tip ghosts. */
+function drawPhosphorValueChip(
+  ctx: CanvasRenderingContext2D,
+  label: string,
+  cx: number,
+  cy: number,
+  zoom: number,
+) {
+  ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+  const tw = ctx.measureText(label).width;
+  const chipW = tw + 8 / zoom;
+  const chipH = 14 / zoom;
 
+  // soft outer glow — dual phosphor rings matching tip ghosts
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx - 1.6 / zoom, cy - chipH - 1.6 / zoom, chipW + 3.2 / zoom, chipH + 3.2 / zoom, 4.2 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx - 3.2 / zoom, cy - chipH - 3.2 / zoom, chipW + 6.4 / zoom, chipH + 6.4 / zoom, 5.5 / zoom);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+  ctx.lineWidth = 1 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
+  ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+}
 
 function drawStrokeCapJoinChips(
   ctx: CanvasRenderingContext2D,
@@ -2794,18 +2833,9 @@ function drawStrokeCapJoinChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -2850,18 +2880,9 @@ function drawOpacityScrubEdge(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -2918,18 +2939,9 @@ function drawAxisScrubChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -2994,18 +3006,9 @@ function drawFilterHoverChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -3059,18 +3062,9 @@ function drawTypeHoverChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -3118,18 +3112,9 @@ function drawCropHoverChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -3173,18 +3158,9 @@ function drawRadiusScrubChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -3227,18 +3203,9 @@ function drawShadowBlurScrubChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
@@ -3282,18 +3249,9 @@ function drawLiveScrubChips(
     ctx.textBaseline = "bottom";
     const tw = ctx.measureText(label).width;
     const chipW = tw + 8 / zoom;
-    const chipH = 14 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    ctx.fillStyle = "rgba(6, 23, 15, 0.82)";
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.beginPath();
-    ctx.roundRect(cx, cy - chipH, chipW, chipH, 3 / zoom);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillText(label, cx + 4 / zoom, cy - 2 / zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
   }
   ctx.restore();
 }
