@@ -2544,7 +2544,8 @@ function drawPathPointHandleNumericPreview(
   ctx.strokeStyle = phosphor;
   ctx.fillStyle = "rgba(63,198,255,0.45)";
   ctx.lineWidth = 1 / vp.zoom;
-  ctx.setLineDash([3 / vp.zoom, 3 / vp.zoom]);
+  const isLen = preview.axis === "len";
+  ctx.setLineDash(isLen ? [2 / vp.zoom, 2 / vp.zoom] : [3 / vp.zoom, 3 / vp.zoom]);
   const ax = n.x + pt.x;
   const ay = n.y + pt.y;
   const tx = ax + preview.toX;
@@ -2554,12 +2555,38 @@ function drawPathPointHandleNumericPreview(
   ctx.moveTo(ax, ay);
   ctx.lineTo(tx, ty);
   ctx.stroke();
-  // ghost circle at proposed tip
-  const r = 5 / vp.zoom;
+  // ghost circle at proposed tip — tighter for length
+  const r = (isLen ? 3.5 : 5) / vp.zoom;
   ctx.beginPath();
   ctx.arc(tx, ty, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  // tighter phosphor glow for length previews
+  if (isLen) {
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.lineWidth = 3 / vp.zoom;
+    ctx.beginPath();
+    ctx.arc(tx, ty, r + 2 / vp.zoom, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.12;
+    ctx.lineWidth = 5 / vp.zoom;
+    ctx.beginPath();
+    ctx.arc(tx, ty, r + 4 / vp.zoom, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    // perpendicular length tick at tip
+    const dx = preview.toX;
+    const dy = preview.toY;
+    const hyp = Math.hypot(dx, dy) || 1;
+    const px = -dy / hyp;
+    const py = dx / hyp;
+    const tick = 4.5 / vp.zoom;
+    ctx.beginPath();
+    ctx.moveTo(tx - px * tick, ty - py * tick);
+    ctx.lineTo(tx + px * tick, ty + py * tick);
+    ctx.stroke();
+  }
   // small cross for axis emphasis (skip for length)
   if (preview.axis !== "len") {
     const cross = 3.5 / vp.zoom;
