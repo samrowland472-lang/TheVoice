@@ -52,7 +52,7 @@ export function PointRow({
       data-point={hole == null ? `path-${index}` : `hole-${hole}-${index}`}
       className={cn(
         "rounded-[8px] border px-2 py-1.5",
-        active ? "border-phosphor/60 bg-phosphor/10" : "border-border",
+        active ? "border-phosphor/60 bg-phosphor/10 dual-phosphor-ring" : "border-border",
       )}
     >
       <button type="button" tabIndex={-1} className="mb-1 flex w-full items-center justify-between text-left" aria-label={`select point ${index + 1}`} onClick={() => revealAndSelect()}>
@@ -90,8 +90,8 @@ export function PointRow({
         />
       </div>
       <div className="mt-1 flex gap-1">
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`smooth point ${index + 1}`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`corner point ${index + 1}`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor dual-phosphor-ring" : "border border-border text-ink-dim")} aria-label={`smooth point ${index + 1}`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor dual-phosphor-ring" : "border border-border text-ink-dim")} aria-label={`corner point ${index + 1}`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`delete point ${index + 1}`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>

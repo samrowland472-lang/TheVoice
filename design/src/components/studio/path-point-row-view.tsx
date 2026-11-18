@@ -351,7 +351,7 @@ export function PointRow({
   const inLen = point.in ? Math.round(Math.hypot(point.in.x, point.in.y)) : 0;
   const outLen = point.out ? Math.round(Math.hypot(point.out.x, point.out.y)) : 0;
   return (
-    <div data-point={key} className={cn("rounded-[8px] border px-2 py-1.5", active ? "border-phosphor/60 bg-phosphor/10" : "border-border")}>
+    <div data-point={key} className={cn("rounded-[8px] border px-2 py-1.5", active ? "border-phosphor/60 bg-phosphor/10 dual-phosphor-ring" : "border-border")}>
       <button type="button" className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim" onClick={(e) => {
         if (e.shiftKey) {
           togglePathPointSelection(index, hole);
@@ -481,10 +481,10 @@ export function PointRow({
         </div>
       )}
       <div className="mt-1 flex gap-1">
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles (remembered for this point)" onClick={toggleMirror}>Mirror</button>
-        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row. Click a length on the canvas or in the row to set it exactly. Arrow keys nudge the selected handle length (Shift for 10)" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth !== false ? "bg-phosphor/15 text-phosphor dual-phosphor-ring" : "border border-border text-ink-dim")} aria-label={`${label} smooth`} onClick={() => setPathPointSmooth(nodeId, index, true, hole)}>Smooth</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", point.smooth === false ? "bg-phosphor/15 text-phosphor dual-phosphor-ring" : "border border-border text-ink-dim")} aria-label={`${label} corner`} onClick={() => setPathPointSmooth(nodeId, index, false, hole)}>Corner</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", mirror ? "bg-phosphor/15 text-phosphor dual-phosphor-ring" : "border border-border text-ink-dim")} aria-label={`${label} mirror handles`} aria-pressed={mirror} title="Mirror in/out handles (remembered for this point)" onClick={toggleMirror}>Mirror</button>
+        <button type="button" tabIndex={-1} className={cn("h-7 flex-1 rounded-[8px] text-[10px]", showTangentLengths ? "bg-phosphor/15 text-phosphor dual-phosphor-ring" : "border border-border text-ink-dim")} aria-label="show tangent lengths" aria-pressed={showTangentLengths} title="Show live tangent length numbers on the canvas and in the point row. Click a length on the canvas or in the row to set it exactly. Arrow keys nudge the selected handle length (Shift for 10)" onClick={() => setShowTangentLengths(!showTangentLengths)}>Len</button>
         <button type="button" tabIndex={-1} className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" aria-label={`${label} delete`} onClick={() => deletePathPoint(nodeId, index, hole)}>Del</button>
       </div>
     </div>
