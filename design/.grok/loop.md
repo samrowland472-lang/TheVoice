@@ -1,7 +1,8 @@
 # The Voice Design — loop
 
 ## Done
-- Iteration: Tightened path handle length previews with smaller phosphor ghosts, dual glow rings, and a perpendicular length tick at the proposed tip. Dash spacing is denser for length so the ghost reads as a precise measurement. Value chip unchanged. Phosphor-on-ground.
+- Iteration: Deepened path handle X/Y numeric previews to match the tighter length ghosts. Smaller tip circle, denser dash, dual phosphor glow rings, and an axis-aligned measurement tick (vertical for X, horizontal for Y) at the proposed tip. Value chip unchanged. Phosphor-on-ground.
+- Prior: Tightened path handle length previews with smaller phosphor ghosts, dual glow rings, and a perpendicular length tick at the proposed tip. Dash spacing is denser for length so the ghost reads as a precise measurement. Value chip unchanged. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for dash-offset and gradient-angle ranges. Hovering or focusing a path dash-offset range or a gradient angle range now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “Offset 0”, “Angle 45°”) on the canvas. Clears on mouse leave / blur (stays while scrubbing). Multi-selection draws every applicable selected node. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for miter, sides, and head-scale ranges. Hovering or focusing a miter limit, polygon sides, or arrow head-scale range now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “Miter 4”, “Sides 5”, “Head 100%”) on the canvas. Clears on mouse leave / blur (stays while scrubbing). Multi-selection draws every applicable selected node. Phosphor-on-ground.
 - Prior: Live phosphor edge + value chips for type size/leading/weight/tracking and image crop ranges. Hovering or focusing a type size, leading, weight, or tracking range (single or mixed selection) or an image crop X/Y/W/H range now draws a transient phosphor outline on the applicable selected nodes and a live chip (e.g. “Size 48”, “Leading 1.20”, “Crop W 60%”) on the canvas. Clears on mouse leave / blur (stays while scrubbing via typeGhost). Multi-selection draws every applicable selected node. Phosphor-on-ground.
@@ -24,4 +25,4 @@
 - Prior: Refactored outer counter-breath micro-sparks into a single parameterized trail (6 diminishing sparks + soft radial falloffs, phosphor-on-ground). Removed ~500 lines of copy-pasted near-zero-alpha sparks that no longer rendered.
 
 ## Next recommended
-- Add hover chips for gradient stop offset ranges and remaining discrete inspectors, or deepen path handle X/Y previews to match the tighter length ghosts.
+- Add hover chips for gradient stop offset ranges and remaining discrete inspectors.

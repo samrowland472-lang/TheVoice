@@ -2545,7 +2545,9 @@ function drawPathPointHandleNumericPreview(
   ctx.fillStyle = "rgba(63,198,255,0.45)";
   ctx.lineWidth = 1 / vp.zoom;
   const isLen = preview.axis === "len";
-  ctx.setLineDash(isLen ? [2 / vp.zoom, 2 / vp.zoom] : [3 / vp.zoom, 3 / vp.zoom]);
+  const isAxis = preview.axis === "x" || preview.axis === "y";
+  // denser dash so both length and axis ghosts read as precise measurements
+  ctx.setLineDash([2 / vp.zoom, 2 / vp.zoom]);
   const ax = n.x + pt.x;
   const ay = n.y + pt.y;
   const tx = ax + preview.toX;
@@ -2555,26 +2557,26 @@ function drawPathPointHandleNumericPreview(
   ctx.moveTo(ax, ay);
   ctx.lineTo(tx, ty);
   ctx.stroke();
-  // ghost circle at proposed tip — tighter for length
-  const r = (isLen ? 3.5 : 5) / vp.zoom;
+  // ghost circle at proposed tip — tighter for both length and axis
+  const r = 3.5 / vp.zoom;
   ctx.beginPath();
   ctx.arc(tx, ty, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  // tighter phosphor glow for length previews
+  // dual phosphor glow rings for precise tip
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.lineWidth = 3 / vp.zoom;
+  ctx.beginPath();
+  ctx.arc(tx, ty, r + 2 / vp.zoom, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5 / vp.zoom;
+  ctx.beginPath();
+  ctx.arc(tx, ty, r + 4 / vp.zoom, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
   if (isLen) {
-    ctx.save();
-    ctx.globalAlpha = 0.25;
-    ctx.lineWidth = 3 / vp.zoom;
-    ctx.beginPath();
-    ctx.arc(tx, ty, r + 2 / vp.zoom, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 0.12;
-    ctx.lineWidth = 5 / vp.zoom;
-    ctx.beginPath();
-    ctx.arc(tx, ty, r + 4 / vp.zoom, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
     // perpendicular length tick at tip
     const dx = preview.toX;
     const dy = preview.toY;
@@ -2586,17 +2588,16 @@ function drawPathPointHandleNumericPreview(
     ctx.moveTo(tx - px * tick, ty - py * tick);
     ctx.lineTo(tx + px * tick, ty + py * tick);
     ctx.stroke();
-  }
-  // small cross for axis emphasis (skip for length)
-  if (preview.axis !== "len") {
-    const cross = 3.5 / vp.zoom;
+  } else if (isAxis) {
+    // axis-aligned measurement tick: vertical for X, horizontal for Y
+    const tick = 4.5 / vp.zoom;
     ctx.beginPath();
     if (preview.axis === "x") {
-      ctx.moveTo(tx - cross, ty);
-      ctx.lineTo(tx + cross, ty);
+      ctx.moveTo(tx, ty - tick);
+      ctx.lineTo(tx, ty + tick);
     } else {
-      ctx.moveTo(tx, ty - cross);
-      ctx.lineTo(tx, ty + cross);
+      ctx.moveTo(tx - tick, ty);
+      ctx.lineTo(tx + tick, ty);
     }
     ctx.stroke();
   }
