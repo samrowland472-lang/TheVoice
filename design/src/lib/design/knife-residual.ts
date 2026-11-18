@@ -212,11 +212,29 @@ export function drawKnifeResidual(
       const tw = ctx.measureText(lab.label).width;
       const bw = tw + pad * 2;
       const bh = 16 / vp.zoom;
+      const bx = lx - bw / 2;
+      const by = ly - bh / 2;
+
+      // dual soft outer phosphor rings matching residual outlines and length chips
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.28;
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+      ctx.lineWidth = 3.2 / vp.zoom;
+      ctx.beginPath();
+      ctx.roundRect(bx - 1.6 / vp.zoom, by - 1.6 / vp.zoom, bw + 3.2 / vp.zoom, bh + 3.2 / vp.zoom, 4.2 / vp.zoom);
+      ctx.stroke();
+      ctx.globalAlpha = alpha * 0.12;
+      ctx.lineWidth = 5.5 / vp.zoom;
+      ctx.beginPath();
+      ctx.roundRect(bx - 3.2 / vp.zoom, by - 3.2 / vp.zoom, bw + 6.4 / vp.zoom, bh + 6.4 / vp.zoom, 5.5 / vp.zoom);
+      ctx.stroke();
+      ctx.restore();
+
       ctx.fillStyle = "rgba(6, 23, 15, 0.9)";
       ctx.strokeStyle = "#3fc6ff";
       ctx.lineWidth = 1.25 / vp.zoom;
       ctx.beginPath();
-      ctx.roundRect(lx - bw / 2, ly - bh / 2, bw, bh, 4 / vp.zoom);
+      ctx.roundRect(bx, by, bw, bh, 4 / vp.zoom);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = "#3fc6ff";

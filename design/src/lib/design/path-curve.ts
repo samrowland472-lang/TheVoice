@@ -300,12 +300,30 @@ export function drawPathTangents(
         const tw = ctx.measureText(label).width;
         const bw = tw + pad * 2;
         const bh = 14 / zoom;
+        const bx = lx - bw / 2;
+        const by = ly - bh / 2;
+
+        // dual soft outer phosphor rings matching measurement ghosts and value chips
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+        ctx.lineWidth = 3.2 / zoom;
+        ctx.beginPath();
+        ctx.roundRect(bx - 1.6 / zoom, by - 1.6 / zoom, bw + 3.2 / zoom, bh + 3.2 / zoom, 4.2 / zoom);
+        ctx.stroke();
+        ctx.globalAlpha = 0.12;
+        ctx.lineWidth = 5.5 / zoom;
+        ctx.beginPath();
+        ctx.roundRect(bx - 3.2 / zoom, by - 3.2 / zoom, bw + 6.4 / zoom, bh + 6.4 / zoom, 5.5 / zoom);
+        ctx.stroke();
+        ctx.restore();
+
         // Phosphor plate badge for the live length
         ctx.fillStyle = hot ? "rgba(6, 23, 15, 0.95)" : "rgba(6, 23, 15, 0.88)";
         ctx.strokeStyle = hot ? "#7ee0ff" : "#3fc6ff";
         ctx.lineWidth = (hot ? 1.5 : 1) / zoom;
         ctx.beginPath();
-        ctx.roundRect(lx - bw / 2, ly - bh / 2, bw, bh, 3 / zoom);
+        ctx.roundRect(bx, by, bw, bh, 3 / zoom);
         ctx.fill();
         ctx.stroke();
         // small phosphor core
