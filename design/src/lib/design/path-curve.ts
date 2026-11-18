@@ -335,6 +335,22 @@ export function drawPathTangents(
         ctx.fillText(label, lx, ly);
         ctx.restore();
       }
+      if (hot) {
+        // dual soft outer phosphor rings matching measurement ghosts, value chips, and residual outlines
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+        ctx.lineWidth = 2.4 / zoom;
+        ctx.beginPath();
+        ctx.arc(hx, hy, diamond + 2.4 / zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 0.12;
+        ctx.lineWidth = 4 / zoom;
+        ctx.beginPath();
+        ctx.arc(hx, hy, diamond + 4.8 / zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
       ctx.beginPath();
       ctx.moveTo(hx, hy - diamond);
       ctx.lineTo(hx + diamond, hy);
@@ -343,14 +359,30 @@ export function drawPathTangents(
       ctx.closePath();
       ctx.fillStyle = hot ? "#7ee0ff" : "#0a0d0c";
       ctx.fill();
-      ctx.strokeStyle = "#3fc6ff";
-      ctx.lineWidth = 1.2 / zoom;
+      ctx.strokeStyle = hot ? "#7ee0ff" : "#3fc6ff";
+      ctx.lineWidth = (hot ? 1.6 : 1.2) / zoom;
       ctx.stroke();
     }
     const aHot = active?.index === i && active.arm === "anchor";
+    if (aHot) {
+      // dual soft outer phosphor rings on selected/hovered anchors
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+      ctx.lineWidth = 2.4 / zoom;
+      ctx.beginPath();
+      ctx.arc(ax, ay, anchor * 0.72 + 2.4 / zoom, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 0.12;
+      ctx.lineWidth = 4 / zoom;
+      ctx.beginPath();
+      ctx.arc(ax, ay, anchor * 0.72 + 4.8 / zoom, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.fillStyle = aHot ? "#3fc6ff" : "#0a0d0c";
-    ctx.strokeStyle = "#3fc6ff";
-    ctx.lineWidth = 1.2 / zoom;
+    ctx.strokeStyle = aHot ? "#7ee0ff" : "#3fc6ff";
+    ctx.lineWidth = (aHot ? 1.6 : 1.2) / zoom;
     ctx.fillRect(ax - anchor / 2, ay - anchor / 2, anchor, anchor);
     ctx.strokeRect(ax - anchor / 2, ay - anchor / 2, anchor, anchor);
   }
