@@ -2731,6 +2731,75 @@ function drawPhosphorGuideLine(
   ctx.setLineDash([]);
 }
 
+/** Dual soft outer phosphor rings + main stroke for selection bounding boxes and similar outlines. */
+function drawPhosphorSelectionOutline(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  zoom: number,
+  dashed = false,
+) {
+  // dual outer phosphor rings
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 3.2 / zoom;
+  if (dashed) ctx.setLineDash([5 / zoom, 4 / zoom]);
+  ctx.beginPath();
+  ctx.rect(x - 1.6 / zoom, y - 1.6 / zoom, w + 3.2 / zoom, h + 3.2 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 5.5 / zoom;
+  ctx.beginPath();
+  ctx.rect(x - 3.2 / zoom, y - 3.2 / zoom, w + 6.4 / zoom, h + 6.4 / zoom);
+  ctx.stroke();
+  ctx.restore();
+
+  // main precise outline
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+  ctx.lineWidth = 1.4 / zoom;
+  if (dashed) ctx.setLineDash([5 / zoom, 4 / zoom]);
+  else ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+/** Dual soft outer phosphor rings around a resize handle square. */
+function drawPhosphorHandle(
+  ctx: CanvasRenderingContext2D,
+  hx: number,
+  hy: number,
+  size: number,
+  zoom: number,
+) {
+  const half = size / 2;
+  // dual outer rings
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 2.4 / zoom;
+  ctx.beginPath();
+  ctx.rect(hx - half - 1.4 / zoom, hy - half - 1.4 / zoom, size + 2.8 / zoom, size + 2.8 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 4 / zoom;
+  ctx.beginPath();
+  ctx.rect(hx - half - 2.8 / zoom, hy - half - 2.8 / zoom, size + 5.6 / zoom, size + 5.6 / zoom);
+  ctx.stroke();
+  ctx.restore();
+
+  // solid handle
+  ctx.fillStyle = "#06170f";
+  ctx.strokeStyle = "#3fc6ff";
+  ctx.lineWidth = 1.2 / zoom;
+  ctx.fillRect(hx - half, hy - half, size, size);
+  ctx.strokeRect(hx - half, hy - half, size, size);
+}
+
 function drawStrokeCapJoinChips(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
@@ -3532,11 +3601,11 @@ function drawSelection(
         }
         if (Number.isFinite(minX) && pathPointSelection.length > 1) {
           const pad = 6 / vp.zoom;
-          ctx.strokeStyle = "#3fc6ff";
-          ctx.lineWidth = 1 / vp.zoom;
-          ctx.setLineDash([5 / vp.zoom, 4 / vp.zoom]);
-          ctx.strokeRect(minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2);
-          ctx.setLineDash([]);
+          const boxX = minX - pad;
+          const boxY = minY - pad;
+          const boxW = maxX - minX + pad * 2;
+          const boxH = maxY - minY + pad * 2;
+          drawPhosphorSelectionOutline(ctx, boxX, boxY, boxW, boxH, vp.zoom, true);
 
           // Flip feedback: reverse-arrow indicators on individual flipped axes
           if (scaleFlip && (scaleFlip.x || scaleFlip.y)) {
@@ -3591,10 +3660,6 @@ function drawSelection(
           // Scale handles (corners + mid-edges)
           const size = 8 / vp.zoom;
           const half = size / 2;
-          const boxX = minX - pad;
-          const boxY = minY - pad;
-          const boxW = maxX - minX + pad * 2;
-          const boxH = maxY - minY + pad * 2;
           const handles: [number, number][] = [
             [boxX, boxY],
             [boxX + boxW / 2, boxY],
@@ -3605,11 +3670,8 @@ function drawSelection(
             [boxX, boxY + boxH],
             [boxX, boxY + boxH / 2],
           ];
-          ctx.fillStyle = "#06170f";
-          ctx.strokeStyle = "#3fc6ff";
           for (const [hx, hy] of handles) {
-            ctx.fillRect(hx - half, hy - half, size, size);
-            ctx.strokeRect(hx - half, hy - half, size, size);
+            drawPhosphorHandle(ctx, hx, hy, size, vp.zoom);
             // Cross the handle if both axes flipped
             if (scaleFlip && scaleFlip.x && scaleFlip.y) {
               ctx.strokeStyle = "#ff6b6b";
@@ -3627,14 +3689,48 @@ function drawSelection(
           const lcx = (minX + maxX) / 2;
           const top = minY - pad;
           const ry = top - 28 / vp.zoom;
+          // dual soft outer phosphor on the rotation stem
+          ctx.save();
+          ctx.globalAlpha = 0.28;
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+          ctx.lineWidth = 3.2 / vp.zoom;
           ctx.beginPath();
           ctx.moveTo(lcx, top);
           ctx.lineTo(lcx, ry);
           ctx.stroke();
+          ctx.globalAlpha = 0.12;
+          ctx.lineWidth = 5.5 / vp.zoom;
+          ctx.beginPath();
+          ctx.moveTo(lcx, top);
+          ctx.lineTo(lcx, ry);
+          ctx.stroke();
+          ctx.restore();
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+          ctx.lineWidth = 1.4 / vp.zoom;
+          ctx.beginPath();
+          ctx.moveTo(lcx, top);
+          ctx.lineTo(lcx, ry);
+          ctx.stroke();
+          // rotation circle with dual outer rings
+          ctx.save();
+          ctx.globalAlpha = 0.28;
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+          ctx.lineWidth = 3.2 / vp.zoom;
+          ctx.beginPath();
+          ctx.arc(lcx, ry, 7 / vp.zoom + 1.6 / vp.zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 0.12;
+          ctx.lineWidth = 5.5 / vp.zoom;
+          ctx.beginPath();
+          ctx.arc(lcx, ry, 7 / vp.zoom + 3.2 / vp.zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
           ctx.beginPath();
           ctx.arc(lcx, ry, 7 / vp.zoom, 0, Math.PI * 2);
           ctx.fillStyle = "#06170f";
           ctx.fill();
+          ctx.strokeStyle = "#3fc6ff";
+          ctx.lineWidth = 1.2 / vp.zoom;
           ctx.stroke();
 
           // Live angle badge while rotating the path-point group
@@ -3792,10 +3888,7 @@ function drawSelection(
     ctx.translate(c.x, c.y);
     ctx.rotate(degToRad(n.rotation));
     ctx.translate(-c.x, -c.y);
-    ctx.strokeStyle = phosphor;
-    ctx.lineWidth = 1 / vp.zoom;
-    ctx.setLineDash([]);
-    ctx.strokeRect(n.x, n.y, n.w, n.h);
+    drawPhosphorSelectionOutline(ctx, n.x, n.y, n.w, n.h, vp.zoom);
     const size = 8 / vp.zoom;
     const half = size / 2;
     const pts = [
@@ -3808,21 +3901,53 @@ function drawSelection(
       [n.x, n.y + n.h],
       [n.x, n.y + n.h / 2],
     ];
-    ctx.fillStyle = "#06170f";
-    ctx.strokeStyle = phosphor;
     for (const [px, py] of pts) {
-      ctx.fillRect(px! - half, py! - half, size, size);
-      ctx.strokeRect(px! - half, py! - half, size, size);
+      drawPhosphorHandle(ctx, px!, py!, size, vp.zoom);
     }
     const ry = n.y - 28 / vp.zoom;
     const rx = n.x + n.w / 2;
+    // dual soft outer phosphor on the rotation stem
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 3.2 / vp.zoom;
     ctx.beginPath();
     ctx.moveTo(rx, n.y);
     ctx.lineTo(rx, ry);
     ctx.stroke();
+    ctx.globalAlpha = 0.12;
+    ctx.lineWidth = 5.5 / vp.zoom;
+    ctx.beginPath();
+    ctx.moveTo(rx, n.y);
+    ctx.lineTo(rx, ry);
+    ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+    ctx.lineWidth = 1.4 / vp.zoom;
+    ctx.beginPath();
+    ctx.moveTo(rx, n.y);
+    ctx.lineTo(rx, ry);
+    ctx.stroke();
+    // rotation circle with dual outer rings
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 3.2 / vp.zoom;
+    ctx.beginPath();
+    ctx.arc(rx, ry, 7 / vp.zoom + 1.6 / vp.zoom, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.12;
+    ctx.lineWidth = 5.5 / vp.zoom;
+    ctx.beginPath();
+    ctx.arc(rx, ry, 7 / vp.zoom + 3.2 / vp.zoom, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
     ctx.beginPath();
     ctx.arc(rx, ry, 7 / vp.zoom, 0, Math.PI * 2);
+    ctx.fillStyle = "#06170f";
     ctx.fill();
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.2 / vp.zoom;
     ctx.stroke();
     ctx.restore();
   }
