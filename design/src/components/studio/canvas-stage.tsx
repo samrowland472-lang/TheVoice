@@ -3783,12 +3783,26 @@ function drawSelection(
           ctx.lineWidth = 1 / vp.zoom;
           for (const a of aligns) {
             const r = a.edge === alignHover ? ar * 1.6 : ar;
+            // dual soft outer phosphor rings
+            ctx.save();
+            ctx.globalAlpha = 0.28;
+            ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+            ctx.lineWidth = 2.4 / vp.zoom;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, r + 1.6 / vp.zoom, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 0.12;
+            ctx.lineWidth = 4 / vp.zoom;
+            ctx.beginPath();
+            ctx.arc(a.x, a.y, r + 3.2 / vp.zoom, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
             ctx.beginPath();
             ctx.arc(a.x, a.y, r, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             if (a.edge === alignHover) {
-              // extra phosphor ring
+              // extra phosphor ring on hover
               ctx.strokeStyle = "rgba(63,198,255,0.9)";
               ctx.lineWidth = 1.5 / vp.zoom;
               ctx.beginPath();
@@ -3830,6 +3844,31 @@ function drawSelection(
           ctx.strokeStyle = "#06170f";
           ctx.lineWidth = 1 / vp.zoom;
           for (const f of flips) {
+            // dual soft outer phosphor rings around diamond
+            ctx.save();
+            ctx.globalAlpha = 0.28;
+            ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+            ctx.lineWidth = 2.4 / vp.zoom;
+            ctx.beginPath();
+            const outer = fs + 1.6 / vp.zoom;
+            ctx.moveTo(f.x, f.y - outer);
+            ctx.lineTo(f.x + outer, f.y);
+            ctx.lineTo(f.x, f.y + outer);
+            ctx.lineTo(f.x - outer, f.y);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.globalAlpha = 0.12;
+            ctx.lineWidth = 4 / vp.zoom;
+            ctx.beginPath();
+            const outer2 = fs + 3.2 / vp.zoom;
+            ctx.moveTo(f.x, f.y - outer2);
+            ctx.lineTo(f.x + outer2, f.y);
+            ctx.lineTo(f.x, f.y + outer2);
+            ctx.lineTo(f.x - outer2, f.y);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+
             // diamond
             ctx.beginPath();
             ctx.moveTo(f.x, f.y - fs);
@@ -3971,25 +4010,8 @@ function drawSelection(
         { x: ux + uw / 2, y: uy + uh + distOff, axis: "v" },
       ];
       const hs = 9 / vp.zoom;
-      ctx.fillStyle = "#3fc6ff";
-      ctx.strokeStyle = "#06170f";
-      ctx.lineWidth = 1 / vp.zoom;
       for (const dh of distHandles) {
-        ctx.fillRect(dh.x - hs / 2, dh.y - hs / 2, hs, hs);
-        ctx.strokeRect(dh.x - hs / 2, dh.y - hs / 2, hs, hs);
-        // triple-dot motif
-        ctx.fillStyle = "#06170f";
-        const ds = 1.6 / vp.zoom;
-        if (dh.axis === "h") {
-          ctx.fillRect(dh.x - ds * 2.2, dh.y - ds / 2, ds, ds);
-          ctx.fillRect(dh.x - ds / 2, dh.y - ds / 2, ds, ds);
-          ctx.fillRect(dh.x + ds * 1.2, dh.y - ds / 2, ds, ds);
-        } else {
-          ctx.fillRect(dh.x - ds / 2, dh.y - ds * 2.2, ds, ds);
-          ctx.fillRect(dh.x - ds / 2, dh.y - ds / 2, ds, ds);
-          ctx.fillRect(dh.x - ds / 2, dh.y + ds * 1.2, ds, ds);
-        }
-        ctx.fillStyle = "#3fc6ff";
+        drawDistHandle(ctx, dh.x, dh.y, dh.axis, vp.zoom);
       }
     }
   }

@@ -99,7 +99,7 @@ export function drawGapBadges(
   }
 }
 
-/** Draw a phosphor square handle with three equal-gap dots oriented to axis. */
+/** Draw a phosphor square handle with three equal-gap dots oriented to axis. Dual soft outer phosphor rings. */
 export function drawDistHandle(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -111,6 +111,22 @@ export function drawDistHandle(
   const half = ds / 2;
   const dotR = 0.9 / zoom;
   const span = 4.2 / zoom;
+
+  // dual soft outer phosphor rings
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 2.4 / zoom;
+  ctx.beginPath();
+  ctx.rect(x - half - 1.4 / zoom, y - half - 1.4 / zoom, ds + 2.8 / zoom, ds + 2.8 / zoom);
+  ctx.stroke();
+  ctx.globalAlpha = 0.12;
+  ctx.lineWidth = 4 / zoom;
+  ctx.beginPath();
+  ctx.rect(x - half - 2.8 / zoom, y - half - 2.8 / zoom, ds + 5.6 / zoom, ds + 5.6 / zoom);
+  ctx.stroke();
+  ctx.restore();
+
   ctx.fillStyle = "#3fc6ff";
   ctx.strokeStyle = "#06170f";
   ctx.lineWidth = 1 / zoom;
