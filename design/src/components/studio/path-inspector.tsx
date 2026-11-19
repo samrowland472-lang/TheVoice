@@ -205,14 +205,17 @@ export function PathInspector({ node }: { node: PathNode }) {
         <Field label="Points">
           <ul className="max-h-56 space-y-1 overflow-auto scrollbar-thin">
             {node.points.map((pt, i) => {
-              const selected = outerActive === i;
+              const inMulti = pointSel.some((s) => s.hole == null && s.index === i);
+              const selected = outerActive === i || inMulti;
               return (
                 <li
                   key={i}
                   data-point={`path-${i}`}
                   className={cn(
-                    "rounded-[8px] border px-2 py-1.5",
-                    selected ? "border-phosphor/60 bg-phosphor/10" : "border-border",
+                    "rounded-[8px] border px-2 py-1.5 transition-[box-shadow,border-color,background-color]",
+                    selected
+                      ? "border-phosphor/70 bg-phosphor/12 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_32%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_16%,transparent)]"
+                      : "border-border",
                   )}
                 >
                   <button
@@ -221,8 +224,8 @@ export function PathInspector({ node }: { node: PathNode }) {
                     onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                     onClick={() => setPathEditHit({ index: i, arm: "anchor" })}
                   >
-                    <span className="font-mono text-ink">{String(i + 1).padStart(2, "0")}</span>
-                    <span>{pt.smooth !== false ? "smooth" : "corner"}</span>
+                    <span className={cn("font-mono", selected ? "text-phosphor" : "text-ink")}>{String(i + 1).padStart(2, "0")}</span>
+                    <span className={selected ? "text-phosphor/80" : ""}>{pt.smooth !== false ? "smooth" : "corner"}</span>
                   </button>
                   <div className="grid grid-cols-2 gap-1">
                     <NumField
@@ -246,8 +249,10 @@ export function PathInspector({ node }: { node: PathNode }) {
                     <button
                       type="button"
                       className={cn(
-                        "h-7 rounded-[8px] text-[10px]",
-                        pt.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                        "h-7 rounded-[8px] text-[10px] transition-[box-shadow,background-color]",
+                        pt.smooth !== false
+                          ? "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]"
+                          : "border border-border text-ink-dim",
                       )}
                       onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
                       onClick={() => toggleSmooth(i)}
@@ -336,19 +341,22 @@ export function PathInspector({ node }: { node: PathNode }) {
                     </div>
                     <ul className="space-y-1">
                       {ring.map((pt, i) => {
-                        const selected = holeHit === i;
+                        const inMulti = pointSel.some((s) => s.hole === h && s.index === i);
+                        const selected = holeHit === i || inMulti;
                         return (
                           <li
                             key={i}
                             data-point={`hole-${h}-${i}`}
                             className={cn(
-                              "rounded-[6px] border px-1.5 py-1",
-                              selected ? "border-phosphor/60 bg-phosphor/10" : "border-border/70",
+                              "rounded-[6px] border px-1.5 py-1 transition-[box-shadow,border-color,background-color]",
+                              selected
+                                ? "border-phosphor/70 bg-phosphor/12 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_32%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_16%,transparent)]"
+                                : "border-border/70",
                             )}
                           >
                             <div className="mb-0.5 flex items-center justify-between text-[9px] text-ink-dim">
-                              <span className="font-mono">{String(i + 1).padStart(2, "0")}</span>
-                              <span>{pt.smooth !== false ? "smooth" : "corner"}</span>
+                              <span className={cn("font-mono", selected ? "text-phosphor" : "")}>{String(i + 1).padStart(2, "0")}</span>
+                              <span className={selected ? "text-phosphor/80" : ""}>{pt.smooth !== false ? "smooth" : "corner"}</span>
                             </div>
                             <div className="grid grid-cols-2 gap-1">
                               <NumField
@@ -372,8 +380,10 @@ export function PathInspector({ node }: { node: PathNode }) {
                               <button
                                 type="button"
                                 className={cn(
-                                  "h-6 rounded-[6px] text-[9px]",
-                                  pt.smooth !== false ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                                  "h-6 rounded-[6px] text-[9px] transition-[box-shadow,background-color]",
+                                  pt.smooth !== false
+                                    ? "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]"
+                                    : "border border-border text-ink-dim",
                                 )}
                                 onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
                                 onClick={() => toggleHoleSmooth(h, i)}
