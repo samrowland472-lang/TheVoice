@@ -1,4 +1,5 @@
 import { BRUSHES } from "@/lib/design/brushes";
+import { rememberColor } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { BrushPreview } from "./brush-preview";
@@ -105,7 +106,7 @@ export function PaintDock() {
           className="h-7 w-8 cursor-pointer rounded-[6px] border border-border bg-transparent"
           value={liveColor}
           aria-label="Brush colour"
-          onChange={(e) => setBrush({ color: e.target.value })}
+          onChange={(e) => { rememberColor(e.target.value); setBrush({ color: e.target.value }); }}
         />
       </label>
       <label className="flex items-center gap-2 text-[11px] text-ink-dim">

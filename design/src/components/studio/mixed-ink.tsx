@@ -18,7 +18,7 @@ import { cloneFill, solidOf } from "@/lib/design/ink";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode, Shadow } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
-import { Field, Swatches } from "./inspector-parts";
+import { Field, RecentSwatches, Swatches } from "./inspector-parts";
 import { NumField } from "./num-field";
 import {
   MixedBlendChips,
@@ -122,6 +122,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }}
         />
         <Swatches colors={brandColors} onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
+        <RecentSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
         <button
           type="button"
           className="mt-1 text-[10px] text-phosphor"
@@ -136,7 +137,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           value={first.stroke === "transparent" ? "#3fc6ff" : first.stroke}
           mixed={mixedStrokeColor}
           ariaLabel="selection stroke"
-          onCommit={(hex) => updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true)}
+          onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true); }}
         />
         <div className="mt-1.5 flex items-center gap-2">
           <span className="text-[10px] text-ink-dim">{mixedStrokeWidth ? "Width · mixed" : "Width"}</span>
@@ -156,6 +157,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
         >
           Apply key stroke to all
         </button>
+        <RecentSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true); }} />
         {mixedStroke && <MixedStrokeChips nodes={nodes} />}
       </Field>
       <Field label={mixedOpacity ? "Opacity · mixed" : `Opacity ${Math.round(first.opacity * 100)}%`}>
@@ -209,7 +211,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           ))}
         </div>
         <Field label={mixedColor ? "Colour · mixed" : "Colour"}>
-          <input type="color" className={cn("h-8 w-full rounded-[8px] border border-border", mixedColor && "ghost")} value={ghost.color} title="Unify shadow ox" aria-label={mixedColor ? "selection shadow colour mixed ghost" : "selection shadow colour"} onChange={(e) => { const color = e.target.value; mapShadows((sh) => stampShadowColor(sh, color)); }} onPointerUp={() => useDesign.getState().commit()} />
+          <input type="color" className={cn("h-8 w-full rounded-[8px] border border-border", mixedColor && "ghost")} value={ghost.color} title="Unify shadow ox" aria-label={mixedColor ? "selection shadow colour mixed ghost" : "selection shadow colour"} onChange={(e) => { const color = e.target.value; rememberColor(color); mapShadows((sh) => stampShadowColor(sh, color)); }} onPointerUp={() => useDesign.getState().commit()} />
           {mixedColor && <MixedShadowColorChips nodes={nodes} />}
         </Field>
         <Field label={mixedBlur ? "Blur · mixed" : `Blur ${ghost.blur}`}>

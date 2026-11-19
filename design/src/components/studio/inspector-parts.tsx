@@ -1,4 +1,5 @@
-import { loadRecentColors, rememberColor } from "@/lib/design/persist";
+import { clearRecentColors, loadRecentColors, rememberColor } from "@/lib/design/persist";
+import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { nextFromRangeKey } from "./range-keys";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
@@ -134,18 +135,34 @@ export function FillEditor({ node }: { node: DesignNode }) {
   );
 }
 
-function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
-  const colors = loadRecentColors();
+export function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
+  const [colors, setColors] = useState<string[]>(() => loadRecentColors());
+  useEffect(() => {
+    const sync = () => setColors(loadRecentColors());
+    sync();
+    window.addEventListener("voice-design:recent-colors", sync);
+    return () => window.removeEventListener("voice-design:recent-colors", sync);
+  }, []);
   if (!colors.length) return null;
   return (
     <div className="mt-2">
-      <div className="mb-1 text-[10px] tracking-[0.12em] text-ink-faint uppercase">Recent</div>
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-[10px] tracking-[0.12em] text-ink-faint uppercase">Recent</span>
+        <button
+          type="button"
+          className="text-[9px] text-ink-faint hover:text-phosphor"
+          onClick={() => clearRecentColors()}
+          aria-label="Clear recent colours"
+        >
+          Clear
+        </button>
+      </div>
       <div className="flex flex-wrap gap-1.5">
         {colors.map((hex) => (
           <button
             key={hex}
             type="button"
-            className="size-6 rounded-full border border-border"
+            className="size-6 rounded-full border border-border ring-offset-1 hover:ring-1 hover:ring-phosphor/60"
             style={{ background: hex }}
             onClick={() => onPick(hex)}
             aria-label={hex}
@@ -232,7 +249,7 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
               className={cn("h-8 w-full rounded-[8px] border border-border", mixedColor && "opacity-70")}
               value={ghost.color}
               aria-label={mixedColor ? "layer shadow colour mixed" : "layer shadow colour"}
-              onChange={(e) => stampAll((cur) => stampShadowColor(cur, e.target.value))}
+              onChange={(e) => { rememberColor(e.target.value); stampAll((cur) => stampShadowColor(cur, e.target.value)); }}
               onPointerUp={commit}
             />
           </Field>

@@ -2,7 +2,8 @@ import { cloneFill, fillChipLabel, fillKey, solidOf } from "@/lib/design/ink";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode, TextNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
-import { Field, Swatches } from "./inspector-parts";
+import { rememberColor } from "@/lib/design/persist";
+import { Field, RecentSwatches, Swatches } from "./inspector-parts";
 
 export function MixedTypeColour({
   nodes,
@@ -20,6 +21,7 @@ export function MixedTypeColour({
   const hex = solidOf(key.fill, ink);
   const mixed = new Set(nodes.map((n) => fillKey(n.fill))).size > 1;
   function writeFill(fill: DesignNode["fill"]) {
+    if (typeof fill === "string" && fill !== "transparent") rememberColor(fill);
     updateNodes(ids, { fill: cloneFill(fill) } as Partial<DesignNode>, true);
   }
   return (
@@ -61,6 +63,7 @@ export function MixedTypeColour({
           />
         </div>
         <Swatches colors={brandColors} onPick={(picked) => writeFill(picked)} />
+        <RecentSwatches onPick={(hex) => writeFill(hex)} />
         <button
           type="button"
           className="mt-1 text-[10px] text-phosphor"

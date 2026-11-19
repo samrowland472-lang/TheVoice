@@ -236,6 +236,11 @@ export function loadRecentColors(): string[] {
   }
 }
 
+function notifyRecentColors() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("voice-design:recent-colors"));
+}
+
 export function rememberColor(hex: string) {
   if (typeof localStorage === "undefined" || !hex || hex === "transparent") return;
   const normalized = hex.toLowerCase();
@@ -243,9 +248,11 @@ export function rememberColor(hex: string) {
   const current = loadRecentColors().filter((c) => c.toLowerCase() !== normalized);
   const next = [normalized, ...current].slice(0, MAX_RECENT);
   localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next));
+  notifyRecentColors();
 }
 
 export function clearRecentColors() {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(RECENT_COLORS_KEY);
+  notifyRecentColors();
 }
