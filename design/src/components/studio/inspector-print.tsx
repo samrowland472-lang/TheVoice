@@ -67,6 +67,7 @@ export function InspectorPrint() {
   const distributeSelectedGuides = useDesign((s) => s.distributeSelectedGuides);
   const lockSelectedGuides = useDesign((s) => s.lockSelectedGuides);
   const unlockSelectedGuides = useDesign((s) => s.unlockSelectedGuides);
+  const setSelectedGuidesDash = useDesign((s) => s.setSelectedGuidesDash);
   const patchGuide = useDesign((s) => s.patchGuide);
   const probe = useDesign((s) => s.guideProbe);
 
@@ -237,6 +238,66 @@ export function InspectorPrint() {
             onClick={() => unlockSelectedGuides?.()}
           >
             Unlock
+          </button>
+          <button
+            type="button"
+            disabled={!guides.length}
+            className={cn(
+              "h-7 rounded-[8px] border border-border px-1.5 font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !guides.length && "opacity-40",
+            )}
+            title="Set dash on selected guides (or all if none selected)"
+            onClick={() => {
+              setSelectedGuidesDash?.("dash");
+              setStudioStatus("Guide dash set to dash");
+            }}
+          >
+            Dash
+          </button>
+          <button
+            type="button"
+            disabled={!guides.length}
+            className={cn(
+              "h-7 rounded-[8px] border border-border px-1.5 font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !guides.length && "opacity-40",
+            )}
+            title="Set tight dash on selected guides (or all if none selected)"
+            onClick={() => {
+              setSelectedGuidesDash?.("tight");
+              setStudioStatus("Guide dash set to tight");
+            }}
+          >
+            Tight
+          </button>
+          <button
+            type="button"
+            disabled={!guides.length}
+            className={cn(
+              "h-7 rounded-[8px] border border-border px-1.5 font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !guides.length && "opacity-40",
+            )}
+            title="Set solid on selected guides (or all if none selected)"
+            onClick={() => {
+              setSelectedGuidesDash?.("solid");
+              setStudioStatus("Guide dash set to solid");
+            }}
+          >
+            Solid
+          </button>
+          <button
+            type="button"
+            disabled={!guides.length}
+            className={cn(
+              "h-7 rounded-[8px] border border-border px-1.5 font-mono text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !guides.length && "opacity-40",
+            )}
+            title="Clear dash override on selected guides (or all if none selected)"
+            onClick={() => {
+              setSelectedGuidesDash?.(undefined);
+              setStudioStatus("Guide dash cleared");
+            }}
+          >
+            None
           </button>
         </div>
         {probe ? (

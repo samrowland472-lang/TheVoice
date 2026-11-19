@@ -12,6 +12,7 @@
 - Iteration 7: Guide labels editable in the inspector list. Optional short name (max 32) on each guide, committed for undo, status feedback. Labels draw near the guide on the canvas when set.
 - Iteration 8: Per-guide color override. Color swatch in the guides list cycles the palette (or clears). Canvas and labels draw with the override via resolveGuideStroke. Status + undo commit.
 - Iteration 9: Per-guide dash override. Dash chip in the guides list cycles solid/dash/tight (or clears on repeat). Drawing uses the override via resolveGuideStroke. Status + undo commit. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- Iteration 10: Bulk dash apply for guides. Dash / Tight / Solid / None buttons in the guides toolbar set the dash override on the selection (or all guides when none are selected). History commit + status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -28,8 +29,10 @@
 
 - 2026-11-19T20:15:00Z — Per-guide dash override in the guides list. Dash button cycles GUIDE_DASHES; canvas uses dashArray. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
+- 2026-11-19T21:08:00Z — Bulk dash apply to selected (or all) guides. Dash/Tight/Solid/None buttons. Commit + status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+
 ## Next recommended
 - Recent colours also in the single-node stroke inspector if one exists.
 - Or: layer filter also matches group contents / path points.
 - Or: style paste also includes stroke dash / line cap when present.
-- Or: bulk dash apply to selected guides.
+- Or: bulk color apply to selected guides.
