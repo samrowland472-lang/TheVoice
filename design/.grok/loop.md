@@ -5,15 +5,17 @@
 - Iteration 2: Polished recent colours — live-updating chips (event-driven), clear button, hover ring, and recent swatches now appear for multi-select fill/stroke and type colour. Stroke, shadow, and brush colours are also remembered.
 - Iteration 3: Layer search focus + keyboard jump. Cmd/Ctrl+F focuses the layers filter. While filtering, ↑/↓ cycle matching layers (select + scroll into view), Enter commits the current match, Esc clears.
 - Iteration 4: Copy / paste style. Copies fill, stroke, stroke width, opacity, and blend from the first selected layer and pastes onto the current selection. Available as commands and via Cmd/Ctrl+Alt+C / V.
+- Iteration 5: Style paste now also includes shadow (color, blur, offset, spread, inset). Mixed detection accounts for shadow differences.
 
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T03:05:45Z — Recent colours polish. Reactive chips + clear + broader coverage (stroke/shadow/brush/type). Auth OFF, DB OFF, localStorage only.
 - 2026-11-19T04:06:00Z — Layer search focus + keyboard jump to matching layers. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T05:15:00Z — Copy/paste style (fill + stroke + opacity + blend). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- 2026-11-19T15:05:00Z — Style copy/paste now carries shadow. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Next recommended
 - Artboard guides lock/unlock bulk action.
 - Or: recent colours also in the single-node stroke inspector if one exists.
 - Or: layer filter also matches group contents / path points.
-- Or: style paste also includes shadow when present.
+- Or: style paste also includes stroke dash / line cap when present.
