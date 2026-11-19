@@ -1,3 +1,4 @@
+import { resolveGuideStroke, hexToRgba, dashArray } from "./guide-style";
 import { guideDisplayName } from "./guide-select";
 import type { DesignDocument, Guide, Viewport } from "./types";
 import { formatGuideProbe, guidePairs, type GuideProbe } from "./snap-guide";
@@ -57,6 +58,7 @@ export function drawDocGuides(
   live?: GuideDrag | null,
   probe?: GuideProbe | null,
   selectedIds?: string[],
+  looks?: import("./guide-style").GuideLooks,
 ) {
   const guides = [...(doc.guides ?? [])];
   if (live) {
@@ -68,16 +70,16 @@ export function drawDocGuides(
     }
   }
   ctx.save();
-  ctx.strokeStyle = "rgba(63,198,255,0.72)";
   ctx.lineWidth = 1;
-  ctx.setLineDash([5, 4]);
   const selected = new Set(selectedIds ?? []);
   for (const g of guides) {
     if (g.hidden) continue;
     const isSel = selected.has(g.id);
     const locked = !!g.locked;
-    ctx.strokeStyle = isSel ? "rgba(196,255,77,0.85)" : locked ? "rgba(255,194,77,0.7)" : "rgba(63,198,255,0.72)";
-    ctx.setLineDash(locked ? [2, 6] : [5, 4]);
+    const stroke = resolveGuideStroke(g, looks);
+    const base = hexToRgba(stroke.color, isSel ? 0.9 : locked ? 0.65 : 0.72);
+    ctx.strokeStyle = base;
+    ctx.setLineDash(dashArray(stroke.dash as any));
     ctx.beginPath();
     if (g.axis === "x") {
       const x = screenFromDoc(g.pos, viewport.x, viewport.zoom);
@@ -94,7 +96,7 @@ export function drawDocGuides(
       ctx.save();
       ctx.setLineDash([]);
       ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
-      ctx.fillStyle = isSel ? "rgba(196,255,77,0.95)" : locked ? "rgba(255,194,77,0.9)" : "rgba(63,198,255,0.9)";
+      ctx.fillStyle = hexToRgba(stroke.color, isSel ? 0.95 : 0.9);
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       if (g.axis === "x") {

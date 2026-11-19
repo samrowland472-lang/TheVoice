@@ -8,6 +8,7 @@ import {
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
 import { canDistributeGuides, sanitizeGuideLabel } from "@/lib/design/guide-select";
+import { GUIDE_COLORS, cycleGuideColor, resolveGuideStroke } from "@/lib/design/guide-style";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import "@/lib/design/guide-live";
@@ -296,6 +297,25 @@ export function InspectorPrint() {
                     s.commit?.();
                     patchGuide?.(g.id, { label: next || undefined });
                     setStudioStatus(next ? `Guide labeled “${next}”` : "Guide label cleared");
+                  }}
+                />
+                <button
+                  type="button"
+                  className="h-7 w-7 shrink-0 rounded-[6px] border border-border"
+                  style={{ background: resolveGuideStroke(g).color }}
+                  aria-label="cycle guide color"
+                  title="Cycle color override (click same to clear)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const looks = useDesign.getState().guideLooks;
+                    const current = resolveGuideStroke(g, looks).color;
+                    const idx = GUIDE_COLORS.findIndex((c) => c.hex.toLowerCase() === current.toLowerCase());
+                    const next = GUIDE_COLORS[(idx + 1) % GUIDE_COLORS.length]!;
+                    const override = cycleGuideColor(g.color, next.hex);
+                    const s = useDesign.getState();
+                    s.commit?.();
+                    patchGuide?.(g.id, { color: override });
+                    setStudioStatus(override ? `Guide color ${next.id}` : "Guide color cleared");
                   }}
                 />
                 <button

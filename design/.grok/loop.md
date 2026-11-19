@@ -10,6 +10,7 @@
 - Iteration 6b: Polished guides lock — Lock/Unlock now apply to all guides when none are selected; history commit + status strip feedback; patchGuide commits for undo.
 
 - Iteration 7: Guide labels editable in the inspector list. Optional short name (max 32) on each guide, committed for undo, status feedback. Labels draw near the guide on the canvas when set.
+- Iteration 8: Per-guide color override. Color swatch in the guides list cycles the palette (or clears). Canvas and labels draw with the override via resolveGuideStroke. Status + undo commit.
 
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -28,3 +29,12 @@
 - Or: style paste also includes stroke dash / line cap when present.
 
 - Or: guide color override per guide in the list.
+
+## Iteration
+- 2026-11-19T19:10:00Z — Per-guide color override in the guides list. Color swatch cycles palette; drawing uses resolveGuideStroke. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+
+## Next recommended
+- Recent colours also in the single-node stroke inspector if one exists.
+- Or: layer filter also matches group contents / path points.
+- Or: style paste also includes stroke dash / line cap when present.
+- Or: per-guide dash override in the list (cycle solid/dash/tight).
