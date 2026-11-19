@@ -27,6 +27,14 @@ import { applyIsolate } from "./layers-isolate";
 import type { BrandKit, DesignDocument, DesignNode, PathNode, Tool, Viewport } from "./types";
 import type { StrokeGhost } from "./stroke-ghost";
 
+export type StyleClipboard = {
+  fill: string | { type: "linear"; angle: number; stops: { offset: number; color: string }[] };
+  stroke: string;
+  strokeWidth: number;
+  opacity: number;
+  blend: string;
+};
+
 const MAX_HISTORY = 60;
 
 export type ViewIntent = { type: "fit" } | { type: "zoom"; zoom: number } | { type: "fit-sel" } | null;
@@ -80,6 +88,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
   dirty: false,
   clipboard: [],
   opacityClipboard: null as number | null,
+  styleClipboard: null as StyleClipboard | null,
   opacityScrubId: null as string | null,
   axisScrubTag: null as FontAxisTag | null,
   axisHoverTag: null as FontAxisTag | null,
@@ -704,6 +713,38 @@ export const useDesign = create<any>((set: any, get: any) => ({
     if (!selection.length || opacityClipboard == null) return;
     get().updateNodes(selection, { opacity: opacityClipboard }, true);
     setStudioStatus(`Pasted opacity ${Math.round(opacityClipboard * 100)}%`);
+  },
+  copyStyle: () => {
+    const { doc, selection } = get();
+    if (!doc || !selection.length) return;
+    const nodes = doc.nodes.filter((n) => selection.includes(n.id));
+    if (!nodes.length) return;
+    const src = nodes[0];
+    const style: StyleClipboard = {
+      fill: structuredClone(src.fill),
+      stroke: src.stroke,
+      strokeWidth: src.strokeWidth,
+      opacity: src.opacity,
+      blend: src.blend,
+    };
+    const mixed = nodes.length > 1 && nodes.some((n) =>
+      n.fill !== src.fill || n.stroke !== src.stroke || n.strokeWidth !== src.strokeWidth ||
+      n.opacity !== src.opacity || n.blend !== src.blend
+    );
+    set({ styleClipboard: style });
+    setStudioStatus(`Copied style${mixed ? " (mixed — first layer)" : ""}`);
+  },
+  pasteStyle: () => {
+    const { selection, styleClipboard } = get();
+    if (!selection.length || !styleClipboard) return;
+    get().updateNodes(selection, {
+      fill: structuredClone(styleClipboard.fill),
+      stroke: styleClipboard.stroke,
+      strokeWidth: styleClipboard.strokeWidth,
+      opacity: styleClipboard.opacity,
+      blend: styleClipboard.blend,
+    }, true);
+    setStudioStatus("Pasted style");
   },
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   togglePrintMarks: () => set({ printMarks: !get().printMarks }),

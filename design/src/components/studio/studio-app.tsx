@@ -81,6 +81,8 @@ export function StudioApp({ id }: { id: string }) {
       { id: "paste", label: "Paste", group: "Edit", hint: "Cmd+V", run: () => s().pasteClipboard() },
       { id: "copy-opacity", label: "Copy opacity", group: "Edit", hint: "Cmd+Shift+C", run: () => s().copyOpacity() },
       { id: "paste-opacity", label: "Paste opacity", group: "Edit", hint: "Cmd+Shift+V", run: () => s().pasteOpacity() },
+      { id: "copy-style", label: "Copy style", group: "Edit", hint: "Cmd+Alt+C", run: () => s().copyStyle() },
+      { id: "paste-style", label: "Paste style", group: "Edit", hint: "Cmd+Alt+V", run: () => s().pasteStyle() },
       { id: "fit", label: "Fit artboard", group: "View", hint: "0", run: () => s().requestFit() },
       { id: "present", label: "Present artboard", group: "View", hint: "Shift+P", run: () => s().togglePresent() },
       {

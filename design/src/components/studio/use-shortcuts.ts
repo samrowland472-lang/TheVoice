@@ -171,7 +171,8 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       }
       if (meta && e.key.toLowerCase() === "c") {
         e.preventDefault();
-        if (e.shiftKey) s.copyOpacity();
+        if (e.altKey) s.copyStyle();
+        else if (e.shiftKey) s.copyOpacity();
         else s.copySelected();
         return;
       }
@@ -182,7 +183,8 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       }
       if (meta && e.key.toLowerCase() === "v") {
         e.preventDefault();
-        if (e.shiftKey) s.pasteOpacity();
+        if (e.altKey) s.pasteStyle();
+        else if (e.shiftKey) s.pasteOpacity();
         else s.pasteClipboard();
         return;
       }
