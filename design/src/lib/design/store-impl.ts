@@ -1,5 +1,1 @@
-import type { TypeGhost } from "./type-ghost";
-import type { FontAxisTag } from "./fonts";
-import { create } from "zustand";
-// RESTORED - see local workspace for full file
-export const useDesign = create(() => ({}));
+REDIRECT_FROM_BLOB_f14cc974591e928a7a7c81cd5df2ac6454b804de
