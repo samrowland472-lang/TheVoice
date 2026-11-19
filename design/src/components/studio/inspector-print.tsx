@@ -68,6 +68,7 @@ export function InspectorPrint() {
   const lockSelectedGuides = useDesign((s) => s.lockSelectedGuides);
   const unlockSelectedGuides = useDesign((s) => s.unlockSelectedGuides);
   const setSelectedGuidesDash = useDesign((s) => s.setSelectedGuidesDash);
+  const setSelectedGuidesColor = useDesign((s) => s.setSelectedGuidesColor);
   const patchGuide = useDesign((s) => s.patchGuide);
   const probe = useDesign((s) => s.guideProbe);
 
@@ -298,6 +299,41 @@ export function InspectorPrint() {
             }}
           >
             None
+          </button>
+        </div>
+        <div className="mb-2 flex flex-wrap gap-1">
+          {GUIDE_COLORS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              disabled={!guides.length}
+              className={cn(
+                "h-6 w-6 shrink-0 rounded-[4px] border border-border hover:border-phosphor",
+                !guides.length && "opacity-40",
+              )}
+              style={{ background: c.hex }}
+              title={`Set ${c.id} on selected guides (or all if none selected)`}
+              aria-label={`set guide color ${c.id}`}
+              onClick={() => {
+                setSelectedGuidesColor?.(c.hex);
+                setStudioStatus(`Guide color set to ${c.id}`);
+              }}
+            />
+          ))}
+          <button
+            type="button"
+            disabled={!guides.length}
+            className={cn(
+              "h-6 rounded-[4px] border border-border px-1.5 font-mono text-[9px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !guides.length && "opacity-40",
+            )}
+            title="Clear color override on selected guides (or all if none selected)"
+            onClick={() => {
+              setSelectedGuidesColor?.(undefined);
+              setStudioStatus("Guide color cleared");
+            }}
+          >
+            Clear
           </button>
         </div>
         {probe ? (

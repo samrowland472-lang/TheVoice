@@ -14,6 +14,8 @@
 - Iteration 9: Per-guide dash override. Dash chip in the guides list cycles solid/dash/tight (or clears on repeat). Drawing uses the override via resolveGuideStroke. Status + undo commit. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 10: Bulk dash apply for guides. Dash / Tight / Solid / None buttons in the guides toolbar set the dash override on the selection (or all guides when none are selected). History commit + status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
+
+- Iteration 11: Bulk color apply for guides. Color swatches + Clear in the guides toolbar set the color override on the selection (or all guides when none are selected). History commit + status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T03:05:45Z — Recent colours polish. Reactive chips + clear + broader coverage (stroke/shadow/brush/type). Auth OFF, DB OFF, localStorage only.
@@ -31,8 +33,10 @@
 
 - 2026-11-19T21:08:00Z — Bulk dash apply to selected (or all) guides. Dash/Tight/Solid/None buttons. Commit + status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
+
+- 2026-11-19T22:04:27Z — Bulk color apply to selected (or all) guides. Color chips + Clear. Commit + status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Next recommended
-- Recent colours also in the single-node stroke inspector if one exists.
+- Style paste also includes stroke dash / line cap when present.
+- Or: recent colours also in the single-node stroke inspector if one exists.
 - Or: layer filter also matches group contents / path points.
-- Or: style paste also includes stroke dash / line cap when present.
-- Or: bulk color apply to selected guides.
+- Or: guide color + dash combined bulk presets.

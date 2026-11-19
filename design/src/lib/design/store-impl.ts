@@ -857,6 +857,28 @@ export const useDesign = create<any>((set: any, get: any) => ({
       dirty: true,
     });
   },
+  setSelectedGuidesColor: (color: string | undefined) => {
+    const { doc, guideSelection } = get();
+    if (!doc) return;
+    const guides = doc.guides ?? [];
+    if (!guides.length) return;
+    const ids = guideSelection?.length ? new Set(guideSelection) : null;
+    get().commit();
+    set({
+      doc: {
+        ...doc,
+        guides: guides.map((g) => {
+          if (ids && !ids.has(g.id)) return g;
+          if (color === undefined) {
+            const { color: _drop, ...rest } = g;
+            return rest;
+          }
+          return { ...g, color };
+        }),
+      },
+      dirty: true,
+    });
+  },
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   togglePrintMarks: () => set({ printMarks: !get().printMarks }),
   setBleed: (px) => {
