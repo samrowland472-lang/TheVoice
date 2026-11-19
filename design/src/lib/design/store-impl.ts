@@ -35,6 +35,11 @@ export type StyleClipboard = {
   opacity: number;
   blend: string;
   shadow: Shadow | null;
+  strokeDash: number;
+  strokeDashOffset: number;
+  lineCap: CanvasLineCap;
+  lineJoin: CanvasLineJoin;
+  miterLimit: number;
 };
 
 const MAX_HISTORY = 60;
@@ -729,11 +734,21 @@ export const useDesign = create<any>((set: any, get: any) => ({
       opacity: src.opacity,
       blend: src.blend,
       shadow: src.shadow ? structuredClone(src.shadow) : null,
+      strokeDash: src.strokeDash ?? 0,
+      strokeDashOffset: src.strokeDashOffset ?? 0,
+      lineCap: src.lineCap ?? "round",
+      lineJoin: src.lineJoin ?? "round",
+      miterLimit: src.miterLimit ?? 4,
     };
     const mixed = nodes.length > 1 && nodes.some((n) =>
       n.fill !== src.fill || n.stroke !== src.stroke || n.strokeWidth !== src.strokeWidth ||
       n.opacity !== src.opacity || n.blend !== src.blend ||
-      JSON.stringify(n.shadow) !== JSON.stringify(src.shadow)
+      JSON.stringify(n.shadow) !== JSON.stringify(src.shadow) ||
+      (n.strokeDash ?? 0) !== (src.strokeDash ?? 0) ||
+      (n.strokeDashOffset ?? 0) !== (src.strokeDashOffset ?? 0) ||
+      (n.lineCap ?? "round") !== (src.lineCap ?? "round") ||
+      (n.lineJoin ?? "round") !== (src.lineJoin ?? "round") ||
+      (n.miterLimit ?? 4) !== (src.miterLimit ?? 4)
     );
     set({ styleClipboard: style });
     setStudioStatus(`Copied style${mixed ? " (mixed — first layer)" : ""}`);
@@ -748,6 +763,11 @@ export const useDesign = create<any>((set: any, get: any) => ({
       opacity: styleClipboard.opacity,
       blend: styleClipboard.blend,
       shadow: styleClipboard.shadow ? structuredClone(styleClipboard.shadow) : null,
+      strokeDash: styleClipboard.strokeDash,
+      strokeDashOffset: styleClipboard.strokeDashOffset,
+      lineCap: styleClipboard.lineCap,
+      lineJoin: styleClipboard.lineJoin,
+      miterLimit: styleClipboard.miterLimit,
     }, true);
     setStudioStatus("Pasted style");
   },
