@@ -7,6 +7,7 @@
 - Iteration 4: Copy / paste style. Copies fill, stroke, stroke width, opacity, and blend from the first selected layer and pastes onto the current selection. Available as commands and via Cmd/Ctrl+Alt+C / V.
 - Iteration 5: Style paste now also includes shadow (color, blur, offset, spread, inset). Mixed detection accounts for shadow differences.
 - Iteration 6: Artboard guides lock/unlock bulk action. Selected guides can be locked or unlocked together. Per-guide lock and hide toggles. Locked guides refuse move/nudge/delete. Hidden guides are skipped on canvas. Keyboard delete and arrows act on guide selection.
+- Iteration 6b: Polished guides lock — Lock/Unlock now apply to all guides when none are selected; history commit + status strip feedback; patchGuide commits for undo.
 
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -15,6 +16,7 @@
 - 2026-11-19T05:15:00Z — Copy/paste style (fill + stroke + opacity + blend). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T15:05:00Z — Style copy/paste now carries shadow. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T17:20:17Z — Artboard guides lock/unlock bulk action. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- 2026-11-19T17:32:00Z — Guides lock polish (all-when-empty, commit, status). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Next recommended
 - Recent colours also in the single-node stroke inspector if one exists.
