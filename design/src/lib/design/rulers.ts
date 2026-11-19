@@ -89,6 +89,23 @@ export function drawDocGuides(
       ctx.lineTo(w, y);
     }
     ctx.stroke();
+    const name = guideDisplayName(g);
+    if (name && g.label) {
+      ctx.save();
+      ctx.setLineDash([]);
+      ctx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.fillStyle = isSel ? "rgba(196,255,77,0.95)" : locked ? "rgba(255,194,77,0.9)" : "rgba(63,198,255,0.9)";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      if (g.axis === "x") {
+        const x = screenFromDoc(g.pos, viewport.x, viewport.zoom);
+        ctx.fillText(name, x + 4, RULER + 4);
+      } else {
+        const y = screenFromDoc(g.pos, viewport.y, viewport.zoom);
+        ctx.fillText(name, RULER + 4, y + 4);
+      }
+      ctx.restore();
+    }
   }
   const pairs = guidePairs(guides);
   ctx.setLineDash([]);

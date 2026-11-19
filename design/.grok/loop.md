@@ -9,6 +9,8 @@
 - Iteration 6: Artboard guides lock/unlock bulk action. Selected guides can be locked or unlocked together. Per-guide lock and hide toggles. Locked guides refuse move/nudge/delete. Hidden guides are skipped on canvas. Keyboard delete and arrows act on guide selection.
 - Iteration 6b: Polished guides lock — Lock/Unlock now apply to all guides when none are selected; history commit + status strip feedback; patchGuide commits for undo.
 
+- Iteration 7: Guide labels editable in the inspector list. Optional short name (max 32) on each guide, committed for undo, status feedback. Labels draw near the guide on the canvas when set.
+
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T03:05:45Z — Recent colours polish. Reactive chips + clear + broader coverage (stroke/shadow/brush/type). Auth OFF, DB OFF, localStorage only.
@@ -18,8 +20,11 @@
 - 2026-11-19T17:20:17Z — Artboard guides lock/unlock bulk action. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T17:32:00Z — Guides lock polish (all-when-empty, commit, status). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
+- 2026-11-19T18:12:25Z — Guide labels editable + canvas draw. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+
 ## Next recommended
 - Recent colours also in the single-node stroke inspector if one exists.
 - Or: layer filter also matches group contents / path points.
 - Or: style paste also includes stroke dash / line cap when present.
-- Or: guide labels editable in the inspector list.
+
+- Or: guide color override per guide in the list.

@@ -7,8 +7,9 @@ import {
   guideProbe,
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
-import { canDistributeGuides } from "@/lib/design/guide-select";
+import { canDistributeGuides, sanitizeGuideLabel } from "@/lib/design/guide-select";
 import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
 import "@/lib/design/guide-live";
 import "@/lib/design/guide-distribute";
 import { cn } from "@/lib/utils";
@@ -270,6 +271,31 @@ export function InspectorPrint() {
                       ? snapGuideToObjects(g.axis, n, s.doc.nodes, s.doc.artboard).pos
                       : n;
                     moveGuide(g.id, next);
+                  }}
+                />
+                <input
+                  type="text"
+                  key={`${g.id}-${g.label ?? ""}`}
+                  defaultValue={g.label ?? ""}
+                  placeholder="label"
+                  maxLength={32}
+                  className="h-7 min-w-[4.5rem] flex-1 rounded-[6px] border border-border bg-transparent px-1 font-mono text-[10px] text-ink placeholder:text-ink-dim/50 focus:border-phosphor focus:outline-none"
+                  aria-label="guide label"
+                  title="Optional name for this guide"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+                    e.stopPropagation();
+                  }}
+                  onBlur={(e) => {
+                    const raw = e.currentTarget.value;
+                    const next = sanitizeGuideLabel(raw);
+                    const prev = sanitizeGuideLabel(g.label ?? "");
+                    if (next === prev) return;
+                    const s = useDesign.getState();
+                    s.commit?.();
+                    patchGuide?.(g.id, { label: next || undefined });
+                    setStudioStatus(next ? `Guide labeled “${next}”` : "Guide label cleared");
                   }}
                 />
                 <button
