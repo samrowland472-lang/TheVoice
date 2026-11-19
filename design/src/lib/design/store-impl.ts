@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { campaignPageName, campaignPages } from "./campaign";
 import { formatById } from "./formats";
 import { uid } from "./id";
+import { nudgeGuidePositions, pruneGuideIds, toggleGuideIds } from "./guide-select";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
 import { brushById } from "./brushes";
 import { bakePaintIfSized, bakePaintNode, paintNeedsBake } from "./paint-bake";
@@ -749,6 +750,90 @@ export const useDesign = create<any>((set: any, get: any) => ({
       shadow: styleClipboard.shadow ? structuredClone(styleClipboard.shadow) : null,
     }, true);
     setStudioStatus("Pasted style");
+  },
+  addGuide: (axis: "x" | "y", pos: number) => {
+    const { doc } = get();
+    if (!doc) return "";
+    const g = { id: uid("gd"), axis, pos };
+    set({ doc: { ...doc, guides: [...(doc.guides ?? []), g] }, dirty: true });
+    return g.id;
+  },
+  moveGuide: (id: string, pos: number) => {
+    const { doc } = get();
+    if (!doc) return;
+    set({
+      doc: {
+        ...doc,
+        guides: (doc.guides ?? []).map((g) => (g.id === id && !g.locked ? { ...g, pos } : g)),
+      },
+      dirty: true,
+    });
+  },
+  removeGuide: (id: string) => {
+    const { doc } = get();
+    if (!doc) return;
+    const target = (doc.guides ?? []).find((g) => g.id === id);
+    if (target?.locked) return;
+    set({ doc: { ...doc, guides: (doc.guides ?? []).filter((g) => g.id !== id) }, dirty: true });
+  },
+  clearGuides: () => {
+    const { doc } = get();
+    if (!doc) return;
+    set({ doc: { ...doc, guides: [] }, dirty: true, guideSelection: [] });
+  },
+  patchGuide: (id: string, patch: Partial<{ locked?: boolean; hidden?: boolean; pos?: number; label?: string; color?: string }>) => {
+    const { doc } = get();
+    if (!doc) return;
+    set({
+      doc: {
+        ...doc,
+        guides: (doc.guides ?? []).map((g) => (g.id === id ? { ...g, ...patch } : g)),
+      },
+      dirty: true,
+    });
+  },
+  selectGuides: (ids: string[], additive = false) => {
+    const cur = (get().guideSelection ?? []) as string[];
+    if (additive) {
+      const next = toggleGuideIds(cur, ids);
+      set({ guideSelection: next, selection: [] });
+      return;
+    }
+    set({ guideSelection: ids, selection: [] });
+  },
+  nudgeGuides: (dx: number, dy: number) => {
+    const { doc, guideSelection } = get();
+    if (!doc || !guideSelection?.length) return;
+    const next = nudgeGuidePositions(doc.guides ?? [], guideSelection, dx, dy);
+    set({ doc: { ...doc, guides: next }, dirty: true });
+  },
+  removeSelectedGuides: () => {
+    const { doc, guideSelection } = get();
+    if (!doc || !guideSelection?.length) return;
+    const drop = new Set(guideSelection);
+    set({
+      doc: {
+        ...doc,
+        guides: (doc.guides ?? []).filter((g) => g.locked || !drop.has(g.id)),
+      },
+      guideSelection: [],
+      dirty: true,
+    });
+  },
+  lockSelectedGuides: (locked = true) => {
+    const { doc, guideSelection } = get();
+    if (!doc || !guideSelection?.length) return;
+    const setIds = new Set(guideSelection);
+    set({
+      doc: {
+        ...doc,
+        guides: (doc.guides ?? []).map((g) => (setIds.has(g.id) ? { ...g, locked } : g)),
+      },
+      dirty: true,
+    });
+  },
+  unlockSelectedGuides: () => {
+    get().lockSelectedGuides(false);
   },
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   togglePrintMarks: () => set({ printMarks: !get().printMarks }),

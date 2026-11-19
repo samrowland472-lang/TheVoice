@@ -190,6 +190,10 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
       }
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
+        if (s.guideSelection?.length) {
+          s.removeSelectedGuides?.();
+          return;
+        }
         if (s.tool === "pen") {
           const n = s.doc?.nodes.find((x) => x.id === s.selection[0]);
           if (n?.kind === "path") {
@@ -310,6 +314,10 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
         arrows.add(e.key);
         const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
         const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
+        if (s.guideSelection?.length) {
+          s.nudgeGuides?.(dx, dy);
+          return;
+        }
         // Prefer path-point nudge when points are selected on a single path
         if (
           s.selection.length === 1 &&

@@ -63,6 +63,9 @@ export function InspectorPrint() {
   const guideSelection = useDesign((s) => s.guideSelection) as string[] | undefined;
   const selectGuides = useDesign((s) => s.selectGuides);
   const distributeSelectedGuides = useDesign((s) => s.distributeSelectedGuides);
+  const lockSelectedGuides = useDesign((s) => s.lockSelectedGuides);
+  const unlockSelectedGuides = useDesign((s) => s.unlockSelectedGuides);
+  const patchGuide = useDesign((s) => s.patchGuide);
   const probe = useDesign((s) => s.guideProbe);
 
   if (!doc) return null;
@@ -171,7 +174,7 @@ export function InspectorPrint() {
         )}
       </section>
       <Section title="Guides">
-        <div className="mb-2 grid grid-cols-4 gap-1">
+        <div className="mb-2 grid grid-cols-3 gap-1">
           <button
             type="button"
             className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
@@ -209,6 +212,30 @@ export function InspectorPrint() {
           >
             Even
           </button>
+          <button
+            type="button"
+            disabled={!(guideSelection ?? []).length}
+            className={cn(
+              "h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !(guideSelection ?? []).length && "opacity-40",
+            )}
+            title="Lock selected guides"
+            onClick={() => lockSelectedGuides?.(true)}
+          >
+            Lock
+          </button>
+          <button
+            type="button"
+            disabled={!(guideSelection ?? []).length}
+            className={cn(
+              "h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+              !(guideSelection ?? []).length && "opacity-40",
+            )}
+            title="Unlock selected guides"
+            onClick={() => unlockSelectedGuides?.()}
+          >
+            Unlock
+          </button>
         </div>
         {probe ? (
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
@@ -245,6 +272,36 @@ export function InspectorPrint() {
                     moveGuide(g.id, next);
                   }}
                 />
+                <button
+                  type="button"
+                  className={cn(
+                    "h-7 shrink-0 rounded-[8px] border border-border px-1.5 text-[10px]",
+                    g.locked ? "border-phosphor text-phosphor" : "text-ink-dim hover:border-phosphor hover:text-ink",
+                  )}
+                  aria-label="lock guide"
+                  title={g.locked ? "Unlock guide" : "Lock guide"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    patchGuide?.(g.id, { locked: !g.locked });
+                  }}
+                >
+                  {g.locked ? "L" : "l"}
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "h-7 shrink-0 rounded-[8px] border border-border px-1.5 text-[10px]",
+                    g.hidden ? "border-phosphor text-phosphor" : "text-ink-dim hover:border-phosphor hover:text-ink",
+                  )}
+                  aria-label="hide guide"
+                  title={g.hidden ? "Show guide" : "Hide guide"}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    patchGuide?.(g.id, { hidden: !g.hidden });
+                  }}
+                >
+                  {g.hidden ? "H" : "h"}
+                </button>
                 <button
                   type="button"
                   className="h-7 shrink-0 rounded-[8px] border border-border px-1.5 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"

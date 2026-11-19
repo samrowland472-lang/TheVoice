@@ -56,6 +56,7 @@ export function drawDocGuides(
   h: number,
   live?: GuideDrag | null,
   probe?: GuideProbe | null,
+  selectedIds?: string[],
 ) {
   const guides = [...(doc.guides ?? [])];
   if (live) {
@@ -70,8 +71,13 @@ export function drawDocGuides(
   ctx.strokeStyle = "rgba(63,198,255,0.72)";
   ctx.lineWidth = 1;
   ctx.setLineDash([5, 4]);
+  const selected = new Set(selectedIds ?? []);
   for (const g of guides) {
     if (g.hidden) continue;
+    const isSel = selected.has(g.id);
+    const locked = !!g.locked;
+    ctx.strokeStyle = isSel ? "rgba(196,255,77,0.85)" : locked ? "rgba(255,194,77,0.7)" : "rgba(63,198,255,0.72)";
+    ctx.setLineDash(locked ? [2, 6] : [5, 4]);
     ctx.beginPath();
     if (g.axis === "x") {
       const x = screenFromDoc(g.pos, viewport.x, viewport.zoom);
