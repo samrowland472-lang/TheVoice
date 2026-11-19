@@ -42,6 +42,8 @@ export function LayersPanel() {
   const groupSelection = useDesign((s) => s.groupSelection);
   const ungroupSelection = useDesign((s) => s.ungroupSelection);
   const listRef = useRef<HTMLUListElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const matchIndexRef = useRef(0);
   const dragIdsRef = useRef<string[] | null>(null);
   const dwellRef = useRef<number | null>(null);
   const [dragIds, setDragIds] = useState<string[] | null>(null);
@@ -60,6 +62,25 @@ export function LayersPanel() {
   const [weightDraft, setWeightDraft] = useState("");
   const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  // Cmd/Ctrl+F focuses the layer filter. Arrow keys / Enter jump among matches.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (!(meta && e.key.toLowerCase() === "f" && !e.shiftKey && !e.altKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) {
+        if (t === searchRef.current) return; // already there
+        // Allow override only if not already in a field? Prefer always focus layers search.
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, []);
 
   if (!doc) return null;
   const needle = query.trim().toLowerCase();
@@ -152,10 +173,49 @@ export function LayersPanel() {
         <label className="relative flex h-8 items-center">
           <Search className="pointer-events-none absolute left-2 size-3.5 text-ink-faint" />
           <input
+            ref={searchRef}
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Filter layers"
+            onChange={(e) => {
+              setQuery(e.target.value);
+              matchIndexRef.current = 0;
+            }}
+            onKeyDown={(e) => {
+              if (!filtering) return;
+              const matches = layers.map((l) => l.node.id);
+              if (matches.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                matchIndexRef.current = (matchIndexRef.current + 1) % matches.length;
+                const id = matches[matchIndexRef.current];
+                select([id]);
+                requestAnimationFrame(() => {
+                  listRef.current?.querySelector(`[data-layer-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
+                });
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                matchIndexRef.current = (matchIndexRef.current - 1 + matches.length) % matches.length;
+                const id = matches[matchIndexRef.current];
+                select([id]);
+                requestAnimationFrame(() => {
+                  listRef.current?.querySelector(`[data-layer-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
+                });
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                const id = matches[matchIndexRef.current] || matches[0];
+                select([id]);
+                requestAnimationFrame(() => {
+                  listRef.current?.querySelector(`[data-layer-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
+                });
+                // Keep focus so user can continue jumping, or blur to canvas.
+                searchRef.current?.blur();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setQuery("");
+                searchRef.current?.blur();
+              }
+            }}
+            placeholder="Filter layers" title="Cmd/Ctrl+F to focus · ↑↓ jump matches"
             aria-label="Filter layers"
             className="field h-8 w-full pl-7 pr-7 text-xs"
           />
@@ -218,8 +278,8 @@ export function LayersPanel() {
         <OpacityQuickStrip />
         <TypeQuickStrip />
         {filtering && (
-          <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
-            {layers.length} match{layers.length === 1 ? "" : "es"}
+          <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint" title="↑↓ jump · Enter select · Esc clear">
+            {layers.length} match{layers.length === 1 ? "" : "es"} · ↑↓ jump
           </p>
         )}
         {dragIds && !filtering && (
