@@ -781,7 +781,7 @@ export const useDesign = create<any>((set: any, get: any) => ({
     if (!doc) return;
     set({ doc: { ...doc, guides: [] }, dirty: true, guideSelection: [] });
   },
-  patchGuide: (id: string, patch: Partial<{ locked?: boolean; hidden?: boolean; pos?: number; label?: string; color?: string }>) => {
+  patchGuide: (id: string, patch: Partial<{ locked?: boolean; hidden?: boolean; pos?: number; label?: string; color?: string; dash?: "solid" | "dash" | "tight" }>) => {
     const { doc } = get();
     if (!doc) return;
     set({

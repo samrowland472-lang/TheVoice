@@ -8,7 +8,7 @@ import {
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
 import { canDistributeGuides, sanitizeGuideLabel } from "@/lib/design/guide-select";
-import { GUIDE_COLORS, cycleGuideColor, resolveGuideStroke } from "@/lib/design/guide-style";
+import { GUIDE_COLORS, GUIDE_DASHES, cycleGuideColor, cycleGuideDash, resolveGuideStroke } from "@/lib/design/guide-style";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import "@/lib/design/guide-live";
@@ -318,6 +318,29 @@ export function InspectorPrint() {
                     setStudioStatus(override ? `Guide color ${next.id}` : "Guide color cleared");
                   }}
                 />
+                <button
+                  type="button"
+                  className={cn(
+                    "h-7 shrink-0 rounded-[6px] border border-border px-1 font-mono text-[9px]",
+                    g.dash ? "border-phosphor text-phosphor" : "text-ink-dim",
+                  )}
+                  aria-label="cycle guide dash"
+                  title="Cycle dash override (solid / dash / tight). Click current to clear."
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const looks = useDesign.getState().guideLooks;
+                    const current = resolveGuideStroke(g, looks).dash;
+                    const idx = GUIDE_DASHES.indexOf(current);
+                    const next = GUIDE_DASHES[(idx + 1) % GUIDE_DASHES.length]!;
+                    const override = cycleGuideDash(g.dash, next);
+                    const s = useDesign.getState();
+                    s.commit?.();
+                    patchGuide?.(g.id, { dash: override });
+                    setStudioStatus(override ? `Guide dash ${override}` : "Guide dash cleared");
+                  }}
+                >
+                  {g.dash ? g.dash.slice(0, 1).toUpperCase() : "—"}
+                </button>
                 <button
                   type="button"
                   className={cn(

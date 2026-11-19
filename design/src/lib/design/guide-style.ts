@@ -38,6 +38,11 @@ export function cycleGuideColor(current: string | undefined, clickedHex: string)
   return GUIDE_COLORS.find((c) => c.hex.toLowerCase() === clicked)?.hex ?? clickedHex;
 }
 
+export function cycleGuideDash(current: GuideDash | undefined, clicked: GuideDash): GuideDash | undefined {
+  if (current === clicked) return undefined;
+  return clicked;
+}
+
 export const GUIDE_DASHES: GuideDash[] = ["dash", "tight", "solid"];
 
 export const DEFAULT_GUIDE_LOOKS: GuideLooks = {
