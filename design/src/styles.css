@@ -157,7 +157,12 @@ button:focus-visible {
 }
 
 .field:focus-visible {
-  border-color: var(--color-phosphor);
+  border-color: color-mix(in srgb, var(--color-phosphor) 70%, transparent);
+  background-color: color-mix(in srgb, var(--color-phosphor) 8%, var(--color-surface));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-phosphor) 32%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-phosphor) 16%, transparent);
+  outline: none;
 }
 textarea.field {
   height: auto;
