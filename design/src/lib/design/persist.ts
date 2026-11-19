@@ -219,3 +219,33 @@ export function saveBrand(kit: BrandKit) {
 export function brandHexes(kit: BrandKit): string[] {
   return kit.colors.map((c) => c.hex);
 }
+
+const RECENT_COLORS_KEY = "voice-design:recent-colors:v1";
+const MAX_RECENT = 8;
+
+export function loadRecentColors(): string[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_COLORS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((c): c is string => typeof c === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(c)).slice(0, MAX_RECENT);
+  } catch {
+    return [];
+  }
+}
+
+export function rememberColor(hex: string) {
+  if (typeof localStorage === "undefined" || !hex || hex === "transparent") return;
+  const normalized = hex.toLowerCase();
+  if (!/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/.test(normalized)) return;
+  const current = loadRecentColors().filter((c) => c.toLowerCase() !== normalized);
+  const next = [normalized, ...current].slice(0, MAX_RECENT);
+  localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(next));
+}
+
+export function clearRecentColors() {
+  if (typeof localStorage === "undefined") return;
+  localStorage.removeItem(RECENT_COLORS_KEY);
+}

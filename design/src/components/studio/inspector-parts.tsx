@@ -1,3 +1,4 @@
+import { loadRecentColors, rememberColor } from "@/lib/design/persist";
 import type { CSSProperties } from "react";
 import { nextFromRangeKey } from "./range-keys";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
@@ -60,7 +61,19 @@ export function FillEditor({ node }: { node: DesignNode }) {
           type="color"
           className="h-8 w-full rounded-[8px] border border-border"
           value={typeof fill === "string" && fill !== "transparent" ? fill : "#d9f5e3"}
-          onChange={(e) => updateNodes([node.id], { fill: e.target.value }, true)}
+          onChange={(e) => {
+            const hex = e.target.value;
+            rememberColor(hex);
+            updateNodes([node.id], { fill: hex }, true);
+          }}
+        />
+      )}
+      {!gradient && (
+        <RecentSwatches
+          onPick={(hex) => {
+            rememberColor(hex);
+            updateNodes([node.id], { fill: hex }, true);
+          }}
         />
       )}
       {gradient && (
@@ -95,7 +108,9 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 className="h-8 w-12 rounded-[8px] border border-border"
                 value={stop.color}
                 onChange={(e) => {
-                  const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: e.target.value } : s));
+                  const hex = e.target.value;
+                  rememberColor(hex);
+                  const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
                   updateNodes([node.id], { fill: { ...fill, stops } }, true);
                 }}
               />
@@ -116,6 +131,29 @@ export function FillEditor({ node }: { node: DesignNode }) {
         </div>
       )}
     </>
+  );
+}
+
+function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
+  const colors = loadRecentColors();
+  if (!colors.length) return null;
+  return (
+    <div className="mt-2">
+      <div className="mb-1 text-[10px] tracking-[0.12em] text-ink-faint uppercase">Recent</div>
+      <div className="flex flex-wrap gap-1.5">
+        {colors.map((hex) => (
+          <button
+            key={hex}
+            type="button"
+            className="size-6 rounded-full border border-border"
+            style={{ background: hex }}
+            onClick={() => onPick(hex)}
+            aria-label={hex}
+            title={hex}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

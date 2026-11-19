@@ -1,11 +1,12 @@
-# The Voice Design — loop
+# The Voice Design — Improvement Loop
 
 ## Done
-- Iteration: Polished inspector numeric field focus/active states with dual soft outer phosphor rings, matching border, soft background tint, and color-mix shadows for full consistency with path-point rows, chips, and overlays. Phosphor-on-ground.
-- Prior: Deepened multi-select path-point group highlights in the inspector. Selected rows (single hit or multi-selected) and active Smooth/Corner toggles now use dual soft outer phosphor rings, with phosphor-tinted headers. Matching prior chip and overlay treatments. Phosphor-on-ground.
-- Prior: Polished inspector path-point chips and numeric-adjacent toggles with dual soft outer phosphor rings on selected rows and active Smooth/Corner/Mirror/Len controls. Matching selection treatment for complete overlay consistency. Phosphor-on-ground.
-- Prior: Deepened hover and selection states on path anchors and handles with dual soft outer phosphor rings, brighter strokes, and matching glow. Phosphor-on-ground.
-- Prior: Deepened path-edit tangent length chips and knife residual piece labels with dual soft outer phosphor rings, matching measurement ghosts, value chips, and residual outlines. Phosphor-on-ground.
+- Iteration 1: Added persistent recent colors swatches in the fill inspector. Colors used in solid fills or gradient stops are remembered (up to 8, localStorage) and shown as clickable chips under the color picker. Multi-select ink also records them.
+
+## Iteration
+- 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Next recommended
-- Deepen canvas multi-select path-point group outlines to match the updated inspector field rings, or polish remaining inspector button focus states for complete dual-phosphor coverage.
+- Layer search focus + keyboard jump to matching layer.
+- Or: copy/paste style (fill + stroke + opacity + blend) as a command.
+- Or: artboard guides lock/unlock bulk action.

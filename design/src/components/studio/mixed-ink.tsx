@@ -1,3 +1,4 @@
+import { rememberColor } from "@/lib/design/persist";
 import type { CSSProperties } from "react";
 import {
   cloneShadow,
@@ -118,9 +119,9 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           value={fillHex}
           mixed={mixedFill}
           ariaLabel="selection fill"
-          onCommit={(hex) => updateNodes(ids, { fill: hex }, true)}
+          onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }}
         />
-        <Swatches colors={brandColors} onPick={(hex) => updateNodes(ids, { fill: hex }, true)} />
+        <Swatches colors={brandColors} onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
         <button
           type="button"
           className="mt-1 text-[10px] text-phosphor"
