@@ -42,3 +42,12 @@
 - Or: layer filter also matches group contents / path points.
 - Or: guide color + dash combined bulk presets.
 - Or: stroke dash scrub preview on canvas while dragging the dash field.
+
+- Iteration 12: Guide color + dash combined bulk presets. Phosphor dash, Ice solid, Amber tight, Magenta dash buttons apply both override at once to selected (or all) guides. Status feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+## Iteration
+- 2026-11-20T00:15:00Z — Guide color + dash combined bulk presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+## Next recommended
+- Recent colours also in the single-node stroke inspector if one exists.
+- Or: layer filter also matches group contents / path points.
+- Or: stroke dash scrub preview on canvas while dragging the dash field.
+- Or: more guide presets or per-axis bulk.

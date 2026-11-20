@@ -336,6 +336,33 @@ export function InspectorPrint() {
             Clear
           </button>
         </div>
+        <div className="mb-2 flex flex-wrap gap-1">
+          {[
+            { id: "phosphor-dash", label: "Phosphor dash", color: "#c4ff4d", dash: "dash" as const },
+            { id: "ice-solid", label: "Ice solid", color: "#9ee7ff", dash: "solid" as const },
+            { id: "amber-tight", label: "Amber tight", color: "#ffc24d", dash: "tight" as const },
+            { id: "magenta-dash", label: "Magenta dash", color: "#ff5ad5", dash: "dash" as const },
+          ].map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              disabled={!guides.length}
+              className={cn(
+                "h-6 rounded-[4px] border border-border px-1.5 font-mono text-[8px] text-ink hover:border-phosphor",
+                !guides.length && "opacity-40",
+              )}
+              style={{ background: `${preset.color}22`, borderColor: preset.color }}
+              title={`Apply ${preset.label} (color + dash) to selected guides (or all if none selected)`}
+              onClick={() => {
+                setSelectedGuidesColor?.(preset.color);
+                setSelectedGuidesDash?.(preset.dash);
+                setStudioStatus(`Guide preset: ${preset.label}`);
+              }}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
         {probe ? (
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
         ) : null}
