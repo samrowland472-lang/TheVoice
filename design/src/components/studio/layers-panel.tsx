@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
 import { useDesign } from "@/lib/design/store";
-import { flattenLayers, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
-import { isGroup, isText, type DesignNode } from "@/lib/design/types";
+import { flattenLayers, descendantsOf, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
+import { isGroup, isText, isPath, type DesignNode } from "@/lib/design/types";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
@@ -19,6 +19,21 @@ import {
 } from "@/lib/design/align-preview";
 
 type DropHint = LayerDrop;
+
+function nodeMatchesQuery(n: DesignNode, needle: string): boolean {
+  const name = (n.name || "").toLowerCase();
+  const kind = (n.kind || "").toLowerCase();
+  if (name.includes(needle) || kind.includes(needle)) return true;
+  if (isText(n) && n.text.toLowerCase().includes(needle)) return true;
+  if (isPath(n)) {
+    // Match path points by coordinate fragments (e.g. "12" or "12,34")
+    const coords = n.points
+      .map((p) => `${Math.round(p.x)},${Math.round(p.y)}`)
+      .join(" ");
+    if (coords.includes(needle)) return true;
+  }
+  return false;
+}
 
 export function LayersPanel() {
   const doc = useDesign((s) => s.doc);
@@ -87,14 +102,11 @@ export function LayersPanel() {
   const filtering = needle.length > 0;
   const tree = flattenLayers(doc.nodes);
   const layers = filtering
-    ? [...doc.nodes]
-        .reverse()
-        .filter((n) => {
-          const name = (n.name || "").toLowerCase();
-          const kind = (n.kind || "").toLowerCase();
-          return name.includes(needle) || kind.includes(needle);
-        })
-        .map((node) => ({ node, depth: 0 }))
+    ? tree.filter(
+        ({ node }) =>
+          nodeMatchesQuery(node, needle) ||
+          descendantsOf(doc.nodes, node.id).some((d) => nodeMatchesQuery(d, needle)),
+      )
     : tree;
   const draggingSet = dragIds ? new Set(dragIds) : null;
   const canGroup = selection.length >= 2;
