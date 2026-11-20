@@ -434,6 +434,30 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           ))}
         </select>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="line cap presets">
+        {CAPS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className={cn(
+              "flex h-7 items-center gap-1 rounded-full border px-2 font-mono text-[8px]",
+              !mixedCap && cap === id
+                ? "border-phosphor bg-phosphor/15 text-phosphor"
+                : "border-phosphor/40 bg-surface-alt text-phosphor hover:bg-phosphor/10",
+            )}
+            title={`Set line cap to ${capChipLabel(id)} on selected outlines`}
+            aria-label={`Set line cap to ${capChipLabel(id)}`}
+            onMouseEnter={() => ghostStroke({ lineCap: id })}
+            onFocus={() => ghostStroke({ lineCap: id })}
+            onMouseLeave={() => ghostStroke(null)}
+            onBlur={() => ghostStroke(null)}
+            onClick={() => updateNodes(ids, { lineCap: id }, true)}
+          >
+            <CapIcon cap={id} />
+            <span>{capChipLabel(id)}</span>
+          </button>
+        ))}
+      </div>
       {mixedCap && <MixedCapLegend outlines={outlines} />}
       {mixedCap && (
         <div className="mt-1 flex flex-wrap gap-1">
@@ -482,6 +506,30 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           ))}
         </select>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="line join presets">
+        {JOINS.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className={cn(
+              "flex h-7 items-center gap-1 rounded-full border px-2 font-mono text-[8px]",
+              !mixedJoin && join === id
+                ? "border-phosphor bg-phosphor/15 text-phosphor"
+                : "border-phosphor/40 bg-surface-alt text-phosphor hover:bg-phosphor/10",
+            )}
+            title={`Set line join to ${joinChipLabel(id)} on selected outlines`}
+            aria-label={`Set line join to ${joinChipLabel(id)}`}
+            onMouseEnter={() => ghostStroke({ lineJoin: id })}
+            onFocus={() => ghostStroke({ lineJoin: id })}
+            onMouseLeave={() => ghostStroke(null)}
+            onBlur={() => ghostStroke(null)}
+            onClick={() => updateNodes(ids, { lineJoin: id }, true)}
+          >
+            <JoinIcon join={id} />
+            <span>{joinChipLabel(id)}</span>
+          </button>
+        ))}
+      </div>
       {mixedJoin && <MixedJoinLegend outlines={outlines} />}
       {mixedJoin && (
         <div className="mt-1 flex flex-wrap gap-1">
