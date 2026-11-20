@@ -17,6 +17,7 @@
 
 - Iteration 11: Bulk color apply for guides. Color swatches + Clear in the guides toolbar set the color override on the selection (or all guides when none are selected). History commit + status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 12: Style paste now also includes stroke dash, dash offset, line cap, line join, and miter limit. Copy from first selected layer; paste applies them with history commit. Mixed detection covers the new stroke fields. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Iteration
 - 2026-11-19T02:15:00Z — Recent colors slice. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T03:05:45Z — Recent colours polish. Reactive chips + clear + broader coverage (stroke/shadow/brush/type). Auth OFF, DB OFF, localStorage only.
@@ -37,17 +38,9 @@
 
 - 2026-11-19T22:04:27Z — Bulk color apply to selected (or all) guides. Color chips + Clear. Commit + status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T23:25:00Z — Style paste includes stroke dash / line cap / join / miter. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
-## Next recommended
-- Recent colours also in the single-node stroke inspector if one exists.
-- Or: layer filter also matches group contents / path points.
-- Or: guide color + dash combined bulk presets.
-- Or: stroke dash scrub preview on canvas while dragging the dash field.
-
-- Iteration 12: Guide color + dash combined bulk presets. Phosphor dash, Ice solid, Amber tight, Magenta dash buttons apply both override at once to selected (or all) guides. Status feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
-## Iteration
-- 2026-11-20T00:15:00Z — Guide color + dash combined bulk presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- 2026-11-20T00:11:06Z — Guide color + dash combined bulk presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Next recommended
 - Recent colours also in the single-node stroke inspector if one exists.
 - Or: layer filter also matches group contents / path points.
 - Or: stroke dash scrub preview on canvas while dragging the dash field.
-- Or: more guide presets or per-axis bulk.
+- Or: guide look presets also available from the command palette.
