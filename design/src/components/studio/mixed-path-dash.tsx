@@ -445,6 +445,42 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           ))}
         </select>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="line cap presets">
+        {([
+          { id: "butt" as const, label: "Butt" },
+          { id: "round" as const, label: "Round" },
+          { id: "square" as const, label: "Square" },
+        ] as const).map((preset) => {
+          const active = !mixedCap && cap === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={cn(
+                "flex h-7 items-center gap-1 rounded border px-1.5 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} line cap to selected outlines`}
+              aria-label={`Apply ${preset.label} line cap`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes(ids, { lineCap: preset.id }, true);
+                ghostStroke(null);
+                setStudioStatus(`Cap · ${preset.label}`);
+              }}
+              onMouseEnter={() => ghostStroke({ lineCap: preset.id })}
+              onMouseLeave={() => ghostStroke(null)}
+              onFocus={() => ghostStroke({ lineCap: preset.id })}
+              onBlur={() => ghostStroke(null)}
+            >
+              <CapIcon cap={preset.id} />
+              <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
       {mixedCap && <MixedCapLegend outlines={outlines} />}
       {mixedCap && (
         <div className="mt-1 flex flex-wrap gap-1">
@@ -493,6 +529,42 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           ))}
         </select>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="line join presets">
+        {([
+          { id: "miter" as const, label: "Miter" },
+          { id: "round" as const, label: "Round" },
+          { id: "bevel" as const, label: "Bevel" },
+        ] as const).map((preset) => {
+          const active = !mixedJoin && join === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={cn(
+                "flex h-7 items-center gap-1 rounded border px-1.5 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} line join to selected outlines`}
+              aria-label={`Apply ${preset.label} line join`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes(ids, { lineJoin: preset.id }, true);
+                ghostStroke(null);
+                setStudioStatus(`Join · ${preset.label}`);
+              }}
+              onMouseEnter={() => ghostStroke({ lineJoin: preset.id })}
+              onMouseLeave={() => ghostStroke(null)}
+              onFocus={() => ghostStroke({ lineJoin: preset.id })}
+              onBlur={() => ghostStroke(null)}
+            >
+              <JoinIcon join={preset.id} />
+              <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
       {mixedJoin && <MixedJoinLegend outlines={outlines} />}
       {mixedJoin && (
         <div className="mt-1 flex flex-wrap gap-1">
