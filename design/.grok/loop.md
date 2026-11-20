@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 19: Guide distribute / equal-gap from the command palette. "Distribute guides evenly" command spaces selected (or all) guides of each axis evenly between extremes, with history commit and status. Also available via the Print inspector Even button. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 18: Layer filter matches group contents and path points. Filtering now keeps hierarchy: a layer shows if it or any descendant matches name/kind/text or path-point coordinates. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 17: Single-node stroke dash presets (Solid / Dash / Dot / Long / Gap) in the Appearance stroke section. Click applies dash + offset with history commit; hover/focus shows phosphor ghost on canvas. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 16: Single-node stroke inspector extended with dash, offset, line cap, line join, and miter limit controls (when join is miter). Scrub ranges set live canvas phosphor overlays via strokeDashScrubId / strokeDashOffsetScrubId / miterLimitScrubId and strokeGhost. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -50,8 +51,9 @@
 - 2026-11-19T22:04:27Z — Bulk color apply to selected (or all) guides. Color chips + Clear. Commit + status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-19T23:25:00Z — Style paste includes stroke dash / line cap / join / miter. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T00:11:06Z — Guide color + dash combined bulk presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- 2026-11-20T06:06:19Z — Guide distribute from command palette. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Next recommended
-- Or: guide distribute / equal-gap from the command palette.
 - Or: stroke dash scrub preview on canvas while dragging the dash field (partially via ghost; polish further).
 - Or: multi-select dash presets.
 - Or: layer filter highlight the matching text/points.
+- Or: guide equal-gap numeric input in the inspector.

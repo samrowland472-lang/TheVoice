@@ -103,6 +103,15 @@ export function StudioApp({ id }: { id: string }) {
       { id: "reset-guide-colors", label: "Reset guide colors", group: "Print", run: () => s().resetGuideColors?.() },
       { id: "reset-guide-dashes", label: "Reset guide dashes", group: "Print", run: () => s().resetGuideDashes?.() },
       { id: "clear-guide-names", label: "Clear guide names", group: "Print", run: () => s().clearGuideLabels?.() },
+      {
+        id: "distribute-guides",
+        label: "Distribute guides evenly",
+        group: "Print",
+        hint: "Even",
+        run: () => {
+          s().distributeSelectedGuides?.();
+        },
+      },
       ...GUIDE_LOOK_PRESETS.map((preset) => ({
         id: `guide-preset-${preset.id}`,
         label: `Guide preset: ${preset.label}`,
