@@ -140,6 +140,14 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const stroke = node.stroke;
   const width = node.strokeWidth;
+  const dash = node.strokeDash ?? 0;
+  const offset = node.strokeDashOffset ?? 0;
+  const cap = node.lineCap ?? "round";
+  const join = node.lineJoin ?? "round";
+  const miter = node.miterLimit ?? 4;
+
+  const CAPS: CanvasLineCap[] = ["butt", "round", "square"];
+  const JOINS: CanvasLineJoin[] = ["miter", "round", "bevel"];
 
   return (
     <>
@@ -172,6 +180,155 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
           onCommit={(n) => updateNodes([node.id], { strokeWidth: n }, true)}
         />
       </div>
+
+      <Field label={`Dash ${Math.round(dash)}`}>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            className="range-phosphor min-w-0 flex-1"
+            min={0}
+            max={48}
+            step={1}
+            aria-label="stroke dash"
+            value={dash}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              updateNodes([node.id], { strokeDash: v });
+              useDesign.getState().setStrokeGhost({ strokeDash: v });
+            }}
+            onPointerDown={() => useDesign.getState().setStrokeDashScrubId(node.id)}
+            onPointerUp={() => {
+              useDesign.getState().setStrokeDashScrubId(null);
+              useDesign.getState().commit();
+              useDesign.getState().setStrokeGhost(null);
+            }}
+            onPointerCancel={() => useDesign.getState().setStrokeDashScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setStrokeDashScrubId(null)}
+          />
+          <NumField
+            className="field w-16 font-mono"
+            value={dash}
+            min={0}
+            max={96}
+            aria-label="stroke dash"
+            onCommit={(n) => updateNodes([node.id], { strokeDash: n }, true)}
+          />
+        </div>
+      </Field>
+
+      <Field label={`Offset ${Math.round(offset)}`}>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            className="range-phosphor min-w-0 flex-1"
+            min={-48}
+            max={48}
+            step={1}
+            aria-label="stroke dash offset"
+            value={offset}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              updateNodes([node.id], { strokeDashOffset: v });
+              useDesign.getState().setStrokeGhost({ strokeDashOffset: v });
+            }}
+            onPointerDown={() => useDesign.getState().setStrokeDashOffsetScrubId(node.id)}
+            onPointerUp={() => {
+              useDesign.getState().setStrokeDashOffsetScrubId(null);
+              useDesign.getState().commit();
+              useDesign.getState().setStrokeGhost(null);
+            }}
+            onPointerCancel={() => useDesign.getState().setStrokeDashOffsetScrubId(null)}
+            onLostPointerCapture={() => useDesign.getState().setStrokeDashOffsetScrubId(null)}
+          />
+          <NumField
+            className="field w-16 font-mono"
+            value={offset}
+            min={-96}
+            max={96}
+            aria-label="stroke dash offset"
+            onCommit={(n) => updateNodes([node.id], { strokeDashOffset: n }, true)}
+          />
+        </div>
+      </Field>
+
+      <Field label="Cap">
+        <select
+          className="field"
+          value={cap}
+          aria-label="stroke line cap"
+          onChange={(e) => {
+            const v = e.target.value as CanvasLineCap;
+            updateNodes([node.id], { lineCap: v }, true);
+            useDesign.getState().setStrokeGhost({ lineCap: v });
+          }}
+          onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+          onBlur={() => useDesign.getState().setStrokeGhost(null)}
+        >
+          {CAPS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label="Join">
+        <select
+          className="field"
+          value={join}
+          aria-label="stroke line join"
+          onChange={(e) => {
+            const v = e.target.value as CanvasLineJoin;
+            updateNodes([node.id], { lineJoin: v }, true);
+            useDesign.getState().setStrokeGhost({ lineJoin: v });
+          }}
+          onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+          onBlur={() => useDesign.getState().setStrokeGhost(null)}
+        >
+          {JOINS.map((j) => (
+            <option key={j} value={j}>
+              {j}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      {join === "miter" && (
+        <Field label={`Miter ${Math.round(miter)}`}>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              className="range-phosphor min-w-0 flex-1"
+              min={1}
+              max={20}
+              step={0.5}
+              aria-label="stroke miter limit"
+              value={miter}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                updateNodes([node.id], { miterLimit: v });
+                useDesign.getState().setStrokeGhost({ miterLimit: v });
+              }}
+              onPointerDown={() => useDesign.getState().setMiterLimitScrubId(node.id)}
+              onPointerUp={() => {
+                useDesign.getState().setMiterLimitScrubId(null);
+                useDesign.getState().commit();
+                useDesign.getState().setStrokeGhost(null);
+              }}
+              onPointerCancel={() => useDesign.getState().setMiterLimitScrubId(null)}
+              onLostPointerCapture={() => useDesign.getState().setMiterLimitScrubId(null)}
+            />
+            <NumField
+              className="field w-16 font-mono"
+              value={miter}
+              min={1}
+              max={32}
+              aria-label="stroke miter limit"
+              onCommit={(n) => updateNodes([node.id], { miterLimit: n }, true)}
+            />
+          </div>
+        </Field>
+      )}
     </>
   );
 }

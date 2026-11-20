@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 16: Single-node stroke inspector extended with dash, offset, line cap, line join, and miter limit controls (when join is miter). Scrub ranges set live canvas phosphor overlays via strokeDashScrubId / strokeDashOffsetScrubId / miterLimitScrubId and strokeGhost. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 14: Guide look presets in the command palette (Phosphor dash / Ice solid / Amber tight / Magenta dash) plus Reset guide look (color + dash). Shared GUIDE_LOOK_PRESETS. Status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 15: Single-node stroke inspector. Color picker + width field + recent colour swatches under the stroke color in the Appearance section (when one layer is selected). Picks remember to recent colours. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 1: Added persistent recent colors swatches in the fill inspector. Colors used in solid fills or gradient stops are remembered (up to 8, localStorage) and shown as clickable chips under the color picker. Multi-select ink also records them.
@@ -21,6 +22,7 @@
 - Iteration 12: Style paste now also includes stroke dash, dash offset, line cap, line join, and miter limit. Copy from first selected layer; paste applies them with history commit. Mixed detection covers the new stroke fields. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Iteration
+- 2026-11-20T03:20:00Z — Single-node stroke dash / cap / join / miter controls. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T02:15:00Z — Single-node stroke inspector with recent colours. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T01:05:57Z — Guide look presets in command palette. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T01:09:00Z — Guide look reset command in palette + loop polish. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -48,4 +50,4 @@
 - Layer filter also matches group contents / path points.
 - Or: stroke dash scrub preview on canvas while dragging the dash field.
 - Or: guide distribute / equal-gap from the command palette.
-- Or: stroke dash / cap / join controls in the single-node stroke inspector.
+- Or: stroke dash / cap / join controls in the single-node stroke inspector (done in Iteration 16).
