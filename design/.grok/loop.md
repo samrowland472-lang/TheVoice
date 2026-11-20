@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 20: Multi-select stroke dash presets. Solid / Dash / Dot / Long / Gap buttons in the Appearance mixed-path section apply the pattern (and matching offset) to all selected outlines in one history commit. Hover and focus show the phosphor ghost on canvas. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 19: Guide distribute / equal-gap from the command palette. "Distribute guides evenly" command spaces selected (or all) guides of each axis evenly between extremes, with history commit and status. Also available via the Print inspector Even button. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 18: Layer filter matches group contents and path points. Filtering now keeps hierarchy: a layer shows if it or any descendant matches name/kind/text or path-point coordinates. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 17: Single-node stroke dash presets (Solid / Dash / Dot / Long / Gap) in the Appearance stroke section. Click applies dash + offset with history commit; hover/focus shows phosphor ghost on canvas. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -25,6 +26,7 @@
 - Iteration 12: Style paste now also includes stroke dash, dash offset, line cap, line join, and miter limit. Copy from first selected layer; paste applies them with history commit. Mixed detection covers the new stroke fields. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Iteration
+- 2026-11-20T15:42:10Z — Multi-select stroke dash presets (Solid/Dash/Dot/Long/Gap) in Appearance for selected outlines. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T05:06:00Z — Layer filter matches group contents / path points (hierarchy preserved; name/kind/text/coords). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T04:09:02Z — Stroke dash pattern presets in single-node inspector. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T03:20:00Z — Single-node stroke dash / cap / join / miter controls. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -54,6 +56,6 @@
 - 2026-11-20T06:06:19Z — Guide distribute from command palette. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Next recommended
 - Or: stroke dash scrub preview on canvas while dragging the dash field (partially via ghost; polish further).
-- Or: multi-select dash presets.
 - Or: layer filter highlight the matching text/points.
 - Or: guide equal-gap numeric input in the inspector.
+- Or: multi-select line cap / join presets.

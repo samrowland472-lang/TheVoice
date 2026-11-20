@@ -301,6 +301,33 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           />
         </div>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1">
+        {[
+          { label: "Solid", dash: 0, offset: 0 },
+          { label: "Dash", dash: 8, offset: 0 },
+          { label: "Dot", dash: 2, offset: 0 },
+          { label: "Long", dash: 16, offset: 0 },
+          { label: "Gap", dash: 4, offset: 4 },
+        ].map((preset) => (
+          <button
+            key={preset.label}
+            type="button"
+            className="rounded border border-border px-1.5 py-0.5 text-[10px] text-ink-dim hover:bg-surface hover:text-ink"
+            title={`Apply ${preset.label} dash to selected outlines`}
+            aria-label={`Apply ${preset.label} dash preset`}
+            onClick={() => {
+              updateNodes(ids, { strokeDash: preset.dash, strokeDashOffset: preset.offset }, true);
+              ghostStroke(null);
+            }}
+            onMouseEnter={() => ghostStroke({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
+            onMouseLeave={() => ghostStroke(null)}
+            onFocus={() => ghostStroke({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
+            onBlur={() => ghostStroke(null)}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
       {mixed && (
         <div className="mt-1 flex flex-wrap gap-1">
           {outlines.map((n) => {
