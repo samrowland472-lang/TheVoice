@@ -8,7 +8,7 @@ import {
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
 import { canDistributeGuides, sanitizeGuideLabel } from "@/lib/design/guide-select";
-import { GUIDE_COLORS, GUIDE_DASHES, cycleGuideColor, cycleGuideDash, resolveGuideStroke } from "@/lib/design/guide-style";
+import { GUIDE_COLORS, GUIDE_DASHES, GUIDE_LOOK_PRESETS, cycleGuideColor, cycleGuideDash, resolveGuideStroke } from "@/lib/design/guide-style";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
 import "@/lib/design/guide-live";
@@ -337,12 +337,7 @@ export function InspectorPrint() {
           </button>
         </div>
         <div className="mb-2 flex flex-wrap gap-1">
-          {[
-            { id: "phosphor-dash", label: "Phosphor dash", color: "#c4ff4d", dash: "dash" as const },
-            { id: "ice-solid", label: "Ice solid", color: "#9ee7ff", dash: "solid" as const },
-            { id: "amber-tight", label: "Amber tight", color: "#ffc24d", dash: "tight" as const },
-            { id: "magenta-dash", label: "Magenta dash", color: "#ff5ad5", dash: "dash" as const },
-          ].map((preset) => (
+          {GUIDE_LOOK_PRESETS.map((preset) => (
             <button
               key={preset.id}
               type="button"

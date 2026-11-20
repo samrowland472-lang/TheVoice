@@ -11,6 +11,8 @@ import {
 } from "@/lib/design/offset-actions";
 import { watchFontsForWrapCache } from "@/lib/design/watch-fonts";
 import { bleedMmToPx } from "@/lib/design/print-marks";
+import { GUIDE_LOOK_PRESETS } from "@/lib/design/guide-style";
+import { setStudioStatus } from "@/lib/design/studio-status";
 import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { CommandPalette, type CommandItem } from "./command-palette";
@@ -117,6 +119,16 @@ export function StudioApp({ id }: { id: string }) {
       { id: "reset-guide-colors", label: "Reset guide colors", group: "Print", run: () => s().resetGuideColors?.() },
       { id: "reset-guide-dashes", label: "Reset guide dashes", group: "Print", run: () => s().resetGuideDashes?.() },
       { id: "clear-guide-names", label: "Clear guide names", group: "Print", run: () => s().clearGuideLabels?.() },
+      ...GUIDE_LOOK_PRESETS.map((preset) => ({
+        id: `guide-preset-${preset.id}`,
+        label: `Guide preset: ${preset.label}`,
+        group: "Print",
+        run: () => {
+          s().setSelectedGuidesColor?.(preset.color);
+          s().setSelectedGuidesDash?.(preset.dash);
+          setStudioStatus(`Guide preset: ${preset.label}`);
+        },
+      })),
     ];
   }, [navigate]);
 

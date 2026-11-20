@@ -23,6 +23,14 @@ export const GUIDE_COLORS = [
   { id: "bone", hex: "#e8e0d0" },
 ] as const;
 
+export const GUIDE_LOOK_PRESETS = [
+  { id: "phosphor-dash", label: "Phosphor dash", color: "#c4ff4d", dash: "dash" as const },
+  { id: "ice-solid", label: "Ice solid", color: "#9ee7ff", dash: "solid" as const },
+  { id: "amber-tight", label: "Amber tight", color: "#ffc24d", dash: "tight" as const },
+  { id: "magenta-dash", label: "Magenta dash", color: "#ff5ad5", dash: "dash" as const },
+] as const;
+
+
 export type GuideColorId = (typeof GUIDE_COLORS)[number]["id"];
 
 export function guideColorByHex(hex: string | undefined): (typeof GUIDE_COLORS)[number] | undefined {
