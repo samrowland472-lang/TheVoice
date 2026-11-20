@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 22: Multi-select stroke look presets. Clean / Sharp / Dotted / Dashed / Long buttons in the Appearance mixed-path section stamp dash + offset + line cap + line join onto all selected outlines in one history commit. Hover and focus show the combined phosphor ghost on canvas. Status strip reports the applied look. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 21: Multi-select line cap / join presets. Icon + label buttons for Butt / Round / Square caps and Miter / Round / Bevel joins in the Appearance mixed-path section. Click applies to all selected outlines in one history commit; hover and focus show the phosphor ghost on canvas. Active state highlights the current shared value. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 20: Multi-select stroke dash presets. Solid / Dash / Dot / Long / Gap buttons in the Appearance mixed-path section apply the pattern (and matching offset) to all selected outlines in one history commit. Hover and focus show the phosphor ghost on canvas. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
  Multi-select stroke dash presets. Solid / Dash / Dot / Long / Gap buttons in the Appearance mixed-path section apply the pattern (and matching offset) to all selected outlines in one history commit. Hover and focus show the phosphor ghost on canvas. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -56,9 +57,10 @@
 - 2026-11-19T23:25:00Z — Style paste includes stroke dash / line cap / join / miter. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T00:11:06Z — Guide color + dash combined bulk presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T06:06:19Z — Guide distribute from command palette. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
+- 2026-11-20T19:40:00Z — Multi-select stroke look presets (cap + join + dash combined). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T18:06:32Z — Multi-select line cap / join presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 ## Next recommended
 - Or: stroke dash scrub preview on canvas while dragging the dash field (partially via ghost; polish further).
 - Or: layer filter highlight the matching text/points.
 - Or: guide equal-gap numeric input in the inspector.
-- Or: multi-select stroke look presets (cap + join + dash combined).
+- Or: multi-select miter limit presets when join is miter.

@@ -1,3 +1,4 @@
+import { setStudioStatus } from "@/lib/design/studio-status";
 import {
   capChipLabel,
   dashChipLabel,
@@ -17,6 +18,20 @@ import { NumField } from "./num-field";
 const CAPS: CanvasLineCap[] = ["butt", "round", "square"];
 const JOINS: CanvasLineJoin[] = ["miter", "round", "bevel"];
 const OUTLINE_KINDS = new Set(["path", "rect", "ellipse", "line", "polygon", "star", "arrow"]);
+
+const LOOK_PRESETS: {
+  label: string;
+  dash: number;
+  offset: number;
+  cap: CanvasLineCap;
+  join: CanvasLineJoin;
+}[] = [
+  { label: "Clean", dash: 0, offset: 0, cap: "round", join: "round" },
+  { label: "Sharp", dash: 0, offset: 0, cap: "butt", join: "miter" },
+  { label: "Dotted", dash: 2, offset: 0, cap: "round", join: "round" },
+  { label: "Dashed", dash: 8, offset: 0, cap: "square", join: "bevel" },
+  { label: "Long", dash: 16, offset: 0, cap: "butt", join: "miter" },
+];
 
 function dashKey(n: DesignNode) {
   return Math.round((n.strokeDash ?? 0) * 100) / 100;
@@ -322,6 +337,51 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             onMouseEnter={() => ghostStroke({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
             onMouseLeave={() => ghostStroke(null)}
             onFocus={() => ghostStroke({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
+            onBlur={() => ghostStroke(null)}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1" aria-label="stroke look presets">
+        {LOOK_PRESETS.map((preset) => (
+          <button
+            key={preset.label}
+            type="button"
+            className="rounded border border-phosphor/40 bg-surface-alt px-1.5 py-0.5 text-[10px] text-phosphor hover:bg-phosphor/10"
+            title={`Apply ${preset.label} look (cap ${preset.cap}, join ${preset.join}, dash ${preset.dash}) to selected outlines`}
+            aria-label={`Apply ${preset.label} stroke look`}
+            onClick={() => {
+              updateNodes(
+                ids,
+                {
+                  strokeDash: preset.dash,
+                  strokeDashOffset: preset.offset,
+                  lineCap: preset.cap,
+                  lineJoin: preset.join,
+                },
+                true,
+              );
+              setStudioStatus(`${preset.label} look on ${ids.length} outline${ids.length === 1 ? "" : "s"}`);
+              ghostStroke(null);
+            }}
+            onMouseEnter={() =>
+              ghostStroke({
+                strokeDash: preset.dash,
+                strokeDashOffset: preset.offset,
+                lineCap: preset.cap,
+                lineJoin: preset.join,
+              })
+            }
+            onMouseLeave={() => ghostStroke(null)}
+            onFocus={() =>
+              ghostStroke({
+                strokeDash: preset.dash,
+                strokeDashOffset: preset.offset,
+                lineCap: preset.cap,
+                lineJoin: preset.join,
+              })
+            }
             onBlur={() => ghostStroke(null)}
           >
             {preset.label}
