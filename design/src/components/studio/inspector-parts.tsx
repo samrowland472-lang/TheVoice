@@ -21,6 +21,7 @@ import { useDesign } from "@/lib/design/store";
 import type { Align, DesignNode, GradientFill, ImageNode, TextNode } from "@/lib/design/types";
 import { isGradient } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
+import { NumField } from "./num-field";
 
 export function FillEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -131,6 +132,46 @@ export function FillEditor({ node }: { node: DesignNode }) {
           ))}
         </div>
       )}
+    </>
+  );
+}
+
+export function StrokeEditor({ node }: { node: DesignNode }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const stroke = node.stroke;
+  const width = node.strokeWidth;
+
+  return (
+    <>
+      <div className="mt-3 flex items-center justify-between">
+        <span className="text-[11px] text-ink-dim">Stroke</span>
+      </div>
+      <input
+        type="color"
+        className="h-8 w-full rounded-[8px] border border-border"
+        value={stroke === "transparent" || !stroke ? "#3fc6ff" : stroke}
+        onChange={(e) => {
+          const hex = e.target.value;
+          rememberColor(hex);
+          updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
+        }}
+      />
+      <RecentSwatches
+        onPick={(hex) => {
+          rememberColor(hex);
+          updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
+        }}
+      />
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="text-[10px] text-ink-dim">Width</span>
+        <NumField
+          className="field w-16 font-mono"
+          value={width}
+          min={0}
+          aria-label="stroke width"
+          onCommit={(n) => updateNodes([node.id], { strokeWidth: n }, true)}
+        />
+      </div>
     </>
   );
 }

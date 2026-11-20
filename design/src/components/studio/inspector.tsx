@@ -27,7 +27,7 @@ import { useDesign } from "@/lib/design/store";
 import type { DesignNode, PathNode, TextNode } from "@/lib/design/types";
 import { isGroup, isPath, isText } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
-import { FillEditor, ShadowEditor, Field, Section } from "./inspector-parts";
+import { FillEditor, ShadowEditor, Field, Section, StrokeEditor } from "./inspector-parts";
 import { ImageAdjust } from "./image-adjust";
 import { PathFields } from "./inspector-path";
 import { TextFields } from "./inspector-type";
@@ -317,6 +317,7 @@ export function Inspector() {
                   </select>
                 </Field>
                 <FillEditor node={node} />
+                <StrokeEditor node={node} />
               </Section>
 
               {isText(node) && texts.length === 1 && (

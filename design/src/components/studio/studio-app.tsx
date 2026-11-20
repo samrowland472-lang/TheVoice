@@ -157,8 +157,14 @@ export function StudioApp({ id }: { id: string }) {
         <div className="flex w-full shrink-0 flex-col border-t border-border md:w-[320px] md:border-t-0 md:border-l">
           <LayersPanel />
           <Inspector />
-          {selectedNodes.length > 1 && <MixedInk />}
-          {selectedText.length > 0 && <MixedType />}
+          {selectedNodes.length > 1 && (
+            <MixedInk
+              nodes={selectedNodes}
+              brandColors={useDesign.getState().brand.colors}
+              ink={useDesign.getState().color}
+            />
+          )}
+          {selectedText.length > 0 && <MixedType nodes={selectedText} />}
           <AiPanel />
         </div>
       </div>
