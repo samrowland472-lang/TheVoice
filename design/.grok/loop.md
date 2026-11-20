@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 24: Multi-select miter limit presets. When selection has miter joins (or mixed), Tight (2) / Default (4) / Loose (10) buttons appear under the miter field. Click stamps the limit on all selected outlines in one history commit; hover/focus shows phosphor ghost; active state highlights the shared value. Status strip reports the preset. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 23: Polished multi-select stroke look presets. Buttons now show Cap + Join icons, highlight when the entire selection matches the look (aria-pressed), and set miterLimit=4 on miter joins. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 22: Multi-select stroke look presets. Clean / Sharp / Dotted / Dashed / Long buttons in the Appearance mixed-path section stamp dash + offset + line cap + line join onto all selected outlines in one history commit. Hover and focus show the combined phosphor ghost on canvas. Status strip reports the applied look. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 21: Multi-select line cap / join presets. Icon + label buttons for Butt / Round / Square caps and Miter / Round / Bevel joins in the Appearance mixed-path section. Click applies to all selected outlines in one history commit; hover and focus show the phosphor ghost on canvas. Active state highlights the current shared value. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -65,4 +66,3 @@
 - Or: stroke dash scrub preview on canvas while dragging the dash field (partially via ghost; polish further).
 - Or: layer filter highlight the matching text/points.
 - Or: guide equal-gap numeric input in the inspector.
-- Or: multi-select miter limit presets when join is miter.

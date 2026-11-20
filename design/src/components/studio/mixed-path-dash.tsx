@@ -33,6 +33,12 @@ const LOOK_PRESETS: {
   { label: "Long", dash: 16, offset: 0, cap: "butt", join: "miter" },
 ];
 
+const MITER_PRESETS: { label: string; value: number }[] = [
+  { label: "Tight", value: 2 },
+  { label: "Default", value: 4 },
+  { label: "Loose", value: 10 },
+];
+
 function dashKey(n: DesignNode) {
   return Math.round((n.strokeDash ?? 0) * 100) / 100;
 }
@@ -660,6 +666,7 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
         </div>
       )}
       {(mixedJoin || join === "miter") && (
+        <>
         <Field label={mixedMiter ? "Miter · mixed" : `Miter ${Math.round(miter)}`}>
           <div className="flex items-center gap-2">
             <input
@@ -699,6 +706,38 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             />
           </div>
         </Field>
+        <div className="mt-1 flex flex-wrap gap-1" aria-label="miter limit presets">
+          {MITER_PRESETS.map((preset) => {
+            const isActive = !mixedMiter && Math.abs(miter - preset.value) < 0.05;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                className={cn(
+                  "flex h-6 items-center rounded border px-2 text-[10px]",
+                  isActive
+                    ? "border-phosphor bg-phosphor/15 text-phosphor"
+                    : "border-phosphor/40 bg-surface-alt text-phosphor hover:bg-phosphor/10",
+                )}
+                title={`Set miter limit to ${preset.value} on selected outlines`}
+                aria-label={`Apply ${preset.label} miter limit (${preset.value})`}
+                aria-pressed={isActive}
+                onClick={() => {
+                  updateNodes(ids, { miterLimit: preset.value }, true);
+                  setStudioStatus(`${preset.label} miter (${preset.value}) on ${ids.length} outline${ids.length === 1 ? "" : "s"}`);
+                  ghostStroke(null);
+                }}
+                onMouseEnter={() => ghostStroke({ miterLimit: preset.value })}
+                onMouseLeave={() => ghostStroke(null)}
+                onFocus={() => ghostStroke({ miterLimit: preset.value })}
+                onBlur={() => ghostStroke(null)}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+        </>
       )}
       {mixedMiter && (
         <div className="mt-1 flex flex-wrap gap-1">
