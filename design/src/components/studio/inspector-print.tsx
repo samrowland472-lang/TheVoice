@@ -7,7 +7,7 @@ import {
   guideProbe,
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
-import { canDistributeGuides, canSpaceGuidesByGap, sanitizeGuideLabel } from "@/lib/design/guide-select";
+import { canDistributeGuides, canSpaceGuidesByGap, spaceGuidesByGap, sanitizeGuideLabel } from "@/lib/design/guide-select";
 import { GUIDE_COLORS, GUIDE_DASHES, GUIDE_LOOK_PRESETS, cycleGuideColor, cycleGuideDash, resolveGuideStroke } from "@/lib/design/guide-style";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
@@ -73,11 +73,17 @@ export function InspectorPrint() {
   const setSelectedGuidesColor = useDesign((s) => s.setSelectedGuidesColor);
   const patchGuide = useDesign((s) => s.patchGuide);
   const probe = useDesign((s) => s.guideProbe);
+  const guideGapPreview = useDesign((s) => s.guideGapPreview) as number | null | undefined;
 
   if (!doc) return null;
   const edges = resolveBleed(doc);
   const uniform = uniformBleed(edges);
   const guides = doc.guides ?? [];
+  const previewingGap = guideGapPreview != null && guideGapPreview >= 1 && (guideSelection?.length ?? 0) > 0;
+  const displayGuides = previewingGap
+    ? spaceGuidesByGap(guides, guideSelection ?? [], guideGapPreview!)
+    : guides;
+  const pairs = guidePairs(displayGuides);
 
   const bleedChips = (
     <div className="flex flex-wrap gap-1" data-testid="bleed-edge-chips">
@@ -395,9 +401,10 @@ export function InspectorPrint() {
         {probe ? (
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
         ) : null}
-        {guidePairs(guides).length ? (
-          <p className="mb-1 font-mono text-[10px] text-ink-dim">
-            {guidePairs(guides).map(formatGuidePair).join("  ·  ")}
+        {pairs.length ? (
+          <p className={cn("mb-1 font-mono text-[10px]", previewingGap ? "text-phosphor" : "text-ink-dim")}>
+            {previewingGap ? "preview  " : ""}
+            {pairs.map(formatGuidePair).join("  ·  ")}
           </p>
         ) : null}
         {guides.length === 0 ? (

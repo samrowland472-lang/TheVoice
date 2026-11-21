@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 41: Guide gap pair labels live preview. While scrubbing or typing the equal-gap field, the pair-gap summary in the Print inspector updates live to the proposed spaced gaps (phosphor text, "preview" prefix), anchoring the first selected guide. Clears with the canvas ghost on commit or Gap apply. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 40: Guide gap live phosphor preview. While scrubbing or typing the equal-gap numeric field in the Print inspector, selected guides show a live phosphor ghost (amber dashed lines) at the proposed spaced positions, anchoring the first. Clears on commit or Gap apply. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 39: Guide equal-gap numeric input in the Print inspector. Gap field + Gap button spaces selected (or all) guides of each axis by a fixed gap, anchoring the first, with history commit and status strip. Works for 2+ guides per axis. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 38: Layer filter highlight. Matching text in layer names, text content, and path-point coordinates is marked with a phosphor highlight in the list. Non-name matches show a short snippet. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -61,4 +62,4 @@
 ## Next recommended
 - Or: layer filter highlight polish (multi-match, case, or jump-to-match scroll).
 - Or: single-node stroke width named presets polish or multi-select consistency.
-- Or: guide gap preview also updates the gap pair labels live.
+- Or: guide distribute live phosphor preview (mirroring the gap preview).
