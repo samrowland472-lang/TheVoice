@@ -35,6 +35,39 @@ function nodeMatchesQuery(n: DesignNode, needle: string): boolean {
   return false;
 }
 
+/** Split text on case-insensitive needle and wrap matches in a phosphor mark. */
+function highlightMatch(text: string, needle: string): React.ReactNode {
+  if (!needle) return text;
+  const lower = text.toLowerCase();
+  const idx = lower.indexOf(needle.toLowerCase());
+  if (idx === -1) return text;
+  const before = text.slice(0, idx);
+  const match = text.slice(idx, idx + needle.length);
+  const after = text.slice(idx + needle.length);
+  return (
+    <>
+      {before}
+      <mark className="rounded-sm bg-phosphor/35 px-px text-phosphor-ink">{match}</mark>
+      {after}
+    </>
+  );
+}
+
+/** Where the needle matched for a layer (name / kind / text / points). */
+function matchSource(n: DesignNode, needle: string): "name" | "kind" | "text" | "points" | null {
+  if (!needle) return null;
+  const name = (n.name || "").toLowerCase();
+  const kind = (n.kind || "").toLowerCase();
+  if (name.includes(needle)) return "name";
+  if (kind.includes(needle)) return "kind";
+  if (isText(n) && n.text.toLowerCase().includes(needle)) return "text";
+  if (isPath(n)) {
+    const coords = n.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+    if (coords.includes(needle)) return "points";
+  }
+  return null;
+}
+
 export function LayersPanel() {
   const doc = useDesign((s) => s.doc);
   const selection = useDesign((s) => s.selection);
@@ -426,7 +459,22 @@ export function LayersPanel() {
                     }}
                   >
                     {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
-                    {n.name || n.kind}
+                    {filtering ? highlightMatch(n.name || n.kind, needle) : (n.name || n.kind)}
+                    {filtering && matchSource(n, needle) === "text" && isText(n) && (
+                      <span className="ml-1.5 inline-block max-w-[8rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint" title={n.text}>
+                        text: {highlightMatch(n.text.slice(0, 24), needle)}
+                      </span>
+                    )}
+                    {filtering && matchSource(n, needle) === "points" && isPath(n) && (() => {
+                      const coords = n.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+                      const idx = coords.toLowerCase().indexOf(needle);
+                      const snippet = idx >= 0 ? coords.slice(Math.max(0, idx - 4), idx + needle.length + 6) : "pts";
+                      return (
+                        <span className="ml-1.5 inline-block max-w-[7rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint" title={`Path points: ${coords}`}>
+                          {highlightMatch(snippet, needle)}
+                        </span>
+                      );
+                    })()}
                     {n.opacity < 0.999 && (
                       <button
                         type="button"
