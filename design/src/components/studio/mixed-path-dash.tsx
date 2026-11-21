@@ -15,6 +15,12 @@ import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
 import { NumField } from "./num-field";
 
+const WIDTH_PRESETS = [
+  { id: 1, label: "Hair" },
+  { id: 2, label: "Fine" },
+  { id: 4, label: "Medium" },
+  { id: 8, label: "Bold" },
+] as const;
 const CAPS: CanvasLineCap[] = ["butt", "round", "square"];
 const JOINS: CanvasLineJoin[] = ["miter", "round", "bevel"];
 const OUTLINE_KINDS = new Set(["path", "rect", "ellipse", "line", "polygon", "star", "arrow"]);
@@ -267,6 +273,38 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           />
         </div>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="stroke width presets">
+        {WIDTH_PRESETS.map((preset) => {
+          const active = !mixedWidth && Math.abs(width - preset.id) < 0.05;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={cn(
+                "flex h-7 items-center gap-1 rounded border px-2 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} stroke width (${preset.id}) to selected outlines`}
+              aria-label={`Apply ${preset.label} stroke width`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes(ids, { strokeWidth: preset.id }, true);
+                ghostStroke(null);
+                setStudioStatus(`Width · ${preset.label}`);
+              }}
+              onMouseEnter={() => ghostStroke({ strokeWidth: preset.id })}
+              onMouseLeave={() => ghostStroke(null)}
+              onFocus={() => ghostStroke({ strokeWidth: preset.id })}
+              onBlur={() => ghostStroke(null)}
+            >
+              <span className="font-mono">{preset.id}</span>
+              <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
       <Field label={mixed ? "Dash · mixed" : `Dash ${Math.round(value)}`}>
         <div className="flex items-center gap-2">
           <input
