@@ -22,6 +22,7 @@ const WIDTH_PRESETS = [
   { id: 8, label: "Bold" },
 ] as const;
 const WIDTH_NUMERIC = [0.5, 1.5, 3, 6] as const;
+const OFFSET_NUMERIC = [0, 2, 4, 8, -4] as const;
 const CAPS: CanvasLineCap[] = ["butt", "round", "square"];
 const JOINS: CanvasLineJoin[] = ["miter", "round", "bevel"];
 const OUTLINE_KINDS = new Set(["path", "rect", "ellipse", "line", "polygon", "star", "arrow"]);
@@ -488,6 +489,37 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
           })}
         </div>
       )}
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="dash offset numeric chips">
+        {OFFSET_NUMERIC.map((o) => {
+          const active = !mixedOffset && Math.abs(offset - o) < 0.05;
+          return (
+            <button
+              key={o}
+              type="button"
+              className={cn(
+                "flex h-7 items-center justify-center rounded border px-2 font-mono text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply dash offset ${o} to selected outlines`}
+              aria-label={`Apply dash offset ${o}`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes(ids, { strokeDashOffset: o }, true);
+                ghostStroke(null);
+                setStudioStatus(`Offset · ${o}`);
+              }}
+              onMouseEnter={() => ghostStroke({ strokeDashOffset: o })}
+              onMouseLeave={() => ghostStroke(null)}
+              onFocus={() => ghostStroke({ strokeDashOffset: o })}
+              onBlur={() => ghostStroke(null)}
+            >
+              {o}
+            </button>
+          );
+        })}
+      </div>
       <Field label={mixedCap ? "Cap · mixed" : "Cap"}>
         <select
           className="field"
