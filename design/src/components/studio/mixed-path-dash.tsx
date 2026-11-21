@@ -21,6 +21,7 @@ const WIDTH_PRESETS = [
   { id: 4, label: "Medium" },
   { id: 8, label: "Bold" },
 ] as const;
+const WIDTH_NUMERIC = [0.5, 1.5, 3, 6] as const;
 const CAPS: CanvasLineCap[] = ["butt", "round", "square"];
 const JOINS: CanvasLineJoin[] = ["miter", "round", "bevel"];
 const OUTLINE_KINDS = new Set(["path", "rect", "ellipse", "line", "polygon", "star", "arrow"]);
@@ -301,6 +302,37 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
             >
               <span className="font-mono">{preset.id}</span>
               <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="stroke width numeric chips">
+        {WIDTH_NUMERIC.map((w) => {
+          const active = !mixedWidth && Math.abs(width - w) < 0.05;
+          return (
+            <button
+              key={w}
+              type="button"
+              className={cn(
+                "flex h-7 items-center justify-center rounded border px-2 font-mono text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply stroke width ${w} to selected outlines`}
+              aria-label={`Apply stroke width ${w}`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes(ids, { strokeWidth: w }, true);
+                ghostStroke(null);
+                setStudioStatus(`Width · ${w}`);
+              }}
+              onMouseEnter={() => ghostStroke({ strokeWidth: w })}
+              onMouseLeave={() => ghostStroke(null)}
+              onFocus={() => ghostStroke({ strokeWidth: w })}
+              onBlur={() => ghostStroke(null)}
+            >
+              {w}
             </button>
           );
         })}

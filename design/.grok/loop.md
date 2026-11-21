@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 28: Multi-select stroke width numeric quick chips (0.5 / 1.5 / 3 / 6) alongside named Hair/Fine/Medium/Bold presets. Active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 27: Multi-select stroke width presets (Hair 1 / Fine 2 / Medium 4 / Bold 8). Chips with active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 26: Multi-select line-cap and line-join preset chips. Butt/Round/Square and Miter/Round/Bevel chips with icons, active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 25: Restored multi-select stroke inspector (mixed-path-dash) after placeholder corruption, then added Soft / Default / Sharp / Hard miter-limit presets. Presets write miter + force join=miter on selected outlines, phosphor ghost on hover, active highlight when matched, history commit, and status strip. Dash presets also gained active state + status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -26,6 +27,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-21T01:05:00Z — Multi-select stroke width numeric quick chips (0.5 / 1.5 / 3 / 6) alongside named presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T00:08:32Z — Multi-select stroke width presets (Hair / Fine / Medium / Bold). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T23:14:14Z — Multi-select line-cap / join preset chips with icons (Butt/Round/Square, Miter/Round/Bevel), active state, phosphor ghost, status. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-20T06:06:19Z — Guide distribute from command palette. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -34,7 +36,7 @@
 - 2026-11-20T03:20:00Z — Single-node stroke dash / cap / join / miter controls. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Next recommended
+- Or: multi-select dash offset numeric chips or presets (0 / 2 / 4 / 8 / -4).
 - Or: layer filter highlight the matching text/points in the list.
 - Or: guide equal-gap numeric input in the inspector.
-- Or: multi-select dash offset presets or numeric chips.
-- Or: stroke width numeric quick chips (0.5 / 1.5 / 3 / 6) alongside named presets.
+- Or: single-node stroke width numeric quick chips matching the multi-select set.
