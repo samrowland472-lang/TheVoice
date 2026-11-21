@@ -331,30 +331,42 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
         </div>
       </Field>
 
-      <div className="mt-1 flex flex-wrap gap-1">
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="dash named presets">
         {[
           { label: "Solid", dash: 0, offset: 0 },
           { label: "Dash", dash: 8, offset: 0 },
           { label: "Dot", dash: 2, offset: 0 },
           { label: "Long", dash: 16, offset: 0 },
           { label: "Gap", dash: 4, offset: 4 },
-        ].map((preset) => (
-          <button
-            key={preset.label}
-            type="button"
-            className="rounded border border-border px-1.5 py-0.5 text-[10px] text-ink-dim hover:bg-surface hover:text-ink"
-            onClick={() => {
-              updateNodes([node.id], { strokeDash: preset.dash, strokeDashOffset: preset.offset }, true);
-              useDesign.getState().setStrokeGhost(null);
-            }}
-            onMouseEnter={() => useDesign.getState().setStrokeGhost({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
-            onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
-            onFocus={() => useDesign.getState().setStrokeGhost({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
-            onBlur={() => useDesign.getState().setStrokeGhost(null)}
-          >
-            {preset.label}
-          </button>
-        ))}
+        ].map((preset) => {
+          const active = Math.abs(dash - preset.dash) < 0.05 && Math.abs(offset - preset.offset) < 0.05;
+          return (
+            <button
+              key={preset.label}
+              type="button"
+              className={cn(
+                "rounded border px-1.5 py-0.5 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} dash`}
+              aria-label={`Apply ${preset.label} dash preset`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { strokeDash: preset.dash, strokeDashOffset: preset.offset }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`${preset.label} dash`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ strokeDash: preset.dash, strokeDashOffset: preset.offset })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              {preset.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-1 flex flex-wrap gap-1" aria-label="dash pattern numeric chips">
