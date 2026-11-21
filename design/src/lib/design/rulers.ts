@@ -1,5 +1,5 @@
 import { resolveGuideStroke, hexToRgba, dashArray } from "./guide-style";
-import { guideDisplayName } from "./guide-select";
+import { guideDisplayName, spaceGuidesByGap } from "./guide-select";
 import type { DesignDocument, Guide, Viewport } from "./types";
 import { formatGuideProbe, guidePairs, type GuideProbe } from "./snap-guide";
 
@@ -59,6 +59,7 @@ export function drawDocGuides(
   probe?: GuideProbe | null,
   selectedIds?: string[],
   looks?: import("./guide-style").GuideLooks,
+  gapPreview?: number | null,
 ) {
   const guides = [...(doc.guides ?? [])];
   if (live) {
@@ -67,6 +68,18 @@ export function drawDocGuides(
       if (i >= 0) guides[i] = { ...guides[i]!, pos: live.pos };
     } else {
       guides.push({ id: "live", axis: live.axis, pos: live.pos });
+    }
+  }
+  // Compute gap preview positions (phosphor ghost overlay)
+  let previewMap: Map<string, number> | null = null;
+  if (gapPreview != null && gapPreview >= 1 && selectedIds?.length) {
+    const previewGuides = spaceGuidesByGap(doc.guides ?? [], selectedIds, gapPreview);
+    previewMap = new Map();
+    for (const g of previewGuides) {
+      const orig = (doc.guides ?? []).find((og) => og.id === g.id);
+      if (orig && Math.abs(orig.pos - g.pos) > 0.05) {
+        previewMap.set(g.id, g.pos);
+      }
     }
   }
   ctx.save();
@@ -108,6 +121,29 @@ export function drawDocGuides(
       }
       ctx.restore();
     }
+  }
+  // Draw phosphor ghost lines for gap preview
+  if (previewMap && previewMap.size) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(196,255,77,0.85)";
+    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 1.5;
+    for (const g of guides) {
+      const prevPos = previewMap.get(g.id);
+      if (prevPos == null) continue;
+      ctx.beginPath();
+      if (g.axis === "x") {
+        const x = screenFromDoc(prevPos, viewport.x, viewport.zoom);
+        ctx.moveTo(x, RULER);
+        ctx.lineTo(x, h);
+      } else {
+        const y = screenFromDoc(prevPos, viewport.y, viewport.zoom);
+        ctx.moveTo(RULER, y);
+        ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
   const pairs = guidePairs(guides);
   ctx.setLineDash([]);

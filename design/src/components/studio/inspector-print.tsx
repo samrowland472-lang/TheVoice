@@ -221,7 +221,14 @@ export function InspectorPrint() {
           <div className="col-span-2 flex items-center gap-1">
             <NumField
               value={gapValue}
-              onCommit={(n) => setGapValue(Math.max(1, Math.round(n * 10) / 10))}
+              onCommit={(n) => {
+                const next = Math.max(1, Math.round(n * 10) / 10);
+                setGapValue(next);
+                useDesign.getState().setGuideGapPreview?.(null);
+              }}
+              onDraft={(n) => {
+                useDesign.getState().setGuideGapPreview?.(n != null && n >= 1 ? n : null);
+              }}
               min={1}
               className="h-7 w-14 rounded-[8px] border border-border bg-transparent px-1 font-mono text-[10px] text-ink"
               aria-label="guide equal gap"
@@ -236,6 +243,7 @@ export function InspectorPrint() {
               title="Space selected guides of the same axis by the entered gap, anchoring the first"
               onClick={() => {
                 spaceSelectedGuidesByGap?.(gapValue);
+                useDesign.getState().setGuideGapPreview?.(null);
                 setStudioStatus(`Guides spaced by ${gapValue}`);
               }}
             >
