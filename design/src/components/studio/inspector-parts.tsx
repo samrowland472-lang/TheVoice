@@ -542,6 +542,44 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
           </div>
         </Field>
       )}
+      {join === "miter" && (
+        <div className="mt-1 flex flex-wrap gap-1" aria-label="miter limit presets">
+          {[
+            { label: "Soft", value: 2 },
+            { label: "Default", value: 4 },
+            { label: "Sharp", value: 10 },
+            { label: "Hard", value: 20 },
+          ].map((preset) => {
+            const active = Math.abs(miter - preset.value) < 0.05;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                className={cn(
+                  "rounded border px-1.5 py-0.5 text-[10px] transition-colors",
+                  active
+                    ? "border-phosphor bg-phosphor/15 text-phosphor"
+                    : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+                )}
+                title={`Apply ${preset.label} miter limit (${preset.value})`}
+                aria-label={`Apply ${preset.label} miter limit`}
+                aria-pressed={active}
+                onClick={() => {
+                  updateNodes([node.id], { miterLimit: preset.value, lineJoin: "miter" }, true);
+                  useDesign.getState().setStrokeGhost(null);
+                  setStudioStatus(`${preset.label} miter · ${preset.value}`);
+                }}
+                onMouseEnter={() => useDesign.getState().setStrokeGhost({ miterLimit: preset.value, lineJoin: "miter" })}
+                onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+                onFocus={() => useDesign.getState().setStrokeGhost({ miterLimit: preset.value, lineJoin: "miter" })}
+                onBlur={() => useDesign.getState().setStrokeGhost(null)}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
