@@ -357,6 +357,38 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
         ))}
       </div>
 
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="dash pattern numeric chips">
+        {[0, 4, 8, 16].map((d) => {
+          const active = Math.abs(dash - d) < 0.05;
+          return (
+            <button
+              key={d}
+              type="button"
+              className={cn(
+                "flex h-7 items-center justify-center rounded border px-2 font-mono text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply dash ${d}`}
+              aria-label={`Apply dash ${d}`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { strokeDash: d }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`Dash · ${d}`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ strokeDash: d })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ strokeDash: d })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+
       <Field label={`Offset ${Math.round(offset)}`}>
         <div className="flex items-center gap-2">
           <input
