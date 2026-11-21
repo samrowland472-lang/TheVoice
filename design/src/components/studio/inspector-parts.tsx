@@ -392,6 +392,38 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
         </div>
       </Field>
 
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="dash offset numeric chips">
+        {[0, 2, 4, 8, -4].map((o) => {
+          const active = Math.abs(offset - o) < 0.05;
+          return (
+            <button
+              key={o}
+              type="button"
+              className={cn(
+                "flex h-7 items-center justify-center rounded border px-2 font-mono text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply dash offset ${o}`}
+              aria-label={`Apply dash offset ${o}`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { strokeDashOffset: o }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`Offset · ${o}`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ strokeDashOffset: o })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ strokeDashOffset: o })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              {o}
+            </button>
+          );
+        })}
+      </div>
+
       <Field label="Cap">
         <select
           className="field"

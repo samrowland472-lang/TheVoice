@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 35: Single-node dash offset numeric chips (0 / 2 / 4 / 8 / -4). Chips with active highlight when matched, phosphor ghost on hover/focus, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 34: Single-node miter-limit presets (Soft 2 / Default 4 / Sharp 10 / Hard 20). Chips with active highlight when matched, phosphor ghost on hover/focus, force join=miter, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 33: Single-node line-cap / join preset chips. Butt/Round/Square and Miter/Round/Bevel chips with icons, active highlight when matched, phosphor ghost on hover/focus, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 32: Single-node named stroke width presets (Hair 1 / Fine 2 / Medium 4 / Bold 8). Chips with active highlight when matched, phosphor ghost on hover/focus, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -33,6 +34,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-21T16:06:00Z — Single-node dash offset numeric chips (0 / 2 / 4 / 8 / -4). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T07:08:39Z — Single-node miter-limit presets (Soft / Default / Sharp / Hard). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T06:04:55Z — Single-node line-cap / join preset chips (Butt/Round/Square, Miter/Round/Bevel). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T05:05:00Z — Single-node named stroke width presets (Hair / Fine / Medium / Bold). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -49,4 +51,4 @@
 ## Next recommended
 - Or: layer filter highlight the matching text/points in the list.
 - Or: guide equal-gap numeric input in the inspector.
-- Or: single-node dash offset numeric chips matching multi-select.
+- Or: single-node dash pattern numeric chips matching multi-select.
