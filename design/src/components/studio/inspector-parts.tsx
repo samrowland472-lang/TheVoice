@@ -18,6 +18,7 @@ import {
   stampShadowSpread,
 } from "@/lib/design/shadow";
 import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
 import type { Align, DesignNode, GradientFill, ImageNode, TextNode } from "@/lib/design/types";
 import { isGradient } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
@@ -179,6 +180,37 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
           aria-label="stroke width"
           onCommit={(n) => updateNodes([node.id], { strokeWidth: n }, true)}
         />
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="stroke width numeric chips">
+        {[0.5, 1.5, 3, 6].map((w) => {
+          const active = Math.abs(width - w) < 0.05;
+          return (
+            <button
+              key={w}
+              type="button"
+              className={cn(
+                "flex h-7 items-center justify-center rounded border px-2 font-mono text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply stroke width ${w}`}
+              aria-label={`Apply stroke width ${w}`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { strokeWidth: w }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`Width · ${w}`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ strokeWidth: w })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ strokeWidth: w })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              {w}
+            </button>
+          );
+        })}
       </div>
 
       <Field label={`Dash ${Math.round(dash)}`}>
