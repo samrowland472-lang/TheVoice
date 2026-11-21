@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 30: Multi-select dash pattern numeric chips (0 / 4 / 8 / 16). Active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 29: Multi-select dash offset numeric chips (0 / 2 / 4 / 8 / -4). Active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 28: Multi-select stroke width numeric quick chips (0.5 / 1.5 / 3 / 6) alongside named Hair/Fine/Medium/Bold presets. Active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 27: Multi-select stroke width presets (Hair 1 / Fine 2 / Medium 4 / Bold 8). Chips with active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -28,6 +29,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-21T03:04:54Z — Multi-select dash pattern numeric chips (0 / 4 / 8 / 16). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T02:06:33Z — Multi-select dash offset numeric chips (0 / 2 / 4 / 8 / -4). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T01:05:00Z — Multi-select stroke width numeric quick chips (0.5 / 1.5 / 3 / 6) alongside named presets. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T00:08:32Z — Multi-select stroke width presets (Hair / Fine / Medium / Bold). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -40,4 +42,3 @@
 - Or: layer filter highlight the matching text/points in the list.
 - Or: guide equal-gap numeric input in the inspector.
 - Or: single-node stroke width numeric quick chips matching the multi-select set.
-- Or: multi-select dash pattern numeric chips (e.g. 0 / 4 / 8 / 16).

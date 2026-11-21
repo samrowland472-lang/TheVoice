@@ -23,6 +23,7 @@ const WIDTH_PRESETS = [
 ] as const;
 const WIDTH_NUMERIC = [0.5, 1.5, 3, 6] as const;
 const OFFSET_NUMERIC = [0, 2, 4, 8, -4] as const;
+const DASH_NUMERIC = [0, 4, 8, 16] as const;
 const CAPS: CanvasLineCap[] = ["butt", "round", "square"];
 const JOINS: CanvasLineJoin[] = ["miter", "round", "bevel"];
 const OUTLINE_KINDS = new Set(["path", "rect", "ellipse", "line", "polygon", "star", "arrow"]);
@@ -406,6 +407,37 @@ export function MixedPathDash({ nodes }: { nodes: DesignNode[] }) {
               onBlur={() => ghostStroke(null)}
             >
               {preset.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="dash pattern numeric chips">
+        {DASH_NUMERIC.map((d) => {
+          const active = !mixed && Math.abs(value - d) < 0.05;
+          return (
+            <button
+              key={d}
+              type="button"
+              className={cn(
+                "flex h-7 items-center justify-center rounded border px-2 font-mono text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply dash ${d} to selected outlines`}
+              aria-label={`Apply dash ${d}`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes(ids, { strokeDash: d }, true);
+                ghostStroke(null);
+                setStudioStatus(`Dash · ${d}`);
+              }}
+              onMouseEnter={() => ghostStroke({ strokeDash: d })}
+              onMouseLeave={() => ghostStroke(null)}
+              onFocus={() => ghostStroke({ strokeDash: d })}
+              onBlur={() => ghostStroke(null)}
+            >
+              {d}
             </button>
           );
         })}
