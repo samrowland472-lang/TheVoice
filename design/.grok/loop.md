@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 32: Single-node named stroke width presets (Hair 1 / Fine 2 / Medium 4 / Bold 8). Chips with active highlight when matched, phosphor ghost on hover/focus, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 31: Single-node stroke width numeric quick chips (0.5 / 1.5 / 3 / 6). Active highlight when matched, phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 30: Multi-select dash pattern numeric chips (0 / 4 / 8 / 16). Active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 29: Multi-select dash offset numeric chips (0 / 2 / 4 / 8 / -4). Active highlight when matched (non-mixed), phosphor ghost on hover/focus, history commit, and status strip. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -30,6 +31,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-21T05:05:00Z — Single-node named stroke width presets (Hair / Fine / Medium / Bold). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T04:05:14Z — Single-node stroke width numeric quick chips (0.5 / 1.5 / 3 / 6). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T03:04:54Z — Multi-select dash pattern numeric chips (0 / 4 / 8 / 16). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T02:06:33Z — Multi-select dash offset numeric chips (0 / 2 / 4 / 8 / -4). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -43,4 +45,4 @@
 ## Next recommended
 - Or: layer filter highlight the matching text/points in the list.
 - Or: guide equal-gap numeric input in the inspector.
-- Or: single-node named stroke width presets (Hair / Fine / Medium / Bold) matching multi-select.
+- Or: single-node line-cap / join preset chips matching multi-select.

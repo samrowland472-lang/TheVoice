@@ -181,6 +181,43 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
           onCommit={(n) => updateNodes([node.id], { strokeWidth: n }, true)}
         />
       </div>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="stroke width presets">
+        {[
+          { id: 1, label: "Hair" },
+          { id: 2, label: "Fine" },
+          { id: 4, label: "Medium" },
+          { id: 8, label: "Bold" },
+        ].map((preset) => {
+          const active = Math.abs(width - preset.id) < 0.05;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={cn(
+                "flex h-7 items-center gap-1 rounded border px-2 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} stroke width (${preset.id})`}
+              aria-label={`Apply ${preset.label} stroke width`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { strokeWidth: preset.id }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`Width · ${preset.label}`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ strokeWidth: preset.id })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ strokeWidth: preset.id })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              <span className="font-mono">{preset.id}</span>
+              <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
       <div className="mt-1 flex flex-wrap gap-1" aria-label="stroke width numeric chips">
         {[0.5, 1.5, 3, 6].map((w) => {
           const active = Math.abs(width - w) < 0.05;
