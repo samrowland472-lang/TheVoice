@@ -137,6 +137,52 @@ export function FillEditor({ node }: { node: DesignNode }) {
   );
 }
 
+function CapIcon({ cap }: { cap: CanvasLineCap }) {
+  const common = "stroke-phosphor fill-none";
+  if (cap === "round") {
+    return (
+      <svg width="16" height="8" viewBox="0 0 16 8" className={common} aria-hidden>
+        <line x1="2" y1="4" x2="14" y2="4" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (cap === "square") {
+    return (
+      <svg width="16" height="8" viewBox="0 0 16 8" className={common} aria-hidden>
+        <line x1="2" y1="4" x2="14" y2="4" strokeWidth="3" strokeLinecap="square" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="16" height="8" viewBox="0 0 16 8" className={common} aria-hidden>
+      <line x1="3" y1="4" x2="13" y2="4" strokeWidth="3" strokeLinecap="butt" />
+    </svg>
+  );
+}
+
+function JoinIcon({ join }: { join: CanvasLineJoin }) {
+  const common = "stroke-phosphor fill-none";
+  if (join === "round") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" className={common} aria-hidden>
+        <path d="M2 12 L7 2 L12 12" strokeWidth="2.5" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (join === "bevel") {
+    return (
+      <svg width="14" height="14" viewBox="0 0 14 14" className={common} aria-hidden>
+        <path d="M2 12 L7 2 L12 12" strokeWidth="2.5" strokeLinejoin="bevel" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" className={common} aria-hidden>
+      <path d="M2 12 L7 2 L12 12" strokeWidth="2.5" strokeLinejoin="miter" />
+    </svg>
+  );
+}
+
 export function StrokeEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const stroke = node.stroke;
@@ -366,6 +412,42 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
           ))}
         </select>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="line cap presets">
+        {([
+          { id: "butt" as const, label: "Butt" },
+          { id: "round" as const, label: "Round" },
+          { id: "square" as const, label: "Square" },
+        ] as const).map((preset) => {
+          const active = cap === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={cn(
+                "flex h-7 items-center gap-1 rounded border px-1.5 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} line cap`}
+              aria-label={`Apply ${preset.label} line cap`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { lineCap: preset.id }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`Cap · ${preset.label}`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ lineCap: preset.id })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ lineCap: preset.id })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              <CapIcon cap={preset.id} />
+              <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <Field label="Join">
         <select
@@ -387,6 +469,42 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
           ))}
         </select>
       </Field>
+      <div className="mt-1 flex flex-wrap gap-1" aria-label="line join presets">
+        {([
+          { id: "miter" as const, label: "Miter" },
+          { id: "round" as const, label: "Round" },
+          { id: "bevel" as const, label: "Bevel" },
+        ] as const).map((preset) => {
+          const active = join === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={cn(
+                "flex h-7 items-center gap-1 rounded border px-1.5 text-[10px] transition-colors",
+                active
+                  ? "border-phosphor bg-phosphor/15 text-phosphor"
+                  : "border-border text-ink-dim hover:bg-surface hover:text-ink",
+              )}
+              title={`Apply ${preset.label} line join`}
+              aria-label={`Apply ${preset.label} line join`}
+              aria-pressed={active}
+              onClick={() => {
+                updateNodes([node.id], { lineJoin: preset.id }, true);
+                useDesign.getState().setStrokeGhost(null);
+                setStudioStatus(`Join · ${preset.label}`);
+              }}
+              onMouseEnter={() => useDesign.getState().setStrokeGhost({ lineJoin: preset.id })}
+              onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+              onFocus={() => useDesign.getState().setStrokeGhost({ lineJoin: preset.id })}
+              onBlur={() => useDesign.getState().setStrokeGhost(null)}
+            >
+              <JoinIcon join={preset.id} />
+              <span>{preset.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {join === "miter" && (
         <Field label={`Miter ${Math.round(miter)}`}>
