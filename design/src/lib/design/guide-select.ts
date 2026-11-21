@@ -80,11 +80,43 @@ export function distributeGuidePositions(guides: Guide[], ids: string[]): Guide[
   return next;
 }
 
+/**
+ * Space selected guides of the same axis by a fixed gap, anchoring the lowest/leftmost.
+ * Hidden guides ignored. Locked guides keep position. Needs 2+ guides per axis.
+ */
+export function spaceGuidesByGap(guides: Guide[], ids: string[], gap: number): Guide[] {
+  if (!Number.isFinite(gap) || gap <= 0) return guides;
+  const pick = ids.length ? new Set(ids) : null;
+  const next = guides.map((g) => ({ ...g }));
+  for (const axis of ["x", "y"] as const) {
+    const group = next
+      .filter((g) => g.axis === axis && !g.hidden && (!pick || pick.has(g.id)))
+      .sort((a, b) => a.pos - b.pos);
+    if (group.length < 2) continue;
+    const lo = group[0].pos;
+    for (let i = 1; i < group.length; i++) {
+      const g = group[i];
+      if (g.locked) continue;
+      g.pos = Math.round((lo + gap * i) * 10) / 10;
+    }
+  }
+  return next;
+}
+
 export function canDistributeGuides(guides: Guide[], ids: string[]): boolean {
   const pick = ids.length ? new Set(ids) : null;
   for (const axis of ["x", "y"] as const) {
     const n = guides.filter((g) => g.axis === axis && !g.hidden && (!pick || pick.has(g.id))).length;
     if (n >= 3) return true;
+  }
+  return false;
+}
+
+export function canSpaceGuidesByGap(guides: Guide[], ids: string[]): boolean {
+  const pick = ids.length ? new Set(ids) : null;
+  for (const axis of ["x", "y"] as const) {
+    const n = guides.filter((g) => g.axis === axis && !g.hidden && (!pick || pick.has(g.id))).length;
+    if (n >= 2) return true;
   }
   return false;
 }

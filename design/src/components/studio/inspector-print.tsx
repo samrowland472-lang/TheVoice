@@ -7,7 +7,7 @@ import {
   guideProbe,
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
-import { canDistributeGuides, sanitizeGuideLabel } from "@/lib/design/guide-select";
+import { canDistributeGuides, canSpaceGuidesByGap, sanitizeGuideLabel } from "@/lib/design/guide-select";
 import { GUIDE_COLORS, GUIDE_DASHES, GUIDE_LOOK_PRESETS, cycleGuideColor, cycleGuideDash, resolveGuideStroke } from "@/lib/design/guide-style";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
@@ -49,6 +49,7 @@ export function InspectorPrint() {
   const setBleed = useDesign((s) => s.setBleed);
   const setBleedEdges = useDesign((s) => s.setBleedEdges);
   const [rail, setRail] = useState(false);
+  const [gapValue, setGapValue] = useState(40);
 
   useEffect(() => {
     setRail(loadPrintRail());
@@ -65,6 +66,7 @@ export function InspectorPrint() {
   const guideSelection = useDesign((s) => s.guideSelection) as string[] | undefined;
   const selectGuides = useDesign((s) => s.selectGuides);
   const distributeSelectedGuides = useDesign((s) => s.distributeSelectedGuides);
+  const spaceSelectedGuidesByGap = useDesign((s) => s.spaceSelectedGuidesByGap);
   const lockSelectedGuides = useDesign((s) => s.lockSelectedGuides);
   const unlockSelectedGuides = useDesign((s) => s.unlockSelectedGuides);
   const setSelectedGuidesDash = useDesign((s) => s.setSelectedGuidesDash);
@@ -216,6 +218,30 @@ export function InspectorPrint() {
           >
             Even
           </button>
+          <div className="col-span-2 flex items-center gap-1">
+            <NumField
+              value={gapValue}
+              onCommit={(n) => setGapValue(Math.max(1, Math.round(n * 10) / 10))}
+              min={1}
+              className="h-7 w-14 rounded-[8px] border border-border bg-transparent px-1 font-mono text-[10px] text-ink"
+              aria-label="guide equal gap"
+            />
+            <button
+              type="button"
+              disabled={!canSpaceGuidesByGap(guides, guideSelection ?? [])}
+              className={cn(
+                "h-7 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink",
+                !canSpaceGuidesByGap(guides, guideSelection ?? []) && "opacity-40",
+              )}
+              title="Space selected guides of the same axis by the entered gap, anchoring the first"
+              onClick={() => {
+                spaceSelectedGuidesByGap?.(gapValue);
+                setStudioStatus(`Guides spaced by ${gapValue}`);
+              }}
+            >
+              Gap
+            </button>
+          </div>
           <button
             type="button"
             disabled={!(guideSelection ?? []).length}

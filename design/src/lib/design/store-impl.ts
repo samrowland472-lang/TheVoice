@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { campaignPageName, campaignPages } from "./campaign";
 import { formatById } from "./formats";
 import { uid } from "./id";
-import { canDistributeGuides, distributeGuidePositions, nudgeGuidePositions, pruneGuideIds, toggleGuideIds } from "./guide-select";
+import { canDistributeGuides, canSpaceGuidesByGap, distributeGuidePositions, spaceGuidesByGap, nudgeGuidePositions, pruneGuideIds, toggleGuideIds } from "./guide-select";
 import { cloneNode, paintLayer, shape, text } from "./node-factory";
 import { brushById } from "./brushes";
 import { bakePaintIfSized, bakePaintNode, paintNeedsBake } from "./paint-bake";
@@ -866,6 +866,18 @@ export const useDesign = create<any>((set: any, get: any) => ({
     const next = distributeGuidePositions(guides, ids);
     set({ doc: { ...doc, guides: next }, dirty: true });
     setStudioStatus("Guides distributed evenly");
+  },
+  spaceSelectedGuidesByGap: (gap: number) => {
+    const { doc, guideSelection } = get();
+    if (!doc) return;
+    const guides = doc.guides ?? [];
+    if (!guides.length) return;
+    const ids = (guideSelection ?? []).length ? guideSelection! : guides.map((g) => g.id);
+    if (!canSpaceGuidesByGap(guides, ids)) return;
+    get().commit();
+    const next = spaceGuidesByGap(guides, ids, gap);
+    set({ doc: { ...doc, guides: next }, dirty: true });
+    setStudioStatus(`Guides spaced by ${gap}`);
   },
   setSelectedGuidesDash: (dash: "solid" | "dash" | "tight" | undefined) => {
     const { doc, guideSelection } = get();

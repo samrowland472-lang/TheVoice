@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 39: Guide equal-gap numeric input in the Print inspector. Gap field + Gap button spaces selected (or all) guides of each axis by a fixed gap, anchoring the first, with history commit and status strip. Works for 2+ guides per axis. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 38: Layer filter highlight. Matching text in layer names, text content, and path-point coordinates is marked with a phosphor highlight in the list. Non-name matches show a short snippet. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 37: Single-node dash named presets active state (Solid / Dash / Dot / Long / Gap). Chips highlight with phosphor when current dash + offset match, phosphor ghost on hover/focus, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 36: Single-node dash pattern numeric chips (0 / 4 / 8 / 16). Chips with active highlight when matched, phosphor ghost on hover/focus, history commit, and status strip. Matches multi-select. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -37,6 +38,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-21T21:05:00Z — Guide equal-gap numeric input in the Print inspector. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T20:05:00Z — Layer filter highlight matching text/points in the list. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T19:05:00Z — Single-node dash named presets active state (Solid / Dash / Dot / Long / Gap). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T18:10:00Z — Single-node dash pattern numeric chips (0 / 4 / 8 / 16). Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -55,6 +57,6 @@
 - 2026-11-20T04:09:02Z — Stroke dash pattern presets in single-node inspector. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Next recommended
-- Or: guide equal-gap numeric input in the inspector.
-- Or: single-node stroke width named presets polish or multi-select consistency.
 - Or: layer filter highlight polish (multi-match, case, or jump-to-match scroll).
+- Or: single-node stroke width named presets polish or multi-select consistency.
+- Or: guide gap live phosphor preview while scrubbing the numeric field.
