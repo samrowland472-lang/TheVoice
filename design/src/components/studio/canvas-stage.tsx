@@ -244,6 +244,19 @@ export default function CanvasStage() {
       const fit = fitViewport(doc.artboard.width, doc.artboard.height, w, h);
       setViewport(fit);
       useDesign.setState({ viewIntent: null });
+    } else if (viewIntent?.type === "zoom") {
+      const z = Math.max(0.05, Math.min(8, viewIntent.zoom));
+      // Keep the artboard center roughly in view when zooming
+      const cx = w / 2;
+      const cy = h / 2;
+      const docX = (cx - viewport.x) / viewport.zoom;
+      const docY = (cy - viewport.y) / viewport.zoom;
+      setViewport({
+        zoom: z,
+        x: cx - docX * z,
+        y: cy - docY * z,
+      });
+      useDesign.setState({ viewIntent: null });
     } else if (viewIntent?.type === "fit-sel" && selection.length) {
       const nodes = doc.nodes.filter((n) => selection.includes(n.id));
       if (nodes.length) {

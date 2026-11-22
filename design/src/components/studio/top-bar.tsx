@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Redo2, Ruler, Save, Scan, Search, Undo2 } from "lucide-react";
+import { ArrowLeft, Crop, Download, Grid3x3, Maximize2, Minus, Plus, Redo2, Ruler, Save, Scan, Search, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { campaignPages } from "@/lib/design/campaign";
 import { campaignDocsFromIndex, campaignReadoutFromSizes, downloadCampaignPdf, downloadCampaignSvg } from "@/lib/design/export-campaign";
@@ -179,7 +179,26 @@ export function TopBar() {
           </option>
         ))}
       </select>
-      <span className="hidden font-mono text-[11px] text-ink-faint tabular-nums md:inline">{Math.round(zoom * 100)}%</span>
+      <div className="hidden items-center gap-0.5 md:flex">
+        <Button variant="ghost" size="icon-sm" onClick={() => useDesign.getState().requestZoom(Math.max(0.05, zoom / 1.15))} aria-label="Zoom out">
+          <Minus className="size-3.5" />
+        </Button>
+        <button
+          type="button"
+          className="min-w-[3.25rem] rounded-[8px] px-1.5 py-1 font-mono text-[11px] text-ink-faint tabular-nums hover:bg-surface-alt hover:text-ink"
+          onClick={() => useDesign.getState().requestZoom(1)}
+          title="100%"
+          aria-label={`Zoom ${Math.round(zoom * 100)} percent, click for 100%`}
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <Button variant="ghost" size="icon-sm" onClick={() => useDesign.getState().requestZoom(Math.min(8, zoom * 1.15))} aria-label="Zoom in">
+          <Plus className="size-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon-sm" onClick={() => useDesign.getState().requestFit()} aria-label="Fit artboard" title="Fit (0)">
+          <Maximize2 className="size-3.5" />
+        </Button>
+      </div>
       <Button variant="ghost" size="icon-sm" onClick={() => setPaletteOpen(true)} aria-label="Command palette">
         <Search className="size-4" />
       </Button>
