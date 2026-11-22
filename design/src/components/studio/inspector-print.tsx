@@ -75,6 +75,7 @@ export function InspectorPrint() {
   const probe = useDesign((s) => s.guideProbe);
   const guideGapPreview = useDesign((s) => s.guideGapPreview) as number | null | undefined;
   const guideDistributePreview = useDesign((s) => s.guideDistributePreview) as boolean | undefined;
+  const guideLookPreview = useDesign((s) => s.guideLookPreview) as { color: string; dash: string } | null | undefined;
 
   if (!doc) return null;
   const edges = resolveBleed(doc);
@@ -399,8 +400,13 @@ export function InspectorPrint() {
                 !guides.length && "opacity-40",
               )}
               style={{ background: `${preset.color}22`, borderColor: preset.color }}
-              title={`Apply ${preset.label} (color + dash) to selected guides (or all if none selected)`}
+              title={`Apply ${preset.label} (color + dash) to selected guides (or all if none selected). Hover for live preview.`}
+              onMouseEnter={() => useDesign.getState().setGuideLookPreview?.({ color: preset.color, dash: preset.dash })}
+              onFocus={() => useDesign.getState().setGuideLookPreview?.({ color: preset.color, dash: preset.dash })}
+              onMouseLeave={() => useDesign.getState().setGuideLookPreview?.(null)}
+              onBlur={() => useDesign.getState().setGuideLookPreview?.(null)}
               onClick={() => {
+                useDesign.getState().setGuideLookPreview?.(null);
                 setSelectedGuidesColor?.(preset.color);
                 setSelectedGuidesDash?.(preset.dash);
                 setStudioStatus(`Guide preset: ${preset.label}`);
@@ -414,8 +420,8 @@ export function InspectorPrint() {
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
         ) : null}
         {pairs.length ? (
-          <p className={cn("mb-1 font-mono text-[10px]", previewingGap || previewingDistribute ? "text-phosphor" : "text-ink-dim")}>
-            {previewingGap || previewingDistribute ? "preview  " : ""}
+          <p className={cn("mb-1 font-mono text-[10px]", previewingGap || previewingDistribute || !!guideLookPreview ? "text-phosphor" : "text-ink-dim")}>
+            {previewingGap || previewingDistribute || !!guideLookPreview ? "preview  " : ""}
             {pairs.map(formatGuidePair).join("  ·  ")}
           </p>
         ) : null}

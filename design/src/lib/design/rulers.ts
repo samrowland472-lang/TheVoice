@@ -1,4 +1,4 @@
-import { resolveGuideStroke, hexToRgba, dashArray } from "./guide-style";
+import { resolveGuideStroke, hexToRgba, dashArray, sanitizeGuideColor } from "./guide-style";
 import { guideDisplayName, spaceGuidesByGap, distributeGuidePositions } from "./guide-select";
 import type { DesignDocument, Guide, Viewport } from "./types";
 import { formatGuideProbe, guidePairs, type GuideProbe } from "./snap-guide";
@@ -61,6 +61,7 @@ export function drawDocGuides(
   looks?: import("./guide-style").GuideLooks,
   gapPreview?: number | null,
   distributePreview?: boolean,
+  lookPreview?: import("./guide-style").GuideLookPreview,
 ) {
   const guides = [...(doc.guides ?? [])];
   if (live) {
@@ -132,6 +133,31 @@ export function drawDocGuides(
       }
       ctx.restore();
     }
+  }
+  // Draw live look preview overlay (color + dash) for selected (or all) guides
+  if (lookPreview && sanitizeGuideColor(lookPreview.color)) {
+    const ids = new Set(selectedIds ?? []);
+    const affectAll = ids.size === 0;
+    ctx.save();
+    ctx.strokeStyle = hexToRgba(lookPreview.color, 0.92);
+    ctx.setLineDash(dashArray(lookPreview.dash));
+    ctx.lineWidth = 1.75;
+    for (const g of guides) {
+      if (g.hidden) continue;
+      if (!affectAll && !ids.has(g.id)) continue;
+      ctx.beginPath();
+      if (g.axis === "x") {
+        const x = screenFromDoc(g.pos, viewport.x, viewport.zoom);
+        ctx.moveTo(x, RULER);
+        ctx.lineTo(x, h);
+      } else {
+        const y = screenFromDoc(g.pos, viewport.y, viewport.zoom);
+        ctx.moveTo(RULER, y);
+        ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
   // Draw phosphor ghost lines for gap or distribute preview
   if (previewMap && previewMap.size) {

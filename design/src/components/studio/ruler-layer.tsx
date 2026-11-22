@@ -25,6 +25,7 @@ export function RulerLayer() {
   useDesign((s) => s.guideDashPreview);
   useDesign((s) => s.guideGapPreview);
   useDesign((s) => s.guideDistributePreview);
+  useDesign((s) => s.guideLookPreview);
 
   function paint() {
     const wrap = wrapRef.current;
@@ -43,7 +44,7 @@ export function RulerLayer() {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe, s.guideSelection, s.guideLooks, s.guideGapPreview, s.guideDistributePreview);
+    drawDocGuides(ctx, s.doc, s.viewport, w, h, drag.current, s.guideProbe, s.guideSelection, s.guideLooks, s.guideGapPreview, s.guideDistributePreview, s.guideLookPreview);
     if (s.rulers) drawRulers(ctx, s.doc, s.viewport, w, h);
   }
 

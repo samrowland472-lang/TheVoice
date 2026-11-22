@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 43: Guide look preset live preview. Hovering or focusing a look preset (Phosphor dash / Ice solid / Amber tight / Magenta dash) overlays selected (or all) guides with the proposed color + dash as a live phosphor-style stroke. Clears on leave/blur or click commit. Pair summary shows preview prefix. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 42: Guide distribute live phosphor preview. Hovering or focusing the Even button in the Print inspector shows amber dashed phosphor ghosts at the even-spaced positions (anchoring first/last of each axis) and updates the pair-gap summary live with a "preview" prefix. Clears on mouse leave, blur, or click commit. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 41: Guide gap pair labels live preview. While scrubbing or typing the equal-gap field, the pair-gap summary in the Print inspector updates live to the proposed spaced gaps (phosphor text, "preview" prefix), anchoring the first selected guide. Clears with the canvas ghost on commit or Gap apply. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 40: Guide gap live phosphor preview. While scrubbing or typing the equal-gap numeric field in the Print inspector, selected guides show a live phosphor ghost (amber dashed lines) at the proposed spaced positions, anchoring the first. Clears on commit or Gap apply. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -41,6 +42,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-22T01:08:17Z — Guide look preset live preview on hover/focus of the look chips. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-22T00:10:00Z — Guide distribute live phosphor preview on Even button hover/focus. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T22:10:00Z — Guide gap live phosphor preview while scrubbing the numeric field. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-21T21:05:00Z — Guide equal-gap numeric input in the Print inspector. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -64,4 +66,4 @@
 ## Next recommended
 - Or: layer filter highlight polish (multi-match, case, or jump-to-match scroll).
 - Or: single-node stroke width named presets polish or multi-select consistency.
-- Or: guide color/dash live preview on hover of the look presets.
+- Or: guide look preset active-state highlight when current selection matches a preset.

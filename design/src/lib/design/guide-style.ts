@@ -145,7 +145,7 @@ export function hexToRgba(hex: string, alpha: number) {
 
 const looks = loadGuideLooks();
 
-export type GuideLookPreview = { axis: "x" | "y"; color: string } | null;
+export type GuideLookPreview = { color: string; dash: GuideDash } | null;
 
 export function pairCaptionFill(
   axis: "x" | "y",
@@ -154,10 +154,7 @@ export function pairCaptionFill(
   hot: boolean,
 ) {
   const look = resolveGuideLook(axis, looks);
-  const hex =
-    preview && preview.axis === axis && sanitizeGuideColor(preview.color)
-      ? preview.color
-      : look.color;
+  const hex = preview && sanitizeGuideColor(preview.color) ? preview.color : look.color;
   return hexToRgba(hex, hot ? 0.95 : 0.92);
 }
 
