@@ -24,6 +24,13 @@ import { isGradient } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { NumField } from "./num-field";
 
+
+function gradientPreviewCss(g: GradientFill): string {
+  const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
+  const parts = stops.map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`).join(", ");
+  return `linear-gradient(${g.angle}deg, ${parts})`;
+}
+
 export function FillEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const fill = node.fill;
@@ -104,33 +111,80 @@ export function FillEditor({ node }: { node: DesignNode }) {
               onBlur={() => useDesign.getState().setGradientHoverKey(null)}
             />
           </Field>
-          {fill.stops.map((stop, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="color"
-                className="h-8 w-12 rounded-[8px] border border-border"
-                value={stop.color}
-                onChange={(e) => {
-                  const hex = e.target.value;
-                  rememberColor(hex);
-                  const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
-                  updateNodes([node.id], { fill: { ...fill, stops } }, true);
-                }}
-              />
-              <input
-                type="range"
-                className="range-phosphor flex-1"
-                min={0}
-                max={1}
-                step={0.01}
-                value={stop.offset}
-                onChange={(e) => {
-                  const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: Number(e.target.value) } : s));
-                  updateNodes([node.id], { fill: { ...fill, stops } }, false);
-                }}
-              />
-            </div>
-          ))}
+          <div
+            className="relative h-8 w-full rounded-[8px] border border-border"
+            style={{ background: gradientPreviewCss(fill) }}
+            aria-hidden
+          />
+          {fill.stops
+            .map((stop, i) => ({ stop, i }))
+            .sort((a, b) => a.stop.offset - b.stop.offset)
+            .map(({ stop, i }) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="h-8 w-12 rounded-[8px] border border-border"
+                  value={stop.color}
+                  onChange={(e) => {
+                    const hex = e.target.value;
+                    rememberColor(hex);
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                />
+                <input
+                  type="range"
+                  className="range-phosphor flex-1"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={stop.offset}
+                  onChange={(e) => {
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: Number(e.target.value) } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, false);
+                  }}
+                  onPointerUp={() => useDesign.getState().commit()}
+                  onPointerCancel={() => useDesign.getState().commit()}
+                />
+                <span className="w-9 text-right text-[10px] tabular-nums text-ink-dim">
+                  {Math.round(stop.offset * 100)}%
+                </span>
+                <button
+                  type="button"
+                  className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30"
+                  disabled={fill.stops.length <= 2}
+                  onClick={() => {
+                    if (fill.stops.length <= 2) return;
+                    const stops = fill.stops.filter((_, j) => j !== i);
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                  aria-label="Remove stop"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          <button
+            type="button"
+            className="text-[10px] text-phosphor self-start"
+            onClick={() => {
+              const sorted = [...fill.stops].sort((a, b) => a.offset - b.offset);
+              let at = 0.5;
+              let maxGap = 0;
+              for (let k = 0; k < sorted.length - 1; k++) {
+                const gap = sorted[k + 1].offset - sorted[k].offset;
+                if (gap > maxGap) {
+                  maxGap = gap;
+                  at = (sorted[k].offset + sorted[k + 1].offset) / 2;
+                }
+              }
+              const color = sorted[0]?.color ?? "#d9f5e3";
+              const stops = [...fill.stops, { offset: at, color }].sort((a, b) => a.offset - b.offset);
+              updateNodes([node.id], { fill: { ...fill, stops } }, true);
+            }}
+          >
+            Add stop
+          </button>
         </div>
       )}
     </>
