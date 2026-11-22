@@ -1,4 +1,5 @@
 import { applyFontFace } from "./fonts";
+import { cropSourceRect } from "./image-filters";
 import { degToRad, nodeCenter } from "./geometry";
 import { hitNode, nodeLocalPoint } from "./hit";
 import { tracePath } from "./path-curve";
@@ -320,7 +321,8 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode) {
   if (isImage(n)) {
     const img = getCachedImage(n.src);
     if (img && img.complete && img.naturalWidth) {
-      ctx.drawImage(img, n.x, n.y, n.w, n.h);
+      const src = cropSourceRect(img, n.crop);
+      ctx.drawImage(img, src.sx, src.sy, src.sw, src.sh, n.x, n.y, n.w, n.h);
     } else {
       applyFill(ctx, n.fill, n.x, n.y, n.w, n.h);
       ctx.fillRect(n.x, n.y, n.w, n.h);
@@ -328,7 +330,8 @@ function drawNode(ctx: CanvasRenderingContext2D, n: DesignNode) {
   } else if (isPaint(n)) {
     const img = getCachedImage(n.bitmap);
     if (img && img.complete && img.naturalWidth) {
-      ctx.drawImage(img, n.x, n.y, n.w, n.h);
+      const src = cropSourceRect(img, n.crop);
+      ctx.drawImage(img, src.sx, src.sy, src.sw, src.sh, n.x, n.y, n.w, n.h);
     } else {
       applyFill(ctx, n.fill, n.x, n.y, n.w, n.h);
       ctx.fillRect(n.x, n.y, n.w, n.h);

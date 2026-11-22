@@ -12,6 +12,9 @@ import {
 import { clearDistributePreview, commitDistributePreview, getDistributePreview } from "@/lib/design/distribute-preview";
 import { clearAlignCommitEcho, clearAlignPreview, commitAlignPreview, getAlignCommitEcho, getAlignPreview } from "@/lib/design/align-preview";
 import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
+import { cropHandleForArrow, nudgeCropHandle } from "@/lib/design/crop-handles";
+import { isBitmap } from "@/lib/design/types";
 import type { Tool } from "@/lib/design/types";
 
 const KEYS: Record<string, Tool> = {
@@ -325,6 +328,19 @@ export function useShortcuts(_opts?: { onPalette?: () => void }) {
           nudgeSelectedPathPoints(dx, dy)
         ) {
           return;
+        }
+        // Alt+arrow nudges a crop edge on a single selected bitmap
+        if (e.altKey && s.selection.length === 1) {
+          const n = s.doc?.nodes.find((x) => x.id === s.selection[0]);
+          if (n && isBitmap(n)) {
+            const handle = cropHandleForArrow(e.key);
+            if (handle) {
+              const patch = nudgeCropHandle(n, handle, dx, dy);
+              s.updateNodes([n.id], patch, true);
+              setStudioStatus(`Crop ${handle}`);
+              return;
+            }
+          }
         }
         // Alt is the fine step and the snap bypass, matching a drag.
         useDesign.getState().translateSelected(dx, dy, { snap: s.snap && !e.altKey });

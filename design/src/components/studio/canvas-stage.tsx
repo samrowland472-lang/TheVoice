@@ -13,6 +13,8 @@ import {
 import { drawStrokeGhosts } from "@/lib/design/stroke-ghost";
 import { fillChipLabel, strokeChipLabel } from "@/lib/design/ink";
 import { applyHandle, hitHandle, hitTop, type Handle } from "@/lib/design/hit";
+import { applyCropHandle, drawCropHandles, hitCropHandle, sourceBoxFor, type CropHandle } from "@/lib/design/crop-handles";
+import { isBitmap } from "@/lib/design/types";
 import { nodeCenter, degToRad, rotatePoint } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
@@ -63,6 +65,7 @@ import { formatDistributeGap, getDistributePreview, drawDistributePreview, setLi
 type DragKind =
   | { type: "move"; id: string; startX: number; startY: number; ox: number; oy: number }
   | { type: "resize"; id: string; handle: Handle; startX: number; startY: number; orig: DesignNode }
+  | { type: "crop"; id: string; handle: CropHandle; startX: number; startY: number; orig: DesignNode; source: { x: number; y: number; w: number; h: number } }
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
   | { type: "pan"; startX: number; startY: number; vx: number; vy: number }
   | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null }
@@ -350,6 +353,17 @@ export default function CanvasStage() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawDocument(ctx, doc, { viewport, dpr });
     drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
+    if (selection.length === 1) {
+      const n = doc.nodes.find((x) => x.id === selection[0]);
+      if (n && n.visible && isBitmap(n)) {
+        ctx.save();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.translate(viewport.x, viewport.y);
+        ctx.scale(viewport.zoom, viewport.zoom);
+        drawCropHandles(ctx, n, viewport.zoom);
+        ctx.restore();
+      }
+    }
     drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
     drawAxisScrubChips(ctx, doc.nodes, axisScrubTag, selection, viewport, dpr);
     drawAxisHoverChips(ctx, doc.nodes, axisHoverTag, selection, viewport, dpr);
@@ -811,6 +825,17 @@ export default function CanvasStage() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawDocument(ctx, doc, { viewport, dpr });
       drawSelection(ctx, doc.nodes, selection, viewport, dpr, pathEditHit, pathPointSelection, scaleFlip, showTangentLengths, rotateAngle, alignHover);
+      if (selection.length === 1) {
+        const n = doc.nodes.find((x) => x.id === selection[0]);
+        if (n && n.visible && isBitmap(n)) {
+          ctx.save();
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.translate(viewport.x, viewport.y);
+          ctx.scale(viewport.zoom, viewport.zoom);
+          drawCropHandles(ctx, n, viewport.zoom);
+          ctx.restore();
+        }
+      }
     drawOpacityScrubEdge(ctx, doc.nodes, opacityScrubId, selection, viewport, dpr);
     drawAxisScrubChips(ctx, doc.nodes, axisScrubTag, selection, viewport, dpr);
     drawAxisHoverChips(ctx, doc.nodes, axisHoverTag, selection, viewport, dpr);
@@ -1539,6 +1564,28 @@ export default function CanvasStage() {
         }
       }
 
+      // Crop handles on single selected bitmap take priority over regular resize
+      if (selected.length === 1) {
+        const n = selected[0];
+        if (n && isBitmap(n)) {
+          const ch = hitCropHandle(n, docPt.x, docPt.y, viewport.zoom);
+          if (ch) {
+            const source = sourceBoxFor(n);
+            drag.current = {
+              type: "crop",
+              id: n.id,
+              handle: ch,
+              startX: docPt.x,
+              startY: docPt.y,
+              orig: { ...n },
+              source,
+            };
+            setStudioStatus(`Crop ${ch}`);
+            return;
+          }
+        }
+      }
+
       let hitH: { node: DesignNode; handle: Handle } | null = null;
       for (const n of selected) {
         const h = hitHandle(n, docPt.x, docPt.y, viewport.zoom);
@@ -1967,6 +2014,14 @@ export default function CanvasStage() {
       updateNodes([d.id], patch, false);
       return;
     }
+    if (d.type === "crop") {
+      const local = localDelta(d.orig, docPt.x - d.startX, docPt.y - d.startY);
+      const patch = applyCropHandle(d.orig as any, d.handle, local.dx, local.dy, d.source);
+      updateNodes([d.id], patch, false);
+      const pct = Math.round((patch.crop?.w ?? 1) * 100);
+      setStudioStatus(`Crop ${d.handle} · ${pct}%`);
+      return;
+    }
     if (d.type === "path-points-rotate") {
       const ang = Math.atan2(docPt.y - d.cy, docPt.x - d.cx);
       let deg = ((ang - d.startAngle) * 180) / Math.PI;
@@ -2196,6 +2251,10 @@ export default function CanvasStage() {
     }
     if (d?.type === "path-point") {
       // final state already live; nothing to commit again
+    }
+    if (d?.type === "crop") {
+      commit();
+      setStudioStatus("Crop committed");
     }
     if (d?.type === "marquee") {
       const dx = Math.abs(d.endX - d.startX);
@@ -3940,21 +3999,27 @@ function drawSelection(
     ctx.translate(c.x, c.y);
     ctx.rotate(degToRad(n.rotation));
     ctx.translate(-c.x, -c.y);
-    drawPhosphorSelectionOutline(ctx, n.x, n.y, n.w, n.h, vp.zoom);
+    // Single selected bitmaps use dedicated crop handles drawn later
+    const isSingleBitmap = selection.length === 1 && isBitmap(n);
+    if (!isSingleBitmap) {
+      drawPhosphorSelectionOutline(ctx, n.x, n.y, n.w, n.h, vp.zoom);
+    }
     const size = 8 / vp.zoom;
     const half = size / 2;
-    const pts = [
-      [n.x, n.y],
-      [n.x + n.w / 2, n.y],
-      [n.x + n.w, n.y],
-      [n.x + n.w, n.y + n.h / 2],
-      [n.x + n.w, n.y + n.h],
-      [n.x + n.w / 2, n.y + n.h],
-      [n.x, n.y + n.h],
-      [n.x, n.y + n.h / 2],
-    ];
-    for (const [px, py] of pts) {
-      drawPhosphorHandle(ctx, px!, py!, size, vp.zoom);
+    if (!isSingleBitmap) {
+      const pts = [
+        [n.x, n.y],
+        [n.x + n.w / 2, n.y],
+        [n.x + n.w, n.y],
+        [n.x + n.w, n.y + n.h / 2],
+        [n.x + n.w, n.y + n.h],
+        [n.x + n.w / 2, n.y + n.h],
+        [n.x, n.y + n.h],
+        [n.x, n.y + n.h / 2],
+      ];
+      for (const [px, py] of pts) {
+        drawPhosphorHandle(ctx, px!, py!, size, vp.zoom);
+      }
     }
     const ry = n.y - 28 / vp.zoom;
     const rx = n.x + n.w / 2;
