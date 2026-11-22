@@ -55,12 +55,43 @@ export function applyCropHandle(
   dx: number,
   dy: number,
   source: { x: number; y: number; w: number; h: number },
+  lockAspect = false,
 ): Pick<BitmapNode, "x" | "y" | "w" | "h" | "crop"> {
   const geo = applyHandle(n, handle, dx, dy);
-  const boxed = clampNodeToSource(
+  let boxed = clampNodeToSource(
     { x: geo.x ?? n.x, y: geo.y ?? n.y, w: geo.w ?? n.w, h: geo.h ?? n.h },
     source,
   );
+  if (lockAspect && (handle === "nw" || handle === "ne" || handle === "se" || handle === "sw")) {
+    const aspect = (n.w || 1) / (n.h || 1);
+    // Prefer the larger delta so the locked box still follows the drag
+    const proposedW = boxed.w;
+    const proposedH = boxed.h;
+    let nw = proposedW;
+    let nh = proposedW / aspect;
+    if (Math.abs(proposedH - n.h) > Math.abs(proposedW - n.w)) {
+      nh = proposedH;
+      nw = proposedH * aspect;
+    }
+    // Anchor opposite the handle
+    let nx = boxed.x;
+    let ny = boxed.y;
+    if (handle === "nw") {
+      nx = n.x + n.w - nw;
+      ny = n.y + n.h - nh;
+    } else if (handle === "ne") {
+      nx = n.x;
+      ny = n.y + n.h - nh;
+    } else if (handle === "sw") {
+      nx = n.x + n.w - nw;
+      ny = n.y;
+    } else {
+      // se
+      nx = n.x;
+      ny = n.y;
+    }
+    boxed = clampNodeToSource({ x: nx, y: ny, w: nw, h: nh }, source);
+  }
   return { ...boxed, crop: cropFromBoxes(boxed, source) };
 }
 
@@ -110,6 +141,28 @@ export function drawCropHandles(
     ctx.fill();
     ctx.stroke();
   }
+  // Live crop readout chip (top-right of crop frame)
+  const crop = n.crop ?? { x: 0, y: 0, w: 1, h: 1 };
+  const pctW = Math.round((crop.w ?? 1) * 100);
+  const pctH = Math.round((crop.h ?? 1) * 100);
+  const label = `${pctW}% × ${pctH}%`;
+  ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "bottom";
+  const tw = ctx.measureText(label).width;
+  const chipW = tw + 10 / zoom;
+  const chipH = 14 / zoom;
+  const cx = n.x + n.w - chipW;
+  const cy = n.y - chipH - 2 / zoom;
+  ctx.fillStyle = "rgba(6,16,20,0.92)";
+  ctx.strokeStyle = "rgba(63,198,255,0.7)";
+  ctx.lineWidth = 1 / zoom;
+  ctx.beginPath();
+  ctx.roundRect(cx, cy, chipW, chipH, 2 / zoom);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "#3fc6ff";
+  ctx.fillText(label, cx + 5 / zoom, cy + chipH - 2 / zoom);
   ctx.restore();
 }
 

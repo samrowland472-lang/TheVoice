@@ -1580,7 +1580,7 @@ export default function CanvasStage() {
               orig: { ...n },
               source,
             };
-            setStudioStatus(`Crop ${ch}`);
+            setStudioStatus(`Crop ${ch} · Shift locks aspect`);
             return;
           }
         }
@@ -2016,10 +2016,12 @@ export default function CanvasStage() {
     }
     if (d.type === "crop") {
       const local = localDelta(d.orig, docPt.x - d.startX, docPt.y - d.startY);
-      const patch = applyCropHandle(d.orig as any, d.handle, local.dx, local.dy, d.source);
+      const lock = e.shiftKey && (d.handle === "nw" || d.handle === "ne" || d.handle === "se" || d.handle === "sw");
+      const patch = applyCropHandle(d.orig as any, d.handle, local.dx, local.dy, d.source, lock);
       updateNodes([d.id], patch, false);
-      const pct = Math.round((patch.crop?.w ?? 1) * 100);
-      setStudioStatus(`Crop ${d.handle} · ${pct}%`);
+      const pctW = Math.round((patch.crop?.w ?? 1) * 100);
+      const pctH = Math.round((patch.crop?.h ?? 1) * 100);
+      setStudioStatus(lock ? `Crop ${d.handle} · ${pctW}%×${pctH}% · locked` : `Crop ${d.handle} · ${pctW}%×${pctH}%`);
       return;
     }
     if (d.type === "path-points-rotate") {

@@ -6,9 +6,10 @@
 - Multi-select distribute preview: gap NumField in inspector (live scrub), phosphor equal-spacing connectors + midpoint ticks between ghosts.
 - Distribute gap polish: live range slider + NumField draft updates, Natural reset, per-connector gap labels on canvas, shorter Commit.
 - Image crop handles: live crop on selected photo/paint (source box dashed, crop frame with phosphor squares). Drag corners/edges to crop (source frozen). Alt+arrows nudge an edge. Crop now drawn correctly via source rect.
+- Crop polish: Shift locks aspect on corner drags (anchors opposite corner). Live phosphor chip on the crop frame shows %×% size. Status and inspector copy updated.
 
 ## Iteration
-- 2026-11-22T22:15Z — Image crop handles polish: interactive crop drag on canvas for single selected bitmap, source outline, Alt+arrow edge nudge, proper crop rendering. Typecheck, build, smoke clean.
+- 2026-11-22T23:05Z — Crop aspect lock + live size chip: Shift on corners keeps original crop aspect, phosphor %×% readout sits on the frame. Typecheck, build, smoke clean.
 
 ## Next recommended
 - Layer panel drag reorder polish
