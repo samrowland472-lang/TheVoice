@@ -7,7 +7,11 @@ type Probe = {
   after: number | null;
 } | null;
 
-const state = useDesign.getState() as { setGuideProbe?: (p: Probe) => void; setGuideGapPreview?: (g: number | null) => void };
+const state = useDesign.getState() as {
+  setGuideProbe?: (p: Probe) => void;
+  setGuideGapPreview?: (g: number | null) => void;
+  setGuideDistributePreview?: (on: boolean) => void;
+};
 if (typeof state.setGuideProbe !== "function") {
   useDesign.setState({
     guideProbe: null,
@@ -18,5 +22,11 @@ if (typeof state.setGuideGapPreview !== "function") {
   useDesign.setState({
     guideGapPreview: null as number | null,
     setGuideGapPreview: (guideGapPreview: number | null) => useDesign.setState({ guideGapPreview }),
+  } as Record<string, unknown>);
+}
+if (typeof state.setGuideDistributePreview !== "function") {
+  useDesign.setState({
+    guideDistributePreview: false as boolean,
+    setGuideDistributePreview: (guideDistributePreview: boolean) => useDesign.setState({ guideDistributePreview }),
   } as Record<string, unknown>);
 }

@@ -1,5 +1,5 @@
 import { resolveGuideStroke, hexToRgba, dashArray } from "./guide-style";
-import { guideDisplayName, spaceGuidesByGap } from "./guide-select";
+import { guideDisplayName, spaceGuidesByGap, distributeGuidePositions } from "./guide-select";
 import type { DesignDocument, Guide, Viewport } from "./types";
 import { formatGuideProbe, guidePairs, type GuideProbe } from "./snap-guide";
 
@@ -60,6 +60,7 @@ export function drawDocGuides(
   selectedIds?: string[],
   looks?: import("./guide-style").GuideLooks,
   gapPreview?: number | null,
+  distributePreview?: boolean,
 ) {
   const guides = [...(doc.guides ?? [])];
   if (live) {
@@ -70,10 +71,20 @@ export function drawDocGuides(
       guides.push({ id: "live", axis: live.axis, pos: live.pos });
     }
   }
-  // Compute gap preview positions (phosphor ghost overlay)
+  // Compute gap or distribute preview positions (phosphor ghost overlay)
   let previewMap: Map<string, number> | null = null;
-  if (gapPreview != null && gapPreview >= 1 && selectedIds?.length) {
-    const previewGuides = spaceGuidesByGap(doc.guides ?? [], selectedIds, gapPreview);
+  const ids = selectedIds ?? [];
+  if (gapPreview != null && gapPreview >= 1 && ids.length) {
+    const previewGuides = spaceGuidesByGap(doc.guides ?? [], ids, gapPreview);
+    previewMap = new Map();
+    for (const g of previewGuides) {
+      const orig = (doc.guides ?? []).find((og) => og.id === g.id);
+      if (orig && Math.abs(orig.pos - g.pos) > 0.05) {
+        previewMap.set(g.id, g.pos);
+      }
+    }
+  } else if (distributePreview) {
+    const previewGuides = distributeGuidePositions(doc.guides ?? [], ids);
     previewMap = new Map();
     for (const g of previewGuides) {
       const orig = (doc.guides ?? []).find((og) => og.id === g.id);
@@ -122,7 +133,7 @@ export function drawDocGuides(
       ctx.restore();
     }
   }
-  // Draw phosphor ghost lines for gap preview
+  // Draw phosphor ghost lines for gap or distribute preview
   if (previewMap && previewMap.size) {
     ctx.save();
     ctx.strokeStyle = "rgba(196,255,77,0.85)";

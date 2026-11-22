@@ -7,7 +7,7 @@ import {
   guideProbe,
   snapGuideToObjects,
 } from "@/lib/design/snap-guide";
-import { canDistributeGuides, canSpaceGuidesByGap, spaceGuidesByGap, sanitizeGuideLabel } from "@/lib/design/guide-select";
+import { canDistributeGuides, canSpaceGuidesByGap, spaceGuidesByGap, distributeGuidePositions, sanitizeGuideLabel } from "@/lib/design/guide-select";
 import { GUIDE_COLORS, GUIDE_DASHES, GUIDE_LOOK_PRESETS, cycleGuideColor, cycleGuideDash, resolveGuideStroke } from "@/lib/design/guide-style";
 import { useDesign } from "@/lib/design/store";
 import { setStudioStatus } from "@/lib/design/studio-status";
@@ -74,15 +74,20 @@ export function InspectorPrint() {
   const patchGuide = useDesign((s) => s.patchGuide);
   const probe = useDesign((s) => s.guideProbe);
   const guideGapPreview = useDesign((s) => s.guideGapPreview) as number | null | undefined;
+  const guideDistributePreview = useDesign((s) => s.guideDistributePreview) as boolean | undefined;
 
   if (!doc) return null;
   const edges = resolveBleed(doc);
   const uniform = uniformBleed(edges);
   const guides = doc.guides ?? [];
   const previewingGap = guideGapPreview != null && guideGapPreview >= 1 && (guideSelection?.length ?? 0) > 0;
+  const previewingDistribute = !!guideDistributePreview && canDistributeGuides(guides, guideSelection ?? []) && !previewingGap;
+  const displayIds = (guideSelection ?? []).length ? guideSelection! : guides.map((g) => g.id);
   const displayGuides = previewingGap
     ? spaceGuidesByGap(guides, guideSelection ?? [], guideGapPreview!)
-    : guides;
+    : previewingDistribute
+      ? distributeGuidePositions(guides, displayIds)
+      : guides;
   const pairs = guidePairs(displayGuides);
 
   const bleedChips = (
@@ -220,7 +225,14 @@ export function InspectorPrint() {
               !canDistributeGuides(guides, guideSelection ?? []) && "opacity-40",
             )}
             title="Space selected guides of the same axis evenly between the first and last"
-            onClick={() => distributeSelectedGuides()}
+            onMouseEnter={() => useDesign.getState().setGuideDistributePreview?.(true)}
+            onMouseLeave={() => useDesign.getState().setGuideDistributePreview?.(false)}
+            onFocus={() => useDesign.getState().setGuideDistributePreview?.(true)}
+            onBlur={() => useDesign.getState().setGuideDistributePreview?.(false)}
+            onClick={() => {
+              distributeSelectedGuides();
+              useDesign.getState().setGuideDistributePreview?.(false);
+            }}
           >
             Even
           </button>
@@ -402,8 +414,8 @@ export function InspectorPrint() {
           <p className="mb-1 font-mono text-[10px] text-phosphor">{formatGuideProbe(probe)}</p>
         ) : null}
         {pairs.length ? (
-          <p className={cn("mb-1 font-mono text-[10px]", previewingGap ? "text-phosphor" : "text-ink-dim")}>
-            {previewingGap ? "preview  " : ""}
+          <p className={cn("mb-1 font-mono text-[10px]", previewingGap || previewingDistribute ? "text-phosphor" : "text-ink-dim")}>
+            {previewingGap || previewingDistribute ? "preview  " : ""}
             {pairs.map(formatGuidePair).join("  ·  ")}
           </p>
         ) : null}
