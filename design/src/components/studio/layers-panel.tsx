@@ -20,33 +20,36 @@ import {
 
 type DropHint = LayerDrop;
 
-function nodeMatchesQuery(n: DesignNode, needle: string): boolean {
-  const name = (n.name || "").toLowerCase();
-  const kind = (n.kind || "").toLowerCase();
-  if (name.includes(needle) || kind.includes(needle)) return true;
-  if (isText(n) && n.text.toLowerCase().includes(needle)) return true;
+function nodeMatchesQuery(n: DesignNode, needle: string, caseSensitive = false): boolean {
+  if (!needle) return false;
+  const prep = (s: string) => (caseSensitive ? s : s.toLowerCase());
+  const name = prep(n.name || "");
+  const kind = prep(n.kind || "");
+  const nNeedle = caseSensitive ? needle : needle.toLowerCase();
+  if (name.includes(nNeedle) || kind.includes(nNeedle)) return true;
+  if (isText(n) && prep(n.text).includes(nNeedle)) return true;
   if (isPath(n)) {
     // Match path points by coordinate fragments (e.g. "12" or "12,34")
     const coords = n.points
       .map((p) => `${Math.round(p.x)},${Math.round(p.y)}`)
       .join(" ");
-    if (coords.includes(needle)) return true;
+    if (prep(coords).includes(nNeedle)) return true;
   }
   return false;
 }
 
-/** Split text on case-insensitive needle and wrap every match in a phosphor mark. */
-function highlightMatch(text: string, needle: string): React.ReactNode {
+/** Split text on needle and wrap every match in a phosphor mark. Case-sensitive when requested. */
+function highlightMatch(text: string, needle: string, caseSensitive = false): React.ReactNode {
   if (!needle || !text) return text;
-  const lower = text.toLowerCase();
-  const nLower = needle.toLowerCase();
-  const nLen = nLower.length;
+  const src = caseSensitive ? text : text.toLowerCase();
+  const nSrc = caseSensitive ? needle : needle.toLowerCase();
+  const nLen = nSrc.length;
   if (nLen === 0) return text;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
   let guard = 0;
   while (cursor < text.length && guard < 64) {
-    const idx = lower.indexOf(nLower, cursor);
+    const idx = src.indexOf(nSrc, cursor);
     if (idx === -1) break;
     if (idx > cursor) parts.push(text.slice(cursor, idx));
     parts.push(
@@ -63,16 +66,18 @@ function highlightMatch(text: string, needle: string): React.ReactNode {
 }
 
 /** Where the needle matched for a layer (name / kind / text / points). */
-function matchSource(n: DesignNode, needle: string): "name" | "kind" | "text" | "points" | null {
+function matchSource(n: DesignNode, needle: string, caseSensitive = false): "name" | "kind" | "text" | "points" | null {
   if (!needle) return null;
-  const name = (n.name || "").toLowerCase();
-  const kind = (n.kind || "").toLowerCase();
-  if (name.includes(needle)) return "name";
-  if (kind.includes(needle)) return "kind";
-  if (isText(n) && n.text.toLowerCase().includes(needle)) return "text";
+  const prep = (s: string) => (caseSensitive ? s : s.toLowerCase());
+  const nNeedle = caseSensitive ? needle : needle.toLowerCase();
+  const name = prep(n.name || "");
+  const kind = prep(n.kind || "");
+  if (name.includes(nNeedle)) return "name";
+  if (kind.includes(nNeedle)) return "kind";
+  if (isText(n) && prep(n.text).includes(nNeedle)) return "text";
   if (isPath(n)) {
     const coords = n.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
-    if (coords.includes(needle)) return "points";
+    if (prep(coords).includes(nNeedle)) return "points";
   }
   return null;
 }
@@ -120,6 +125,7 @@ export function LayersPanel() {
   const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [matchIndex, setMatchIndex] = useState(0);
+  const [caseSensitive, setCaseSensitive] = useState(false);
 
   // Cmd/Ctrl+F focuses the layer filter. Arrow keys / Enter jump among matches.
   useEffect(() => {
@@ -141,14 +147,15 @@ export function LayersPanel() {
   }, []);
 
   if (!doc) return null;
-  const needle = query.trim().toLowerCase();
+  const rawNeedle = query.trim();
+  const needle = caseSensitive ? rawNeedle : rawNeedle.toLowerCase();
   const filtering = needle.length > 0;
   const tree = flattenLayers(doc.nodes);
   const layers = filtering
     ? tree.filter(
         ({ node }) =>
-          nodeMatchesQuery(node, needle) ||
-          descendantsOf(doc.nodes, node.id).some((d) => nodeMatchesQuery(d, needle)),
+          nodeMatchesQuery(node, rawNeedle, caseSensitive) ||
+          descendantsOf(doc.nodes, node.id).some((d) => nodeMatchesQuery(d, rawNeedle, caseSensitive)),
       )
     : tree;
   // Keep jump index in range when the filter result set changes.
@@ -280,8 +287,22 @@ export function LayersPanel() {
             }}
             placeholder="Filter layers" title="Cmd/Ctrl+F to focus · ↑↓ jump matches"
             aria-label="Filter layers"
-            className="field h-8 w-full pl-7 pr-7 text-xs"
+            className="field h-8 w-full pl-7 pr-14 text-xs"
           />
+          <button
+            type="button"
+            className={`absolute right-7 grid size-6 place-items-center rounded-[6px] font-mono text-[10px] tracking-tight ${
+              caseSensitive
+                ? "bg-phosphor/20 text-phosphor ring-1 ring-phosphor/60"
+                : "text-ink-faint hover:text-ink"
+            }`}
+            aria-label={caseSensitive ? "Case-sensitive filter on" : "Case-sensitive filter off"}
+            aria-pressed={caseSensitive}
+            title={caseSensitive ? "Case-sensitive (Aa)" : "Case-insensitive (click for Aa)"}
+            onClick={() => setCaseSensitive((v) => !v)}
+          >
+            Aa
+          </button>
           {query && (
             <button
               type="button"
@@ -344,7 +365,7 @@ export function LayersPanel() {
           <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint" title="↑↓ jump · Enter select · Esc clear">
             {layers.length === 0
               ? "No matches"
-              : `${matchIndex + 1} of ${layers.length} match${layers.length === 1 ? "" : "es"} · ↑↓ jump`}
+              : `${matchIndex + 1} of ${layers.length} match${layers.length === 1 ? "" : "es"}${caseSensitive ? " · Aa" : ""} · ↑↓ jump`}
           </p>
         )}
         {dragIds && !filtering && (
@@ -480,19 +501,19 @@ export function LayersPanel() {
                     }}
                   >
                     {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
-                    {filtering ? highlightMatch(n.name || n.kind, needle) : (n.name || n.kind)}
-                    {filtering && matchSource(n, needle) === "text" && isText(n) && (
+                    {filtering ? highlightMatch(n.name || n.kind, rawNeedle, caseSensitive) : (n.name || n.kind)}
+                    {filtering && matchSource(n, rawNeedle, caseSensitive) === "text" && isText(n) && (
                       <span className="ml-1.5 inline-block max-w-[8rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint" title={n.text}>
-                        text: {highlightMatch(n.text.slice(0, 24), needle)}
+                        text: {highlightMatch(n.text.slice(0, 24), rawNeedle, caseSensitive)}
                       </span>
                     )}
-                    {filtering && matchSource(n, needle) === "points" && isPath(n) && (() => {
+                    {filtering && matchSource(n, rawNeedle, caseSensitive) === "points" && isPath(n) && (() => {
                       const coords = n.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
                       const idx = coords.toLowerCase().indexOf(needle);
                       const snippet = idx >= 0 ? coords.slice(Math.max(0, idx - 4), idx + needle.length + 6) : "pts";
                       return (
                         <span className="ml-1.5 inline-block max-w-[7rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint" title={`Path points: ${coords}`}>
-                          {highlightMatch(snippet, needle)}
+                          {highlightMatch(snippet, rawNeedle, caseSensitive)}
                         </span>
                       );
                     })()}

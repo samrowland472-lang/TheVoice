@@ -1,6 +1,7 @@
 # The Voice Design — Improvement Loop
 
 ## Done
+- Iteration 46: Layer filter case-sensitive toggle. Aa chip next to the filter field switches matching and phosphor highlights between case-insensitive (default) and case-sensitive. Status line annotates “· Aa” when on. Jump, clear, and Cmd/Ctrl+F unchanged. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 45: Layer filter highlight polish. All occurrences of the filter needle are phosphor-marked in layer names, text snippets, and path-point coords (not only the first). Jump status shows “1 of N matches · ↑↓ jump”. The current jump target gets a phosphor ring. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 44: Guide look preset active-state highlight. Phosphor dash / Ice solid / Amber tight / Magenta dash chips show a phosphor ring + stronger border when the selected (or all) guides resolve to that color + dash. Mixed or partial matches stay inactive. Hover/focus live preview and click commit unchanged. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - Iteration 43: Guide look preset live preview. Hovering or focusing a look preset (Phosphor dash / Ice solid / Amber tight / Magenta dash) overlays selected (or all) guides with the proposed color + dash as a live phosphor-style stroke. Clears on leave/blur or click commit. Pair summary shows preview prefix. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -44,6 +45,7 @@
 - Iteration 13: Guide color + dash combined bulk presets. Cyan dash / Ice tight / Phos solid / Mag dash buttons plus Reset look in the guides toolbar apply both overrides in one history commit (selection or all). Status strip feedback. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 
 ## Iteration
+- 2026-11-22T04:09:48Z — Layer filter case-sensitive Aa toggle. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-22T03:04:35Z — Layer filter multi-match phosphor highlight + current-jump index and ring. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-22T02:05:00Z — Guide look preset active-state highlight when selected (or all) guides match a preset's color + dash. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
 - 2026-11-22T01:08:17Z — Guide look preset live preview on hover/focus of the look chips. Auth OFF, DB OFF, localStorage only. Phosphor-on-ground intact.
@@ -70,4 +72,4 @@
 ## Next recommended
 - Or: single-node stroke width named presets polish or multi-select consistency.
 - Or: guide look preset active-state for mixed selection (show partial or unify action).
-- Or: layer filter case-sensitive toggle or jump-to-match keyboard polish.
+- Or: layer filter jump-to-match keyboard polish (Home/End or wrap visual).
