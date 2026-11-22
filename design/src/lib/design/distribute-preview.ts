@@ -145,6 +145,49 @@ export function drawDistributePreview(
     ctx.stroke();
   }
   ctx.setLineDash([]);
+  // Equal-spacing connectors between consecutive ghosts
+  if (!flush && ghosts.length >= 2) {
+    ctx.save();
+    ctx.strokeStyle = PHOSPHOR;
+    ctx.globalAlpha = 0.42;
+    ctx.lineWidth = 0.75 / zoom;
+    ctx.setLineDash([3 / zoom, 2 / zoom]);
+    for (let i = 0; i < ghosts.length - 1; i++) {
+      const a = ghosts[i]!;
+      const b = ghosts[i + 1]!;
+      let x1, y1, x2, y2;
+      if (axis === "h") {
+        x1 = a.x + a.w;
+        y1 = a.y + a.h / 2;
+        x2 = b.x;
+        y2 = b.y + b.h / 2;
+      } else {
+        x1 = a.x + a.w / 2;
+        y1 = a.y + a.h;
+        x2 = b.x + b.w / 2;
+        y2 = b.y;
+      }
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      // Tick at midpoint
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      if (axis === "h") {
+        ctx.moveTo(mx, my - 4 / zoom);
+        ctx.lineTo(mx, my + 4 / zoom);
+      } else {
+        ctx.moveTo(mx - 4 / zoom, my);
+        ctx.lineTo(mx + 4 / zoom, my);
+      }
+      ctx.stroke();
+      ctx.setLineDash([3 / zoom, 2 / zoom]);
+    }
+    ctx.restore();
+  }
   if (flush) {
     const cx = (bounds.minX + bounds.maxX) / 2;
     const cy = (bounds.minY + bounds.maxY) / 2;

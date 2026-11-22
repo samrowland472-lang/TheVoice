@@ -47,3 +47,8 @@ test("even spacing keeps the first and last boxes and names one gap", () => {
   assert.equal(next[1].x, 45);
   assert.equal(next[2].x, 90);
 });
+
+test("equal-spacing connectors draw between ghosts", () => {
+  assert.match(preview, /Equal-spacing connectors between consecutive ghosts/);
+  assert.match(preview, /Tick at midpoint/);
+});

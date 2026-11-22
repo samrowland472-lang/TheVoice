@@ -18,7 +18,9 @@ import {
 import {
   armDistributePreview,
   commitDistributePreview,
+  formatDistributeGap,
   getDistributePreview,
+  setLiveDistributePreview,
   subscribeDistributePreview,
   type DistributeAxis,
 } from "@/lib/design/distribute-preview";
@@ -38,8 +40,8 @@ import { MixedFillRule } from "./mixed-fill-rule";
 import { MixedPathDash } from "./mixed-path-dash";
 import { MixedGeometry } from "./mixed-geometry";
 import { BooleanButtons } from "./boolean-buttons";
-import { InspectorPrint } from "./inspector-print";
 import { NumField } from "./num-field";
+import { InspectorPrint } from "./inspector-print";
 
 const EDGES: AlignEdge[] = ["left", "center", "right", "top", "middle", "bottom"];
 const EDGE_LABEL: Record<AlignEdge, string> = {
@@ -224,10 +226,21 @@ export function Inspector() {
                 ))}
               </div>
               {distribute && (
-                <div className="flex flex-col gap-1 text-[10px] text-ink-dim">
-                  <span data-distribute-gap={distribute.gap}>{Math.round(distribute.gap)} gap</span>
-                  <span data-distribute-stay={distribute.ghosts.filter((g) => g.stay).length} />
-                  <span data-distribute-move={distribute.deltas.length} />
+                <div className="flex flex-col gap-1.5 text-[10px] text-ink-dim">
+                  <div className="flex items-center gap-2">
+                    <span className="w-8 shrink-0">Gap</span>
+                    <NumField
+                      value={distribute.gap}
+                      min={0}
+                      className="field h-7 flex-1 font-mono text-[11px]"
+                      aria-label="distribute gap"
+                      onCommit={(n) => setLiveDistributePreview(distribute.axis, Math.max(0, n))}
+                    />
+                    <span className="w-10 text-right font-mono text-phosphor">{formatDistributeGap(distribute.gap)}</span>
+                  </div>
+                  <span data-distribute-gap={distribute.gap} className="sr-only">{Math.round(distribute.gap)}</span>
+                  <span data-distribute-stay={distribute.ghosts.filter((g) => g.stay).length} className="sr-only" />
+                  <span data-distribute-move={distribute.deltas.length} className="sr-only" />
                   <button type="button" className="h-7 rounded-[8px] bg-phosphor text-phosphor-ink" onClick={() => commitDistributePreview()}>
                     Commit across
                   </button>
