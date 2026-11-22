@@ -35,22 +35,31 @@ function nodeMatchesQuery(n: DesignNode, needle: string): boolean {
   return false;
 }
 
-/** Split text on case-insensitive needle and wrap matches in a phosphor mark. */
+/** Split text on case-insensitive needle and wrap every match in a phosphor mark. */
 function highlightMatch(text: string, needle: string): React.ReactNode {
-  if (!needle) return text;
+  if (!needle || !text) return text;
   const lower = text.toLowerCase();
-  const idx = lower.indexOf(needle.toLowerCase());
-  if (idx === -1) return text;
-  const before = text.slice(0, idx);
-  const match = text.slice(idx, idx + needle.length);
-  const after = text.slice(idx + needle.length);
-  return (
-    <>
-      {before}
-      <mark className="rounded-sm bg-phosphor/35 px-px text-phosphor-ink">{match}</mark>
-      {after}
-    </>
-  );
+  const nLower = needle.toLowerCase();
+  const nLen = nLower.length;
+  if (nLen === 0) return text;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  let guard = 0;
+  while (cursor < text.length && guard < 64) {
+    const idx = lower.indexOf(nLower, cursor);
+    if (idx === -1) break;
+    if (idx > cursor) parts.push(text.slice(cursor, idx));
+    parts.push(
+      <mark key={`${idx}-${guard}`} className="rounded-sm bg-phosphor/35 px-px text-phosphor-ink">
+        {text.slice(idx, idx + nLen)}
+      </mark>,
+    );
+    cursor = idx + nLen;
+    guard += 1;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  if (parts.length === 0) return text;
+  return <>{parts}</>;
 }
 
 /** Where the needle matched for a layer (name / kind / text / points). */
@@ -110,6 +119,7 @@ export function LayersPanel() {
   const [weightDraft, setWeightDraft] = useState("");
   const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [matchIndex, setMatchIndex] = useState(0);
 
   // Cmd/Ctrl+F focuses the layer filter. Arrow keys / Enter jump among matches.
   useEffect(() => {
@@ -141,6 +151,11 @@ export function LayersPanel() {
           descendantsOf(doc.nodes, node.id).some((d) => nodeMatchesQuery(d, needle)),
       )
     : tree;
+  // Keep jump index in range when the filter result set changes.
+  if (filtering && layers.length > 0 && matchIndex >= layers.length) {
+    matchIndexRef.current = 0;
+    // state update is deferred; UI will show 1 of N next render
+  }
   const draggingSet = dragIds ? new Set(dragIds) : null;
   const canGroup = selection.length >= 2;
 
@@ -224,6 +239,7 @@ export function LayersPanel() {
             onChange={(e) => {
               setQuery(e.target.value);
               matchIndexRef.current = 0;
+              setMatchIndex(0);
             }}
             onKeyDown={(e) => {
               if (!filtering) return;
@@ -232,6 +248,7 @@ export function LayersPanel() {
               if (e.key === "ArrowDown") {
                 e.preventDefault();
                 matchIndexRef.current = (matchIndexRef.current + 1) % matches.length;
+                setMatchIndex(matchIndexRef.current);
                 const id = matches[matchIndexRef.current];
                 select([id]);
                 requestAnimationFrame(() => {
@@ -240,6 +257,7 @@ export function LayersPanel() {
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 matchIndexRef.current = (matchIndexRef.current - 1 + matches.length) % matches.length;
+                setMatchIndex(matchIndexRef.current);
                 const id = matches[matchIndexRef.current];
                 select([id]);
                 requestAnimationFrame(() => {
@@ -324,7 +342,9 @@ export function LayersPanel() {
         <TypeQuickStrip />
         {filtering && (
           <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint" title="↑↓ jump · Enter select · Esc clear">
-            {layers.length} match{layers.length === 1 ? "" : "es"} · ↑↓ jump
+            {layers.length === 0
+              ? "No matches"
+              : `${matchIndex + 1} of ${layers.length} match${layers.length === 1 ? "" : "es"} · ↑↓ jump`}
           </p>
         )}
         {dragIds && !filtering && (
@@ -334,8 +354,9 @@ export function LayersPanel() {
         )}
       </div>
       <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
-        {layers.map(({ node: n, depth }) => {
+        {layers.map(({ node: n, depth }, layerIdx) => {
           const active = selection.includes(n.id);
+          const isCurrentMatch = filtering && layerIdx === matchIndex;
           const isKey = selection.length >= 2 && selection[selection.length - 1] === n.id;
           const dragging = draggingSet?.has(n.id) ?? false;
           const into = dropHint?.mode === "into" && dropHint.groupId === n.id;
@@ -346,7 +367,7 @@ export function LayersPanel() {
             !!dropHint && !!dragIds && (into || before || after) && !layerDropLegal(doc.nodes, dragIds, dropHint);
           const barLeft = 8 + depth * 12;
           return (
-            <li key={n.id} data-layer-id={n.id} data-layer-kind={n.kind} className="relative">
+            <li key={n.id} data-layer-id={n.id} data-layer-kind={n.kind} className={cn("relative", isCurrentMatch && "ring-1 ring-phosphor/60 rounded-[4px]")}>
               {before && (
                 <span
                   className={cn(
