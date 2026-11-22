@@ -2,6 +2,7 @@ import { autoSmoothPoint, smoothPathCorners } from "@/lib/design/path-curve";
 import { alignSelectedPathPoints, distributeSelectedPathPoints, previewAlignSelectedPathPoints, previewDistributeSelectedPathPoints, clearPathPointAlignPreview, setPathEditHit } from "@/lib/design/path-actions";
 import { dropHole, holeFillRule, pathFillRule, setHoleFillRule, type PathFillRule } from "@/lib/design/fill-rule";
 import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
 import type { PathNode, PathPoint } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { Field, Section } from "./inspector-parts";
@@ -202,6 +203,72 @@ export function PathInspector({ node }: { node: PathNode }) {
             )}
           </div>
         )}
+        {pointSel.length >= 2 && (() => {
+          const outerIdx = pointSel.filter((s) => s.hole == null).map((s) => s.index);
+          if (outerIdx.length < 2) return null;
+          const smoothCount = outerIdx.filter((i) => {
+            const pt = node.points[i];
+            return pt && pt.smooth !== false;
+          }).length;
+          const fullSmooth = smoothCount === outerIdx.length;
+          const partialSmooth = smoothCount > 0 && smoothCount < outerIdx.length;
+          const fullCorner = smoothCount === 0;
+          const applySmooth = (smooth: boolean) => {
+            const nextPoints = node.points.map((pt, i) =>
+              outerIdx.includes(i)
+                ? smooth
+                  ? autoSmoothPoint(node.points, i, node.closed)
+                  : { ...pt, in: null, out: null, smooth: false }
+                : pt,
+            );
+            writePoints(node, nextPoints);
+            setStudioStatus(smooth ? `Smoothed ${outerIdx.length} points` : `Cornered ${outerIdx.length} points`);
+          };
+          return (
+            <div className="mt-1 flex gap-1">
+              <button
+                type="button"
+                className={cn(
+                  "h-7 flex-1 rounded-[8px] text-[10px] transition-[box-shadow,background-color]",
+                  fullSmooth && "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]",
+                  partialSmooth && "bg-phosphor/10 text-phosphor/80 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_20%,transparent)] [box-shadow:0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_40%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_15%,transparent)]",
+                  !fullSmooth && !partialSmooth && "border border-border text-ink-dim",
+                )}
+                title={
+                  partialSmooth
+                    ? `${smoothCount} of ${outerIdx.length} selected points are smooth. Click to smooth all.`
+                    : fullSmooth
+                      ? "All selected points are smooth"
+                      : "Smooth all selected points"
+                }
+                aria-pressed={fullSmooth ? true : partialSmooth ? "mixed" : false}
+                onClick={() => applySmooth(true)}
+              >
+                Smooth selected
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "h-7 flex-1 rounded-[8px] text-[10px] transition-[box-shadow,background-color]",
+                  fullCorner && "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]",
+                  partialSmooth && "bg-phosphor/10 text-phosphor/80 [box-shadow:0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_40%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_15%,transparent)]",
+                  !fullCorner && !partialSmooth && "border border-border text-ink-dim",
+                )}
+                title={
+                  partialSmooth
+                    ? `${outerIdx.length - smoothCount} of ${outerIdx.length} selected points are corners. Click to corner all.`
+                    : fullCorner
+                      ? "All selected points are corners"
+                      : "Corner all selected points"
+                }
+                aria-pressed={fullCorner ? true : partialSmooth ? "mixed" : false}
+                onClick={() => applySmooth(false)}
+              >
+                Corner selected
+              </button>
+            </div>
+          );
+        })()}
         <Field label="Points">
           <ul className="max-h-56 space-y-1 overflow-auto scrollbar-thin">
             {node.points.map((pt, i) => {
