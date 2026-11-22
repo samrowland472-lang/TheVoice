@@ -234,16 +234,39 @@ export function Inspector() {
                       min={0}
                       className="field h-7 flex-1 font-mono text-[11px]"
                       aria-label="distribute gap"
+                      onDraft={(n) => {
+                        if (n != null && Number.isFinite(n)) setLiveDistributePreview(distribute.axis, Math.max(0, n));
+                      }}
                       onCommit={(n) => setLiveDistributePreview(distribute.axis, Math.max(0, n))}
                     />
                     <span className="w-10 text-right font-mono text-phosphor">{formatDistributeGap(distribute.gap)}</span>
                   </div>
+                  <input
+                    type="range"
+                    className="range-phosphor w-full"
+                    min={0}
+                    max={Math.max(40, Math.round(distribute.gap * 2) || 80)}
+                    step={1}
+                    value={Math.round(distribute.gap)}
+                    onChange={(e) => setLiveDistributePreview(distribute.axis, Number(e.target.value))}
+                    aria-label="distribute gap slider"
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      className="h-7 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+                      onClick={() => armDistributePreview(distribute.axis)}
+                      title="Reset to natural even spacing"
+                    >
+                      Natural
+                    </button>
+                    <button type="button" className="h-7 flex-1 rounded-[8px] bg-phosphor text-phosphor-ink" onClick={() => commitDistributePreview()}>
+                      Commit
+                    </button>
+                  </div>
                   <span data-distribute-gap={distribute.gap} className="sr-only">{Math.round(distribute.gap)}</span>
                   <span data-distribute-stay={distribute.ghosts.filter((g) => g.stay).length} className="sr-only" />
                   <span data-distribute-move={distribute.deltas.length} className="sr-only" />
-                  <button type="button" className="h-7 rounded-[8px] bg-phosphor text-phosphor-ink" onClick={() => commitDistributePreview()}>
-                    Commit across
-                  </button>
                 </div>
               )}
             </Section>

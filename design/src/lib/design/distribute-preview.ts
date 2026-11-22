@@ -171,7 +171,7 @@ export function drawDistributePreview(
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
       ctx.stroke();
-      // Tick at midpoint
+      // Tick at midpoint + small gap readout
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       ctx.setLineDash([]);
@@ -184,6 +184,19 @@ export function drawDistributePreview(
         ctx.lineTo(mx + 4 / zoom, my);
       }
       ctx.stroke();
+      // Per-gap label when space allows
+      if (gap > 8 && zoom > 0.4) {
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = PHOSPHOR;
+        ctx.font = `${Math.max(7, 8 / zoom)}px ui-sans-serif, system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const labelOff = 10 / zoom;
+        const lx = axis === "h" ? mx : mx + labelOff;
+        const ly = axis === "h" ? my - labelOff : my;
+        ctx.fillText(formatDistributeGap(gap), lx, ly);
+        ctx.globalAlpha = 0.42;
+      }
       ctx.setLineDash([3 / zoom, 2 / zoom]);
     }
     ctx.restore();
