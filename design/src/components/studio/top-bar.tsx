@@ -11,8 +11,9 @@ import {
   isolateDocument,
   selectionDocument,
 } from "@/lib/design/selection-document";
-import { FORMATS } from "@/lib/design/formats";
-import type { ProjectMeta } from "@/lib/design/types";
+import { FORMATS, formatById } from "@/lib/design/formats";
+import { bakePaintNode } from "@/lib/design/paint-bake";
+import type { DesignDocument, ProjectMeta } from "@/lib/design/types";
 import { markStayOnHub } from "@/lib/design/persist";
 import { useDesign } from "@/lib/design/store";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,7 @@ export function TopBar() {
   const isolateSnapshot = useDesign((s) => s.isolateSnapshot);
   const [scale, setScale] = useState(2);
   const [exportOpen, setExportOpen] = useState(false);
+  const [socialPreset, setSocialPreset] = useState("ig-post");
 
   if (!doc) return null;
 
@@ -148,6 +150,27 @@ export function TopBar() {
     setExportOpen(false);
   }
 
+  function exportSocial(formatId: string) {
+    if (!doc) return;
+    save();
+    const fmt = formatById(formatId);
+    const sx = fmt.width / doc.artboard.width;
+    const sy = fmt.height / doc.artboard.height;
+    const nodes = doc.nodes.map((n) => {
+      const next = { ...n, x: n.x * sx, y: n.y * sy, w: n.w * sx, h: n.kind === "text" ? n.h : n.h * sy };
+      if (n.kind === "paint") return bakePaintNode(next, next.w, next.h);
+      return next;
+    });
+    const temp: DesignDocument = {
+      ...doc,
+      artboard: { ...doc.artboard, width: fmt.width, height: fmt.height, formatId: fmt.id, name: fmt.label },
+      nodes,
+    };
+    downloadDataUrl(exportPng(temp, scale), `${slug(doc.name)}-${fmt.id}.png`);
+    toast.success(`Exported ${fmt.label} PNG @${scale}× · ${fmt.width}×${fmt.height}`);
+    setExportOpen(false);
+  }
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border px-2 md:gap-2 md:px-3">
       <Button
@@ -234,7 +257,7 @@ export function TopBar() {
           <span className="hidden sm:inline">Export</span>
         </Button>
         {exportOpen && (
-          <div className="absolute top-11 right-0 z-40 w-44 rounded-[12px] border border-border bg-surface p-2 shadow-lg">
+          <div className="absolute top-11 right-0 z-40 w-52 rounded-[12px] border border-border bg-surface p-2 shadow-lg">
             <select
               className="mb-2 h-8 w-full rounded-[8px] border border-border bg-surface-alt px-1 font-mono text-[11px] text-ink"
               value={scale}
@@ -324,6 +347,24 @@ export function TopBar() {
             <Button size="sm" className="w-full" variant="primary" onClick={() => exportFile("pdf")}>
               Print PDF
             </Button>
+            <div className="mt-2 border-t border-border pt-2">
+              <div className="mb-1 font-mono text-[10px] tracking-wide text-ink-faint uppercase">Social preset</div>
+              <select
+                className="mb-1 h-8 w-full rounded-[8px] border border-border bg-surface-alt px-1 font-mono text-[11px] text-ink"
+                value={socialPreset}
+                onChange={(e) => setSocialPreset(e.target.value)}
+                aria-label="Social export preset"
+              >
+                {FORMATS.filter((f) => f.group === "Social").map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.label} · {f.width}×{f.height}
+                  </option>
+                ))}
+              </select>
+              <Button size="sm" className="w-full" onClick={() => exportSocial(socialPreset)}>
+                Export PNG
+              </Button>
+            </div>
             {doc.campaignId && (
               <>
                 <CampaignExportReadout />
