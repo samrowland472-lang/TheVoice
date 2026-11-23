@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Present mode notes polish: resizable drawer height (drag phosphor bar, 120–420px, persisted), estimated speaking time (~140 wpm) next to word/char count.
 - Zoom controls in top bar: − / % (click → 100%) / + / Fit. Fixed missing viewIntent "zoom" handler so keyboard and UI zoom actually work (keeps view center).
 - Gradient stop editor depth: live preview bar, % readout, add/remove stops (min 2), sorted display, commit on scrub end.
 - Multi-select distribute preview: gap NumField in inspector (live scrub), phosphor equal-spacing connectors + midpoint ticks between ghosts.
@@ -14,9 +15,10 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
-- 2026-11-23T04:15Z — Present mode notes better UX: wired the existing notes panel into present view with count, placeholder, and caret/jump polish. Typecheck, build, smoke clean.
+- 2026-11-23T05:05Z — Present mode notes polish: resizable height with phosphor drag handle (persisted) + speaking-time readout. Typecheck, build, smoke clean.
 
 ## Next recommended
+- Present mode notes polish (done)
 - Layer panel drag reorder polish (done)
 - Path point inspector more editable (done)
 

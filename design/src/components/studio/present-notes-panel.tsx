@@ -2,12 +2,15 @@ import {
   clampCaret,
   readCaretMap,
   readLastNotesEdit,
+  readNotesHeight,
+  speakingTimeLabel,
   writeCaretMap,
   writeLastNotesEdit,
+  writeNotesHeight,
   type LastNotesEdit,
 } from "@/lib/design/present-notes-pref";
 import { PresentNotesJump } from "./present-notes-jump";
-import { useEffect, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from "react";
 
 export function persistNotesCaret(pageId: string, el: HTMLTextAreaElement | null) {
   if (!el) return;
@@ -44,16 +47,65 @@ export function PresentNotesPanel(props: {
   onChange: (value: string) => void;
   onJump: (id: string) => void;
 }) {
+  const [height, setHeight] = useState(() => readNotesHeight());
+  const dragRef = useRef<{ startY: number; startH: number; currentH?: number } | null>(null);
+
   useEffect(() => {
     restoreCaretIfFocused(props.liveId, props.notes.length, props.notesRef.current);
   }, [props.liveId, props.notes, props.notesRef]);
+
+  const onPointerDown = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    dragRef.current = { startY: e.clientY, startH: height };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  }, [height]);
+
+  const onPointerMove = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    // Dragging up increases height (drawer grows from bottom)
+    const next = drag.startH + (drag.startY - e.clientY);
+    const clamped = Math.min(420, Math.max(120, next));
+    setHeight(clamped);
+    drag.currentH = clamped;
+  }, []);
+
+  const onPointerUp = useCallback((e: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const finalH = drag.currentH ?? height;
+    dragRef.current = null;
+    writeNotesHeight(finalH);
+    setHeight(finalH);
+    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+  }, [height]);
+
   if (!props.open) return null;
   const last: LastNotesEdit | null = readLastNotesEdit();
   const text = props.notes;
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   const chars = text.length;
+  const speak = speakingTimeLabel(words);
+
   return (
-    <div className="flex h-48 shrink-0 flex-col border-t border-border bg-ground px-3 py-2">
+    <div
+      className="relative flex shrink-0 flex-col border-t border-border bg-ground px-3 py-2"
+      style={{ height }}
+    >
+      <div
+        className="absolute left-0 right-0 -mt-1.5 h-2 cursor-ns-resize touch-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize speaker notes"
+        title="Drag to resize notes"
+      >
+        <div className="mx-auto h-0.5 w-10 rounded-full bg-phosphor/40" />
+      </div>
       <div className="mb-1 flex items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-wide text-ink-dim">Speaker notes</span>
         <PresentNotesJump
@@ -67,7 +119,7 @@ export function PresentNotesPanel(props: {
           fallback={props.liveName}
         />
         <span className="ml-auto font-mono text-[10px] text-ink-faint">
-          {words}w · {chars}c
+          {words}w · {chars}c{speak ? ` · ${speak}` : ""}
         </span>
       </div>
       <textarea

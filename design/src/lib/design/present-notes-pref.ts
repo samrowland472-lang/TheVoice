@@ -1,6 +1,10 @@
 export const NOTES_PREF = "voice-design-present-notes";
 export const NOTES_CARET = "voice-design-present-notes-caret";
 export const NOTES_LAST = "voice-design-present-notes-last";
+export const NOTES_HEIGHT = "voice-design-present-notes-height";
+export const NOTES_HEIGHT_MIN = 120;
+export const NOTES_HEIGHT_MAX = 420;
+export const NOTES_HEIGHT_DEFAULT = 192;
 
 export type CaretMap = Record<string, { start: number; end: number }>;
 export type LastNotesEdit = { pageId: string; name: string; at: number };
@@ -103,4 +107,35 @@ export function readCaretMap(): CaretMap {
   } catch {
     return {};
   }
+}
+
+
+export function readNotesHeight(): number {
+  try {
+    const raw = localStorage.getItem(NOTES_HEIGHT);
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return NOTES_HEIGHT_DEFAULT;
+    return Math.min(NOTES_HEIGHT_MAX, Math.max(NOTES_HEIGHT_MIN, n));
+  } catch {
+    return NOTES_HEIGHT_DEFAULT;
+  }
+}
+
+export function writeNotesHeight(px: number) {
+  try {
+    const clamped = Math.min(NOTES_HEIGHT_MAX, Math.max(NOTES_HEIGHT_MIN, Math.round(px)));
+    localStorage.setItem(NOTES_HEIGHT, String(clamped));
+  } catch {
+    /* blocked */
+  }
+}
+
+/** Rough speaking time at 140 wpm. Returns empty string when there is nothing to read. */
+export function speakingTimeLabel(words: number): string {
+  if (words <= 0) return "";
+  const seconds = Math.round((words / 140) * 60);
+  if (seconds < 60) return `~${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `~${m}m` : `~${m}m${s}s`;
 }
