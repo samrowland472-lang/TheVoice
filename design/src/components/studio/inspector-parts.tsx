@@ -31,6 +31,76 @@ function gradientPreviewCss(g: GradientFill): string {
   return `linear-gradient(${g.angle}deg, ${parts})`;
 }
 
+function normalizeHex(raw: string): string | null {
+  let h = raw.trim();
+  if (!h.startsWith("#")) h = "#" + h;
+  if (/^#[0-9a-fA-F]{3}$/.test(h)) {
+    h = "#" + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(h)) return h.toLowerCase();
+  return null;
+}
+
+export function HexColorField({
+  value,
+  onChange,
+  label = "Colour",
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+  label?: string;
+}) {
+  const safe = value && value !== "transparent" && value.startsWith("#") ? value : "#d9f5e3";
+  const [draft, setDraft] = useState(safe);
+  useEffect(() => {
+    setDraft(safe);
+  }, [safe]);
+
+  function commit() {
+    const n = normalizeHex(draft);
+    if (n) {
+      onChange(n);
+      setDraft(n);
+    } else {
+      setDraft(safe);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        className="h-8 w-12 shrink-0 rounded-[8px] border border-border"
+        value={safe.length === 7 ? safe : "#d9f5e3"}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={`${label} colour`}
+      />
+      <input
+        type="text"
+        className="field min-w-0 flex-1 font-mono text-[11px] uppercase tracking-wide"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+            (e.target as HTMLInputElement).blur();
+          }
+          if (e.key === "Escape") {
+            setDraft(safe);
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        placeholder="#rrggbb"
+        aria-label={`${label} hex`}
+        spellCheck={false}
+        maxLength={7}
+      />
+    </div>
+  );
+}
+
 export function FillEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const fill = node.fill;
@@ -67,12 +137,10 @@ export function FillEditor({ node }: { node: DesignNode }) {
         </button>
       </div>
       {!gradient && (
-        <input
-          type="color"
-          className="h-8 w-full rounded-[8px] border border-border"
+        <HexColorField
+          label="Fill"
           value={typeof fill === "string" && fill !== "transparent" ? fill : "#d9f5e3"}
-          onChange={(e) => {
-            const hex = e.target.value;
+          onChange={(hex) => {
             rememberColor(hex);
             updateNodes([node.id], { fill: hex }, true);
           }}
@@ -255,12 +323,10 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
       <div className="mt-3 flex items-center justify-between">
         <span className="text-[11px] text-ink-dim">Stroke</span>
       </div>
-      <input
-        type="color"
-        className="h-8 w-full rounded-[8px] border border-border"
+      <HexColorField
+        label="Stroke"
         value={stroke === "transparent" || !stroke ? "#3fc6ff" : stroke}
-        onChange={(e) => {
-          const hex = e.target.value;
+        onChange={(hex) => {
           rememberColor(hex);
           updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
         }}
@@ -823,13 +889,13 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
       {(sh || multi) && (
         <div className="mt-2 flex flex-col gap-2">
           <Field label={mixedColor ? "Colour \u00b7 mixed" : "Colour"}>
-            <input
-              type="color"
-              className={cn("h-8 w-full rounded-[8px] border border-border", mixedColor && "opacity-70")}
+            <HexColorField
+              label="Shadow"
               value={ghost.color}
-              aria-label={mixedColor ? "layer shadow colour mixed" : "layer shadow colour"}
-              onChange={(e) => { rememberColor(e.target.value); stampAll((cur) => stampShadowColor(cur, e.target.value)); }}
-              onPointerUp={commit}
+              onChange={(hex) => {
+                rememberColor(hex);
+                stampAll((cur) => stampShadowColor(cur, hex), true);
+              }}
             />
           </Field>
           <Field label={mixedBlur ? "Blur \u00b7 mixed" : `Blur ${ghost.blur}`}>

@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Precise hex colour entry: Fill, Stroke and Shadow editors now pair the colour picker with a live hex text field (normalises #rgb/#rrggbb, Enter/blur commits, Esc reverts). Recent swatches unchanged.
 - Present mode notes polish: resizable drawer height (drag phosphor bar, 120–420px, persisted), estimated speaking time (~140 wpm) next to word/char count.
 - Zoom controls in top bar: − / % (click → 100%) / + / Fit. Fixed missing viewIntent "zoom" handler so keyboard and UI zoom actually work (keeps view center).
 - Gradient stop editor depth: live preview bar, % readout, add/remove stops (min 2), sorted display, commit on scrub end.
@@ -15,15 +16,16 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
-- 2026-11-23T05:05Z — Present mode notes polish: resizable height with phosphor drag handle (persisted) + speaking-time readout. Typecheck, build, smoke clean.
+- 2026-11-23T06:15Z — Precise hex colour entry in Fill / Stroke / Shadow. Typecheck, build, smoke clean.
 
 ## Next recommended
-- Present mode notes polish (done)
-- Layer panel drag reorder polish (done)
-- Path point inspector more editable (done)
+- Gradient stop colour hex fields (pair picker + hex per stop)
+- Eyedropper or brand swatch one-click in solid fill
+- Opacity field next to fill hex
 
 ## Backlog
 1. Present mode notes better UX (done)
 2. Layer panel drag reorder polish (done)
 3. Path point inspector more editable (done)
 4. Export preset for common social sizes from studio (done)
+5. Precise hex colour entry (done)
