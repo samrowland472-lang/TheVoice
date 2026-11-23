@@ -312,6 +312,66 @@ export function PathInspector({ node }: { node: PathNode }) {
                       onCommit={(n) => patchPoint(i, { ...pt, y: n })}
                     />
                   </div>
+                  {(pt.smooth !== false || pt.in || pt.out) && (
+                    <div className="mt-1 space-y-1 border-t border-border/50 pt-1">
+                      <div className="flex items-center justify-between text-[9px] text-ink-dim">
+                        <span>Handles</span>
+                        <button
+                          type="button"
+                          className="rounded px-1 text-[9px] text-ink-dim hover:text-phosphor"
+                          onClick={() => patchPoint(i, { ...pt, in: null, out: null, smooth: false })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-4 gap-0.5 text-[9px]">
+                        <span className="col-span-1 self-center text-ink-dim">In</span>
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.in?.x ?? 0)}
+                          aria-label={`point ${i + 1} in x`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.in ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, in: { ...h, x: n } });
+                          }}
+                        />
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.in?.y ?? 0)}
+                          aria-label={`point ${i + 1} in y`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.in ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, in: { ...h, y: n } });
+                          }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 gap-0.5 text-[9px]">
+                        <span className="col-span-1 self-center text-ink-dim">Out</span>
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.out?.x ?? 0)}
+                          aria-label={`point ${i + 1} out x`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.out ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, out: { ...h, x: n } });
+                          }}
+                        />
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.out?.y ?? 0)}
+                          aria-label={`point ${i + 1} out y`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.out ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, out: { ...h, y: n } });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="mt-1 grid grid-cols-2 gap-1">
                     <button
                       type="button"
@@ -443,6 +503,66 @@ export function PathInspector({ node }: { node: PathNode }) {
                                 onCommit={(n) => patchHolePoint(h, i, { ...pt, y: n })}
                               />
                             </div>
+                            {(pt.smooth !== false || pt.in || pt.out) && (
+                              <div className="mt-1 space-y-1 border-t border-border/50 pt-1">
+                                <div className="flex items-center justify-between text-[8px] text-ink-dim">
+                                  <span>Handles</span>
+                                  <button
+                                    type="button"
+                                    className="rounded px-1 text-[8px] text-ink-dim hover:text-phosphor"
+                                    onClick={() => patchHolePoint(h, i, { ...pt, in: null, out: null, smooth: false })}
+                                  >
+                                    Clear
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-0.5">
+                                  <span className="self-center text-[8px] text-ink-dim">In</span>
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.in?.x ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} in x`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.in ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, in: { ...hh, x: n } });
+                                    }}
+                                  />
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.in?.y ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} in y`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.in ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, in: { ...hh, y: n } });
+                                    }}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-4 gap-0.5">
+                                  <span className="self-center text-[8px] text-ink-dim">Out</span>
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.out?.x ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} out x`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.out ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, out: { ...hh, x: n } });
+                                    }}
+                                  />
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.out?.y ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} out y`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.out ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, out: { ...hh, y: n } });
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
                             <div className="mt-0.5 grid grid-cols-2 gap-1">
                               <button
                                 type="button"

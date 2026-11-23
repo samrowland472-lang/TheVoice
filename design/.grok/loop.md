@@ -9,17 +9,18 @@
 - Crop polish: Shift locks aspect on corner drags (anchors opposite corner). Live phosphor chip on the crop frame shows %×% size. Status and inspector copy updated.
 - Social export presets: in the Export menu, pick a Social size (IG Post, Story, X Post, etc.) and export a temporary magic-resized PNG at that size (original artboard unchanged).
 - Keyboard shortcut overlay in command palette: footer “Shortcuts” switches the palette to a filterable, categorized list of tool, edit, view, path, and nudge bindings (phosphor keys). Esc or Back returns to commands.
+- Path point inspector more editable: for each smooth (or handled) point in the Path inspector, live In/Out handle offset NumFields (relative to anchor) plus a Clear control that forces corner. Works for outer path and holes.
 
 ## Iteration
-- 2026-11-23T01:05Z — Keyboard shortcut overlay in command palette: open the palette (⌘K or ?), hit Shortcuts in the footer for a searchable reference of the main bindings. Typecheck, build, smoke clean.
+- 2026-11-23T02:10Z — Path point inspector more editable: select a path, open the Points list, expand Handles on a smooth point to edit bezier in/out offsets directly. Typecheck, build, smoke clean.
 
 ## Next recommended
 - Layer panel drag reorder polish
-- Path point inspector more editable
 - Present mode notes better UX
+- Path point inspector more editable (done)
 
 ## Backlog
-1. Path point inspector more editable
-2. Layer panel drag reorder polish
-3. Present mode notes better UX
+1. Layer panel drag reorder polish
+2. Present mode notes better UX
+3. Path point inspector more editable (done)
 4. Export preset for common social sizes from studio (done)
