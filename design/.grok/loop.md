@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Opacity field next to solid fill hex: solid Fill editor shows a live % NumField (0–100, draft updates canvas, Enter/blur commits) beside the hex and colour picker.
 - Gradient stop offset % fields: each stop's % readout is now a live editable NumField (0–100, draft updates canvas, Enter/blur commits). Hex colour, offset slider and Remove stay beside it.
 - Gradient stop colour hex fields: each stop now pairs the colour picker with a live hex text field (normalises #rgb/#rrggbb, Enter/blur commits, Esc reverts). Offset slider and Remove stay under the hex row.
 - Precise hex colour entry: Fill, Stroke and Shadow editors now pair the colour picker with a live hex text field (normalises #rgb/#rrggbb, Enter/blur commits, Esc reverts). Recent swatches unchanged.
@@ -18,12 +19,13 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 
 ## Next recommended
-- Opacity field next to solid fill hex
 - Eyedropper or brand swatch one-click in solid fill
 - Gradient stop drag reorder or live stop markers on the preview bar
+- Stroke opacity field next to stroke hex
 
 ## Backlog
 1. Present mode notes better UX (done)
@@ -33,3 +35,4 @@
 5. Precise hex colour entry (done)
 6. Gradient stop colour hex fields (done)
 7. Gradient stop offset % editable fields (done)
+8. Opacity field next to solid fill hex (done)

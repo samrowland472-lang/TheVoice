@@ -137,14 +137,35 @@ export function FillEditor({ node }: { node: DesignNode }) {
         </button>
       </div>
       {!gradient && (
-        <HexColorField
-          label="Fill"
-          value={typeof fill === "string" && fill !== "transparent" ? fill : "#d9f5e3"}
-          onChange={(hex) => {
-            rememberColor(hex);
-            updateNodes([node.id], { fill: hex }, true);
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <HexColorField
+              label="Fill"
+              value={typeof fill === "string" && fill !== "transparent" ? fill : "#d9f5e3"}
+              onChange={(hex) => {
+                rememberColor(hex);
+                updateNodes([node.id], { fill: hex }, true);
+              }}
+            />
+          </div>
+          <NumField
+            value={Math.round(node.opacity * 100)}
+            min={0}
+            max={100}
+            className="field w-12 font-mono text-[11px] text-right"
+            aria-label="Fill opacity percent"
+            onDraft={(n) => {
+              if (n == null || !Number.isFinite(n)) return;
+              const op = Math.max(0, Math.min(1, n / 100));
+              updateNodes([node.id], { opacity: op }, false);
+            }}
+            onCommit={(n) => {
+              const op = Math.max(0, Math.min(1, n / 100));
+              updateNodes([node.id], { opacity: op }, true);
+            }}
+          />
+          <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+        </div>
       )}
       {!gradient && (
         <RecentSwatches
