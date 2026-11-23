@@ -17,6 +17,7 @@ import {
   subscribeAlignCommitEcho,
   subscribeAlignPreview,
 } from "@/lib/design/align-preview";
+import { releaseStudioStatus, setStudioStatus } from "@/lib/design/studio-status";
 
 type DropHint = LayerDrop;
 
@@ -110,6 +111,7 @@ export function LayersPanel() {
   const dwellRef = useRef<number | null>(null);
   const [dragIds, setDragIds] = useState<string[] | null>(null);
   const [dropHint, setDropHint] = useState<DropHint | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [editingOpacityId, setEditingOpacityId] = useState<string | null>(null);
@@ -225,6 +227,8 @@ export function LayersPanel() {
     dragIdsRef.current = null;
     setDragIds(null);
     setDropHint(null);
+    setDragPos(null);
+    releaseStudioStatus();
   };
 
   return (
@@ -392,7 +396,7 @@ export function LayersPanel() {
               {before && (
                 <span
                   className={cn(
-                    "pointer-events-none absolute -top-px z-10 h-0.5 rounded-full",
+                    "pointer-events-none absolute -top-px z-10 h-[3px] rounded-full",
                     blocked ? "bg-ink-faint" : "bg-phosphor shadow-[0_0_8px_2px_var(--color-phosphor)]",
                   )}
                   style={{ left: barLeft, right: 8 }}
@@ -401,7 +405,7 @@ export function LayersPanel() {
               {after && (
                 <span
                   className={cn(
-                    "pointer-events-none absolute -bottom-px z-10 h-0.5 rounded-full",
+                    "pointer-events-none absolute -bottom-px z-10 h-[3px] rounded-full",
                     blocked ? "bg-ink-faint" : "bg-phosphor shadow-[0_0_8px_2px_var(--color-phosphor)]",
                   )}
                   style={{ left: barLeft, right: 8 }}
@@ -431,6 +435,8 @@ export function LayersPanel() {
                     dragIdsRef.current = groupIds;
                     setDragIds(groupIds);
                     setDropHint({ mode: "before", anchorId: n.id });
+                    setDragPos({ x: e.clientX, y: e.clientY });
+                    setStudioStatus("Reordering layers");
                     if (!sel.includes(n.id)) select([n.id]);
                   }}
                   onPointerMove={(e) => {
@@ -438,7 +444,24 @@ export function LayersPanel() {
                     autoScroll(e.clientY);
                     const hint = hintFromY(e.clientY);
                     setDropHint(hint);
+                    setDragPos({ x: e.clientX, y: e.clientY });
                     armDwell(hint);
+                    const ids = dragIdsRef.current;
+                    if (hint && ids) {
+                      const legal = layerDropLegal(doc.nodes, ids, hint);
+                      let label = "Reordering layers";
+                      if (hint.mode === "into") {
+                        const g = doc.nodes.find((x) => x.id === hint.groupId);
+                        label = legal ? `Nest into ${g?.name || "group"}` : "Cannot nest";
+                      } else if (hint.anchorId) {
+                        const a = doc.nodes.find((x) => x.id === hint.anchorId);
+                        const verb = hint.mode === "before" ? "Place before" : "Place after";
+                        label = legal ? `${verb} ${a?.name || "layer"}` : "Invalid drop";
+                      }
+                      setStudioStatus(label);
+                    } else {
+                      setStudioStatus("Reordering layers");
+                    }
                   }}
                   onPointerUp={(e) => {
                     if (!dragIdsRef.current) return;
@@ -449,6 +472,8 @@ export function LayersPanel() {
                     dragIdsRef.current = null;
                     setDragIds(null);
                     setDropHint(null);
+                    setDragPos(null);
+                    releaseStudioStatus();
                   }}
                 >
                   <GripVertical className="size-3.5" />
@@ -943,6 +968,19 @@ export function LayersPanel() {
         )}
       </ul>
       <HistoryList />
+      {dragIds && dragPos && (
+        <div
+          className="pointer-events-none fixed z-50 flex items-center gap-1.5 rounded-[8px] border border-phosphor/70 bg-surface/95 px-2 py-1 font-mono text-[10px] tracking-wide text-phosphor shadow-[0_0_12px_1px_color-mix(in_srgb,var(--color-phosphor)_55%,transparent)]"
+          style={{ left: dragPos.x + 14, top: dragPos.y - 22 }}
+        >
+          <GripVertical className="size-3" />
+          <span>
+            {dragIds.length === 1
+              ? doc.nodes.find((n) => n.id === dragIds[0])?.name || "Layer"
+              : `${dragIds.length} layers`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
