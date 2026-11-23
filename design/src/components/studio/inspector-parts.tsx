@@ -1,5 +1,5 @@
 import { clearRecentColors, loadRecentColors, rememberColor, loadBrand } from "@/lib/design/persist";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { nextFromRangeKey } from "./range-keys";
 import { CANVAS_FONTS } from "@/lib/design/fonts";
@@ -105,6 +105,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const fill = node.fill;
   const gradient = isGradient(fill);
+  const barRef = useRef<HTMLDivElement>(null);
 
   function toggle() {
     if (gradient) {
@@ -209,10 +210,42 @@ export function FillEditor({ node }: { node: DesignNode }) {
             />
           </Field>
           <div
+            ref={barRef}
             className="relative h-8 w-full rounded-[8px] border border-border"
             style={{ background: gradientPreviewCss(fill) }}
-            aria-hidden
-          />
+          >
+            {fill.stops.map((stop, i) => (
+              <button
+                key={i}
+                type="button"
+                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
+                style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const bar = barRef.current;
+                  if (!bar) return;
+                  const rect = bar.getBoundingClientRect();
+                  const startX = e.clientX;
+                  const startOffset = stop.offset;
+                  const onMove = (ev: PointerEvent) => {
+                    const dx = ev.clientX - startX;
+                    const newOff = Math.max(0, Math.min(1, startOffset + dx / rect.width));
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: newOff } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, false);
+                  };
+                  const onUp = () => {
+                    window.removeEventListener("pointermove", onMove);
+                    window.removeEventListener("pointerup", onUp);
+                    useDesign.getState().commit();
+                  };
+                  window.addEventListener("pointermove", onMove);
+                  window.addEventListener("pointerup", onUp);
+                }}
+                aria-label={`Drag gradient stop ${i + 1}`}
+              />
+            ))}
+          </div>
           {fill.stops
             .map((stop, i) => ({ stop, i }))
             .sort((a, b) => a.stop.offset - b.stop.offset)
