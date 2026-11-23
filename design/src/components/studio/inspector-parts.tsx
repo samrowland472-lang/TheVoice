@@ -1,4 +1,4 @@
-import { clearRecentColors, loadRecentColors, rememberColor } from "@/lib/design/persist";
+import { clearRecentColors, loadRecentColors, rememberColor, loadBrand } from "@/lib/design/persist";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { nextFromRangeKey } from "./range-keys";
@@ -166,6 +166,14 @@ export function FillEditor({ node }: { node: DesignNode }) {
           />
           <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
         </div>
+      )}
+      {!gradient && (
+        <BrandSwatches
+          onPick={(hex) => {
+            rememberColor(hex);
+            updateNodes([node.id], { fill: hex }, true);
+          }}
+        />
       )}
       {!gradient && (
         <RecentSwatches
@@ -389,6 +397,12 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
         />
         <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
       </div>
+      <BrandSwatches
+        onPick={(hex) => {
+          rememberColor(hex);
+          updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
+        }}
+      />
       <RecentSwatches
         onPick={(hex) => {
           rememberColor(hex);
@@ -838,6 +852,29 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
   );
 }
 
+export function BrandSwatches({ onPick }: { onPick: (hex: string) => void }) {
+  const kit = loadBrand();
+  if (!kit.colors.length) return null;
+  return (
+    <div className="mt-2">
+      <span className="mb-1 block text-[10px] tracking-[0.12em] text-ink-faint uppercase">Brand</span>
+      <div className="flex flex-wrap gap-1">
+        {kit.colors.map((c) => (
+          <button
+            key={c.hex}
+            type="button"
+            className="size-5 rounded-full border border-border hover:ring-1 hover:ring-phosphor/60"
+            style={{ background: c.hex }}
+            onClick={() => onPick(c.hex)}
+            aria-label={c.name}
+            title={c.name}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
   const [colors, setColors] = useState<string[]>(() => loadRecentColors());
   useEffect(() => {
@@ -860,12 +897,12 @@ export function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
           Clear
         </button>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1">
         {colors.map((hex) => (
           <button
             key={hex}
             type="button"
-            className="size-6 rounded-full border border-border ring-offset-1 hover:ring-1 hover:ring-phosphor/60"
+            className="size-5 rounded-full border border-border hover:ring-1 hover:ring-phosphor/60"
             style={{ background: hex }}
             onClick={() => onPick(hex)}
             aria-label={hex}

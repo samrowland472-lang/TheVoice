@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Denser brand + recent one-click swatches in solid Fill and Stroke editors: brand kit colours appear as a tight row of size-5 phosphor-ready chips above recent colours (also densified to size-5 / gap-1). Click applies the hex to fill or stroke and remembers it.
 - Stroke opacity field next to stroke hex: Stroke editor shows a live % NumField (0–100, draft updates canvas, Enter/blur commits) beside the hex and colour picker, matching the solid Fill pattern (controls the same node opacity).
 - Opacity field next to solid fill hex: solid Fill editor shows a live % NumField (0–100, draft updates canvas, Enter/blur commits) beside the hex and colour picker.
 - Gradient stop offset % fields: each stop's % readout is now a live editable NumField (0–100, draft updates canvas, Enter/blur commits). Hex colour, offset slider and Remove stay beside it.
@@ -20,14 +21,15 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-23T20:05Z — Denser brand + recent one-click swatches in solid Fill and Stroke. Typecheck, build, smoke clean.
 - 2026-11-23T19:15Z — Stroke opacity field next to stroke hex. Typecheck, build, smoke clean.
 - 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 
 ## Next recommended
-- Eyedropper or brand swatch one-click in solid fill
+- Eyedropper tool samples canvas colour onto selected fill or stroke
 - Gradient stop drag reorder or live stop markers on the preview bar
-- Brand / recent swatches denser one-click row in stroke editor
+- Brand / recent denser also in mixed-ink and type colour editors
 
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
@@ -40,3 +42,4 @@
 7. Gradient stop offset % editable fields (done)
 8. Opacity field next to solid fill hex (done)
 9. Stroke opacity field next to stroke hex (done)
+10. Denser brand + recent swatches in solid Fill/Stroke (done)
