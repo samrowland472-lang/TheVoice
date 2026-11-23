@@ -49,8 +49,11 @@ export function PresentNotesPanel(props: {
   }, [props.liveId, props.notes, props.notesRef]);
   if (!props.open) return null;
   const last: LastNotesEdit | null = readLastNotesEdit();
+  const text = props.notes;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
   return (
-    <div className="flex h-40 shrink-0 flex-col border-t border-border bg-ground px-3 py-2">
+    <div className="flex h-48 shrink-0 flex-col border-t border-border bg-ground px-3 py-2">
       <div className="mb-1 flex items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-wide text-ink-dim">Speaker notes</span>
         <PresentNotesJump
@@ -63,11 +66,15 @@ export function PresentNotesPanel(props: {
           }}
           fallback={props.liveName}
         />
+        <span className="ml-auto font-mono text-[10px] text-ink-faint">
+          {words}w · {chars}c
+        </span>
       </div>
       <textarea
         ref={props.notesRef}
-        className="min-h-0 flex-1 resize-none bg-transparent font-mono text-sm text-ink outline-none"
+        className="min-h-0 flex-1 resize-none bg-transparent font-mono text-sm text-ink outline-none placeholder:text-ink-faint"
         value={props.notes}
+        placeholder="Speaker notes for this frame…"
         aria-label="Speaker notes"
         onChange={(e) => {
           props.onChange(e.target.value);

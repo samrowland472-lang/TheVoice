@@ -11,17 +11,17 @@
 - Keyboard shortcut overlay in command palette: footer “Shortcuts” switches the palette to a filterable, categorized list of tool, edit, view, path, and nudge bindings (phosphor keys). Esc or Back returns to commands.
 - Path point inspector more editable: for each smooth (or handled) point in the Path inspector, live In/Out handle offset NumFields (relative to anchor) plus a Clear control that forces corner. Works for outer path and holes.
 - Layer panel drag reorder polish: floating phosphor ghost follows the cursor with the layer name (or count), live status strip describes the drop ("Nest into …", "Place before …"), thicker insertion bars, illegal drops stay grey.
+- Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
-- 2026-11-23T03:05Z — Layer panel drag reorder polish: drag a layer (or multi-selection) and a phosphor chip tracks the pointer; the status strip names the intended nest or place action. Typecheck, build, smoke clean.
+- 2026-11-23T04:15Z — Present mode notes better UX: wired the existing notes panel into present view with count, placeholder, and caret/jump polish. Typecheck, build, smoke clean.
 
 ## Next recommended
-- Present mode notes better UX
 - Layer panel drag reorder polish (done)
 - Path point inspector more editable (done)
 
 ## Backlog
-1. Present mode notes better UX
+1. Present mode notes better UX (done)
 2. Layer panel drag reorder polish (done)
 3. Path point inspector more editable (done)
 4. Export preset for common social sizes from studio (done)

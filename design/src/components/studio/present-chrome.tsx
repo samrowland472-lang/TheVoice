@@ -28,6 +28,7 @@ import { useDesign } from "@/lib/design/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import CanvasStage from "./canvas-stage";
+import { PresentNotesPanel } from "./present-notes-panel";
 import { PresentChipRail } from "./present-chip-menu";
 import { PresentNotesJump } from "./present-notes-jump";
 import {
@@ -472,6 +473,18 @@ export function PresentView() {
       <div className="relative min-h-0 flex-1">
         <CanvasStage />
       </div>
+      {notesOpen && (
+        <PresentNotesPanel
+          open={notesOpen}
+          liveId={live.id}
+          liveName={live.name}
+          notes={live.notes ?? ""}
+          pageIds={pages.map((p) => p.id)}
+          notesRef={notesRef}
+          onChange={(value) => setNotes(value)}
+          onJump={(id) => goTo(id)}
+        />
+      )}
     </div>
   );
 }
