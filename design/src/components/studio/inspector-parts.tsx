@@ -360,14 +360,35 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
       <div className="mt-3 flex items-center justify-between">
         <span className="text-[11px] text-ink-dim">Stroke</span>
       </div>
-      <HexColorField
-        label="Stroke"
-        value={stroke === "transparent" || !stroke ? "#3fc6ff" : stroke}
-        onChange={(hex) => {
-          rememberColor(hex);
-          updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
-        }}
-      />
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <HexColorField
+            label="Stroke"
+            value={stroke === "transparent" || !stroke ? "#3fc6ff" : stroke}
+            onChange={(hex) => {
+              rememberColor(hex);
+              updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
+            }}
+          />
+        </div>
+        <NumField
+          value={Math.round(node.opacity * 100)}
+          min={0}
+          max={100}
+          className="field w-12 font-mono text-[11px] text-right"
+          aria-label="Stroke opacity percent"
+          onDraft={(n) => {
+            if (n == null || !Number.isFinite(n)) return;
+            const op = Math.max(0, Math.min(1, n / 100));
+            updateNodes([node.id], { opacity: op }, false);
+          }}
+          onCommit={(n) => {
+            const op = Math.max(0, Math.min(1, n / 100));
+            updateNodes([node.id], { opacity: op }, true);
+          }}
+        />
+        <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+      </div>
       <RecentSwatches
         onPick={(hex) => {
           rememberColor(hex);
