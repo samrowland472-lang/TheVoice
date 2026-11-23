@@ -188,18 +188,17 @@ export function FillEditor({ node }: { node: DesignNode }) {
             .map((stop, i) => ({ stop, i }))
             .sort((a, b) => a.stop.offset - b.stop.offset)
             .map(({ stop, i }) => (
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  type="color"
-                  className="h-8 w-12 rounded-[8px] border border-border"
+              <div key={i} className="flex flex-col gap-1.5">
+                <HexColorField
+                  label={`Stop ${i + 1}`}
                   value={stop.color}
-                  onChange={(e) => {
-                    const hex = e.target.value;
+                  onChange={(hex) => {
                     rememberColor(hex);
                     const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
                     updateNodes([node.id], { fill: { ...fill, stops } }, true);
                   }}
                 />
+                <div className="flex items-center gap-2">
                 <input
                   type="range"
                   className="range-phosphor flex-1"
@@ -230,6 +229,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 >
                   Remove
                 </button>
+                </div>
               </div>
             ))}
           <button

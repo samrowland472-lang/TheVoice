@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Gradient stop colour hex fields: each stop now pairs the colour picker with a live hex text field (normalises #rgb/#rrggbb, Enter/blur commits, Esc reverts). Offset slider and Remove stay under the hex row.
 - Precise hex colour entry: Fill, Stroke and Shadow editors now pair the colour picker with a live hex text field (normalises #rgb/#rrggbb, Enter/blur commits, Esc reverts). Recent swatches unchanged.
 - Present mode notes polish: resizable drawer height (drag phosphor bar, 120–420px, persisted), estimated speaking time (~140 wpm) next to word/char count.
 - Zoom controls in top bar: − / % (click → 100%) / + / Fit. Fixed missing viewIntent "zoom" handler so keyboard and UI zoom actually work (keeps view center).
@@ -16,12 +17,12 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
-- 2026-11-23T06:15Z — Precise hex colour entry in Fill / Stroke / Shadow. Typecheck, build, smoke clean.
+- 2026-11-23T07:15Z — Gradient stop colour hex fields. Typecheck, build, smoke clean.
 
 ## Next recommended
-- Gradient stop colour hex fields (pair picker + hex per stop)
+- Opacity field next to solid fill hex
 - Eyedropper or brand swatch one-click in solid fill
-- Opacity field next to fill hex
+- Gradient stop opacity (if model supports)
 
 ## Backlog
 1. Present mode notes better UX (done)
@@ -29,3 +30,4 @@
 3. Path point inspector more editable (done)
 4. Export preset for common social sizes from studio (done)
 5. Precise hex colour entry (done)
+6. Gradient stop colour hex fields (done)
