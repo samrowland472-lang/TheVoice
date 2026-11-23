@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useDesign } from "@/lib/design/store";
+import { rememberColor } from "@/lib/design/persist";
 import { faceAxis, clampAxis, type FontAxisTag } from "@/lib/design/fonts";
 import { isText, type TextNode, type ImageNode, type PaintNode } from "@/lib/design/types";
 import { nodeAxisValue } from "./mixed-type-axes";
@@ -1253,6 +1254,48 @@ export default function CanvasStage() {
 
     if (tool === "hand" || e.button === 1 || (e.button === 0 && e.altKey && tool === "select")) {
       drag.current = { type: "pan", startX: sx, startY: sy, vx: viewport.x, vy: viewport.y };
+      return;
+    }
+
+    // Eyedropper: sample rendered canvas colour onto selected fill (Shift: stroke)
+    if (tool === "eyedropper" && e.button === 0) {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx) return;
+      const dpr = window.devicePixelRatio || 1;
+      const px = Math.floor(sx * dpr);
+      const py = Math.floor(sy * dpr);
+      if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) {
+        setStudioStatus("Eyedropper: outside canvas");
+        return;
+      }
+      const pixel = ctx.getImageData(px, py, 1, 1).data;
+      const r = pixel[0] ?? 0;
+      const g = pixel[1] ?? 0;
+      const b = pixel[2] ?? 0;
+      const a = pixel[3] ?? 0;
+      if (a < 16) {
+        setStudioStatus("Eyedropper: transparent");
+        return;
+      }
+      const hex = `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+      rememberColor(hex);
+      const state = useDesign.getState();
+      const sel = state.selection;
+      if (sel.length) {
+        if (e.shiftKey) {
+          const first = state.doc?.nodes.find((n) => n.id === sel[0]);
+          const sw = Math.max(first?.strokeWidth ?? 1, 1);
+          state.updateNodes(sel, { stroke: hex, strokeWidth: sw }, true);
+          setStudioStatus(`Eyedropper → stroke ${hex}`);
+        } else {
+          state.updateNodes(sel, { fill: hex }, true);
+          setStudioStatus(`Eyedropper → fill ${hex}`);
+        }
+      } else {
+        setStudioStatus(`Eyedropper sampled ${hex}`);
+      }
+      state.setTool("select");
       return;
     }
 
