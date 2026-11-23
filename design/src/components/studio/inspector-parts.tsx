@@ -213,9 +213,25 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   onPointerUp={() => useDesign.getState().commit()}
                   onPointerCancel={() => useDesign.getState().commit()}
                 />
-                <span className="w-9 text-right text-[10px] tabular-nums text-ink-dim">
-                  {Math.round(stop.offset * 100)}%
-                </span>
+                <NumField
+                  value={Math.round(stop.offset * 100)}
+                  min={0}
+                  max={100}
+                  className="field w-11 font-mono text-[11px] text-right"
+                  aria-label={`Stop ${i + 1} offset percent`}
+                  onDraft={(n) => {
+                    if (n == null || !Number.isFinite(n)) return;
+                    const off = Math.max(0, Math.min(1, n / 100));
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, false);
+                  }}
+                  onCommit={(n) => {
+                    const off = Math.max(0, Math.min(1, n / 100));
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                />
+                <span className="text-[10px] text-ink-dim">%</span>
                 <button
                   type="button"
                   className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30"
