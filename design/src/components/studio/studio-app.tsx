@@ -169,7 +169,6 @@ export function StudioApp({ id }: { id: string }) {
           {selectedNodes.length > 1 && (
             <MixedInk
               nodes={selectedNodes}
-              brandColors={useDesign.getState().brand.colors}
               ink={useDesign.getState().color}
             />
           )}

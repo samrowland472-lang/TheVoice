@@ -449,7 +449,7 @@ export function Inspector() {
               </Section>
 
               {texts.length >= 2 && <MixedType nodes={texts} />}
-              {texts.length >= 1 && mixedKinds && <MixedTypeColour nodes={texts} brandColors={useDesign.getState().brand.colors} ink={useDesign.getState().color} />}
+              {texts.length >= 1 && mixedKinds && <MixedTypeColour nodes={texts} ink={useDesign.getState().color} />}
               {outlines.length >= 1 && <MixedPathDash nodes={outlines} />}
               {paths.length >= 1 && <MixedFillRule nodes={paths} />}
               <MixedFilters nodes={selectedNodes} />

@@ -18,7 +18,7 @@ import { cloneFill, solidOf } from "@/lib/design/ink";
 import { useDesign } from "@/lib/design/store";
 import type { DesignNode, Shadow } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
-import { Field, RecentSwatches, Swatches } from "./inspector-parts";
+import { BrandSwatches, Field, RecentSwatches } from "./inspector-parts";
 import { NumField } from "./num-field";
 import {
   MixedBlendChips,
@@ -87,7 +87,7 @@ function MixedHexField({
   );
 }
 
-export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; brandColors: { name: string; hex: string }[]; ink: string }) {
+export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
   if (nodes.length < 2) return null;
@@ -121,7 +121,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
           ariaLabel="selection fill"
           onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }}
         />
-        <Swatches colors={brandColors} onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
+        <BrandSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
         <RecentSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
         <button
           type="button"
@@ -157,6 +157,7 @@ export function MixedInk({ nodes, brandColors, ink }: { nodes: DesignNode[]; bra
         >
           Apply key stroke to all
         </button>
+        <BrandSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true); }} />
         <RecentSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true); }} />
         {mixedStroke && <MixedStrokeChips nodes={nodes} />}
       </Field>

@@ -3,15 +3,13 @@ import { useDesign } from "@/lib/design/store";
 import type { DesignNode, TextNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { rememberColor } from "@/lib/design/persist";
-import { Field, RecentSwatches, Swatches } from "./inspector-parts";
+import { BrandSwatches, Field, RecentSwatches } from "./inspector-parts";
 
 export function MixedTypeColour({
   nodes,
-  brandColors,
   ink,
 }: {
   nodes: TextNode[];
-  brandColors: { name: string; hex: string }[];
   ink: string;
 }) {
   const updateNodes = useDesign((s) => s.updateNodes);
@@ -62,7 +60,7 @@ export function MixedTypeColour({
             }}
           />
         </div>
-        <Swatches colors={brandColors} onPick={(picked) => writeFill(picked)} />
+        <BrandSwatches onPick={(picked) => writeFill(picked)} />
         <RecentSwatches onPick={(hex) => writeFill(hex)} />
         <button
           type="button"
