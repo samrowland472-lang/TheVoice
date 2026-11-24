@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- On-canvas angle drag for linear gradients: selecting a shape with a linear gradient shows a phosphor dashed line from the centre with a draggable end handle. Drag the handle to scrub the gradient angle live (Shift snaps to 15°). Accounts for node rotation. Commits on release. Inspector slider and NumField remain available.
 - Gradient angle live scrub polish: Angle editor for linear gradients now pairs the range slider with a live editable NumField (0–360°, draft updates canvas, Enter/blur commits) and ° label, matching the solid opacity pattern. Slider still drives the on-canvas scrub chips.
 - Radial gradients: Fill editor gains Linear / Radial toggle. Radial fills render with createRadialGradient centred on the node (stops map to radius). Preview bar switches to radial-gradient. Angle slider hidden for radial. Type preserved in clone, style clipboard, and fill keys/labels.
 - Eyedropper sample status holds longer: successful samples (fill or stroke) now use holdStudioStatus so the message persists until the next inspector action; includes alpha % note when the sample is not fully opaque. Colour is still remembered into recent swatches.
@@ -31,6 +32,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T08:05Z — On-canvas angle drag for linear gradients (phosphor handle from centre, live scrub, Shift snap 15°, rotation-aware). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T07:10Z — Gradient angle live scrub polish (NumField beside slider, draft updates, commits on Enter/blur). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T06:06Z — Radial gradients (Linear/Radial toggle, canvas + preview support, angle hidden for radial). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T05:01Z — Eyedropper sample status holds longer (held status + alpha note). Typecheck, build, smoke clean (hub content visible).
@@ -48,7 +50,6 @@
 ## Next recommended
 - Mixed selection support for gradient fills
 - Radial centre offset or focal point controls
-- On-canvas angle drag for linear gradients
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)
@@ -66,3 +67,4 @@
 13. Gradient stop markers show offset % on hover (done)
 14. Brand / recent denser also in mixed-ink and type colour editors (done)
 15. Radial gradients (done)
+16. On-canvas angle drag for linear gradients (done)

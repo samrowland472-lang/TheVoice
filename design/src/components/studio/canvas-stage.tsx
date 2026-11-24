@@ -68,6 +68,7 @@ type DragKind =
   | { type: "resize"; id: string; handle: Handle; startX: number; startY: number; orig: DesignNode }
   | { type: "crop"; id: string; handle: CropHandle; startX: number; startY: number; orig: DesignNode; source: { x: number; y: number; w: number; h: number } }
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
+  | { type: "gradient-angle"; id: string; cx: number; cy: number }
   | { type: "pan"; startX: number; startY: number; vx: number; vy: number }
   | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null }
   | {
@@ -396,6 +397,7 @@ export default function CanvasStage() {
       const hoverId = selection[0] ?? null;
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr);
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -868,6 +870,7 @@ export default function CanvasStage() {
       const hoverId = selection[0] ?? null;
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr);
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1632,6 +1635,24 @@ export default function CanvasStage() {
         }
       }
 
+      // On-canvas linear gradient angle handle (single selection)
+      if (selected.length === 1) {
+        const n = selected[0];
+        if (n && typeof n.fill === "object" && n.fill != null && n.fill.type === "linear") {
+          const handle = gradientAngleHandle(n, viewport.zoom);
+          if (handle) {
+            const dx = docPt.x - handle.ex;
+            const dy = docPt.y - handle.ey;
+            const hitR = 10 / viewport.zoom;
+            if (dx * dx + dy * dy < hitR * hitR) {
+              drag.current = { type: "gradient-angle", id: n.id, cx: handle.cx, cy: handle.cy };
+              setStudioStatus(`Gradient angle ${Math.round(n.fill.angle)}°`);
+              return;
+            }
+          }
+        }
+      }
+
       let hitH: { node: DesignNode; handle: Handle } | null = null;
       for (const n of selected) {
         const h = hitHandle(n, docPt.x, docPt.y, viewport.zoom);
@@ -2166,6 +2187,17 @@ export default function CanvasStage() {
       setStudioStatus(`Rotate ${Math.round(deg)}°`);
       return;
     }
+    if (d.type === "gradient-angle") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || typeof n.fill !== "object" || n.fill?.type !== "linear") return;
+      const worldAng = (Math.atan2(docPt.y - d.cy, docPt.x - d.cx) * 180) / Math.PI;
+      let localAng = worldAng - n.rotation;
+      localAng = ((localAng % 360) + 360) % 360;
+      if (e.shiftKey) localAng = Math.round(localAng / 15) * 15;
+      updateNodes([d.id], { fill: { ...n.fill, angle: localAng } }, false);
+      setStudioStatus(`Gradient angle ${Math.round(localAng)}°`);
+      return;
+    }
     if (d.type === "path-handle-length") {
       const n = doc.nodes.find((x) => x.id === d.id);
       if (!n || !isPath(n)) return;
@@ -2329,6 +2361,10 @@ export default function CanvasStage() {
     if (d?.type === "crop") {
       commit();
       setStudioStatus("Crop committed");
+    }
+    if (d?.type === "gradient-angle") {
+      commit();
+      setStudioStatus("Gradient angle committed");
     }
     if (d?.type === "marquee") {
       const dx = Math.abs(d.endX - d.startX);
@@ -3644,6 +3680,56 @@ function drawMiterLimitScrubChips(
     (n) => "miterLimit" in n,
     (n) => `Miter ${Math.round(((n as { miterLimit?: number }).miterLimit) ?? 4)}`,
   );
+}
+
+function gradientAngleHandle(n: DesignNode, zoom: number) {
+  if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "linear") return null;
+  const c = nodeCenter(n);
+  const ang = degToRad(n.fill.angle + n.rotation);
+  const len = Math.max(36 / zoom, Math.min(Math.abs(n.w), Math.abs(n.h)) * 0.42);
+  return {
+    cx: c.x,
+    cy: c.y,
+    ex: c.x + Math.cos(ang) * len,
+    ey: c.y + Math.sin(ang) * len,
+    len,
+  };
+}
+
+function drawGradientAngleHandle(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  if (selection.length !== 1) return;
+  const n = nodes.find((x) => x.id === selection[0] && x.visible);
+  if (!n) return;
+  const h = gradientAngleHandle(n, vp.zoom);
+  if (!h) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+  ctx.lineWidth = 1.5 / zoom;
+  ctx.setLineDash([4 / zoom, 3 / zoom]);
+  ctx.beginPath();
+  ctx.moveTo(h.cx, h.cy);
+  ctx.lineTo(h.ex, h.ey);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#3fc6ff";
+  ctx.strokeStyle = "#7ee0ff";
+  ctx.lineWidth = 1.2 / zoom;
+  const r = 5 / zoom;
+  ctx.beginPath();
+  ctx.arc(h.ex, h.ey, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawGradientAngleScrubChips(
