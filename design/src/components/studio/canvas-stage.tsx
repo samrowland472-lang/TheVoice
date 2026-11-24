@@ -197,6 +197,7 @@ export default function CanvasStage() {
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
+  const [eyedropperPreview, setEyedropperPreview] = useState<{ sx: number; sy: number; hex: string | null } | null>(null);
   const [knifeResidual, setKnifeResidual] = useState<KnifeResidual | null>(null);
   const [flushPulse, setFlushPulse] = useState(0);
   const [flushPulseLag, setFlushPulseLag] = useState(0);
@@ -1697,6 +1698,31 @@ export default function CanvasStage() {
     const sy = e.clientY - rect.top;
     const docPt = screenToDoc(sx, sy, viewport);
 
+    // Eyedropper live preview chip under cursor
+    if (tool === "eyedropper") {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      let hex: string | null = null;
+      if (canvas && ctx) {
+        const dpr = window.devicePixelRatio || 1;
+        const px = Math.floor(sx * dpr);
+        const py = Math.floor(sy * dpr);
+        if (px >= 0 && py >= 0 && px < canvas.width && py < canvas.height) {
+          const pixel = ctx.getImageData(px, py, 1, 1).data;
+          const a = pixel[3] ?? 0;
+          if (a >= 16) {
+            const r = pixel[0] ?? 0;
+            const g = pixel[1] ?? 0;
+            const b = pixel[2] ?? 0;
+            hex = `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+          }
+        }
+      }
+      setEyedropperPreview({ sx, sy, hex });
+    } else if (eyedropperPreview) {
+      setEyedropperPreview(null);
+    }
+
     // Knife hover preview (point cut) when not dragging
     if (tool === "knife" && !drag.current) {
       let best: { x: number; y: number; dist: number } | null = null;
@@ -2400,6 +2426,18 @@ export default function CanvasStage() {
         onPointerCancel={onPointerUp}
         onWheel={onWheel}
       />
+      {eyedropperPreview && (
+        <div
+          className="pointer-events-none absolute z-50 flex items-center gap-1 rounded border border-phosphor/60 bg-ground/90 px-1 py-0.5 text-[10px] text-ink shadow-lg"
+          style={{ left: eyedropperPreview.sx + 16, top: eyedropperPreview.sy + 16 }}
+        >
+          <div
+            className="size-4 rounded border border-border"
+            style={{ background: eyedropperPreview.hex ?? "transparent" }}
+          />
+          <span className="font-mono">{eyedropperPreview.hex ?? "transparent"}</span>
+        </div>
+      )}
     </div>
   );
 }
