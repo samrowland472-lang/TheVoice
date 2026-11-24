@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Gradient stop editors with denser brand + recent swatches: each gradient stop now shows the tight size-5 BrandSwatches and RecentSwatches under its hex field. Click applies the colour to that stop, remembers it, and updates the live preview bar.
 - Eyedropper live preview chip polish: larger phosphor-bordered swatch with alpha % when <100, transparent checkerboard, position clamped inside canvas bounds.
 - Eyedropper live preview chip under cursor: while the Eyedropper tool is active, a small phosphor-bordered chip follows the pointer showing the live sampled hex (or "transparent"). Click still samples and applies as before.
 - Denser brand + recent one-click swatches in mixed-ink and type colour editors: mixed Fill, mixed Stroke, and type colour now use the tight size-5 phosphor BrandSwatches row (plus denser Recent) matching the solid Fill/Stroke pattern. Click applies the hex to the selection and remembers it.
@@ -27,6 +28,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T04:08Z — Gradient stop editors with denser brand + recent swatches. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T03:04Z — Eyedropper live preview chip polish (alpha, clamp, checker). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T02:15Z — Eyedropper live preview chip under cursor. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T01:15Z — Denser brand + recent swatches in mixed-ink (fill + stroke) and type colour editors. Typecheck, build, smoke clean (hub content visible).
@@ -38,9 +40,9 @@
 - 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 ## Next recommended
-- Mixed gradient stop editors with denser swatches
 - Eyedropper sample also remembers into recent and shows in status longer
-- Path point inspector more editable (already done, skip)
+- Gradient angle live scrub polish or radial gradients
+- Mixed selection support for gradient fills
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)

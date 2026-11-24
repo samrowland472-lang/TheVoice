@@ -274,6 +274,20 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     updateNodes([node.id], { fill: { ...fill, stops } }, true);
                   }}
                 />
+                <BrandSwatches
+                  onPick={(hex) => {
+                    rememberColor(hex);
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                />
+                <RecentSwatches
+                  onPick={(hex) => {
+                    rememberColor(hex);
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                />
                 <div className="flex items-center gap-2">
                 <input
                   type="range"
