@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-24T22:06Z — Gradient stop editing in mixed selection: when multiple nodes share a uniform gradient fill, the mixed Ink panel shows per-stop HexColorField, offset % NumField, Remove, and Add stop. Changes write to every selected node. Typecheck, build, smoke clean (hub content visible).
 - On-canvas handle for radial inner radius: selecting a shape with a radial gradient shows a phosphor dashed circle at the focal (when r0 > 0) and a draggable handle to the right of the focal. Drag the handle to scrub the inner radius live (0–95% of outer, Shift snaps to 5%). Hit-testing prefers the r0 handle; status updates while dragging and on commit. Typecheck, build, smoke clean (hub content visible).
 - Inner radius (r0) control for radial gradients: radial fills now support a movable inner radius (r0, 0–95% of outer radius, default 0). Canvas `createRadialGradient` uses the focal as the inner circle with radius r0 × outer. Inspector gains Inner radius % slider + NumField (single selection); mixed selection gains R0 NumField. CSS preview bars remap stops so the solid core is visible. Preserved in clone and fill keys; chip labels note rNN when set. Typecheck, build, smoke clean (hub content visible).
 - Focal point (inner radius offset) for radial gradients: radial fills now use a separate focal point (fx/fy, defaulting to centre). Canvas renders the start circle at the focal with r=0 and the outer at the centre covering bounds. Inspector gains Focal X/Y % sliders + NumFields (single and mixed selection). On-canvas phosphor diamond handle (drag to reposition, Shift snaps to 5%, accounts for rotation); centre cross remains. Preserved in clone and fill keys. Typecheck, build, smoke clean (hub content visible).
@@ -59,9 +60,10 @@
 - 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 ## Next recommended
-- Gradient stop editing in mixed selection
 - On-canvas radial r0 handle polish (rotation-aware direction, live % chip)
+- Gradient stop drag on the mixed preview bar
 ## Backlog
+21. Gradient stop editing in mixed selection (done)
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)
 2. Layer panel drag reorder polish (done)

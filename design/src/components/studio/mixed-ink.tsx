@@ -19,7 +19,7 @@ import { useDesign } from "@/lib/design/store";
 import type { DesignNode, GradientFill, Shadow } from "@/lib/design/types";
 import { isGradient } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
-import { BrandSwatches, Field, RecentSwatches } from "./inspector-parts";
+import { BrandSwatches, Field, HexColorField, RecentSwatches } from "./inspector-parts";
 import { NumField } from "./num-field";
 import {
   MixedBlendChips,
@@ -326,6 +326,80 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                 </div>
               </div>
             )}
+            <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
+              <div className="text-[10px] text-ink-dim">Stops</div>
+              {g.stops
+                .map((stop, i) => ({ stop, i }))
+                .sort((a, b) => a.stop.offset - b.stop.offset)
+                .map(({ stop, i }) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <HexColorField
+                      label={`Stop ${i + 1}`}
+                      value={stop.color}
+                      onChange={(hex) => {
+                        rememberColor(hex);
+                        const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                        updateNodes(ids, { fill: { ...g, stops } }, true);
+                      }}
+                    />
+                    <div className="flex items-center gap-2">
+                      <NumField
+                        value={Math.round(stop.offset * 100)}
+                        min={0}
+                        max={100}
+                        className="field w-12 font-mono text-[11px] text-right"
+                        aria-label={`Stop ${i + 1} offset percent`}
+                        onDraft={(n) => {
+                          if (n == null || !Number.isFinite(n)) return;
+                          const off = Math.max(0, Math.min(1, n / 100));
+                          const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
+                          updateNodes(ids, { fill: { ...g, stops } }, false);
+                        }}
+                        onCommit={(n) => {
+                          const off = Math.max(0, Math.min(1, n / 100));
+                          const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
+                          updateNodes(ids, { fill: { ...g, stops } }, true);
+                        }}
+                      />
+                      <span className="text-[10px] text-ink-dim">%</span>
+                      <button
+                        type="button"
+                        className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30"
+                        disabled={g.stops.length <= 2}
+                        onClick={() => {
+                          if (g.stops.length <= 2) return;
+                          const stops = g.stops.filter((_, j) => j !== i);
+                          updateNodes(ids, { fill: { ...g, stops } }, true);
+                        }}
+                        aria-label="Remove stop"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              <button
+                type="button"
+                className="self-start text-[10px] text-phosphor"
+                onClick={() => {
+                  const sorted = [...g.stops].sort((a, b) => a.offset - b.offset);
+                  let at = 0.5;
+                  let maxGap = 0;
+                  for (let k = 0; k < sorted.length - 1; k++) {
+                    const gap = sorted[k + 1].offset - sorted[k].offset;
+                    if (gap > maxGap) {
+                      maxGap = gap;
+                      at = (sorted[k].offset + sorted[k + 1].offset) / 2;
+                    }
+                  }
+                  const color = sorted[0]?.color ?? "#d9f5e3";
+                  const stops = [...g.stops, { offset: at, color }].sort((a, b) => a.offset - b.offset);
+                  updateNodes(ids, { fill: { ...g, stops } }, true);
+                }}
+              >
+                Add stop
+              </button>
+            </div>
           </div>
           );
         })()}
