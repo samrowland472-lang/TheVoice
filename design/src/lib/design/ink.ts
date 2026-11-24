@@ -3,7 +3,9 @@ import { isGradient } from "./types";
 
 export function fillKey(fill: DesignNode["fill"]): string {
   if (typeof fill === "string") return fill;
-  return `g:${fill.type}:${fill.angle}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
+  const cx = fill.cx ?? 0.5;
+  const cy = fill.cy ?? 0.5;
+  return `g:${fill.type}:${fill.angle}:${cx}:${cy}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
 }
 
 export function solidOf(fill: DesignNode["fill"], fallback: string): string {
@@ -18,7 +20,14 @@ export function fillChipLabel(fill: DesignNode["fill"]): string {
   if (isGradient(fill)) {
     const a = fill.stops[0]?.color ?? "grad";
     const b = fill.stops[fill.stops.length - 1]?.color ?? a;
-    if (fill.type === "radial") return `radial · ${a}→${b}`;
+    if (fill.type === "radial") {
+      const ox = fill.cx ?? 0.5;
+      const oy = fill.cy ?? 0.5;
+      if (Math.abs(ox - 0.5) > 0.01 || Math.abs(oy - 0.5) > 0.01) {
+        return `radial ${(ox * 100).toFixed(0)},${(oy * 100).toFixed(0)} · ${a}→${b}`;
+      }
+      return `radial · ${a}→${b}`;
+    }
     return `grad ${fill.angle}° · ${a}→${b}`;
   }
   return "fill";
@@ -41,5 +50,7 @@ export function cloneFill(fill: DesignNode["fill"]): DesignNode["fill"] {
     angle: fill.angle,
     stops: fill.stops.map((s) => ({ offset: s.offset, color: s.color })),
   };
+  if (fill.cx != null) g.cx = fill.cx;
+  if (fill.cy != null) g.cy = fill.cy;
   return g;
 }

@@ -30,9 +30,22 @@ export function getCachedImage(src: string): HTMLImageElement | null {
 export function applyFill(ctx: CanvasRenderingContext2D, fill: Fill, x: number, y: number, w: number, h: number) {
   if (isGradient(fill)) {
     if (fill.type === "radial") {
-      const cx = x + w / 2;
-      const cy = y + h / 2;
-      const r = Math.max(w, h) / 2;
+      const ox = fill.cx ?? 0.5;
+      const oy = fill.cy ?? 0.5;
+      const cx = x + w * ox;
+      const cy = y + h * oy;
+      // Radius to the farthest corner so the gradient covers the bounds
+      const corners = [
+        [x, y],
+        [x + w, y],
+        [x + w, y + h],
+        [x, y + h],
+      ];
+      let r = 0;
+      for (const [px, py] of corners) {
+        r = Math.max(r, Math.hypot(px - cx, py - cy));
+      }
+      r = Math.max(r, 1);
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
       for (const s of fill.stops) g.addColorStop(Math.max(0, Math.min(1, s.offset)), s.color);
       ctx.fillStyle = g;

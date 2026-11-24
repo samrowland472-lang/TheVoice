@@ -29,7 +29,9 @@ function gradientPreviewCss(g: GradientFill): string {
   const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
   const parts = stops.map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`).join(", ");
   if (g.type === "radial") {
-    return `radial-gradient(circle, ${parts})`;
+    const cx = ((g.cx ?? 0.5) * 100).toFixed(1);
+    const cy = ((g.cy ?? 0.5) * 100).toFixed(1);
+    return `radial-gradient(circle at ${cx}% ${cy}%, ${parts})`;
   }
   return `linear-gradient(${g.angle}deg, ${parts})`;
 }
@@ -213,6 +215,82 @@ export function FillEditor({ node }: { node: DesignNode }) {
               Radial
             </button>
           </div>
+          {fill.type === "radial" && (
+            <div className="flex flex-col gap-1.5">
+              <Field label="Centre X">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="range-phosphor min-w-0 flex-1"
+                    min={0}
+                    max={100}
+                    value={Math.round((fill.cx ?? 0.5) * 100)}
+                    onChange={(e) =>
+                      updateNodes(
+                        [node.id],
+                        { fill: { ...fill, cx: Number(e.target.value) / 100 } },
+                        false,
+                      )
+                    }
+                    onPointerUp={() => useDesign.getState().commit()}
+                  />
+                  <NumField
+                    value={Math.round((fill.cx ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial centre X percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, cx: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, cx: v } }, true);
+                    }}
+                  />
+                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+                </div>
+              </Field>
+              <Field label="Centre Y">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="range-phosphor min-w-0 flex-1"
+                    min={0}
+                    max={100}
+                    value={Math.round((fill.cy ?? 0.5) * 100)}
+                    onChange={(e) =>
+                      updateNodes(
+                        [node.id],
+                        { fill: { ...fill, cy: Number(e.target.value) / 100 } },
+                        false,
+                      )
+                    }
+                    onPointerUp={() => useDesign.getState().commit()}
+                  />
+                  <NumField
+                    value={Math.round((fill.cy ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial centre Y percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, cy: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, cy: v } }, true);
+                    }}
+                  />
+                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+                </div>
+              </Field>
+            </div>
+          )}
           {fill.type !== "radial" && (
             <Field label="Angle">
               <div className="flex items-center gap-2">

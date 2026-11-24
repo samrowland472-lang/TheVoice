@@ -69,6 +69,7 @@ type DragKind =
   | { type: "crop"; id: string; handle: CropHandle; startX: number; startY: number; orig: DesignNode; source: { x: number; y: number; w: number; h: number } }
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
   | { type: "gradient-angle"; id: string; cx: number; cy: number }
+  | { type: "gradient-radial"; id: string }
   | { type: "pan"; startX: number; startY: number; vx: number; vy: number }
   | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null }
   | {
@@ -398,6 +399,7 @@ export default function CanvasStage() {
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr);
+    drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr);
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -871,6 +873,7 @@ export default function CanvasStage() {
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr);
+    drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr);
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1653,6 +1656,24 @@ export default function CanvasStage() {
         }
       }
 
+      // On-canvas radial gradient centre handle (single selection)
+      if (selected.length === 1) {
+        const n = selected[0];
+        if (n && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial") {
+          const centre = radialCentre(n);
+          if (centre) {
+            const dx = docPt.x - centre.x;
+            const dy = docPt.y - centre.y;
+            const hitR = 12 / viewport.zoom;
+            if (dx * dx + dy * dy < hitR * hitR) {
+              drag.current = { type: "gradient-radial", id: n.id };
+              setStudioStatus(`Radial centre ${( (n.fill.cx ?? 0.5) * 100 ).toFixed(0)}%, ${( (n.fill.cy ?? 0.5) * 100 ).toFixed(0)}%`);
+              return;
+            }
+          }
+        }
+      }
+
       let hitH: { node: DesignNode; handle: Handle } | null = null;
       for (const n of selected) {
         const h = hitHandle(n, docPt.x, docPt.y, viewport.zoom);
@@ -2198,6 +2219,26 @@ export default function CanvasStage() {
       setStudioStatus(`Gradient angle ${Math.round(localAng)}°`);
       return;
     }
+    if (d.type === "gradient-radial") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || typeof n.fill !== "object" || n.fill?.type !== "radial") return;
+      // Map world point back to local node space (undo rotation)
+      const c = nodeCenter(n);
+      const local = n.rotation
+        ? rotatePoint(docPt.x, docPt.y, c.x, c.y, -n.rotation)
+        : { x: docPt.x, y: docPt.y };
+      let ox = (local.x - n.x) / n.w;
+      let oy = (local.y - n.y) / n.h;
+      ox = Math.max(0, Math.min(1, ox));
+      oy = Math.max(0, Math.min(1, oy));
+      if (e.shiftKey) {
+        ox = Math.round(ox * 20) / 20;
+        oy = Math.round(oy * 20) / 20;
+      }
+      updateNodes([d.id], { fill: { ...n.fill, cx: ox, cy: oy } }, false);
+      setStudioStatus(`Radial centre ${(ox * 100).toFixed(0)}%, ${(oy * 100).toFixed(0)}%`);
+      return;
+    }
     if (d.type === "path-handle-length") {
       const n = doc.nodes.find((x) => x.id === d.id);
       if (!n || !isPath(n)) return;
@@ -2365,6 +2406,10 @@ export default function CanvasStage() {
     if (d?.type === "gradient-angle") {
       commit();
       setStudioStatus("Gradient angle committed");
+    }
+    if (d?.type === "gradient-radial") {
+      commit();
+      setStudioStatus("Radial centre committed");
     }
     if (d?.type === "marquee") {
       const dx = Math.abs(d.endX - d.startX);
@@ -3729,6 +3774,56 @@ function drawGradientAngleHandle(
   ctx.arc(h.ex, h.ey, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  ctx.restore();
+}
+
+function radialCentre(n: DesignNode) {
+  if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "radial") return null;
+  const ox = n.fill.cx ?? 0.5;
+  const oy = n.fill.cy ?? 0.5;
+  const lx = n.x + n.w * ox;
+  const ly = n.y + n.h * oy;
+  const c = nodeCenter(n);
+  if (n.rotation) {
+    const world = rotatePoint(lx, ly, c.x, c.y, n.rotation);
+    return world;
+  }
+  return { x: lx, y: ly };
+}
+
+function drawGradientRadialHandle(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  if (selection.length !== 1) return;
+  const n = nodes.find((x) => x.id === selection[0] && x.visible);
+  if (!n) return;
+  const centre = radialCentre(n);
+  if (!centre) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  const r = 6 / zoom;
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.lineWidth = 1.4 / zoom;
+  ctx.beginPath();
+  ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(centre.x - r * 1.6, centre.y);
+  ctx.lineTo(centre.x + r * 1.6, centre.y);
+  ctx.moveTo(centre.x, centre.y - r * 1.6);
+  ctx.lineTo(centre.x, centre.y + r * 1.6);
+  ctx.stroke();
+  ctx.fillStyle = "#3fc6ff";
+  ctx.beginPath();
+  ctx.arc(centre.x, centre.y, 2.2 / zoom, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 

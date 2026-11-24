@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Radial centre offset: radial gradients now support a movable centre (cx/cy 0–1). On-canvas phosphor cross handle (drag to reposition, Shift snaps to 5%, accounts for rotation). Inspector gains Centre X/Y % sliders + NumFields. Preview bar and render use the offset; radius covers the bounds. Preserved in clone and fill keys.
 - On-canvas angle drag for linear gradients: selecting a shape with a linear gradient shows a phosphor dashed line from the centre with a draggable end handle. Drag the handle to scrub the gradient angle live (Shift snaps to 15°). Accounts for node rotation. Commits on release. Inspector slider and NumField remain available.
 - Gradient angle live scrub polish: Angle editor for linear gradients now pairs the range slider with a live editable NumField (0–360°, draft updates canvas, Enter/blur commits) and ° label, matching the solid opacity pattern. Slider still drives the on-canvas scrub chips.
 - Radial gradients: Fill editor gains Linear / Radial toggle. Radial fills render with createRadialGradient centred on the node (stops map to radius). Preview bar switches to radial-gradient. Angle slider hidden for radial. Type preserved in clone, style clipboard, and fill keys/labels.
@@ -32,6 +33,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T09:07Z — Radial centre offset (on-canvas phosphor cross handle + inspector % controls, rotation-aware, Shift snap). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T08:05Z — On-canvas angle drag for linear gradients (phosphor handle from centre, live scrub, Shift snap 15°, rotation-aware). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T07:10Z — Gradient angle live scrub polish (NumField beside slider, draft updates, commits on Enter/blur). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T06:06Z — Radial gradients (Linear/Radial toggle, canvas + preview support, angle hidden for radial). Typecheck, build, smoke clean (hub content visible).
@@ -49,7 +51,7 @@
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 ## Next recommended
 - Mixed selection support for gradient fills
-- Radial centre offset or focal point controls
+- Focal point (inner radius offset) for radial gradients
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)
@@ -68,3 +70,4 @@
 14. Brand / recent denser also in mixed-ink and type colour editors (done)
 15. Radial gradients (done)
 16. On-canvas angle drag for linear gradients (done)
+17. Radial centre offset (done)
