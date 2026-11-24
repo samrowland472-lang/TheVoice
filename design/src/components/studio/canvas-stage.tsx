@@ -18,7 +18,7 @@ import { applyCropHandle, drawCropHandles, hitCropHandle, sourceBoxFor, type Cro
 import { isBitmap } from "@/lib/design/types";
 import { nodeCenter, degToRad, rotatePoint } from "@/lib/design/geometry";
 import { makeShape, makeText } from "@/lib/design/store";
-import { setStudioStatus } from "@/lib/design/studio-status";
+import { setStudioStatus, holdStudioStatus } from "@/lib/design/studio-status";
 import {
   alignSelectedPathPoints,
   appendPenPoint,
@@ -1281,6 +1281,8 @@ export default function CanvasStage() {
       }
       const hex = `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
       rememberColor(hex);
+      const alphaPct = Math.round((a / 255) * 100);
+      const alphaNote = alphaPct < 100 ? ` · ${alphaPct}%` : "";
       const state = useDesign.getState();
       const sel = state.selection;
       if (sel.length) {
@@ -1288,13 +1290,13 @@ export default function CanvasStage() {
           const first = state.doc?.nodes.find((n) => n.id === sel[0]);
           const sw = Math.max(first?.strokeWidth ?? 1, 1);
           state.updateNodes(sel, { stroke: hex, strokeWidth: sw }, true);
-          setStudioStatus(`Eyedropper → stroke ${hex}`);
+          holdStudioStatus(`Eyedropper → stroke ${hex}${alphaNote}`);
         } else {
           state.updateNodes(sel, { fill: hex }, true);
-          setStudioStatus(`Eyedropper → fill ${hex}`);
+          holdStudioStatus(`Eyedropper → fill ${hex}${alphaNote}`);
         }
       } else {
-        setStudioStatus(`Eyedropper sampled ${hex}`);
+        holdStudioStatus(`Eyedropper sampled ${hex}${alphaNote}`);
       }
       state.setTool("select");
       return;
