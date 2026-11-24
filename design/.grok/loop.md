@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Gradient angle live scrub polish: Angle editor for linear gradients now pairs the range slider with a live editable NumField (0–360°, draft updates canvas, Enter/blur commits) and ° label, matching the solid opacity pattern. Slider still drives the on-canvas scrub chips.
 - Radial gradients: Fill editor gains Linear / Radial toggle. Radial fills render with createRadialGradient centred on the node (stops map to radius). Preview bar switches to radial-gradient. Angle slider hidden for radial. Type preserved in clone, style clipboard, and fill keys/labels.
 - Eyedropper sample status holds longer: successful samples (fill or stroke) now use holdStudioStatus so the message persists until the next inspector action; includes alpha % note when the sample is not fully opaque. Colour is still remembered into recent swatches.
 - Gradient stop editors with denser brand + recent swatches: each gradient stop now shows the tight size-5 BrandSwatches and RecentSwatches under its hex field. Click applies the colour to that stop, remembers it, and updates the live preview bar.
@@ -30,6 +31,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T07:10Z — Gradient angle live scrub polish (NumField beside slider, draft updates, commits on Enter/blur). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T06:06Z — Radial gradients (Linear/Radial toggle, canvas + preview support, angle hidden for radial). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T05:01Z — Eyedropper sample status holds longer (held status + alpha note). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T04:08Z — Gradient stop editors with denser brand + recent swatches. Typecheck, build, smoke clean (hub content visible).
@@ -44,9 +46,9 @@
 - 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 ## Next recommended
-- Gradient angle live scrub polish (NumField or on-canvas drag)
 - Mixed selection support for gradient fills
 - Radial centre offset or focal point controls
+- On-canvas angle drag for linear gradients
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)
