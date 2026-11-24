@@ -5,7 +5,9 @@ export function fillKey(fill: DesignNode["fill"]): string {
   if (typeof fill === "string") return fill;
   const cx = fill.cx ?? 0.5;
   const cy = fill.cy ?? 0.5;
-  return `g:${fill.type}:${fill.angle}:${cx}:${cy}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
+  const fx = fill.fx ?? cx;
+  const fy = fill.fy ?? cy;
+  return `g:${fill.type}:${fill.angle}:${cx}:${cy}:${fx}:${fy}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
 }
 
 export function solidOf(fill: DesignNode["fill"], fallback: string): string {
@@ -23,8 +25,15 @@ export function fillChipLabel(fill: DesignNode["fill"]): string {
     if (fill.type === "radial") {
       const ox = fill.cx ?? 0.5;
       const oy = fill.cy ?? 0.5;
-      if (Math.abs(ox - 0.5) > 0.01 || Math.abs(oy - 0.5) > 0.01) {
-        return `radial ${(ox * 100).toFixed(0)},${(oy * 100).toFixed(0)} · ${a}→${b}`;
+      const fx = fill.fx ?? ox;
+      const fy = fill.fy ?? oy;
+      const centreOff = Math.abs(ox - 0.5) > 0.01 || Math.abs(oy - 0.5) > 0.01;
+      const focalOff = Math.abs(fx - ox) > 0.01 || Math.abs(fy - oy) > 0.01;
+      if (centreOff || focalOff) {
+        const base = `radial ${(ox * 100).toFixed(0)},${(oy * 100).toFixed(0)}`;
+        return focalOff
+          ? `${base}→${(fx * 100).toFixed(0)},${(fy * 100).toFixed(0)} · ${a}→${b}`
+          : `${base} · ${a}→${b}`;
       }
       return `radial · ${a}→${b}`;
     }
@@ -52,5 +61,7 @@ export function cloneFill(fill: DesignNode["fill"]): DesignNode["fill"] {
   };
   if (fill.cx != null) g.cx = fill.cx;
   if (fill.cy != null) g.cy = fill.cy;
+  if (fill.fx != null) g.fx = fill.fx;
+  if (fill.fy != null) g.fy = fill.fy;
   return g;
 }
