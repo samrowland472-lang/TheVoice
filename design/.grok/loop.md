@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Gradient stop markers show offset % on hover (and while dragging): a small phosphor chip appears above the marker with the live percent.
 - Live gradient stop markers on the preview bar: each stop is a small phosphor-bordered square (filled with its colour) positioned by offset. Drag left/right to scrub the offset live (commits on release). Markers stay in sync with the % fields and sliders below.
 - Eyedropper tool samples canvas colour onto selected fill or stroke: click with the I tool (or pick Eyedropper) to sample the rendered pixel under the cursor; applies as solid fill to the selection (Shift applies as stroke, ensuring width ≥ 1). Remembers the colour, shows status, and returns to Select. Transparent samples are ignored.
 - Denser brand + recent one-click swatches in solid Fill and Stroke editors: brand kit colours appear as a tight row of size-5 phosphor-ready chips above recent colours (also densified to size-5 / gap-1). Click applies the hex to fill or stroke and remembers it.
@@ -23,6 +24,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T00:10Z — Gradient stop markers show offset % on hover and while dragging. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-23T23:10Z — Live gradient stop markers on the preview bar (drag to scrub offset). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-23T22:10Z — Eyedropper tool samples canvas colour onto selected fill or stroke (Shift for stroke). Typecheck, build, smoke clean.
 - 2026-11-23T20:05Z — Denser brand + recent one-click swatches in solid Fill and Stroke. Typecheck, build, smoke clean.
@@ -33,7 +35,6 @@
 ## Next recommended
 - Brand / recent denser also in mixed-ink and type colour editors
 - Eyedropper live preview chip under cursor
-- Gradient stop markers show offset % on hover
 
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
@@ -49,3 +50,4 @@
 10. Denser brand + recent swatches in solid Fill/Stroke (done)
 11. Eyedropper tool samples canvas colour onto selected fill or stroke (done)
 12. Live gradient stop markers on the preview bar (done)
+13. Gradient stop markers show offset % on hover (done)

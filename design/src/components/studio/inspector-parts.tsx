@@ -106,6 +106,8 @@ export function FillEditor({ node }: { node: DesignNode }) {
   const fill = node.fill;
   const gradient = isGradient(fill);
   const barRef = useRef<HTMLDivElement>(null);
+  const [hoverStop, setHoverStop] = useState<number | null>(null);
+  const [dragStop, setDragStop] = useState<number | null>(null);
 
   function toggle() {
     if (gradient) {
@@ -220,9 +222,12 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 type="button"
                 className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
                 style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
+                onMouseEnter={() => setHoverStop(i)}
+                onMouseLeave={() => setHoverStop(null)}
                 onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  setDragStop(i);
                   const bar = barRef.current;
                   if (!bar) return;
                   const rect = bar.getBoundingClientRect();
@@ -237,6 +242,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   const onUp = () => {
                     window.removeEventListener("pointermove", onMove);
                     window.removeEventListener("pointerup", onUp);
+                    setDragStop(null);
                     useDesign.getState().commit();
                   };
                   window.addEventListener("pointermove", onMove);
@@ -245,6 +251,14 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 aria-label={`Drag gradient stop ${i + 1}`}
               />
             ))}
+            {(dragStop ?? hoverStop) != null && fill.stops[dragStop ?? hoverStop!] && (
+              <div
+                className="pointer-events-none absolute -top-5 z-10 -translate-x-1/2 rounded-sm border border-phosphor bg-surface px-1 py-0.5 text-[9px] font-mono text-phosphor shadow-[0_0_0_1px_#000]"
+                style={{ left: `${fill.stops[dragStop ?? hoverStop!].offset * 100}%` }}
+              >
+                {Math.round(fill.stops[dragStop ?? hoverStop!].offset * 100)}%
+              </div>
+            )}
           </div>
           {fill.stops
             .map((stop, i) => ({ stop, i }))
