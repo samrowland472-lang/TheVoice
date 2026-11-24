@@ -71,6 +71,7 @@ type DragKind =
   | { type: "gradient-angle"; id: string; cx: number; cy: number }
   | { type: "gradient-radial"; id: string }
   | { type: "gradient-radial-focal"; id: string }
+  | { type: "gradient-radial-r0"; id: string }
   | { type: "pan"; startX: number; startY: number; vx: number; vy: number }
   | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null }
   | {
@@ -1657,10 +1658,21 @@ export default function CanvasStage() {
         }
       }
 
-      // On-canvas radial gradient focal + centre handles (single selection)
+      // On-canvas radial gradient r0 + focal + centre handles (single selection)
       if (selected.length === 1) {
         const n = selected[0];
         if (n && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial") {
+          const r0h = radialR0Handle(n, viewport.zoom);
+          if (r0h) {
+            const dx = docPt.x - r0h.x;
+            const dy = docPt.y - r0h.y;
+            const hitR = 11 / viewport.zoom;
+            if (dx * dx + dy * dy < hitR * hitR) {
+              drag.current = { type: "gradient-radial-r0", id: n.id };
+              setStudioStatus(`Radial inner radius ${(r0h.r0 * 100).toFixed(0)}%`);
+              return;
+            }
+          }
           const focal = radialFocal(n);
           if (focal) {
             const dx = docPt.x - focal.x;
@@ -2272,6 +2284,20 @@ export default function CanvasStage() {
       setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
       return;
     }
+    if (d.type === "gradient-radial-r0") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || typeof n.fill !== "object" || n.fill?.type !== "radial") return;
+      const focal = radialFocal(n);
+      if (!focal) return;
+      const outer = radialOuterRadius(n);
+      const dist = Math.hypot(docPt.x - focal.x, docPt.y - focal.y);
+      let r0 = dist / outer;
+      r0 = Math.max(0, Math.min(0.95, r0));
+      if (e.shiftKey) r0 = Math.round(r0 * 20) / 20;
+      updateNodes([d.id], { fill: { ...n.fill, r0 } }, false);
+      setStudioStatus(`Radial inner radius ${(r0 * 100).toFixed(0)}%`);
+      return;
+    }
     if (d.type === "path-handle-length") {
       const n = doc.nodes.find((x) => x.id === d.id);
       if (!n || !isPath(n)) return;
@@ -2447,6 +2473,10 @@ export default function CanvasStage() {
     if (d?.type === "gradient-radial-focal") {
       commit();
       setStudioStatus("Radial focal committed");
+    }
+    if (d?.type === "gradient-radial-r0") {
+      commit();
+      setStudioStatus("Radial inner radius committed");
     }
     if (d?.type === "marquee") {
       const dx = Math.abs(d.endX - d.startX);
@@ -3844,6 +3874,45 @@ function radialFocal(n: DesignNode) {
   return { x: lx, y: ly };
 }
 
+function radialOuterRadius(n: DesignNode): number {
+  if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "radial") return 1;
+  const ox = n.fill.cx ?? 0.5;
+  const oy = n.fill.cy ?? 0.5;
+  const cx = n.x + n.w * ox;
+  const cy = n.y + n.h * oy;
+  const corners: [number, number][] = [
+    [n.x, n.y],
+    [n.x + n.w, n.y],
+    [n.x + n.w, n.y + n.h],
+    [n.x, n.y + n.h],
+  ];
+  let r = 0;
+  for (const [px, py] of corners) {
+    r = Math.max(r, Math.hypot(px - cx, py - cy));
+  }
+  return Math.max(r, 1);
+}
+
+/** World position of the r0 handle (right of focal). Visual offset is at least a grab radius. */
+function radialR0Handle(n: DesignNode, zoom: number) {
+  if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "radial") return null;
+  const focal = radialFocal(n);
+  if (!focal) return null;
+  const outer = radialOuterRadius(n);
+  const r0 = Math.max(0, Math.min(0.95, n.fill.r0 ?? 0));
+  const innerR = r0 * outer;
+  const minVis = 10 / zoom;
+  const visR = Math.max(innerR, minVis);
+  return {
+    x: focal.x + visR,
+    y: focal.y,
+    innerR,
+    outer,
+    r0,
+    focal,
+  };
+}
+
 function drawGradientRadialHandle(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
@@ -3892,6 +3961,33 @@ function drawGradientRadialHandle(
     ctx.lineTo(focal.x - fr, focal.y);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+  }
+  // Inner radius (r0) — dashed circle + phosphor handle to the right of focal
+  const r0h = radialR0Handle(n, zoom);
+  if (r0h && r0h.innerR > 0.5) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.setLineDash([4 / zoom, 3 / zoom]);
+    ctx.beginPath();
+    ctx.arc(r0h.focal.x, r0h.focal.y, r0h.innerR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (r0h) {
+    const hr = 5 / zoom;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.95)";
+    ctx.fillStyle = "#3fc6ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.beginPath();
+    ctx.arc(r0h.x, r0h.y, hr, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // small tick inward toward focal
+    ctx.beginPath();
+    ctx.moveTo(r0h.x - hr * 1.4, r0h.y);
+    ctx.lineTo(r0h.x - hr * 0.2, r0h.y);
     ctx.stroke();
   }
   ctx.restore();
