@@ -45,16 +45,19 @@ function mapShadows(map: (sh: Shadow | null) => Shadow | null, commit = false) {
 
 
 function gradientPreviewCss(g: GradientFill): string {
-  const parts = g.stops
-    .slice()
-    .sort((a, b) => a.offset - b.offset)
-    .map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`)
-    .join(", ");
+  const stops = g.stops.slice().sort((a, b) => a.offset - b.offset);
   if (g.type === "radial") {
     const cx = ((g.cx ?? 0.5) * 100).toFixed(1);
     const cy = ((g.cy ?? 0.5) * 100).toFixed(1);
+    const r0 = Math.max(0, Math.min(0.95, g.r0 ?? 0));
+    const remapped = stops.map((s) => {
+      const off = r0 + (1 - r0) * s.offset;
+      return `${s.color} ${(off * 100).toFixed(1)}%`;
+    });
+    const parts = remapped.join(", ");
     return `radial-gradient(circle at ${cx}% ${cy}%, ${parts})`;
   }
+  const parts = stops.map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`).join(", ");
   return `linear-gradient(${g.angle}deg, ${parts})`;
 }
 
@@ -300,6 +303,26 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                       updateNodes(ids, { fill: { ...g, fy: v } }, true);
                     }}
                   />
+                </div>
+                <div className="col-span-2 flex items-center gap-1">
+                  <span className="text-[10px] text-ink-dim">R0</span>
+                  <NumField
+                    value={Math.round((g.r0 ?? 0) * 100)}
+                    min={0}
+                    max={95}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial inner radius percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(95, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, r0: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(95, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, r0: v } }, true);
+                    }}
+                  />
+                  <span className="text-[10px] text-ink-dim">%</span>
                 </div>
               </div>
             )}

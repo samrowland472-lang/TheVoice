@@ -27,12 +27,19 @@ import { NumField } from "./num-field";
 
 function gradientPreviewCss(g: GradientFill): string {
   const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
-  const parts = stops.map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`).join(", ");
   if (g.type === "radial") {
     const cx = ((g.cx ?? 0.5) * 100).toFixed(1);
     const cy = ((g.cy ?? 0.5) * 100).toFixed(1);
+    const r0 = Math.max(0, Math.min(0.95, g.r0 ?? 0));
+    // Remap stops so inner radius appears as solid core in CSS preview
+    const remapped = stops.map((s) => {
+      const off = r0 + (1 - r0) * s.offset;
+      return `${s.color} ${(off * 100).toFixed(1)}%`;
+    });
+    const parts = remapped.join(", ");
     return `radial-gradient(circle at ${cx}% ${cy}%, ${parts})`;
   }
+  const parts = stops.map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`).join(", ");
   return `linear-gradient(${g.angle}deg, ${parts})`;
 }
 
@@ -356,6 +363,42 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     onCommit={(n) => {
                       const v = Math.max(0, Math.min(100, n)) / 100;
                       updateNodes([node.id], { fill: { ...fill, fy: v } }, true);
+                    }}
+                  />
+                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+                </div>
+              </Field>
+              <Field label="Inner radius">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="range-phosphor min-w-0 flex-1"
+                    min={0}
+                    max={95}
+                    value={Math.round((fill.r0 ?? 0) * 100)}
+                    onChange={(e) =>
+                      updateNodes(
+                        [node.id],
+                        { fill: { ...fill, r0: Number(e.target.value) / 100 } },
+                        false,
+                      )
+                    }
+                    onPointerUp={() => useDesign.getState().commit()}
+                  />
+                  <NumField
+                    value={Math.round((fill.r0 ?? 0) * 100)}
+                    min={0}
+                    max={95}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial inner radius percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(95, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, r0: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(95, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, r0: v } }, true);
                     }}
                   />
                   <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
