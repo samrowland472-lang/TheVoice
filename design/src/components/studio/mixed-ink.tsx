@@ -263,6 +263,44 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                     }}
                   />
                 </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-ink-dim">FX</span>
+                  <NumField
+                    value={Math.round((g.fx ?? g.cx ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial focal X percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, fx: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, fx: v } }, true);
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-ink-dim">FY</span>
+                  <NumField
+                    value={Math.round((g.fy ?? g.cy ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial focal Y percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, fy: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, fy: v } }, true);
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>

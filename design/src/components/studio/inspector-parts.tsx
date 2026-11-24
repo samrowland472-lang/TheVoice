@@ -289,6 +289,78 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
                 </div>
               </Field>
+              <Field label="Focal X">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="range-phosphor min-w-0 flex-1"
+                    min={0}
+                    max={100}
+                    value={Math.round((fill.fx ?? fill.cx ?? 0.5) * 100)}
+                    onChange={(e) =>
+                      updateNodes(
+                        [node.id],
+                        { fill: { ...fill, fx: Number(e.target.value) / 100 } },
+                        false,
+                      )
+                    }
+                    onPointerUp={() => useDesign.getState().commit()}
+                  />
+                  <NumField
+                    value={Math.round((fill.fx ?? fill.cx ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial focal X percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, fx: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, fx: v } }, true);
+                    }}
+                  />
+                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+                </div>
+              </Field>
+              <Field label="Focal Y">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="range"
+                    className="range-phosphor min-w-0 flex-1"
+                    min={0}
+                    max={100}
+                    value={Math.round((fill.fy ?? fill.cy ?? 0.5) * 100)}
+                    onChange={(e) =>
+                      updateNodes(
+                        [node.id],
+                        { fill: { ...fill, fy: Number(e.target.value) / 100 } },
+                        false,
+                      )
+                    }
+                    onPointerUp={() => useDesign.getState().commit()}
+                  />
+                  <NumField
+                    value={Math.round((fill.fy ?? fill.cy ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial focal Y percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, fy: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, fy: v } }, true);
+                    }}
+                  />
+                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+                </div>
+              </Field>
             </div>
           )}
           {fill.type !== "radial" && (

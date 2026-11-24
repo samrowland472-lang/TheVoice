@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Focal point (inner radius offset) for radial gradients: radial fills now use a separate focal point (fx/fy, defaulting to centre). Canvas renders the start circle at the focal with r=0 and the outer at the centre covering bounds. Inspector gains Focal X/Y % sliders + NumFields (single and mixed selection). On-canvas phosphor diamond handle (drag to reposition, Shift snaps to 5%, accounts for rotation); centre cross remains. Preserved in clone and fill keys. Typecheck, build, smoke clean (hub content visible).
 - Mixed selection support for gradient fills: when multiple nodes are selected, the Ink Fill field shows a live gradient preview bar if the key fill is a gradient, labels it with the chip description, offers Apply key fill / Make all solid, and (when the selection is uniform) Linear/Radial toggle plus angle or CX/CY controls that write to every selected node.
 - Radial centre offset: radial gradients now support a movable centre (cx/cy 0–1). On-canvas phosphor cross handle (drag to reposition, Shift snaps to 5%, accounts for rotation). Inspector gains Centre X/Y % sliders + NumFields. Preview bar and render use the offset; radius covers the bounds. Preserved in clone and fill keys.
 - On-canvas angle drag for linear gradients: selecting a shape with a linear gradient shows a phosphor dashed line from the centre with a draggable end handle. Drag the handle to scrub the gradient angle live (Shift snaps to 15°). Accounts for node rotation. Commits on release. Inspector slider and NumField remain available.
@@ -34,6 +35,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T19:10Z — Focal point (inner radius offset) for radial gradients (fx/fy, on-canvas diamond handle + inspector % controls, rotation-aware, Shift snap, mixed selection). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T17:08Z — Mixed selection support for gradient fills. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T09:07Z — Radial centre offset (on-canvas phosphor cross handle + inspector % controls, rotation-aware, Shift snap). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T08:05Z — On-canvas angle drag for linear gradients (phosphor handle from centre, live scrub, Shift snap 15°, rotation-aware). Typecheck, build, smoke clean (hub content visible).
@@ -52,8 +54,8 @@
 - 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 ## Next recommended
-- Focal point (inner radius offset) for radial gradients
 - Gradient stop editing in mixed selection
+- Inner radius (r0) control for radial gradients
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)
@@ -74,3 +76,4 @@
 16. On-canvas angle drag for linear gradients (done)
 17. Radial centre offset (done)
 18. Mixed selection support for gradient fills (done)
+19. Focal point (inner radius offset) for radial gradients (done)

@@ -70,6 +70,7 @@ type DragKind =
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
   | { type: "gradient-angle"; id: string; cx: number; cy: number }
   | { type: "gradient-radial"; id: string }
+  | { type: "gradient-radial-focal"; id: string }
   | { type: "pan"; startX: number; startY: number; vx: number; vy: number }
   | { type: "create"; tool: Tool; startX: number; startY: number; id: string | null }
   | {
@@ -1656,10 +1657,23 @@ export default function CanvasStage() {
         }
       }
 
-      // On-canvas radial gradient centre handle (single selection)
+      // On-canvas radial gradient focal + centre handles (single selection)
       if (selected.length === 1) {
         const n = selected[0];
         if (n && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial") {
+          const focal = radialFocal(n);
+          if (focal) {
+            const dx = docPt.x - focal.x;
+            const dy = docPt.y - focal.y;
+            const hitR = 9 / viewport.zoom;
+            if (dx * dx + dy * dy < hitR * hitR) {
+              drag.current = { type: "gradient-radial-focal", id: n.id };
+              const fx = n.fill.fx ?? n.fill.cx ?? 0.5;
+              const fy = n.fill.fy ?? n.fill.cy ?? 0.5;
+              setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
+              return;
+            }
+          }
           const centre = radialCentre(n);
           if (centre) {
             const dx = docPt.x - centre.x;
@@ -2239,6 +2253,25 @@ export default function CanvasStage() {
       setStudioStatus(`Radial centre ${(ox * 100).toFixed(0)}%, ${(oy * 100).toFixed(0)}%`);
       return;
     }
+    if (d.type === "gradient-radial-focal") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || typeof n.fill !== "object" || n.fill?.type !== "radial") return;
+      const c = nodeCenter(n);
+      const local = n.rotation
+        ? rotatePoint(docPt.x, docPt.y, c.x, c.y, -n.rotation)
+        : { x: docPt.x, y: docPt.y };
+      let fx = (local.x - n.x) / n.w;
+      let fy = (local.y - n.y) / n.h;
+      fx = Math.max(0, Math.min(1, fx));
+      fy = Math.max(0, Math.min(1, fy));
+      if (e.shiftKey) {
+        fx = Math.round(fx * 20) / 20;
+        fy = Math.round(fy * 20) / 20;
+      }
+      updateNodes([d.id], { fill: { ...n.fill, fx, fy } }, false);
+      setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
+      return;
+    }
     if (d.type === "path-handle-length") {
       const n = doc.nodes.find((x) => x.id === d.id);
       if (!n || !isPath(n)) return;
@@ -2410,6 +2443,10 @@ export default function CanvasStage() {
     if (d?.type === "gradient-radial") {
       commit();
       setStudioStatus("Radial centre committed");
+    }
+    if (d?.type === "gradient-radial-focal") {
+      commit();
+      setStudioStatus("Radial focal committed");
     }
     if (d?.type === "marquee") {
       const dx = Math.abs(d.endX - d.startX);
@@ -3791,6 +3828,22 @@ function radialCentre(n: DesignNode) {
   return { x: lx, y: ly };
 }
 
+function radialFocal(n: DesignNode) {
+  if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "radial") return null;
+  const ox = n.fill.cx ?? 0.5;
+  const oy = n.fill.cy ?? 0.5;
+  const fx = n.fill.fx ?? ox;
+  const fy = n.fill.fy ?? oy;
+  const lx = n.x + n.w * fx;
+  const ly = n.y + n.h * fy;
+  const c = nodeCenter(n);
+  if (n.rotation) {
+    const world = rotatePoint(lx, ly, c.x, c.y, n.rotation);
+    return world;
+  }
+  return { x: lx, y: ly };
+}
+
 function drawGradientRadialHandle(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
@@ -3803,11 +3856,13 @@ function drawGradientRadialHandle(
   if (!n) return;
   const centre = radialCentre(n);
   if (!centre) return;
+  const focal = radialFocal(n);
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.translate(vp.x, vp.y);
   ctx.scale(vp.zoom, vp.zoom);
   const zoom = vp.zoom;
+  // Centre cross (outer)
   const r = 6 / zoom;
   ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
   ctx.lineWidth = 1.4 / zoom;
@@ -3824,6 +3879,21 @@ function drawGradientRadialHandle(
   ctx.beginPath();
   ctx.arc(centre.x, centre.y, 2.2 / zoom, 0, Math.PI * 2);
   ctx.fill();
+  // Focal point (inner) — smaller filled diamond
+  if (focal) {
+    const fr = 4.5 / zoom;
+    ctx.strokeStyle = "rgba(126, 224, 255, 0.9)";
+    ctx.fillStyle = "#7ee0ff";
+    ctx.lineWidth = 1.2 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(focal.x, focal.y - fr);
+    ctx.lineTo(focal.x + fr, focal.y);
+    ctx.lineTo(focal.x, focal.y + fr);
+    ctx.lineTo(focal.x - fr, focal.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
