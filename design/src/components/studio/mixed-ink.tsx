@@ -14,9 +14,10 @@ import {
   stampShadowOy,
   stampShadowSpread,
 } from "@/lib/design/shadow";
-import { cloneFill, solidOf } from "@/lib/design/ink";
+import { cloneFill, fillChipLabel, solidOf } from "@/lib/design/ink";
 import { useDesign } from "@/lib/design/store";
-import type { DesignNode, Shadow } from "@/lib/design/types";
+import type { DesignNode, GradientFill, Shadow } from "@/lib/design/types";
+import { isGradient } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { BrandSwatches, Field, RecentSwatches } from "./inspector-parts";
 import { NumField } from "./num-field";
@@ -40,6 +41,21 @@ import {
 function mapShadows(map: (sh: Shadow | null) => Shadow | null, commit = false) {
   const state = useDesign.getState();
   state.mapNodes(state.selection, (layer) => ({ ...layer, shadow: map(layer.shadow) }), commit);
+}
+
+
+function gradientPreviewCss(g: GradientFill): string {
+  const parts = g.stops
+    .slice()
+    .sort((a, b) => a.offset - b.offset)
+    .map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`)
+    .join(", ");
+  if (g.type === "radial") {
+    const cx = ((g.cx ?? 0.5) * 100).toFixed(1);
+    const cy = ((g.cy ?? 0.5) * 100).toFixed(1);
+    return `radial-gradient(circle at ${cx}% ${cy}%, ${parts})`;
+  }
+  return `linear-gradient(${g.angle}deg, ${parts})`;
 }
 
 function MixedHexField({
@@ -96,6 +112,9 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
   const ghost = first.shadow ?? DEFAULT_SHADOW;
   const fillHex = solidOf(first.fill, ink);
   const mixedFill = new Set(nodes.map((n) => JSON.stringify(n.fill))).size > 1;
+  const keyIsGradient = isGradient(first.fill);
+  const uniformGradient = !mixedFill && keyIsGradient;
+  const fillLabel = mixedFill ? "Fill · mixed" : keyIsGradient ? `Fill · ${fillChipLabel(first.fill)}` : "Fill";
   const mixedStrokeColor = new Set(nodes.map((n) => n.stroke)).size > 1;
   const mixedStrokeWidth = new Set(nodes.map((n) => n.strokeWidth)).size > 1;
   const mixedStroke = mixedStrokeColor || mixedStrokeWidth;
@@ -114,7 +133,14 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
     <section className="border-b border-border py-3">
       <div className="mb-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Ink · {nodes.length}</div>
       <p className="mb-2 text-[10px] text-ink-dim">Mixed sliders stay live — they ghost the first drop and write only the field you drag.</p>
-      <Field label={mixedFill ? "Fill · mixed" : "Fill"}>
+      <Field label={fillLabel}>
+        {keyIsGradient && (
+          <div
+            className="mb-2 h-6 w-full rounded-[6px] border border-border"
+            style={{ background: gradientPreviewCss(first.fill as GradientFill) }}
+            title={fillChipLabel(first.fill)}
+          />
+        )}
         <MixedHexField
           value={fillHex}
           mixed={mixedFill}
@@ -123,13 +149,125 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
         />
         <BrandSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
         <RecentSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
-        <button
-          type="button"
-          className="mt-1 text-[10px] text-phosphor"
-          onClick={() => updateNodes(ids, { fill: cloneFill(first.fill) }, true)}
-        >
-          Apply key fill to all
-        </button>
+        <div className="mt-1 flex flex-wrap gap-1">
+          <button
+            type="button"
+            className="text-[10px] text-phosphor"
+            onClick={() => updateNodes(ids, { fill: cloneFill(first.fill) }, true)}
+          >
+            Apply key fill to all
+          </button>
+          {keyIsGradient && (
+            <button
+              type="button"
+              className="text-[10px] text-ink-dim hover:text-phosphor"
+              onClick={() => updateNodes(ids, { fill: fillHex }, true)}
+            >
+              Make all solid
+            </button>
+          )}
+        </div>
+        {uniformGradient && (() => {
+          const g = first.fill as GradientFill;
+          return (
+          <div className="mt-2 flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={cn(
+                  "flex-1 rounded-[6px] border px-2 py-1 text-[10px] transition-colors",
+                  g.type !== "radial" ? "border-phosphor bg-phosphor/10 text-phosphor" : "border-border text-ink-dim hover:text-ink",
+                )}
+                onClick={() => updateNodes(ids, { fill: { ...g, type: "linear" } }, true)}
+              >
+                Linear
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "flex-1 rounded-[6px] border px-2 py-1 text-[10px] transition-colors",
+                  g.type === "radial" ? "border-phosphor bg-phosphor/10 text-phosphor" : "border-border text-ink-dim hover:text-ink",
+                )}
+                onClick={() => updateNodes(ids, { fill: { ...g, type: "radial" } }, true)}
+              >
+                Radial
+              </button>
+            </div>
+            {g.type !== "radial" && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  className="range-phosphor min-w-0 flex-1"
+                  min={0}
+                  max={360}
+                  value={Math.round(g.angle)}
+                  onChange={(e) => updateNodes(ids, { fill: { ...g, angle: Number(e.target.value) } }, false)}
+                  onPointerUp={() => useDesign.getState().commit()}
+                />
+                <NumField
+                  value={Math.round(g.angle)}
+                  min={0}
+                  max={360}
+                  className="field w-12 font-mono text-[11px] text-right"
+                  aria-label="Gradient angle degrees"
+                  onDraft={(n) => {
+                    if (n == null || !Number.isFinite(n)) return;
+                    const ang = Math.max(0, Math.min(360, n));
+                    updateNodes(ids, { fill: { ...g, angle: ang } }, false);
+                  }}
+                  onCommit={(n) => {
+                    const ang = Math.max(0, Math.min(360, n));
+                    updateNodes(ids, { fill: { ...g, angle: ang } }, true);
+                  }}
+                />
+                <span className="shrink-0 text-[10px] text-ink-dim">°</span>
+              </div>
+            )}
+            {g.type === "radial" && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-ink-dim">CX</span>
+                  <NumField
+                    value={Math.round((g.cx ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial centre X percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, cx: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, cx: v } }, true);
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-ink-dim">CY</span>
+                  <NumField
+                    value={Math.round((g.cy ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Radial centre Y percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, cy: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes(ids, { fill: { ...g, cy: v } }, true);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          );
+        })()}
         {mixedFill && <MixedFillChips nodes={nodes} ink={ink} />}
       </Field>
       <Field label={mixedStroke ? "Stroke · mixed" : "Stroke"}>
