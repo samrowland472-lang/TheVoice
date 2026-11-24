@@ -44,7 +44,7 @@ export type NodeKind =
   | "group";
 
 export interface GradientFill {
-  type: "linear";
+  type: "linear" | "radial";
   angle: number;
   stops: { offset: number; color: string }[];
 }
@@ -249,7 +249,7 @@ export interface BrushSettings {
 }
 
 export function isGradient(fill: Fill): fill is GradientFill {
-  return typeof fill === "object" && fill !== null && fill.type === "linear";
+  return typeof fill === "object" && fill !== null && (fill.type === "linear" || fill.type === "radial");
 }
 
 export function isText(n: DesignNode): n is TextNode {

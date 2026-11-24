@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- Radial gradients: Fill editor gains Linear / Radial toggle. Radial fills render with createRadialGradient centred on the node (stops map to radius). Preview bar switches to radial-gradient. Angle slider hidden for radial. Type preserved in clone, style clipboard, and fill keys/labels.
 - Eyedropper sample status holds longer: successful samples (fill or stroke) now use holdStudioStatus so the message persists until the next inspector action; includes alpha % note when the sample is not fully opaque. Colour is still remembered into recent swatches.
 - Gradient stop editors with denser brand + recent swatches: each gradient stop now shows the tight size-5 BrandSwatches and RecentSwatches under its hex field. Click applies the colour to that stop, remembers it, and updates the live preview bar.
 - Eyedropper live preview chip polish: larger phosphor-bordered swatch with alpha % when <100, transparent checkerboard, position clamped inside canvas bounds.
@@ -29,6 +30,7 @@
 - Present mode notes better UX: speaker notes drawer now renders in present (N / Notes toggle). Live word/char count, placeholder, caret restore + jump-to-last-edit, taller drawer. Notes persist per frame via localStorage.
 
 ## Iteration
+- 2026-11-24T06:06Z — Radial gradients (Linear/Radial toggle, canvas + preview support, angle hidden for radial). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T05:01Z — Eyedropper sample status holds longer (held status + alpha note). Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T04:08Z — Gradient stop editors with denser brand + recent swatches. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-24T03:04Z — Eyedropper live preview chip polish (alpha, clamp, checker). Typecheck, build, smoke clean (hub content visible).
@@ -42,9 +44,9 @@
 - 2026-11-23T17:07Z — Opacity field next to solid fill hex. Typecheck, build, smoke clean.
 - 2026-11-23T08:07Z — Gradient stop offset % editable NumFields. Typecheck, build, smoke clean.
 ## Next recommended
-- Gradient angle live scrub polish or radial gradients
+- Gradient angle live scrub polish (NumField or on-canvas drag)
 - Mixed selection support for gradient fills
-- Eyedropper sample also remembers into recent and shows in status longer (done)
+- Radial centre offset or focal point controls
 ## Backlog
 1. Stroke opacity field next to stroke hex (done)
 1. Present mode notes better UX (done)
@@ -61,3 +63,4 @@
 12. Live gradient stop markers on the preview bar (done)
 13. Gradient stop markers show offset % on hover (done)
 14. Brand / recent denser also in mixed-ink and type colour editors (done)
+15. Radial gradients (done)

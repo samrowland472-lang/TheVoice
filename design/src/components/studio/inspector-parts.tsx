@@ -28,6 +28,9 @@ import { NumField } from "./num-field";
 function gradientPreviewCss(g: GradientFill): string {
   const stops = [...g.stops].sort((a, b) => a.offset - b.offset);
   const parts = stops.map((s) => `${s.color} ${(s.offset * 100).toFixed(1)}%`).join(", ");
+  if (g.type === "radial") {
+    return `radial-gradient(circle, ${parts})`;
+  }
   return `linear-gradient(${g.angle}deg, ${parts})`;
 }
 
@@ -188,29 +191,53 @@ export function FillEditor({ node }: { node: DesignNode }) {
       )}
       {gradient && (
         <div className="flex flex-col gap-2">
-          <Field label={`Angle ${fill.angle}°`}>
-            <input
-              type="range"
-              className="range-phosphor w-full"
-              min={0}
-              max={360}
-              value={fill.angle}
-              onChange={(e) =>
-                updateNodes([node.id], { fill: { ...fill, angle: Number(e.target.value) } }, false)
-              }
-              onPointerDown={() => useDesign.getState().setGradientAngleScrubId(node.id)}
-              onPointerUp={() => {
-                useDesign.getState().setGradientAngleScrubId(null);
-                useDesign.getState().commit();
-              }}
-              onPointerCancel={() => useDesign.getState().setGradientAngleScrubId(null)}
-              onLostPointerCapture={() => useDesign.getState().setGradientAngleScrubId(null)}
-              onMouseEnter={() => useDesign.getState().setGradientHoverKey("angle")}
-              onFocus={() => useDesign.getState().setGradientHoverKey("angle")}
-              onMouseLeave={() => { if (!useDesign.getState().gradientAngleScrubId) useDesign.getState().setGradientHoverKey(null); }}
-              onBlur={() => useDesign.getState().setGradientHoverKey(null)}
-            />
-          </Field>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={cn(
+                "flex-1 rounded-[6px] border px-2 py-1 text-[10px] transition-colors",
+                fill.type !== "radial" ? "border-phosphor bg-phosphor/10 text-phosphor" : "border-border text-ink-dim hover:text-ink",
+              )}
+              onClick={() => updateNodes([node.id], { fill: { ...fill, type: "linear" } }, true)}
+            >
+              Linear
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "flex-1 rounded-[6px] border px-2 py-1 text-[10px] transition-colors",
+                fill.type === "radial" ? "border-phosphor bg-phosphor/10 text-phosphor" : "border-border text-ink-dim hover:text-ink",
+              )}
+              onClick={() => updateNodes([node.id], { fill: { ...fill, type: "radial" } }, true)}
+            >
+              Radial
+            </button>
+          </div>
+          {fill.type !== "radial" && (
+            <Field label={`Angle ${fill.angle}°`}>
+              <input
+                type="range"
+                className="range-phosphor w-full"
+                min={0}
+                max={360}
+                value={fill.angle}
+                onChange={(e) =>
+                  updateNodes([node.id], { fill: { ...fill, angle: Number(e.target.value) } }, false)
+                }
+                onPointerDown={() => useDesign.getState().setGradientAngleScrubId(node.id)}
+                onPointerUp={() => {
+                  useDesign.getState().setGradientAngleScrubId(null);
+                  useDesign.getState().commit();
+                }}
+                onPointerCancel={() => useDesign.getState().setGradientAngleScrubId(null)}
+                onLostPointerCapture={() => useDesign.getState().setGradientAngleScrubId(null)}
+                onMouseEnter={() => useDesign.getState().setGradientHoverKey("angle")}
+                onFocus={() => useDesign.getState().setGradientHoverKey("angle")}
+                onMouseLeave={() => { if (!useDesign.getState().gradientAngleScrubId) useDesign.getState().setGradientHoverKey(null); }}
+                onBlur={() => useDesign.getState().setGradientHoverKey(null)}
+              />
+            </Field>
+          )}
           <div
             ref={barRef}
             className="relative h-8 w-full rounded-[8px] border border-border"

@@ -29,7 +29,7 @@ import type { BrandKit, DesignDocument, DesignNode, PathNode, Shadow, Tool, View
 import type { StrokeGhost } from "./stroke-ghost";
 
 export type StyleClipboard = {
-  fill: string | { type: "linear"; angle: number; stops: { offset: number; color: string }[] };
+  fill: string | { type: "linear" | "radial"; angle: number; stops: { offset: number; color: string }[] };
   stroke: string;
   strokeWidth: number;
   opacity: number;

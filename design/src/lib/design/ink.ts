@@ -3,7 +3,7 @@ import { isGradient } from "./types";
 
 export function fillKey(fill: DesignNode["fill"]): string {
   if (typeof fill === "string") return fill;
-  return `g:${fill.angle}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
+  return `g:${fill.type}:${fill.angle}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
 }
 
 export function solidOf(fill: DesignNode["fill"], fallback: string): string {
@@ -18,6 +18,7 @@ export function fillChipLabel(fill: DesignNode["fill"]): string {
   if (isGradient(fill)) {
     const a = fill.stops[0]?.color ?? "grad";
     const b = fill.stops[fill.stops.length - 1]?.color ?? a;
+    if (fill.type === "radial") return `radial · ${a}→${b}`;
     return `grad ${fill.angle}° · ${a}→${b}`;
   }
   return "fill";
@@ -36,7 +37,7 @@ export function strokeKey(stroke: string, width: number): string {
 export function cloneFill(fill: DesignNode["fill"]): DesignNode["fill"] {
   if (typeof fill === "string") return fill;
   const g: GradientFill = {
-    type: "linear",
+    type: fill.type === "radial" ? "radial" : "linear",
     angle: fill.angle,
     stops: fill.stops.map((s) => ({ offset: s.offset, color: s.color })),
   };

@@ -29,13 +29,22 @@ export function getCachedImage(src: string): HTMLImageElement | null {
 
 export function applyFill(ctx: CanvasRenderingContext2D, fill: Fill, x: number, y: number, w: number, h: number) {
   if (isGradient(fill)) {
-    const ang = (fill.angle * Math.PI) / 180;
-    const cx = x + w / 2;
-    const cy = y + h / 2;
-    const len = Math.max(w, h);
-    const g = ctx.createLinearGradient(cx - Math.cos(ang) * len, cy - Math.sin(ang) * len, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
-    for (const s of fill.stops) g.addColorStop(s.offset, s.color);
-    ctx.fillStyle = g;
+    if (fill.type === "radial") {
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const r = Math.max(w, h) / 2;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      for (const s of fill.stops) g.addColorStop(Math.max(0, Math.min(1, s.offset)), s.color);
+      ctx.fillStyle = g;
+    } else {
+      const ang = (fill.angle * Math.PI) / 180;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const len = Math.max(w, h);
+      const g = ctx.createLinearGradient(cx - Math.cos(ang) * len, cy - Math.sin(ang) * len, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
+      for (const s of fill.stops) g.addColorStop(Math.max(0, Math.min(1, s.offset)), s.color);
+      ctx.fillStyle = g;
+    }
   } else {
     ctx.fillStyle = fill;
   }
