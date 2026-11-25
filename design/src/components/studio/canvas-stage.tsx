@@ -4142,9 +4142,13 @@ function drawGradientAngleScrubChips(
     dpr,
     (n) => typeof n.fill === "object" && n.fill != null && "angle" in n.fill,
     (n) => {
-      const fill = n.fill as { angle?: number } | string | undefined;
-      const angle = typeof fill === "object" && fill ? fill.angle ?? 0 : 0;
-      return `Angle ${Math.round(angle)}°`;
+      const fill = n.fill as { angle?: number; llen?: number; lox?: number; loy?: number } | string | undefined;
+      if (typeof fill !== "object" || !fill) return "Gradient";
+      const angle = fill.angle ?? 0;
+      const llen = Math.round((fill.llen ?? 1) * 100);
+      const lox = Math.round((fill.lox ?? 0.5) * 100);
+      const loy = Math.round((fill.loy ?? 0.5) * 100);
+      return `∠${Math.round(angle)}° · ${llen}% · ${lox},${loy}`;
     },
   );
 }
