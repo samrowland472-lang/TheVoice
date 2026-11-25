@@ -184,6 +184,7 @@ export default function CanvasStage() {
   const strokeDashOffsetScrubId = useDesign((s) => s.strokeDashOffsetScrubId);
   const miterLimitScrubId = useDesign((s) => s.miterLimitScrubId);
   const gradientAngleScrubId = useDesign((s) => s.gradientAngleScrubId);
+  const radialR0ScrubId = useDesign((s) => s.radialR0ScrubId);
   const sidesScrubId = useDesign((s) => s.sidesScrubId);
   const headScaleScrubId = useDesign((s) => s.headScaleScrubId);
   const strokeGhost = useDesign((s) => s.strokeGhost);
@@ -387,6 +388,7 @@ export default function CanvasStage() {
     drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
+    drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     if (pathDashHoverKey) {
@@ -811,7 +813,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -861,6 +863,7 @@ export default function CanvasStage() {
     drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
+    drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     if (pathDashHoverKey) {
@@ -1251,7 +1254,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, strokeGhost]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -1669,6 +1672,7 @@ export default function CanvasStage() {
             const hitR = 11 / viewport.zoom;
             if (dx * dx + dy * dy < hitR * hitR) {
               drag.current = { type: "gradient-radial-r0", id: n.id };
+              useDesign.getState().setRadialR0ScrubId(n.id);
               setStudioStatus(`Radial inner radius ${(r0h.r0 * 100).toFixed(0)}%`);
               return;
             }
@@ -2476,6 +2480,7 @@ export default function CanvasStage() {
     }
     if (d?.type === "gradient-radial-r0") {
       commit();
+      useDesign.getState().setRadialR0ScrubId(null);
       setStudioStatus("Radial inner radius committed");
     }
     if (d?.type === "marquee") {
@@ -3893,7 +3898,7 @@ function radialOuterRadius(n: DesignNode): number {
   return Math.max(r, 1);
 }
 
-/** World position of the r0 handle (right of focal). Visual offset is at least a grab radius. */
+/** World position of the r0 handle (along rotated local +x from focal). Visual offset is at least a grab radius. */
 function radialR0Handle(n: DesignNode, zoom: number) {
   if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "radial") return null;
   const focal = radialFocal(n);
@@ -3903,13 +3908,18 @@ function radialR0Handle(n: DesignNode, zoom: number) {
   const innerR = r0 * outer;
   const minVis = 10 / zoom;
   const visR = Math.max(innerR, minVis);
+  const ang = degToRad(n.rotation || 0);
+  const dx = Math.cos(ang) * visR;
+  const dy = Math.sin(ang) * visR;
   return {
-    x: focal.x + visR,
-    y: focal.y,
+    x: focal.x + dx,
+    y: focal.y + dy,
     innerR,
     outer,
     r0,
     focal,
+    dx,
+    dy,
   };
 }
 
@@ -3984,10 +3994,13 @@ function drawGradientRadialHandle(
     ctx.arc(r0h.x, r0h.y, hr, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    // small tick inward toward focal
+    // small tick inward toward focal along the direction
+    const len = Math.hypot(r0h.dx, r0h.dy) || 1;
+    const ux = r0h.dx / len;
+    const uy = r0h.dy / len;
     ctx.beginPath();
-    ctx.moveTo(r0h.x - hr * 1.4, r0h.y);
-    ctx.lineTo(r0h.x - hr * 0.2, r0h.y);
+    ctx.moveTo(r0h.x - ux * hr * 1.4, r0h.y - uy * hr * 1.4);
+    ctx.lineTo(r0h.x - ux * hr * 0.2, r0h.y - uy * hr * 0.2);
     ctx.stroke();
   }
   ctx.restore();
@@ -4013,6 +4026,30 @@ function drawGradientAngleScrubChips(
       const fill = n.fill as { angle?: number } | string | undefined;
       const angle = typeof fill === "object" && fill ? fill.angle ?? 0 : 0;
       return `Angle ${Math.round(angle)}°`;
+    },
+  );
+}
+
+function drawRadialR0ScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
+    (n) => {
+      const fill = n.fill as { r0?: number } | string | undefined;
+      const r0 = typeof fill === "object" && fill ? fill.r0 ?? 0 : 0;
+      return `Inner ${Math.round(r0 * 100)}%`;
     },
   );
 }
