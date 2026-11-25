@@ -245,11 +245,23 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
               <button type="button" className={cn("flex-1 rounded-[6px] border px-2 py-1 text-[10px] transition-colors", g.type === "radial" ? "border-phosphor bg-phosphor/10 text-phosphor" : "border-border text-ink-dim hover:text-ink")} onClick={() => updateNodes(ids, { fill: { ...g, type: "radial" } }, true)}>Radial</button>
             </div>
             {g.type !== "radial" && (
+              <>
               <div className="flex items-center gap-2">
                 <input type="range" className="range-phosphor min-w-0 flex-1" min={0} max={360} value={Math.round(g.angle)} onChange={(e) => updateNodes(ids, { fill: { ...g, angle: Number(e.target.value) } }, false)} onPointerUp={() => useDesign.getState().commit()} />
                 <NumField value={Math.round(g.angle)} min={0} max={360} className="field w-12 font-mono text-[11px] text-right" aria-label="Gradient angle degrees" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, angle: Math.max(0, Math.min(360, n)) } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, angle: Math.max(0, Math.min(360, n)) } }, true); }} />
                 <span className="shrink-0 text-[10px] text-ink-dim">°</span>
               </div>
+              <div className="flex items-center gap-2">
+                <span className="w-8 shrink-0 text-[10px] text-ink-dim">Len</span>
+                <input type="range" className="range-phosphor min-w-0 flex-1" min={20} max={300} value={Math.round((g.llen ?? 1) * 100)} onChange={(e) => updateNodes(ids, { fill: { ...g, llen: Number(e.target.value) / 100 } }, false)} onPointerUp={() => useDesign.getState().commit()} />
+                <NumField value={Math.round((g.llen ?? 1) * 100)} min={20} max={300} className="field w-12 font-mono text-[11px] text-right" aria-label="Linear gradient length percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, llen: Math.max(20, Math.min(300, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, llen: Math.max(20, Math.min(300, n)) / 100 } }, true); }} />
+                <span className="shrink-0 text-[10px] text-ink-dim">%</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-1"><span className="text-[10px] text-ink-dim">OX</span><NumField value={Math.round((g.lox ?? 0.5) * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label="Linear offset X percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, lox: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, lox: Math.max(0, Math.min(100, n)) / 100 } }, true); }} /><span className="text-[10px] text-ink-dim">%</span></div>
+                <div className="flex items-center gap-1"><span className="text-[10px] text-ink-dim">OY</span><NumField value={Math.round((g.loy ?? 0.5) * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label="Linear offset Y percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, loy: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, loy: Math.max(0, Math.min(100, n)) / 100 } }, true); }} /><span className="text-[10px] text-ink-dim">%</span></div>
+              </div>
+              </>
             )}
             {g.type === "radial" && (
               <div className="grid grid-cols-2 gap-2">

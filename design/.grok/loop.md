@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-25T06:12Z — Inspector fields for linear gradient length and offset: Length % (20–300, range + NumField) and Offset X/Y % (0–100) now appear in both single-node Fill editor and mixed Ink when a uniform linear fill is selected. Matches on-canvas llen/lox/loy handles. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle: end handle now also scrubs relative length (llen, 20–300%); phosphor diamond at gradient centre drags to offset the line (lox/loy 0–100%). Shared across uniform mixed selections. Live status shows angle · length or offset %. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T04:12Z — On-canvas linear gradient angle handle for mixed selections: when multiple nodes share a uniform linear fill, phosphor dashed line + end handle now appear on every selected node. Dragging any handle scrubs the shared angle live across the whole selection (Shift snaps to 15°). Live Angle ° chips appear on all selected nodes during the drag. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T03:07Z — On-canvas radial gradient handles for mixed selections: when multiple nodes share a uniform radial fill, phosphor centre cross, focal diamond, and r0 handle now appear on every selected node. Dragging any handle (centre, focal, or inner radius) scrubs the shared fill parameters live across the whole selection (Shift snaps). Live % chips appear on all selected nodes during the drag. Typecheck, build, smoke clean (hub content visible).
@@ -31,7 +32,7 @@
 - Gradient stop offset % editable NumFields.
 ## Next recommended
 - Live gradient angle/length/offset chips denser or combined
-- Inspector fields for linear length and offset
+- On-canvas live chips for linear length and offset (matching radial)
 ## Backlog
 22. On-canvas linear gradient angle handle for mixed selections (done)
 21. Gradient stop editing in mixed selection (done)

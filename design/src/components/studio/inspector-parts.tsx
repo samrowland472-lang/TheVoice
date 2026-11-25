@@ -407,6 +407,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
             </div>
           )}
           {fill.type !== "radial" && (
+            <>
             <Field label="Angle">
               <div className="flex items-center gap-2">
                 <input
@@ -449,6 +450,83 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">°</span>
               </div>
             </Field>
+            <Field label="Length">
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  className="range-phosphor min-w-0 flex-1"
+                  min={20}
+                  max={300}
+                  value={Math.round((fill.llen ?? 1) * 100)}
+                  onChange={(e) =>
+                    updateNodes([node.id], { fill: { ...fill, llen: Number(e.target.value) / 100 } }, false)
+                  }
+                  onPointerUp={() => useDesign.getState().commit()}
+                />
+                <NumField
+                  value={Math.round((fill.llen ?? 1) * 100)}
+                  min={20}
+                  max={300}
+                  className="field w-12 font-mono text-[11px] text-right"
+                  aria-label="Linear gradient length percent"
+                  onDraft={(n) => {
+                    if (n == null || !Number.isFinite(n)) return;
+                    const v = Math.max(20, Math.min(300, n)) / 100;
+                    updateNodes([node.id], { fill: { ...fill, llen: v } }, false);
+                  }}
+                  onCommit={(n) => {
+                    const v = Math.max(20, Math.min(300, n)) / 100;
+                    updateNodes([node.id], { fill: { ...fill, llen: v } }, true);
+                  }}
+                />
+                <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+              </div>
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Offset X">
+                <div className="flex items-center gap-1">
+                  <NumField
+                    value={Math.round((fill.lox ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Linear gradient offset X percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, lox: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, lox: v } }, true);
+                    }}
+                  />
+                  <span className="text-[10px] text-ink-dim">%</span>
+                </div>
+              </Field>
+              <Field label="Offset Y">
+                <div className="flex items-center gap-1">
+                  <NumField
+                    value={Math.round((fill.loy ?? 0.5) * 100)}
+                    min={0}
+                    max={100}
+                    className="field w-12 font-mono text-[11px] text-right"
+                    aria-label="Linear gradient offset Y percent"
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, loy: v } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const v = Math.max(0, Math.min(100, n)) / 100;
+                      updateNodes([node.id], { fill: { ...fill, loy: v } }, true);
+                    }}
+                  />
+                  <span className="text-[10px] text-ink-dim">%</span>
+                </div>
+              </Field>
+            </div>
+            </>
           )}
           <div
             ref={barRef}
