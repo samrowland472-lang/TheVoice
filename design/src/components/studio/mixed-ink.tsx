@@ -1,5 +1,5 @@
 import { rememberColor } from "@/lib/design/persist";
-import type { CSSProperties } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import {
   cloneShadow,
   DEFAULT_SHADOW,
@@ -106,6 +106,74 @@ function MixedHexField({
   );
 }
 
+
+function MixedGradientBar({
+  gradient,
+  ids,
+  updateNodes,
+}: {
+  gradient: GradientFill;
+  ids: string[];
+  updateNodes: (ids: string[], patch: Partial<DesignNode>, commit: boolean) => void;
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const [hoverStop, setHoverStop] = useState<number | null>(null);
+  const [dragStop, setDragStop] = useState<number | null>(null);
+
+  return (
+    <div
+      ref={barRef}
+      className="relative mb-2 h-6 w-full rounded-[6px] border border-border"
+      style={{ background: gradientPreviewCss(gradient) }}
+      title={fillChipLabel(gradient)}
+    >
+      {gradient.stops.map((stop, i) => (
+        <button
+          key={i}
+          type="button"
+          className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
+          style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
+          onMouseEnter={() => setHoverStop(i)}
+          onMouseLeave={() => setHoverStop(null)}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragStop(i);
+            const bar = barRef.current;
+            if (!bar) return;
+            const rect = bar.getBoundingClientRect();
+            const startX = e.clientX;
+            const startOffset = stop.offset;
+            const onMove = (ev: PointerEvent) => {
+              const dx = ev.clientX - startX;
+              const newOff = Math.max(0, Math.min(1, startOffset + dx / rect.width));
+              const stops = gradient.stops.map((s, j) => (j === i ? { ...s, offset: newOff } : s));
+              updateNodes(ids, { fill: { ...gradient, stops } }, false);
+            };
+            const onUp = () => {
+              window.removeEventListener("pointermove", onMove);
+              window.removeEventListener("pointerup", onUp);
+              setDragStop(null);
+              useDesign.getState().commit();
+            };
+            window.addEventListener("pointermove", onMove);
+            window.addEventListener("pointerup", onUp);
+          }}
+          aria-label={`Drag gradient stop ${i + 1}`}
+        />
+      ))}
+      {(dragStop ?? hoverStop) != null && gradient.stops[dragStop ?? hoverStop!] && (
+        <div
+          className="pointer-events-none absolute -top-5 z-10 -translate-x-1/2 rounded-sm border border-phosphor bg-surface px-1 py-0.5 text-[9px] font-mono text-phosphor shadow-[0_0_0_1px_#000]"
+          style={{ left: `${gradient.stops[dragStop ?? hoverStop!].offset * 100}%` }}
+        >
+          {Math.round(gradient.stops[dragStop ?? hoverStop!].offset * 100)}%
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
@@ -138,10 +206,10 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
       <p className="mb-2 text-[10px] text-ink-dim">Mixed sliders stay live — they ghost the first drop and write only the field you drag.</p>
       <Field label={fillLabel}>
         {keyIsGradient && (
-          <div
-            className="mb-2 h-6 w-full rounded-[6px] border border-border"
-            style={{ background: gradientPreviewCss(first.fill as GradientFill) }}
-            title={fillChipLabel(first.fill)}
+          <MixedGradientBar
+            gradient={first.fill as GradientFill}
+            ids={ids}
+            updateNodes={updateNodes}
           />
         )}
         <MixedHexField
