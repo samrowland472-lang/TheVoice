@@ -1649,19 +1649,29 @@ export default function CanvasStage() {
         }
       }
 
-      // On-canvas linear gradient angle handle (single selection)
-      if (selected.length === 1) {
-        const n = selected[0];
-        if (n && typeof n.fill === "object" && n.fill != null && n.fill.type === "linear") {
-          const handle = gradientAngleHandle(n, viewport.zoom);
-          if (handle) {
-            const dx = docPt.x - handle.ex;
-            const dy = docPt.y - handle.ey;
-            const hitR = 10 / viewport.zoom;
-            if (dx * dx + dy * dy < hitR * hitR) {
-              drag.current = { type: "gradient-angle", id: n.id, cx: handle.cx, cy: handle.cy };
-              setStudioStatus(`Gradient angle ${Math.round(n.fill.angle)}°`);
-              return;
+      // On-canvas linear gradient angle handle (uniform selection, single or mixed)
+      {
+        const linears = selected.filter(
+          (n) => n && typeof n.fill === "object" && n.fill != null && n.fill.type === "linear",
+        );
+        if (linears.length === selected.length && linears.length > 0) {
+          const fillStr = JSON.stringify(linears[0]!.fill);
+          const uniform = linears.every((n) => JSON.stringify(n.fill) === fillStr);
+          if (uniform) {
+            // Prefer topmost first
+            for (const n of linears.slice().reverse()) {
+              const handle = gradientAngleHandle(n, viewport.zoom);
+              if (handle) {
+                const dx = docPt.x - handle.ex;
+                const dy = docPt.y - handle.ey;
+                const hitR = 10 / viewport.zoom;
+                if (dx * dx + dy * dy < hitR * hitR) {
+                  drag.current = { type: "gradient-angle", id: n.id, cx: handle.cx, cy: handle.cy };
+                  useDesign.getState().setGradientAngleScrubId(n.id);
+                  setStudioStatus(`Gradient angle ${Math.round(n.fill.angle)}°`);
+                  return;
+                }
+              }
             }
           }
         }
@@ -2264,7 +2274,8 @@ export default function CanvasStage() {
       let localAng = worldAng - n.rotation;
       localAng = ((localAng % 360) + 360) % 360;
       if (e.shiftKey) localAng = Math.round(localAng / 15) * 15;
-      updateNodes([d.id], { fill: { ...n.fill, angle: localAng } }, false);
+      const ids = selection.length > 1 ? selection : [d.id];
+      updateNodes(ids, { fill: { ...n.fill, angle: localAng } }, false);
       setStudioStatus(`Gradient angle ${Math.round(localAng)}°`);
       return;
     }
@@ -2490,6 +2501,7 @@ export default function CanvasStage() {
     }
     if (d?.type === "gradient-angle") {
       commit();
+      useDesign.getState().setGradientAngleScrubId(null);
       setStudioStatus("Gradient angle committed");
     }
     if (d?.type === "gradient-radial") {
@@ -3844,11 +3856,15 @@ function drawGradientAngleHandle(
   vp: Viewport,
   dpr: number,
 ) {
-  if (selection.length !== 1) return;
-  const n = nodes.find((x) => x.id === selection[0] && x.visible);
-  if (!n) return;
-  const h = gradientAngleHandle(n, vp.zoom);
-  if (!h) return;
+  const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
+  if (selected.length === 0) return;
+  const linears = selected.filter(
+    (n) => n && typeof n.fill === "object" && n.fill != null && n.fill.type === "linear",
+  );
+  if (linears.length !== selected.length || linears.length === 0) return;
+  const fillStr = JSON.stringify(linears[0]!.fill);
+  if (!linears.every((n) => JSON.stringify(n.fill) === fillStr)) return;
+
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.translate(vp.x, vp.y);
@@ -3857,19 +3873,25 @@ function drawGradientAngleHandle(
   ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
   ctx.lineWidth = 1.5 / zoom;
   ctx.setLineDash([4 / zoom, 3 / zoom]);
-  ctx.beginPath();
-  ctx.moveTo(h.cx, h.cy);
-  ctx.lineTo(h.ex, h.ey);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = "#3fc6ff";
-  ctx.strokeStyle = "#7ee0ff";
-  ctx.lineWidth = 1.2 / zoom;
-  const r = 5 / zoom;
-  ctx.beginPath();
-  ctx.arc(h.ex, h.ey, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+
+  for (const n of linears) {
+    const h = gradientAngleHandle(n, zoom);
+    if (!h) continue;
+    ctx.beginPath();
+    ctx.moveTo(h.cx, h.cy);
+    ctx.lineTo(h.ex, h.ey);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#3fc6ff";
+    ctx.strokeStyle = "#7ee0ff";
+    ctx.lineWidth = 1.2 / zoom;
+    const r = 5 / zoom;
+    ctx.beginPath();
+    ctx.arc(h.ex, h.ey, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([4 / zoom, 3 / zoom]);
+  }
   ctx.restore();
 }
 
