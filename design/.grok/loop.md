@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-25T02:08Z — Live % chips on on-canvas radial centre and focal handles: dragging the phosphor centre cross or focal diamond now shows a phosphor value chip on the node (Centre XX%, YY% or Focal XX%, YY%). Scrub state tracks the drag; chips clear on commit. Matches the existing Inner radius chip pattern. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T01:22Z — Mixed gradient stop bar polish: larger phosphor stop markers (h-8 bar, size-3 handles) matching single FillEditor; optional commit flag. Restored after push glitch. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T01:06Z — Gradient stop drag on the mixed preview bar: when a mixed selection shares a uniform gradient fill, the Ink preview bar now shows phosphor stop markers. Drag a marker to scrub its offset live across every selected node (0–100%). Hover or drag shows a phosphor % chip. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T00:05Z — On-canvas radial r0 handle polish: handle direction is now rotation-aware (along rotated local +x from the focal). Live Inner % chip appears on the node while dragging the r0 handle (phosphor value chip). Typecheck, build, smoke clean (hub content visible).
@@ -26,8 +27,8 @@
 - Opacity field next to solid fill hex.
 - Gradient stop offset % editable NumFields.
 ## Next recommended
-- On-canvas radial centre/focal handles with live % chips
-- Live % chips on on-canvas radial centre and focal handles
+- On-canvas radial gradient handles for mixed selections
+- Live gradient angle chip polish for linear (already present; denser?)
 ## Backlog
 21. Gradient stop editing in mixed selection (done)
 1. Stroke opacity field next to stroke hex (done)

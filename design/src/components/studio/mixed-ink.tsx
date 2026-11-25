@@ -292,7 +292,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
         {mixedOpacity && <MixedOpacityChips nodes={nodes} />}
       </Field>
       <Field label={mixedBlend ? "Blend · mixed" : "Blend"}>
-        <MixedBlendLegend />
+        <MixedBlendLegend nodes={nodes} />
         {mixedBlend && <MixedBlendChips nodes={nodes} />}
       </Field>
       <div className="mt-2 flex flex-wrap gap-2">

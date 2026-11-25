@@ -185,6 +185,8 @@ export default function CanvasStage() {
   const miterLimitScrubId = useDesign((s) => s.miterLimitScrubId);
   const gradientAngleScrubId = useDesign((s) => s.gradientAngleScrubId);
   const radialR0ScrubId = useDesign((s) => s.radialR0ScrubId);
+  const radialCentreScrubId = useDesign((s) => s.radialCentreScrubId);
+  const radialFocalScrubId = useDesign((s) => s.radialFocalScrubId);
   const sidesScrubId = useDesign((s) => s.sidesScrubId);
   const headScaleScrubId = useDesign((s) => s.headScaleScrubId);
   const strokeGhost = useDesign((s) => s.strokeGhost);
@@ -389,6 +391,8 @@ export default function CanvasStage() {
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
     drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr);
+    drawRadialCentreScrubChips(ctx, doc.nodes, radialCentreScrubId, selection, viewport, dpr);
+    drawRadialFocalScrubChips(ctx, doc.nodes, radialFocalScrubId, selection, viewport, dpr);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     if (pathDashHoverKey) {
@@ -813,7 +817,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -864,6 +868,8 @@ export default function CanvasStage() {
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr);
     drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr);
+    drawRadialCentreScrubChips(ctx, doc.nodes, radialCentreScrubId, selection, viewport, dpr);
+    drawRadialFocalScrubChips(ctx, doc.nodes, radialFocalScrubId, selection, viewport, dpr);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     if (pathDashHoverKey) {
@@ -1254,7 +1260,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, strokeGhost]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
@@ -1684,6 +1690,7 @@ export default function CanvasStage() {
             const hitR = 9 / viewport.zoom;
             if (dx * dx + dy * dy < hitR * hitR) {
               drag.current = { type: "gradient-radial-focal", id: n.id };
+              useDesign.getState().setRadialFocalScrubId(n.id);
               const fx = n.fill.fx ?? n.fill.cx ?? 0.5;
               const fy = n.fill.fy ?? n.fill.cy ?? 0.5;
               setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
@@ -1697,6 +1704,7 @@ export default function CanvasStage() {
             const hitR = 12 / viewport.zoom;
             if (dx * dx + dy * dy < hitR * hitR) {
               drag.current = { type: "gradient-radial", id: n.id };
+              useDesign.getState().setRadialCentreScrubId(n.id);
               setStudioStatus(`Radial centre ${( (n.fill.cx ?? 0.5) * 100 ).toFixed(0)}%, ${( (n.fill.cy ?? 0.5) * 100 ).toFixed(0)}%`);
               return;
             }
@@ -2472,10 +2480,12 @@ export default function CanvasStage() {
     }
     if (d?.type === "gradient-radial") {
       commit();
+      useDesign.getState().setRadialCentreScrubId(null);
       setStudioStatus("Radial centre committed");
     }
     if (d?.type === "gradient-radial-focal") {
       commit();
+      useDesign.getState().setRadialFocalScrubId(null);
       setStudioStatus("Radial focal committed");
     }
     if (d?.type === "gradient-radial-r0") {
@@ -4050,6 +4060,58 @@ function drawRadialR0ScrubChips(
       const fill = n.fill as { r0?: number } | string | undefined;
       const r0 = typeof fill === "object" && fill ? fill.r0 ?? 0 : 0;
       return `Inner ${Math.round(r0 * 100)}%`;
+    },
+  );
+}
+
+function drawRadialCentreScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
+    (n) => {
+      const fill = n.fill as { cx?: number; cy?: number } | string | undefined;
+      const cx = typeof fill === "object" && fill ? fill.cx ?? 0.5 : 0.5;
+      const cy = typeof fill === "object" && fill ? fill.cy ?? 0.5 : 0.5;
+      return `Centre ${Math.round(cx * 100)}%, ${Math.round(cy * 100)}%`;
+    },
+  );
+}
+
+function drawRadialFocalScrubChips(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  drawLiveScrubChips(
+    ctx,
+    nodes,
+    scrubId,
+    selection,
+    vp,
+    dpr,
+    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
+    (n) => {
+      const fill = n.fill as { fx?: number; fy?: number; cx?: number; cy?: number } | string | undefined;
+      const ox = typeof fill === "object" && fill ? fill.cx ?? 0.5 : 0.5;
+      const oy = typeof fill === "object" && fill ? fill.cy ?? 0.5 : 0.5;
+      const fx = typeof fill === "object" && fill ? fill.fx ?? ox : ox;
+      const fy = typeof fill === "object" && fill ? fill.fy ?? oy : oy;
+      return `Focal ${Math.round(fx * 100)}%, ${Math.round(fy * 100)}%`;
     },
   );
 }
