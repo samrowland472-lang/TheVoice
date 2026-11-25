@@ -68,7 +68,7 @@ type DragKind =
   | { type: "resize"; id: string; handle: Handle; startX: number; startY: number; orig: DesignNode }
   | { type: "crop"; id: string; handle: CropHandle; startX: number; startY: number; orig: DesignNode; source: { x: number; y: number; w: number; h: number } }
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
-  | { type: "gradient-angle"; id: string; cx: number; cy: number }
+  | { type: "gradient-angle"; id: string; cx: number; cy: number; origAngle: number; origLlen: number }
   | { type: "gradient-linear-offset"; id: string }
   | { type: "gradient-radial"; id: string }
   | { type: "gradient-radial-focal"; id: string }
@@ -1679,10 +1679,20 @@ export default function CanvasStage() {
                 const dy = docPt.y - handle.ey;
                 const hitR = 10 / viewport.zoom;
                 if (dx * dx + dy * dy < hitR * hitR) {
-                  drag.current = { type: "gradient-angle", id: n.id, cx: handle.cx, cy: handle.cy };
+                  const fill = n.fill as { angle?: number; llen?: number };
+                  drag.current = {
+                    type: "gradient-angle",
+                    id: n.id,
+                    cx: handle.cx,
+                    cy: handle.cy,
+                    origAngle: fill.angle ?? 0,
+                    origLlen: fill.llen ?? 1,
+                  };
                   useDesign.getState().setGradientAngleScrubId(n.id);
-                  useDesign.getState().setGradientHoverKey("length");
-                  setStudioStatus(`Gradient angle ${Math.round(n.fill.angle)}°`);
+                  const modeKey = e.altKey ? "angle" : (e.ctrlKey || e.metaKey) ? "length" : "length";
+                  useDesign.getState().setGradientHoverKey(modeKey);
+                  const ang = Math.round(fill.angle ?? 0);
+                  setStudioStatus(e.altKey ? `Angle only · ${ang}°` : (e.ctrlKey || e.metaKey) ? `Length only` : `Gradient · ${ang}°`);
                   return;
                 }
                 // Centre offset handle
@@ -2308,9 +2318,26 @@ export default function CanvasStage() {
       let llen = baseLen > 0 ? dist / (baseLen * 0.42) : 1;
       llen = Math.max(0.2, Math.min(3, llen));
       if (e.shiftKey) llen = Math.round(llen * 10) / 10;
+      // Modifier modes: Alt = angle only, Ctrl/Cmd = length only, else both
+      let finalAng = localAng;
+      let finalLen = llen;
+      let focus: "angle" | "length" | null = "length";
+      if (e.altKey) {
+        finalLen = d.origLlen;
+        focus = "angle";
+      } else if (e.ctrlKey || e.metaKey) {
+        finalAng = d.origAngle;
+        focus = "length";
+      }
+      useDesign.getState().setGradientHoverKey(focus);
       const ids = selection.length > 1 ? selection : [d.id];
-      updateNodes(ids, { fill: { ...n.fill, angle: localAng, llen } }, false);
-      setStudioStatus(`Gradient angle ${Math.round(localAng)}° · length ${(llen * 100).toFixed(0)}%`);
+      updateNodes(ids, { fill: { ...n.fill, angle: finalAng, llen: finalLen } }, false);
+      const angStr = Math.round(finalAng);
+      const lenStr = (finalLen * 100).toFixed(0);
+      const snap = e.shiftKey ? " · Shift snap" : "";
+      if (e.altKey) setStudioStatus(`Angle only ${angStr}°${snap}`);
+      else if (e.ctrlKey || e.metaKey) setStudioStatus(`Length only ${lenStr}%${snap}`);
+      else setStudioStatus(`Gradient ${angStr}° · ${lenStr}%${snap}`);
       return;
     }
     if (d.type === "gradient-linear-offset") {
