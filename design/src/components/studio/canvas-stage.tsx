@@ -408,7 +408,7 @@ export default function CanvasStage() {
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, gradientHoverKey);
     }
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
-    drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr);
+    drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -885,7 +885,7 @@ export default function CanvasStage() {
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, gradientHoverKey);
     }
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
-    drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr);
+    drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1709,6 +1709,7 @@ export default function CanvasStage() {
                 if (dx * dx + dy * dy < hitR * hitR) {
                   drag.current = { type: "gradient-radial-r0", id: n.id };
                   useDesign.getState().setRadialR0ScrubId(n.id);
+                  useDesign.getState().setGradientHoverKey("r0");
                   setStudioStatus(`Radial inner radius ${(r0h.r0 * 100).toFixed(0)}%`);
                   return;
                 }
@@ -1721,6 +1722,7 @@ export default function CanvasStage() {
                 if (dx * dx + dy * dy < hitR * hitR) {
                   drag.current = { type: "gradient-radial-focal", id: n.id };
                   useDesign.getState().setRadialFocalScrubId(n.id);
+                  useDesign.getState().setGradientHoverKey("focal");
                   const fx = n.fill.fx ?? n.fill.cx ?? 0.5;
                   const fy = n.fill.fy ?? n.fill.cy ?? 0.5;
                   setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
@@ -1735,6 +1737,7 @@ export default function CanvasStage() {
                 if (dx * dx + dy * dy < hitR * hitR) {
                   drag.current = { type: "gradient-radial", id: n.id };
                   useDesign.getState().setRadialCentreScrubId(n.id);
+                  useDesign.getState().setGradientHoverKey("centre");
                   setStudioStatus(
                     `Radial centre ${((n.fill.cx ?? 0.5) * 100).toFixed(0)}%, ${((n.fill.cy ?? 0.5) * 100).toFixed(0)}%`,
                   );
@@ -4086,6 +4089,7 @@ function drawGradientRadialHandle(
   selection: string[],
   vp: Viewport,
   dpr: number,
+  hoverKey: "angle" | "length" | "offset" | "centre" | "focal" | "r0" | null = null,
 ) {
   const selected = nodes.filter((x) => selection.includes(x.id) && x.visible);
   if (!selected.length) return;
@@ -4107,9 +4111,10 @@ function drawGradientRadialHandle(
     if (!centre) continue;
     const focal = radialFocal(n);
     // Centre cross (outer)
-    const r = 6 / zoom;
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
-    ctx.lineWidth = 1.4 / zoom;
+    const activeCentre = hoverKey === "centre";
+    const r = activeCentre ? 9.5 / zoom : 6 / zoom;
+    ctx.strokeStyle = activeCentre ? "rgba(126, 224, 255, 0.95)" : "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = activeCentre ? 2.2 / zoom : 1.4 / zoom;
     ctx.beginPath();
     ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2);
     ctx.stroke();
@@ -4119,16 +4124,24 @@ function drawGradientRadialHandle(
     ctx.moveTo(centre.x, centre.y - r * 1.6);
     ctx.lineTo(centre.x, centre.y + r * 1.6);
     ctx.stroke();
-    ctx.fillStyle = "#3fc6ff";
+    ctx.fillStyle = activeCentre ? "#a8f0ff" : "#3fc6ff";
     ctx.beginPath();
-    ctx.arc(centre.x, centre.y, 2.2 / zoom, 0, Math.PI * 2);
+    ctx.arc(centre.x, centre.y, activeCentre ? 3.4 / zoom : 2.2 / zoom, 0, Math.PI * 2);
     ctx.fill();
+    if (activeCentre) {
+      ctx.beginPath();
+      ctx.arc(centre.x, centre.y, r + 5 / zoom, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.45)";
+      ctx.lineWidth = 2.8 / zoom;
+      ctx.stroke();
+    }
     // Focal point (inner) — smaller filled diamond
     if (focal) {
-      const fr = 4.5 / zoom;
-      ctx.strokeStyle = "rgba(126, 224, 255, 0.9)";
-      ctx.fillStyle = "#7ee0ff";
-      ctx.lineWidth = 1.2 / zoom;
+      const activeFocal = hoverKey === "focal";
+      const fr = activeFocal ? 7.2 / zoom : 4.5 / zoom;
+      ctx.strokeStyle = activeFocal ? "rgba(168, 240, 255, 0.95)" : "rgba(126, 224, 255, 0.9)";
+      ctx.fillStyle = activeFocal ? "#a8f0ff" : "#7ee0ff";
+      ctx.lineWidth = activeFocal ? 2.2 / zoom : 1.2 / zoom;
       ctx.beginPath();
       ctx.moveTo(focal.x, focal.y - fr);
       ctx.lineTo(focal.x + fr, focal.y);
@@ -4137,6 +4150,13 @@ function drawGradientRadialHandle(
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+      if (activeFocal) {
+        ctx.beginPath();
+        ctx.arc(focal.x, focal.y, fr + 4.5 / zoom, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.4)";
+        ctx.lineWidth = 2.4 / zoom;
+        ctx.stroke();
+      }
     }
     // Inner radius (r0) — dashed circle + phosphor handle to the right of focal
     const r0h = radialR0Handle(n, zoom);
@@ -4151,14 +4171,22 @@ function drawGradientRadialHandle(
       ctx.restore();
     }
     if (r0h) {
-      const hr = 5 / zoom;
-      ctx.strokeStyle = "rgba(63, 198, 255, 0.95)";
-      ctx.fillStyle = "#3fc6ff";
-      ctx.lineWidth = 1.4 / zoom;
+      const activeR0 = hoverKey === "r0";
+      const hr = activeR0 ? 8.5 / zoom : 5 / zoom;
+      ctx.strokeStyle = activeR0 ? "rgba(126, 224, 255, 0.95)" : "rgba(63, 198, 255, 0.95)";
+      ctx.fillStyle = activeR0 ? "#7ee0ff" : "#3fc6ff";
+      ctx.lineWidth = activeR0 ? 2.2 / zoom : 1.4 / zoom;
       ctx.beginPath();
       ctx.arc(r0h.x, r0h.y, hr, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      if (activeR0) {
+        ctx.beginPath();
+        ctx.arc(r0h.x, r0h.y, hr + 4.5 / zoom, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.45)";
+        ctx.lineWidth = 2.5 / zoom;
+        ctx.stroke();
+      }
       // small tick inward toward focal along the direction
       const len = Math.hypot(r0h.dx, r0h.dy) || 1;
       const ux = r0h.dx / len;

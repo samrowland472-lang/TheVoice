@@ -225,7 +225,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
           {fill.type === "radial" && (
             <div className="flex flex-col gap-1.5">
               <Field label="Centre X">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <input
                     type="range"
                     className="range-phosphor min-w-0 flex-1"
@@ -261,7 +261,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </div>
               </Field>
               <Field label="Centre Y">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <input
                     type="range"
                     className="range-phosphor min-w-0 flex-1"
@@ -297,7 +297,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </div>
               </Field>
               <Field label="Focal X">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <input
                     type="range"
                     className="range-phosphor min-w-0 flex-1"
@@ -333,7 +333,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </div>
               </Field>
               <Field label="Focal Y">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <input
                     type="range"
                     className="range-phosphor min-w-0 flex-1"
@@ -369,7 +369,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </div>
               </Field>
               <Field label="Inner radius">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("r0")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("r0")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <input
                     type="range"
                     className="range-phosphor min-w-0 flex-1"
