@@ -403,11 +403,11 @@ export default function CanvasStage() {
       else if (pathDashHoverKey === "headScale") drawHeadScaleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
       else if (pathDashHoverKey === "offset") drawStrokeDashOffsetScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
-    if (gradientHoverKey === "angle") {
+    if (gradientHoverKey === "angle" || gradientHoverKey === "length" || gradientHoverKey === "offset") {
       const hoverId = selection[0] ?? null;
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
-    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr);
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr);
     if (strokeGhost) {
       ctx.save();
@@ -880,11 +880,11 @@ export default function CanvasStage() {
       else if (pathDashHoverKey === "headScale") drawHeadScaleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
       else if (pathDashHoverKey === "offset") drawStrokeDashOffsetScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
-    if (gradientHoverKey === "angle") {
+    if (gradientHoverKey === "angle" || gradientHoverKey === "length" || gradientHoverKey === "offset") {
       const hoverId = selection[0] ?? null;
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr);
     }
-    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr);
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr);
     if (strokeGhost) {
       ctx.save();
@@ -3905,6 +3905,7 @@ function drawGradientAngleHandle(
   selection: string[],
   vp: Viewport,
   dpr: number,
+  hoverKey: "angle" | "length" | "offset" | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (selected.length === 0) return;
@@ -3936,16 +3937,24 @@ function drawGradientAngleHandle(
     ctx.strokeStyle = "#7ee0ff";
     ctx.lineWidth = 1.2 / zoom;
     const r = 5 / zoom;
+    const endR = hoverKey === "length" ? r * 1.6 : r;
     ctx.beginPath();
-    ctx.arc(h.ex, h.ey, r, 0, Math.PI * 2);
+    ctx.arc(h.ex, h.ey, endR, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
+    if (hoverKey === "length") {
+      ctx.beginPath();
+      ctx.arc(h.ex, h.ey, endR + 3 / zoom, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.5)";
+      ctx.lineWidth = 2 / zoom;
+      ctx.stroke();
+    }
     // Offset centre handle (phosphor diamond)
     ctx.setLineDash([]);
-    ctx.fillStyle = "#3fc6ff";
+    ctx.fillStyle = hoverKey === "offset" ? "#7ee0ff" : "#3fc6ff";
     ctx.strokeStyle = "#7ee0ff";
-    ctx.lineWidth = 1.2 / zoom;
-    const s = 4 / zoom;
+    ctx.lineWidth = hoverKey === "offset" ? 2 / zoom : 1.2 / zoom;
+    const s = hoverKey === "offset" ? 6 / zoom : 4 / zoom;
     ctx.beginPath();
     ctx.moveTo(h.cx, h.cy - s);
     ctx.lineTo(h.cx + s, h.cy);

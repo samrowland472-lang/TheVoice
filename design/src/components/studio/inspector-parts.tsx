@@ -462,6 +462,10 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     updateNodes([node.id], { fill: { ...fill, llen: Number(e.target.value) / 100 } }, false)
                   }
                   onPointerUp={() => useDesign.getState().commit()}
+                  onMouseEnter={() => useDesign.getState().setGradientHoverKey("length")}
+                  onFocus={() => useDesign.getState().setGradientHoverKey("length")}
+                  onMouseLeave={() => { if (!useDesign.getState().gradientAngleScrubId) useDesign.getState().setGradientHoverKey(null); }}
+                  onBlur={() => useDesign.getState().setGradientHoverKey(null)}
                 />
                 <NumField
                   value={Math.round((fill.llen ?? 1) * 100)}
@@ -484,7 +488,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
             </Field>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Offset X">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("offset")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("offset")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <NumField
                     value={Math.round((fill.lox ?? 0.5) * 100)}
                     min={0}
@@ -505,7 +509,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </div>
               </Field>
               <Field label="Offset Y">
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("offset")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("offset")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <NumField
                     value={Math.round((fill.loy ?? 0.5) * 100)}
                     min={0}
