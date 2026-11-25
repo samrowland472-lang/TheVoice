@@ -4142,24 +4142,49 @@ function drawGradientAngleScrubChips(
   vp: Viewport,
   dpr: number,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => typeof n.fill === "object" && n.fill != null && "angle" in n.fill,
-    (n) => {
-      const fill = n.fill as { angle?: number; llen?: number; lox?: number; loy?: number } | string | undefined;
-      if (typeof fill !== "object" || !fill) return "Gradient";
-      const angle = fill.angle ?? 0;
-      const llen = Math.round((fill.llen ?? 1) * 100);
-      const lox = Math.round((fill.lox ?? 0.5) * 100);
-      const loy = Math.round((fill.loy ?? 0.5) * 100);
-      return `∠${Math.round(angle)}° · ${llen}% · ${lox},${loy}`;
-    },
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && typeof n.fill === "object" && n.fill != null && "angle" in n.fill)
+    : nodes.filter((n) => n.id === scrubId && n.visible && typeof n.fill === "object" && n.fill != null && "angle" in n.fill);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    const fill = n.fill as { angle?: number; llen?: number; lox?: number; loy?: number };
+    const angle = Math.round(fill.angle ?? 0);
+    const llen = Math.round((fill.llen ?? 1) * 100);
+    const lox = Math.round((fill.lox ?? 0.5) * 100);
+    const loy = Math.round((fill.loy ?? 0.5) * 100);
+    const hnd = gradientAngleHandle(n, zoom);
+    if (hnd) {
+      // Denser separate chips attached to handles (cursor-following while dragging)
+      drawPhosphorValueChip(ctx, `∠${angle}°`, hnd.cx + 8 / zoom, hnd.cy - 6 / zoom, zoom);
+      drawPhosphorValueChip(ctx, `${llen}%`, hnd.ex + 8 / zoom, hnd.ey - 6 / zoom, zoom);
+      drawPhosphorValueChip(ctx, `${lox},${loy}`, hnd.cx - 28 / zoom, hnd.cy + 18 / zoom, zoom);
+    } else {
+      const label = `∠${angle}° · ${llen}% · ${lox},${loy}`;
+      ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+      const tw = ctx.measureText(label).width;
+      const chipW = tw + 8 / zoom;
+      drawPhosphorValueChip(ctx, label, x + w - chipW, y - 2 / zoom, zoom);
+    }
+  }
+  ctx.restore();
 }
 
 function drawRadialR0ScrubChips(
