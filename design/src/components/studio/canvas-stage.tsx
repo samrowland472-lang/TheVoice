@@ -391,9 +391,9 @@ export default function CanvasStage() {
     drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr, gradientHoverKey);
-    drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr);
-    drawRadialCentreScrubChips(ctx, doc.nodes, radialCentreScrubId, selection, viewport, dpr);
-    drawRadialFocalScrubChips(ctx, doc.nodes, radialFocalScrubId, selection, viewport, dpr);
+    drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr, gradientHoverKey === "r0" ? "r0" : null);
+    drawRadialCentreScrubChips(ctx, doc.nodes, radialCentreScrubId, selection, viewport, dpr, gradientHoverKey === "centre" ? "centre" : null);
+    drawRadialFocalScrubChips(ctx, doc.nodes, radialFocalScrubId, selection, viewport, dpr, gradientHoverKey === "focal" ? "focal" : null);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     if (pathDashHoverKey) {
@@ -406,6 +406,12 @@ export default function CanvasStage() {
     if (gradientHoverKey === "angle" || gradientHoverKey === "length" || gradientHoverKey === "offset") {
       const hoverId = selection[0] ?? null;
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, gradientHoverKey);
+    }
+    if (gradientHoverKey === "r0" || gradientHoverKey === "centre" || gradientHoverKey === "focal") {
+      const hoverId = selection[0] ?? null;
+      if (gradientHoverKey === "r0") drawRadialR0ScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "r0");
+      else if (gradientHoverKey === "centre") drawRadialCentreScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "centre");
+      else if (gradientHoverKey === "focal") drawRadialFocalScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "focal");
     }
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
@@ -868,9 +874,9 @@ export default function CanvasStage() {
     drawStrokeDashOffsetScrubChips(ctx, doc.nodes, strokeDashOffsetScrubId, selection, viewport, dpr);
     drawMiterLimitScrubChips(ctx, doc.nodes, miterLimitScrubId, selection, viewport, dpr);
     drawGradientAngleScrubChips(ctx, doc.nodes, gradientAngleScrubId, selection, viewport, dpr, gradientHoverKey);
-    drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr);
-    drawRadialCentreScrubChips(ctx, doc.nodes, radialCentreScrubId, selection, viewport, dpr);
-    drawRadialFocalScrubChips(ctx, doc.nodes, radialFocalScrubId, selection, viewport, dpr);
+    drawRadialR0ScrubChips(ctx, doc.nodes, radialR0ScrubId, selection, viewport, dpr, gradientHoverKey === "r0" ? "r0" : null);
+    drawRadialCentreScrubChips(ctx, doc.nodes, radialCentreScrubId, selection, viewport, dpr, gradientHoverKey === "centre" ? "centre" : null);
+    drawRadialFocalScrubChips(ctx, doc.nodes, radialFocalScrubId, selection, viewport, dpr, gradientHoverKey === "focal" ? "focal" : null);
     drawSidesScrubChips(ctx, doc.nodes, sidesScrubId, selection, viewport, dpr);
     drawHeadScaleScrubChips(ctx, doc.nodes, headScaleScrubId, selection, viewport, dpr);
     if (pathDashHoverKey) {
@@ -883,6 +889,12 @@ export default function CanvasStage() {
     if (gradientHoverKey === "angle" || gradientHoverKey === "length" || gradientHoverKey === "offset") {
       const hoverId = selection[0] ?? null;
       drawGradientAngleScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, gradientHoverKey);
+    }
+    if (gradientHoverKey === "r0" || gradientHoverKey === "centre" || gradientHoverKey === "focal") {
+      const hoverId = selection[0] ?? null;
+      if (gradientHoverKey === "r0") drawRadialR0ScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "r0");
+      else if (gradientHoverKey === "centre") drawRadialCentreScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "centre");
+      else if (gradientHoverKey === "focal") drawRadialFocalScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "focal");
     }
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
@@ -4269,21 +4281,44 @@ function drawRadialR0ScrubChips(
   selection: string[],
   vp: Viewport,
   dpr: number,
+  focusKey: "centre" | "focal" | "r0" | null = null,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
-    (n) => {
-      const fill = n.fill as { r0?: number } | string | undefined;
-      const r0 = typeof fill === "object" && fill ? fill.r0 ?? 0 : 0;
-      return `Inner ${Math.round(r0 * 100)}%`;
-    },
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial")
+    : nodes.filter((n) => n.id === scrubId && n.visible && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial");
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    const fill = n.fill as { r0?: number };
+    const r0 = Math.round((fill.r0 ?? 0) * 100);
+    const r0h = radialR0Handle(n, zoom);
+    const emphasize = focusKey === "r0";
+    if (r0h) {
+      drawPhosphorValueChip(ctx, `Inner ${r0}%`, r0h.x + 10 / zoom, r0h.y - 6 / zoom, zoom, emphasize);
+    } else {
+      const label = `Inner ${r0}%`;
+      const tw = ctx.measureText(label).width;
+      drawPhosphorValueChip(ctx, label, x + w - (tw + 8 / zoom), y - 2 / zoom, zoom, emphasize);
+    }
+  }
+  ctx.restore();
 }
 
 function drawRadialCentreScrubChips(
@@ -4293,22 +4328,45 @@ function drawRadialCentreScrubChips(
   selection: string[],
   vp: Viewport,
   dpr: number,
+  focusKey: "centre" | "focal" | "r0" | null = null,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
-    (n) => {
-      const fill = n.fill as { cx?: number; cy?: number } | string | undefined;
-      const cx = typeof fill === "object" && fill ? fill.cx ?? 0.5 : 0.5;
-      const cy = typeof fill === "object" && fill ? fill.cy ?? 0.5 : 0.5;
-      return `Centre ${Math.round(cx * 100)}%, ${Math.round(cy * 100)}%`;
-    },
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial")
+    : nodes.filter((n) => n.id === scrubId && n.visible && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial");
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    const fill = n.fill as { cx?: number; cy?: number };
+    const cxp = Math.round((fill.cx ?? 0.5) * 100);
+    const cyp = Math.round((fill.cy ?? 0.5) * 100);
+    const centre = radialCentre(n);
+    const emphasize = focusKey === "centre";
+    if (centre) {
+      drawPhosphorValueChip(ctx, `Centre ${cxp}%, ${cyp}%`, centre.x + 10 / zoom, centre.y - 8 / zoom, zoom, emphasize);
+    } else {
+      const label = `Centre ${cxp}%, ${cyp}%`;
+      const tw = ctx.measureText(label).width;
+      drawPhosphorValueChip(ctx, label, x + w - (tw + 8 / zoom), y - 2 / zoom, zoom, emphasize);
+    }
+  }
+  ctx.restore();
 }
 
 function drawRadialFocalScrubChips(
@@ -4318,24 +4376,47 @@ function drawRadialFocalScrubChips(
   selection: string[],
   vp: Viewport,
   dpr: number,
+  focusKey: "centre" | "focal" | "r0" | null = null,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
-    (n) => {
-      const fill = n.fill as { fx?: number; fy?: number; cx?: number; cy?: number } | string | undefined;
-      const ox = typeof fill === "object" && fill ? fill.cx ?? 0.5 : 0.5;
-      const oy = typeof fill === "object" && fill ? fill.cy ?? 0.5 : 0.5;
-      const fx = typeof fill === "object" && fill ? fill.fx ?? ox : ox;
-      const fy = typeof fill === "object" && fill ? fill.fy ?? oy : oy;
-      return `Focal ${Math.round(fx * 100)}%, ${Math.round(fy * 100)}%`;
-    },
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial")
+    : nodes.filter((n) => n.id === scrubId && n.visible && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial");
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    const fill = n.fill as { fx?: number; fy?: number; cx?: number; cy?: number };
+    const ox = fill.cx ?? 0.5;
+    const oy = fill.cy ?? 0.5;
+    const fx = Math.round((fill.fx ?? ox) * 100);
+    const fy = Math.round((fill.fy ?? oy) * 100);
+    const focal = radialFocal(n);
+    const emphasize = focusKey === "focal";
+    if (focal) {
+      drawPhosphorValueChip(ctx, `Focal ${fx}%, ${fy}%`, focal.x + 10 / zoom, focal.y - 8 / zoom, zoom, emphasize);
+    } else {
+      const label = `Focal ${fx}%, ${fy}%`;
+      const tw = ctx.measureText(label).width;
+      drawPhosphorValueChip(ctx, label, x + w - (tw + 8 / zoom), y - 2 / zoom, zoom, emphasize);
+    }
+  }
+  ctx.restore();
 }
 
 function drawSidesScrubChips(
