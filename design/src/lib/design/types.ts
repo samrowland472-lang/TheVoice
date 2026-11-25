@@ -55,6 +55,11 @@ export interface GradientFill {
   fy?: number;
   /** Relative inner radius for radial gradients (0–1 fraction of outer radius, default 0) */
   r0?: number;
+  /** Relative length for linear gradients (1 = node max side, default 1) */
+  llen?: number;
+  /** Relative offset of gradient centre for linear (0–1, default 0.5) */
+  lox?: number;
+  loy?: number;
 }
 
 export type Fill = string | GradientFill;

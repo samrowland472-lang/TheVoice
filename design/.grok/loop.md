@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle: end handle now also scrubs relative length (llen, 20–300%); phosphor diamond at gradient centre drags to offset the line (lox/loy 0–100%). Shared across uniform mixed selections. Live status shows angle · length or offset %. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T04:12Z — On-canvas linear gradient angle handle for mixed selections: when multiple nodes share a uniform linear fill, phosphor dashed line + end handle now appear on every selected node. Dragging any handle scrubs the shared angle live across the whole selection (Shift snaps to 15°). Live Angle ° chips appear on all selected nodes during the drag. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T03:07Z — On-canvas radial gradient handles for mixed selections: when multiple nodes share a uniform radial fill, phosphor centre cross, focal diamond, and r0 handle now appear on every selected node. Dragging any handle (centre, focal, or inner radius) scrubs the shared fill parameters live across the whole selection (Shift snaps). Live % chips appear on all selected nodes during the drag. Typecheck, build, smoke clean (hub content visible).
 - 2026-11-25T02:08Z — Live % chips on on-canvas radial centre and focal handles: dragging the phosphor centre cross or focal diamond now shows a phosphor value chip on the node (Centre XX%, YY% or Focal XX%, YY%). Scrub state tracks the drag; chips clear on commit. Matches the existing Inner radius chip pattern. Typecheck, build, smoke clean (hub content visible).
@@ -29,8 +30,8 @@
 - Opacity field next to solid fill hex.
 - Gradient stop offset % editable NumFields.
 ## Next recommended
-- Live gradient angle chip polish for linear (already present; denser?)
-- On-canvas linear gradient length / offset handle
+- Live gradient angle/length/offset chips denser or combined
+- Inspector fields for linear length and offset
 ## Backlog
 22. On-canvas linear gradient angle handle for mixed selections (done)
 21. Gradient stop editing in mixed selection (done)

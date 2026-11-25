@@ -8,7 +8,10 @@ export function fillKey(fill: DesignNode["fill"]): string {
   const fx = fill.fx ?? cx;
   const fy = fill.fy ?? cy;
   const r0 = fill.r0 ?? 0;
-  return `g:${fill.type}:${fill.angle}:${cx}:${cy}:${fx}:${fy}:${r0}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
+  const llen = fill.llen ?? 1;
+  const lox = fill.lox ?? 0.5;
+  const loy = fill.loy ?? 0.5;
+  return `g:${fill.type}:${fill.angle}:${cx}:${cy}:${fx}:${fy}:${r0}:${llen}:${lox}:${loy}:${fill.stops.map((s) => `${s.offset}:${s.color}`).join("|")}`;
 }
 
 export function solidOf(fill: DesignNode["fill"], fallback: string): string {
@@ -67,5 +70,8 @@ export function cloneFill(fill: DesignNode["fill"]): DesignNode["fill"] {
   if (fill.fx != null) g.fx = fill.fx;
   if (fill.fy != null) g.fy = fill.fy;
   if (fill.r0 != null) g.r0 = fill.r0;
+  if (fill.llen != null) g.llen = fill.llen;
+  if (fill.lox != null) g.lox = fill.lox;
+  if (fill.loy != null) g.loy = fill.loy;
   return g;
 }

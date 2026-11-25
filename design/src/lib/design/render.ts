@@ -59,9 +59,13 @@ export function applyFill(ctx: CanvasRenderingContext2D, fill: Fill, x: number, 
       ctx.fillStyle = g;
     } else {
       const ang = (fill.angle * Math.PI) / 180;
-      const cx = x + w / 2;
-      const cy = y + h / 2;
-      const len = Math.max(w, h);
+      const baseLen = Math.max(Math.abs(w), Math.abs(h));
+      const llen = fill.llen ?? 1;
+      const len = Math.max(1, baseLen * llen);
+      const ox = fill.lox ?? 0.5;
+      const oy = fill.loy ?? 0.5;
+      const cx = x + w * ox;
+      const cy = y + h * oy;
       const g = ctx.createLinearGradient(cx - Math.cos(ang) * len, cy - Math.sin(ang) * len, cx + Math.cos(ang) * len, cy + Math.sin(ang) * len);
       for (const s of fill.stops) g.addColorStop(Math.max(0, Math.min(1, s.offset)), s.color);
       ctx.fillStyle = g;

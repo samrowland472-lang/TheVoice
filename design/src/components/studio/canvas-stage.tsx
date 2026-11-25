@@ -69,6 +69,7 @@ type DragKind =
   | { type: "crop"; id: string; handle: CropHandle; startX: number; startY: number; orig: DesignNode; source: { x: number; y: number; w: number; h: number } }
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
   | { type: "gradient-angle"; id: string; cx: number; cy: number }
+  | { type: "gradient-linear-offset"; id: string }
   | { type: "gradient-radial"; id: string }
   | { type: "gradient-radial-focal"; id: string }
   | { type: "gradient-radial-r0"; id: string }
@@ -1671,6 +1672,16 @@ export default function CanvasStage() {
                   setStudioStatus(`Gradient angle ${Math.round(n.fill.angle)}°`);
                   return;
                 }
+                // Centre offset handle
+                const cdx = docPt.x - handle.cx;
+                const cdy = docPt.y - handle.cy;
+                const cHitR = 8 / viewport.zoom;
+                if (cdx * cdx + cdy * cdy < cHitR * cHitR) {
+                  drag.current = { type: "gradient-linear-offset", id: n.id };
+                  useDesign.getState().setGradientAngleScrubId(n.id); // reuse for chip
+                  setStudioStatus(`Gradient offset`);
+                  return;
+                }
               }
             }
           }
@@ -2274,9 +2285,35 @@ export default function CanvasStage() {
       let localAng = worldAng - n.rotation;
       localAng = ((localAng % 360) + 360) % 360;
       if (e.shiftKey) localAng = Math.round(localAng / 15) * 15;
+      // Also compute length from distance
+      const dist = Math.hypot(docPt.x - d.cx, docPt.y - d.cy);
+      const baseLen = Math.max(Math.abs(n.w), Math.abs(n.h));
+      let llen = baseLen > 0 ? dist / (baseLen * 0.42) : 1;
+      llen = Math.max(0.2, Math.min(3, llen));
+      if (e.shiftKey) llen = Math.round(llen * 10) / 10;
       const ids = selection.length > 1 ? selection : [d.id];
-      updateNodes(ids, { fill: { ...n.fill, angle: localAng } }, false);
-      setStudioStatus(`Gradient angle ${Math.round(localAng)}°`);
+      updateNodes(ids, { fill: { ...n.fill, angle: localAng, llen } }, false);
+      setStudioStatus(`Gradient angle ${Math.round(localAng)}° · length ${(llen * 100).toFixed(0)}%`);
+      return;
+    }
+    if (d.type === "gradient-linear-offset") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || typeof n.fill !== "object" || n.fill?.type !== "linear") return;
+      const c = nodeCenter(n);
+      const local = n.rotation
+        ? rotatePoint(docPt.x, docPt.y, c.x, c.y, -n.rotation)
+        : { x: docPt.x, y: docPt.y };
+      let ox = (local.x - n.x) / n.w;
+      let oy = (local.y - n.y) / n.h;
+      ox = Math.max(0, Math.min(1, ox));
+      oy = Math.max(0, Math.min(1, oy));
+      if (e.shiftKey) {
+        ox = Math.round(ox * 20) / 20;
+        oy = Math.round(oy * 20) / 20;
+      }
+      const ids = selection.length > 1 ? selection : [d.id];
+      updateNodes(ids, { fill: { ...n.fill, lox: ox, loy: oy } }, false);
+      setStudioStatus(`Gradient offset ${(ox * 100).toFixed(0)}%, ${(oy * 100).toFixed(0)}%`);
       return;
     }
     if (d.type === "gradient-radial") {
@@ -2503,6 +2540,11 @@ export default function CanvasStage() {
       commit();
       useDesign.getState().setGradientAngleScrubId(null);
       setStudioStatus("Gradient angle committed");
+    }
+    if (d?.type === "gradient-linear-offset") {
+      commit();
+      useDesign.getState().setGradientAngleScrubId(null);
+      setStudioStatus("Gradient offset committed");
     }
     if (d?.type === "gradient-radial") {
       commit();
@@ -3837,15 +3879,23 @@ function drawMiterLimitScrubChips(
 
 function gradientAngleHandle(n: DesignNode, zoom: number) {
   if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "linear") return null;
+  const ox = n.fill.lox ?? 0.5;
+  const oy = n.fill.loy ?? 0.5;
+  const lx = n.x + n.w * ox;
+  const ly = n.y + n.h * oy;
   const c = nodeCenter(n);
+  const world = n.rotation ? rotatePoint(lx, ly, c.x, c.y, n.rotation) : { x: lx, y: ly };
   const ang = degToRad(n.fill.angle + n.rotation);
-  const len = Math.max(36 / zoom, Math.min(Math.abs(n.w), Math.abs(n.h)) * 0.42);
+  const baseLen = Math.max(Math.abs(n.w), Math.abs(n.h));
+  const llen = n.fill.llen ?? 1;
+  const visualLen = Math.max(36 / zoom, baseLen * llen * 0.42);
   return {
-    cx: c.x,
-    cy: c.y,
-    ex: c.x + Math.cos(ang) * len,
-    ey: c.y + Math.sin(ang) * len,
-    len,
+    cx: world.x,
+    cy: world.y,
+    ex: world.x + Math.cos(ang) * visualLen,
+    ey: world.y + Math.sin(ang) * visualLen,
+    len: visualLen,
+    llen,
   };
 }
 
@@ -3888,6 +3938,20 @@ function drawGradientAngleHandle(
     const r = 5 / zoom;
     ctx.beginPath();
     ctx.arc(h.ex, h.ey, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // Offset centre handle (phosphor diamond)
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#3fc6ff";
+    ctx.strokeStyle = "#7ee0ff";
+    ctx.lineWidth = 1.2 / zoom;
+    const s = 4 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(h.cx, h.cy - s);
+    ctx.lineTo(h.cx + s, h.cy);
+    ctx.lineTo(h.cx, h.cy + s);
+    ctx.lineTo(h.cx - s, h.cy);
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
     ctx.setLineDash([4 / zoom, 3 / zoom]);
