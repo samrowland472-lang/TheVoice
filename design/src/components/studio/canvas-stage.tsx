@@ -1669,6 +1669,7 @@ export default function CanvasStage() {
                 if (dx * dx + dy * dy < hitR * hitR) {
                   drag.current = { type: "gradient-angle", id: n.id, cx: handle.cx, cy: handle.cy };
                   useDesign.getState().setGradientAngleScrubId(n.id);
+                  useDesign.getState().setGradientHoverKey("length");
                   setStudioStatus(`Gradient angle ${Math.round(n.fill.angle)}°`);
                   return;
                 }
@@ -1679,6 +1680,7 @@ export default function CanvasStage() {
                 if (cdx * cdx + cdy * cdy < cHitR * cHitR) {
                   drag.current = { type: "gradient-linear-offset", id: n.id };
                   useDesign.getState().setGradientAngleScrubId(n.id); // reuse for chip
+                  useDesign.getState().setGradientHoverKey("offset");
                   setStudioStatus(`Gradient offset`);
                   return;
                 }
@@ -2539,11 +2541,13 @@ export default function CanvasStage() {
     if (d?.type === "gradient-angle") {
       commit();
       useDesign.getState().setGradientAngleScrubId(null);
+      useDesign.getState().setGradientHoverKey(null);
       setStudioStatus("Gradient angle committed");
     }
     if (d?.type === "gradient-linear-offset") {
       commit();
       useDesign.getState().setGradientAngleScrubId(null);
+      useDesign.getState().setGradientHoverKey(null);
       setStudioStatus("Gradient offset committed");
     }
     if (d?.type === "gradient-radial") {
@@ -3939,33 +3943,43 @@ function drawGradientAngleHandle(
   for (const n of linears) {
     const h = gradientAngleHandle(n, zoom);
     if (!h) continue;
+    const activeLenOrAng = hoverKey === "length" || hoverKey === "angle";
     ctx.beginPath();
     ctx.moveTo(h.cx, h.cy);
     ctx.lineTo(h.ex, h.ey);
+    if (activeLenOrAng) {
+      ctx.strokeStyle = "rgba(126, 224, 255, 0.95)";
+      ctx.lineWidth = 2.2 / zoom;
+    } else {
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.7)";
+      ctx.lineWidth = 1.5 / zoom;
+    }
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#3fc6ff";
+    ctx.fillStyle = activeLenOrAng ? "#7ee0ff" : "#3fc6ff";
     ctx.strokeStyle = "#7ee0ff";
     ctx.lineWidth = 1.2 / zoom;
     const r = 5 / zoom;
-    const endR = hoverKey === "length" ? r * 1.6 : r;
+    const endR = activeLenOrAng ? r * 1.85 : r;
     ctx.beginPath();
     ctx.arc(h.ex, h.ey, endR, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    if (hoverKey === "length") {
+    if (activeLenOrAng) {
+      // soft outer glow ring
       ctx.beginPath();
-      ctx.arc(h.ex, h.ey, endR + 3 / zoom, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(63, 198, 255, 0.5)";
-      ctx.lineWidth = 2 / zoom;
+      ctx.arc(h.ex, h.ey, endR + 4.5 / zoom, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.45)";
+      ctx.lineWidth = 2.5 / zoom;
       ctx.stroke();
     }
     // Offset centre handle (phosphor diamond)
     ctx.setLineDash([]);
-    ctx.fillStyle = hoverKey === "offset" ? "#7ee0ff" : "#3fc6ff";
+    const activeOff = hoverKey === "offset";
+    ctx.fillStyle = activeOff ? "#a8f0ff" : "#3fc6ff";
     ctx.strokeStyle = "#7ee0ff";
-    ctx.lineWidth = hoverKey === "offset" ? 2 / zoom : 1.2 / zoom;
-    const s = hoverKey === "offset" ? 6 / zoom : 4 / zoom;
+    ctx.lineWidth = activeOff ? 2.4 / zoom : 1.2 / zoom;
+    const s = activeOff ? 7.2 / zoom : 4 / zoom;
     ctx.beginPath();
     ctx.moveTo(h.cx, h.cy - s);
     ctx.lineTo(h.cx + s, h.cy);
@@ -3974,6 +3988,19 @@ function drawGradientAngleHandle(
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    if (activeOff) {
+      // soft outer glow for diamond
+      const gs = s + 3.5 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(h.cx, h.cy - gs);
+      ctx.lineTo(h.cx + gs, h.cy);
+      ctx.lineTo(h.cx, h.cy + gs);
+      ctx.lineTo(h.cx - gs, h.cy);
+      ctx.closePath();
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.4)";
+      ctx.lineWidth = 2 / zoom;
+      ctx.stroke();
+    }
     ctx.setLineDash([4 / zoom, 3 / zoom]);
   }
   ctx.restore();
