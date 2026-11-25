@@ -1667,46 +1667,57 @@ export default function CanvasStage() {
         }
       }
 
-      // On-canvas radial gradient r0 + focal + centre handles (single selection)
-      if (selected.length === 1) {
-        const n = selected[0];
-        if (n && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial") {
-          const r0h = radialR0Handle(n, viewport.zoom);
-          if (r0h) {
-            const dx = docPt.x - r0h.x;
-            const dy = docPt.y - r0h.y;
-            const hitR = 11 / viewport.zoom;
-            if (dx * dx + dy * dy < hitR * hitR) {
-              drag.current = { type: "gradient-radial-r0", id: n.id };
-              useDesign.getState().setRadialR0ScrubId(n.id);
-              setStudioStatus(`Radial inner radius ${(r0h.r0 * 100).toFixed(0)}%`);
-              return;
-            }
-          }
-          const focal = radialFocal(n);
-          if (focal) {
-            const dx = docPt.x - focal.x;
-            const dy = docPt.y - focal.y;
-            const hitR = 9 / viewport.zoom;
-            if (dx * dx + dy * dy < hitR * hitR) {
-              drag.current = { type: "gradient-radial-focal", id: n.id };
-              useDesign.getState().setRadialFocalScrubId(n.id);
-              const fx = n.fill.fx ?? n.fill.cx ?? 0.5;
-              const fy = n.fill.fy ?? n.fill.cy ?? 0.5;
-              setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
-              return;
-            }
-          }
-          const centre = radialCentre(n);
-          if (centre) {
-            const dx = docPt.x - centre.x;
-            const dy = docPt.y - centre.y;
-            const hitR = 12 / viewport.zoom;
-            if (dx * dx + dy * dy < hitR * hitR) {
-              drag.current = { type: "gradient-radial", id: n.id };
-              useDesign.getState().setRadialCentreScrubId(n.id);
-              setStudioStatus(`Radial centre ${( (n.fill.cx ?? 0.5) * 100 ).toFixed(0)}%, ${( (n.fill.cy ?? 0.5) * 100 ).toFixed(0)}%`);
-              return;
+      // On-canvas radial gradient r0 + focal + centre handles (uniform selection, single or mixed)
+      {
+        const radials = selected.filter(
+          (n) => n && typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
+        );
+        if (radials.length === selected.length && radials.length > 0) {
+          const fillStr = JSON.stringify(radials[0]!.fill);
+          const uniform = radials.every((n) => JSON.stringify(n.fill) === fillStr);
+          if (uniform) {
+            // Prefer r0, then focal, then centre; check topmost first
+            for (const n of radials.slice().reverse()) {
+              const r0h = radialR0Handle(n, viewport.zoom);
+              if (r0h) {
+                const dx = docPt.x - r0h.x;
+                const dy = docPt.y - r0h.y;
+                const hitR = 11 / viewport.zoom;
+                if (dx * dx + dy * dy < hitR * hitR) {
+                  drag.current = { type: "gradient-radial-r0", id: n.id };
+                  useDesign.getState().setRadialR0ScrubId(n.id);
+                  setStudioStatus(`Radial inner radius ${(r0h.r0 * 100).toFixed(0)}%`);
+                  return;
+                }
+              }
+              const focal = radialFocal(n);
+              if (focal) {
+                const dx = docPt.x - focal.x;
+                const dy = docPt.y - focal.y;
+                const hitR = 9 / viewport.zoom;
+                if (dx * dx + dy * dy < hitR * hitR) {
+                  drag.current = { type: "gradient-radial-focal", id: n.id };
+                  useDesign.getState().setRadialFocalScrubId(n.id);
+                  const fx = n.fill.fx ?? n.fill.cx ?? 0.5;
+                  const fy = n.fill.fy ?? n.fill.cy ?? 0.5;
+                  setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
+                  return;
+                }
+              }
+              const centre = radialCentre(n);
+              if (centre) {
+                const dx = docPt.x - centre.x;
+                const dy = docPt.y - centre.y;
+                const hitR = 12 / viewport.zoom;
+                if (dx * dx + dy * dy < hitR * hitR) {
+                  drag.current = { type: "gradient-radial", id: n.id };
+                  useDesign.getState().setRadialCentreScrubId(n.id);
+                  setStudioStatus(
+                    `Radial centre ${((n.fill.cx ?? 0.5) * 100).toFixed(0)}%, ${((n.fill.cy ?? 0.5) * 100).toFixed(0)}%`,
+                  );
+                  return;
+                }
+              }
             }
           }
         }
@@ -2273,7 +2284,8 @@ export default function CanvasStage() {
         ox = Math.round(ox * 20) / 20;
         oy = Math.round(oy * 20) / 20;
       }
-      updateNodes([d.id], { fill: { ...n.fill, cx: ox, cy: oy } }, false);
+      const ids = selection.length > 1 ? selection : [d.id];
+      updateNodes(ids, { fill: { ...n.fill, cx: ox, cy: oy } }, false);
       setStudioStatus(`Radial centre ${(ox * 100).toFixed(0)}%, ${(oy * 100).toFixed(0)}%`);
       return;
     }
@@ -2292,7 +2304,8 @@ export default function CanvasStage() {
         fx = Math.round(fx * 20) / 20;
         fy = Math.round(fy * 20) / 20;
       }
-      updateNodes([d.id], { fill: { ...n.fill, fx, fy } }, false);
+      const ids = selection.length > 1 ? selection : [d.id];
+      updateNodes(ids, { fill: { ...n.fill, fx, fy } }, false);
       setStudioStatus(`Radial focal ${(fx * 100).toFixed(0)}%, ${(fy * 100).toFixed(0)}%`);
       return;
     }
@@ -2306,7 +2319,8 @@ export default function CanvasStage() {
       let r0 = dist / outer;
       r0 = Math.max(0, Math.min(0.95, r0));
       if (e.shiftKey) r0 = Math.round(r0 * 20) / 20;
-      updateNodes([d.id], { fill: { ...n.fill, r0 } }, false);
+      const ids = selection.length > 1 ? selection : [d.id];
+      updateNodes(ids, { fill: { ...n.fill, r0 } }, false);
       setStudioStatus(`Radial inner radius ${(r0 * 100).toFixed(0)}%`);
       return;
     }
@@ -3940,78 +3954,87 @@ function drawGradientRadialHandle(
   vp: Viewport,
   dpr: number,
 ) {
-  if (selection.length !== 1) return;
-  const n = nodes.find((x) => x.id === selection[0] && x.visible);
-  if (!n) return;
-  const centre = radialCentre(n);
-  if (!centre) return;
-  const focal = radialFocal(n);
+  const selected = nodes.filter((x) => selection.includes(x.id) && x.visible);
+  if (!selected.length) return;
+  const radials = selected.filter(
+    (n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "radial",
+  );
+  if (radials.length !== selected.length || radials.length === 0) return;
+  const fillStr = JSON.stringify(radials[0]!.fill);
+  if (!radials.every((n) => JSON.stringify(n.fill) === fillStr)) return;
+
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.translate(vp.x, vp.y);
   ctx.scale(vp.zoom, vp.zoom);
   const zoom = vp.zoom;
-  // Centre cross (outer)
-  const r = 6 / zoom;
-  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
-  ctx.lineWidth = 1.4 / zoom;
-  ctx.beginPath();
-  ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(centre.x - r * 1.6, centre.y);
-  ctx.lineTo(centre.x + r * 1.6, centre.y);
-  ctx.moveTo(centre.x, centre.y - r * 1.6);
-  ctx.lineTo(centre.x, centre.y + r * 1.6);
-  ctx.stroke();
-  ctx.fillStyle = "#3fc6ff";
-  ctx.beginPath();
-  ctx.arc(centre.x, centre.y, 2.2 / zoom, 0, Math.PI * 2);
-  ctx.fill();
-  // Focal point (inner) — smaller filled diamond
-  if (focal) {
-    const fr = 4.5 / zoom;
-    ctx.strokeStyle = "rgba(126, 224, 255, 0.9)";
-    ctx.fillStyle = "#7ee0ff";
-    ctx.lineWidth = 1.2 / zoom;
-    ctx.beginPath();
-    ctx.moveTo(focal.x, focal.y - fr);
-    ctx.lineTo(focal.x + fr, focal.y);
-    ctx.lineTo(focal.x, focal.y + fr);
-    ctx.lineTo(focal.x - fr, focal.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-  // Inner radius (r0) — dashed circle + phosphor handle to the right of focal
-  const r0h = radialR0Handle(n, zoom);
-  if (r0h && r0h.innerR > 0.5) {
-    ctx.save();
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
-    ctx.lineWidth = 1 / zoom;
-    ctx.setLineDash([4 / zoom, 3 / zoom]);
-    ctx.beginPath();
-    ctx.arc(r0h.focal.x, r0h.focal.y, r0h.innerR, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-  if (r0h) {
-    const hr = 5 / zoom;
-    ctx.strokeStyle = "rgba(63, 198, 255, 0.95)";
-    ctx.fillStyle = "#3fc6ff";
+
+  for (const n of radials) {
+    const centre = radialCentre(n);
+    if (!centre) continue;
+    const focal = radialFocal(n);
+    // Centre cross (outer)
+    const r = 6 / zoom;
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
     ctx.lineWidth = 1.4 / zoom;
     ctx.beginPath();
-    ctx.arc(r0h.x, r0h.y, hr, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(centre.x, centre.y, r, 0, Math.PI * 2);
     ctx.stroke();
-    // small tick inward toward focal along the direction
-    const len = Math.hypot(r0h.dx, r0h.dy) || 1;
-    const ux = r0h.dx / len;
-    const uy = r0h.dy / len;
     ctx.beginPath();
-    ctx.moveTo(r0h.x - ux * hr * 1.4, r0h.y - uy * hr * 1.4);
-    ctx.lineTo(r0h.x - ux * hr * 0.2, r0h.y - uy * hr * 0.2);
+    ctx.moveTo(centre.x - r * 1.6, centre.y);
+    ctx.lineTo(centre.x + r * 1.6, centre.y);
+    ctx.moveTo(centre.x, centre.y - r * 1.6);
+    ctx.lineTo(centre.x, centre.y + r * 1.6);
     ctx.stroke();
+    ctx.fillStyle = "#3fc6ff";
+    ctx.beginPath();
+    ctx.arc(centre.x, centre.y, 2.2 / zoom, 0, Math.PI * 2);
+    ctx.fill();
+    // Focal point (inner) — smaller filled diamond
+    if (focal) {
+      const fr = 4.5 / zoom;
+      ctx.strokeStyle = "rgba(126, 224, 255, 0.9)";
+      ctx.fillStyle = "#7ee0ff";
+      ctx.lineWidth = 1.2 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(focal.x, focal.y - fr);
+      ctx.lineTo(focal.x + fr, focal.y);
+      ctx.lineTo(focal.x, focal.y + fr);
+      ctx.lineTo(focal.x - fr, focal.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    // Inner radius (r0) — dashed circle + phosphor handle to the right of focal
+    const r0h = radialR0Handle(n, zoom);
+    if (r0h && r0h.innerR > 0.5) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+      ctx.lineWidth = 1 / zoom;
+      ctx.setLineDash([4 / zoom, 3 / zoom]);
+      ctx.beginPath();
+      ctx.arc(r0h.focal.x, r0h.focal.y, r0h.innerR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (r0h) {
+      const hr = 5 / zoom;
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.95)";
+      ctx.fillStyle = "#3fc6ff";
+      ctx.lineWidth = 1.4 / zoom;
+      ctx.beginPath();
+      ctx.arc(r0h.x, r0h.y, hr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // small tick inward toward focal along the direction
+      const len = Math.hypot(r0h.dx, r0h.dy) || 1;
+      const ux = r0h.dx / len;
+      const uy = r0h.dy / len;
+      ctx.beginPath();
+      ctx.moveTo(r0h.x - ux * hr * 1.4, r0h.y - uy * hr * 1.4);
+      ctx.lineTo(r0h.x - ux * hr * 0.2, r0h.y - uy * hr * 0.2);
+      ctx.stroke();
+    }
   }
   ctx.restore();
 }
