@@ -3453,22 +3453,24 @@ function drawPhosphorValueChip(
   const chipW = tw + padX;
   const chipH = (emphasize ? 16.5 : 14) / zoom;
 
-  // soft outer glow — dual phosphor rings matching tip ghosts (stronger when emphasized)
-  const g1 = emphasize ? 0.42 : 0.28;
-  const g2 = emphasize ? 0.18 : 0.12;
-  const lw1 = (emphasize ? 3.8 : 3.2) / zoom;
-  const lw2 = (emphasize ? 6.4 : 5.5) / zoom;
+  // soft outer glow — dual phosphor rings matching tip ghosts (stronger / denser when emphasized)
+  const g1 = emphasize ? 0.55 : 0.28;
+  const g2 = emphasize ? 0.28 : 0.12;
+  const lw1 = (emphasize ? 4.4 : 3.2) / zoom;
+  const lw2 = (emphasize ? 7.2 : 5.5) / zoom;
+  const off1 = (emphasize ? 2.2 : 1.6) / zoom;
+  const off2 = (emphasize ? 4.2 : 3.2) / zoom;
   ctx.save();
   ctx.globalAlpha = g1;
-  ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+  ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
   ctx.lineWidth = lw1;
   ctx.beginPath();
-  ctx.roundRect(cx - 1.6 / zoom, cy - chipH - 1.6 / zoom, chipW + 3.2 / zoom, chipH + 3.2 / zoom, 4.2 / zoom);
+  ctx.roundRect(cx - off1, cy - chipH - off1, chipW + off1 * 2, chipH + off1 * 2, (emphasize ? 4.8 : 4.2) / zoom);
   ctx.stroke();
   ctx.globalAlpha = g2;
   ctx.lineWidth = lw2;
   ctx.beginPath();
-  ctx.roundRect(cx - 3.2 / zoom, cy - chipH - 3.2 / zoom, chipW + 6.4 / zoom, chipH + 6.4 / zoom, 5.5 / zoom);
+  ctx.roundRect(cx - off2, cy - chipH - off2, chipW + off2 * 2, chipH + off2 * 2, (emphasize ? 6.2 : 5.5) / zoom);
   ctx.stroke();
   ctx.restore();
 
@@ -4481,6 +4483,7 @@ function drawGradientAngleHandle(
     const sw = linearStopWorld(n, zoom);
     if (sw) {
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
+      const chipDraws: { label: string; cx: number; cy: number; emphasize: boolean }[] = [];
       for (let si = 0; si < sw.stops.length; si++) {
         const st = sw.stops[si]!;
         const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
@@ -4526,7 +4529,14 @@ function drawGradientAngleHandle(
         const off = 14 / zoom;
         const cx = st.x + px * off;
         const cy = st.y + py * off;
-        drawPhosphorValueChip(ctx, label, cx, cy, zoom, emphasize);
+        chipDraws.push({ label, cx, cy, emphasize });
+      }
+      // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
+      for (const c of chipDraws.filter((c) => !c.emphasize)) {
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false);
+      }
+      for (const c of chipDraws.filter((c) => c.emphasize)) {
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true);
       }
     }
     ctx.setLineDash([4 / zoom, 3 / zoom]);
@@ -4741,6 +4751,7 @@ function drawGradientRadialHandle(
       ctx.stroke();
       ctx.restore();
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
+      const chipDraws: { label: string; cx: number; cy: number; emphasize: boolean }[] = [];
       for (let si = 0; si < sw.stops.length; si++) {
         const st = sw.stops[si]!;
         const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
@@ -4780,7 +4791,14 @@ function drawGradientRadialHandle(
         const off = 14 / zoom;
         const cx = st.x - sw.uy * off;
         const cy = st.y + sw.ux * off;
-        drawPhosphorValueChip(ctx, label, cx, cy, zoom, emphasize);
+        chipDraws.push({ label, cx, cy, emphasize });
+      }
+      // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
+      for (const c of chipDraws.filter((c) => !c.emphasize)) {
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false);
+      }
+      for (const c of chipDraws.filter((c) => c.emphasize)) {
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true);
       }
     }
   }
