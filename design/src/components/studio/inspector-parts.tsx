@@ -543,8 +543,8 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 type="button"
                 className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
                 style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
-                onMouseEnter={() => setHoverStop(i)}
-                onMouseLeave={() => setHoverStop(null)}
+                onMouseEnter={() => { setHoverStop(i); useDesign.getState().setGradientHoverStop(i); }}
+                onMouseLeave={() => { setHoverStop(null); useDesign.getState().setGradientHoverStop(null); }}
                 onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -585,7 +585,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
             .map((stop, i) => ({ stop, i }))
             .sort((a, b) => a.stop.offset - b.stop.offset)
             .map(({ stop, i }) => (
-              <div key={i} className="flex flex-col gap-1.5">
+              <div key={i} className="flex flex-col gap-1.5" onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)} onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)} onFocus={() => useDesign.getState().setGradientHoverStop(i)} onBlur={() => useDesign.getState().setGradientHoverStop(null)}>
                 <HexColorField
                   label={`Stop ${i + 1}`}
                   value={stop.color}

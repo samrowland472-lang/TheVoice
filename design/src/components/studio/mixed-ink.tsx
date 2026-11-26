@@ -131,8 +131,8 @@ function MixedGradientStopBar({
           type="button"
           className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
           style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
-          onMouseEnter={() => setHoverStop(i)}
-          onMouseLeave={() => setHoverStop(null)}
+          onMouseEnter={() => { setHoverStop(i); useDesign.getState().setGradientHoverStop(i); }}
+          onMouseLeave={() => { setHoverStop(null); useDesign.getState().setGradientHoverStop(null); }}
           onPointerDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -275,7 +275,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
             <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
               <div className="text-[10px] text-ink-dim">Stops</div>
               {g.stops.map((stop, i) => ({ stop, i })).sort((a, b) => a.stop.offset - b.stop.offset).map(({ stop, i }) => (
-                <div key={i} className="flex flex-col gap-1">
+                <div key={i} className="flex flex-col gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)} onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)} onFocus={() => useDesign.getState().setGradientHoverStop(i)} onBlur={() => useDesign.getState().setGradientHoverStop(null)}>
                   <HexColorField label={`Stop ${i + 1}`} value={stop.color} onChange={(hex) => { rememberColor(hex); const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
                   <div className="flex items-center gap-2">
                     <NumField value={Math.round(stop.offset * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label={`Stop ${i + 1} offset percent`} onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, false); }} onCommit={(n) => { const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />

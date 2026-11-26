@@ -175,6 +175,7 @@ export default function CanvasStage() {
   const cropHoverKey = useDesign((s) => s.cropHoverKey);
   const pathDashHoverKey = useDesign((s) => s.pathDashHoverKey);
   const gradientHoverKey = useDesign((s) => s.gradientHoverKey);
+  const gradientHoverStop = useDesign((s) => s.gradientHoverStop);
   const radiusScrubId = useDesign((s) => s.radiusScrubId);
   const shadowBlurScrubId = useDesign((s) => s.shadowBlurScrubId);
   const rotationScrubId = useDesign((s) => s.rotationScrubId);
@@ -430,7 +431,7 @@ export default function CanvasStage() {
       else if (gradientHoverKey === "focal") drawRadialFocalScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "focal");
     }
     const focusedStop = drag.current?.type === "gradient-stop" ? { id: drag.current.id, index: drag.current.stopIndex } : null;
-    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop);
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop, gradientHoverStop);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     if (strokeGhost) {
       ctx.save();
@@ -841,7 +842,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -914,7 +915,7 @@ export default function CanvasStage() {
       else if (gradientHoverKey === "focal") drawRadialFocalScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "focal");
     }
     const focusedStop = drag.current?.type === "gradient-stop" ? { id: drag.current.id, index: drag.current.stopIndex } : null;
-    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop);
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop, gradientHoverStop);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     if (strokeGhost) {
       ctx.save();
@@ -1291,7 +1292,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, strokeGhost]);
 
   function onDoubleClick(e: React.MouseEvent) {
     if (!doc) return;
@@ -1970,6 +1971,39 @@ export default function CanvasStage() {
       setEyedropperPreview({ sx, sy, hex, alpha });
     } else if (eyedropperPreview) {
       setEyedropperPreview(null);
+    }
+
+    // On-canvas hover over linear gradient stops → emphasize chip
+    if (!drag.current && tool === "select") {
+      let hitStop: number | null = null;
+      const selected = doc.nodes.filter((n) => selection.includes(n.id) && n.visible);
+      const linears = selected.filter((n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "linear");
+      if (linears.length === selected.length && linears.length > 0) {
+        const fillStr = JSON.stringify(linears[0]!.fill);
+        if (linears.every((n) => JSON.stringify(n.fill) === fillStr)) {
+          for (const n of linears.slice().reverse()) {
+            const sw = linearStopWorld(n, viewport.zoom);
+            if (sw) {
+              const stopHitR = 8 / viewport.zoom;
+              for (let i = 0; i < sw.stops.length; i++) {
+                const st = sw.stops[i]!;
+                const sdx = docPt.x - st.x;
+                const sdy = docPt.y - st.y;
+                if (sdx * sdx + sdy * sdy < stopHitR * stopHitR) {
+                  hitStop = i;
+                  break;
+                }
+              }
+            }
+            if (hitStop != null) break;
+          }
+        }
+      }
+      if (hitStop !== useDesign.getState().gradientHoverStop) {
+        useDesign.getState().setGradientHoverStop(hitStop);
+      }
+    } else if (useDesign.getState().gradientHoverStop != null) {
+      useDesign.getState().setGradientHoverStop(null);
     }
 
     // Knife hover preview (point cut) when not dragging
@@ -4165,6 +4199,7 @@ function drawGradientAngleHandle(
   dpr: number,
   hoverKey: "angle" | "length" | "offset" | "angle-only" | "length-only" | null = null,
   focusedStop: { id: string; index: number } | null = null,
+  hoveredStop: number | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (selected.length === 0) return;
@@ -4320,7 +4355,7 @@ function drawGradientAngleHandle(
         // Percent chip next to stop (emphasized when this stop is the focused/dragged one)
         const pct = Math.round(st.offset * 100);
         const label = `${pct}%`;
-        const emphasize = !!(isFocusedNode && focusedStop.index === si);
+        const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
         // offset chip perpendicular to the gradient line so it stays clear of the handle
         const dx = h.ex - h.cx;
         const dy = h.ey - h.cy;
