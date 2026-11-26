@@ -207,12 +207,27 @@ export default function CanvasStage() {
   const [knifeStroke, setKnifeStroke] = useState<{ ax: number; ay: number; bx: number; by: number } | null>(null);
   const [knifeHover, setKnifeHover] = useState<{ x: number; y: number } | null>(null);
   const [eyedropperPreview, setEyedropperPreview] = useState<{ sx: number; sy: number; hex: string | null; alpha: number } | null>(null);
+  const [stopColorTarget, setStopColorTarget] = useState<{
+    id: string;
+    stopIndex: number;
+    color: string;
+    sx: number;
+    sy: number;
+  } | null>(null);
+  const colorInputRef = useRef<HTMLInputElement>(null);
   const [knifeResidual, setKnifeResidual] = useState<KnifeResidual | null>(null);
   const [flushPulse, setFlushPulse] = useState(0);
   const [flushPulseLag, setFlushPulseLag] = useState(0);
   const [flushPulseRotate, setFlushPulseRotate] = useState(0);
   const [flushPulseSlow, setFlushPulseSlow] = useState(0);
   const [flushPulseTrail, setFlushPulseTrail] = useState(0);
+
+  useEffect(() => {
+    if (stopColorTarget && colorInputRef.current) {
+      // open native picker immediately
+      colorInputRef.current.click();
+    }
+  }, [stopColorTarget]);
   const [scaleFlip, setScaleFlip] = useState<{ x: boolean; y: boolean } | null>(null);
   const [rotateAngle, setRotateAngle] = useState<number | null>(null);
   const [rotateHover, setRotateHover] = useState<{
@@ -1288,6 +1303,28 @@ export default function CanvasStage() {
     if (linears.length !== selected.length || linears.length === 0) return;
     const fillStr = JSON.stringify(linears[0]!.fill);
     if (!linears.every((n) => JSON.stringify(n.fill) === fillStr)) return;
+    // Prefer existing stop circles for color pick
+    for (const n of linears.slice().reverse()) {
+      const sw = linearStopWorld(n, viewport.zoom);
+      if (!sw) continue;
+      const hitR = 7 / viewport.zoom;
+      for (let i = 0; i < sw.stops.length; i++) {
+        const st = sw.stops[i]!;
+        const ddx = docPt.x - st.x;
+        const ddy = docPt.y - st.y;
+        if (ddx * ddx + ddy * ddy < hitR * hitR) {
+          setStopColorTarget({
+            id: n.id,
+            stopIndex: i,
+            color: st.color,
+            sx,
+            sy,
+          });
+          setStudioStatus(`Stop ${i + 1} colour`);
+          return;
+        }
+      }
+    }
     for (const n of linears.slice().reverse()) {
       const sw = linearStopWorld(n, viewport.zoom);
       if (!sw) continue;
@@ -2828,6 +2865,35 @@ export default function CanvasStage() {
               : ""}
           </span>
         </div>
+      )}
+      {stopColorTarget && (
+        <input
+          ref={colorInputRef}
+          type="color"
+          value={stopColorTarget.color}
+          onChange={(ev) => {
+            const hex = ev.target.value;
+            const node = doc?.nodes.find((nn) => nn.id === stopColorTarget.id);
+            if (!node || typeof node.fill !== "object" || node.fill == null || node.fill.type !== "linear") {
+              setStopColorTarget(null);
+              return;
+            }
+            const stops = (node.fill as any).stops.map((s: any, j: number) =>
+              j === stopColorTarget.stopIndex ? { ...s, color: hex } : s,
+            );
+            const ids = selection.length > 1 ? selection : [stopColorTarget.id];
+            useDesign.getState().updateNodes(ids, { fill: { ...(node.fill as any), stops } }, true);
+            rememberColor(hex);
+            setStopColorTarget((prev) => (prev ? { ...prev, color: hex } : null));
+            setStudioStatus(`Stop ${stopColorTarget.stopIndex + 1} · ${hex}`);
+          }}
+          onBlur={() => setStopColorTarget(null)}
+          className="absolute z-[60] size-8 cursor-pointer rounded-full border-2 border-phosphor bg-ground opacity-0"
+          style={{
+            left: Math.min(Math.max(stopColorTarget.sx - 16, 4), (wrapRef.current?.clientWidth ?? 800) - 40),
+            top: Math.min(Math.max(stopColorTarget.sy - 16, 4), (wrapRef.current?.clientHeight ?? 600) - 40),
+          }}
+        />
       )}
     </div>
   );
