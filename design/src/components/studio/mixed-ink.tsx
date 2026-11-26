@@ -297,18 +297,33 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                 </div>
               </div>
             )}
-            <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
+            <div className="mt-2 flex flex-col gap-1 border-t border-border pt-2">
               <div className="text-[10px] text-ink-dim">{g.type === "radial" ? "Stops along radial ray" : "Gradient stops"}</div>
-              {g.stops.map((stop, i) => ({ stop, i })).sort((a, b) => a.stop.offset - b.stop.offset).map(({ stop, i }) => (
-                <div key={i} className="flex flex-col gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)} onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)} onFocus={() => useDesign.getState().setGradientHoverStop(i)} onBlur={() => useDesign.getState().setGradientHoverStop(null)}>
+              {g.stops.map((stop, i) => ({ stop, i })).sort((a, b) => a.stop.offset - b.stop.offset).map(({ stop, i }) => {
+                const active = gradientHoverStop === i;
+                return (
+                <div
+                  key={i}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-[6px] px-1 py-0.5 transition-all",
+                    active
+                      ? "border border-phosphor bg-phosphor/8 shadow-[0_0_0_1px_#3fc6ff,0_0_10px_rgba(63,198,255,0.4)] scale-[1.02]"
+                      : "border border-transparent",
+                  )}
+                  onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)}
+                  onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)}
+                  onFocus={() => useDesign.getState().setGradientHoverStop(i)}
+                  onBlur={() => useDesign.getState().setGradientHoverStop(null)}
+                >
                   <HexColorField label={`Stop ${i + 1}`} value={stop.color} onChange={(hex) => { rememberColor(hex); const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
-                  <div className="flex items-center gap-2">
-                    <NumField value={Math.round(stop.offset * 100)} min={0} max={100} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverStop === i && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label={`Stop ${i + 1} offset percent`} onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, false); }} onCommit={(n) => { const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
-                    <span className={cn("text-[10px] transition-all", gradientHoverStop === i ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
-                    <button type="button" className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30" disabled={g.stops.length <= 2} onClick={() => { if (g.stops.length <= 2) return; const stops = g.stops.filter((_, j) => j !== i); updateNodes(ids, { fill: { ...g, stops } }, true); }} aria-label="Remove stop">Remove</button>
+                  <div className={cn("flex items-center gap-0.5 transition-all", active && "scale-110")}>
+                    <NumField value={Math.round(stop.offset * 100)} min={0} max={100} className={cn("field w-11 font-mono text-[11px] text-right", active && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.55),0_0_16px_rgba(63,198,255,0.3)] scale-105")} aria-label={`Stop ${i + 1} offset percent`} onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, false); }} onCommit={(n) => { const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
+                    <span className={cn("text-[10px] transition-all", active ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
                   </div>
+                  <button type="button" className="ml-auto text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30" disabled={g.stops.length <= 2} onClick={() => { if (g.stops.length <= 2) return; const stops = g.stops.filter((_, j) => j !== i); updateNodes(ids, { fill: { ...g, stops } }, true); }} aria-label="Remove stop">Remove</button>
                 </div>
-              ))}
+                );
+              })}
               <button type="button" className="self-start text-[10px] text-phosphor" onClick={() => { const sorted = [...g.stops].sort((a, b) => a.offset - b.offset); let at = 0.5; let maxGap = 0; for (let k = 0; k < sorted.length - 1; k++) { const gap = sorted[k + 1].offset - sorted[k].offset; if (gap > maxGap) { maxGap = gap; at = (sorted[k].offset + sorted[k + 1].offset) / 2; } } const color = sorted[0]?.color ?? "#d9f5e3"; const stops = [...g.stops, { offset: at, color }].sort((a, b) => a.offset - b.offset); updateNodes(ids, { fill: { ...g, stops } }, true); }}>Add stop</button>
             </div>
           </div>
