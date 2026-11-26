@@ -115,6 +115,7 @@ export function HexColorField({
 
 export function FillEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
+  const gradientHoverStop = useDesign((s) => s.gradientHoverStop);
   const fill = node.fill;
   const gradient = isGradient(fill);
   const barRef = useRef<HTMLDivElement>(null);
@@ -537,11 +538,16 @@ export function FillEditor({ node }: { node: DesignNode }) {
             className="relative h-8 w-full rounded-[8px] border border-border"
             style={{ background: gradientPreviewCss(fill) }}
           >
-            {fill.stops.map((stop, i) => (
+            {fill.stops.map((stop, i) => {
+              const active = gradientHoverStop === i || dragStop === i;
+              return (
               <button
                 key={i}
                 type="button"
-                className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
+                className={cn(
+                  "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000] transition-all",
+                  active ? "size-4 scale-110 shadow-[0_0_10px_#3fc6ff]" : "size-3",
+                )}
                 style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
                 onMouseEnter={() => { setHoverStop(i); useDesign.getState().setGradientHoverStop(i); }}
                 onMouseLeave={() => { setHoverStop(null); useDesign.getState().setGradientHoverStop(null); }}
@@ -549,6 +555,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   e.preventDefault();
                   e.stopPropagation();
                   setDragStop(i);
+                  useDesign.getState().setGradientHoverStop(i);
                   const bar = barRef.current;
                   if (!bar) return;
                   const rect = bar.getBoundingClientRect();
@@ -564,6 +571,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     window.removeEventListener("pointermove", onMove);
                     window.removeEventListener("pointerup", onUp);
                     setDragStop(null);
+                    useDesign.getState().setGradientHoverStop(null);
                     useDesign.getState().commit();
                   };
                   window.addEventListener("pointermove", onMove);
@@ -571,21 +579,36 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 }}
                 aria-label={`Drag gradient stop ${i + 1}`}
               />
-            ))}
-            {(dragStop ?? hoverStop) != null && fill.stops[dragStop ?? hoverStop!] && (
+              );
+            })}
+            {(dragStop ?? gradientHoverStop) != null && fill.stops[dragStop ?? gradientHoverStop!] && (
               <div
-                className="pointer-events-none absolute -top-5 z-10 -translate-x-1/2 rounded-sm border border-phosphor bg-surface px-1 py-0.5 text-[9px] font-mono text-phosphor shadow-[0_0_0_1px_#000]"
-                style={{ left: `${fill.stops[dragStop ?? hoverStop!].offset * 100}%` }}
+                className="pointer-events-none absolute -top-6 z-10 -translate-x-1/2 scale-110 rounded border border-phosphor bg-ground/95 px-1.5 py-0.5 text-[10px] font-mono text-phosphor shadow-[0_0_0_1px_#000,0_0_8px_#3fc6ff,0_0_16px_rgba(63,198,255,0.4)] transition-all"
+                style={{ left: `${fill.stops[dragStop ?? gradientHoverStop!].offset * 100}%` }}
               >
-                {Math.round(fill.stops[dragStop ?? hoverStop!].offset * 100)}%
+                {Math.round(fill.stops[dragStop ?? gradientHoverStop!].offset * 100)}%
               </div>
             )}
           </div>
           {fill.stops
             .map((stop, i) => ({ stop, i }))
             .sort((a, b) => a.stop.offset - b.stop.offset)
-            .map(({ stop, i }) => (
-              <div key={i} className="flex flex-col gap-1.5" onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)} onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)} onFocus={() => useDesign.getState().setGradientHoverStop(i)} onBlur={() => useDesign.getState().setGradientHoverStop(null)}>
+            .map(({ stop, i }) => {
+              const active = gradientHoverStop === i;
+              return (
+              <div
+                key={i}
+                className={cn(
+                  "flex flex-col gap-1.5 rounded-[6px] p-1.5 transition-all",
+                  active
+                    ? "border border-phosphor bg-phosphor/8 shadow-[0_0_0_1px_#3fc6ff,0_0_12px_rgba(63,198,255,0.35)] scale-[1.015]"
+                    : "border border-transparent",
+                )}
+                onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)}
+                onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)}
+                onFocus={() => useDesign.getState().setGradientHoverStop(i)}
+                onBlur={() => useDesign.getState().setGradientHoverStop(null)}
+              >
                 <HexColorField
                   label={`Stop ${i + 1}`}
                   value={stop.color}
@@ -624,25 +647,30 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   onPointerUp={() => useDesign.getState().commit()}
                   onPointerCancel={() => useDesign.getState().commit()}
                 />
-                <NumField
-                  value={Math.round(stop.offset * 100)}
-                  min={0}
-                  max={100}
-                  className="field w-11 font-mono text-[11px] text-right"
-                  aria-label={`Stop ${i + 1} offset percent`}
-                  onDraft={(n) => {
-                    if (n == null || !Number.isFinite(n)) return;
-                    const off = Math.max(0, Math.min(1, n / 100));
-                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
-                    updateNodes([node.id], { fill: { ...fill, stops } }, false);
-                  }}
-                  onCommit={(n) => {
-                    const off = Math.max(0, Math.min(1, n / 100));
-                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
-                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
-                  }}
-                />
-                <span className="text-[10px] text-ink-dim">%</span>
+                <div className={cn("flex items-center gap-0.5 transition-all", active && "scale-110")}>
+                  <NumField
+                    value={Math.round(stop.offset * 100)}
+                    min={0}
+                    max={100}
+                    className={cn(
+                      "field w-11 font-mono text-[11px] text-right",
+                      active && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)]",
+                    )}
+                    aria-label={`Stop ${i + 1} offset percent`}
+                    onDraft={(n) => {
+                      if (n == null || !Number.isFinite(n)) return;
+                      const off = Math.max(0, Math.min(1, n / 100));
+                      const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
+                      updateNodes([node.id], { fill: { ...fill, stops } }, false);
+                    }}
+                    onCommit={(n) => {
+                      const off = Math.max(0, Math.min(1, n / 100));
+                      const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: off } : s));
+                      updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                    }}
+                  />
+                  <span className={cn("text-[10px]", active ? "text-phosphor font-medium" : "text-ink-dim")}>%</span>
+                </div>
                 <button
                   type="button"
                   className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30"
@@ -658,7 +686,8 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           <button
             type="button"
             className="text-[10px] text-phosphor self-start"
