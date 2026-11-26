@@ -177,6 +177,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
   const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
   const gradientHoverKey = useDesign((s) => s.gradientHoverKey);
   const gradientHoverStop = useDesign((s) => s.gradientHoverStop);
+  const [reorderDrag, setReorderDrag] = useState<number | null>(null);
   if (nodes.length < 2) return null;
   const ids = nodes.map((n) => n.id);
   const first = nodes[0]!;
@@ -299,8 +300,8 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
             )}
             <div className="mt-2 flex flex-col gap-1 border-t border-border pt-2">
               <div className="text-[10px] text-ink-dim">{g.type === "radial" ? "Stops along radial ray" : "Gradient stops"}</div>
-              {g.stops.map((stop, i) => ({ stop, i })).sort((a, b) => a.stop.offset - b.stop.offset).map(({ stop, i }) => {
-                const active = gradientHoverStop === i;
+              {g.stops.map((stop, i) => ({ stop, i })).sort((a, b) => a.stop.offset - b.stop.offset).map(({ stop, i }, sortedIdx) => {
+                const active = gradientHoverStop === i || reorderDrag === i;
                 return (
                 <div
                   key={i}
@@ -309,12 +310,62 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                     active
                       ? "border border-phosphor bg-phosphor/8 shadow-[0_0_0_1px_#3fc6ff,0_0_10px_rgba(63,198,255,0.4)] scale-[1.02]"
                       : "border border-transparent",
+                    reorderDrag === i && "opacity-80",
                   )}
                   onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)}
-                  onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)}
+                  onMouseLeave={() => { if (reorderDrag !== i) useDesign.getState().setGradientHoverStop(null); }}
                   onFocus={() => useDesign.getState().setGradientHoverStop(i)}
                   onBlur={() => useDesign.getState().setGradientHoverStop(null)}
                 >
+                  <button
+                    type="button"
+                    className="cursor-grab text-phosphor/60 hover:text-phosphor active:cursor-grabbing shrink-0"
+                    aria-label="Drag to reorder stop"
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setReorderDrag(i);
+                      useDesign.getState().setGradientHoverStop(i);
+                      const startY = e.clientY;
+                      const rowH = 32;
+                      const onMove = (ev: PointerEvent) => {
+                        const dy = ev.clientY - startY;
+                        const steps = Math.round(dy / rowH);
+                        const st = useDesign.getState();
+                        const node = st.doc.nodes.find((n) => n.id === ids[0]);
+                        if (!node || typeof node.fill !== "object" || node.fill == null || !("stops" in node.fill)) return;
+                        const curFill = node.fill as typeof g;
+                        const sorted = curFill.stops.map((s, j) => ({ s, j })).sort((a, b) => a.s.offset - b.s.offset);
+                        const curPos = sorted.findIndex((x) => x.j === i);
+                        if (curPos < 0) return;
+                        const targetPos = Math.max(0, Math.min(sorted.length - 1, curPos + steps));
+                        if (targetPos === curPos) return;
+                        let newOff: number;
+                        if (targetPos < curPos) {
+                          const neighbor = sorted[targetPos]!.s.offset;
+                          newOff = Math.max(0, neighbor - 0.005);
+                        } else {
+                          const neighbor = sorted[targetPos]!.s.offset;
+                          newOff = Math.min(1, neighbor + 0.005);
+                        }
+                        const stops = curFill.stops.map((s, j) => (j === i ? { ...s, offset: newOff } : s));
+                        updateNodes(ids, { fill: { ...curFill, stops } }, false);
+                      };
+                      const onUp = () => {
+                        window.removeEventListener("pointermove", onMove);
+                        window.removeEventListener("pointerup", onUp);
+                        setReorderDrag(null);
+                        useDesign.getState().setGradientHoverStop(null);
+                        useDesign.getState().commit();
+                      };
+                      window.addEventListener("pointermove", onMove);
+                      window.addEventListener("pointerup", onUp);
+                    }}
+                  >
+                    <svg width="10" height="14" viewBox="0 0 10 14" aria-hidden className="stroke-current">
+                      <path d="M1.5 3.5h7M1.5 7h7M1.5 10.5h7" strokeWidth="1.4" strokeLinecap="round" />
+                    </svg>
+                  </button>
                   <HexColorField label={`Stop ${i + 1}`} value={stop.color} onChange={(hex) => { rememberColor(hex); const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
                   <div className={cn("flex items-center gap-0.5 transition-all", active && "scale-110")}>
                     <NumField value={Math.round(stop.offset * 100)} min={0} max={100} className={cn("field w-11 font-mono text-[11px] text-right", active && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.55),0_0_16px_rgba(63,198,255,0.3)] scale-105")} aria-label={`Stop ${i + 1} offset percent`} onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, false); }} onCommit={(n) => { const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />

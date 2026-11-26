@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T20:07Z — Inspector stop reorder by drag in mixed list: phosphor grip handle on each stop row. Drag the grip up/down to cross neighbors and live-reorder the stop (offset snaps just past the crossed stop). Row stays emphasized with dual-glow while dragging. Works for both linear and radial uniform mixed selections. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T18:05Z — Denser inspector stop list for mixed selections (linear + radial): color swatch + percent NumField + % + Remove now on a single compact row. Hovered/focused stop row scales (~1.02×) with phosphor border, dual-glow plate, and brighter dual-glow on the percent field + % label (scale-110). Matches single-node stop-row emphasis and on-canvas chips. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T10:09Z — On-canvas gradient stop circles scale + dual-glow phosphor when hovered or dragged (linear and radial, including mixed uniform selections). Percent chips already emphasized; stop circles now grow (~1.5×) with brighter stroke and outer phosphor rings matching other handles. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T09:09Z — Denser radial dimension chips + stop list in mixed inspector: Centre/Focal X/Y pairs side-by-side with phosphor NumField + % labels (scale + dual-glow when gradientHoverKey matches); Inner keeps slider; stop bar circles and floating % chips scale/glow on hover; stop list labelled “Stops along radial ray” for radial fills and percent fields emphasize on hover. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -25,7 +26,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- On-canvas radial stop percent chips denser dual-glow parity with linear (already partially done) or inspector stop reorder by drag in mixed list
+- On-canvas radial stop percent chips denser dual-glow parity with linear (emphasize draws last / stronger outer rings) or single-node inspector stop reorder by drag
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)
