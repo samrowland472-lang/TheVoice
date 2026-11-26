@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T00:12Z — Visual mode indicator on linear gradient end handle: when dragging with Alt (angle-only) the end circle gets a warm phosphor outer ring + small rotation-arc glyph with arrow; with Ctrl/Cmd (length-only) a cool green-cyan ring + double-headed length bar. Normal drag (both) keeps the standard blue glow. Focused chip still scales. Cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-25T23:08Z — Separate angle-only vs length-only end-handle modes: drag the linear gradient end handle normally to adjust both angle and length. Hold Alt for angle-only (length locked to start value); hold Ctrl/Cmd for length-only (angle locked). Shift still snaps. Status bar announces the mode; focused phosphor chip (∠ or Len) scales + glows live. Cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-25T21:05Z — Radial value chips scale + glow parity with linear: Inner / Centre / Focal phosphor chips now grow (13.5px font, taller plate, stronger dual glow, brighter stroke/text) and position near their handles when gradientHoverKey is "r0" / "centre" / "focal". Inspector hover and on-canvas drag both drive the emphasis; cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-25T19:15Z — Radial gradient handles scale + glow parity with linear: centre cross, focal diamond, and r0 circle grow (~1.6–1.7×) with brighter fill and outer phosphor ring when gradientHoverKey is "centre" / "focal" / "r0". Inspector hover on Centre/Focal/Inner fields and on-canvas drag both drive the emphasis; cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -14,7 +15,6 @@
 
 ## Next recommended
 - Multi-stop gradient editing on-canvas (add/remove/reorder stops)
-- Visual mode indicator on the end handle itself (e.g. icon or color shift when modifier active)
 
 ## Backlog
 23. Inspector fields for linear length and offset (done)
