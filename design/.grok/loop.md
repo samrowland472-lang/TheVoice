@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T03:07Z — Reorder linear gradient stops by dragging past each other: live sort by offset while dragging (index tracked so the same stop stays under the pointer); also sorted on add and on commit so the gradient fill never receives out-of-order stops. Status still shows the percent. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T02:06Z — On-canvas stop colour picker: double-click a linear gradient stop circle to open the native colour picker at that stop. Updates the stop (and uniform selection) live; remembers the colour. Status announces the stop. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T01:08Z — On-canvas multi-stop gradient editing: phosphor stop circles along the linear handle (colored by stop). Drag a stop to change its offset (Shift snaps); Alt-click a stop (when >2) to remove it; double-click the gradient line to add a stop (inherits nearest color). Status shows percent. Uniform selection only. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T00:12Z — Visual mode indicator on linear gradient end handle: when dragging with Alt (angle-only) the end circle gets a warm phosphor outer ring + small rotation-arc glyph with arrow; with Ctrl/Cmd (length-only) a cool green-cyan ring + double-headed length bar. Normal drag (both) keeps the standard blue glow. Focused chip still scales. Cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -16,10 +17,11 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Reorder gradient stops by dragging past each other (or sort on offset commit)
+- On-canvas stop value chips (percent next to each stop circle, focused one scales)
 
 ## Backlog
+24. Reorder gradient stops by dragging past each other (done this pass)
 23. Inspector fields for linear length and offset (done)
 22. On-canvas linear gradient angle handle for mixed selections (done)
 21. Gradient stop editing in mixed selection (done)
-20. Context-aware / denser gradient dimension chips (done this pass)
+20. Context-aware / denser gradient dimension chips (done)

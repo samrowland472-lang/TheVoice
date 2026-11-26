@@ -1348,7 +1348,7 @@ export default function CanvasStage() {
           const d = Math.abs(s.offset - offset);
           if (d < best) { best = d; nearest = s; }
         }
-        const newStops = [...(n.fill as any).stops, { offset, color: nearest.color }];
+        const newStops = sortedStops([...(n.fill as any).stops, { offset, color: nearest.color }]);
         const ids = selection.length > 1 ? selection : [n.id];
         useDesign.getState().updateNodes(ids, { fill: { ...(n.fill as any), stops: newStops } }, true);
         setStudioStatus(`Added stop at ${Math.round(offset * 100)}%`);
@@ -2481,11 +2481,18 @@ export default function CanvasStage() {
       let offset = 0.5 + tFromCenter * 0.5;
       offset = Math.max(0, Math.min(1, offset));
       if (e.shiftKey) offset = Math.round(offset * 20) / 20;
-      const stops = (n.fill as any).stops.map((s: any, j: number) =>
+      const rawStops = (n.fill as any).stops as { offset: number; color: string }[];
+      const updated = rawStops.map((s, j) =>
         j === d.stopIndex ? { ...s, offset } : s
       );
+      const moved = updated[d.stopIndex]!;
+      const sorted = sortedStops(updated);
+      const newIndex = sorted.indexOf(moved);
       const ids = selection.length > 1 ? selection : [d.id];
-      updateNodes(ids, { fill: { ...(n.fill as any), stops } }, false);
+      updateNodes(ids, { fill: { ...(n.fill as any), stops: sorted } }, false);
+      if (drag.current && drag.current.type === "gradient-stop") {
+        drag.current.stopIndex = newIndex >= 0 ? newIndex : d.stopIndex;
+      }
       setStudioStatus(`Stop ${Math.round(offset * 100)}%`);
       return;
     }
@@ -2722,6 +2729,13 @@ export default function CanvasStage() {
       setStudioStatus("Gradient offset committed");
     }
     if (d?.type === "gradient-stop") {
+      // Ensure stops are sorted by offset on commit
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (n && typeof n.fill === "object" && n.fill?.type === "linear") {
+        const sorted = sortedStops((n.fill as any).stops);
+        const ids = selection.length > 1 ? selection : [d.id];
+        useDesign.getState().updateNodes(ids, { fill: { ...(n.fill as any), stops: sorted } }, false);
+      }
       commit();
       useDesign.getState().setGradientAngleScrubId(null);
       setStudioStatus("Stop offset committed");
@@ -4135,6 +4149,11 @@ function linearStopWorld(n: DesignNode, zoom: number) {
   });
   return { h, stops };
 }
+
+function sortedStops(stops: { offset: number; color: string }[]) {
+  return [...stops].sort((a, b) => a.offset - b.offset);
+}
+
 
 function drawGradientAngleHandle(
   ctx: CanvasRenderingContext2D,
