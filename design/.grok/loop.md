@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T04:05Z — On-canvas stop value chips: percent next to each linear gradient stop circle (offset perpendicular to the handle). Focused/dragged stop chip scales + glows (same phosphor chip style as angle/length). Live during reorder. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T03:07Z — Reorder linear gradient stops by dragging past each other: live sort by offset while dragging (index tracked so the same stop stays under the pointer); also sorted on add and on commit so the gradient fill never receives out-of-order stops. Status still shows the percent. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T02:06Z — On-canvas stop colour picker: double-click a linear gradient stop circle to open the native colour picker at that stop. Updates the stop (and uniform selection) live; remembers the colour. Status announces the stop. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T01:08Z — On-canvas multi-stop gradient editing: phosphor stop circles along the linear handle (colored by stop). Drag a stop to change its offset (Shift snaps); Alt-click a stop (when >2) to remove it; double-click the gradient line to add a stop (inherits nearest color). Status shows percent. Uniform selection only. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -17,7 +18,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- On-canvas stop value chips (percent next to each stop circle, focused one scales)
+- Hover-emphasize stop chips (or inspector stop list parity with on-canvas chips)
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

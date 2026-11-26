@@ -429,7 +429,8 @@ export default function CanvasStage() {
       else if (gradientHoverKey === "centre") drawRadialCentreScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "centre");
       else if (gradientHoverKey === "focal") drawRadialFocalScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "focal");
     }
-    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
+    const focusedStop = drag.current?.type === "gradient-stop" ? { id: drag.current.id, index: drag.current.stopIndex } : null;
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     if (strokeGhost) {
       ctx.save();
@@ -912,7 +913,8 @@ export default function CanvasStage() {
       else if (gradientHoverKey === "centre") drawRadialCentreScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "centre");
       else if (gradientHoverKey === "focal") drawRadialFocalScrubChips(ctx, doc.nodes, hoverId, selection, viewport, dpr, "focal");
     }
-    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
+    const focusedStop = drag.current?.type === "gradient-stop" ? { id: drag.current.id, index: drag.current.stopIndex } : null;
+    drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey);
     if (strokeGhost) {
       ctx.save();
@@ -4162,6 +4164,7 @@ function drawGradientAngleHandle(
   vp: Viewport,
   dpr: number,
   hoverKey: "angle" | "length" | "offset" | "angle-only" | "length-only" | null = null,
+  focusedStop: { id: string; index: number } | null = null,
 ) {
   const selected = nodes.filter((n) => selection.includes(n.id) && n.visible);
   if (selected.length === 0) return;
@@ -4298,7 +4301,9 @@ function drawGradientAngleHandle(
     // Multi-stop handles along the visual gradient line
     const sw = linearStopWorld(n, zoom);
     if (sw) {
-      for (const st of sw.stops) {
+      const isFocusedNode = focusedStop && focusedStop.id === n.id;
+      for (let si = 0; si < sw.stops.length; si++) {
+        const st = sw.stops[si]!;
         const sr = 4.2 / zoom;
         ctx.beginPath();
         ctx.arc(st.x, st.y, sr, 0, Math.PI * 2);
@@ -4312,6 +4317,20 @@ function drawGradientAngleHandle(
         ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
         ctx.lineWidth = 1.2 / zoom;
         ctx.stroke();
+        // Percent chip next to stop (emphasized when this stop is the focused/dragged one)
+        const pct = Math.round(st.offset * 100);
+        const label = `${pct}%`;
+        const emphasize = !!(isFocusedNode && focusedStop.index === si);
+        // offset chip perpendicular to the gradient line so it stays clear of the handle
+        const dx = h.ex - h.cx;
+        const dy = h.ey - h.cy;
+        const len = Math.hypot(dx, dy) || 1;
+        const px = -dy / len;
+        const py = dx / len;
+        const off = 14 / zoom;
+        const cx = st.x + px * off;
+        const cy = st.y + py * off;
+        drawPhosphorValueChip(ctx, label, cx, cy, zoom, emphasize);
       }
     }
     ctx.setLineDash([4 / zoom, 3 / zoom]);
