@@ -563,7 +563,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
               <div
                 key={i}
                 className={cn(
-                  "relative flex flex-col gap-1.5 rounded-[6px] p-1.5 pl-7 transition-all",
+                  "relative flex flex-col gap-1 rounded-[6px] p-1 transition-all",
                   active
                     ? "border border-phosphor bg-phosphor/8 shadow-[0_0_0_1px_#3fc6ff,0_0_12px_rgba(63,198,255,0.35)] scale-[1.015]"
                     : "border border-transparent",
@@ -574,9 +574,10 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 onFocus={() => useDesign.getState().setGradientHoverStop(i)}
                 onBlur={() => useDesign.getState().setGradientHoverStop(null)}
               >
+                <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  className="absolute left-1 top-2 z-10 cursor-grab text-phosphor/60 hover:text-phosphor active:cursor-grabbing"
+                  className="cursor-grab text-phosphor/60 hover:text-phosphor active:cursor-grabbing shrink-0"
                   aria-label="Drag to reorder stop"
                   onPointerDown={(e) => {
                     e.preventDefault();
@@ -584,7 +585,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     setReorderDrag(i);
                     useDesign.getState().setGradientHoverStop(i);
                     const startY = e.clientY;
-                    const rowH = 88;
+                    const rowH = 42;
                     const onMove = (ev: PointerEvent) => {
                       const dy = ev.clientY - startY;
                       const steps = Math.round(dy / rowH);
@@ -632,36 +633,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     updateNodes([node.id], { fill: { ...fill, stops } }, true);
                   }}
                 />
-                <BrandSwatches
-                  onPick={(hex) => {
-                    rememberColor(hex);
-                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
-                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
-                  }}
-                />
-                <RecentSwatches
-                  onPick={(hex) => {
-                    rememberColor(hex);
-                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
-                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
-                  }}
-                />
-                <div className="flex items-center gap-2">
-                <input
-                  type="range"
-                  className="range-phosphor flex-1"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={stop.offset}
-                  onChange={(e) => {
-                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: Number(e.target.value) } : s));
-                    updateNodes([node.id], { fill: { ...fill, stops } }, false);
-                  }}
-                  onPointerUp={() => useDesign.getState().commit()}
-                  onPointerCancel={() => useDesign.getState().commit()}
-                />
-                <div className={cn("flex items-center gap-0.5 transition-all", active && "scale-110")}>
+                <div className={cn("flex items-center gap-0.5 transition-all ml-auto", active && "scale-110")}>
                   <NumField
                     value={Math.round(stop.offset * 100)}
                     min={0}
@@ -687,7 +659,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 </div>
                 <button
                   type="button"
-                  className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30"
+                  className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30 shrink-0"
                   disabled={fill.stops.length <= 2}
                   onClick={() => {
                     if (fill.stops.length <= 2) return;
@@ -698,6 +670,36 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 >
                   Remove
                 </button>
+                </div>
+                <div className="flex flex-col gap-1 pl-6">
+                <input
+                  type="range"
+                  className="range-phosphor flex-1"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={stop.offset}
+                  onChange={(e) => {
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, offset: Number(e.target.value) } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, false);
+                  }}
+                  onPointerUp={() => useDesign.getState().commit()}
+                  onPointerCancel={() => useDesign.getState().commit()}
+                />
+                <BrandSwatches
+                  onPick={(hex) => {
+                    rememberColor(hex);
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                />
+                <RecentSwatches
+                  onPick={(hex) => {
+                    rememberColor(hex);
+                    const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                    updateNodes([node.id], { fill: { ...fill, stops } }, true);
+                  }}
+                />
                 </div>
               </div>
               );
