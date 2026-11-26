@@ -116,6 +116,7 @@ export function HexColorField({
 export function FillEditor({ node }: { node: DesignNode }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const gradientHoverStop = useDesign((s) => s.gradientHoverStop);
+  const gradientHoverKey = useDesign((s) => s.gradientHoverKey);
   const fill = node.fill;
   const gradient = isGradient(fill);
   const barRef = useRef<HTMLDivElement>(null);
@@ -225,150 +226,106 @@ export function FillEditor({ node }: { node: DesignNode }) {
           </div>
           {fill.type === "radial" && (
             <div className="flex flex-col gap-1.5">
-              <Field label="Centre X">
-                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
-                  <input
-                    type="range"
-                    className="range-phosphor min-w-0 flex-1"
-                    min={0}
-                    max={100}
-                    value={Math.round((fill.cx ?? 0.5) * 100)}
-                    onChange={(e) =>
-                      updateNodes(
-                        [node.id],
-                        { fill: { ...fill, cx: Number(e.target.value) / 100 } },
-                        false,
-                      )
-                    }
-                    onPointerUp={() => useDesign.getState().commit()}
-                  />
-                  <NumField
-                    value={Math.round((fill.cx ?? 0.5) * 100)}
-                    min={0}
-                    max={100}
-                    className="field w-12 font-mono text-[11px] text-right"
-                    aria-label="Radial centre X percent"
-                    onDraft={(n) => {
-                      if (n == null || !Number.isFinite(n)) return;
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, cx: v } }, false);
-                    }}
-                    onCommit={(n) => {
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, cx: v } }, true);
-                    }}
-                  />
-                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
-                </div>
-              </Field>
-              <Field label="Centre Y">
-                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
-                  <input
-                    type="range"
-                    className="range-phosphor min-w-0 flex-1"
-                    min={0}
-                    max={100}
-                    value={Math.round((fill.cy ?? 0.5) * 100)}
-                    onChange={(e) =>
-                      updateNodes(
-                        [node.id],
-                        { fill: { ...fill, cy: Number(e.target.value) / 100 } },
-                        false,
-                      )
-                    }
-                    onPointerUp={() => useDesign.getState().commit()}
-                  />
-                  <NumField
-                    value={Math.round((fill.cy ?? 0.5) * 100)}
-                    min={0}
-                    max={100}
-                    className="field w-12 font-mono text-[11px] text-right"
-                    aria-label="Radial centre Y percent"
-                    onDraft={(n) => {
-                      if (n == null || !Number.isFinite(n)) return;
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, cy: v } }, false);
-                    }}
-                    onCommit={(n) => {
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, cy: v } }, true);
-                    }}
-                  />
-                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
-                </div>
-              </Field>
-              <Field label="Focal X">
-                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
-                  <input
-                    type="range"
-                    className="range-phosphor min-w-0 flex-1"
-                    min={0}
-                    max={100}
-                    value={Math.round((fill.fx ?? fill.cx ?? 0.5) * 100)}
-                    onChange={(e) =>
-                      updateNodes(
-                        [node.id],
-                        { fill: { ...fill, fx: Number(e.target.value) / 100 } },
-                        false,
-                      )
-                    }
-                    onPointerUp={() => useDesign.getState().commit()}
-                  />
-                  <NumField
-                    value={Math.round((fill.fx ?? fill.cx ?? 0.5) * 100)}
-                    min={0}
-                    max={100}
-                    className="field w-12 font-mono text-[11px] text-right"
-                    aria-label="Radial focal X percent"
-                    onDraft={(n) => {
-                      if (n == null || !Number.isFinite(n)) return;
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, fx: v } }, false);
-                    }}
-                    onCommit={(n) => {
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, fx: v } }, true);
-                    }}
-                  />
-                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
-                </div>
-              </Field>
-              <Field label="Focal Y">
-                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
-                  <input
-                    type="range"
-                    className="range-phosphor min-w-0 flex-1"
-                    min={0}
-                    max={100}
-                    value={Math.round((fill.fy ?? fill.cy ?? 0.5) * 100)}
-                    onChange={(e) =>
-                      updateNodes(
-                        [node.id],
-                        { fill: { ...fill, fy: Number(e.target.value) / 100 } },
-                        false,
-                      )
-                    }
-                    onPointerUp={() => useDesign.getState().commit()}
-                  />
-                  <NumField
-                    value={Math.round((fill.fy ?? fill.cy ?? 0.5) * 100)}
-                    min={0}
-                    max={100}
-                    className="field w-12 font-mono text-[11px] text-right"
-                    aria-label="Radial focal Y percent"
-                    onDraft={(n) => {
-                      if (n == null || !Number.isFinite(n)) return;
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, fy: v } }, false);
-                    }}
-                    onCommit={(n) => {
-                      const v = Math.max(0, Math.min(100, n)) / 100;
-                      updateNodes([node.id], { fill: { ...fill, fy: v } }, true);
-                    }}
-                  />
-                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
-                </div>
-              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Centre X">
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <NumField
+                      value={Math.round((fill.cx ?? 0.5) * 100)}
+                      min={0}
+                      max={100}
+                      className={cn(
+                        "field w-12 font-mono text-[11px] text-right",
+                        gradientHoverKey === "centre" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105",
+                      )}
+                      aria-label="Radial centre X percent"
+                      onDraft={(n) => {
+                        if (n == null || !Number.isFinite(n)) return;
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, cx: v } }, false);
+                      }}
+                      onCommit={(n) => {
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, cx: v } }, true);
+                      }}
+                    />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "centre" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                </Field>
+                <Field label="Centre Y">
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <NumField
+                      value={Math.round((fill.cy ?? 0.5) * 100)}
+                      min={0}
+                      max={100}
+                      className={cn(
+                        "field w-12 font-mono text-[11px] text-right",
+                        gradientHoverKey === "centre" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105",
+                      )}
+                      aria-label="Radial centre Y percent"
+                      onDraft={(n) => {
+                        if (n == null || !Number.isFinite(n)) return;
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, cy: v } }, false);
+                      }}
+                      onCommit={(n) => {
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, cy: v } }, true);
+                      }}
+                    />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "centre" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Focal X">
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <NumField
+                      value={Math.round((fill.fx ?? fill.cx ?? 0.5) * 100)}
+                      min={0}
+                      max={100}
+                      className={cn(
+                        "field w-12 font-mono text-[11px] text-right",
+                        gradientHoverKey === "focal" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105",
+                      )}
+                      aria-label="Radial focal X percent"
+                      onDraft={(n) => {
+                        if (n == null || !Number.isFinite(n)) return;
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, fx: v } }, false);
+                      }}
+                      onCommit={(n) => {
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, fx: v } }, true);
+                      }}
+                    />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "focal" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                </Field>
+                <Field label="Focal Y">
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <NumField
+                      value={Math.round((fill.fy ?? fill.cy ?? 0.5) * 100)}
+                      min={0}
+                      max={100}
+                      className={cn(
+                        "field w-12 font-mono text-[11px] text-right",
+                        gradientHoverKey === "focal" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105",
+                      )}
+                      aria-label="Radial focal Y percent"
+                      onDraft={(n) => {
+                        if (n == null || !Number.isFinite(n)) return;
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, fy: v } }, false);
+                      }}
+                      onCommit={(n) => {
+                        const v = Math.max(0, Math.min(100, n)) / 100;
+                        updateNodes([node.id], { fill: { ...fill, fy: v } }, true);
+                      }}
+                    />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "focal" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                </Field>
+              </div>
               <Field label="Inner radius">
                 <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("r0")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("r0")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
                   <input
@@ -390,7 +347,10 @@ export function FillEditor({ node }: { node: DesignNode }) {
                     value={Math.round((fill.r0 ?? 0) * 100)}
                     min={0}
                     max={95}
-                    className="field w-12 font-mono text-[11px] text-right"
+                    className={cn(
+                      "field w-12 font-mono text-[11px] text-right",
+                      gradientHoverKey === "r0" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105",
+                    )}
                     aria-label="Radial inner radius percent"
                     onDraft={(n) => {
                       if (n == null || !Number.isFinite(n)) return;
@@ -402,7 +362,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                       updateNodes([node.id], { fill: { ...fill, r0: v } }, true);
                     }}
                   />
-                  <span className="shrink-0 text-[10px] text-ink-dim" aria-hidden="true">%</span>
+                  <span className={cn("shrink-0 text-[10px] transition-all", gradientHoverKey === "r0" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
                 </div>
               </Field>
             </div>
@@ -533,6 +493,9 @@ export function FillEditor({ node }: { node: DesignNode }) {
             </div>
             </>
           )}
+          <div className="mt-1 text-[10px] text-ink-dim">
+            {fill.type === "radial" ? "Stops along radial ray" : "Gradient stops"}
+          </div>
           <div
             ref={barRef}
             className="relative h-8 w-full rounded-[8px] border border-border"
