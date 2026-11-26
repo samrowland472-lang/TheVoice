@@ -129,7 +129,7 @@ function MixedGradientStopBar({
         <button
           key={i}
           type="button"
-          className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000]"
+          className={cn("absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize rounded-sm border-2 border-phosphor shadow-[0_0_0_1px_#000] transition-all", (hoverStop === i || dragStop === i) && "scale-150 shadow-[0_0_8px_rgba(63,198,255,0.7)]")}
           style={{ left: `${stop.offset * 100}%`, backgroundColor: stop.color }}
           onMouseEnter={() => { setHoverStop(i); useDesign.getState().setGradientHoverStop(i); }}
           onMouseLeave={() => { setHoverStop(null); useDesign.getState().setGradientHoverStop(null); }}
@@ -162,7 +162,7 @@ function MixedGradientStopBar({
       ))}
       {(dragStop ?? hoverStop) != null && fill.stops[dragStop ?? hoverStop!] && (
         <div
-          className="pointer-events-none absolute -top-5 z-10 -translate-x-1/2 rounded-sm border border-phosphor bg-surface px-1 py-0.5 text-[9px] font-mono text-phosphor shadow-[0_0_0_1px_#000]"
+          className={cn("pointer-events-none absolute -top-5 z-10 -translate-x-1/2 rounded-sm border border-phosphor bg-surface px-1 py-0.5 font-mono text-phosphor shadow-[0_0_0_1px_#000] transition-all", (dragStop ?? hoverStop) != null && "text-[11px] shadow-[0_0_8px_rgba(63,198,255,0.6)] scale-110")}
           style={{ left: `${fill.stops[dragStop ?? hoverStop!].offset * 100}%` }}
         >
           {Math.round(fill.stops[dragStop ?? hoverStop!].offset * 100)}%
@@ -175,6 +175,8 @@ function MixedGradientStopBar({
 export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
   const updateNodes = useDesign((s) => s.updateNodes);
   const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
+  const gradientHoverKey = useDesign((s) => s.gradientHoverKey);
+  const gradientHoverStop = useDesign((s) => s.gradientHoverStop);
   if (nodes.length < 2) return null;
   const ids = nodes.map((n) => n.id);
   const first = nodes[0]!;
@@ -264,22 +266,45 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
               </>
             )}
             {g.type === "radial" && (
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-1"><span className="text-[10px] text-ink-dim">CX</span><NumField value={Math.round((g.cx ?? 0.5) * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label="Radial centre X percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, cx: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, cx: Math.max(0, Math.min(100, n)) / 100 } }, true); }} /></div>
-                <div className="flex items-center gap-1"><span className="text-[10px] text-ink-dim">CY</span><NumField value={Math.round((g.cy ?? 0.5) * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label="Radial centre Y percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, cy: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, cy: Math.max(0, Math.min(100, n)) / 100 } }, true); }} /></div>
-                <div className="flex items-center gap-1"><span className="text-[10px] text-ink-dim">FX</span><NumField value={Math.round((g.fx ?? g.cx ?? 0.5) * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label="Radial focal X percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, fx: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, fx: Math.max(0, Math.min(100, n)) / 100 } }, true); }} /></div>
-                <div className="flex items-center gap-1"><span className="text-[10px] text-ink-dim">FY</span><NumField value={Math.round((g.fy ?? g.cy ?? 0.5) * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label="Radial focal Y percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, fy: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, fy: Math.max(0, Math.min(100, n)) / 100 } }, true); }} /></div>
-                <div className="col-span-2 flex items-center gap-1"><span className="text-[10px] text-ink-dim">R0</span><NumField value={Math.round((g.r0 ?? 0) * 100)} min={0} max={95} className="field w-12 font-mono text-[11px] text-right" aria-label="Radial inner radius percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, r0: Math.max(0, Math.min(95, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, r0: Math.max(0, Math.min(95, n)) / 100 } }, true); }} /><span className="text-[10px] text-ink-dim">%</span></div>
+              <div className="flex flex-col gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "centre" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>CX</span>
+                    <NumField value={Math.round((g.cx ?? 0.5) * 100)} min={0} max={100} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverKey === "centre" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label="Radial centre X percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, cx: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, cx: Math.max(0, Math.min(100, n)) / 100 } }, true); }} />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "centre" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("centre")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("centre")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "centre" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>CY</span>
+                    <NumField value={Math.round((g.cy ?? 0.5) * 100)} min={0} max={100} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverKey === "centre" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label="Radial centre Y percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, cy: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, cy: Math.max(0, Math.min(100, n)) / 100 } }, true); }} />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "centre" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "focal" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>FX</span>
+                    <NumField value={Math.round((g.fx ?? g.cx ?? 0.5) * 100)} min={0} max={100} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverKey === "focal" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label="Radial focal X percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, fx: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, fx: Math.max(0, Math.min(100, n)) / 100 } }, true); }} />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "focal" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                  <div className="flex items-center gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverKey("focal")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("focal")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "focal" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>FY</span>
+                    <NumField value={Math.round((g.fy ?? g.cy ?? 0.5) * 100)} min={0} max={100} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverKey === "focal" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label="Radial focal Y percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, fy: Math.max(0, Math.min(100, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, fy: Math.max(0, Math.min(100, n)) / 100 } }, true); }} />
+                    <span className={cn("text-[10px] transition-all", gradientHoverKey === "focal" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2" onMouseEnter={() => useDesign.getState().setGradientHoverKey("r0")} onMouseLeave={() => useDesign.getState().setGradientHoverKey(null)} onFocus={() => useDesign.getState().setGradientHoverKey("r0")} onBlur={() => useDesign.getState().setGradientHoverKey(null)}>
+                  <span className={cn("w-8 shrink-0 text-[10px] transition-all", gradientHoverKey === "r0" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>Inner</span>
+                  <input type="range" className="range-phosphor min-w-0 flex-1" min={0} max={95} value={Math.round((g.r0 ?? 0) * 100)} onChange={(e) => updateNodes(ids, { fill: { ...g, r0: Number(e.target.value) / 100 } }, false)} onPointerUp={() => useDesign.getState().commit()} />
+                  <NumField value={Math.round((g.r0 ?? 0) * 100)} min={0} max={95} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverKey === "r0" && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label="Radial inner radius percent" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { fill: { ...g, r0: Math.max(0, Math.min(95, n)) / 100 } }, false); }} onCommit={(n) => { updateNodes(ids, { fill: { ...g, r0: Math.max(0, Math.min(95, n)) / 100 } }, true); }} />
+                  <span className={cn("text-[10px] transition-all", gradientHoverKey === "r0" ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
+                </div>
               </div>
             )}
             <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
-              <div className="text-[10px] text-ink-dim">Stops</div>
+              <div className="text-[10px] text-ink-dim">{g.type === "radial" ? "Stops along radial ray" : "Gradient stops"}</div>
               {g.stops.map((stop, i) => ({ stop, i })).sort((a, b) => a.stop.offset - b.stop.offset).map(({ stop, i }) => (
                 <div key={i} className="flex flex-col gap-1" onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)} onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)} onFocus={() => useDesign.getState().setGradientHoverStop(i)} onBlur={() => useDesign.getState().setGradientHoverStop(null)}>
                   <HexColorField label={`Stop ${i + 1}`} value={stop.color} onChange={(hex) => { rememberColor(hex); const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
                   <div className="flex items-center gap-2">
-                    <NumField value={Math.round(stop.offset * 100)} min={0} max={100} className="field w-12 font-mono text-[11px] text-right" aria-label={`Stop ${i + 1} offset percent`} onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, false); }} onCommit={(n) => { const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
-                    <span className="text-[10px] text-ink-dim">%</span>
+                    <NumField value={Math.round(stop.offset * 100)} min={0} max={100} className={cn("field w-12 font-mono text-[11px] text-right", gradientHoverStop === i && "border-phosphor text-phosphor shadow-[0_0_8px_rgba(63,198,255,0.5)] scale-105")} aria-label={`Stop ${i + 1} offset percent`} onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, false); }} onCommit={(n) => { const off = Math.max(0, Math.min(1, n / 100)); const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: off } : s)); updateNodes(ids, { fill: { ...g, stops } }, true); }} />
+                    <span className={cn("text-[10px] transition-all", gradientHoverStop === i ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
                     <button type="button" className="text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30" disabled={g.stops.length <= 2} onClick={() => { if (g.stops.length <= 2) return; const stops = g.stops.filter((_, j) => j !== i); updateNodes(ids, { fill: { ...g, stops } }, true); }} aria-label="Remove stop">Remove</button>
                   </div>
                 </div>
