@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T10:09Z — On-canvas gradient stop circles scale + dual-glow phosphor when hovered or dragged (linear and radial, including mixed uniform selections). Percent chips already emphasized; stop circles now grow (~1.5×) with brighter stroke and outer phosphor rings matching other handles. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T09:09Z — Denser radial dimension chips + stop list in mixed inspector: Centre/Focal X/Y pairs side-by-side with phosphor NumField + % labels (scale + dual-glow when gradientHoverKey matches); Inner keeps slider; stop bar circles and floating % chips scale/glow on hover; stop list labelled “Stops along radial ray” for radial fills and percent fields emphasize on hover. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T08:05Z — Denser radial dimension chips + inspector stop list label: Centre/Focal X/Y pairs side-by-side (no range sliders), Inner keeps slider; NumFields and % labels scale + dual-glow phosphor when the matching hover key is active (inspector or on-canvas). Stop bar labelled “Stops along radial ray” for radial fills. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T07:07Z — On-canvas radial gradient stop editing: phosphor stop circles along the radial ray (from focal/inner to outer), percent chips (emphasized on hover/drag), drag to change offset (Shift snaps, live reorder), Alt-click to remove (when >2), double-click stop for colour picker, double-click the ray to add a stop (inherits nearest colour). Uniform selection. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -23,7 +24,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- On-canvas radial stop editing for mixed uniform selections (stop circles along the ray + percent chips)
+- Inspector stop list denser percent fields + scale/glow parity for radial mixed selections
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

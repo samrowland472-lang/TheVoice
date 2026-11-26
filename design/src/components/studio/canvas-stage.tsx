@@ -4483,23 +4483,40 @@ function drawGradientAngleHandle(
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
       for (let si = 0; si < sw.stops.length; si++) {
         const st = sw.stops[si]!;
-        const sr = 4.2 / zoom;
+        const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
+        const sr = (emphasize ? 6.4 : 4.2) / zoom;
         ctx.beginPath();
         ctx.arc(st.x, st.y, sr, 0, Math.PI * 2);
         ctx.fillStyle = st.color;
         ctx.fill();
-        ctx.strokeStyle = "#7ee0ff";
-        ctx.lineWidth = 1.4 / zoom;
+        ctx.strokeStyle = emphasize ? "#a8f0ff" : "#7ee0ff";
+        ctx.lineWidth = (emphasize ? 2.2 : 1.4) / zoom;
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
-        ctx.lineWidth = 1.2 / zoom;
-        ctx.stroke();
+        // dual phosphor outer rings when emphasized
+        if (emphasize) {
+          ctx.save();
+          ctx.globalAlpha = 0.42;
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+          ctx.lineWidth = 3.2 / zoom;
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, sr + 3.8 / zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 0.18;
+          ctx.lineWidth = 5.6 / zoom;
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, sr + 6.4 / zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+          ctx.lineWidth = 1.2 / zoom;
+          ctx.stroke();
+        }
         // Percent chip next to stop (emphasized when this stop is the focused/dragged one)
         const pct = Math.round(st.offset * 100);
         const label = `${pct}%`;
-        const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
         // offset chip perpendicular to the gradient line so it stays clear of the handle
         const dx = h.ex - h.cx;
         const dy = h.ey - h.cy;
@@ -4726,22 +4743,39 @@ function drawGradientRadialHandle(
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
       for (let si = 0; si < sw.stops.length; si++) {
         const st = sw.stops[si]!;
-        const sr = 4.2 / zoom;
+        const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
+        const sr = (emphasize ? 6.4 : 4.2) / zoom;
         ctx.beginPath();
         ctx.arc(st.x, st.y, sr, 0, Math.PI * 2);
         ctx.fillStyle = st.color;
         ctx.fill();
-        ctx.strokeStyle = "#7ee0ff";
-        ctx.lineWidth = 1.4 / zoom;
+        ctx.strokeStyle = emphasize ? "#a8f0ff" : "#7ee0ff";
+        ctx.lineWidth = (emphasize ? 2.2 : 1.4) / zoom;
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
-        ctx.lineWidth = 1.2 / zoom;
-        ctx.stroke();
+        // dual phosphor outer rings when emphasized
+        if (emphasize) {
+          ctx.save();
+          ctx.globalAlpha = 0.42;
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
+          ctx.lineWidth = 3.2 / zoom;
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, sr + 3.8 / zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 0.18;
+          ctx.lineWidth = 5.6 / zoom;
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, sr + 6.4 / zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+          ctx.lineWidth = 1.2 / zoom;
+          ctx.stroke();
+        }
         const pct = Math.round(st.offset * 100);
         const label = `${pct}%`;
-        const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
         // chip offset perpendicular to the ray
         const off = 14 / zoom;
         const cx = st.x - sw.uy * off;
