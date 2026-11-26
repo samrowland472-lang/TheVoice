@@ -1,0 +1,390 @@
+import type { PathPoint } from "./types";
+
+export function hasHandle(h: { x: number; y: number } | null | undefined) {
+  return Boolean(h && (Math.abs(h.x) > 0.2 || Math.abs(h.y) > 0.2));
+}
+
+/** Screen-pixel radius for pen snap-close to the first point. */
+export const PEN_CLOSE_SNAP_PX = 9;
+
+export function nearPenClose(
+  probeX: number,
+  probeY: number,
+  firstX: number,
+  firstY: number,
+  zoom: number,
+  px = PEN_CLOSE_SNAP_PX,
+) {
+  return Math.hypot(probeX - firstX, probeY - firstY) <= px / zoom;
+}
+
+export function tracePath(ctx: CanvasRenderingContext2D, ox: number, oy: number, pts: PathPoint[], closed: boolean) {
+  if (!pts.length) return;
+  ctx.moveTo(ox + pts[0]!.x, oy + pts[0]!.y);
+  const n = pts.length;
+  const last = closed ? n : n - 1;
+  for (let i = 0; i < last; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % n]!;
+    const out = a.out;
+    const inn = b.in;
+    if (hasHandle(out) || hasHandle(inn)) {
+      const c1x = ox + a.x + (out?.x ?? 0);
+      const c1y = oy + a.y + (out?.y ?? 0);
+      const c2x = ox + b.x + (inn?.x ?? 0);
+      const c2y = oy + b.y + (inn?.y ?? 0);
+      ctx.bezierCurveTo(c1x, c1y, c2x, c2y, ox + b.x, oy + b.y);
+    } else {
+      ctx.lineTo(ox + b.x, oy + b.y);
+    }
+  }
+  if (closed) ctx.closePath();
+}
+
+/** Rotate a relative cubic handle (offset from its anchor) by degrees. */
+export function rotateHandle(
+  h: { x: number; y: number } | null | undefined,
+  deg: number,
+): { x: number; y: number } | null {
+  if (!h) return null;
+  const r = (deg * Math.PI) / 180;
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  return { x: h.x * c - h.y * s, y: h.x * s + h.y * c };
+}
+
+/**
+ * Flatten a rotate-group into world-space points: anchors around (cx, cy)
+ * and cubic handles as rotated relative offsets so path d needs no transform.
+ */
+export function bakeRotatedPoints(
+  ox: number,
+  oy: number,
+  pts: PathPoint[],
+  rotation: number,
+  cx: number,
+  cy: number,
+): PathPoint[] {
+  const rot = rotation || 0;
+  return pts.map((p) => {
+    const ax = ox + p.x;
+    const ay = oy + p.y;
+    if (!rot) return { ...p, x: ax, y: ay };
+    const r = (rot * Math.PI) / 180;
+    const dx = ax - cx;
+    const dy = ay - cy;
+    return {
+      ...p,
+      x: cx + dx * Math.cos(r) - dy * Math.sin(r),
+      y: cy + dx * Math.sin(r) + dy * Math.cos(r),
+      in: rotateHandle(p.in, rot),
+      out: rotateHandle(p.out, rot),
+    };
+  });
+}
+
+export function pathD(ox: number, oy: number, pts: PathPoint[], closed: boolean) {
+  if (!pts.length) return "";
+  const parts: string[] = [`M ${ox + pts[0]!.x} ${oy + pts[0]!.y}`];
+  const n = pts.length;
+  const last = closed ? n : n - 1;
+  for (let i = 0; i < last; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % n]!;
+    const out = a.out;
+    const inn = b.in;
+    if (hasHandle(out) || hasHandle(inn)) {
+      const c1x = ox + a.x + (out?.x ?? 0);
+      const c1y = oy + a.y + (out?.y ?? 0);
+      const c2x = ox + b.x + (inn?.x ?? 0);
+      const c2y = oy + b.y + (inn?.y ?? 0);
+      parts.push(`C ${c1x} ${c1y} ${c2x} ${c2y} ${ox + b.x} ${oy + b.y}`);
+    } else {
+      parts.push(`L ${ox + b.x} ${oy + b.y}`);
+    }
+  }
+  if (closed) parts.push("Z");
+  return parts.join(" ");
+}
+
+export function mirrorHandle(h: { x: number; y: number }) {
+  return { x: -h.x, y: -h.y };
+}
+
+function unit(x: number, y: number) {
+  const len = Math.hypot(x, y);
+  if (len < 1e-6) return { x: 0, y: 0, len: 0 };
+  return { x: x / len, y: y / len, len };
+}
+
+/** Average incoming/outgoing tangents and write mirrored cubic handles. */
+export function autoSmoothPoint(pts: PathPoint[], index: number, closed: boolean): PathPoint {
+  const n = pts.length;
+  const cur = pts[index]!;
+  if (n < 2) return { ...cur, smooth: true };
+
+  const prev = index > 0 ? pts[index - 1]! : closed ? pts[n - 1]! : null;
+  const next = index < n - 1 ? pts[index + 1]! : closed ? pts[0]! : null;
+
+  const inDir = prev ? unit(cur.x - prev.x, cur.y - prev.y) : null;
+  const outDir = next ? unit(next.x - cur.x, next.y - cur.y) : null;
+
+  let tx = 0;
+  let ty = 0;
+  if (inDir && outDir) {
+    tx = inDir.x + outDir.x;
+    ty = inDir.y + outDir.y;
+  } else if (outDir) {
+    tx = outDir.x;
+    ty = outDir.y;
+  } else if (inDir) {
+    tx = inDir.x;
+    ty = inDir.y;
+  }
+  const t = unit(tx, ty);
+  if (t.len < 1e-6) {
+    return { ...cur, in: null, out: null, smooth: true };
+  }
+
+  const inLen = prev ? Math.hypot(cur.x - prev.x, cur.y - prev.y) / 3 : 0;
+  const outLen = next ? Math.hypot(next.x - cur.x, next.y - cur.y) / 3 : 0;
+
+  return {
+    ...cur,
+    in: inLen > 0.2 ? { x: -t.x * inLen, y: -t.y * inLen } : null,
+    out: outLen > 0.2 ? { x: t.x * outLen, y: t.y * outLen } : null,
+    smooth: true,
+  };
+}
+
+export function smoothPathCorners(pts: PathPoint[], closed: boolean): PathPoint[] {
+  return pts.map((_, i) => autoSmoothPoint(pts, i, closed));
+}
+
+function unitHandle(from: PathPoint, toward: PathPoint, scale = 1 / 3) {
+  const dx = toward.x - from.x;
+  const dy = toward.y - from.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 0.2) return null;
+  return { x: dx * scale, y: dy * scale };
+}
+
+/** Close an open contour and guarantee the last→first segment is cubic. */
+export function closePathWithCubic<T extends { points: PathPoint[]; closed: boolean }>(n: T): T {
+  if (n.closed || n.points.length < 3) return n;
+  const pts = n.points.map((p) => ({ ...p, in: p.in ? { ...p.in } : null, out: p.out ? { ...p.out } : null }));
+  const first = pts[0]!;
+  const last = pts[pts.length - 1]!;
+  if (!hasHandle(last.out)) {
+    last.out = hasHandle(last.in) && last.in ? mirrorHandle(last.in) : unitHandle(last, first);
+  }
+  if (!hasHandle(first.in)) {
+    first.in = hasHandle(first.out) && first.out ? mirrorHandle(first.out) : unitHandle(first, last);
+  }
+  first.smooth = Boolean(hasHandle(first.in) && hasHandle(first.out));
+  last.smooth = Boolean(hasHandle(last.in) && hasHandle(last.out));
+  return { ...n, points: pts, closed: true };
+}
+
+export type PathEditHit = { index: number; arm: "in" | "out" | "anchor"; hole?: number };
+
+/** Hit a path anchor or cubic handle in document space. */
+export function hitPathEdit(
+  ox: number,
+  oy: number,
+  pts: PathPoint[],
+  wx: number,
+  wy: number,
+  zoom: number,
+): PathEditHit | null {
+  const handlePx = 8 / zoom;
+  const anchorPx = 7 / zoom;
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i]!;
+    if (hasHandle(p.out)) {
+      const hx = ox + p.x + p.out!.x;
+      const hy = oy + p.y + p.out!.y;
+      if (Math.hypot(wx - hx, wy - hy) <= handlePx) return { index: i, arm: "out" };
+    }
+    if (hasHandle(p.in)) {
+      const hx = ox + p.x + p.in!.x;
+      const hy = oy + p.y + p.in!.y;
+      if (Math.hypot(wx - hx, wy - hy) <= handlePx) return { index: i, arm: "in" };
+    }
+  }
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i]!;
+    if (Math.hypot(wx - (ox + p.x), wy - (oy + p.y)) <= anchorPx) return { index: i, arm: "anchor" };
+  }
+  return null;
+}
+
+/** Drag an in/out handle. Smooth points keep opposite handles mirrored; Alt breaks that. */
+export function dragPathHandle(pt: PathPoint, arm: "in" | "out", hx: number, hy: number, keepSmooth: boolean): PathPoint {
+  const handle = { x: hx - pt.x, y: hy - pt.y };
+  if (!keepSmooth) {
+    return arm === "out" ? { ...pt, out: handle, smooth: false } : { ...pt, in: handle, smooth: false };
+  }
+  const opposite = mirrorHandle(handle);
+  if (arm === "out") return { ...pt, out: handle, in: opposite, smooth: true };
+  return { ...pt, in: handle, out: opposite, smooth: true };
+}
+
+/** Overlay: phosphor arms + diamonds for in/out, squares for anchors. */
+export function drawPathTangents(
+  ctx: CanvasRenderingContext2D,
+  ox: number,
+  oy: number,
+  pts: PathPoint[],
+  zoom: number,
+  active?: PathEditHit | null,
+  tone: "phosphor" | "cool" = "phosphor",
+  showLengths = false,
+) {
+  void tone;
+  if (!pts.length) return;
+  const armW = 1.25 / zoom;
+  const diamond = 5 / zoom;
+  const anchor = 6 / zoom;
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i]!;
+    const ax = ox + p.x;
+    const ay = oy + p.y;
+    const arms: Array<{ arm: "in" | "out"; h: { x: number; y: number } }> = [];
+    if (hasHandle(p.in) && p.in) arms.push({ arm: "in", h: p.in });
+    if (hasHandle(p.out) && p.out) arms.push({ arm: "out", h: p.out });
+    for (const { arm, h } of arms) {
+      const hx = ax + h.x;
+      const hy = ay + h.y;
+      const hot = active?.index === i && active.arm === arm;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(hx, hy);
+      ctx.strokeStyle = hot ? "#7ee0ff" : "rgba(63,198,255,0.85)";
+      ctx.lineWidth = hot ? armW * 2.4 : armW;
+      ctx.stroke();
+      if (hot) {
+        // Live tangent guide: faint extension past the handle so the direction stays readable while scrubbing.
+        const len = Math.hypot(h.x, h.y) || 1;
+        const ux = h.x / len;
+        const uy = h.y / len;
+        const ext = 28 / zoom;
+        ctx.save();
+        ctx.setLineDash([3 / zoom, 3 / zoom]);
+        ctx.beginPath();
+        ctx.moveTo(hx, hy);
+        ctx.lineTo(hx + ux * ext, hy + uy * ext);
+        ctx.strokeStyle = "rgba(126,224,255,0.55)";
+        ctx.lineWidth = armW;
+        ctx.stroke();
+        ctx.restore();
+      }
+      const isAnchorActive = active?.index === i && active.arm === "anchor";
+      if (showLengths && (hot || isAnchorActive)) {
+        const length = Math.round(Math.hypot(h.x, h.y));
+        const len = Math.hypot(h.x, h.y) || 1;
+        const ux = h.x / len;
+        const uy = h.y / len;
+        const off = 14 / zoom;
+        const lx = hx + ux * off;
+        const ly = hy + uy * off;
+        const label = String(length);
+        ctx.save();
+        ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const pad = 5 / zoom;
+        const tw = ctx.measureText(label).width;
+        const bw = tw + pad * 2;
+        const bh = 14 / zoom;
+        const bx = lx - bw / 2;
+        const by = ly - bh / 2;
+
+        // dual soft outer phosphor rings matching measurement ghosts and value chips
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+        ctx.lineWidth = 3.2 / zoom;
+        ctx.beginPath();
+        ctx.roundRect(bx - 1.6 / zoom, by - 1.6 / zoom, bw + 3.2 / zoom, bh + 3.2 / zoom, 4.2 / zoom);
+        ctx.stroke();
+        ctx.globalAlpha = 0.12;
+        ctx.lineWidth = 5.5 / zoom;
+        ctx.beginPath();
+        ctx.roundRect(bx - 3.2 / zoom, by - 3.2 / zoom, bw + 6.4 / zoom, bh + 6.4 / zoom, 5.5 / zoom);
+        ctx.stroke();
+        ctx.restore();
+
+        // Phosphor plate badge for the live length
+        ctx.fillStyle = hot ? "rgba(6, 23, 15, 0.95)" : "rgba(6, 23, 15, 0.88)";
+        ctx.strokeStyle = hot ? "#7ee0ff" : "#3fc6ff";
+        ctx.lineWidth = (hot ? 1.5 : 1) / zoom;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, 3 / zoom);
+        ctx.fill();
+        ctx.stroke();
+        // small phosphor core
+        ctx.fillStyle = "#3fc6ff";
+        ctx.beginPath();
+        ctx.arc(lx, ly, 1.2 / zoom, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#7ee0ff";
+        ctx.fillText(label, lx, ly);
+        ctx.restore();
+      }
+      if (hot) {
+        // dual soft outer phosphor rings matching measurement ghosts, value chips, and residual outlines
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+        ctx.lineWidth = 2.4 / zoom;
+        ctx.beginPath();
+        ctx.arc(hx, hy, diamond + 2.4 / zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 0.12;
+        ctx.lineWidth = 4 / zoom;
+        ctx.beginPath();
+        ctx.arc(hx, hy, diamond + 4.8 / zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.beginPath();
+      ctx.moveTo(hx, hy - diamond);
+      ctx.lineTo(hx + diamond, hy);
+      ctx.lineTo(hx, hy + diamond);
+      ctx.lineTo(hx - diamond, hy);
+      ctx.closePath();
+      ctx.fillStyle = hot ? "#7ee0ff" : "#0a0d0c";
+      ctx.fill();
+      ctx.strokeStyle = hot ? "#7ee0ff" : "#3fc6ff";
+      ctx.lineWidth = (hot ? 1.6 : 1.2) / zoom;
+      ctx.stroke();
+    }
+    const aHot = active?.index === i && active.arm === "anchor";
+    if (aHot) {
+      // dual soft outer phosphor rings on selected/hovered anchors
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+      ctx.lineWidth = 2.4 / zoom;
+      ctx.beginPath();
+      ctx.arc(ax, ay, anchor * 0.72 + 2.4 / zoom, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 0.12;
+      ctx.lineWidth = 4 / zoom;
+      ctx.beginPath();
+      ctx.arc(ax, ay, anchor * 0.72 + 4.8 / zoom, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.fillStyle = aHot ? "#3fc6ff" : "#0a0d0c";
+    ctx.strokeStyle = aHot ? "#7ee0ff" : "#3fc6ff";
+    ctx.lineWidth = (aHot ? 1.6 : 1.2) / zoom;
+    ctx.fillRect(ax - anchor / 2, ay - anchor / 2, anchor, anchor);
+    ctx.strokeRect(ax - anchor / 2, ay - anchor / 2, anchor, anchor);
+  }
+  ctx.restore();
+}

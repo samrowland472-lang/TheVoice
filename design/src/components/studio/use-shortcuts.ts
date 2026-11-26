@@ -1,0 +1,399 @@
+import { useEffect } from "react";
+import { imageNode } from "@/lib/design/node-factory";
+import { applyBoolean, requestFitSelection, smoothSelectedPath } from "@/lib/design/boolean-actions";
+import {
+  cornerLastPenPoint,
+  jumpPathHole,
+  jumpPathHolePoint,
+  nudgeSelectedPathPoints,
+  stepPathHole,
+  stepPathHolePoint,
+} from "@/lib/design/path-actions";
+import { clearDistributePreview, commitDistributePreview, getDistributePreview } from "@/lib/design/distribute-preview";
+import { clearAlignCommitEcho, clearAlignPreview, commitAlignPreview, getAlignCommitEcho, getAlignPreview } from "@/lib/design/align-preview";
+import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
+import { cropHandleForArrow, nudgeCropHandle } from "@/lib/design/crop-handles";
+import { isBitmap } from "@/lib/design/types";
+import type { Tool } from "@/lib/design/types";
+
+const KEYS: Record<string, Tool> = {
+  v: "select",
+  h: "hand",
+  r: "rect",
+  o: "ellipse",
+  l: "line",
+  g: "polygon",
+  s: "star",
+  a: "arrow",
+  t: "text",
+  p: "pen",
+  k: "knife",
+  b: "brush",
+  e: "eraser",
+  m: "image",
+  i: "eyedropper",
+  f: "frame",
+};
+
+export function useShortcuts(_opts?: { onPalette?: () => void }) {
+  useEffect(() => {
+    const arrows = new Set<string>();
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      const typing = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
+      const s = useDesign.getState();
+      const meta = e.metaKey || e.ctrlKey;
+
+      if (meta && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        s.setPaletteOpen(!s.paletteOpen);
+        return;
+      }
+
+      if (typing) return;
+
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        s.setPaletteOpen(true);
+        return;
+      }
+
+      if (e.key === "Escape") {
+        if (getAlignPreview()) {
+          e.preventDefault();
+          clearAlignPreview();
+          return;
+        }
+        if (getAlignCommitEcho()) {
+          e.preventDefault();
+          clearAlignCommitEcho();
+          return;
+        }
+        if (getDistributePreview()) {
+          e.preventDefault();
+          clearDistributePreview();
+          return;
+        }
+        if (s.paletteOpen) {
+          s.setPaletteOpen(false);
+          return;
+        }
+        if (s.present) {
+          s.setPresent(false);
+          return;
+        }
+        if (s.tool === "pen") {
+          e.preventDefault();
+          s.finishPen();
+          return;
+        }
+        s.select([]);
+        s.setTool("select");
+        return;
+      }
+
+      if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight") && s.doc?.campaignId) {
+        e.preventDefault();
+        s.nudgeCampaignPage(s.doc.id, e.key === "ArrowLeft" ? -1 : 1);
+        return;
+      }
+
+      if (s.present) return;
+
+      // Alt+0–9 sets selection opacity to tenths (0.0–0.9). Alt+Shift+0 sets 100%.
+      if (e.altKey && !meta && s.selection.length > 0 && /^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        if (e.shiftKey && e.key === "0") {
+          s.updateNodes(s.selection, { opacity: 1 });
+        } else if (!e.shiftKey) {
+          const tenths = Number(e.key);
+          s.updateNodes(s.selection, { opacity: tenths / 10 });
+        } else {
+          return;
+        }
+        s.commit();
+        return;
+      }
+
+      // Alt+Arrow adjusts selection opacity by 1% while the layers panel is focused.
+      if (e.altKey && !meta && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        const panel = document.querySelector("[data-layers-panel]");
+        if (panel && panel.contains(t)) {
+          e.preventDefault();
+          const delta = e.key === "ArrowUp" ? 0.01 : -0.01;
+          const live = useDesign.getState();
+          if (live.selection.length > 0) {
+            live.mapNodes(
+              live.selection,
+              (n) => ({ ...n, opacity: Math.max(0, Math.min(1, (n.opacity ?? 1) + delta)) }),
+              true,
+            );
+          }
+          return;
+        }
+      }
+
+      if (meta && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) s.redo();
+        else s.undo();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        s.save();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        if (e.shiftKey) s.duplicateLinked();
+        else s.duplicateSelected();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        s.selectAll();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "u") {
+        e.preventDefault();
+        applyBoolean(e.shiftKey ? "subtract" : "union");
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "i") {
+        e.preventDefault();
+        applyBoolean(e.shiftKey ? "exclude" : "intersect");
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "g") {
+        e.preventDefault();
+        if (e.shiftKey) s.ungroupSelection();
+        else s.groupSelection();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        if (e.altKey) s.copyStyle();
+        else if (e.shiftKey) s.copyOpacity();
+        else s.copySelected();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "x") {
+        e.preventDefault();
+        s.cutSelected();
+        return;
+      }
+      if (meta && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        if (e.altKey) s.pasteStyle();
+        else if (e.shiftKey) s.pasteOpacity();
+        else s.pasteClipboard();
+        return;
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        if (s.guideSelection?.length) {
+          s.removeSelectedGuides?.();
+          return;
+        }
+        if (s.tool === "pen") {
+          const n = s.doc?.nodes.find((x) => x.id === s.selection[0]);
+          if (n?.kind === "path") {
+            s.popLastPathPoint();
+            return;
+          }
+        }
+        s.removeSelected();
+        return;
+      }
+
+      if (e.key === "Enter" && getAlignPreview()) {
+        e.preventDefault();
+        commitAlignPreview();
+        return;
+      }
+
+      if (e.key === "Enter" && getDistributePreview()) {
+        e.preventDefault();
+        commitDistributePreview();
+        return;
+      }
+
+      if (e.key === "Enter" && s.tool === "pen") {
+        e.preventDefault();
+        s.closeSelectedPath();
+        return;
+      }
+
+      if ((e.key === "Alt" || e.code === "AltLeft" || e.code === "AltRight") && s.tool === "pen" && !meta) {
+        if (cornerLastPenPoint()) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (e.shiftKey && e.key.toLowerCase() === "s" && !meta) {
+        e.preventDefault();
+        smoothSelectedPath();
+        return;
+      }
+
+      if (e.shiftKey && e.code === "KeyP" && !meta) {
+        e.preventDefault();
+        s.togglePresent();
+        return;
+      }
+
+      if (e.code === "Digit0" || e.key === "0" || e.key === ")") {
+        e.preventDefault();
+        if (e.shiftKey) requestFitSelection();
+        else s.requestFit();
+        return;
+      }
+      if (e.key === "1" && !meta) {
+        e.preventDefault();
+        s.requestZoom(1);
+        return;
+      }
+      if (e.key === "2" && !meta) {
+        e.preventDefault();
+        s.requestZoom(2);
+        return;
+      }
+      if (e.key === "=" || e.key === "+") {
+        e.preventDefault();
+        s.requestZoom(s.viewport.zoom * 1.15);
+        return;
+      }
+      if (e.key === "-" || e.key === "_") {
+        e.preventDefault();
+        s.requestZoom(s.viewport.zoom / 1.15);
+        return;
+      }
+      if (e.key === "[") {
+        s.setBrush({ size: Math.max(2, s.brush.size - 4) });
+        return;
+      }
+      if (e.key === "]") {
+        s.setBrush({ size: Math.min(120, s.brush.size + 4) });
+        return;
+      }
+
+      if (!meta && s.pathEditHit?.hole != null && (e.key === "Home" || e.key === "End")) {
+        const toEnd = e.key === "End";
+        if (e.shiftKey) {
+          jumpPathHolePoint(toEnd);
+          e.preventDefault();
+          return;
+        }
+        if (jumpPathHole(toEnd)) {
+          e.preventDefault();
+          return;
+        }
+      }
+
+      const nudge = e.altKey ? 0.5 : e.shiftKey ? 10 : 1;
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (
+          !meta &&
+          (e.key === "ArrowUp" || e.key === "ArrowDown") &&
+          s.pathEditHit?.hole != null &&
+          stepPathHole(e.key === "ArrowDown" ? 1 : -1)
+        ) {
+          e.preventDefault();
+          return;
+        }
+        if (
+          !meta &&
+          (e.key === "ArrowLeft" || e.key === "ArrowRight") &&
+          s.pathEditHit?.hole != null &&
+          stepPathHolePoint(e.key === "ArrowRight" ? 1 : -1)
+        ) {
+          e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+        arrows.add(e.key);
+        const dx = e.key === "ArrowLeft" ? -nudge : e.key === "ArrowRight" ? nudge : 0;
+        const dy = e.key === "ArrowUp" ? -nudge : e.key === "ArrowDown" ? nudge : 0;
+        if (s.guideSelection?.length) {
+          s.nudgeGuides?.(dx, dy);
+          return;
+        }
+        // Prefer path-point nudge when points are selected on a single path
+        if (
+          s.selection.length === 1 &&
+          (s.pathPointSelection?.length || s.pathEditHit) &&
+          nudgeSelectedPathPoints(dx, dy)
+        ) {
+          return;
+        }
+        // Alt+arrow nudges a crop edge on a single selected bitmap
+        if (e.altKey && s.selection.length === 1) {
+          const n = s.doc?.nodes.find((x) => x.id === s.selection[0]);
+          if (n && isBitmap(n)) {
+            const handle = cropHandleForArrow(e.key);
+            if (handle) {
+              const patch = nudgeCropHandle(n, handle, dx, dy);
+              s.updateNodes([n.id], patch, true);
+              setStudioStatus(`Crop ${handle}`);
+              return;
+            }
+          }
+        }
+        // Alt is the fine step and the snap bypass, matching a drag.
+        useDesign.getState().translateSelected(dx, dy, { snap: s.snap && !e.altKey });
+      }
+      if (meta) return;
+      const tool = KEYS[e.key.toLowerCase()];
+      if (tool) s.setTool(tool);
+    };
+
+    const onPaste = (e: ClipboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith("image/"));
+      if (!item) return;
+      const file = item.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      const reader = new FileReader();
+      reader.onload = () => {
+        const src = String(reader.result);
+        const img = new Image();
+        img.onload = () => {
+          const doc = useDesign.getState().doc;
+          if (!doc) return;
+          const max = 720;
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          useDesign.getState().addNode(
+            imageNode({
+              x: 80,
+              y: 80,
+              w: img.width * scale,
+              h: img.height * scale,
+              src,
+            }),
+          );
+        };
+        img.src = src;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const onUp = (e: KeyboardEvent) => {
+      if (!arrows.has(e.key)) return;
+      arrows.delete(e.key);
+      if (arrows.size === 0) useDesign.getState().releaseNudgeGuides();
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onUp);
+    window.addEventListener("paste", onPaste);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onUp);
+      window.removeEventListener("paste", onPaste);
+    };
+  }, []);
+}

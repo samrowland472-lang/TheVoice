@@ -1,0 +1,602 @@
+import { autoSmoothPoint, smoothPathCorners } from "@/lib/design/path-curve";
+import { alignSelectedPathPoints, distributeSelectedPathPoints, previewAlignSelectedPathPoints, previewDistributeSelectedPathPoints, clearPathPointAlignPreview, setPathEditHit } from "@/lib/design/path-actions";
+import { dropHole, holeFillRule, pathFillRule, setHoleFillRule, type PathFillRule } from "@/lib/design/fill-rule";
+import { useDesign } from "@/lib/design/store";
+import { setStudioStatus } from "@/lib/design/studio-status";
+import type { PathNode, PathPoint } from "@/lib/design/types";
+import { cn } from "@/lib/utils";
+import { Field, Section } from "./inspector-parts";
+import { NumField } from "./num-field";
+
+function writeNode(node: PathNode, next: PathNode) {
+  useDesign.getState().replaceNode(node.id, next, true);
+}
+
+function writePoints(node: PathNode, points: PathPoint[], extra: Partial<PathNode> = {}) {
+  writeNode(node, { ...node, points, ...extra });
+}
+
+function ringBounds(points: PathPoint[]) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of points) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  if (!Number.isFinite(minX)) return { cx: 0, cy: 0, w: 40, h: 40 };
+  return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: Math.max(8, maxX - minX), h: Math.max(8, maxY - minY) };
+}
+
+export function PathInspector({ node }: { node: PathNode }) {
+  const hit = useDesign((s) => s.pathEditHit);
+  const pointSel = useDesign((s) => s.pathPointSelection);
+  const outerActive = hit && hit.hole == null ? hit.index : -1;
+  const holes = node.holes ?? [];
+
+  const setClosed = (closed: boolean) => {
+    if (closed && node.points.length < 3) return;
+    writePoints(node, node.points, { closed });
+  };
+
+  const smoothAll = () => {
+    writePoints(node, smoothPathCorners(node.points, node.closed));
+  };
+
+  const cornerAll = () => {
+    writePoints(
+      node,
+      node.points.map((p) => ({ ...p, in: null, out: null, smooth: false })),
+    );
+  };
+
+  const patchPoint = (index: number, next: PathPoint) => {
+    writePoints(
+      node,
+      node.points.map((p, i) => (i === index ? next : p)),
+    );
+  };
+
+  const deletePoint = (index: number) => {
+    if (node.points.length <= 1) {
+      useDesign.getState().removeSelected();
+      return;
+    }
+    const points = node.points.filter((_, i) => i !== index);
+    const closed = points.length >= 3 ? node.closed : false;
+    writePoints(node, points, { closed });
+    setPathEditHit(null);
+  };
+
+  const toggleSmooth = (index: number) => {
+    const p = node.points[index];
+    if (!p) return;
+    if (p.smooth !== false && (p.in || p.out)) {
+      patchPoint(index, { ...p, in: null, out: null, smooth: false });
+      return;
+    }
+    patchPoint(index, autoSmoothPoint(node.points, index, node.closed));
+  };
+
+  const addHole = () => {
+    const b = ringBounds(node.points);
+    const hw = Math.max(12, b.w * 0.25);
+    const hh = Math.max(12, b.h * 0.25);
+    const cx = b.cx;
+    const cy = b.cy;
+    const ring: PathPoint[] = [
+      { x: cx - hw, y: cy - hh, smooth: false },
+      { x: cx + hw, y: cy - hh, smooth: false },
+      { x: cx + hw, y: cy + hh, smooth: false },
+      { x: cx - hw, y: cy + hh, smooth: false },
+    ];
+    const nextHoles = [...holes, ring];
+    const nextRules = [...(node.holeFillRules ?? [])];
+    while (nextRules.length < nextHoles.length) nextRules.push(pathFillRule(node));
+    writeNode(node, { ...node, holes: nextHoles, holeFillRules: nextRules, closed: true });
+    setPathEditHit({ index: 0, arm: "anchor", hole: nextHoles.length - 1 });
+  };
+
+  const removeHole = (index: number) => {
+    writeNode(node, dropHole(node, index));
+    setPathEditHit(null);
+  };
+
+  const setHoleRule = (index: number, rule: PathFillRule) => {
+    writeNode(node, setHoleFillRule(node, index, rule));
+  };
+
+  const patchHolePoint = (h: number, index: number, next: PathPoint) => {
+    const nextHoles = holes.map((ring, i) =>
+      i === h ? ring.map((p, j) => (j === index ? next : p)) : ring,
+    );
+    writeNode(node, { ...node, holes: nextHoles });
+  };
+
+  const deleteHolePoint = (h: number, index: number) => {
+    const ring = holes[h];
+    if (!ring) return;
+    if (ring.length <= 3) {
+      removeHole(h);
+      return;
+    }
+    const nextRing = ring.filter((_, i) => i !== index);
+    const nextHoles = holes.map((r, i) => (i === h ? nextRing : r));
+    writeNode(node, { ...node, holes: nextHoles });
+    setPathEditHit(null);
+  };
+
+  const toggleHoleSmooth = (h: number, index: number) => {
+    const ring = holes[h];
+    const p = ring?.[index];
+    if (!ring || !p) return;
+    if (p.smooth !== false && (p.in || p.out)) {
+      patchHolePoint(h, index, { ...p, in: null, out: null, smooth: false });
+      return;
+    }
+    patchHolePoint(h, index, autoSmoothPoint(ring, index, true));
+  };
+
+  return (
+    <Section title="Path">
+      <div data-path-inspector className="space-y-2">
+        <div className="flex items-center justify-between text-[11px] text-ink-dim">
+          <span>
+            {node.points.length} point{node.points.length === 1 ? "" : "s"}
+            {holes.length ? ` · ${holes.length} hole${holes.length === 1 ? "" : "s"}` : ""}
+          </span>
+          <span className="font-mono text-[10px]">{node.closed ? "closed" : "open"}</span>
+        </div>
+        <div className="grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            disabled={node.points.length < 3}
+            className={cn(
+              "h-8 rounded-[8px] text-[10px]",
+              node.closed ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+              node.points.length < 3 && "opacity-40",
+            )}
+            onClick={() => setClosed(!node.closed)}
+          >
+            {node.closed ? "Open" : "Close"}
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            onClick={smoothAll}
+          >
+            Smooth
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            onClick={cornerAll}
+          >
+            Corner
+          </button>
+          <button
+            type="button"
+            className="h-8 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+            onClick={() => useDesign.getState().popLastPathPoint()}
+          >
+            Drop last
+          </button>
+        </div>
+        {pointSel.length >= 2 && (
+          <div className="space-y-1">
+            <div className="text-[10px] text-ink-dim">
+              {pointSel.length} points selected · align / distribute
+            </div>
+            <div className="grid grid-cols-3 gap-1" onMouseLeave={() => clearPathPointAlignPreview()}>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("left"); }} onMouseEnter={() => previewAlignSelectedPathPoints("left")} title="Align selected points left">L</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("center"); }} onMouseEnter={() => previewAlignSelectedPathPoints("center")} title="Align selected points center">C</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("right"); }} onMouseEnter={() => previewAlignSelectedPathPoints("right")} title="Align selected points right">R</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("top"); }} onMouseEnter={() => previewAlignSelectedPathPoints("top")} title="Align selected points top">T</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("middle"); }} onMouseEnter={() => previewAlignSelectedPathPoints("middle")} title="Align selected points middle">M</button>
+              <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); alignSelectedPathPoints("bottom"); }} onMouseEnter={() => previewAlignSelectedPathPoints("bottom")} title="Align selected points bottom">B</button>
+            </div>
+            {pointSel.length >= 3 && (
+              <div className="grid grid-cols-2 gap-1" onMouseLeave={() => clearPathPointAlignPreview()}>
+                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); distributeSelectedPathPoints("h"); }} onMouseEnter={() => previewDistributeSelectedPathPoints("h")} title="Distribute selected points horizontally">Dist H</button>
+                <button type="button" className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { clearPathPointAlignPreview(); distributeSelectedPathPoints("v"); }} onMouseEnter={() => previewDistributeSelectedPathPoints("v")} title="Distribute selected points vertically">Dist V</button>
+              </div>
+            )}
+          </div>
+        )}
+        {pointSel.length >= 2 && (() => {
+          const outerIdx = pointSel.filter((s) => s.hole == null).map((s) => s.index);
+          if (outerIdx.length < 2) return null;
+          const smoothCount = outerIdx.filter((i) => {
+            const pt = node.points[i];
+            return pt && pt.smooth !== false;
+          }).length;
+          const fullSmooth = smoothCount === outerIdx.length;
+          const partialSmooth = smoothCount > 0 && smoothCount < outerIdx.length;
+          const fullCorner = smoothCount === 0;
+          const applySmooth = (smooth: boolean) => {
+            const nextPoints = node.points.map((pt, i) =>
+              outerIdx.includes(i)
+                ? smooth
+                  ? autoSmoothPoint(node.points, i, node.closed)
+                  : { ...pt, in: null, out: null, smooth: false }
+                : pt,
+            );
+            writePoints(node, nextPoints);
+            setStudioStatus(smooth ? `Smoothed ${outerIdx.length} points` : `Cornered ${outerIdx.length} points`);
+          };
+          return (
+            <div className="mt-1 flex gap-1">
+              <button
+                type="button"
+                className={cn(
+                  "h-7 flex-1 rounded-[8px] text-[10px] transition-[box-shadow,background-color]",
+                  fullSmooth && "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]",
+                  partialSmooth && "bg-phosphor/10 text-phosphor/80 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_20%,transparent)] [box-shadow:0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_40%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_15%,transparent)]",
+                  !fullSmooth && !partialSmooth && "border border-border text-ink-dim",
+                )}
+                title={
+                  partialSmooth
+                    ? `${smoothCount} of ${outerIdx.length} selected points are smooth. Click to smooth all.`
+                    : fullSmooth
+                      ? "All selected points are smooth"
+                      : "Smooth all selected points"
+                }
+                aria-pressed={fullSmooth ? true : partialSmooth ? "mixed" : false}
+                onClick={() => applySmooth(true)}
+              >
+                Smooth selected
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  "h-7 flex-1 rounded-[8px] text-[10px] transition-[box-shadow,background-color]",
+                  fullCorner && "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]",
+                  partialSmooth && "bg-phosphor/10 text-phosphor/80 [box-shadow:0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_40%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_15%,transparent)]",
+                  !fullCorner && !partialSmooth && "border border-border text-ink-dim",
+                )}
+                title={
+                  partialSmooth
+                    ? `${outerIdx.length - smoothCount} of ${outerIdx.length} selected points are corners. Click to corner all.`
+                    : fullCorner
+                      ? "All selected points are corners"
+                      : "Corner all selected points"
+                }
+                aria-pressed={fullCorner ? true : partialSmooth ? "mixed" : false}
+                onClick={() => applySmooth(false)}
+              >
+                Corner selected
+              </button>
+            </div>
+          );
+        })()}
+        <Field label="Points">
+          <ul className="max-h-56 space-y-1 overflow-auto scrollbar-thin">
+            {node.points.map((pt, i) => {
+              const inMulti = pointSel.some((s) => s.hole == null && s.index === i);
+              const selected = outerActive === i || inMulti;
+              return (
+                <li
+                  key={i}
+                  data-point={`path-${i}`}
+                  className={cn(
+                    "rounded-[8px] border px-2 py-1.5 transition-[box-shadow,border-color,background-color]",
+                    selected
+                      ? "border-phosphor/70 bg-phosphor/12 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_32%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_16%,transparent)]"
+                      : "border-border",
+                  )}
+                >
+                  <button
+                    type="button"
+                    className="mb-1 flex w-full items-center justify-between text-left text-[10px] text-ink-dim"
+                    onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                    onClick={() => setPathEditHit({ index: i, arm: "anchor" })}
+                  >
+                    <span className={cn("font-mono", selected ? "text-phosphor" : "text-ink")}>{String(i + 1).padStart(2, "0")}</span>
+                    <span className={selected ? "text-phosphor/80" : ""}>{pt.smooth !== false ? "smooth" : "corner"}</span>
+                  </button>
+                  <div className="grid grid-cols-2 gap-1">
+                    <NumField
+                      className="field font-mono"
+                      value={Math.round(pt.x)}
+                      aria-label={`point ${i + 1} x`}
+                      data-path-axis="x"
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                      onCommit={(n) => patchPoint(i, { ...pt, x: n })}
+                    />
+                    <NumField
+                      className="field font-mono"
+                      value={Math.round(pt.y)}
+                      aria-label={`point ${i + 1} y`}
+                      data-path-axis="y"
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                      onCommit={(n) => patchPoint(i, { ...pt, y: n })}
+                    />
+                  </div>
+                  {(pt.smooth !== false || pt.in || pt.out) && (
+                    <div className="mt-1 space-y-1 border-t border-border/50 pt-1">
+                      <div className="flex items-center justify-between text-[9px] text-ink-dim">
+                        <span>Handles</span>
+                        <button
+                          type="button"
+                          className="rounded px-1 text-[9px] text-ink-dim hover:text-phosphor"
+                          onClick={() => patchPoint(i, { ...pt, in: null, out: null, smooth: false })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-4 gap-0.5 text-[9px]">
+                        <span className="col-span-1 self-center text-ink-dim">In</span>
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.in?.x ?? 0)}
+                          aria-label={`point ${i + 1} in x`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.in ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, in: { ...h, x: n } });
+                          }}
+                        />
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.in?.y ?? 0)}
+                          aria-label={`point ${i + 1} in y`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.in ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, in: { ...h, y: n } });
+                          }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 gap-0.5 text-[9px]">
+                        <span className="col-span-1 self-center text-ink-dim">Out</span>
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.out?.x ?? 0)}
+                          aria-label={`point ${i + 1} out x`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.out ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, out: { ...h, x: n } });
+                          }}
+                        />
+                        <NumField
+                          className="field font-mono text-[10px]"
+                          value={Math.round(pt.out?.y ?? 0)}
+                          aria-label={`point ${i + 1} out y`}
+                          onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                          onCommit={(n) => {
+                            const h = pt.out ?? { x: 0, y: 0 };
+                            patchPoint(i, { ...pt, out: { ...h, y: n } });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-1 grid grid-cols-2 gap-1">
+                    <button
+                      type="button"
+                      className={cn(
+                        "h-7 rounded-[8px] text-[10px] transition-[box-shadow,background-color]",
+                        pt.smooth !== false
+                          ? "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]"
+                          : "border border-border text-ink-dim",
+                      )}
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                      onClick={() => toggleSmooth(i)}
+                    >
+                      {pt.smooth !== false ? "Corner" : "Smooth"}
+                    </button>
+                    <button
+                      type="button"
+                      className="h-7 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+                      onFocus={() => setPathEditHit({ index: i, arm: "anchor" })}
+                      onClick={() => deletePoint(i)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Field>
+
+        <Field label="Holes">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[10px] text-ink-dim">
+              {holes.length ? `${holes.length} cutout${holes.length === 1 ? "" : "s"}` : "none"}
+            </span>
+            <button
+              type="button"
+              className="h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink"
+              onClick={addHole}
+            >
+              Add hole
+            </button>
+          </div>
+          {holes.length === 0 ? null : (
+            <ul className="max-h-64 space-y-2 overflow-auto scrollbar-thin">
+              {holes.map((ring, h) => {
+                const rule = holeFillRule(node, h);
+                const holeHit = hit && hit.hole === h ? hit.index : -1;
+                return (
+                  <li key={h} className="rounded-[8px] border border-border p-1.5">
+                    <div
+                      data-select-hole={h}
+                      data-hole={h}
+                      className="mb-1 flex items-center justify-between gap-1"
+                    >
+                      <button
+                        type="button"
+                        className="flex min-w-0 flex-1 items-center justify-between text-left text-[10px] text-ink-dim"
+                        onFocus={() => setPathEditHit({ index: 0, arm: "anchor", hole: h })}
+                        onClick={() => setPathEditHit({ index: 0, arm: "anchor", hole: h })}
+                      >
+                        <span className="font-mono text-ink">Hole {String(h + 1).padStart(2, "0")}</span>
+                        <span>{ring.length} pts</span>
+                      </button>
+                      <button
+                        type="button"
+                        data-delete-hole
+                        className="h-6 rounded-[6px] border border-border px-1.5 text-[9px] text-ink-dim hover:border-phosphor hover:text-ink"
+                        onClick={() => removeHole(h)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <div data-hole-fill className="mb-1 grid grid-cols-2 gap-1">
+                      <button
+                        type="button"
+                        className={cn(
+                          "h-6 rounded-[6px] text-[9px]",
+                          rule === "evenodd" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                        )}
+                        onClick={() => setHoleRule(h, "evenodd")}
+                      >
+                        Even-odd
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          "h-6 rounded-[6px] text-[9px]",
+                          rule === "nonzero" ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+                        )}
+                        onClick={() => setHoleRule(h, "nonzero")}
+                      >
+                        Nonzero
+                      </button>
+                    </div>
+                    <ul className="space-y-1">
+                      {ring.map((pt, i) => {
+                        const inMulti = pointSel.some((s) => s.hole === h && s.index === i);
+                        const selected = holeHit === i || inMulti;
+                        return (
+                          <li
+                            key={i}
+                            data-point={`hole-${h}-${i}`}
+                            className={cn(
+                              "rounded-[6px] border px-1.5 py-1 transition-[box-shadow,border-color,background-color]",
+                              selected
+                                ? "border-phosphor/70 bg-phosphor/12 shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_32%,transparent),0_0_0_3px_color-mix(in_srgb,var(--color-phosphor)_16%,transparent)]"
+                                : "border-border/70",
+                            )}
+                          >
+                            <div className="mb-0.5 flex items-center justify-between text-[9px] text-ink-dim">
+                              <span className={cn("font-mono", selected ? "text-phosphor" : "")}>{String(i + 1).padStart(2, "0")}</span>
+                              <span className={selected ? "text-phosphor/80" : ""}>{pt.smooth !== false ? "smooth" : "corner"}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1">
+                              <NumField
+                                className="field font-mono text-[10px]"
+                                value={Math.round(pt.x)}
+                                aria-label={`hole ${h + 1} point ${i + 1} x`}
+                                data-path-axis="x"
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                onCommit={(n) => patchHolePoint(h, i, { ...pt, x: n })}
+                              />
+                              <NumField
+                                className="field font-mono text-[10px]"
+                                value={Math.round(pt.y)}
+                                aria-label={`hole ${h + 1} point ${i + 1} y`}
+                                data-path-axis="y"
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                onCommit={(n) => patchHolePoint(h, i, { ...pt, y: n })}
+                              />
+                            </div>
+                            {(pt.smooth !== false || pt.in || pt.out) && (
+                              <div className="mt-1 space-y-1 border-t border-border/50 pt-1">
+                                <div className="flex items-center justify-between text-[8px] text-ink-dim">
+                                  <span>Handles</span>
+                                  <button
+                                    type="button"
+                                    className="rounded px-1 text-[8px] text-ink-dim hover:text-phosphor"
+                                    onClick={() => patchHolePoint(h, i, { ...pt, in: null, out: null, smooth: false })}
+                                  >
+                                    Clear
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-0.5">
+                                  <span className="self-center text-[8px] text-ink-dim">In</span>
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.in?.x ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} in x`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.in ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, in: { ...hh, x: n } });
+                                    }}
+                                  />
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.in?.y ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} in y`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.in ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, in: { ...hh, y: n } });
+                                    }}
+                                  />
+                                </div>
+                                <div className="grid grid-cols-4 gap-0.5">
+                                  <span className="self-center text-[8px] text-ink-dim">Out</span>
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.out?.x ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} out x`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.out ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, out: { ...hh, x: n } });
+                                    }}
+                                  />
+                                  <NumField
+                                    className="field font-mono text-[9px]"
+                                    value={Math.round(pt.out?.y ?? 0)}
+                                    aria-label={`hole ${h + 1} point ${i + 1} out y`}
+                                    onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                    onCommit={(n) => {
+                                      const hh = pt.out ?? { x: 0, y: 0 };
+                                      patchHolePoint(h, i, { ...pt, out: { ...hh, y: n } });
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            <div className="mt-0.5 grid grid-cols-2 gap-1">
+                              <button
+                                type="button"
+                                className={cn(
+                                  "h-6 rounded-[6px] text-[9px] transition-[box-shadow,background-color]",
+                                  pt.smooth !== false
+                                    ? "bg-phosphor/15 text-phosphor shadow-[0_0_0_1px_color-mix(in_srgb,var(--color-phosphor)_28%,transparent),0_0_0_2px_color-mix(in_srgb,var(--color-phosphor)_12%,transparent)]"
+                                    : "border border-border text-ink-dim",
+                                )}
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                onClick={() => toggleHoleSmooth(h, i)}
+                              >
+                                {pt.smooth !== false ? "Corner" : "Smooth"}
+                              </button>
+                              <button
+                                type="button"
+                                className="h-6 rounded-[6px] border border-border text-[9px] text-ink-dim hover:border-phosphor hover:text-ink"
+                                onFocus={() => setPathEditHit({ index: i, arm: "anchor", hole: h })}
+                                onClick={() => deleteHolePoint(h, i)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Field>
+      </div>
+    </Section>
+  );
+}

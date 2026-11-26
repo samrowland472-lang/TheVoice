@@ -1,0 +1,540 @@
+import { nextFromRangeKey } from "./range-keys";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { CANVAS_FONTS, clampAxis, faceAxis } from "@/lib/design/fonts";
+import { paletteFromSrc, paletteName } from "@/lib/design/palette";
+import { bestInk, contrastRatio, solidHex, wcagLevel } from "@/lib/design/contrast";
+import { useDesign } from "@/lib/design/store";
+import { applyTypeGhost } from "@/lib/design/type-ghost";
+import type { Align, DesignNode, ImageNode, TextNode } from "@/lib/design/types";
+import { Field } from "./inspector-parts";
+import { NumField } from "./num-field";
+import { cn } from "@/lib/utils";
+
+export function TextFields({ node, hideType = false }: { node: TextNode; hideType?: boolean }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const brand = useDesign((s) => s.brand);
+  const display = brand.displayFont || "Chakra Petch";
+  const body = brand.bodyFont || "Outfit";
+  return (
+    <>
+      <Field label="Copy">
+        <textarea
+          className="field min-h-20"
+          value={node.text}
+          onChange={(e) => updateNodes([node.id], { text: e.target.value } as Partial<DesignNode>)}
+          onBlur={() => useDesign.getState().commit()}
+          aria-label="type copy"
+        />
+        <CopyMeter text={node.text} />
+      </Field>
+      {hideType ? null : (
+      <>
+      <div className="flex gap-1">
+        <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => updateNodes([node.id], { fontFamily: display, fontWeight: 600, fontSize: Math.max(node.fontSize, 40) } as Partial<DesignNode>, true)}>Display</button>
+        <button type="button" className="h-8 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => updateNodes([node.id], { fontFamily: body, fontWeight: 400, fontSize: Math.min(node.fontSize, 28) } as Partial<DesignNode>, true)}>Body</button>
+      </div>
+      <ContrastMeter node={node} />
+      <Field label="Font">
+        <select className="field" value={node.fontFamily} onChange={(e) => updateNodes([node.id], { fontFamily: e.target.value } as Partial<DesignNode>, true)}>
+          {CANVAS_FONTS.map((f) => (<option key={f.id} value={f.family}>{f.family}</option>))}
+        </select>
+      </Field>
+      <Field label={`Size ${Math.round(node.fontSize)}`}>
+        <div className="flex items-center gap-2">
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-size" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.fontSize - 6) / (400 - 6)))) } as CSSProperties} min={6} max={400} step={1} aria-label="type size" value={node.fontSize} onChange={(e) => { const next = Number(e.target.value); useDesign.getState().setTypeGhost({ fontSize: next }); updateNodes([node.id], { fontSize: next } as Partial<DesignNode>); }} onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }} onKeyUp={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } }} onBlur={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } useDesign.getState().setTypeHoverKey(null); }} onMouseEnter={() => useDesign.getState().setTypeHoverKey("size")} onFocus={() => useDesign.getState().setTypeHoverKey("size")} onMouseLeave={() => { if (!useDesign.getState().typeGhost) useDesign.getState().setTypeHoverKey(null); }} onKeyDown={(e) => { const next = nextFromRangeKey(e, node.fontSize, 6, 400, 1); if (next != null) { useDesign.getState().setTypeGhost({ fontSize: next }); updateNodes([node.id], { fontSize: next } as Partial<DesignNode>); } }} />
+          <NumField className="field w-16 font-mono" value={node.fontSize} min={6} max={400} aria-label="type size" onCommit={(n) => updateNodes([node.id], { fontSize: n } as Partial<DesignNode>, true)} />
+        </div>
+      </Field>
+      <Field label={`Weight ${node.fontWeight}`}>
+        <div className="flex items-center gap-2">
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-weight" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.fontWeight - 100) / (900 - 100)))) } as CSSProperties} min={100} max={900} step={100} aria-label="type weight" value={node.fontWeight} onChange={(e) => { const next = Math.min(900, Math.max(100, Math.round(Number(e.target.value) / 100) * 100)); useDesign.getState().setTypeGhost({ fontWeight: next }); updateNodes([node.id], { fontWeight: next } as Partial<DesignNode>); }} onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }} onKeyUp={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } }} onBlur={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } useDesign.getState().setTypeHoverKey(null); }} onMouseEnter={() => useDesign.getState().setTypeHoverKey("weight")} onFocus={() => useDesign.getState().setTypeHoverKey("weight")} onMouseLeave={() => { if (!useDesign.getState().typeGhost) useDesign.getState().setTypeHoverKey(null); }} onKeyDown={(e) => { const next = nextFromRangeKey(e, node.fontWeight, 100, 900, 100); if (next != null) { const w = Math.min(900, Math.max(100, Math.round(next / 100) * 100)); useDesign.getState().setTypeGhost({ fontWeight: w }); updateNodes([node.id], { fontWeight: w } as Partial<DesignNode>); } }} />
+          <NumField className="field w-16 font-mono" value={node.fontWeight} min={100} max={900} aria-label="type weight" onCommit={(n) => updateNodes([node.id], { fontWeight: Math.min(900, Math.max(100, Math.round(n / 100) * 100)) } as Partial<DesignNode>, true)} />
+        </div>
+      </Field>
+      <Field label={`Tracking ${node.letterSpacing}`}>
+        <div className="flex items-center gap-2">
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-tracking" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.letterSpacing - (-8)) / (40 - (-8))))) } as CSSProperties} min={-8} max={40} step={0.25} aria-label="type tracking" value={node.letterSpacing} onChange={(e) => { const next = Number(e.target.value); useDesign.getState().setTypeGhost({ letterSpacing: next }); updateNodes([node.id], { letterSpacing: next } as Partial<DesignNode>); }} onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }} onKeyUp={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } }} onBlur={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } useDesign.getState().setTypeHoverKey(null); }} onMouseEnter={() => useDesign.getState().setTypeHoverKey("tracking")} onFocus={() => useDesign.getState().setTypeHoverKey("tracking")} onMouseLeave={() => { if (!useDesign.getState().typeGhost) useDesign.getState().setTypeHoverKey(null); }} onKeyDown={(e) => { const next = nextFromRangeKey(e, node.letterSpacing, -8, 40, 0.25); if (next != null) { useDesign.getState().setTypeGhost({ letterSpacing: next }); updateNodes([node.id], { letterSpacing: next } as Partial<DesignNode>); } }} />
+          <NumField className="field w-16 font-mono" value={node.letterSpacing} min={-8} max={40} aria-label="type tracking" onCommit={(n) => updateNodes([node.id], { letterSpacing: n } as Partial<DesignNode>, true)} />
+        </div>
+      </Field>
+      <Field label={`Leading ${node.lineHeight.toFixed(2)}`}>
+        <div className="flex items-center gap-2">
+          <input type="range" className="range-phosphor min-w-0 flex-1" data-fill-range="type-leading" style={{ "--fill-percent": String(Math.max(0, Math.min(1, (node.lineHeight - 0.7) / (2 - 0.7)))) } as CSSProperties} min={0.7} max={2} step={0.02} aria-label="type leading" value={node.lineHeight} onChange={(e) => { const next = Number(e.target.value); useDesign.getState().setTypeGhost({ lineHeight: next }); updateNodes([node.id], { lineHeight: next } as Partial<DesignNode>); }} onPointerUp={() => { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); }} onKeyUp={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } }} onBlur={() => { if (useDesign.getState().typeGhost) { useDesign.getState().setTypeGhost(null); useDesign.getState().commit(); } useDesign.getState().setTypeHoverKey(null); }} onMouseEnter={() => useDesign.getState().setTypeHoverKey("leading")} onFocus={() => useDesign.getState().setTypeHoverKey("leading")} onMouseLeave={() => { if (!useDesign.getState().typeGhost) useDesign.getState().setTypeHoverKey(null); }} onKeyDown={(e) => { const next = nextFromRangeKey(e, node.lineHeight, 0.7, 2, 0.02); if (next != null) { useDesign.getState().setTypeGhost({ lineHeight: next }); updateNodes([node.id], { lineHeight: next } as Partial<DesignNode>); } }} />
+          <NumField className="field w-16 font-mono" value={node.lineHeight} min={0.7} max={2} aria-label="type leading" onCommit={(n) => updateNodes([node.id], { lineHeight: n } as Partial<DesignNode>, true)} />
+        </div>
+      </Field>
+      <TypeRhythmPreview node={node} />
+            <Field label="Align">
+        <div className="flex gap-1">
+          {(["left", "center", "right"] as Align[]).map((a) => (
+            <button key={a} type="button" className={`h-8 flex-1 rounded-[8px] border text-xs capitalize ${node.align === a ? "border-phosphor text-phosphor" : "border-border text-ink-dim"}`} onClick={() => updateNodes([node.id], { align: a } as Partial<DesignNode>, true)}>{a}</button>
+          ))}
+        </div>
+      </Field>
+      <label className="flex items-center gap-2 text-xs text-ink-dim">
+        <input type="checkbox" checked={node.uppercase} onChange={(e) => updateNodes([node.id], { uppercase: e.target.checked } as Partial<DesignNode>, true)} />
+        Uppercase
+      </label>
+      <TypeAxes node={node} />
+      </>
+      )}
+    </>
+  );
+}
+
+export function CopyMeter({ text }: { text: string }) {
+  const chars = [...text].length;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const lines = text.length ? text.split("\n").length : 0;
+  return (
+    <div className="mt-1 flex justify-between text-[10px] text-ink-dim" aria-live="polite">
+      <span>
+        {chars} {chars === 1 ? "character" : "characters"}
+      </span>
+      <span>
+        {words} {words === 1 ? "word" : "words"} · {lines} {lines === 1 ? "line" : "lines"}
+      </span>
+    </div>
+  );
+}
+
+
+
+function DensityFactorThumb({ factor, onHoverStart, onHoverEnd, onDoubleClick }: { factor: number; onHoverStart?: () => void; onHoverEnd?: () => void; onDoubleClick?: () => void }) {
+  const f = Math.max(0.4, Math.min(2.5, factor || 1));
+  const base = 7;
+  const step = Math.max(2.4, base / f);
+  const ticks: number[] = [];
+  let x = 3;
+  while (x < 46 && ticks.length < 12) {
+    ticks.push(x);
+    x += step;
+  }
+  return (
+    <svg
+      width="48"
+      height="16"
+      viewBox="0 0 48 16"
+      className="shrink-0 rounded-[3px] border border-border/40 bg-ground/40 cursor-help"
+      aria-hidden
+      onMouseEnter={onHoverStart}
+      onMouseLeave={onHoverEnd}
+      onDoubleClick={onDoubleClick}
+    >
+      <title>{`Density preview ×${f.toFixed(2)}. Hover to preview on canvas. Double-click to reset factor to 1.`}</title>
+      <line x1="1" y1="8" x2="47" y2="8" stroke="rgba(63,198,255,0.25)" strokeWidth="0.6" />
+      {ticks.map((tx, i) => (
+        <line
+          key={i}
+          x1={tx}
+          y1="4.5"
+          x2={tx}
+          y2="11.5"
+          stroke="rgba(63,198,255,0.85)"
+          strokeWidth="1"
+        />
+      ))}
+    </svg>
+  );
+}
+
+export function TypeRhythmPreview({ node }: { node: TextNode }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const typeGhost = useDesign((s) => s.typeGhost);
+  const showPerGlyphTicks = useDesign((s) => s.showPerGlyphTicks);
+  const setShowPerGlyphTicks = useDesign((s) => s.setShowPerGlyphTicks);
+  const showWeightTickThickness = useDesign((s) => s.showWeightTickThickness);
+  const setShowWeightTickThickness = useDesign((s) => s.setShowWeightTickThickness);
+  const showGlyphDensityScale = useDesign((s) => s.showGlyphDensityScale);
+  const setShowGlyphDensityScale = useDesign((s) => s.setShowGlyphDensityScale);
+  const glyphDensityScaleFactor = useDesign((s) => s.glyphDensityScaleFactor);
+  const setGlyphDensityScaleFactor = useDesign((s) => s.setGlyphDensityScaleFactor);
+  const reverseTypeLeading = useDesign((s) => s.reverseTypeLeading);
+  const setReverseTypeLeading = useDesign((s) => s.setReverseTypeLeading);
+  const typeBaseline = useDesign((s) => s.typeBaseline);
+  const setTypeBaseline = useDesign((s) => s.setTypeBaseline);
+  const ghosted = applyTypeGhost(node, typeGhost);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = 220;
+    const cssH = 36;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const phosphor = "rgba(63,198,255,0.85)";
+    const phosphorSoft = "rgba(63,198,255,0.35)";
+    const y = cssH * 0.62;
+    const left = 6;
+    const right = cssW - 6;
+
+    ctx.strokeStyle = phosphor;
+    ctx.lineWidth = typeGhost?.fontWeight != null ? 1.8 : 1.15;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(right, y);
+    ctx.stroke();
+
+    // Left and right baseline ticks
+    const tickH = 7;
+    const up = reverseTypeLeading ? tickH * 0.35 : tickH;
+    const down = reverseTypeLeading ? tickH : tickH * 0.35;
+    ctx.beginPath();
+    ctx.moveTo(left, y - up);
+    ctx.lineTo(left, y + down);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(right, y - up);
+    ctx.lineTo(right, y + down);
+    ctx.stroke();
+
+    // Mid-line center tick
+    const midX = (left + right) / 2;
+    const midTick = 9;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(midX, y - midTick / 2);
+    ctx.lineTo(midX, y + midTick / 2);
+    ctx.stroke();
+
+    // Density marks — prefer leading ghost spacing, else size
+    const size = ghosted.fontSize;
+    const lineH = ghosted.lineHeight * size;
+    const autoDensity = showGlyphDensityScale
+      ? Math.max(0.55, Math.min(2.4, Math.sqrt(Math.max(6, size) / 16)))
+      : 1;
+    const densityFactor = Math.max(0.35, Math.min(4, autoDensity * (Number.isFinite(glyphDensityScaleFactor) ? glyphDensityScaleFactor : 1)));
+    const densityStep = typeGhost?.lineHeight != null
+      ? Math.max(lineH * 0.42 / densityFactor, 11)
+      : Math.max(size * 0.55 / densityFactor, 9);
+    if (densityStep > 5 && densityStep < (right - left) * 0.42) {
+      ctx.strokeStyle = phosphorSoft;
+      ctx.lineWidth = 0.75;
+      for (let x = left + densityStep; x < right - densityStep * 0.35; x += densityStep) {
+        if (Math.abs(x - midX) < densityStep * 0.32) continue;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 2.8);
+        ctx.lineTo(x, y + 2.8);
+        ctx.stroke();
+      }
+    }
+
+    // Tracking / weight density marks — spaced by measured average advance of a sample
+    // or per-glyph when the preference is on (independent of sample length, capped for the strip).
+    if (typeGhost?.letterSpacing != null || typeGhost?.fontWeight != null) {
+      ctx.save();
+      ctx.font = `${ghosted.fontWeight} ${Math.min(size, 28)}px ${ghosted.fontFamily}`;
+      ctx.letterSpacing = "0px";
+      const sample = (node.text || "Type").slice(0, 24) || "A";
+      const tracking = ghosted.letterSpacing || 0;
+      const SHORT = 8;
+      const PER_GLYPH_MAX = 24;
+      const usePerGlyph = showPerGlyphTicks ? sample.length <= PER_GLYPH_MAX : sample.length <= SHORT;
+      ctx.strokeStyle = phosphorSoft;
+      let wFactor = 1;
+      if (showWeightTickThickness && typeGhost?.fontWeight != null) {
+        wFactor = Math.max(0.6, Math.min(2.6, (ghosted.fontWeight || 400) / 400));
+      }
+      ctx.lineWidth = 0.7 * wFactor;
+      const tickH = 4.2 * Math.pow(wFactor, 0.5);
+      const tUp = reverseTypeLeading ? tickH * 0.28 : tickH;
+      const tDown = reverseTypeLeading ? tickH : tickH * 0.28;
+      if (usePerGlyph) {
+        let cum = 0;
+        for (let g = 0; g < sample.length; g++) {
+          const chW = ctx.measureText(sample[g]).width;
+          const tickX = left + 4 + cum + chW * 0.5;
+          if (tickX > left && tickX < right) {
+            ctx.beginPath();
+            ctx.moveTo(tickX, y - tUp);
+            ctx.lineTo(tickX, y + tDown);
+            ctx.stroke();
+          }
+          cum += chW + (g < sample.length - 1 ? tracking * 0.85 : 0);
+        }
+      } else {
+        const glyphW = ctx.measureText(sample).width;
+        const advance = Math.max(
+          6,
+          (glyphW / Math.max(1, sample.length) + tracking * 0.85) / densityFactor,
+        );
+        for (let x = left + advance * 0.35; x < right - 3; x += advance) {
+          ctx.beginPath();
+          ctx.moveTo(x, y - tUp);
+          ctx.lineTo(x, y + tDown);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  }, [node, typeGhost, ghosted.fontSize, ghosted.lineHeight, ghosted.letterSpacing, ghosted.fontWeight, showPerGlyphTicks, showWeightTickThickness, showGlyphDensityScale, glyphDensityScaleFactor, reverseTypeLeading]);
+
+  return (
+    <div className="mt-2">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="text-[10px] text-ink-dim">Rhythm</div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              showWeightTickThickness ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={showWeightTickThickness}
+            title="Scale rhythm tick thickness and height with font weight while scrubbing weight"
+            onClick={() => setShowWeightTickThickness(!showWeightTickThickness)}
+          >
+            Wt
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              showGlyphDensityScale ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={showGlyphDensityScale}
+            title="Scale rhythm density marks with font size (denser for larger type) on canvas and strip. Factor slider multiplies the densification (Arrow keys while focused; Shift for larger nudge). Exact number and density preview thumbnail beside the slider. Scrub the factor to preview density ghosts live on the canvas. Hover the thumbnail to preview density ghosts on the canvas. Double-click the slider or thumbnail to reset the factor to 1."
+            onClick={() => setShowGlyphDensityScale(!showGlyphDensityScale)}
+          >
+            Den
+          </button>
+          {showGlyphDensityScale && (
+            <>
+              <input
+                type="range"
+                min={0.4}
+                max={2.5}
+                step={0.05}
+                value={glyphDensityScaleFactor}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  setGlyphDensityScaleFactor(next);
+                  // Live canvas density preview while scrubbing the factor
+                  if (!useDesign.getState().typeGhost) {
+                    useDesign.getState().setTypeGhost({ fontSize: node.fontSize });
+                  }
+                }}
+                onPointerUp={() => {
+                  const g = useDesign.getState().typeGhost;
+                  if (g && g.fontSize === node.fontSize && g.letterSpacing == null && g.lineHeight == null && g.fontWeight == null) {
+                    useDesign.getState().setTypeGhost(null);
+                  }
+                }}
+                onBlur={() => {
+                  const g = useDesign.getState().typeGhost;
+                  if (g && g.fontSize === node.fontSize && g.letterSpacing == null && g.lineHeight == null && g.fontWeight == null) {
+                    useDesign.getState().setTypeGhost(null);
+                  }
+                }}
+                onDoubleClick={() => {
+                  setGlyphDensityScaleFactor(1);
+                  const g = useDesign.getState().typeGhost;
+                  if (g && g.fontSize === node.fontSize && g.letterSpacing == null && g.lineHeight == null && g.fontWeight == null) {
+                    useDesign.getState().setTypeGhost(null);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  const special = nextFromRangeKey(e, glyphDensityScaleFactor, 0.4, 2.5, 0.05);
+                  if (special != null) {
+                    setGlyphDensityScaleFactor(special);
+                    if (!useDesign.getState().typeGhost) {
+                      useDesign.getState().setTypeGhost({ fontSize: node.fontSize });
+                    }
+                    return;
+                  }
+                  const dir =
+                    e.key === "ArrowUp" || e.key === "ArrowRight" ? 1 :
+                    e.key === "ArrowDown" || e.key === "ArrowLeft" ? -1 : 0;
+                  if (dir === 0) return;
+                  e.preventDefault();
+                  const step = e.shiftKey ? 0.25 : 0.05;
+                  const next = Math.min(2.5, Math.max(0.4, glyphDensityScaleFactor + dir * step));
+                  setGlyphDensityScaleFactor(next);
+                  if (!useDesign.getState().typeGhost) {
+                    useDesign.getState().setTypeGhost({ fontSize: node.fontSize });
+                  }
+                }}
+                className="h-1 w-12 cursor-pointer accent-phosphor"
+                title={`Density factor ×${glyphDensityScaleFactor.toFixed(2)} (higher = denser). Arrow keys nudge (Shift for larger). Exact number beside. Scrub to preview density ghosts live on the canvas. Double-click to reset to 1.`}
+                aria-label="Density scale factor"
+              />
+              <NumField
+                value={glyphDensityScaleFactor}
+                min={0.4}
+                max={2.5}
+                aria-label="Density scale factor exact"
+                className="h-5 w-10 shrink-0 rounded-[4px] border border-border/70 bg-surface/40 px-0.5 text-center font-mono text-[9px] tabular-nums text-phosphor"
+                onCommit={(n) => setGlyphDensityScaleFactor(n)}
+              />
+              <DensityFactorThumb
+                factor={glyphDensityScaleFactor}
+                onHoverStart={() => {
+                  if (useDesign.getState().typeGhost) return;
+                  useDesign.getState().setTypeGhost({ fontSize: node.fontSize });
+                }}
+                onHoverEnd={() => {
+                  const g = useDesign.getState().typeGhost;
+                  if (g && g.fontSize === node.fontSize && g.letterSpacing == null && g.lineHeight == null && g.fontWeight == null) {
+                    useDesign.getState().setTypeGhost(null);
+                  }
+                }}
+                onDoubleClick={() => {
+                  setGlyphDensityScaleFactor(1);
+                  const g = useDesign.getState().typeGhost;
+                  if (g && g.fontSize === node.fontSize && g.letterSpacing == null && g.lineHeight == null && g.fontWeight == null) {
+                    useDesign.getState().setTypeGhost(null);
+                  }
+                }}
+              />
+            </>
+          )}
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              showPerGlyphTicks ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={showPerGlyphTicks}
+            title="Show per-glyph ticks on the canvas and rhythm strip (independent of line length)"
+            onClick={() => setShowPerGlyphTicks(!showPerGlyphTicks)}
+          >
+            Glyph
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+              reverseTypeLeading ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+            )}
+            aria-pressed={reverseTypeLeading}
+            title="Reverse leading direction: stack rhythm baselines from the bottom of the text box (first line at bottom). Ticks in the strip flip to match."
+            onClick={() => setReverseTypeLeading(!reverseTypeLeading)}
+          >
+            Rev
+          </button>
+          {(["hanging", "alphabetic", "middle"] as const).map((b) => (
+            <button
+              key={b}
+              type="button"
+              className={cn(
+                "h-5 rounded-[4px] px-1.5 text-[9px] tabular-nums",
+                typeBaseline === b ? "bg-phosphor/15 text-phosphor" : "border border-border text-ink-dim",
+              )}
+              aria-pressed={typeBaseline === b}
+              title={`Baseline alignment: ${b}. Changes how type sits relative to the line y (hanging ≈ top, alphabetic, middle). Rhythm ticks follow the chosen baseline.`}
+              onClick={() => setTypeBaseline(b)}
+            >
+              {b === "hanging" ? "Hng" : b === "alphabetic" ? "Alp" : "Mid"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <canvas
+        ref={canvasRef}
+        className="w-full max-w-[220px] rounded-[6px] border border-border/50 bg-ground/30"
+        aria-hidden
+      />
+    </div>
+  );
+}
+
+const FALLBACK_OPSZ = { tag: "opsz" as const, min: 6, max: 144, fallback: 14 };
+const OPSZ_FALLBACK = FALLBACK_OPSZ;
+
+export function TypeAxes({ node }: { node: TextNode }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const opsz = faceAxis(node.fontFamily, "opsz") ?? OPSZ_FALLBACK;
+  const wdth = faceAxis(node.fontFamily, "wdth");
+  const opszValue = clampAxis(opsz, node.opticalSize, node.fontSize);
+  const wdthValue = wdth ? clampAxis(wdth, node.fontWidth) : 0;
+  return (
+    <>
+      {
+        <Field label={`Optical ${Math.round(opszValue)}${node.opticalSize == null ? " · auto" : ""}`}>
+          <div className="flex items-center gap-2">
+            <input type="range" className="range-phosphor min-w-0 flex-1" min={opsz.min} max={opsz.max} step={1} aria-label="type optical size" value={opszValue} onChange={(e) => updateNodes([node.id], { opticalSize: Number(e.target.value) } as Partial<DesignNode>)} onPointerDown={() => useDesign.getState().setAxisScrubTag("opsz")} onPointerUp={() => { useDesign.getState().setAxisScrubTag(null); useDesign.getState().commit(); }} onPointerCancel={() => useDesign.getState().setAxisScrubTag(null)} onLostPointerCapture={() => useDesign.getState().setAxisScrubTag(null)} />
+            <NumField className="field w-16 font-mono" value={opszValue} min={opsz.min} max={opsz.max} aria-label="type optical size" onCommit={(n) => updateNodes([node.id], { opticalSize: n } as Partial<DesignNode>, true)} />
+          </div>
+          <button type="button" className="mt-1 h-7 rounded-[8px] border border-border px-2 text-[10px] text-ink-dim hover:border-phosphor hover:text-ink" onClick={() => { useDesign.getState().commit(); const doc = useDesign.getState().doc; if (!doc) return; useDesign.setState({ doc: { ...doc, nodes: doc.nodes.map((n) => { if (n.id !== node.id || n.kind !== "text") return n; const next = { ...n }; delete next.opticalSize; return next; }) }, dirty: true }); }}>Auto from size</button>
+        </Field>
+      }
+      {wdth && (
+        <Field label={`Width ${Math.round(wdthValue)}`}>
+          <div className="flex items-center gap-2">
+            <input type="range" className="range-phosphor min-w-0 flex-1" min={wdth.min} max={wdth.max} step={1} aria-label="type width" value={wdthValue} onChange={(e) => updateNodes([node.id], { fontWidth: Number(e.target.value) } as Partial<DesignNode>)} onPointerDown={() => useDesign.getState().setAxisScrubTag("wdth")} onPointerUp={() => { useDesign.getState().setAxisScrubTag(null); useDesign.getState().commit(); }} onPointerCancel={() => useDesign.getState().setAxisScrubTag(null)} onLostPointerCapture={() => useDesign.getState().setAxisScrubTag(null)} />
+            <NumField className="field w-16 font-mono" value={wdthValue} min={wdth.min} max={wdth.max} aria-label="type width" onCommit={(n) => updateNodes([node.id], { fontWidth: n } as Partial<DesignNode>, true)} />
+          </div>
+        </Field>
+      )}
+    </>
+  );
+}
+
+export function ContrastMeter({ node }: { node: TextNode }) {
+  const doc = useDesign((s) => s.doc);
+  const brand = useDesign((s) => s.brand);
+  if (!doc) return null;
+  const ink = solidHex(node.fill, "#d9f5e3");
+  const ground = solidHex(doc.artboard.background, "#0a0d0c");
+  const ratio = contrastRatio(ink, ground);
+  const large = node.fontSize >= 24 || (node.fontSize >= 18 && node.fontWeight >= 700);
+  const level = ratio == null ? "fail" : wcagLevel(ratio, large);
+  const suggested = bestInk(ground, brand.colors.map((c) => c.hex));
+  return (
+    <div className="flex items-center justify-between gap-2 text-[10px] text-ink-dim">
+      <span>Contrast {ratio == null ? "\u2014" : ratio.toFixed(1)} \u00b7 {level.toUpperCase()}</span>
+      {level === "fail" && (
+        <button type="button" className="text-phosphor" onClick={() => useDesign.getState().updateNodes([node.id], { fill: suggested } as Partial<DesignNode>, true)}>Fix ink</button>
+      )}
+    </div>
+  );
+}
+
+export function LinkedRow({ nodeId, linkId }: { nodeId: string; linkId?: string }) {
+  const unlinkSelected = useDesign((s) => s.unlinkSelected);
+  const duplicateLinked = useDesign((s) => s.duplicateLinked);
+  const select = useDesign((s) => s.select);
+  const doc = useDesign((s) => s.doc);
+  const siblings = (doc?.nodes ?? []).filter((n) => linkId && n.linkId === linkId);
+  return (
+    <div className="flex items-center justify-between gap-2 text-[11px] text-ink-dim">
+      <span>{linkId ? `Linked \u00b7 ${siblings.length}` : "Standalone"}</span>
+      <div className="flex gap-1">
+        {linkId && siblings.length > 1 && (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => select(siblings.map((n) => n.id))}>Select all</button>
+        )}
+        {linkId ? (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => { select([nodeId]); unlinkSelected(); }}>Unlink</button>
+        ) : (
+          <button type="button" className="h-7 rounded-[8px] border border-border px-2 text-[10px] hover:border-phosphor hover:text-ink" onClick={() => { select([nodeId]); duplicateLinked(); }}>Instance</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function HotspotField({ node }: { node: DesignNode }) {
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const index = useDesign((s) => s.index);
+  const doc = useDesign((s) => s.doc);
+  const pages = index.filter((p) => p.id !== doc?.id);
+  return (
+    <Field label="Hotspot">
+      <input className="field" placeholder="https:// or pick a page" value={node.href ?? ""} onChange={(e) => updateNodes([node.id], { href: e.target.value || undefined }, true)} />
+      {pages.length > 0 && (
+        <select className="field mt-1" value={node.href?.startsWith("doc:") ? node.href : ""} onChange={(e) => updateNodes([node.id], { href: e.target.value || undefined }, true)}>
+          <option value="">Page link</option>
+          {pages.map((p) => (<option key={p.id} value={`doc:${p.id}`}>{p.name}</option>))}
+        </select>
+      )}
+    </Field>
+  );
+}

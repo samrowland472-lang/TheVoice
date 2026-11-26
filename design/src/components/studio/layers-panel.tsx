@@ -1,0 +1,1758 @@
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, GripVertical, Link2, Lock, Search, Unlock, X } from "lucide-react";
+import { useDesign } from "@/lib/design/store";
+import { flattenLayers, descendantsOf, layerDropLegal, type LayerDrop } from "@/lib/design/groups";
+import { isGroup, isText, isPath, type DesignNode } from "@/lib/design/types";
+import { CANVAS_FONTS } from "@/lib/design/fonts";
+import { cn } from "@/lib/utils";
+import { NumField } from "./num-field";
+import { nextFromRangeKey } from "./range-keys";
+import {
+  alignCommitLayerFadeLine,
+  alignCommitSolidLead,
+  alignEdgeChipLabel,
+  alignPreviewMoverIds,
+  getAlignCommitEcho,
+  getAlignPreview,
+  subscribeAlignCommitEcho,
+  subscribeAlignPreview,
+} from "@/lib/design/align-preview";
+import { releaseStudioStatus, setStudioStatus } from "@/lib/design/studio-status";
+
+type DropHint = LayerDrop;
+
+function nodeMatchesQuery(n: DesignNode, needle: string, caseSensitive = false): boolean {
+  if (!needle) return false;
+  const prep = (s: string) => (caseSensitive ? s : s.toLowerCase());
+  const name = prep(n.name || "");
+  const kind = prep(n.kind || "");
+  const nNeedle = caseSensitive ? needle : needle.toLowerCase();
+  if (name.includes(nNeedle) || kind.includes(nNeedle)) return true;
+  if (isText(n) && prep(n.text).includes(nNeedle)) return true;
+  if (isPath(n)) {
+    // Match path points by coordinate fragments (e.g. "12" or "12,34")
+    const coords = n.points
+      .map((p) => `${Math.round(p.x)},${Math.round(p.y)}`)
+      .join(" ");
+    if (prep(coords).includes(nNeedle)) return true;
+  }
+  return false;
+}
+
+/** Split text on needle and wrap every match in a phosphor mark. Case-sensitive when requested. */
+function highlightMatch(text: string, needle: string, caseSensitive = false): React.ReactNode {
+  if (!needle || !text) return text;
+  const src = caseSensitive ? text : text.toLowerCase();
+  const nSrc = caseSensitive ? needle : needle.toLowerCase();
+  const nLen = nSrc.length;
+  if (nLen === 0) return text;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  let guard = 0;
+  while (cursor < text.length && guard < 64) {
+    const idx = src.indexOf(nSrc, cursor);
+    if (idx === -1) break;
+    if (idx > cursor) parts.push(text.slice(cursor, idx));
+    parts.push(
+      <mark key={`${idx}-${guard}`} className="rounded-sm bg-phosphor/35 px-px text-phosphor-ink">
+        {text.slice(idx, idx + nLen)}
+      </mark>,
+    );
+    cursor = idx + nLen;
+    guard += 1;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  if (parts.length === 0) return text;
+  return <>{parts}</>;
+}
+
+/** Where the needle matched for a layer (name / kind / text / points). */
+function matchSource(n: DesignNode, needle: string, caseSensitive = false): "name" | "kind" | "text" | "points" | null {
+  if (!needle) return null;
+  const prep = (s: string) => (caseSensitive ? s : s.toLowerCase());
+  const nNeedle = caseSensitive ? needle : needle.toLowerCase();
+  const name = prep(n.name || "");
+  const kind = prep(n.kind || "");
+  if (name.includes(nNeedle)) return "name";
+  if (kind.includes(nNeedle)) return "kind";
+  if (isText(n) && prep(n.text).includes(nNeedle)) return "text";
+  if (isPath(n)) {
+    const coords = n.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+    if (prep(coords).includes(nNeedle)) return "points";
+  }
+  return null;
+}
+
+export function LayersPanel() {
+  const doc = useDesign((s) => s.doc);
+  const selection = useDesign((s) => s.selection);
+  const alignEcho = useSyncExternalStore(subscribeAlignCommitEcho, getAlignCommitEcho, getAlignCommitEcho);
+  const alignPill = alignEcho?.fadePill ?? null;
+  const alignSolid = alignEcho ? alignCommitSolidLead(alignEcho.chipLabel, alignEcho.moveCount) : null;
+  const alignFade = alignEcho && alignPill
+    ? alignCommitLayerFadeLine(alignEcho.chipLabel, alignPill, alignEcho.moveCount)
+    : null;
+  const alignPreview = useSyncExternalStore(subscribeAlignPreview, getAlignPreview, getAlignPreview);
+  const previewChip = alignPreview ? alignEdgeChipLabel(alignPreview) : null;
+  const previewMovers = alignPreview ? alignPreviewMoverIds(alignPreview) : [];
+  const select = useDesign((s) => s.select);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
+  const toggleIsolate = useDesign((s) => s.toggleIsolate);
+  const isolateSnapshot = useDesign((s) => s.isolateSnapshot);
+  const reorder = useDesign((s) => s.reorder);
+  const dropLayers = useDesign((s) => s.dropLayers);
+  const groupSelection = useDesign((s) => s.groupSelection);
+  const ungroupSelection = useDesign((s) => s.ungroupSelection);
+  const listRef = useRef<HTMLUListElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const matchIndexRef = useRef(0);
+  const dragIdsRef = useRef<string[] | null>(null);
+  const dwellRef = useRef<number | null>(null);
+  const [dragIds, setDragIds] = useState<string[] | null>(null);
+  const [dropHint, setDropHint] = useState<DropHint | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [editingOpacityId, setEditingOpacityId] = useState<string | null>(null);
+  const [opacityDraft, setOpacityDraft] = useState("");
+  const [editingSizeId, setEditingSizeId] = useState<string | null>(null);
+  const [sizeDraft, setSizeDraft] = useState("");
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const [trackDraft, setTrackDraft] = useState("");
+  const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [leadDraft, setLeadDraft] = useState("");
+  const [editingWeightId, setEditingWeightId] = useState<string | null>(null);
+  const [weightDraft, setWeightDraft] = useState("");
+  const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [matchIndex, setMatchIndex] = useState(0);
+  const [caseSensitive, setCaseSensitive] = useState(false);
+
+  // Cmd/Ctrl+F focuses the layer filter. Arrow keys / Enter jump among matches.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const meta = e.metaKey || e.ctrlKey;
+      if (!(meta && e.key.toLowerCase() === "f" && !e.shiftKey && !e.altKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) {
+        if (t === searchRef.current) return; // already there
+        // Allow override only if not already in a field? Prefer always focus layers search.
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, []);
+
+  if (!doc) return null;
+  const rawNeedle = query.trim();
+  const needle = caseSensitive ? rawNeedle : rawNeedle.toLowerCase();
+  const filtering = needle.length > 0;
+  const tree = flattenLayers(doc.nodes);
+  const layers = filtering
+    ? tree.filter(
+        ({ node }) =>
+          nodeMatchesQuery(node, rawNeedle, caseSensitive) ||
+          descendantsOf(doc.nodes, node.id).some((d) => nodeMatchesQuery(d, rawNeedle, caseSensitive)),
+      )
+    : tree;
+  // Keep jump index in range when the filter result set changes.
+  if (filtering && layers.length > 0 && matchIndex >= layers.length) {
+    matchIndexRef.current = 0;
+    // state update is deferred; UI will show 1 of N next render
+  }
+  const draggingSet = dragIds ? new Set(dragIds) : null;
+  const canGroup = selection.length >= 2;
+
+  const hintFromY = (clientY: number): DropHint | null => {
+    const items = listRef.current?.querySelectorAll<HTMLElement>("[data-layer-id]");
+    if (!items?.length) return null;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item) continue;
+      const r = item.getBoundingClientRect();
+      const id = item.dataset.layerId;
+      if (!id) continue;
+      if (clientY < r.top) return { mode: "before", anchorId: id };
+      if (clientY <= r.bottom) {
+        const y = (clientY - r.top) / Math.max(1, r.height);
+        if (item.dataset.layerKind === "group" && y > 0.28 && y < 0.72) return { mode: "into", groupId: id };
+        return y < 0.5 ? { mode: "before", anchorId: id } : { mode: "after", anchorId: id };
+      }
+    }
+    const last = items[items.length - 1];
+    const id = last?.dataset.layerId;
+    return id ? { mode: "after", anchorId: id } : null;
+  };
+
+  const autoScroll = (clientY: number) => {
+    const list = listRef.current;
+    if (!list || list.scrollHeight <= list.clientHeight + 1) return;
+    const r = list.getBoundingClientRect();
+    if (clientY < r.top || clientY > r.bottom) return;
+    const edge = 16;
+    if (clientY < r.top + edge) list.scrollTop -= 8;
+    else if (clientY > r.bottom - edge) list.scrollTop += 8;
+  };
+
+  const clearDwell = () => {
+    if (dwellRef.current != null) {
+      window.clearTimeout(dwellRef.current);
+      dwellRef.current = null;
+    }
+  };
+
+  const armDwell = (hint: DropHint | null) => {
+    clearDwell();
+    if (hint?.mode !== "into") return;
+    const group = doc.nodes.find((n) => n.id === hint.groupId);
+    if (!group || !isGroup(group) || !group.collapsed) return;
+    const id = group.id;
+    dwellRef.current = window.setTimeout(() => {
+      dwellRef.current = null;
+      updateNodes([id], { collapsed: false }, true);
+    }, 420);
+  };
+
+  const finish = (clientY: number) => {
+    const ids = dragIdsRef.current;
+    const hint = hintFromY(clientY);
+    const live = useDesign.getState().doc;
+    if (ids?.length && hint && live && layerDropLegal(live.nodes, ids, hint)) dropLayers(ids, hint);
+    clearDwell();
+    dragIdsRef.current = null;
+    setDragIds(null);
+    setDropHint(null);
+    setDragPos(null);
+    releaseStudioStatus();
+  };
+
+  return (
+    <div data-layers-panel className="flex min-h-0 flex-col">
+      <div className="flex items-baseline justify-between px-3 py-2">
+        <div className="font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">Layers</div>
+        <div className="font-mono text-[10px] tracking-wide text-ink-faint">
+          {doc.nodes.length}
+          {selection.length > 0 ? ` · ${selection.length} selected` : ""}
+        </div>
+      </div>
+      <div className="px-2 pb-2">
+        <label className="relative flex h-8 items-center">
+          <Search className="pointer-events-none absolute left-2 size-3.5 text-ink-faint" />
+          <input
+            ref={searchRef}
+            type="search"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              matchIndexRef.current = 0;
+              setMatchIndex(0);
+            }}
+            onKeyDown={(e) => {
+              if (!filtering) return;
+              const matches = layers.map((l) => l.node.id);
+              if (matches.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                matchIndexRef.current = (matchIndexRef.current + 1) % matches.length;
+                setMatchIndex(matchIndexRef.current);
+                const id = matches[matchIndexRef.current];
+                select([id]);
+                requestAnimationFrame(() => {
+                  listRef.current?.querySelector(`[data-layer-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
+                });
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                matchIndexRef.current = (matchIndexRef.current - 1 + matches.length) % matches.length;
+                setMatchIndex(matchIndexRef.current);
+                const id = matches[matchIndexRef.current];
+                select([id]);
+                requestAnimationFrame(() => {
+                  listRef.current?.querySelector(`[data-layer-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
+                });
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                const id = matches[matchIndexRef.current] || matches[0];
+                select([id]);
+                requestAnimationFrame(() => {
+                  listRef.current?.querySelector(`[data-layer-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
+                });
+                // Keep focus so user can continue jumping, or blur to canvas.
+                searchRef.current?.blur();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setQuery("");
+                searchRef.current?.blur();
+              }
+            }}
+            placeholder="Filter layers" title="Cmd/Ctrl+F to focus · ↑↓ jump matches"
+            aria-label="Filter layers"
+            className="field h-8 w-full pl-7 pr-14 text-xs"
+          />
+          <button
+            type="button"
+            className={`absolute right-7 grid size-6 place-items-center rounded-[6px] font-mono text-[10px] tracking-tight ${
+              caseSensitive
+                ? "bg-phosphor/20 text-phosphor ring-1 ring-phosphor/60"
+                : "text-ink-faint hover:text-ink"
+            }`}
+            aria-label={caseSensitive ? "Case-sensitive filter on" : "Case-sensitive filter off"}
+            aria-pressed={caseSensitive}
+            title={caseSensitive ? "Case-sensitive (Aa)" : "Case-insensitive (click for Aa)"}
+            onClick={() => setCaseSensitive((v) => !v)}
+          >
+            Aa
+          </button>
+          {query && (
+            <button
+              type="button"
+              className="absolute right-1 grid size-6 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
+              aria-label="Clear filter"
+              onClick={() => setQuery("")}
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </label>
+        <div className="mt-1.5 flex gap-1">
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!canGroup}
+            onClick={() => groupSelection()}
+          >
+            Group
+          </button>
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink"
+            onClick={() => ungroupSelection()}
+          >
+            Ungroup
+          </button>
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!selection.length}
+            onClick={() => useDesign.getState().duplicateSelected()}
+            title="Duplicate selection (Cmd+D)"
+          >
+            Duplicate
+          </button>
+          {selection.length >= 2 && (
+            <button
+              type="button"
+              className="h-7 flex-1 rounded-[6px] border border-border font-mono text-[10px] tracking-[0.14em] text-ink-dim uppercase hover:border-phosphor hover:text-ink"
+              onClick={() => useDesign.getState().reverseStacking()}
+              title="Reverse stacking order of selected layers (within each parent)"
+            >
+              Rev
+            </button>
+          )}
+        </div>
+        {isolateSnapshot ? (
+          <button
+            type="button"
+            className="mt-1.5 h-7 w-full rounded-[6px] bg-phosphor/10 px-2 font-mono text-[10px] tracking-[0.16em] text-phosphor uppercase hover:bg-phosphor/20"
+            onClick={() => toggleIsolate(selection.length ? selection : doc.nodes.map((n) => n.id))}
+          >
+            Show all
+          </button>
+        ) : null}
+        <OpacityQuickStrip />
+        <TypeQuickStrip />
+        {filtering && (
+          <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint" title="↑↓ jump · Enter select · Esc clear">
+            {layers.length === 0
+              ? "No matches"
+              : `${matchIndex + 1} of ${layers.length} match${layers.length === 1 ? "" : "es"}${caseSensitive ? " · Aa" : ""} · ↑↓ jump`}
+          </p>
+        )}
+        {dragIds && !filtering && (
+          <p className="mt-1 px-1 font-mono text-[10px] tracking-wide text-ink-faint">
+            Centre nests. Edge keeps that row's parent.
+          </p>
+        )}
+      </div>
+      <ul ref={listRef} className="min-h-0 flex-1 overflow-auto px-2 pb-2 scrollbar-thin">
+        {layers.map(({ node: n, depth }, layerIdx) => {
+          const active = selection.includes(n.id);
+          const isCurrentMatch = filtering && layerIdx === matchIndex;
+          const isKey = selection.length >= 2 && selection[selection.length - 1] === n.id;
+          const dragging = draggingSet?.has(n.id) ?? false;
+          const into = dropHint?.mode === "into" && dropHint.groupId === n.id;
+          const before = dropHint?.mode === "before" && dropHint.anchorId === n.id;
+          const after = dropHint?.mode === "after" && dropHint.anchorId === n.id;
+          const group = isGroup(n);
+          const blocked =
+            !!dropHint && !!dragIds && (into || before || after) && !layerDropLegal(doc.nodes, dragIds, dropHint);
+          const barLeft = 8 + depth * 12;
+          return (
+            <li key={n.id} data-layer-id={n.id} data-layer-kind={n.kind} className={cn("relative", isCurrentMatch && "ring-1 ring-phosphor/60 rounded-[4px]")}>
+              {before && (
+                <span
+                  className={cn(
+                    "pointer-events-none absolute -top-px z-10 h-[3px] rounded-full",
+                    blocked ? "bg-ink-faint" : "bg-phosphor shadow-[0_0_8px_2px_var(--color-phosphor)]",
+                  )}
+                  style={{ left: barLeft, right: 8 }}
+                />
+              )}
+              {after && (
+                <span
+                  className={cn(
+                    "pointer-events-none absolute -bottom-px z-10 h-[3px] rounded-full",
+                    blocked ? "bg-ink-faint" : "bg-phosphor shadow-[0_0_8px_2px_var(--color-phosphor)]",
+                  )}
+                  style={{ left: barLeft, right: 8 }}
+                />
+              )}
+              <div
+                className={cn(
+                  "group flex h-9 items-center gap-0.5 rounded-[8px] px-0.5 text-xs",
+                  active ? "bg-phosphor/10 text-ink" : "text-ink-dim hover:bg-surface-alt",
+                  dragging && "opacity-40",
+                  into && !blocked && "ring-1 ring-phosphor shadow-[0_0_10px_1px_color-mix(in_srgb,var(--color-phosphor)_60%,transparent)]",
+                  into && blocked && "ring-1 ring-ink-faint",
+                )}
+                style={{ paddingLeft: depth * 12 }}
+              >
+                <span
+                  className={cn(
+                    "grid size-7 shrink-0 place-items-center text-ink-faint touch-none select-none",
+                    filtering ? "cursor-default opacity-40" : "cursor-grab active:cursor-grabbing",
+                  )}
+                  aria-label="Reorder layer"
+                  onPointerDown={(e) => {
+                    if (e.button !== 0 || filtering) return;
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                    const sel = useDesign.getState().selection;
+                    const groupIds = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
+                    dragIdsRef.current = groupIds;
+                    setDragIds(groupIds);
+                    setDropHint({ mode: "before", anchorId: n.id });
+                    setDragPos({ x: e.clientX, y: e.clientY });
+                    setStudioStatus("Reordering layers");
+                    if (!sel.includes(n.id)) select([n.id]);
+                  }}
+                  onPointerMove={(e) => {
+                    if (!dragIdsRef.current) return;
+                    autoScroll(e.clientY);
+                    const hint = hintFromY(e.clientY);
+                    setDropHint(hint);
+                    setDragPos({ x: e.clientX, y: e.clientY });
+                    armDwell(hint);
+                    const ids = dragIdsRef.current;
+                    if (hint && ids) {
+                      const legal = layerDropLegal(doc.nodes, ids, hint);
+                      let label = "Reordering layers";
+                      if (hint.mode === "into") {
+                        const g = doc.nodes.find((x) => x.id === hint.groupId);
+                        label = legal ? `Nest into ${g?.name || "group"}` : "Cannot nest";
+                      } else if (hint.anchorId) {
+                        const a = doc.nodes.find((x) => x.id === hint.anchorId);
+                        const verb = hint.mode === "before" ? "Place before" : "Place after";
+                        label = legal ? `${verb} ${a?.name || "layer"}` : "Invalid drop";
+                      }
+                      setStudioStatus(label);
+                    } else {
+                      setStudioStatus("Reordering layers");
+                    }
+                  }}
+                  onPointerUp={(e) => {
+                    if (!dragIdsRef.current) return;
+                    finish(e.clientY);
+                  }}
+                  onPointerCancel={() => {
+                    clearDwell();
+                    dragIdsRef.current = null;
+                    setDragIds(null);
+                    setDropHint(null);
+                    setDragPos(null);
+                    releaseStudioStatus();
+                  }}
+                >
+                  <GripVertical className="size-3.5" />
+                </span>
+                {group ? (
+                  <button
+                    type="button"
+                    className="grid size-6 shrink-0 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
+                    aria-label={n.collapsed ? "Expand group" : "Collapse group"}
+                    onClick={() => updateNodes([n.id], { collapsed: !n.collapsed }, true)}
+                  >
+                    <ChevronRight className={cn("size-3.5 transition-transform", !n.collapsed && "rotate-90")} />
+                  </button>
+                ) : null}
+                {editingId === n.id ? (
+                  <input
+                    className="field mx-1 h-7 min-w-0 flex-1 px-1.5 font-sans text-xs"
+                    value={draftName}
+                    autoFocus
+                    aria-label="Layer name"
+                    onChange={(e) => setDraftName(e.target.value)}
+                    onBlur={() => {
+                      const next = draftName.trim();
+                      if (next && next !== n.name) updateNodes([n.id], { name: next }, true);
+                      setEditingId(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        setDraftName(n.name);
+                        setEditingId(null);
+                      }
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 truncate px-1 text-left"
+                    onClick={(e) => select([n.id], e.shiftKey)}
+                    onDoubleClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      select([n.id]);
+                      setDraftName(n.name || n.kind);
+                      setEditingId(n.id);
+                    }}
+                  >
+                    {n.linkId && <Link2 className="mr-1 inline size-3 text-phosphor" />}
+                    {filtering ? highlightMatch(n.name || n.kind, rawNeedle, caseSensitive) : (n.name || n.kind)}
+                    {filtering && matchSource(n, rawNeedle, caseSensitive) === "text" && isText(n) && (
+                      <span className="ml-1.5 inline-block max-w-[8rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint" title={n.text}>
+                        text: {highlightMatch(n.text.slice(0, 24), rawNeedle, caseSensitive)}
+                      </span>
+                    )}
+                    {filtering && matchSource(n, rawNeedle, caseSensitive) === "points" && isPath(n) && (() => {
+                      const coords = n.points.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+                      const idx = coords.toLowerCase().indexOf(needle);
+                      const snippet = idx >= 0 ? coords.slice(Math.max(0, idx - 4), idx + needle.length + 6) : "pts";
+                      return (
+                        <span className="ml-1.5 inline-block max-w-[7rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint" title={`Path points: ${coords}`}>
+                          {highlightMatch(snippet, rawNeedle, caseSensitive)}
+                        </span>
+                      );
+                    })()}
+                    {n.opacity < 0.999 && (
+                      <button
+                        type="button"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
+                        title="Edit opacity · Alt+0–9 tenths · Alt+Arrow 1% · Alt+Shift+0 full"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          requestAnimationFrame(() => {
+                            const el = (document.querySelector("[data-opacity-range='inspector']") ||
+                              document.querySelector("[data-opacity-range]")) as HTMLInputElement | null;
+                            el?.focus();
+                          });
+                        }}
+                      >
+                        {Math.round(n.opacity * 100)}%
+                      </button>
+                    )}
+                    {isText(n) && editingSizeId !== n.id && (
+                      <button
+                        type="button"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
+                        title="Click to edit type size"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setSizeDraft(String(Math.round(n.fontSize)));
+                          setEditingSizeId(n.id);
+                        }}
+                      >
+                        {Math.round(n.fontSize)}
+                      </button>
+                    )}
+                    {isText(n) && editingSizeId === n.id && (
+                      <input
+                        type="number"
+                        min={6}
+                        max={400}
+                        step={1}
+                        value={sizeDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} type size`}
+                        className="ml-1.5 inline-block h-5 w-10 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setSizeDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(6, Math.min(400, Number(sizeDraft) || n.fontSize));
+                          updateNodes([n.id], { fontSize: next } as Partial<DesignNode>, true);
+                          setEditingSizeId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(6, Math.min(400, Number(sizeDraft) || n.fontSize));
+                            updateNodes([n.id], { fontSize: next } as Partial<DesignNode>, true);
+                            setEditingSizeId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingSizeId(null);
+                          }
+                        }}
+                      />
+                    )}
+                    {isText(n) && editingTrackId !== n.id && (
+                      <button
+                        type="button"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
+                        title="Click to edit tracking"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setTrackDraft(String(n.letterSpacing));
+                          setEditingTrackId(n.id);
+                        }}
+                      >
+                        {Number.isInteger(n.letterSpacing) ? n.letterSpacing : Number(n.letterSpacing.toFixed(2))}
+                      </button>
+                    )}
+                    {isText(n) && editingTrackId === n.id && (
+                      <input
+                        type="number"
+                        min={-8}
+                        max={40}
+                        step={0.25}
+                        value={trackDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} tracking`}
+                        className="ml-1.5 inline-block h-5 w-12 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setTrackDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(-8, Math.min(40, Number(trackDraft) || n.letterSpacing));
+                          updateNodes([n.id], { letterSpacing: next } as Partial<DesignNode>, true);
+                          setEditingTrackId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(-8, Math.min(40, Number(trackDraft) || n.letterSpacing));
+                            updateNodes([n.id], { letterSpacing: next } as Partial<DesignNode>, true);
+                            setEditingTrackId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingTrackId(null);
+                          }
+                        }}
+                      />
+                    )}
+                    {isText(n) && editingLeadId !== n.id && (
+                      <button
+                        type="button"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
+                        title="Click to edit leading"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setLeadDraft(n.lineHeight.toFixed(2));
+                          setEditingLeadId(n.id);
+                        }}
+                      >
+                        {n.lineHeight.toFixed(2)}
+                      </button>
+                    )}
+                    {isText(n) && editingLeadId === n.id && (
+                      <input
+                        type="number"
+                        min={0.7}
+                        max={2}
+                        step={0.02}
+                        value={leadDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} leading`}
+                        className="ml-1.5 inline-block h-5 w-12 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setLeadDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(0.7, Math.min(2, Number(leadDraft) || n.lineHeight));
+                          updateNodes([n.id], { lineHeight: next } as Partial<DesignNode>, true);
+                          setEditingLeadId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(0.7, Math.min(2, Number(leadDraft) || n.lineHeight));
+                            updateNodes([n.id], { lineHeight: next } as Partial<DesignNode>, true);
+                            setEditingLeadId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingLeadId(null);
+                          }
+                        }}
+                      />
+                    )}
+                    {isText(n) && editingWeightId !== n.id && (
+                      <button
+                        type="button"
+                        className={cn(
+                        "ml-1.5 inline-block rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
+                        title="Click to edit weight"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setWeightDraft(String(Math.round(n.fontWeight)));
+                          setEditingWeightId(n.id);
+                        }}
+                      >
+                        {Math.round(n.fontWeight)}
+                      </button>
+                    )}
+                    {isText(n) && editingWeightId === n.id && (
+                      <input
+                        type="number"
+                        min={100}
+                        max={900}
+                        step={100}
+                        value={weightDraft}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} weight`}
+                        className="ml-1.5 inline-block h-5 w-10 rounded-[4px] border border-phosphor bg-surface px-1 font-mono text-[9px] text-ink"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => setWeightDraft(e.target.value)}
+                        onBlur={() => {
+                          const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || n.fontWeight)));
+                          updateNodes([n.id], { fontWeight: next } as Partial<DesignNode>, true);
+                          setEditingWeightId(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || n.fontWeight)));
+                            updateNodes([n.id], { fontWeight: next } as Partial<DesignNode>, true);
+                            setEditingWeightId(null);
+                          } else if (e.key === "Escape") {
+                            setEditingWeightId(null);
+                          }
+                        }}
+                      />
+                    )}
+                    {isText(n) && editingFamilyId !== n.id && (
+                      <button
+                        type="button"
+                        className={cn(
+                        "ml-1.5 inline-block max-w-[5.5rem] truncate rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor",
+                        active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                      )}
+                        title={`Click to change font family · ${n.fontFamily}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!selection.includes(n.id)) select([n.id]);
+                          setEditingFamilyId(n.id);
+                        }}
+                      >
+                        {n.fontFamily.split(" ")[0] || n.fontFamily}
+                      </button>
+                    )}
+                    {isText(n) && editingFamilyId === n.id && (
+                      <select
+                        className="ml-1.5 inline-block h-5 max-w-[7rem] rounded-[4px] border border-phosphor bg-surface px-0.5 font-mono text-[9px] text-ink"
+                        value={n.fontFamily}
+                        autoFocus
+                        aria-label={`${n.name || n.kind} font family`}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          updateNodes([n.id], { fontFamily: e.target.value } as Partial<DesignNode>, true);
+                          setEditingFamilyId(null);
+                        }}
+                        onBlur={() => setEditingFamilyId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditingFamilyId(null);
+                        }}
+                      >
+                        {CANVAS_FONTS.map((f) => (
+                          <option key={f.id} value={f.family}>{f.family}</option>
+                        ))}
+                      </select>
+                    )}
+                    {isKey && (
+                      <span className="ml-1.5 inline-block rounded-[4px] bg-phosphor/20 px-1 py-px font-mono text-[9px] tracking-[0.14em] text-phosphor uppercase">
+                        Key
+                      </span>
+                    )}
+                    {previewChip && previewMovers.includes(n.id) && (
+                      <span
+                        className="ml-1.5 inline-block rounded-[4px] bg-phosphor/15 px-1 py-px font-mono text-[9px] tracking-[0.04em] text-phosphor"
+                        data-layer-align-preview={previewChip}
+                        data-layer-align-preview-mover=""
+                        title="Edge chip while align preview is armed"
+                      >
+                        {previewChip}
+                      </span>
+                    )}
+                    {alignSolid && !alignFade && alignEcho?.moverIds.includes(n.id) && (
+                      <span
+                        className="ml-1.5 inline-block rounded-[4px] bg-phosphor/15 px-1 py-px font-mono text-[9px] tracking-[0.04em] text-phosphor"
+                        data-layer-align-solid={alignSolid}
+                        data-layer-align-mover=""
+                        title="Same truncated chip and move count as the inspector solid beat"
+                      >
+                        {alignSolid}
+                      </span>
+                    )}
+                    {alignFade && alignEcho?.moverIds.includes(n.id) && (
+                      <span
+                        className="ml-1.5 inline-block max-w-[16rem] truncate rounded-[4px] bg-phosphor/15 px-1 py-px align-bottom font-mono text-[9px] tracking-[0.04em] text-phosphor"
+                        data-layer-align-fade={alignFade}
+                        data-layer-align-solid={alignSolid ?? ""}
+                        data-layer-align-pill={alignPill ?? ""}
+                        data-layer-align-mover=""
+                        title={alignFade}
+                      >
+                        {alignFade}
+                      </span>
+                    )}
+                    {into && (
+                      <span
+                        className={cn(
+                          "ml-1.5 font-mono text-[9px] tracking-[0.14em] uppercase",
+                          blocked ? "text-ink-faint" : "text-phosphor",
+                        )}
+                      >
+                        {blocked ? "No" : "Into"}
+                      </span>
+                    )}
+                  </button>
+                )}
+                <div className={cn(
+                  "flex items-center gap-1 px-1 -mx-1 transition-opacity duration-150",
+                  active ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                )}>
+                  {editingOpacityId === n.id ? (
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={opacityDraft}
+                      autoFocus
+                      aria-label={`${n.name || n.kind} opacity percent`}
+                      className="field h-6 w-12 px-1 font-mono text-[10px]"
+                      onChange={(e) => setOpacityDraft(e.target.value)}
+                      onBlur={() => {
+                        const pct = Math.max(0, Math.min(100, Number(opacityDraft) || 0));
+                        updateNodes([n.id], { opacity: pct / 100 }, true);
+                        setEditingOpacityId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const pct = Math.max(0, Math.min(100, Number(opacityDraft) || 0));
+                          updateNodes([n.id], { opacity: pct / 100 }, true);
+                          setEditingOpacityId(null);
+                        } else if (e.key === "Escape") {
+                          setEditingOpacityId(null);
+                        }
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="min-w-[2.5rem] rounded-[4px] bg-surface-alt px-1 py-px font-mono text-[9px] tracking-wide text-ink-faint hover:bg-phosphor/15 hover:text-phosphor"
+                      title="Click to type opacity percent · Alt+0–9 tenths · Alt+Arrow 1% · Alt+Shift+0 full"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!selection.includes(n.id)) select([n.id]);
+                        setOpacityDraft(String(Math.round(n.opacity * 100)));
+                        setEditingOpacityId(n.id);
+                      }}
+                    >
+                      {Math.round(n.opacity * 100)}%
+                    </button>
+                  )}
+                  <input
+                    type="range"
+                    className="range-phosphor h-5 w-16 shrink-0"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={n.opacity}
+                    aria-label={`${n.name || n.kind} opacity`}
+                    data-opacity-range="row"
+                    style={{ "--fill-opacity": String(n.opacity) } as CSSProperties}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      updateNodes([n.id], { opacity: next });
+                    }}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      setOpacityScrubId(n.id);
+                    }}
+                    onPointerUp={() => {
+                      setOpacityScrubId(null);
+                      useDesign.getState().commit();
+                    }}
+                    onPointerCancel={() => setOpacityScrubId(null)}
+                    onLostPointerCapture={() => setOpacityScrubId(null)}
+                    title="Scrub layer opacity"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="size-7 rounded-[6px] hover:bg-ground"
+                  title="Alt-click isolates this layer"
+                  onClick={(e) => {
+                    if (e.altKey) {
+                      const sel = useDesign.getState().selection;
+                      const keep = sel.includes(n.id) && sel.length > 1 ? sel : [n.id];
+                      toggleIsolate(keep);
+                      return;
+                    }
+                    updateNodes([n.id], { visible: !n.visible }, true);
+                  }}
+                  aria-label={n.visible ? "Hide" : "Show"}
+                >
+                  {n.visible ? <Eye className="mx-auto size-3.5" /> : <EyeOff className="mx-auto size-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  className="size-7 rounded-[6px] hover:bg-ground"
+                  onClick={() => updateNodes([n.id], { locked: !n.locked }, true)}
+                  aria-label={n.locked ? "Unlock" : "Lock"}
+                >
+                  {n.locked ? <Lock className="mx-auto size-3.5" /> : <Unlock className="mx-auto size-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  className="grid size-7 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
+                  onClick={() => reorder(n.id, "up")}
+                  aria-label="Bring forward"
+                >
+                  <ChevronUp className="size-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="grid size-7 place-items-center rounded-[6px] text-ink-faint hover:text-ink"
+                  onClick={() => reorder(n.id, "down")}
+                  aria-label="Send back"
+                >
+                  <ChevronDown className="size-3.5" />
+                </button>
+              </div>
+            </li>
+          );
+        })}
+        {layers.length === 0 && (
+          <li className="px-2 py-6 text-center text-xs text-ink-faint">
+            {filtering
+              ? `No layers match “${needle}”`
+              : "Empty artboard — pick a tool and draw"}
+          </li>
+        )}
+      </ul>
+      <HistoryList />
+      {dragIds && dragPos && (
+        <div
+          className="pointer-events-none fixed z-50 flex items-center gap-1.5 rounded-[8px] border border-phosphor/70 bg-surface/95 px-2 py-1 font-mono text-[10px] tracking-wide text-phosphor shadow-[0_0_12px_1px_color-mix(in_srgb,var(--color-phosphor)_55%,transparent)]"
+          style={{ left: dragPos.x + 14, top: dragPos.y - 22 }}
+        >
+          <GripVertical className="size-3" />
+          <span>
+            {dragIds.length === 1
+              ? doc.nodes.find((n) => n.id === dragIds[0])?.name || "Layer"
+              : `${dragIds.length} layers`}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+const TYPE_LAST_USED_KEY = "voice-design-type-last-used";
+
+type TypeLastUsed = {
+  size: number | null;
+  weight: number | null;
+  track: number | null;
+  lead: number | null;
+  family: string | null;
+};
+
+function loadTypeLastUsed(): TypeLastUsed {
+  const empty: TypeLastUsed = { size: null, weight: null, track: null, lead: null, family: null };
+  try {
+    const raw = localStorage.getItem(TYPE_LAST_USED_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as Partial<TypeLastUsed>;
+    return {
+      size: typeof parsed.size === "number" ? parsed.size : null,
+      weight: typeof parsed.weight === "number" ? parsed.weight : null,
+      track: typeof parsed.track === "number" ? parsed.track : null,
+      lead: typeof parsed.lead === "number" ? parsed.lead : null,
+      family: typeof parsed.family === "string" ? parsed.family : null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function saveTypeLastUsed(next: TypeLastUsed) {
+  try {
+    localStorage.setItem(TYPE_LAST_USED_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+const TYPE_STRIP_COLLAPSED_KEY = "voice-design-type-strip-collapsed";
+
+function loadTypeStripCollapsed(): boolean {
+  try {
+    return localStorage.getItem(TYPE_STRIP_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveTypeStripCollapsed(collapsed: boolean) {
+  try {
+    localStorage.setItem(TYPE_STRIP_COLLAPSED_KEY, collapsed ? "1" : "0");
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function TypeQuickStrip() {
+  const selection = useDesign((s) => s.selection);
+  const doc = useDesign((s) => s.doc);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const [editingWeight, setEditingWeight] = useState(false);
+  const [weightDraft, setWeightDraft] = useState("");
+  const [editingFamily, setEditingFamily] = useState(false);
+  const [editingSize, setEditingSize] = useState(false);
+  const [sizeDraft, setSizeDraft] = useState("");
+  const [editingTrack, setEditingTrack] = useState(false);
+  const [trackDraft, setTrackDraft] = useState("");
+  const [editingLead, setEditingLead] = useState(false);
+  const [leadDraft, setLeadDraft] = useState("");
+  const [lastUsed, setLastUsed] = useState<TypeLastUsed>(loadTypeLastUsed);
+  const [flashProp, setFlashProp] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(loadTypeStripCollapsed);
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      saveTypeStripCollapsed(next);
+      return next;
+    });
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.shiftKey && e.key.toLowerCase() === "t" && !e.metaKey && !e.ctrlKey && !e.altKey)) return;
+      const t = e.target as HTMLElement | null;
+      if (!t || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) return;
+      if (!t.closest("[data-layers-panel]")) return;
+      e.preventDefault();
+      toggleCollapsed();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [toggleCollapsed]);
+
+  const cycleFocusRef = useRef<(reverse?: boolean) => void>(() => {});
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.altKey && !e.metaKey && !e.ctrlKey && e.key.toLowerCase() === "t")) return;
+      const t = e.target as HTMLElement | null;
+      if (!t || !t.closest("[data-layers-panel]")) return;
+      if ((t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable) && !t.closest("[data-type-strip]")) return;
+      e.preventDefault();
+      cycleFocusRef.current(e.shiftKey);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  const triggerFlash = (prop: string) => {
+    setFlashProp(prop);
+    window.setTimeout(() => setFlashProp(null), 700);
+  };
+  const remember = (prop: "size" | "weight" | "track" | "lead" | "family", val: number | string) => {
+    setLastUsed((prev) => {
+      const next = { ...prev, [prop]: val };
+      saveTypeLastUsed(next);
+      return next;
+    });
+  };
+  cycleFocusRef.current = () => {};
+  if (!doc || selection.length === 0) return null;
+  const textNodes = selection
+    .map((id) => doc.nodes.find((n) => n.id === id))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n) && isText(n));
+  if (textNodes.length === 0) return null;
+  const sizeMixed = new Set(textNodes.map((n) => Math.round(n.fontSize))).size > 1;
+  const trackMixed = new Set(textNodes.map((n) => Math.round(n.letterSpacing * 4) / 4)).size > 1;
+  const leadMixed = new Set(textNodes.map((n) => Math.round(n.lineHeight * 50) / 50)).size > 1;
+  const weightMixed = new Set(textNodes.map((n) => Math.round(n.fontWeight))).size > 1;
+  const familyMixed = new Set(textNodes.map((n) => n.fontFamily)).size > 1;
+  const size = sizeMixed ? textNodes[textNodes.length - 1].fontSize : textNodes[0].fontSize;
+  const tracking = trackMixed ? textNodes[textNodes.length - 1].letterSpacing : textNodes[0].letterSpacing;
+  const leading = leadMixed ? textNodes[textNodes.length - 1].lineHeight : textNodes[0].lineHeight;
+  const weight = weightMixed ? textNodes[textNodes.length - 1].fontWeight : textNodes[0].fontWeight;
+  const family = familyMixed ? textNodes[textNodes.length - 1].fontFamily : textNodes[0].fontFamily;
+  const ids = textNodes.map((n) => n.id);
+  const clearGhost = () => {
+    const s = useDesign.getState();
+    if (s.typeGhost) {
+      s.setTypeGhost(null);
+      s.commit();
+    }
+  };
+
+  cycleFocusRef.current = (reverse = false) => {
+    const order = ["size", "weight", "track", "lead", "family"] as const;
+    let current = -1;
+    if (editingSize) current = 0;
+    else if (editingWeight) current = 1;
+    else if (editingTrack) current = 2;
+    else if (editingLead) current = 3;
+    else if (editingFamily) current = 4;
+    const delta = reverse ? -1 : 1;
+    const next = order[(current + delta + order.length) % order.length];
+
+    if (editingSize) {
+      const n = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+      updateNodes(ids, { fontSize: n } as Partial<DesignNode>, true);
+      remember("size", n);
+    } else if (editingWeight) {
+      const n = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+      updateNodes(ids, { fontWeight: n } as Partial<DesignNode>, true);
+      remember("weight", n);
+    } else if (editingTrack) {
+      const n = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+      updateNodes(ids, { letterSpacing: n } as Partial<DesignNode>, true);
+      remember("track", n);
+    } else if (editingLead) {
+      const n = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+      updateNodes(ids, { lineHeight: n } as Partial<DesignNode>, true);
+      remember("lead", n);
+    }
+    // family commits on select change; cycling away just closes it
+
+    setEditingSize(false);
+    setEditingWeight(false);
+    setEditingTrack(false);
+    setEditingLead(false);
+    setEditingFamily(false);
+
+    if (next === "size") {
+      const start = lastUsed.size ?? Math.round(size);
+      setSizeDraft(String(start));
+      setEditingSize(true);
+      if (lastUsed.size != null) triggerFlash("size");
+    } else if (next === "weight") {
+      const start = lastUsed.weight ?? Math.round(weight);
+      setWeightDraft(String(start));
+      setEditingWeight(true);
+      if (lastUsed.weight != null) triggerFlash("weight");
+    } else if (next === "track") {
+      const start = lastUsed.track ?? Math.round(tracking * 4) / 4;
+      setTrackDraft(String(start));
+      setEditingTrack(true);
+      if (lastUsed.track != null) triggerFlash("track");
+    } else if (next === "lead") {
+      const start = lastUsed.lead ?? Math.round(leading * 50) / 50;
+      setLeadDraft(String(start));
+      setEditingLead(true);
+      if (lastUsed.lead != null) triggerFlash("lead");
+    } else if (next === "family") {
+      setEditingFamily(true);
+      if (familyMixed && lastUsed.family) triggerFlash("family");
+    }
+  };
+
+  return (
+    <div data-type-strip className={cn("group/strip mt-2 rounded-[8px] border border-border bg-surface px-2 transition-colors", collapsed ? "py-1" : "py-1.5")}>
+      <div className={cn("flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase", !collapsed && "mb-1")}>
+        <button
+          type="button"
+          className="flex items-center gap-1 hover:text-phosphor"
+          aria-label={collapsed ? "Expand type strip" : "Collapse type strip"}
+          aria-expanded={!collapsed}
+          title="Shift+T collapse · Alt+T cycle focus (size → weight → tracking → leading → family) · Shift+Alt+T reverse"
+          onClick={toggleCollapsed}
+        >
+          <ChevronRight className={cn("size-3 transition-transform", !collapsed && "rotate-90")} />
+          <span>Type</span>
+        </button>
+        <div className={cn(
+          "flex items-center gap-0.5 text-[9px] transition-opacity",
+          collapsed
+            ? "opacity-0 pointer-events-none group-hover/strip:opacity-100 group-hover/strip:pointer-events-auto group-focus-within/strip:opacity-100 group-focus-within/strip:pointer-events-auto"
+            : "opacity-100",
+        )}>
+          {!editingSize ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${sizeMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "size" ? "animate-phosphor-flash" : ""}`}
+              title={sizeMixed ? "Mixed size — click to set all" : "Click to edit size"}
+              onClick={() => {
+                const start = lastUsed.size ?? Math.round(size);
+                setSizeDraft(String(start));
+                setEditingSize(true);
+                if (lastUsed.size != null) triggerFlash("size");
+              }}
+            >
+              {sizeMixed ? "Mixed" : Math.round(size)}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={8}
+              max={160}
+              step={1}
+              value={sizeDraft}
+              autoFocus
+              aria-label="Type size"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setSizeDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+                updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                remember("size", next);
+                setEditingSize(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(8, Math.min(160, Math.round(Number(sizeDraft) || size)));
+                  updateNodes(ids, { fontSize: next } as Partial<DesignNode>, true);
+                  remember("size", next);
+                  setEditingSize(false);
+                } else if (e.key === "Escape") {
+                  setEditingSize(false);
+                }
+              }}
+            />
+          )}
+          <span className="text-ink-faint">/</span>
+          {!editingWeight ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${weightMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "weight" ? "animate-phosphor-flash" : ""}`}
+              title={weightMixed ? "Mixed weight — click to set all" : "Click to edit weight"}
+              onClick={() => {
+                const start = lastUsed.weight ?? Math.round(weight);
+                setWeightDraft(String(start));
+                setEditingWeight(true);
+                if (lastUsed.weight != null) triggerFlash("weight");
+              }}
+            >
+              {weightMixed ? "Mixed" : Math.round(weight)}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={100}
+              max={900}
+              step={100}
+              value={weightDraft}
+              autoFocus
+              aria-label="Type weight"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setWeightDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+                updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                remember("weight", next);
+                setEditingWeight(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(100, Math.min(900, Math.round(Number(weightDraft) || weight)));
+                  updateNodes(ids, { fontWeight: next } as Partial<DesignNode>, true);
+                  remember("weight", next);
+                  setEditingWeight(false);
+                } else if (e.key === "Escape") {
+                  setEditingWeight(false);
+                }
+              }}
+            />
+          )}
+          <span className="text-ink-faint">/</span>
+          {!editingTrack ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${trackMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "track" ? "animate-phosphor-flash" : ""}`}
+              title={trackMixed ? "Mixed tracking — click to set all" : "Click to edit tracking"}
+              onClick={() => {
+                const start = lastUsed.track ?? tracking;
+                setTrackDraft(String(start));
+                setEditingTrack(true);
+                if (lastUsed.track != null) triggerFlash("track");
+              }}
+            >
+              {trackMixed ? "Mixed" : tracking}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={-8}
+              max={40}
+              step={0.25}
+              value={trackDraft}
+              autoFocus
+              aria-label="Type tracking"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setTrackDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+                updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                remember("track", next);
+                setEditingTrack(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(-8, Math.min(40, Number(trackDraft) || tracking));
+                  updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>, true);
+                  remember("track", next);
+                  setEditingTrack(false);
+                } else if (e.key === "Escape") {
+                  setEditingTrack(false);
+                }
+              }}
+            />
+          )}
+          <span className="text-ink-faint">/</span>
+          {!editingLead ? (
+            <button
+              type="button"
+              className={`rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${leadMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "lead" ? "animate-phosphor-flash" : ""}`}
+              title={leadMixed ? "Mixed leading — click to set all" : "Click to edit leading"}
+              onClick={() => {
+                const start = lastUsed.lead ?? leading;
+                setLeadDraft(start.toFixed(2));
+                setEditingLead(true);
+                if (lastUsed.lead != null) triggerFlash("lead");
+              }}
+            >
+              {leadMixed ? "Mixed" : leading.toFixed(2)}
+            </button>
+          ) : (
+            <input
+              type="number"
+              min={0.7}
+              max={2}
+              step={0.02}
+              value={leadDraft}
+              autoFocus
+              aria-label="Type leading"
+              className="h-4 w-9 rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              onChange={(e) => setLeadDraft(e.target.value)}
+              onBlur={() => {
+                const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+                updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                remember("lead", next);
+                setEditingLead(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = Math.max(0.7, Math.min(2, Number(leadDraft) || leading));
+                  updateNodes(ids, { lineHeight: next } as Partial<DesignNode>, true);
+                  remember("lead", next);
+                  setEditingLead(false);
+                } else if (e.key === "Escape") {
+                  setEditingLead(false);
+                }
+              }}
+            />
+          )}
+          <span className="mx-0.5 text-ink-faint">·</span>
+          {!editingFamily ? (
+            <button
+              type="button"
+              className={`max-w-[3.8rem] truncate rounded-[3px] bg-surface-alt px-1 py-px tracking-wide hover:bg-phosphor/15 hover:text-phosphor ${familyMixed ? "text-phosphor" : "text-ink-faint"} ${flashProp === "family" ? "animate-phosphor-flash" : ""}`}
+              title={familyMixed ? `Mixed family — click to set all · ${family}` : `Click to change font family · ${family}`}
+              onClick={() => {
+                setEditingFamily(true);
+                if (familyMixed && lastUsed.family) triggerFlash("family");
+              }}
+            >
+              {familyMixed ? "Mixed" : (family.split(" ")[0] || family)}
+            </button>
+          ) : (
+            <select
+              className="h-4 max-w-[5.5rem] rounded-[3px] border border-phosphor bg-surface px-0.5 text-ink"
+              value={(familyMixed && lastUsed.family) ? lastUsed.family : family}
+              autoFocus
+              aria-label="Type family"
+              onChange={(e) => {
+                const next = e.target.value;
+                updateNodes(ids, { fontFamily: next } as Partial<DesignNode>, true);
+                remember("family", next);
+                setEditingFamily(false);
+              }}
+              onBlur={() => setEditingFamily(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setEditingFamily(false);
+              }}
+            >
+              {familyMixed && <option value={family}>Mixed</option>}
+              {CANVAS_FONTS.map((f) => (
+                <option key={f.id} value={f.family}>{f.family}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      </div>
+      {!collapsed && (
+      <>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Size</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={8}
+          max={160}
+          step={1}
+          value={size}
+          aria-label="Type size"
+          data-type-range="size"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (size - 8) / (160 - 8)))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ fontSize: next });
+            updateNodes(ids, { fontSize: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, size, 8, 160, 1);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ fontSize: next });
+              updateNodes(ids, { fontSize: next } as Partial<DesignNode>);
+            }
+          }}
+        />
+        <NumField
+          aria-label="Type size"
+          mixed={sizeMixed}
+          value={Math.round(size)}
+          min={8}
+          max={160}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { fontSize: n } as Partial<DesignNode>);
+            remember("size", n);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Track</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={-8}
+          max={40}
+          step={0.25}
+          value={tracking}
+          aria-label="Type tracking"
+          data-type-range="tracking"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (tracking - (-8)) / (40 - (-8))))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ letterSpacing: next });
+            updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, tracking, -8, 40, 0.25);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ letterSpacing: next });
+              updateNodes(ids, { letterSpacing: next } as Partial<DesignNode>);
+            }
+          }}
+        />
+        <NumField
+          aria-label="Type tracking"
+          mixed={trackMixed}
+          value={tracking}
+          min={-8}
+          max={40}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { letterSpacing: n } as Partial<DesignNode>);
+            remember("track", n);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Lead</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={0.7}
+          max={2}
+          step={0.02}
+          value={leading}
+          aria-label="Type leading"
+          data-type-range="leading"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (leading - 0.7) / (2 - 0.7)))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ lineHeight: next });
+            updateNodes(ids, { lineHeight: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, leading, 0.7, 2, 0.02);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ lineHeight: next });
+              updateNodes(ids, { lineHeight: next } as Partial<DesignNode>);
+            }
+          }}
+        />
+        <NumField
+          aria-label="Type leading"
+          mixed={leadMixed}
+          value={Number(leading.toFixed(2))}
+          min={0.7}
+          max={2}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { lineHeight: n } as Partial<DesignNode>);
+            remember("lead", n);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Weight</span>
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={100}
+          max={900}
+          step={100}
+          value={weight}
+          aria-label="Type weight"
+          data-type-range="weight"
+          style={{ "--fill-percent": String(Math.max(0, Math.min(1, (weight - 100) / (900 - 100)))) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            useDesign.getState().setTypeGhost({ fontWeight: next });
+            updateNodes(ids, { fontWeight: next } as Partial<DesignNode>);
+          }}
+          onPointerUp={clearGhost}
+          onKeyUp={clearGhost}
+          onBlur={clearGhost}
+          onKeyDown={(e) => {
+            const next = nextFromRangeKey(e, weight, 100, 900, 100);
+            if (next != null) {
+              useDesign.getState().setTypeGhost({ fontWeight: next });
+              updateNodes(ids, { fontWeight: next } as Partial<DesignNode>);
+            }
+          }}
+        />
+        <NumField
+          aria-label="Type weight"
+          mixed={weightMixed}
+          value={Math.round(weight)}
+          min={100}
+          max={900}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(n) => {
+            updateNodes(ids, { fontWeight: n } as Partial<DesignNode>);
+            remember("weight", n);
+            useDesign.getState().commit();
+          }}
+        />
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span className="w-10 shrink-0 font-mono text-[9px] text-ink-faint">Family</span>
+        <select
+          className="h-6 min-w-0 flex-1 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-ink"
+          value={family}
+          aria-label="Type family"
+          onChange={(e) => {
+            const next = e.target.value;
+            updateNodes(ids, { fontFamily: next } as Partial<DesignNode>, true);
+            remember("family", next);
+          }}
+        >
+          {familyMixed && <option value={family}>Mixed</option>}
+          {CANVAS_FONTS.map((f) => (
+            <option key={f.id} value={f.family}>{f.family}</option>
+          ))}
+        </select>
+      </div>
+      </>
+      )}
+    </div>
+  );
+}
+
+function OpacityQuickStrip() {
+  const selection = useDesign((s) => s.selection);
+  const doc = useDesign((s) => s.doc);
+  const updateNodes = useDesign((s) => s.updateNodes);
+  const setOpacityScrubId = useDesign((s) => s.setOpacityScrubId);
+  if (!doc || selection.length === 0) return null;
+  const nodes = selection
+    .map((id) => doc.nodes.find((n) => n.id === id))
+    .filter((n): n is NonNullable<typeof n> => Boolean(n));
+  if (nodes.length === 0) return null;
+  const mixed = new Set(nodes.map((n) => Math.round(n.opacity * 100))).size > 1;
+  const value = mixed ? nodes[nodes.length - 1].opacity : nodes[0].opacity;
+  const scrubTarget = nodes[0]?.id ?? null;
+  return (
+    <div className="mt-2 rounded-[8px] border border-border bg-surface px-2 py-1.5">
+      <div className="mb-1 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
+        <span>Opacity</span>
+        <span className={mixed ? "text-phosphor" : "text-ink-dim"}>{mixed ? "Mixed" : `${Math.round(value * 100)}%`}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          className="range-phosphor min-w-0 flex-1"
+          min={0}
+          max={1}
+          step={0.01}
+          value={value}
+          aria-label="Layer opacity"
+          data-opacity-range="layers"
+          style={{ "--fill-opacity": String(value) } as CSSProperties}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            updateNodes(selection, { opacity: next });
+          }}
+          onPointerDown={() => setOpacityScrubId(scrubTarget)}
+          onPointerUp={() => {
+            setOpacityScrubId(null);
+            useDesign.getState().commit();
+          }}
+          onPointerCancel={() => setOpacityScrubId(null)}
+          onLostPointerCapture={() => setOpacityScrubId(null)}
+        />
+        <NumField
+          aria-label="Layer opacity percent"
+          mixed={mixed}
+          value={Math.round(value * 100)}
+          min={0}
+          max={100}
+          className="h-6 w-12 shrink-0 rounded-[6px] border border-border bg-surface-alt px-1 font-mono text-[10px] text-right text-ink"
+          onCommit={(pct) => {
+            const opacity = Math.max(0, Math.min(1, pct / 100));
+            updateNodes(selection, { opacity });
+            useDesign.getState().commit();
+          }}
+        />
+        <span className="shrink-0 font-mono text-[9px] text-ink-faint">%</span>
+        <button
+          type="button"
+          className="h-6 shrink-0 rounded-[6px] border border-border px-1.5 font-mono text-[9px] tracking-wide text-ink-dim hover:border-phosphor hover:text-ink"
+          title="Set opacity to 100% · Alt+Shift+0 · Alt+Arrow 1% steps"
+          onClick={() => {
+            updateNodes(selection, { opacity: 1 });
+            useDesign.getState().commit();
+          }}
+        >
+          100%
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HistoryList() {
+  const past = useDesign((s) => s.past);
+  const future = useDesign((s) => s.future);
+  const restoreHistory = useDesign((s) => s.restoreHistory);
+  const undo = useDesign((s) => s.undo);
+  const redo = useDesign((s) => s.redo);
+
+  return (
+    <div className="shrink-0 border-t border-border">
+      <div className="px-3 py-2 font-mono text-[10px] tracking-[0.2em] text-ink-faint uppercase">History</div>
+      <ul className="max-h-36 overflow-auto px-2 pb-2 scrollbar-thin">
+        {future
+          .map((_, i) => i)
+          .reverse()
+          .map((idx) => (
+            <li key={`f${idx}`}>
+              <button
+                type="button"
+                className="flex h-8 w-full items-center rounded-[8px] px-2 text-left text-[11px] text-ink-faint hover:bg-surface-alt hover:text-ink"
+                onClick={() => restoreHistory("future", idx)}
+              >
+                Redo {idx + 1}
+              </button>
+            </li>
+          ))}
+        <li>
+          <span className="flex h-8 items-center rounded-[8px] bg-phosphor/10 px-2 text-[11px] text-phosphor">Now</span>
+        </li>
+        {past
+          .map((_, i) => i)
+          .reverse()
+          .map((idx) => (
+            <li key={`p${idx}`}>
+              <button
+                type="button"
+                className="flex h-8 w-full items-center rounded-[8px] px-2 text-left text-[11px] text-ink-dim hover:bg-surface-alt hover:text-ink"
+                onClick={() => restoreHistory("past", idx)}
+              >
+                Step {idx + 1}
+              </button>
+            </li>
+          ))}
+        {past.length === 0 && future.length === 0 && (
+          <li className="px-2 py-3 text-center text-[11px] text-ink-faint">Undo stack is empty</li>
+        )}
+      </ul>
+      {(past.length > 0 || future.length > 0) && (
+        <div className="flex gap-1 px-2 pb-2">
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!past.length}
+            onClick={undo}
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            className="h-7 flex-1 rounded-[8px] border border-border text-[10px] text-ink-dim hover:border-phosphor hover:text-ink disabled:opacity-30"
+            disabled={!future.length}
+            onClick={redo}
+          >
+            Redo
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

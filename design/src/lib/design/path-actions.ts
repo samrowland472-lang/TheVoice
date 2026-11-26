@@ -1,0 +1,1493 @@
+import { dropHole, setHoleFillRule as stampHoleFillRule, type PathFillRule } from "./fill-rule";
+import { applyPathEdit, clonePathPoint, type PathEditHit } from "./path-edit";
+import { autoSmoothPoint, closePathWithCubic, hasHandle } from "./path-curve";
+import { joinOpenPathNodes, nearestOpenPathEnd, PEN_SNAP_PX, type PathEnd } from "./path-join";
+import { pathNode } from "./node-factory";
+import { applyKnifePointToPath, applyKnifeStrokeToPath } from "./knife-apply";
+import { asEditablePath } from "./shape-to-path";
+import { useDesign } from "./store";
+import { setStudioStatus } from "./studio-status";
+import type { PathNode, PathPoint } from "./types";
+import { isPath } from "./types";
+import { formatDistributeGap } from "./distribute-preview";
+
+export function cornerLastPenPoint(): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc || s.tool !== "pen") return false;
+  const sel = s.selection[0] ? doc.nodes.find((x) => x.id === s.selection[0]) : null;
+  if (!sel || !isPath(sel) || sel.closed || !sel.points.length) return false;
+  const last = sel.points[sel.points.length - 1]!;
+  if (!hasHandle(last.out) && last.smooth === false) return false;
+  const nextPt: PathPoint = { ...last, out: null, smooth: false };
+  const points = sel.points.map((p, i) => (i === sel.points.length - 1 ? nextPt : p));
+  s.commit();
+  s.replaceNode(sel.id, { ...sel, points }, false);
+  setPathEditHit({ index: points.length - 1, arm: "anchor" });
+  return true;
+}
+
+export function appendPenPoint(wx: number, wy: number): string | null {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc) return null;
+  const sel = s.selection[0] ? doc.nodes.find((x) => x.id === s.selection[0]) : null;
+  if (sel && isPath(sel) && !sel.closed) {
+    const pt = { x: wx - sel.x, y: wy - sel.y, in: null, out: null, smooth: true };
+    s.commit();
+    s.replaceNode(sel.id, { ...sel, points: [...sel.points, pt] }, false);
+    return sel.id;
+  }
+  const node = pathNode({
+    x: 0,
+    y: 0,
+    w: doc.artboard.width,
+    h: doc.artboard.height,
+    points: [{ x: wx, y: wy, in: null, out: null, smooth: true }],
+    closed: false,
+    stroke: s.color || "#3fc6ff",
+    strokeWidth: 3,
+    fill: "transparent",
+  });
+  s.addNode(node, true);
+  return node.id;
+}
+
+export function setPathEditHit(hit: PathEditHit | null) {
+  useDesign.setState({ pathEditHit: hit });
+}
+
+export function togglePathPointSelection(index: number, hole?: number) {
+  const s = useDesign.getState();
+  const key = (p: { index: number; hole?: number }) => `${p.hole ?? ""}:${p.index}`;
+  const targetKey = `${hole ?? ""}:${index}`;
+  const cur = s.pathPointSelection ?? [];
+  const exists = cur.some((p) => key(p) === targetKey);
+  const next = exists ? cur.filter((p) => key(p) !== targetKey) : [...cur, { index, hole }];
+  useDesign.setState({ pathPointSelection: next, pathEditHit: { index, arm: "anchor", hole } });
+}
+
+export function setPathPointSelection(points: { index: number; hole?: number }[]) {
+  useDesign.setState({ pathPointSelection: points });
+}
+
+export function editPathHit(
+  id: string,
+  hit: PathEditHit,
+  localX: number,
+  localY: number,
+  keepSmooth: boolean,
+  commit = false,
+) {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc) return;
+  const n = doc.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return;
+  if (commit) s.commit();
+  const next = applyPathEdit(n, hit, localX, localY, keepSmooth);
+  s.replaceNode(id, next, false);
+  setPathEditHit(hit);
+}
+
+function livePath(id: string): PathNode | null {
+  const n = useDesign.getState().doc?.nodes.find((x) => x.id === id);
+  return n && isPath(n) ? n : null;
+}
+
+export function selectPathPoint(index: number, hole?: number) {
+  setPathEditHit({ index, arm: "anchor", hole });
+}
+
+export function selectPathHole(hole: number) {
+  setPathEditHit({ index: 0, arm: "anchor", hole });
+}
+
+/** Walk the selected compound path's holes. Returns true when the hit moved. */
+export function stepPathHole(delta: number): boolean {
+  if (!delta) return false;
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const count = n?.holes?.length ?? 0;
+  if (count < 1) return false;
+  const next = Math.max(0, Math.min(count - 1, hit.hole + delta));
+  if (next === hit.hole) return false;
+  selectPathHole(next);
+  return true;
+}
+
+/** Jump to the first (end=false) or last hole. Returns true when the hit moved. */
+export function jumpPathHole(end: boolean): boolean {
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const count = n?.holes?.length ?? 0;
+  if (count < 1) return false;
+  const next = end ? count - 1 : 0;
+  if (next === hit.hole) return false;
+  selectPathHole(next);
+  return true;
+}
+
+/** Walk points on the picked hole ring. Left/Right. Returns true when handled. */
+export function stepPathHolePoint(delta: number): boolean {
+  if (!delta) return false;
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const ring = n?.holes?.[hit.hole];
+  const count = ring?.length ?? 0;
+  if (count < 1) return false;
+  const cur = ((hit.index % count) + count) % count;
+  const next = ((cur + delta) % count + count) % count;
+  selectPathPoint(next, hit.hole);
+  return true;
+}
+
+/** Jump to the first (end=false) or last point on the picked hole ring. */
+export function jumpPathHolePoint(end: boolean): boolean {
+  const s = useDesign.getState();
+  const hit = s.pathEditHit;
+  if (hit?.hole == null) return false;
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  const ring = n?.holes?.[hit.hole];
+  const count = ring?.length ?? 0;
+  if (count < 1) return false;
+  const next = end ? count - 1 : 0;
+  const cur = ((hit.index % count) + count) % count;
+  if (cur === next) return false;
+  selectPathPoint(next, hit.hole);
+  return true;
+}
+
+export function setHoleFillRule(id: string, hole: number, rule: PathFillRule) {
+  const n = livePath(id);
+  if (!n) return;
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, stampHoleFillRule(n, hole, rule), false);
+  if (s.pathEditHit?.hole !== hole) selectPathHole(hole);
+}
+
+export function deletePathHole(id: string, hole: number) {
+  const n = livePath(id);
+  if (!n) return;
+  if (hole < 0 || hole >= (n.holes?.length ?? 0)) return;
+  const s = useDesign.getState();
+  s.commit();
+  const next = dropHole(n, hole);
+  s.replaceNode(id, next, false);
+  const remaining = next.holes?.length ?? 0;
+  if (remaining === 0) {
+    setPathEditHit(null);
+    return;
+  }
+  selectPathHole(Math.min(hole, remaining - 1));
+}
+
+export function setPathClosed(id: string, closed: boolean) {
+  const n = livePath(id);
+  if (!n) return;
+  if (closed && n.points.length < 3) return;
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, closed ? closePathWithCubic(n) : { ...n, closed: false }, false);
+}
+
+export function setPathPointPosition(id: string, index: number, x: number, y: number, hole?: number) {
+  const n = livePath(id);
+  if (!n) return;
+  const hit: PathEditHit = { index, arm: "anchor", hole };
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, applyPathEdit(n, hit, x, y, true), false);
+  setPathEditHit(hit);
+}
+
+export function setPathPointSmooth(id: string, index: number, smooth: boolean, hole?: number) {
+  const n = livePath(id);
+  if (!n) return;
+  const ring = hole == null ? n.points : (n.holes?.[hole] ?? []);
+  const pt = ring[index];
+  if (!pt) return;
+  let nextPt: PathPoint;
+  if (smooth) {
+    nextPt = autoSmoothPoint(ring, index, hole == null ? n.closed : true);
+  } else {
+    nextPt = { ...pt, smooth: false };
+  }
+  const nextRing = ring.map((p, i) => (i === index ? nextPt : p));
+  const next: PathNode =
+    hole == null ? { ...n, points: nextRing } : { ...n, holes: (n.holes ?? []).map((h, i) => (i === hole ? nextRing : h)) };
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, next, false);
+  setPathEditHit({ index, arm: "anchor", hole });
+}
+
+/** Update in/out handle offsets (relative to the anchor). Pass null to clear a handle. */
+export function setPathPointHandles(
+  id: string,
+  index: number,
+  next: { in?: { x: number; y: number } | null; out?: { x: number; y: number } | null },
+  hole?: number,
+) {
+  const n = livePath(id);
+  if (!n) return;
+  const ring = hole == null ? n.points : (n.holes?.[hole] ?? []);
+  const pt = ring[index];
+  if (!pt) return;
+  const nextPt: PathPoint = {
+    ...pt,
+    in: next.in !== undefined ? next.in : pt.in,
+    out: next.out !== undefined ? next.out : pt.out,
+  };
+  // If both handles are cleared, force corner.
+  if (!nextPt.in && !nextPt.out) nextPt.smooth = false;
+  const nextRing = ring.map((p, i) => (i === index ? nextPt : p));
+  const nextNode: PathNode =
+    hole == null ? { ...n, points: nextRing } : { ...n, holes: (n.holes ?? []).map((h, i) => (i === hole ? nextRing : h)) };
+  const s = useDesign.getState();
+  s.commit();
+  s.replaceNode(id, nextNode, false);
+  setPathEditHit({ index, arm: "anchor", hole });
+}
+
+export function joinSelectedPathToNearest(wx: number, wy: number, zoom: number): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc) return false;
+  const thresh = PEN_SNAP_PX / zoom;
+  const open = doc.nodes.filter(isPath).filter((n) => !n.closed);
+  const sel = s.selection[0] ? open.find((n) => n.id === s.selection[0]) : null;
+  const from = sel
+    ? nearestOpenPathEnd([sel], wx, wy, thresh) ?? nearestOpenPathEnd(open, wx, wy, thresh)
+    : nearestOpenPathEnd(open, wx, wy, thresh);
+  if (!from) return false;
+  const to = nearestOpenPathEnd(open, wx, wy, thresh, { id: from.node.id, end: from.end });
+  if (!to) return false;
+  if (from.node.id === to.node.id) {
+    if (from.node.points.length < 3) return false;
+    s.commit();
+    s.replaceNode(from.node.id, closePathWithCubic(from.node), false);
+    setPathEditHit({ index: 0, arm: "anchor" });
+    return true;
+  }
+  const keep = from.node;
+  const other = to.node;
+  const keepEnd: PathEnd = from.end;
+  const merged = joinOpenPathNodes(keep, keepEnd, other, to.end);
+  s.commit();
+  s.replaceNode(keep.id, merged, false);
+  const leftover = useDesign.getState().doc;
+  if (leftover) {
+    useDesign.setState({
+      doc: { ...leftover, nodes: leftover.nodes.filter((n) => n.id !== other.id) },
+      selection: [keep.id],
+      dirty: true,
+    });
+  }
+  setPathEditHit({
+    index: keepEnd === "end" ? Math.max(0, keep.points.length - 1) : 0,
+    arm: "anchor",
+  });
+  return true;
+}
+
+function knifePaths(): PathNode[] {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc) return [];
+  const paths: PathNode[] = [];
+  for (const n of doc.nodes) {
+    if (!n.visible || n.locked) continue;
+    const p = asEditablePath(n);
+    if (!p || p.points.length < 2) continue;
+    paths.push(p);
+  }
+  const preferred = s.selection[0] ? paths.find((n) => n.id === s.selection[0]) : undefined;
+  return preferred ? [preferred, ...paths.filter((n) => n.id !== preferred.id)] : paths;
+}
+
+export function knifeCutAt(wx: number, wy: number, zoom: number): boolean {
+  const s = useDesign.getState();
+  for (const n of knifePaths()) {
+    const applied = applyKnifePointToPath(n, wx, wy, zoom);
+    if (!applied) continue;
+    s.commit();
+    s.replaceNode(n.id, applied.keep, false);
+    const ids = [n.id];
+    for (const extra of applied.extras) {
+      s.addNode(extra, false);
+      ids.push(extra.id);
+    }
+    s.select(ids);
+    setPathEditHit({ index: 0, arm: "anchor" });
+    return true;
+  }
+  return false;
+}
+
+export function knifeCutStroke(ax: number, ay: number, bx: number, by: number, zoom: number): boolean {
+  const dist = Math.hypot(bx - ax, by - ay);
+  if (dist < 4 / zoom) return knifeCutAt(bx, by, zoom);
+  const s = useDesign.getState();
+  let any = false;
+  let firstKeep: string | null = null;
+  const extraIds: string[] = [];
+  for (const n of knifePaths()) {
+    const applied = applyKnifeStrokeToPath(n, ax, ay, bx, by);
+    if (!applied) continue;
+    if (!any) s.commit();
+    any = true;
+    s.replaceNode(n.id, applied.keep, false);
+    if (!firstKeep) firstKeep = n.id;
+    for (const extra of applied.extras) {
+      s.addNode(extra, false);
+      extraIds.push(extra.id);
+    }
+  }
+  if (!any) return knifeCutAt(bx, by, zoom);
+  s.select([firstKeep!, ...extraIds].filter(Boolean));
+  setPathEditHit({ index: 0, arm: "anchor" });
+  return true;
+}
+
+export function deletePathPoint(id: string, index: number, hole?: number) {
+  const n = livePath(id);
+  if (!n) return;
+  const s = useDesign.getState();
+  if (hole == null) {
+    if (n.points.length <= 1) {
+      s.select([id]);
+      s.removeSelected();
+      setPathEditHit(null);
+      return;
+    }
+    const points = n.points.filter((_, i) => i !== index);
+    s.commit();
+    s.replaceNode(id, { ...n, points, closed: points.length >= 3 ? n.closed : false }, false);
+    const nextIndex = Math.min(index, points.length - 1);
+    setPathEditHit({ index: nextIndex, arm: "anchor" });
+    return;
+  }
+  const holeRing = n.holes?.[hole];
+  if (!holeRing) return;
+  s.commit();
+  if (holeRing.length <= 2) {
+    s.replaceNode(id, dropHole(n, hole), false);
+    setPathEditHit(null);
+    return;
+  }
+  const nextHole = holeRing.filter((_, i) => i !== index);
+  s.replaceNode(id, { ...n, holes: (n.holes ?? []).map((h, i) => (i === hole ? nextHole : h)) }, false);
+  setPathEditHit({ index: Math.min(index, nextHole.length - 1), arm: "anchor", hole });
+}
+
+/** Reverse path direction: flip point order and swap in/out handles so curves stay continuous. */
+export function reverseSelectedPath(): boolean {
+  const s = useDesign.getState();
+  const id = s.selection[0];
+  if (!id) return false;
+  const n = livePath(id);
+  if (!n || n.points.length < 2) return false;
+  const reverseRing = (pts: PathPoint[]): PathPoint[] =>
+    pts.slice().reverse().map((p) => ({
+      ...p,
+      in: p.out ?? null,
+      out: p.in ?? null,
+    }));
+  s.commit();
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: reverseRing(n.points),
+      holes: n.holes?.map(reverseRing),
+    },
+    false,
+  );
+  setPathPointSelection([]);
+  setPathEditHit(null);
+  return true;
+}
+
+/** Reverse relative order of multi-selected points (same slots, points reordered among themselves).
+ * Swaps in/out handles so local curves reverse with the order. Selection indices stay valid.
+ * Mirror flags follow the points. */
+export function reverseRelativeSelectedPoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+): boolean {
+  if (selected.length < 2) return false;
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  let nextPoints = node.points.slice();
+  let nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+  const mirrorMoves: { from: string; to: string; value: boolean }[] = [];
+  const mirrorPoints = s.mirrorPoints || {};
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+    const picked = indices.map((i) => ring[i]).filter(Boolean);
+    if (picked.length !== indices.length) continue;
+    const reversed = picked.slice().reverse().map((p) => ({
+      ...p,
+      in: p.out ?? null,
+      out: p.in ?? null,
+    }));
+    for (let k = 0; k < indices.length; k++) {
+      ring[indices[k]!] = reversed[k]!;
+    }
+    // mirror flags follow the points
+    for (let k = 0; k < indices.length; k++) {
+      const fromIdx = indices[k]!;
+      const toIdx = indices[indices.length - 1 - k]!;
+      if (fromIdx === toIdx) continue;
+      const fromKey = `${node.id}:${h ?? ""}:${fromIdx}`;
+      const toKey = `${node.id}:${h ?? ""}:${toIdx}`;
+      const value = !!mirrorPoints[fromKey];
+      mirrorMoves.push({ from: fromKey, to: toKey, value });
+    }
+    changed = true;
+  }
+  if (!changed) return false;
+  s.commit();
+  s.replaceNode(
+    node.id,
+    {
+      ...node,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  // apply mirror moves (two-pass to avoid overwrite)
+  if (mirrorMoves.length) {
+    const temp: Record<string, boolean> = {};
+    for (const m of mirrorMoves) temp[m.to] = m.value;
+    const setMirrorPoint = s.setMirrorPoint;
+    for (const m of mirrorMoves) {
+      if (temp[m.to] !== undefined) {
+        setMirrorPoint(m.to, temp[m.to]!);
+      }
+    }
+  }
+  return true;
+}
+
+/** Reverse relative order within each consecutive run of multi-selected points.
+ * Non-consecutive selected points form separate runs; each run of length >= 2 is reversed independently.
+ * Unselected points and isolated selected points stay put. Handles and Mirror flags follow as in reverseRelativeSelectedPoints. */
+export function reverseConsecutiveRunsSelectedPoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+): boolean {
+  if (selected.length < 2) return false;
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  let nextPoints = node.points.slice();
+  let nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+  const mirrorMoves: { from: string; to: string; value: boolean }[] = [];
+  const mirrorPoints = s.mirrorPoints || {};
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+
+    // group into consecutive runs
+    const runs: number[][] = [];
+    let current: number[] = [indices[0]!];
+    for (let i = 1; i < indices.length; i++) {
+      if (indices[i]! === indices[i - 1]! + 1) {
+        current.push(indices[i]!);
+      } else {
+        if (current.length >= 2) runs.push(current);
+        current = [indices[i]!];
+      }
+    }
+    if (current.length >= 2) runs.push(current);
+
+    for (const run of runs) {
+      const picked = run.map((i) => ring[i]).filter(Boolean);
+      if (picked.length !== run.length) continue;
+      const reversed = picked.slice().reverse().map((p) => ({
+        ...p,
+        in: p.out ?? null,
+        out: p.in ?? null,
+      }));
+      for (let k = 0; k < run.length; k++) {
+        ring[run[k]!] = reversed[k]!;
+      }
+      // mirror flags follow the points
+      for (let k = 0; k < run.length; k++) {
+        const fromIdx = run[k]!;
+        const toIdx = run[run.length - 1 - k]!;
+        if (fromIdx === toIdx) continue;
+        const fromKey = `${node.id}:${h ?? ""}:${fromIdx}`;
+        const toKey = `${node.id}:${h ?? ""}:${toIdx}`;
+        const value = !!mirrorPoints[fromKey];
+        mirrorMoves.push({ from: fromKey, to: toKey, value });
+      }
+      changed = true;
+    }
+  }
+  if (!changed) return false;
+  s.commit();
+  s.replaceNode(
+    node.id,
+    {
+      ...node,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  // apply mirror moves (two-pass to avoid overwrite)
+  if (mirrorMoves.length) {
+    const temp: Record<string, boolean> = {};
+    for (const m of mirrorMoves) temp[m.to] = m.value;
+    const setMirrorPoint = s.setMirrorPoint;
+    for (const m of mirrorMoves) {
+      if (temp[m.to] !== undefined) {
+        setMirrorPoint(m.to, temp[m.to]!);
+      }
+    }
+  }
+  return true;
+}
+
+/** Compute a rotated relative order preview without committing. Direction +1 cycles points to next higher selected slot. */
+export function computeRotatedRelativePoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+  direction: 1 | -1,
+): PathNode | null {
+  if (selected.length < 2) return null;
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  const nextPoints = node.points.slice();
+  const nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+    const picked = indices.map((i) => ring[i]).filter(Boolean);
+    if (picked.length !== indices.length) continue;
+    const rotated = direction === 1
+      ? [...picked.slice(1), picked[0]]
+      : [picked[picked.length - 1], ...picked.slice(0, -1)];
+    for (let k = 0; k < indices.length; k++) {
+      ring[indices[k]!] = rotated[k]!;
+    }
+    changed = true;
+  }
+  if (!changed) return null;
+  return {
+    ...node,
+    points: nextPoints,
+    holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+  };
+}
+
+/** Rotate relative order of multi-selected points by one step among their slots.
+ * Direction +1 moves each point to the next higher selected index (cycling); -1 the opposite.
+ * Handles stay with the points. Mirror flags follow the points. Selection indices remain valid.
+ * Non-selected points stay put. */
+export function rotateRelativeSelectedPoints(
+  node: PathNode,
+  selected: { index: number; hole?: number }[],
+  direction: 1 | -1,
+): boolean {
+  if (selected.length < 2) return false;
+  const s = useDesign.getState();
+  const byHole = new Map<number | null, number[]>();
+  for (const p of selected) {
+    const h = p.hole ?? null;
+    if (!byHole.has(h)) byHole.set(h, []);
+    const arr = byHole.get(h)!;
+    if (!arr.includes(p.index)) arr.push(p.index);
+  }
+  let changed = false;
+  let nextPoints = node.points.slice();
+  let nextHoles = node.holes ? node.holes.map((h) => h.slice()) : undefined;
+  const mirrorMoves: { from: string; to: string; value: boolean }[] = [];
+  const mirrorPoints = s.mirrorPoints || {};
+
+  for (const [h, rawIdx] of byHole) {
+    const indices = rawIdx.slice().sort((a, b) => a - b);
+    if (indices.length < 2) continue;
+    const ring = h == null ? nextPoints : nextHoles?.[h];
+    if (!ring) continue;
+    const picked = indices.map((i) => ring[i]).filter(Boolean);
+    if (picked.length !== indices.length) continue;
+    const rotated = direction === 1
+      ? [...picked.slice(1), picked[0]]
+      : [picked[picked.length - 1], ...picked.slice(0, -1)];
+    for (let k = 0; k < indices.length; k++) {
+      ring[indices[k]!] = rotated[k]!;
+    }
+    // mirror flags follow the points
+    for (let k = 0; k < indices.length; k++) {
+      // original index of the point that moves to this slot
+      const srcK = direction === 1 ? (k + 1) % indices.length : (k - 1 + indices.length) % indices.length;
+      const fromIdx = indices[srcK]!;
+      const toIdx = indices[k]!;
+      if (fromIdx === toIdx) continue;
+      const fromKey = `${node.id}:${h ?? ""}:${fromIdx}`;
+      const toKey = `${node.id}:${h ?? ""}:${toIdx}`;
+      const value = !!mirrorPoints[fromKey];
+      mirrorMoves.push({ from: fromKey, to: toKey, value });
+    }
+    changed = true;
+  }
+  if (!changed) return false;
+  s.commit();
+  s.replaceNode(
+    node.id,
+    {
+      ...node,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  // apply mirror moves (two-pass to avoid overwrite)
+  if (mirrorMoves.length) {
+    const temp: Record<string, boolean> = {};
+    for (const m of mirrorMoves) temp[m.to] = m.value;
+    const setMirrorPoint = s.setMirrorPoint;
+    for (const m of mirrorMoves) {
+      if (temp[m.to] !== undefined) {
+        setMirrorPoint(m.to, temp[m.to]!);
+      }
+    }
+  }
+  return true;
+}
+
+/** Rotate multi-selected path points (and their handles) around the selection center by angleDeg.
+ * If basePoints/baseHoles are provided, rotate from those (for live drag from original).
+ * Returns true if applied.
+ */
+export function rotateSelectedPathPoints(
+  angleDeg: number,
+  basePoints?: PathPoint[],
+  baseHoles?: PathPoint[][],
+): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1 || Math.abs(angleDeg) < 0.01) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const points = basePoints ?? n.points;
+  const holes = baseHoles ?? n.holes;
+
+  // Build a temporary node for coord lookup
+  const tempN: PathNode = { ...n, points, holes };
+  const coords = selectedPointCoords(tempN, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+
+  const rad = (angleDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+
+  const nextPoints = points.map(clonePathPoint);
+  const nextHoles = holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const nx = cx + dx * cos - dy * sin;
+    const ny = cy + dx * sin + dy * cos;
+    const rotH = (h: { x: number; y: number } | null | undefined) => {
+      if (!h) return h ?? null;
+      return { x: h.x * cos - h.y * sin, y: h.x * sin + h.y * cos };
+    };
+    ring[sel.index] = { ...p, x: nx, y: ny, in: rotH(p.in), out: rotH(p.out) };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Rotated ${coords.length} points · ${Math.round(angleDeg)}°`);
+  return true;
+}
+
+type ScaleHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
+
+export let lastPathScale = { sx: 1, sy: 1 };
+
+/** Scale multi-selected path points (and their Bézier handles) from the original bbox.
+ * Fixed edge/corner is the opposite of the dragged handle. Drag past the fixed point to flip (negative scale). Shift locks aspect (signs follow the cursor half-planes). Alt scales from center.
+ * basePoints/baseHoles for live drag from original. Returns true if applied.
+ */
+export function scaleSelectedPathPoints(
+  handle: ScaleHandle,
+  mouseLocalX: number,
+  mouseLocalY: number,
+  shiftKey: boolean,
+  altKey: boolean,
+  basePoints?: PathPoint[],
+  baseHoles?: PathPoint[][],
+): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const points = basePoints ?? n.points;
+  const holes = baseHoles ?? n.holes;
+
+  const tempN: PathNode = { ...n, points, holes };
+  const coords = selectedPointCoords(tempN, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const origW = Math.max(1e-6, maxX - minX);
+  const origH = Math.max(1e-6, maxY - minY);
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+
+  // Fixed point (opposite)
+  let fixedX = cx;
+  let fixedY = cy;
+  if (!altKey) {
+    if (handle.includes("w")) fixedX = maxX;
+    else if (handle.includes("e")) fixedX = minX;
+    if (handle.includes("n")) fixedY = maxY;
+    else if (handle.includes("s")) fixedY = minY;
+  }
+
+  // Compute signed scale from mouse position relative to fixed (negative = flip)
+  let sx = 1;
+  let sy = 1;
+  const involvesX = handle === "e" || handle === "w" || handle === "ne" || handle === "nw" || handle === "se" || handle === "sw";
+  const involvesY = handle === "n" || handle === "s" || handle === "ne" || handle === "nw" || handle === "se" || handle === "sw";
+
+  if (involvesX) {
+    const handleOrigX = handle.includes("w") ? minX : maxX;
+    const origDelta = handleOrigX - fixedX;
+    const newDelta = mouseLocalX - fixedX;
+    sx = Math.abs(origDelta) > 1e-6 ? newDelta / origDelta : 1;
+  }
+  if (involvesY) {
+    const handleOrigY = handle.includes("n") ? minY : maxY;
+    const origDelta = handleOrigY - fixedY;
+    const newDelta = mouseLocalY - fixedY;
+    sy = Math.abs(origDelta) > 1e-6 ? newDelta / origDelta : 1;
+  }
+
+  if (shiftKey) {
+    if (involvesX && involvesY) {
+      // Aspect lock: uniform magnitude from diagonal, signs from which side of the fixed point the cursor is on
+      const origDiag = Math.hypot(origW, origH);
+      const mouseDx = mouseLocalX - fixedX;
+      const mouseDy = mouseLocalY - fixedY;
+      const mouseDiag = Math.hypot(mouseDx, mouseDy);
+      const mag = origDiag > 1e-6 ? mouseDiag / origDiag : 1;
+      const signX = Math.sign(sx) || 1;
+      const signY = Math.sign(sy) || 1;
+      sx = mag * signX;
+      sy = mag * signY;
+    } else if (involvesX) {
+      sy = sx;
+    } else if (involvesY) {
+      sx = sy;
+    }
+  }
+
+  // Clamp magnitude, preserve sign (allows flip)
+  const clamp = (v: number) => {
+    const s = Math.sign(v) || 1;
+    return s * Math.max(0.01, Math.abs(v));
+  };
+  sx = clamp(sx);
+  sy = clamp(sy);
+
+  lastPathScale = { sx, sy };
+
+  const nextPoints = points.map(clonePathPoint);
+  const nextHoles = holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const dx = p.x - fixedX;
+    const dy = p.y - fixedY;
+    const nx = fixedX + dx * sx;
+    const ny = fixedY + dy * sy;
+    const scaleH = (h: { x: number; y: number } | null | undefined) => {
+      if (!h) return h ?? null;
+      return { x: h.x * sx, y: h.y * sy };
+    };
+    ring[sel.index] = { ...p, x: nx, y: ny, in: scaleH(p.in), out: scaleH(p.out) };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  const pct = Math.round(((Math.abs(sx) + Math.abs(sy)) / 2) * 100);
+  const lock = shiftKey ? " · aspect" : "";
+  let flip = "";
+  if (sx < 0 && sy < 0) flip = " · flip XY";
+  else if (sx < 0) flip = " · flip X";
+  else if (sy < 0) flip = " · flip Y";
+  setStudioStatus(`Scaled ${coords.length} points · ${pct}%${lock}${flip}`);
+  return true;
+}
+
+export function nudgeSelectedPathPoints(dx: number, dy: number): boolean {
+  const s = useDesign.getState();
+  const doc = s.doc;
+  if (!doc || (dx === 0 && dy === 0)) return false;
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = doc.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+
+  const pointsToMove = (s.pathPointSelection?.length
+    ? s.pathPointSelection
+    : s.pathEditHit
+      ? [{ index: s.pathEditHit.index, hole: s.pathEditHit.hole }]
+      : []) as { index: number; hole?: number }[];
+  if (!pointsToMove.length) return false;
+
+  // World delta → local (undo rotation)
+  let ldx = dx;
+  let ldy = dy;
+  if (n.rotation) {
+    const rad = (-n.rotation * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    ldx = dx * cos - dy * sin;
+    ldy = dx * sin + dy * cos;
+  }
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const pt of pointsToMove) {
+    const ring = pt.hole == null ? nextPoints : nextHoles?.[pt.hole];
+    if (!ring || pt.index < 0 || pt.index >= ring.length) continue;
+    const p = ring[pt.index]!;
+    ring[pt.index] = { ...p, x: p.x + ldx, y: p.y + ldy };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  const count = pointsToMove.length;
+  setStudioStatus(`Nudged ${count} point${count > 1 ? "s" : ""}`);
+  return true;
+}
+
+export type AlignEdge = "left" | "center" | "right" | "top" | "middle" | "bottom";
+type DistAxis = "h" | "v";
+
+function selectedPointCoords(
+  n: PathNode,
+  selected: { index: number; hole?: number }[],
+): { sel: { index: number; hole?: number }; x: number; y: number }[] {
+  const out: { sel: { index: number; hole?: number }; x: number; y: number }[] = [];
+  for (const sel of selected) {
+    const ring = sel.hole == null ? n.points : n.holes?.[sel.hole];
+    const p = ring?.[sel.index];
+    if (p) out.push({ sel, x: p.x, y: p.y });
+  }
+  return out;
+}
+
+/** Align multi-selected path points to the selection bounds (local space). */
+export function alignSelectedPathPoints(edge: AlignEdge): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+
+  let targetX: number | null = null;
+  let targetY: number | null = null;
+  if (edge === "left") targetX = minX;
+  else if (edge === "center") targetX = midX;
+  else if (edge === "right") targetX = maxX;
+  else if (edge === "top") targetY = minY;
+  else if (edge === "middle") targetY = midY;
+  else if (edge === "bottom") targetY = maxY;
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const next = { ...p };
+    if (targetX != null) next.x = targetX;
+    if (targetY != null) next.y = targetY;
+    ring[sel.index] = next;
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Aligned ${coords.length} points · ${edge}`);
+  return true;
+}
+
+/** Compute align positions for live preview (does not commit). */
+export function previewAlignSelectedPathPoints(edge: AlignEdge): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+  let targetX: number | null = null;
+  let targetY: number | null = null;
+  if (edge === "left") targetX = minX;
+  else if (edge === "center") targetX = midX;
+  else if (edge === "right") targetX = maxX;
+  else if (edge === "top") targetY = minY;
+  else if (edge === "middle") targetY = midY;
+  else if (edge === "bottom") targetY = maxY;
+  const points = coords.map((c) => ({
+    index: c.sel.index,
+    hole: c.sel.hole,
+    fromX: c.x,
+    fromY: c.y,
+    toX: targetX != null ? targetX : c.x,
+    toY: targetY != null ? targetY : c.y,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge,
+    points,
+  });
+  setStudioStatus(`Preview · Align ${edge} · ${points.length} points`);
+  return true;
+}
+
+export function clearPathPointAlignPreview() {
+  const s = useDesign.getState();
+  s.setPathPointAlignPreview?.(null);
+  // status will be overwritten by normal hover or leave
+}
+
+
+/** Distribute multi-selected path points evenly between extremes (local space). Needs 3+. */
+export function distributeSelectedPathPoints(axis: DistAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) return false;
+
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start = axis === "h" ? first.x : first.y;
+  const end = axis === "h" ? last.x : last.y;
+  const step = (end - start) / (sorted.length - 1);
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  sorted.forEach((item, i) => {
+    const ring = item.sel.hole == null ? nextPoints : nextHoles?.[item.sel.hole];
+    if (!ring) return;
+    const p = ring[item.sel.index];
+    if (!p) return;
+    const next = { ...p };
+    if (axis === "h") next.x = start + step * i;
+    else next.y = start + step * i;
+    ring[item.sel.index] = next;
+  });
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Distributed ${coords.length} points · ${axis === "h" ? "horizontal" : "vertical"}`);
+  return true;
+}
+
+/** Compute distribute positions for live preview (does not commit). */
+export function previewDistributeSelectedPathPoints(axis: DistAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start = axis === "h" ? first.x : first.y;
+  const end = axis === "h" ? last.x : last.y;
+  const step = (end - start) / (sorted.length - 1);
+  const points = sorted.map((item, i) => ({
+    index: item.sel.index,
+    hole: item.sel.hole,
+    fromX: item.x,
+    fromY: item.y,
+    toX: axis === "h" ? start + step * i : item.x,
+    toY: axis === "v" ? start + step * i : item.y,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge: axis === "h" ? "dist-h" : "dist-v",
+    points,
+  });
+  setStudioStatus(`Preview · Dist ${axis === "h" ? "H" : "V"} · ${points.length} points`);
+  return true;
+}
+
+/** Preview distribute with a specific gap, centered on current extremes. */
+export function previewDistributeWithGap(axis: DistAxis, gap: number): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start0 = axis === "h" ? first.x : first.y;
+  const end0 = axis === "h" ? last.x : last.y;
+  const center = (start0 + end0) / 2;
+  const count = sorted.length;
+  const span = Math.max(0, gap) * (count - 1);
+  const start = center - span / 2;
+  const points = sorted.map((item, i) => ({
+    index: item.sel.index,
+    hole: item.sel.hole,
+    fromX: item.x,
+    fromY: item.y,
+    toX: axis === "h" ? start + gap * i : item.x,
+    toY: axis === "v" ? start + gap * i : item.y,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge: axis === "h" ? "dist-h" : "dist-v",
+    points,
+  });
+  setStudioStatus(`Gap ${formatDistributeGap(gap)} · ${axis === "h" ? "H" : "V"}`);
+  return true;
+}
+
+/** Apply distribute with a specific gap, centered on current extremes. */
+export function applyDistributeWithGap(axis: DistAxis, gap: number): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 3) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 3) return false;
+
+  const sorted = coords.slice().sort((a, b) => (axis === "h" ? a.x - b.x : a.y - b.y));
+  const first = sorted[0]!;
+  const last = sorted[sorted.length - 1]!;
+  const start0 = axis === "h" ? first.x : first.y;
+  const end0 = axis === "h" ? last.x : last.y;
+  const center = (start0 + end0) / 2;
+  const count = sorted.length;
+  const span = Math.max(0, gap) * (count - 1);
+  const start = center - span / 2;
+
+  s.commit();
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  sorted.forEach((item, i) => {
+    const ring = item.sel.hole == null ? nextPoints : nextHoles?.[item.sel.hole];
+    if (!ring) return;
+    const p = ring[item.sel.index];
+    if (!p) return;
+    const next = { ...p };
+    if (axis === "h") next.x = start + gap * i;
+    else next.y = start + gap * i;
+    ring[item.sel.index] = next;
+  });
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  setStudioStatus(`Distributed · gap ${formatDistributeGap(gap)} · ${axis === "h" ? "horizontal" : "vertical"}`);
+  return true;
+}
+
+/** Live numeric preview for a single path point while editing X/Y in the inspector. */
+export function setPathPointNumericPreview(
+  nodeId: string,
+  index: number,
+  hole: number | undefined,
+  toX: number,
+  toY: number,
+  axis: "x" | "y",
+): boolean {
+  const s = useDesign.getState();
+  const n = s.doc?.nodes.find((x) => x.id === nodeId);
+  if (!n || !isPath(n)) {
+    s.setPathPointNumericPreview?.(null);
+    return false;
+  }
+  const pts = hole == null ? n.points : (n.holes?.[hole] ?? null);
+  if (!pts || !pts[index]) {
+    s.setPathPointNumericPreview?.(null);
+    return false;
+  }
+  const cur = pts[index]!;
+  s.setPathPointNumericPreview?.({
+    nodeId,
+    index,
+    hole,
+    fromX: cur.x,
+    fromY: cur.y,
+    toX,
+    toY,
+    axis,
+  });
+  const delta = axis === "x" ? toX - cur.x : toY - cur.y;
+  const sign = delta >= 0 ? "+" : "";
+  setStudioStatus(`Preview · Point ${index + 1} ${axis.toUpperCase()} ${Math.round(axis === "x" ? toX : toY)} (${sign}${Math.round(delta)})`);
+  return true;
+}
+
+export function clearPathPointNumericPreview() {
+  const s = useDesign.getState();
+  s.setPathPointNumericPreview?.(null);
+}
+
+/** Live numeric preview for a path-point handle (in/out) while editing X/Y or length in the inspector. */
+export function setPathPointHandleNumericPreview(
+  nodeId: string,
+  index: number,
+  hole: number | undefined,
+  arm: "in" | "out",
+  toX: number,
+  toY: number,
+  axis: "x" | "y" | "len",
+): boolean {
+  const s = useDesign.getState();
+  const n = s.doc?.nodes.find((x) => x.id === nodeId);
+  if (!n || !isPath(n)) {
+    s.setPathPointHandleNumericPreview?.(null);
+    return false;
+  }
+  const pts = hole == null ? n.points : (n.holes?.[hole] ?? null);
+  if (!pts || !pts[index]) {
+    s.setPathPointHandleNumericPreview?.(null);
+    return false;
+  }
+  const pt = pts[index]!;
+  const cur = arm === "in" ? (pt.in ?? { x: 0, y: 0 }) : (pt.out ?? { x: 0, y: 0 });
+  s.setPathPointHandleNumericPreview?.({
+    nodeId,
+    index,
+    hole,
+    arm,
+    fromX: cur.x,
+    fromY: cur.y,
+    toX,
+    toY,
+    axis,
+  });
+  const delta = axis === "x" ? toX - cur.x : axis === "y" ? toY - cur.y : Math.hypot(toX, toY) - Math.hypot(cur.x, cur.y);
+  const sign = delta >= 0 ? "+" : "";
+  const label = axis === "len" ? "len" : axis.toUpperCase();
+  const shown = axis === "len" ? Math.round(Math.hypot(toX, toY)) : Math.round(axis === "x" ? toX : toY);
+  setStudioStatus(`Preview · Handle ${arm} ${label} ${shown} (${sign}${Math.round(delta)})`);
+  return true;
+}
+
+export function clearPathPointHandleNumericPreview() {
+  const s = useDesign.getState();
+  s.setPathPointHandleNumericPreview?.(null);
+}
+
+type FlipAxis = "x" | "y" | "xy";
+
+/** Flip multi-selected path points (and their Bézier handles) around the selection center.
+ * axis "x" mirrors horizontally (sx=-1), "y" vertically, "xy" both.
+ * Returns true if applied.
+ */
+export function flipSelectedPathPoints(axis: FlipAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) return false;
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) return false;
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) return false;
+
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) return false;
+
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+
+  const sx = axis === "y" ? 1 : -1;
+  const sy = axis === "x" ? 1 : -1;
+
+  const nextPoints = n.points.map(clonePathPoint);
+  const nextHoles = n.holes?.map((ring) => ring.map(clonePathPoint));
+
+  for (const { sel } of coords) {
+    const ring = sel.hole == null ? nextPoints : nextHoles?.[sel.hole];
+    if (!ring) continue;
+    const p = ring[sel.index];
+    if (!p) continue;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const nx = cx + dx * sx;
+    const ny = cy + dy * sy;
+    const scaleH = (h: { x: number; y: number } | null | undefined) => {
+      if (!h) return h ?? null;
+      return { x: h.x * sx, y: h.y * sy };
+    };
+    ring[sel.index] = { ...p, x: nx, y: ny, in: scaleH(p.in), out: scaleH(p.out) };
+  }
+
+  s.replaceNode(
+    id,
+    {
+      ...n,
+      points: nextPoints,
+      holes: nextHoles && nextHoles.length ? nextHoles : undefined,
+    },
+    false,
+  );
+  const label = axis === "xy" ? "XY" : axis.toUpperCase();
+  setStudioStatus(`Flipped ${coords.length} points · ${label}`);
+  return true;
+}
+
+/** Compute flip positions for live preview (does not commit). */
+export function previewFlipSelectedPathPoints(axis: FlipAxis): boolean {
+  const s = useDesign.getState();
+  if (s.selection.length !== 1) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const id = s.selection[0]!;
+  const n = s.doc?.nodes.find((x) => x.id === id);
+  if (!n || !isPath(n)) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const selected = s.pathPointSelection ?? [];
+  if (selected.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const coords = selectedPointCoords(n, selected);
+  if (coords.length < 2) {
+    s.setPathPointAlignPreview?.(null);
+    return false;
+  }
+  const xs = coords.map((c) => c.x);
+  const ys = coords.map((c) => c.y);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const sx = axis === "y" ? 1 : -1;
+  const sy = axis === "x" ? 1 : -1;
+  const points = coords.map((item) => ({
+    index: item.sel.index,
+    hole: item.sel.hole,
+    fromX: item.x,
+    fromY: item.y,
+    toX: cx + (item.x - cx) * sx,
+    toY: cy + (item.y - cy) * sy,
+  }));
+  s.setPathPointAlignPreview?.({
+    nodeId: id,
+    edge: `flip-${axis}`,
+    points,
+  });
+  setStudioStatus(`Preview · Flip ${axis === "xy" ? "XY" : axis.toUpperCase()} · ${points.length} points`);
+  return true;
+}

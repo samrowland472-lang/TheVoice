@@ -1,0 +1,533 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Copy, FolderPlus, Pin, Plus, Search, Trash2 } from "lucide-react";
+import { FORMATS } from "@/lib/design/formats";
+import { paletteFromSrc, paletteName } from "@/lib/design/palette";
+import { CANVAS_FONTS } from "@/lib/design/fonts";
+import { imageNode } from "@/lib/design/node-factory";
+import { useDesign } from "@/lib/design/store";
+import { TEMPLATES, TEMPLATE_CATEGORIES } from "@/lib/design/templates";
+import { Button } from "@/components/ui/button";
+import { CommandPalette, type CommandItem } from "@/components/studio/command-palette";
+import { TemplateThumb } from "@/components/template-thumb";
+import { cn } from "@/lib/utils";
+
+const PRESET_TAGS = ["Campaign", "Draft", "Press"];
+
+export function HubView() {
+  const navigate = useNavigate();
+  const hydrate = useDesign((s) => s.hydrate);
+  const index = useDesign((s) => s.index);
+  const fromTemplate = useDesign((s) => s.fromTemplate);
+  const fromBlank = useDesign((s) => s.fromBlank);
+  const remove = useDesign((s) => s.remove);
+  const brand = useDesign((s) => s.brand);
+  const setBrand = useDesign((s) => s.setBrand);
+  const duplicateProject = useDesign((s) => s.duplicateProject);
+  const togglePin = useDesign((s) => s.togglePin);
+  const setProjectFolder = useDesign((s) => s.setProjectFolder);
+  const toggleProjectTag = useDesign((s) => s.toggleProjectTag);
+  const paletteOpen = useDesign((s) => s.paletteOpen);
+  const setPaletteOpen = useDesign((s) => s.setPaletteOpen);
+  const [cat, setCat] = useState("All");
+  const [formatId, setFormatId] = useState("ig-post");
+  const [newColor, setNewColor] = useState("#3fc6ff");
+  const [q, setQ] = useState("");
+  const [folder, setFolder] = useState("all");
+  const [tag, setTag] = useState("all");
+  const [campaignFilter, setCampaignFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(!useDesign.getState().paletteOpen);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setPaletteOpen]);
+
+  const templates = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return TEMPLATES.filter((t) => (cat === "All" || t.category === cat) && (!s || `${t.name} ${t.description} ${t.category}`.toLowerCase().includes(s)));
+  }, [cat, q]);
+
+  const campaignCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of index) {
+      if (!p.campaignId) continue;
+      m.set(p.campaignId, (m.get(p.campaignId) ?? 0) + 1);
+    }
+    return m;
+  }, [index]);
+
+  function openTemplate(id: string) {
+    const docId = fromTemplate(id);
+    void navigate({ to: "/studio/$id", params: { id: docId } });
+  }
+
+  function openBlank() {
+    const docId = fromBlank(formatId);
+    void navigate({ to: "/studio/$id", params: { id: docId } });
+  }
+
+  function openProject(id: string) {
+    void navigate({ to: "/studio/$id", params: { id } });
+  }
+
+  const commands = useMemo<CommandItem[]>(() => {
+    return [
+      { id: "blank", label: `New ${FORMATS.find((f) => f.id === formatId)?.label ?? "artboard"}`, group: "Create", hint: "N", run: openBlank },
+      ...TEMPLATES.map((t) => ({
+        id: `t-${t.id}`,
+        label: t.name,
+        group: t.category,
+        hint: t.formatId,
+        run: () => openTemplate(t.id),
+      })),
+      ...index.slice(0, 12).map((p) => ({
+        id: `p-${p.id}`,
+        label: p.name,
+        group: "Recent",
+        run: () => openProject(p.id),
+      })),
+    ];
+  }, [formatId, index]);
+
+  return (
+    <div className="min-h-0 flex-1 overflow-auto scrollbar-thin">
+      <header className="border-b border-border px-5 py-6 md:px-10 md:py-10">
+        <p className="font-mono text-[11px] tracking-[0.28em] text-phosphor uppercase">The Voice · Design</p>
+        <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.03em] text-ink md:text-6xl">
+          Artboard. Paint. Press.
+        </h1>
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-dim">
+          Layouts with type, layers, and a real brush engine — posters, covers, stories, and marks that
+          hold a room. Stay in the loop: ⌘K for anything, drop an image, export at 3×.
+        </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <select
+            value={formatId}
+            onChange={(e) => setFormatId(e.target.value)}
+            className="h-10 rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
+            aria-label="Artboard size"
+          >
+            {FORMATS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label} · {f.width}×{f.height}
+              </option>
+            ))}
+          </select>
+          <Button variant="primary" onClick={openBlank}>
+            <Plus className="size-4" />
+            New artboard
+          </Button>
+          <Button onClick={() => setPaletteOpen(true)}>
+            <Search className="size-4" />
+            Command
+          </Button>
+        </div>
+        <label className="relative mt-6 block max-w-md">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-faint" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search templates"
+            className="h-11 w-full rounded-[12px] border border-border bg-surface-alt pr-3 pl-10 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-phosphor"
+          />
+        </label>
+      </header>
+
+      {index.length > 0 && (
+        <section className="border-b border-border px-5 py-8 md:px-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-sm font-medium tracking-[0.16em] text-ink-dim uppercase">Recent</h2>
+            <div className="flex flex-wrap items-center gap-1">
+              {(["all", "unfiled", ...[...new Set(index.map((p) => p.folder).filter(Boolean) as string[])]] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFolder(id)}
+                  className={cn(
+                    "h-8 rounded-[999px] px-3 text-[11px] font-medium capitalize",
+                    folder === id ? "bg-phosphor text-phosphor-ink" : "text-ink-dim hover:bg-surface-alt hover:text-ink",
+                  )}
+                >
+                  {id === "all" ? "All" : id === "unfiled" ? "Unfiled" : id}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="flex h-8 items-center gap-1 rounded-[999px] px-3 text-[11px] text-ink-dim hover:bg-surface-alt hover:text-ink"
+                onClick={() => {
+                  const name = window.prompt("Folder name");
+                  if (name?.trim()) setFolder(name.trim());
+                }}
+                aria-label="New folder"
+              >
+                <FolderPlus className="size-3.5" />
+                Folder
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1">
+            {["all", ...PRESET_TAGS].map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTag(id)}
+                className={cn(
+                  "h-7 rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide",
+                  tag === id ? "border border-phosphor text-phosphor" : "text-ink-faint hover:text-ink",
+                )}
+              >
+                {id === "all" ? "Any tag" : id}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCampaignFilter((c) => (c ? null : "__any__"))}
+              className={cn(
+                "h-7 rounded-[8px] px-2 font-mono text-[10px] uppercase tracking-wide",
+                campaignFilter ? "border border-phosphor text-phosphor" : "text-ink-faint hover:text-ink",
+              )}
+            >
+              Sets
+            </button>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+            {index
+              .filter((p) => {
+                if (folder === "unfiled") return !p.folder;
+                if (folder !== "all") return p.folder === folder;
+                return true;
+              })
+              .filter((p) => tag === "all" || (p.tags ?? []).includes(tag))
+              .filter((p) => {
+                if (!campaignFilter) return true;
+                if (campaignFilter === "__any__") return Boolean(p.campaignId);
+                return p.campaignId === campaignFilter;
+              })
+              .slice(0, 12)
+              .map((p) => (
+              <article key={p.id} className="group relative">
+                <button
+                  type="button"
+                  onClick={() => openProject(p.id)}
+                  className={cn(
+                    "block w-full overflow-hidden rounded-[16px] border bg-surface text-left transition-colors hover:border-phosphor",
+                    p.pinned ? "border-phosphor/50" : "border-border",
+                  )}
+                >
+                  <div className="aspect-[4/5] bg-surface-alt">
+                    {p.thumbnail ? (
+                      <img src={p.thumbnail} alt="" className="size-full object-cover" />
+                    ) : (
+                      <div className="flex size-full items-center justify-center font-mono text-xs text-ink-faint">
+                        {p.width}×{p.height}
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-3 py-2">
+                    <div className="flex items-center gap-1">
+                      {p.pinned && <Pin className="size-3 shrink-0 fill-phosphor text-phosphor" />}
+                      <div className="truncate text-sm text-ink">{p.name}</div>
+                    </div>
+                    <div className="font-mono text-[10px] text-ink-faint uppercase">
+                      {p.folder ? `${p.folder} · ` : ""}
+                      {p.formatId}
+                    </div>
+                    {(p.tags ?? []).length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {p.tags!.map((t) => (
+                          <span key={t} className="font-mono text-[9px] tracking-wide text-phosphor uppercase">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </button>
+                {p.campaignId && (campaignCounts.get(p.campaignId) ?? 0) > 1 && (
+                  <button
+                    type="button"
+                    className="absolute top-2 left-2 rounded-[6px] border border-phosphor/40 bg-ground/85 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-phosphor uppercase"
+                    onClick={() => setCampaignFilter(p.campaignId ?? null)}
+                    aria-label={`Show ${campaignCounts.get(p.campaignId)}-board set`}
+                  >
+                    Set · {campaignCounts.get(p.campaignId)}
+                  </button>
+                )}
+                <div className="absolute top-2 right-2 hidden gap-1 group-hover:flex">
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-[8px] border border-border bg-ground/80",
+                      p.pinned ? "text-phosphor" : "text-ink-dim hover:text-ink",
+                    )}
+                    onClick={() => togglePin(p.id)}
+                    aria-label={p.pinned ? `Unpin ${p.name}` : `Pin ${p.name}`}
+                  >
+                    <Pin className={cn("size-3.5", p.pinned && "fill-phosphor")} />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-[8px] border border-border bg-ground/80 text-ink-dim hover:text-ink"
+                    onClick={() => duplicateProject(p.id)}
+                    aria-label={`Duplicate ${p.name}`}
+                  >
+                    <Copy className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="flex size-8 items-center justify-center rounded-[8px] border border-border bg-ground/80 text-ink-dim hover:text-alert"
+                    onClick={() => remove(p.id)}
+                    aria-label={`Delete ${p.name}`}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+                <div className="absolute bottom-12 left-2 right-2 hidden group-hover:block">
+                  <select
+                    className="h-7 w-full rounded-[8px] border border-border bg-ground/90 px-2 text-[10px] text-ink"
+                    value={p.folder ?? ""}
+                    aria-label={`Folder for ${p.name}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "__new") {
+                        const name = window.prompt("Folder name");
+                        if (name?.trim()) setProjectFolder(p.id, name.trim());
+                      } else {
+                        setProjectFolder(p.id, v);
+                      }
+                    }}
+                  >
+                    <option value="">Unfiled</option>
+                    {[...new Set(index.map((x) => x.folder).filter(Boolean) as string[])].map((f) => (
+                      <option key={f} value={f}>
+                        {f}
+                      </option>
+                    ))}
+                    {folder !== "all" && folder !== "unfiled" && !index.some((x) => x.folder === folder) && (
+                      <option value={folder}>{folder}</option>
+                    )}
+                    <option value="__new">New folder…</option>
+                  </select>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {PRESET_TAGS.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={cn(
+                          "h-6 rounded-[6px] px-1.5 font-mono text-[9px] uppercase",
+                          (p.tags ?? []).includes(t) ? "bg-phosphor/15 text-phosphor" : "bg-ground/80 text-ink-faint",
+                        )}
+                        onClick={() => toggleProjectTag(p.id, t)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section id="brand" className="border-b border-border px-5 py-8 md:px-10">
+        <h2 className="text-sm font-medium tracking-[0.16em] text-ink-dim uppercase">Brand kit</h2>
+        <p className="mt-2 max-w-xl text-sm text-ink-dim">
+          Named colours and a display/body pairing. New type uses the display face; inspector can switch to body.
+        </p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          {brand.colors.map((c) => (
+            <div key={c.hex} className="flex w-16 flex-col items-center gap-1">
+              <button
+                type="button"
+                className="size-10 rounded-full border border-border"
+                style={{ background: c.hex }}
+                aria-label={`Remove ${c.name}`}
+                onClick={() => setBrand({ ...brand, colors: brand.colors.filter((x) => x.hex !== c.hex) })}
+                title="Remove"
+              />
+              <input
+                className="w-full bg-transparent text-center font-mono text-[9px] text-ink-dim outline-none"
+                value={c.name}
+                placeholder="name"
+                aria-label={`Name for ${c.hex}`}
+                onChange={(e) =>
+                  setBrand({
+                    ...brand,
+                    colors: brand.colors.map((x) => (x.hex === c.hex ? { ...x, name: e.target.value } : x)),
+                  })
+                }
+              />
+            </div>
+          ))}
+          <input
+            type="color"
+            value={newColor}
+            onChange={(e) => setNewColor(e.target.value)}
+            className="size-10 rounded-full border border-border bg-surface-alt"
+            aria-label="New brand colour"
+          />
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!brand.colors.some((x) => x.hex === newColor)) {
+                setBrand({ ...brand, colors: [...brand.colors, { name: "Swatch", hex: newColor }] });
+              }
+            }}
+          >
+            Add colour
+          </Button>
+          <label className="inline-flex h-9 cursor-pointer items-center rounded-[10px] border border-border px-3 text-xs text-ink-dim hover:border-phosphor hover:text-ink">
+            From image
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  void paletteFromSrc(String(reader.result), 6).then((hexes) => {
+                    const cur = useDesign.getState().brand;
+                    const extra = hexes
+                      .filter((hex) => !cur.colors.some((c) => c.hex.toLowerCase() === hex))
+                      .map((hex, i) => ({ name: paletteName(hex, i), hex }));
+                    if (extra.length) setBrand({ ...cur, colors: [...cur.colors, ...extra].slice(0, 12) });
+                  });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+          </label>
+        </div>
+        <div className="mt-6 grid max-w-xl grid-cols-2 gap-3">
+          <label className="text-[11px] text-ink-dim">
+            Display
+            <select
+              className="mt-1 h-10 w-full rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
+              value={brand.displayFont}
+              onChange={(e) => setBrand({ ...brand, displayFont: e.target.value })}
+            >
+              {CANVAS_FONTS.map((f) => (
+                <option key={f.id} value={f.family}>
+                  {f.family}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[11px] text-ink-dim">
+            Body
+            <select
+              className="mt-1 h-10 w-full rounded-[12px] border border-border bg-surface-alt px-3 text-sm text-ink"
+              value={brand.bodyFont}
+              onChange={(e) => setBrand({ ...brand, bodyFont: e.target.value })}
+            >
+              {CANVAS_FONTS.map((f) => (
+                <option key={f.id} value={f.family}>
+                  {f.family}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="mt-4 text-ink">
+          <span className="text-2xl font-semibold tracking-[-0.03em]" style={{ fontFamily: brand.displayFont }}>
+            The Voice
+          </span>
+          <span className="ml-3 text-sm text-ink-dim" style={{ fontFamily: brand.bodyFont }}>
+            A mix that holds a room.
+          </span>
+        </p>
+      </section>
+
+      <section
+        className="px-5 py-8 md:px-10 md:py-12"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = [...e.dataTransfer.files].find((f) => f.type.startsWith("image/"));
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const src = String(reader.result);
+            const docId = fromBlank(formatId);
+            const img = new Image();
+            img.onload = () => {
+              useDesign.getState().open(docId);
+              const doc = useDesign.getState().doc;
+              if (!doc) return;
+              const scale = Math.min(doc.artboard.width / img.width, doc.artboard.height / img.height);
+              useDesign.getState().addNode(
+                imageNode({
+                  x: (doc.artboard.width - img.width * scale) / 2,
+                  y: (doc.artboard.height - img.height * scale) / 2,
+                  w: img.width * scale,
+                  h: img.height * scale,
+                  src,
+                }),
+              );
+              useDesign.getState().save();
+              void navigate({ to: "/studio/$id", params: { id: docId } });
+            };
+            img.src = src;
+          };
+          reader.readAsDataURL(file);
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-medium tracking-[0.16em] text-ink-dim uppercase">Templates</h2>
+          <div className="flex flex-wrap gap-1">
+            {TEMPLATE_CATEGORIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCat(c)}
+                className={cn(
+                  "h-9 rounded-[999px] px-3 text-xs font-medium",
+                  cat === c ? "bg-phosphor text-phosphor-ink" : "text-ink-dim hover:bg-surface-alt hover:text-ink",
+                )}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          {templates.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => openTemplate(t.id)}
+              className="group overflow-hidden rounded-[24px] border border-border bg-surface p-2 text-left transition-colors hover:border-phosphor"
+            >
+              <div className="aspect-[4/5] overflow-hidden rounded-[16px] bg-ground">
+                <TemplateThumb template={t} className="size-full" />
+              </div>
+              <div className="px-2 pt-3 pb-1">
+                <div className="text-sm font-medium text-ink">{t.name}</div>
+                <div className="mt-0.5 text-xs text-ink-dim">{t.description}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        {templates.length === 0 && (
+          <p className="py-16 text-center text-sm text-ink-faint">No templates match that search.</p>
+        )}
+      </section>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} commands={commands} placeholder="Open a template or recent…" />
+    </div>
+  );
+}

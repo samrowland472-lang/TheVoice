@@ -1,0 +1,206 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ground: #0a0d0c;
+  --color-surface: #121613;
+  --color-surface-alt: #1a201c;
+  --color-border: #263029;
+  --color-ink: #d9f5e3;
+  --color-ink-dim: #7d9689;
+  --color-ink-faint: #4c5f56;
+  --color-phosphor: #3fc6ff;
+  --color-phosphor-ink: #06170f;
+  --color-amber: #ffb238;
+  --color-alert: #ff4d4d;
+  --color-glass: rgb(63 198 255 / 0.035);
+  --font-sans: "Chakra Petch", system-ui, -apple-system, sans-serif;
+  --font-display: "Chakra Petch", system-ui, sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, monospace;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  html,
+  body,
+  #app {
+    min-height: 100%;
+    background: var(--color-ground);
+    color: var(--color-ink);
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+}
+
+.pasteboard {
+  background-color: #070908;
+  background-image:
+    linear-gradient(rgb(38 48 41 / 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(38 48 41 / 0.35) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.range-phosphor {
+  appearance: none;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 99px;
+  --fill-opacity: 1;
+}
+/* Opacity ranges: track fill intensity and length follow the live value */
+.range-phosphor[data-opacity-range] {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) calc(var(--fill-opacity) * 100%),
+    var(--color-border) calc(var(--fill-opacity) * 100%),
+    var(--color-border) 100%
+  );
+}
+.range-phosphor[data-opacity-range]::-moz-range-track {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground)) calc(var(--fill-opacity) * 100%),
+    var(--color-border) calc(var(--fill-opacity) * 100%),
+    var(--color-border) 100%
+  );
+  height: 4px;
+  border-radius: 99px;
+  border: none;
+}
+.range-phosphor[data-opacity-range]::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 99px;
+}
+.range-phosphor::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground));
+  border: 1px solid var(--color-phosphor);
+  box-shadow: 0 0 0 1px var(--color-ground);
+}
+.range-phosphor::-moz-range-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--color-phosphor) calc(var(--fill-opacity) * 100%), var(--color-ground));
+  border: 1px solid var(--color-phosphor);
+  box-shadow: 0 0 0 1px var(--color-ground);
+}
+/* Percent ranges (blur, photo filters, shadow blur): track length follows normalized value */
+.range-phosphor[data-fill-range] {
+  --fill-percent: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) calc(var(--fill-percent) * 100%),
+    var(--color-border) calc(var(--fill-percent) * 100%),
+    var(--color-border) 100%
+  );
+}
+.range-phosphor[data-fill-range]::-moz-range-track {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) 0%,
+    color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground)) calc(var(--fill-percent) * 100%),
+    var(--color-border) calc(var(--fill-percent) * 100%),
+    var(--color-border) 100%
+  );
+  height: 4px;
+  border-radius: 99px;
+  border: none;
+}
+.range-phosphor[data-fill-range]::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 99px;
+}
+.range-phosphor[data-fill-range]::-webkit-slider-thumb,
+.range-phosphor[data-fill-range]::-moz-range-thumb {
+  background: color-mix(in srgb, var(--color-phosphor) calc(var(--fill-percent) * 100%), var(--color-ground));
+}
+
+.field:focus-visible,
+button:focus-visible {
+  outline: 1.4px solid rgba(63, 198, 255, 0.9);
+  outline-offset: 0px;
+  box-shadow:
+    0 0 0 3.2px rgba(63, 198, 255, 0.28),
+    0 0 0 5.5px rgba(63, 198, 255, 0.12);
+}
+
+.field:focus-visible {
+  border-color: color-mix(in srgb, var(--color-phosphor) 70%, transparent);
+  background-color: color-mix(in srgb, var(--color-phosphor) 8%, var(--color-surface));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-phosphor) 32%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--color-phosphor) 16%, transparent);
+  outline: none;
+}
+textarea.field {
+  height: auto;
+  padding: 0.5rem;
+  min-height: 4.5rem;
+}
+
+@keyframes phosphor-flash {
+  0% {
+    box-shadow: 0 0 0 1px var(--color-phosphor);
+    background-color: color-mix(in srgb, var(--color-phosphor) 14%, var(--color-surface));
+  }
+  70% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-phosphor) 30%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: var(--color-surface);
+  }
+}
+
+.animate-phosphor-flash {
+  animation: phosphor-flash 0.65s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dual soft outer phosphor rings for selected/active inspector chips and rows */
+.dual-phosphor-ring {
+  box-shadow:
+    0 0 0 1.4px rgba(63, 198, 255, 0.9),
+    0 0 0 3.2px rgba(63, 198, 255, 0.28),
+    0 0 0 5.5px rgba(63, 198, 255, 0.12);
+}

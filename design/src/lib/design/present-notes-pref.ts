@@ -1,0 +1,141 @@
+export const NOTES_PREF = "voice-design-present-notes";
+export const NOTES_CARET = "voice-design-present-notes-caret";
+export const NOTES_LAST = "voice-design-present-notes-last";
+export const NOTES_HEIGHT = "voice-design-present-notes-height";
+export const NOTES_HEIGHT_MIN = 120;
+export const NOTES_HEIGHT_MAX = 420;
+export const NOTES_HEIGHT_DEFAULT = 192;
+
+export type CaretMap = Record<string, { start: number; end: number }>;
+export type LastNotesEdit = { pageId: string; name: string; at: number };
+
+export function parseCaretMap(raw: string | null): CaretMap {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw) as CaretMap;
+    if (!parsed || typeof parsed !== "object") return {};
+    const out: CaretMap = {};
+    for (const [id, value] of Object.entries(parsed)) {
+      if (!value || typeof value !== "object") continue;
+      const start = Number((value as { start?: unknown }).start);
+      const end = Number((value as { end?: unknown }).end);
+      if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
+      out[id] = { start: Math.max(0, start), end: Math.max(0, end) };
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function clampCaret(
+  saved: { start: number; end: number } | undefined,
+  textLen: number,
+): { start: number; end: number } {
+  const start = Math.min(textLen, Math.max(0, saved?.start ?? textLen));
+  const end = Math.min(textLen, Math.max(0, saved?.end ?? start));
+  return { start, end };
+}
+
+export function parseLastNotesEdit(raw: string | null): LastNotesEdit | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as LastNotesEdit;
+    if (!parsed?.pageId || typeof parsed.name !== "string") return null;
+    return {
+      pageId: parsed.pageId,
+      name: parsed.name,
+      at: Number(parsed.at) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** When opening notes on a different campaign frame, jump back to the last page that was edited. */
+export function restoreNotesPageId(
+  last: LastNotesEdit | null,
+  liveId: string,
+  pageIds: string[],
+): string | null {
+  if (!last?.pageId || last.pageId === liveId) return null;
+  if (!pageIds.includes(last.pageId)) return null;
+  return last.pageId;
+}
+
+/** After wrap (or any present frame jump) keep the notes caret on the landed board. */
+export function shouldRestoreNotesCaretAfterFrameJump(
+  notesVisible: boolean,
+  prevPageId: string,
+  nextPageId: string | null,
+): boolean {
+  if (!notesVisible || !nextPageId) return false;
+  return nextPageId !== prevPageId;
+}
+
+export function caretForPage(pageId: string, textLen: number): { start: number; end: number } {
+  return clampCaret(readCaretMap()[pageId], textLen);
+}
+
+export function writeLastNotesEdit(edit: LastNotesEdit) {
+  try {
+    localStorage.setItem(NOTES_LAST, JSON.stringify(edit));
+  } catch {
+    /* blocked */
+  }
+}
+
+export function readLastNotesEdit(): LastNotesEdit | null {
+  try {
+    return parseLastNotesEdit(localStorage.getItem(NOTES_LAST));
+  } catch {
+    return null;
+  }
+}
+
+export function writeCaretMap(map: CaretMap) {
+  try {
+    localStorage.setItem(NOTES_CARET, JSON.stringify(map));
+  } catch {
+    /* blocked */
+  }
+}
+
+export function readCaretMap(): CaretMap {
+  try {
+    return parseCaretMap(localStorage.getItem(NOTES_CARET));
+  } catch {
+    return {};
+  }
+}
+
+
+export function readNotesHeight(): number {
+  try {
+    const raw = localStorage.getItem(NOTES_HEIGHT);
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return NOTES_HEIGHT_DEFAULT;
+    return Math.min(NOTES_HEIGHT_MAX, Math.max(NOTES_HEIGHT_MIN, n));
+  } catch {
+    return NOTES_HEIGHT_DEFAULT;
+  }
+}
+
+export function writeNotesHeight(px: number) {
+  try {
+    const clamped = Math.min(NOTES_HEIGHT_MAX, Math.max(NOTES_HEIGHT_MIN, Math.round(px)));
+    localStorage.setItem(NOTES_HEIGHT, String(clamped));
+  } catch {
+    /* blocked */
+  }
+}
+
+/** Rough speaking time at 140 wpm. Returns empty string when there is nothing to read. */
+export function speakingTimeLabel(words: number): string {
+  if (words <= 0) return "";
+  const seconds = Math.round((words / 140) * 60);
+  if (seconds < 60) return `~${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `~${m}m` : `~${m}m${s}s`;
+}

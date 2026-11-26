@@ -1,0 +1,106 @@
+import { useEffect, useState, type KeyboardEvent } from "react";
+
+function formatNum(n: number) {
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+}
+
+export function NumField({
+  value,
+  mixed = false,
+  onCommit,
+  onDraft,
+  onFocus,
+  onKeyDown,
+  min,
+  max,
+  className = "field font-mono",
+  "aria-label": ariaLabel = "numeric",
+  "data-path-axis": dataPathAxis,
+  tabIndex,
+}: {
+  value: number;
+  mixed?: boolean;
+  onCommit: (n: number) => void;
+  onDraft?: (n: number | null) => void;
+  onFocus?: () => void;
+  onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+  "aria-label"?: string;
+  "data-path-axis"?: "x" | "y";
+  tabIndex?: number;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(mixed ? "" : formatNum(value));
+
+  useEffect(() => {
+    if (!focused) setDraft(mixed ? "" : formatNum(value));
+  }, [value, mixed, focused]);
+
+  function commit(raw: string) {
+    if (raw.trim() === "") {
+      setDraft(mixed ? "" : formatNum(value));
+      return;
+    }
+    const n = Number(raw);
+    if (!Number.isFinite(n)) {
+      setDraft(mixed ? "" : formatNum(value));
+      return;
+    }
+    let next = n;
+    if (min !== undefined) next = Math.max(min, next);
+    if (max !== undefined) next = Math.min(max, next);
+    setDraft(formatNum(next));
+    onCommit(next);
+  }
+
+  return (
+    <input
+      className={className}
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      tabIndex={tabIndex}
+      data-path-axis={dataPathAxis}
+      placeholder={mixed && !focused ? "\u2014" : undefined}
+      aria-label={mixed ? `${ariaLabel} mixed` : ariaLabel}
+      onFocus={(e) => {
+        setFocused(true);
+        e.currentTarget.select();
+        onFocus?.();
+      }}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setDraft(raw);
+        if (onDraft) {
+          const t = raw.trim();
+          if (t === "" || t === "-" || t === "." || t === "-.") {
+            onDraft(null);
+          } else {
+            const n = Number(t);
+            onDraft(Number.isFinite(n) ? n : null);
+          }
+        }
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        commit(e.target.value);
+        onDraft?.(null);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit(draft);
+          // Keep the caret so Tab can walk the next field (path x/y and others).
+        }
+        if (e.key === "Escape") {
+          setDraft(mixed ? "" : formatNum(value));
+          onDraft?.(null);
+          e.currentTarget.blur();
+        }
+        onKeyDown?.(e);
+      }}
+    />
+  );
+}

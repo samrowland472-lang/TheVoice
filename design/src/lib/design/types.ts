@@ -1,0 +1,290 @@
+export type BlendMode =
+  | "source-over"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "soft-light"
+  | "hard-light"
+  | "color-dodge"
+  | "color-burn";
+
+export type Align = "left" | "center" | "right";
+export type Valign = "top" | "middle" | "bottom";
+export type Tool =
+  | "select"
+  | "hand"
+  | "frame"
+  | "rect"
+  | "ellipse"
+  | "line"
+  | "polygon"
+  | "star"
+  | "arrow"
+  | "text"
+  | "pen"
+  | "knife"
+  | "brush"
+  | "eraser"
+  | "image"
+  | "eyedropper";
+
+export type NodeKind =
+  | "rect"
+  | "ellipse"
+  | "line"
+  | "polygon"
+  | "star"
+  | "arrow"
+  | "text"
+  | "image"
+  | "path"
+  | "paint"
+  | "group";
+
+export interface GradientFill {
+  type: "linear" | "radial";
+  angle: number;
+  stops: { offset: number; color: string }[];
+  /** Relative centre (outer) for radial gradients (0–1, default 0.5) */
+  cx?: number;
+  cy?: number;
+  /** Relative focal point (inner) for radial gradients (0–1, defaults to centre) */
+  fx?: number;
+  fy?: number;
+  /** Relative inner radius for radial gradients (0–1 fraction of outer radius, default 0) */
+  r0?: number;
+  /** Relative length for linear gradients (1 = node max side, default 1) */
+  llen?: number;
+  /** Relative offset of gradient centre for linear (0–1, default 0.5) */
+  lox?: number;
+  loy?: number;
+}
+
+export type Fill = string | GradientFill;
+
+export interface Shadow {
+  color: string;
+  blur: number;
+  ox: number;
+  oy: number;
+  spread?: number;
+  inset?: boolean;
+}
+
+export interface BaseNode {
+  id: string;
+  name: string;
+  kind: NodeKind;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rotation: number;
+  opacity: number;
+  visible: boolean;
+  locked: boolean;
+  blend: BlendMode;
+  fill: Fill;
+  stroke: string;
+  strokeWidth: number;
+  strokeDash: number;
+  strokeDashOffset: number;
+  lineCap: CanvasLineCap;
+  lineJoin: CanvasLineJoin;
+  miterLimit: number;
+  radius: number;
+  shadow: Shadow | null;
+  linkId?: string;
+  href?: string;
+  parentId?: string;
+}
+
+export interface GroupNode extends BaseNode {
+  kind: "group";
+  collapsed?: boolean;
+}
+
+export interface TextNode extends BaseNode {
+  kind: "text";
+  text: string;
+  fontFamily: string;
+  fontWeight: number;
+  fontSize: number;
+  letterSpacing: number;
+  lineHeight: number;
+  align: Align;
+  uppercase: boolean;
+  wrap?: boolean;
+  valign?: Valign;
+  opticalSize?: number;
+  fontWidth?: number;
+  fontSlant?: number;
+  fontItalic?: number;
+  fontGrade?: number;
+  fontSoft?: number;
+  fontWonk?: number;
+}
+
+export interface BitmapAdjust {
+  crop: { x: number; y: number; w: number; h: number } | null;
+  filters: {
+    brightness: number;
+    contrast: number;
+    saturate: number;
+    blur: number;
+  };
+}
+
+export interface ImageNode extends BaseNode, BitmapAdjust {
+  kind: "image";
+  src: string;
+}
+
+export interface PathPoint {
+  x: number;
+  y: number;
+  in?: { x: number; y: number } | null;
+  out?: { x: number; y: number } | null;
+  smooth?: boolean;
+}
+
+export interface PathNode extends BaseNode {
+  kind: "path";
+  points: PathPoint[];
+  closed: boolean;
+  holes?: PathPoint[][];
+  fillRule?: "evenodd" | "nonzero";
+  holeFillRules?: ("evenodd" | "nonzero")[];
+}
+
+export interface PaintNode extends BaseNode, BitmapAdjust {
+  kind: "paint";
+  bitmap: string;
+}
+
+export interface ShapeNode extends BaseNode {
+  kind: "rect" | "ellipse" | "line" | "polygon" | "star" | "arrow";
+  sides?: number;
+  headScale?: number;
+}
+
+export type DesignNode = TextNode | ImageNode | PathNode | PaintNode | ShapeNode | GroupNode;
+
+export interface BleedEdges {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+export interface Artboard {
+  width: number;
+  height: number;
+  background: Fill;
+  name: string;
+  formatId: string;
+  bleed?: number;
+  bleedEdges?: BleedEdges;
+}
+
+export interface Guide {
+  id: string;
+  axis: "x" | "y";
+  pos: number;
+  locked?: boolean;
+  hidden?: boolean;
+  color?: string;
+  label?: string;
+  dash?: "solid" | "dash" | "tight";
+}
+
+export interface DesignDocument {
+  id: string;
+  name: string;
+  artboard: Artboard;
+  nodes: DesignNode[];
+  updatedAt: number;
+  createdAt: number;
+  thumbnail?: string;
+  guides?: Guide[];
+  campaignId?: string;
+  notes?: string;
+}
+
+export interface ProjectMeta {
+  id: string;
+  name: string;
+  formatId: string;
+  width: number;
+  height: number;
+  updatedAt: number;
+  thumbnail?: string;
+  pinned?: boolean;
+  folder?: string;
+  tags?: string[];
+  campaignId?: string;
+  campaignOrder?: number;
+}
+
+export interface BrandColor {
+  name: string;
+  hex: string;
+}
+
+export interface BrandKit {
+  name: string;
+  colors: BrandColor[];
+  displayFont: string;
+  bodyFont: string;
+  fonts: string[];
+}
+
+export interface Viewport {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export interface BrushSettings {
+  id: string;
+  size: number;
+  opacity: number;
+  hardness: number;
+  spacing: number;
+  /** Optional scatter override. When unset, the brush preset decides. */
+  scatter?: number;
+  /** Optional grain override. When unset, the brush preset decides. */
+  grain?: boolean;
+  color: string;
+  symmetry: "none" | "x" | "y" | "xy" | "radial";
+}
+
+export function isGradient(fill: Fill): fill is GradientFill {
+  return typeof fill === "object" && fill !== null && (fill.type === "linear" || fill.type === "radial");
+}
+
+export function isText(n: DesignNode): n is TextNode {
+  return n.kind === "text";
+}
+
+export function isImage(n: DesignNode): n is ImageNode {
+  return n.kind === "image";
+}
+
+export function isPath(n: DesignNode): n is PathNode {
+  return n.kind === "path";
+}
+
+export function isPaint(n: DesignNode): n is PaintNode {
+  return n.kind === "paint";
+}
+
+export function isGroup(n: DesignNode): n is GroupNode {
+  return n.kind === "group";
+}
+
+export function isBitmap(n: DesignNode): n is ImageNode | PaintNode {
+  return n.kind === "image" || n.kind === "paint";
+}
