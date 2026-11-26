@@ -122,6 +122,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
   const barRef = useRef<HTMLDivElement>(null);
   const [hoverStop, setHoverStop] = useState<number | null>(null);
   const [dragStop, setDragStop] = useState<number | null>(null);
+  const [reorderDrag, setReorderDrag] = useState<number | null>(null);
 
   function toggle() {
     if (gradient) {
@@ -557,21 +558,71 @@ export function FillEditor({ node }: { node: DesignNode }) {
             .map((stop, i) => ({ stop, i }))
             .sort((a, b) => a.stop.offset - b.stop.offset)
             .map(({ stop, i }) => {
-              const active = gradientHoverStop === i;
+              const active = gradientHoverStop === i || reorderDrag === i;
               return (
               <div
                 key={i}
                 className={cn(
-                  "flex flex-col gap-1.5 rounded-[6px] p-1.5 transition-all",
+                  "relative flex flex-col gap-1.5 rounded-[6px] p-1.5 pl-7 transition-all",
                   active
                     ? "border border-phosphor bg-phosphor/8 shadow-[0_0_0_1px_#3fc6ff,0_0_12px_rgba(63,198,255,0.35)] scale-[1.015]"
                     : "border border-transparent",
+                  reorderDrag === i && "opacity-80",
                 )}
                 onMouseEnter={() => useDesign.getState().setGradientHoverStop(i)}
-                onMouseLeave={() => useDesign.getState().setGradientHoverStop(null)}
+                onMouseLeave={() => { if (reorderDrag !== i) useDesign.getState().setGradientHoverStop(null); }}
                 onFocus={() => useDesign.getState().setGradientHoverStop(i)}
                 onBlur={() => useDesign.getState().setGradientHoverStop(null)}
               >
+                <button
+                  type="button"
+                  className="absolute left-1 top-2 z-10 cursor-grab text-phosphor/60 hover:text-phosphor active:cursor-grabbing"
+                  aria-label="Drag to reorder stop"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setReorderDrag(i);
+                    useDesign.getState().setGradientHoverStop(i);
+                    const startY = e.clientY;
+                    const rowH = 88;
+                    const onMove = (ev: PointerEvent) => {
+                      const dy = ev.clientY - startY;
+                      const steps = Math.round(dy / rowH);
+                      const st = useDesign.getState();
+                      const curNode = st.doc.nodes.find((n) => n.id === node.id);
+                      if (!curNode || typeof curNode.fill !== "object" || curNode.fill == null || !("stops" in curNode.fill)) return;
+                      const curFill = curNode.fill as GradientFill;
+                      const sorted = curFill.stops.map((s, j) => ({ s, j })).sort((a, b) => a.s.offset - b.s.offset);
+                      const curPos = sorted.findIndex((x) => x.j === i);
+                      if (curPos < 0) return;
+                      const targetPos = Math.max(0, Math.min(sorted.length - 1, curPos + steps));
+                      if (targetPos === curPos) return;
+                      let newOff: number;
+                      if (targetPos < curPos) {
+                        const neighbor = sorted[targetPos]!.s.offset;
+                        newOff = Math.max(0, neighbor - 0.005);
+                      } else {
+                        const neighbor = sorted[targetPos]!.s.offset;
+                        newOff = Math.min(1, neighbor + 0.005);
+                      }
+                      const stops = curFill.stops.map((s, j) => (j === i ? { ...s, offset: newOff } : s));
+                      updateNodes([node.id], { fill: { ...curFill, stops } }, false);
+                    };
+                    const onUp = () => {
+                      window.removeEventListener("pointermove", onMove);
+                      window.removeEventListener("pointerup", onUp);
+                      setReorderDrag(null);
+                      useDesign.getState().setGradientHoverStop(null);
+                      useDesign.getState().commit();
+                    };
+                    window.addEventListener("pointermove", onMove);
+                    window.addEventListener("pointerup", onUp);
+                  }}
+                >
+                  <svg width="10" height="14" viewBox="0 0 10 14" aria-hidden className="stroke-current">
+                    <path d="M1.5 3.5h7M1.5 7h7M1.5 10.5h7" strokeWidth="1.4" strokeLinecap="round" />
+                  </svg>
+                </button>
                 <HexColorField
                   label={`Stop ${i + 1}`}
                   value={stop.color}

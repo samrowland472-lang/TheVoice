@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T22:08Z — Single-node inspector stop reorder by drag: phosphor grip handle on each stop row (parity with mixed list). Drag the grip up/down to cross neighbors and live-reorder the stop (offset snaps just past the crossed stop). Row stays emphasized with dual-glow while dragging. Works for both linear and radial. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T21:07Z — On-canvas radial (and linear) stop percent chips denser dual-glow parity: emphasized chips now draw last (on top of other stops) with stronger/denser outer phosphor rings (higher alpha, thicker strokes, larger offsets). Matches the focused-dimension chip pattern. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T20:07Z — Inspector stop reorder by drag in mixed list: phosphor grip handle on each stop row. Drag the grip up/down to cross neighbors and live-reorder the stop (offset snaps just past the crossed stop). Row stays emphasized with dual-glow while dragging. Works for both linear and radial uniform mixed selections. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T18:05Z — Denser inspector stop list for mixed selections (linear + radial): color swatch + percent NumField + % + Remove now on a single compact row. Hovered/focused stop row scales (~1.02×) with phosphor border, dual-glow plate, and brighter dual-glow on the percent field + % label (scale-110). Matches single-node stop-row emphasis and on-canvas chips. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -27,7 +28,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Single-node inspector stop reorder by drag (parity with mixed list) or denser on-canvas radial dimension chips when stops are focused
+- Denser on-canvas radial dimension chips when stops are focused, or single-node stop list denser parity (color + percent + remove on one row)
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)
