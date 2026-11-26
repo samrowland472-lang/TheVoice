@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-26T01:08Z — On-canvas multi-stop gradient editing: phosphor stop circles along the linear handle (colored by stop). Drag a stop to change its offset (Shift snaps); Alt-click a stop (when >2) to remove it; double-click the gradient line to add a stop (inherits nearest color). Status shows percent. Uniform selection only. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T00:12Z — Visual mode indicator on linear gradient end handle: when dragging with Alt (angle-only) the end circle gets a warm phosphor outer ring + small rotation-arc glyph with arrow; with Ctrl/Cmd (length-only) a cool green-cyan ring + double-headed length bar. Normal drag (both) keeps the standard blue glow. Focused chip still scales. Cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-25T23:08Z — Separate angle-only vs length-only end-handle modes: drag the linear gradient end handle normally to adjust both angle and length. Hold Alt for angle-only (length locked to start value); hold Ctrl/Cmd for length-only (angle locked). Shift still snaps. Status bar announces the mode; focused phosphor chip (∠ or Len) scales + glows live. Cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-25T21:05Z — Radial value chips scale + glow parity with linear: Inner / Centre / Focal phosphor chips now grow (13.5px font, taller plate, stronger dual glow, brighter stroke/text) and position near their handles when gradientHoverKey is "r0" / "centre" / "focal". Inspector hover and on-canvas drag both drive the emphasis; cleared on commit. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -14,7 +15,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Multi-stop gradient editing on-canvas (add/remove/reorder stops)
+- On-canvas stop color picker or reorder stops by drag
 
 ## Backlog
 23. Inspector fields for linear length and offset (done)

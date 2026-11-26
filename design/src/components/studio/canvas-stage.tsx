@@ -70,6 +70,7 @@ type DragKind =
   | { type: "rotate"; id: string; startAngle: number; origRot: number; cx: number; cy: number }
   | { type: "gradient-angle"; id: string; cx: number; cy: number; origAngle: number; origLlen: number }
   | { type: "gradient-linear-offset"; id: string }
+  | { type: "gradient-stop"; id: string; stopIndex: number; origOffset: number }
   | { type: "gradient-radial"; id: string }
   | { type: "gradient-radial-focal"; id: string }
   | { type: "gradient-radial-r0"; id: string }
@@ -1275,6 +1276,50 @@ export default function CanvasStage() {
     return () => ro.disconnect();
   }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, strokeGhost]);
 
+  function onDoubleClick(e: React.MouseEvent) {
+    if (!doc) return;
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const docPt = { x: (sx - viewport.x) / viewport.zoom, y: (sy - viewport.y) / viewport.zoom };
+    const selected = doc.nodes.filter((n) => selection.includes(n.id) && n.visible);
+    if (selected.length === 0) return;
+    const linears = selected.filter((n) => typeof n.fill === "object" && n.fill != null && n.fill.type === "linear");
+    if (linears.length !== selected.length || linears.length === 0) return;
+    const fillStr = JSON.stringify(linears[0]!.fill);
+    if (!linears.every((n) => JSON.stringify(n.fill) === fillStr)) return;
+    for (const n of linears.slice().reverse()) {
+      const sw = linearStopWorld(n, viewport.zoom);
+      if (!sw) continue;
+      const h = sw.h;
+      const dx = h.ex - h.cx;
+      const dy = h.ey - h.cy;
+      const len2 = dx * dx + dy * dy;
+      if (len2 < 1e-6) continue;
+      const px = docPt.x - h.cx;
+      const py = docPt.y - h.cy;
+      const t = Math.max(-1, Math.min(1, (px * dx + py * dy) / len2));
+      const projX = h.cx + t * dx;
+      const projY = h.cy + t * dy;
+      const dist = Math.hypot(docPt.x - projX, docPt.y - projY);
+      if (dist < 8 / viewport.zoom) {
+        let offset = 0.5 + t * 0.5;
+        offset = Math.max(0, Math.min(1, offset));
+        let nearest = (n.fill as any).stops[0];
+        let best = 1;
+        for (const s of (n.fill as any).stops) {
+          const d = Math.abs(s.offset - offset);
+          if (d < best) { best = d; nearest = s; }
+        }
+        const newStops = [...(n.fill as any).stops, { offset, color: nearest.color }];
+        const ids = selection.length > 1 ? selection : [n.id];
+        useDesign.getState().updateNodes(ids, { fill: { ...(n.fill as any), stops: newStops } }, true);
+        setStudioStatus(`Added stop at ${Math.round(offset * 100)}%`);
+        return;
+      }
+    }
+  }
+
   function onPointerDown(e: React.PointerEvent) {
     if (!doc || e.button > 1) return;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -1705,6 +1750,29 @@ export default function CanvasStage() {
                   useDesign.getState().setGradientHoverKey("offset");
                   setStudioStatus(`Gradient offset`);
                   return;
+                }
+                // Stop handles (multi-stop on-canvas)
+                const sw = linearStopWorld(n, viewport.zoom);
+                if (sw) {
+                  const stopHitR = 7 / viewport.zoom;
+                  for (let i = 0; i < sw.stops.length; i++) {
+                    const st = sw.stops[i]!;
+                    const sdx = docPt.x - st.x;
+                    const sdy = docPt.y - st.y;
+                    if (sdx * sdx + sdy * sdy < stopHitR * stopHitR) {
+                      if (e.altKey && sw.stops.length > 2) {
+                        const newStops = (n.fill as any).stops.filter((_: any, j: number) => j !== i);
+                        const ids = selection.length > 1 ? selection : [n.id];
+                        useDesign.getState().updateNodes(ids, { fill: { ...(n.fill as any), stops: newStops } }, true);
+                        setStudioStatus(`Removed stop · ${newStops.length} left`);
+                        return;
+                      }
+                      drag.current = { type: "gradient-stop", id: n.id, stopIndex: i, origOffset: st.offset };
+                      useDesign.getState().setGradientAngleScrubId(n.id);
+                      setStudioStatus(`Stop ${Math.round(st.offset * 100)}%`);
+                      return;
+                    }
+                  }
                 }
               }
             }
@@ -2360,6 +2428,30 @@ export default function CanvasStage() {
       setStudioStatus(`Gradient offset ${(ox * 100).toFixed(0)}%, ${(oy * 100).toFixed(0)}%`);
       return;
     }
+    if (d.type === "gradient-stop") {
+      const n = doc.nodes.find((x) => x.id === d.id);
+      if (!n || typeof n.fill !== "object" || n.fill?.type !== "linear") return;
+      const sw = linearStopWorld(n, viewport.zoom);
+      if (!sw) return;
+      const h = sw.h;
+      const dx = h.ex - h.cx;
+      const dy = h.ey - h.cy;
+      const len2 = dx * dx + dy * dy;
+      if (len2 < 1e-6) return;
+      const px = docPt.x - h.cx;
+      const py = docPt.y - h.cy;
+      let tFromCenter = (px * dx + py * dy) / len2;
+      let offset = 0.5 + tFromCenter * 0.5;
+      offset = Math.max(0, Math.min(1, offset));
+      if (e.shiftKey) offset = Math.round(offset * 20) / 20;
+      const stops = (n.fill as any).stops.map((s: any, j: number) =>
+        j === d.stopIndex ? { ...s, offset } : s
+      );
+      const ids = selection.length > 1 ? selection : [d.id];
+      updateNodes(ids, { fill: { ...(n.fill as any), stops } }, false);
+      setStudioStatus(`Stop ${Math.round(offset * 100)}%`);
+      return;
+    }
     if (d.type === "gradient-radial") {
       const n = doc.nodes.find((x) => x.id === d.id);
       if (!n || typeof n.fill !== "object" || n.fill?.type !== "radial") return;
@@ -2592,6 +2684,11 @@ export default function CanvasStage() {
       useDesign.getState().setGradientHoverKey(null);
       setStudioStatus("Gradient offset committed");
     }
+    if (d?.type === "gradient-stop") {
+      commit();
+      useDesign.getState().setGradientAngleScrubId(null);
+      setStudioStatus("Stop offset committed");
+    }
     if (d?.type === "gradient-radial") {
       commit();
       useDesign.getState().setRadialCentreScrubId(null);
@@ -2701,6 +2798,7 @@ export default function CanvasStage() {
         ref={canvasRef}
         className="block h-full w-full touch-none"
         onPointerDown={onPointerDown}
+        onDoubleClick={onDoubleClick}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
@@ -3956,6 +4054,22 @@ function gradientAngleHandle(n: DesignNode, zoom: number) {
   };
 }
 
+
+function linearStopWorld(n: DesignNode, zoom: number) {
+  if (typeof n.fill !== "object" || n.fill == null || n.fill.type !== "linear") return null;
+  const h = gradientAngleHandle(n, zoom);
+  if (!h) return null;
+  const stops = n.fill.stops.map((s) => {
+    const t = s.offset;
+    const dx = h.ex - h.cx;
+    const dy = h.ey - h.cy;
+    const x = h.cx + dx * (t - 0.5) * 2;
+    const y = h.cy + dy * (t - 0.5) * 2;
+    return { ...s, x, y };
+  });
+  return { h, stops };
+}
+
 function drawGradientAngleHandle(
   ctx: CanvasRenderingContext2D,
   nodes: DesignNode[],
@@ -4095,6 +4209,25 @@ function drawGradientAngleHandle(
       ctx.strokeStyle = "rgba(63, 198, 255, 0.4)";
       ctx.lineWidth = 2 / zoom;
       ctx.stroke();
+    }
+    // Multi-stop handles along the visual gradient line
+    const sw = linearStopWorld(n, zoom);
+    if (sw) {
+      for (const st of sw.stops) {
+        const sr = 4.2 / zoom;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, sr, 0, Math.PI * 2);
+        ctx.fillStyle = st.color;
+        ctx.fill();
+        ctx.strokeStyle = "#7ee0ff";
+        ctx.lineWidth = 1.4 / zoom;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
+        ctx.lineWidth = 1.2 / zoom;
+        ctx.stroke();
+      }
     }
     ctx.setLineDash([4 / zoom, 3 / zoom]);
   }
