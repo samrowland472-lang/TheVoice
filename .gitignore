@@ -40,3 +40,4 @@ package-lock.json
 # Keep design package-lock out of root tracking if present
 !design/package-lock.json
 !design/package-lock.json
+!design/package-lock.json
