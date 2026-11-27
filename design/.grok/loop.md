@@ -1,6 +1,5 @@
-# The Voice Design · Improvement Loop
-
 ## Done
+- 2026-11-27T04:05Z — Compact mixed-selection stop secondary controls: thinner range slider (h-1.5) under each stop primary row, plus compact brand and recent swatches (size-3.5, no labels, tight wrap). Matches single-node density. Drag reorder adjusted for taller rows. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T02:07Z — Denser on-canvas linear dimension chips when stops are focused or hovered: compact phosphor chips (smaller font/pad/glow) for ∠, Len, and Offset appear near their handles alongside stop percent chips. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T01:10Z — Compact single-node inspector stop secondary controls: range slider thinner (h-1.5), tighter gap/padding; brand and recent swatches now compact (size-3.5, no large labels, tighter wrap) when used in stop rows. Primary row unchanged. Drag reorder still works. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T00:10Z — Denser on-canvas radial dimension chips when stops are focused or hovered: compact phosphor chips (smaller font/pad/glow) for Centre, Focal, and Inner appear near their handles alongside stop percent chips. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -32,7 +31,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Further compact mixed-selection stop secondary controls, or denser radial stop chips when dimension is focused
+- Denser radial stop chips when dimension is focused, or further on-canvas gradient handle polish
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

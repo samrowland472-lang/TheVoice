@@ -306,7 +306,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                 <div
                   key={i}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-[6px] px-1 py-0.5 transition-all",
+                    "flex flex-col gap-0.5 rounded-[6px] px-1 py-0.5 transition-all",
                     active
                       ? "border border-phosphor bg-phosphor/8 shadow-[0_0_0_1px_#3fc6ff,0_0_10px_rgba(63,198,255,0.4)] scale-[1.02]"
                       : "border border-transparent",
@@ -317,6 +317,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                   onFocus={() => useDesign.getState().setGradientHoverStop(i)}
                   onBlur={() => useDesign.getState().setGradientHoverStop(null)}
                 >
+                  <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     className="cursor-grab text-phosphor/60 hover:text-phosphor active:cursor-grabbing shrink-0"
@@ -327,7 +328,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                       setReorderDrag(i);
                       useDesign.getState().setGradientHoverStop(i);
                       const startY = e.clientY;
-                      const rowH = 32;
+                      const rowH = 52;
                       const onMove = (ev: PointerEvent) => {
                         const dy = ev.clientY - startY;
                         const steps = Math.round(dy / rowH);
@@ -372,6 +373,39 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
                     <span className={cn("text-[10px] transition-all", active ? "text-phosphor font-medium scale-110" : "text-ink-dim")}>%</span>
                   </div>
                   <button type="button" className="ml-auto text-[10px] text-ink-dim hover:text-phosphor disabled:opacity-30" disabled={g.stops.length <= 2} onClick={() => { if (g.stops.length <= 2) return; const stops = g.stops.filter((_, j) => j !== i); updateNodes(ids, { fill: { ...g, stops } }, true); }} aria-label="Remove stop">Remove</button>
+                  </div>
+                  <div className="flex flex-col gap-0.5 pl-5 pt-0.5">
+                    <input
+                      type="range"
+                      className="range-phosphor h-1.5 flex-1"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={stop.offset}
+                      onChange={(e) => {
+                        const stops = g.stops.map((s, j) => (j === i ? { ...s, offset: Number(e.target.value) } : s));
+                        updateNodes(ids, { fill: { ...g, stops } }, false);
+                      }}
+                      onPointerUp={() => useDesign.getState().commit()}
+                      onPointerCancel={() => useDesign.getState().commit()}
+                    />
+                    <BrandSwatches
+                      compact
+                      onPick={(hex) => {
+                        rememberColor(hex);
+                        const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                        updateNodes(ids, { fill: { ...g, stops } }, true);
+                      }}
+                    />
+                    <RecentSwatches
+                      compact
+                      onPick={(hex) => {
+                        rememberColor(hex);
+                        const stops = g.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
+                        updateNodes(ids, { fill: { ...g, stops } }, true);
+                      }}
+                    />
+                  </div>
                 </div>
                 );
               })}
