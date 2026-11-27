@@ -2650,7 +2650,12 @@ export default function CanvasStage() {
       if (drag.current && drag.current.type === "gradient-stop") {
         drag.current.stopIndex = newIndex >= 0 ? newIndex : d.stopIndex;
       }
-      setStudioStatus(`Stop ${Math.round(offset * 100)}%`);
+      const reordered = newIndex >= 0 && newIndex !== d.stopIndex;
+      if (reordered && selection.length > 1) {
+        setStudioStatus(`Reorder stop ${Math.round(offset * 100)}%`);
+      } else {
+        setStudioStatus(`Stop ${Math.round(offset * 100)}%`);
+      }
       return;
     }
     if (d.type === "gradient-radial") {
@@ -4571,6 +4576,25 @@ function drawGradientAngleHandle(
           ctx.arc(st.x, st.y, sr + 6.4 / zoom, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
+          // denser reorder drag ticks for mixed selections: short phosphor ticks radiate from the active stop circle while dragging
+          if (selected.length > 1 && isFocusedNode && focusedStop && focusedStop.index === si) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(168, 240, 255, 0.78)";
+            ctx.lineWidth = 1.15 / zoom;
+            ctx.lineCap = "round";
+            const tickLen = 4.2 / zoom;
+            const tickCount = 6;
+            for (let ti = 0; ti < tickCount; ti++) {
+              const ang = (ti / tickCount) * Math.PI * 2;
+              const dx = Math.cos(ang);
+              const dy = Math.sin(ang);
+              ctx.beginPath();
+              ctx.moveTo(st.x + dx * sr, st.y + dy * sr);
+              ctx.lineTo(st.x + dx * (sr + tickLen), st.y + dy * (sr + tickLen));
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
         } else {
           ctx.beginPath();
           ctx.arc(st.x, st.y, sr + (denser ? 1.4 : 2.2) / zoom, 0, Math.PI * 2);
@@ -4947,6 +4971,25 @@ function drawGradientRadialHandle(
           ctx.arc(st.x, st.y, sr + 6.4 / zoom, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
+          // denser reorder drag ticks for mixed selections: short phosphor ticks radiate from the active stop circle while dragging
+          if (selected.length > 1 && isFocusedNode && focusedStop && focusedStop.index === si) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(168, 240, 255, 0.78)";
+            ctx.lineWidth = 1.15 / zoom;
+            ctx.lineCap = "round";
+            const tickLen = 4.2 / zoom;
+            const tickCount = 6;
+            for (let ti = 0; ti < tickCount; ti++) {
+              const ang = (ti / tickCount) * Math.PI * 2;
+              const dx = Math.cos(ang);
+              const dy = Math.sin(ang);
+              ctx.beginPath();
+              ctx.moveTo(st.x + dx * sr, st.y + dy * sr);
+              ctx.lineTo(st.x + dx * (sr + tickLen), st.y + dy * (sr + tickLen));
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
         } else {
           ctx.beginPath();
           ctx.arc(st.x, st.y, sr + (denser ? 1.4 : 2.2) / zoom, 0, Math.PI * 2);
