@@ -1,4 +1,5 @@
 ## Done
+- 2026-11-27T07:07Z — Denser connecting-line ticks on focused gradient handles: when a linear length/angle or radial centre/focal/r0 is hovered, the connecting line brightens and gains short perpendicular phosphor ticks along its length so the active dimension reads denser and more precise. Ticks scale with zoom and stay clear of handles. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T06:06Z — Denser on-canvas stop circles when a dimension is focused: non-emphasized linear and radial stop circles shrink (smaller radius, thinner stroke, weaker outer ring) while angle/length/offset or centre/focal/inner is hovered, so stop markers stay secondary to the active handle. Emphasized (focused/dragged) stop circles remain full-size with dual-glow. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T05:04Z — Denser radial and linear stop percent chips when a dimension is focused: non-emphasized stop chips shrink to denser phosphor style (smaller font/pad/glow) while a centre/focal/inner or angle/length/offset is hovered, so stop labels stay secondary. Emphasized (focused/dragged) stop chips remain full-size with dual-glow. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T04:05Z — Compact mixed-selection stop secondary controls: thinner range slider (h-1.5) under each stop primary row, plus compact brand and recent swatches (size-3.5, no labels, tight wrap). Matches single-node density. Drag reorder adjusted for taller rows. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -33,7 +34,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Further on-canvas gradient handle polish (e.g. denser connecting line or handle ticks when dimension focused, or mixed selection stop chip density)
+- Mixed-selection stop chip density polish, or denser offset diamond ticks when offset focused
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

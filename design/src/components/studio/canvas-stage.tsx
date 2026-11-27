@@ -4386,6 +4386,32 @@ function drawGradientAngleHandle(
     }
     ctx.stroke();
     ctx.setLineDash([]);
+    // Denser connecting line ticks when length/angle focused
+    if (activeLenOrAng) {
+      const len = Math.hypot(h.ex - h.cx, h.ey - h.cy);
+      if (len > 8 / zoom) {
+        const ux = (h.ex - h.cx) / len;
+        const uy = (h.ey - h.cy) / len;
+        const px = -uy;
+        const py = ux;
+        const tickCount = Math.max(3, Math.min(7, Math.round(len / (28 / zoom))));
+        ctx.save();
+        ctx.strokeStyle = "rgba(168, 240, 255, 0.72)";
+        ctx.lineWidth = 1.15 / zoom;
+        ctx.lineCap = "round";
+        for (let i = 1; i < tickCount; i++) {
+          const t = i / tickCount;
+          const tx = h.cx + (h.ex - h.cx) * t;
+          const ty = h.cy + (h.ey - h.cy) * t;
+          const tl = 3.4 / zoom;
+          ctx.beginPath();
+          ctx.moveTo(tx - px * tl, ty - py * tl);
+          ctx.lineTo(tx + px * tl, ty + py * tl);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
     ctx.fillStyle = activeLenOrAng ? "#7ee0ff" : "#3fc6ff";
     ctx.strokeStyle = "#7ee0ff";
     ctx.lineWidth = 1.2 / zoom;
@@ -4763,13 +4789,39 @@ function drawGradientRadialHandle(
       const startX = sw.focal.x + sw.ux * sw.innerR;
       const startY = sw.focal.y + sw.uy * sw.innerR;
       ctx.save();
-      ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
-      ctx.lineWidth = 1 / zoom;
-      ctx.setLineDash([3 / zoom, 3 / zoom]);
+      const denserRay = hoverKey === "centre" || hoverKey === "focal" || hoverKey === "r0";
+      ctx.strokeStyle = denserRay ? "rgba(126, 224, 255, 0.75)" : "rgba(63, 198, 255, 0.35)";
+      ctx.lineWidth = denserRay ? 1.6 / zoom : 1 / zoom;
+      ctx.setLineDash(denserRay ? [2.2 / zoom, 2.2 / zoom] : [3 / zoom, 3 / zoom]);
       ctx.beginPath();
       ctx.moveTo(startX, startY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
+      ctx.setLineDash([]);
+      // Denser handle ticks along the ray when a radial dimension is focused
+      if (denserRay) {
+        const rayLen = Math.hypot(endX - startX, endY - startY);
+        if (rayLen > 12 / zoom) {
+          const ux = (endX - startX) / rayLen;
+          const uy = (endY - startY) / rayLen;
+          const px = -uy;
+          const py = ux;
+          const tickCount = Math.max(3, Math.min(6, Math.round(rayLen / (32 / zoom))));
+          ctx.strokeStyle = "rgba(168, 240, 255, 0.68)";
+          ctx.lineWidth = 1.05 / zoom;
+          ctx.lineCap = "round";
+          for (let i = 1; i < tickCount; i++) {
+            const t = i / tickCount;
+            const tx = startX + (endX - startX) * t;
+            const ty = startY + (endY - startY) * t;
+            const tl = 2.8 / zoom;
+            ctx.beginPath();
+            ctx.moveTo(tx - px * tl, ty - py * tl);
+            ctx.lineTo(tx + px * tl, ty + py * tl);
+            ctx.stroke();
+          }
+        }
+      }
       ctx.restore();
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
       // Denser stop circles when a radial dimension is focused so they stay secondary
