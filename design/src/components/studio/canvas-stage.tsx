@@ -4543,6 +4543,18 @@ function drawGradientAngleHandle(
       for (const c of chipDraws.filter((c) => c.emphasize)) {
         drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true);
       }
+      // Denser linear dimension chips when a stop is focused or hovered
+      if (isFocusedNode || hoveredStop != null) {
+        const fill = n.fill as { angle?: number; llen?: number; lox?: number; loy?: number };
+        const denser = true;
+        const angle = Math.round(fill.angle ?? 0);
+        const llen = Math.round((fill.llen ?? 1) * 100);
+        const lox = Math.round((fill.lox ?? 0.5) * 100);
+        const loy = Math.round((fill.loy ?? 0.5) * 100);
+        drawPhosphorValueChip(ctx, `∠${angle}°`, h.cx + 6 / zoom, h.cy - 4 / zoom, zoom, false, denser);
+        drawPhosphorValueChip(ctx, `${llen}%`, h.ex + 6 / zoom, h.ey - 4 / zoom, zoom, false, denser);
+        drawPhosphorValueChip(ctx, `${lox},${loy}`, h.cx - 22 / zoom, h.cy + 12 / zoom, zoom, false, denser);
+      }
     }
     ctx.setLineDash([4 / zoom, 3 / zoom]);
   }
