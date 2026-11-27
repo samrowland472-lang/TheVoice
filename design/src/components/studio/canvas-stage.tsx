@@ -4488,17 +4488,20 @@ function drawGradientAngleHandle(
     const sw = linearStopWorld(n, zoom);
     if (sw) {
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
+      // Denser stop circles when a linear dimension is focused so they stay secondary
+      const denserStops = hoverKey === "angle" || hoverKey === "length" || hoverKey === "offset" || hoverKey === "angle-only" || hoverKey === "length-only";
       const chipDraws: { label: string; cx: number; cy: number; emphasize: boolean }[] = [];
       for (let si = 0; si < sw.stops.length; si++) {
         const st = sw.stops[si]!;
         const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
-        const sr = (emphasize ? 6.4 : 4.2) / zoom;
+        const denser = denserStops && !emphasize;
+        const sr = (emphasize ? 6.4 : denser ? 2.8 : 4.2) / zoom;
         ctx.beginPath();
         ctx.arc(st.x, st.y, sr, 0, Math.PI * 2);
         ctx.fillStyle = st.color;
         ctx.fill();
-        ctx.strokeStyle = emphasize ? "#a8f0ff" : "#7ee0ff";
-        ctx.lineWidth = (emphasize ? 2.2 : 1.4) / zoom;
+        ctx.strokeStyle = emphasize ? "#a8f0ff" : denser ? "rgba(126, 224, 255, 0.75)" : "#7ee0ff";
+        ctx.lineWidth = (emphasize ? 2.2 : denser ? 0.9 : 1.4) / zoom;
         ctx.stroke();
         // dual phosphor outer rings when emphasized
         if (emphasize) {
@@ -4517,9 +4520,9 @@ function drawGradientAngleHandle(
           ctx.restore();
         } else {
           ctx.beginPath();
-          ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
-          ctx.lineWidth = 1.2 / zoom;
+          ctx.arc(st.x, st.y, sr + (denser ? 1.4 : 2.2) / zoom, 0, Math.PI * 2);
+          ctx.strokeStyle = denser ? "rgba(63, 198, 255, 0.35)" : "rgba(63, 198, 255, 0.55)";
+          ctx.lineWidth = (denser ? 0.7 : 1.2) / zoom;
           ctx.stroke();
         }
         // Percent chip next to stop (emphasized when this stop is the focused/dragged one)
@@ -4538,7 +4541,6 @@ function drawGradientAngleHandle(
       }
       // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
       // Denser stop percent chips when a linear dimension is focused so they stay secondary
-      const denserStops = hoverKey === "angle" || hoverKey === "length" || hoverKey === "offset" || hoverKey === "angle-only" || hoverKey === "length-only";
       for (const c of chipDraws.filter((c) => !c.emphasize)) {
         drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false, denserStops);
       }
@@ -4770,17 +4772,20 @@ function drawGradientRadialHandle(
       ctx.stroke();
       ctx.restore();
       const isFocusedNode = focusedStop && focusedStop.id === n.id;
+      // Denser stop circles when a radial dimension is focused so they stay secondary
+      const denserStops = hoverKey === "centre" || hoverKey === "focal" || hoverKey === "r0";
       const chipDraws: { label: string; cx: number; cy: number; emphasize: boolean }[] = [];
       for (let si = 0; si < sw.stops.length; si++) {
         const st = sw.stops[si]!;
         const emphasize = !!(isFocusedNode && focusedStop.index === si) || si === hoveredStop;
-        const sr = (emphasize ? 6.4 : 4.2) / zoom;
+        const denser = denserStops && !emphasize;
+        const sr = (emphasize ? 6.4 : denser ? 2.8 : 4.2) / zoom;
         ctx.beginPath();
         ctx.arc(st.x, st.y, sr, 0, Math.PI * 2);
         ctx.fillStyle = st.color;
         ctx.fill();
-        ctx.strokeStyle = emphasize ? "#a8f0ff" : "#7ee0ff";
-        ctx.lineWidth = (emphasize ? 2.2 : 1.4) / zoom;
+        ctx.strokeStyle = emphasize ? "#a8f0ff" : denser ? "rgba(126, 224, 255, 0.75)" : "#7ee0ff";
+        ctx.lineWidth = (emphasize ? 2.2 : denser ? 0.9 : 1.4) / zoom;
         ctx.stroke();
         // dual phosphor outer rings when emphasized
         if (emphasize) {
@@ -4799,9 +4804,9 @@ function drawGradientRadialHandle(
           ctx.restore();
         } else {
           ctx.beginPath();
-          ctx.arc(st.x, st.y, sr + 2.2 / zoom, 0, Math.PI * 2);
-          ctx.strokeStyle = "rgba(63, 198, 255, 0.55)";
-          ctx.lineWidth = 1.2 / zoom;
+          ctx.arc(st.x, st.y, sr + (denser ? 1.4 : 2.2) / zoom, 0, Math.PI * 2);
+          ctx.strokeStyle = denser ? "rgba(63, 198, 255, 0.35)" : "rgba(63, 198, 255, 0.55)";
+          ctx.lineWidth = (denser ? 0.7 : 1.2) / zoom;
           ctx.stroke();
         }
         const pct = Math.round(st.offset * 100);
@@ -4814,7 +4819,6 @@ function drawGradientRadialHandle(
       }
       // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
       // Denser stop percent chips when a radial dimension is focused so they stay secondary
-      const denserStops = hoverKey === "centre" || hoverKey === "focal" || hoverKey === "r0";
       for (const c of chipDraws.filter((c) => !c.emphasize)) {
         drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false, denserStops);
       }
