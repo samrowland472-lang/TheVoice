@@ -1,6 +1,7 @@
 # The Voice Design · Improvement Loop
 
 ## Done
+- 2026-11-27T01:10Z — Compact single-node inspector stop secondary controls: range slider thinner (h-1.5), tighter gap/padding; brand and recent swatches now compact (size-3.5, no large labels, tighter wrap) when used in stop rows. Primary row unchanged. Drag reorder still works. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T00:10Z — Denser on-canvas radial dimension chips when stops are focused or hovered: compact phosphor chips (smaller font/pad/glow) for Centre, Focal, and Inner appear near their handles alongside stop percent chips. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T23:10Z — Single-node inspector stop list denser parity: primary controls (color swatch + percent NumField + % + Remove) now on a single compact row with grip, matching mixed selection density. Range slider and brand/recent swatches sit below. Drag reorder still works (row height adjusted). Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-26T22:08Z — Single-node inspector stop reorder by drag: phosphor grip handle on each stop row (parity with mixed list). Drag the grip up/down to cross neighbors and live-reorder the stop (offset snaps just past the crossed stop). Row stays emphasized with dual-glow while dragging. Works for both linear and radial. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -30,7 +31,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Further compact the single-node secondary controls (range + swatches) or denser linear dimension chips when stops are focused
+- Denser linear dimension chips when stops are focused, or further compact mixed-selection stop secondary controls
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

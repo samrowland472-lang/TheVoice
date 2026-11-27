@@ -671,10 +671,10 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   Remove
                 </button>
                 </div>
-                <div className="flex flex-col gap-1 pl-6">
+                <div className="flex flex-col gap-0.5 pl-5 pt-0.5">
                 <input
                   type="range"
-                  className="range-phosphor flex-1"
+                  className="range-phosphor h-1.5 flex-1"
                   min={0}
                   max={1}
                   step={0.01}
@@ -687,6 +687,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   onPointerCancel={() => useDesign.getState().commit()}
                 />
                 <BrandSwatches
+                  compact
                   onPick={(hex) => {
                     rememberColor(hex);
                     const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
@@ -694,6 +695,7 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   }}
                 />
                 <RecentSwatches
+                  compact
                   onPick={(hex) => {
                     rememberColor(hex);
                     const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
@@ -1279,18 +1281,21 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
   );
 }
 
-export function BrandSwatches({ onPick }: { onPick: (hex: string) => void }) {
+export function BrandSwatches({ onPick, compact = false }: { onPick: (hex: string) => void; compact?: boolean }) {
   const kit = loadBrand();
   if (!kit.colors.length) return null;
   return (
-    <div className="mt-2">
-      <span className="mb-1 block text-[10px] tracking-[0.12em] text-ink-faint uppercase">Brand</span>
-      <div className="flex flex-wrap gap-1">
+    <div className={compact ? "mt-0.5" : "mt-2"}>
+      {!compact && <span className="mb-1 block text-[10px] tracking-[0.12em] text-ink-faint uppercase">Brand</span>}
+      <div className={cn("flex flex-wrap", compact ? "gap-0.5" : "gap-1")}>
         {kit.colors.map((c) => (
           <button
             key={c.hex}
             type="button"
-            className="size-5 rounded-full border border-border hover:ring-1 hover:ring-phosphor/60"
+            className={cn(
+              "rounded-full border border-border hover:ring-1 hover:ring-phosphor/60",
+              compact ? "size-3.5" : "size-5",
+            )}
             style={{ background: c.hex }}
             onClick={() => onPick(c.hex)}
             aria-label={c.name}
@@ -1302,7 +1307,7 @@ export function BrandSwatches({ onPick }: { onPick: (hex: string) => void }) {
   );
 }
 
-export function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
+export function RecentSwatches({ onPick, compact = false }: { onPick: (hex: string) => void; compact?: boolean }) {
   const [colors, setColors] = useState<string[]>(() => loadRecentColors());
   useEffect(() => {
     const sync = () => setColors(loadRecentColors());
@@ -1312,24 +1317,39 @@ export function RecentSwatches({ onPick }: { onPick: (hex: string) => void }) {
   }, []);
   if (!colors.length) return null;
   return (
-    <div className="mt-2">
-      <div className="mb-1 flex items-center justify-between">
-        <span className="text-[10px] tracking-[0.12em] text-ink-faint uppercase">Recent</span>
+    <div className={compact ? "mt-0.5" : "mt-2"}>
+      {!compact && (
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[10px] tracking-[0.12em] text-ink-faint uppercase">Recent</span>
+          <button
+            type="button"
+            className="text-[9px] text-ink-faint hover:text-phosphor"
+            onClick={() => clearRecentColors()}
+            aria-label="Clear recent colours"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+      {compact && (
         <button
           type="button"
-          className="text-[9px] text-ink-faint hover:text-phosphor"
+          className="mb-0.5 text-[8px] text-ink-faint hover:text-phosphor"
           onClick={() => clearRecentColors()}
           aria-label="Clear recent colours"
         >
           Clear
         </button>
-      </div>
-      <div className="flex flex-wrap gap-1">
+      )}
+      <div className={cn("flex flex-wrap", compact ? "gap-0.5" : "gap-1")}>
         {colors.map((hex) => (
           <button
             key={hex}
             type="button"
-            className="size-5 rounded-full border border-border hover:ring-1 hover:ring-phosphor/60"
+            className={cn(
+              "rounded-full border border-border hover:ring-1 hover:ring-phosphor/60",
+              compact ? "size-3.5" : "size-5",
+            )}
             style={{ background: hex }}
             onClick={() => onPick(hex)}
             aria-label={hex}
