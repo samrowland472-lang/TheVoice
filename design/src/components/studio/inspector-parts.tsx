@@ -57,10 +57,14 @@ export function HexColorField({
   value,
   onChange,
   label = "Colour",
+  dense = false,
+  emphasized = false,
 }: {
   value: string;
   onChange: (hex: string) => void;
   label?: string;
+  dense?: boolean;
+  emphasized?: boolean;
 }) {
   const safe = value && value !== "transparent" && value.startsWith("#") ? value : "#d9f5e3";
   const [draft, setDraft] = useState(safe);
@@ -79,17 +83,27 @@ export function HexColorField({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn("flex items-center", dense ? "gap-1" : "gap-2")}>
       <input
         type="color"
-        className="h-8 w-12 shrink-0 rounded-[8px] border border-border"
+        className={cn(
+          "shrink-0 rounded-[8px] border transition-all",
+          dense ? "h-6 w-8" : "h-8 w-12",
+          emphasized
+            ? "border-phosphor shadow-[0_0_0_1px_#3fc6ff,0_0_8px_rgba(63,198,255,0.6)] scale-110"
+            : "border-border",
+        )}
         value={safe.length === 7 ? safe : "#d9f5e3"}
         onChange={(e) => onChange(e.target.value)}
         aria-label={`${label} colour`}
       />
       <input
         type="text"
-        className="field min-w-0 flex-1 font-mono text-[11px] uppercase tracking-wide"
+        className={cn(
+          "field min-w-0 flex-1 font-mono uppercase tracking-wide",
+          dense ? "text-[10px] h-6" : "text-[11px]",
+          emphasized && "border-phosphor text-phosphor",
+        )}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
