@@ -3443,50 +3443,55 @@ function drawPhosphorValueChip(
   cy: number,
   zoom: number,
   emphasize = false,
+  denser = false,
 ) {
-  const fontPx = emphasize ? Math.max(10, 13.5 / zoom) : Math.max(9, 11 / zoom);
+  const fontPx = denser
+    ? Math.max(8, 9.5 / zoom)
+    : emphasize
+      ? Math.max(10, 13.5 / zoom)
+      : Math.max(9, 11 / zoom);
   ctx.font = `${fontPx}px "IBM Plex Mono", ui-monospace, monospace`;
   ctx.textAlign = "left";
   ctx.textBaseline = "bottom";
   const tw = ctx.measureText(label).width;
-  const padX = (emphasize ? 10 : 8) / zoom;
+  const padX = (denser ? 5 : emphasize ? 10 : 8) / zoom;
   const chipW = tw + padX;
-  const chipH = (emphasize ? 16.5 : 14) / zoom;
+  const chipH = (denser ? 11 : emphasize ? 16.5 : 14) / zoom;
 
   // soft outer glow — dual phosphor rings matching tip ghosts (stronger / denser when emphasized)
-  const g1 = emphasize ? 0.55 : 0.28;
-  const g2 = emphasize ? 0.28 : 0.12;
-  const lw1 = (emphasize ? 4.4 : 3.2) / zoom;
-  const lw2 = (emphasize ? 7.2 : 5.5) / zoom;
-  const off1 = (emphasize ? 2.2 : 1.6) / zoom;
-  const off2 = (emphasize ? 4.2 : 3.2) / zoom;
+  const g1 = denser ? 0.22 : emphasize ? 0.55 : 0.28;
+  const g2 = denser ? 0.1 : emphasize ? 0.28 : 0.12;
+  const lw1 = (denser ? 2.4 : emphasize ? 4.4 : 3.2) / zoom;
+  const lw2 = (denser ? 4.2 : emphasize ? 7.2 : 5.5) / zoom;
+  const off1 = (denser ? 1.2 : emphasize ? 2.2 : 1.6) / zoom;
+  const off2 = (denser ? 2.4 : emphasize ? 4.2 : 3.2) / zoom;
   ctx.save();
   ctx.globalAlpha = g1;
   ctx.strokeStyle = "rgba(63, 198, 255, 0.9)";
   ctx.lineWidth = lw1;
   ctx.beginPath();
-  ctx.roundRect(cx - off1, cy - chipH - off1, chipW + off1 * 2, chipH + off1 * 2, (emphasize ? 4.8 : 4.2) / zoom);
+  ctx.roundRect(cx - off1, cy - chipH - off1, chipW + off1 * 2, chipH + off1 * 2, (denser ? 3.2 : emphasize ? 4.8 : 4.2) / zoom);
   ctx.stroke();
   ctx.globalAlpha = g2;
   ctx.lineWidth = lw2;
   ctx.beginPath();
-  ctx.roundRect(cx - off2, cy - chipH - off2, chipW + off2 * 2, chipH + off2 * 2, (emphasize ? 6.2 : 5.5) / zoom);
+  ctx.roundRect(cx - off2, cy - chipH - off2, chipW + off2 * 2, chipH + off2 * 2, (denser ? 4.2 : emphasize ? 6.2 : 5.5) / zoom);
   ctx.stroke();
   ctx.restore();
 
-  const bgAlpha = emphasize ? 0.92 : 0.82;
-  const strokeAlpha = emphasize ? 0.95 : 0.7;
-  const textAlpha = emphasize ? 1 : 0.95;
+  const bgAlpha = denser ? 0.78 : emphasize ? 0.92 : 0.82;
+  const strokeAlpha = denser ? 0.65 : emphasize ? 0.95 : 0.7;
+  const textAlpha = denser ? 0.9 : emphasize ? 1 : 0.95;
   ctx.fillStyle = `rgba(6, 23, 15, ${bgAlpha})`;
   ctx.strokeStyle = `rgba(63, 198, 255, ${strokeAlpha})`;
-  ctx.lineWidth = (emphasize ? 1.4 : 1) / zoom;
+  ctx.lineWidth = (denser ? 0.8 : emphasize ? 1.4 : 1) / zoom;
   ctx.beginPath();
-  ctx.roundRect(cx, cy - chipH, chipW, chipH, (emphasize ? 3.5 : 3) / zoom);
+  ctx.roundRect(cx, cy - chipH, chipW, chipH, (denser ? 2.5 : emphasize ? 3.5 : 3) / zoom);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = `rgba(63, 198, 255, ${textAlpha})`;
-  const textPad = (emphasize ? 5 : 4) / zoom;
-  ctx.fillText(label, cx + textPad, cy - 2 / zoom);
+  const textPad = (denser ? 2.5 : emphasize ? 5 : 4) / zoom;
+  ctx.fillText(label, cx + textPad, cy - 1.5 / zoom);
 }
 
 /** Dual phosphor outer glow + main stroke for measurement guide lines (align, distribute, etc.). */
@@ -4799,6 +4804,28 @@ function drawGradientRadialHandle(
       }
       for (const c of chipDraws.filter((c) => c.emphasize)) {
         drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true);
+      }
+      // Denser radial dimension chips when a stop is focused or hovered
+      if (isFocusedNode || hoveredStop != null) {
+        const fill = n.fill as { cx?: number; cy?: number; fx?: number; fy?: number; r0?: number };
+        const denser = true;
+        if (centre) {
+          const cxp = Math.round((fill.cx ?? 0.5) * 100);
+          const cyp = Math.round((fill.cy ?? 0.5) * 100);
+          drawPhosphorValueChip(ctx, `${cxp},${cyp}`, centre.x + 5 / zoom, centre.y - 3 / zoom, zoom, false, denser);
+        }
+        if (focal) {
+          const ox = fill.cx ?? 0.5;
+          const oy = fill.cy ?? 0.5;
+          const fxp = Math.round((fill.fx ?? ox) * 100);
+          const fyp = Math.round((fill.fy ?? oy) * 100);
+          drawPhosphorValueChip(ctx, `${fxp},${fyp}`, focal.x + 5 / zoom, focal.y - 3 / zoom, zoom, false, denser);
+        }
+        const r0h = radialR0Handle(n, zoom);
+        if (r0h) {
+          const r0 = Math.round((fill.r0 ?? 0) * 100);
+          drawPhosphorValueChip(ctx, `In${r0}%`, r0h.x + 5 / zoom, r0h.y - 3 / zoom, zoom, false, denser);
+        }
       }
     }
   }
