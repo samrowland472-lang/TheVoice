@@ -4509,6 +4509,33 @@ function drawGradientAngleHandle(
       ctx.strokeStyle = "rgba(63, 198, 255, 0.4)";
       ctx.lineWidth = 2 / zoom;
       ctx.stroke();
+      // denser offset diamond ticks: short perpendicular phosphor ticks at each vertex
+      ctx.save();
+      ctx.strokeStyle = "rgba(168, 240, 255, 0.78)";
+      ctx.lineWidth = 1.2 / zoom;
+      ctx.lineCap = "round";
+      const tickLen = 3.6 / zoom;
+      const verts = [
+        { x: h.cx, y: h.cy - s },
+        { x: h.cx + s, y: h.cy },
+        { x: h.cx, y: h.cy + s },
+        { x: h.cx - s, y: h.cy },
+      ];
+      const dirs = [
+        { x: 0, y: -1 },
+        { x: 1, y: 0 },
+        { x: 0, y: 1 },
+        { x: -1, y: 0 },
+      ];
+      for (let i = 0; i < 4; i++) {
+        const v = verts[i]!;
+        const d = dirs[i]!;
+        ctx.beginPath();
+        ctx.moveTo(v.x, v.y);
+        ctx.lineTo(v.x + d.x * tickLen, v.y + d.y * tickLen);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
     // Multi-stop handles along the visual gradient line
     const sw = linearStopWorld(n, zoom);
