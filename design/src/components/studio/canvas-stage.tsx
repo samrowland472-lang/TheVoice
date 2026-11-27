@@ -4767,6 +4767,33 @@ function drawGradientRadialHandle(
         ctx.strokeStyle = "rgba(63, 198, 255, 0.4)";
         ctx.lineWidth = 2.4 / zoom;
         ctx.stroke();
+        // denser focal diamond ticks: short phosphor ticks radiate from each vertex
+        ctx.save();
+        ctx.strokeStyle = "rgba(168, 240, 255, 0.78)";
+        ctx.lineWidth = 1.2 / zoom;
+        ctx.lineCap = "round";
+        const tickLen = 3.6 / zoom;
+        const verts = [
+          { x: focal.x, y: focal.y - fr },
+          { x: focal.x + fr, y: focal.y },
+          { x: focal.x, y: focal.y + fr },
+          { x: focal.x - fr, y: focal.y },
+        ];
+        const dirs = [
+          { x: 0, y: -1 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 },
+        ];
+        for (let i = 0; i < 4; i++) {
+          const v = verts[i]!;
+          const d = dirs[i]!;
+          ctx.beginPath();
+          ctx.moveTo(v.x, v.y);
+          ctx.lineTo(v.x + d.x * tickLen, v.y + d.y * tickLen);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
     }
     // Inner radius (r0) — dashed circle + phosphor handle to the right of focal
