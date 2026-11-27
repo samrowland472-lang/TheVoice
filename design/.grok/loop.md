@@ -1,4 +1,5 @@
 ## Done
+- 2026-11-27T10:06Z — Denser radial centre cross ticks when centre focused: short phosphor ticks radiate from each arm end of the outer centre cross while the radial centre is hovered or dragged, so the active centre point reads denser and more precise. Ticks scale with zoom and stay clear of the cross. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T09:05Z — Denser radial focal diamond ticks when focal focused: short phosphor ticks radiate from each vertex of the inner focal diamond handle while the radial focal is hovered or dragged, so the active focal point reads denser and more precise. Ticks scale with zoom and stay clear of the diamond. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T08:09Z — Denser offset diamond ticks when offset focused: short phosphor ticks radiate from each vertex of the centre diamond handle while the linear offset is hovered or dragged, so the active offset point reads denser and more precise. Ticks scale with zoom and stay clear of the diamond. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T07:07Z — Denser connecting-line ticks on focused gradient handles: when a linear length/angle or radial centre/focal/r0 is hovered, the connecting line brightens and gains short perpendicular phosphor ticks along its length so the active dimension reads denser and more precise. Ticks scale with zoom and stay clear of handles. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -36,7 +37,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Mixed-selection stop chip density polish, or denser radial centre cross ticks when centre focused
+- Mixed-selection stop chip density polish, or denser r0 handle ticks when inner radius focused
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

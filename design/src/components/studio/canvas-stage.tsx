@@ -4745,6 +4745,26 @@ function drawGradientRadialHandle(
       ctx.strokeStyle = "rgba(63, 198, 255, 0.45)";
       ctx.lineWidth = 2.8 / zoom;
       ctx.stroke();
+      // denser centre cross ticks: short phosphor ticks radiate from each arm end
+      ctx.save();
+      ctx.strokeStyle = "rgba(168, 240, 255, 0.78)";
+      ctx.lineWidth = 1.2 / zoom;
+      ctx.lineCap = "round";
+      const tickLen = 3.6 / zoom;
+      const arm = r * 1.6;
+      const ends = [
+        { x: centre.x - arm, y: centre.y, dx: -1, dy: 0 },
+        { x: centre.x + arm, y: centre.y, dx: 1, dy: 0 },
+        { x: centre.x, y: centre.y - arm, dx: 0, dy: -1 },
+        { x: centre.x, y: centre.y + arm, dx: 0, dy: 1 },
+      ];
+      for (const e of ends) {
+        ctx.beginPath();
+        ctx.moveTo(e.x, e.y);
+        ctx.lineTo(e.x + e.dx * tickLen, e.y + e.dy * tickLen);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
     // Focal point (inner) — smaller filled diamond
     if (focal) {
