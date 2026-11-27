@@ -4537,11 +4537,13 @@ function drawGradientAngleHandle(
         chipDraws.push({ label, cx, cy, emphasize });
       }
       // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
+      // Denser stop percent chips when a linear dimension is focused so they stay secondary
+      const denserStops = hoverKey === "angle" || hoverKey === "length" || hoverKey === "offset" || hoverKey === "angle-only" || hoverKey === "length-only";
       for (const c of chipDraws.filter((c) => !c.emphasize)) {
-        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false);
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false, denserStops);
       }
       for (const c of chipDraws.filter((c) => c.emphasize)) {
-        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true);
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true, false);
       }
       // Denser linear dimension chips when a stop is focused or hovered
       if (isFocusedNode || hoveredStop != null) {
@@ -4811,11 +4813,13 @@ function drawGradientRadialHandle(
         chipDraws.push({ label, cx, cy, emphasize });
       }
       // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
+      // Denser stop percent chips when a radial dimension is focused so they stay secondary
+      const denserStops = hoverKey === "centre" || hoverKey === "focal" || hoverKey === "r0";
       for (const c of chipDraws.filter((c) => !c.emphasize)) {
-        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false);
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, false, denserStops);
       }
       for (const c of chipDraws.filter((c) => c.emphasize)) {
-        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true);
+        drawPhosphorValueChip(ctx, c.label, c.cx, c.cy, zoom, true, false);
       }
       // Denser radial dimension chips when a stop is focused or hovered
       if (isFocusedNode || hoveredStop != null) {
