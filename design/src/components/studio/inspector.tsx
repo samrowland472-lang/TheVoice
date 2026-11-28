@@ -345,7 +345,16 @@ export function Inspector() {
                   <select
                     className="field"
                     value={node.blend}
-                    onChange={(e) => setBlend(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value as DesignNode["blend"];
+                      setBlend(v);
+                      useDesign.getState().setStrokeGhost({ blend: v });
+                      setTimeout(() => useDesign.getState().setStrokeGhost(null), 600);
+                    }}
+                    onMouseEnter={() => useDesign.getState().setStrokeGhost({ blend: node.blend })}
+                    onFocus={() => useDesign.getState().setStrokeGhost({ blend: node.blend })}
+                    onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+                    onBlur={() => useDesign.getState().setStrokeGhost(null)}
                   >
                     {["source-over", "multiply", "screen", "overlay", "darken", "lighten"].map((b) => (
                       <option key={b} value={b}>{b}</option>
@@ -439,7 +448,22 @@ export function Inspector() {
                     className="field"
                     value={mixedBlend ? "source-over" : selectedNodes[0]?.blend ?? "source-over"}
                     aria-label={mixedBlend ? "blend mixed" : "blend"}
-                    onChange={(e) => setBlend(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value as DesignNode["blend"];
+                      setBlend(v);
+                      useDesign.getState().setStrokeGhost({ blend: v });
+                      setTimeout(() => useDesign.getState().setStrokeGhost(null), 600);
+                    }}
+                    onMouseEnter={() => {
+                      const cur = mixedBlend ? "source-over" : selectedNodes[0]?.blend ?? "source-over";
+                      useDesign.getState().setStrokeGhost({ blend: cur as DesignNode["blend"] });
+                    }}
+                    onFocus={() => {
+                      const cur = mixedBlend ? "source-over" : selectedNodes[0]?.blend ?? "source-over";
+                      useDesign.getState().setStrokeGhost({ blend: cur as DesignNode["blend"] });
+                    }}
+                    onMouseLeave={() => useDesign.getState().setStrokeGhost(null)}
+                    onBlur={() => useDesign.getState().setStrokeGhost(null)}
                   >
                     {["source-over", "multiply", "screen", "overlay", "darken", "lighten"].map((b) => (
                       <option key={b} value={b}>{b}</option>

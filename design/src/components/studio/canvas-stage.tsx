@@ -3726,7 +3726,64 @@ function drawStrokeCapJoinChips(
     const chipW = tw + 8 / zoom;
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
-    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom, hasBlend);
+
+    // Larger on-canvas blend-mode live preview plate near bottom-right
+    // (distinct from colour/opacity swatches; dual-glow phosphor plate with the mode name).
+    if (hasBlend) {
+      const modeLabel = label;
+      ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+      const mtw = ctx.measureText(modeLabel).width;
+      const plateW = mtw + 16 / zoom;
+      const plateH = 22 / zoom;
+      const px = n.x + n.w + 6 / zoom;
+      const py = n.y + n.h - plateH / 2;
+
+      ctx.save();
+      // Dual-glow rings
+      ctx.strokeStyle = "#3fc6ff";
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 4.2 / zoom;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+      } else {
+        ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+      }
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.22;
+      ctx.lineWidth = 6.5 / zoom;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+      } else {
+        ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+      }
+      ctx.stroke();
+
+      // Plate fill + crisp border
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(12, 16, 20, 0.92)";
+      ctx.strokeStyle = "#a8f0ff";
+      ctx.lineWidth = 1.8 / zoom;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+      } else {
+        ctx.rect(px, py, plateW, plateH);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // Mode name
+      ctx.fillStyle = "#e8fbff";
+      ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(modeLabel, px + plateW / 2, py + plateH / 2);
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
