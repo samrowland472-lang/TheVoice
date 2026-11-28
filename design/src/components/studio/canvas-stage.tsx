@@ -4769,16 +4769,116 @@ function drawStrokeDashScrubChips(
   vp: Viewport,
   dpr: number,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => "strokeDash" in n,
-    (n) => `Dash ${Math.round(((n as { strokeDash?: number }).strokeDash) ?? 0)}`,
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && "strokeDash" in n)
+    : nodes.filter((n) => n.id === scrubId && n.visible && "strokeDash" in n);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+
+    // Small chip near top-right
+    const dash = Math.round((n as { strokeDash?: number }).strokeDash ?? 0);
+    const label = `Dash ${dash}`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas dash live preview plate near bottom-right:
+    // dashed-line glyph whose dash length scales with the value + readout.
+    const plateLabel = `${dash}`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyphW = 22 / zoom;
+    const plateW = ptw + glyphW + 20 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 7 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Dashed line glyph — dash length scales with value (clamped)
+    const gx = px + 6 / zoom;
+    const gy = py + plateH / 2;
+    const dashLen = Math.max(1.5 / zoom, Math.min(8 / zoom, (dash || 1) * 0.25 / zoom));
+    const gapLen = Math.max(1.2 / zoom, dashLen * 0.7);
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.8 / zoom;
+    ctx.lineCap = "round";
+    ctx.setLineDash([dashLen, gapLen]);
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx + glyphW - 4 / zoom, gy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Dash text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyphW + 2 / zoom, gy);
+
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawStrokeDashOffsetScrubChips(
@@ -4789,16 +4889,127 @@ function drawStrokeDashOffsetScrubChips(
   vp: Viewport,
   dpr: number,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => "strokeDashOffset" in n,
-    (n) => `Offset ${Math.round(((n as { strokeDashOffset?: number }).strokeDashOffset) ?? 0)}`,
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && "strokeDashOffset" in n)
+    : nodes.filter((n) => n.id === scrubId && n.visible && "strokeDashOffset" in n);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+
+    // Small chip near top-right
+    const off = Math.round((n as { strokeDashOffset?: number }).strokeDashOffset ?? 0);
+    const label = `Offset ${off}`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas dash-offset live preview plate near bottom-right:
+    // dashed line with phase tick + readout.
+    const plateLabel = `${off}`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyphW = 22 / zoom;
+    const plateW = ptw + glyphW + 20 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 7 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Dashed line with phase tick
+    const gx = px + 6 / zoom;
+    const gy = py + plateH / 2;
+    const dashLen = 3.2 / zoom;
+    const gapLen = 2.4 / zoom;
+    const phase = (Math.abs(off) % 12) / zoom;
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.8 / zoom;
+    ctx.lineCap = "round";
+    ctx.setLineDash([dashLen, gapLen]);
+    ctx.lineDashOffset = phase;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx + glyphW - 4 / zoom, gy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+
+    // Small phase tick
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.2 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(gx + phase, gy - 4 / zoom);
+    ctx.lineTo(gx + phase, gy + 4 / zoom);
+    ctx.stroke();
+
+    // Offset text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyphW + 2 / zoom, gy);
+
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawMiterLimitScrubChips(
@@ -4809,16 +5020,115 @@ function drawMiterLimitScrubChips(
   vp: Viewport,
   dpr: number,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => "miterLimit" in n,
-    (n) => `Miter ${Math.round(((n as { miterLimit?: number }).miterLimit) ?? 4)}`,
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && "miterLimit" in n)
+    : nodes.filter((n) => n.id === scrubId && n.visible && "miterLimit" in n);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+
+    // Small chip near top-right
+    const mit = Math.round((n as { miterLimit?: number }).miterLimit ?? 4);
+    const label = `Miter ${mit}`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas miter-limit live preview plate near bottom-right:
+    // sharp corner glyph + readout.
+    const plateLabel = `${mit}`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyphW = 16 / zoom;
+    const plateW = ptw + glyphW + 20 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 7 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Miter corner glyph (two lines meeting at a point)
+    const gx = px + 6 / zoom;
+    const gy = py + plateH / 2;
+    const arm = 7 / zoom;
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.8 / zoom;
+    ctx.lineJoin = "miter";
+    ctx.miterLimit = Math.max(1, Math.min(20, mit));
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - arm * 0.6);
+    ctx.lineTo(gx + arm * 0.5, gy);
+    ctx.lineTo(gx, gy + arm * 0.6);
+    ctx.stroke();
+
+    // Miter text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyphW + 2 / zoom, gy);
+
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function gradientAngleHandle(n: DesignNode, zoom: number) {
