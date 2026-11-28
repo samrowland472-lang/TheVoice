@@ -843,6 +843,8 @@ export function StrokeEditor({ node }: { node: DesignNode }) {
               rememberColor(hex);
               updateNodes([node.id], { stroke: hex, strokeWidth: Math.max(width, 1) }, true);
             }}
+            onPointerDown={() => useDesign.getState().setStrokeColorDragging(true)}
+            onPointerUp={() => useDesign.getState().setStrokeColorDragging(false)}
           />
         </div>
         <NumField

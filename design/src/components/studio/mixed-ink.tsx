@@ -427,7 +427,7 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
         {mixedFill && <MixedFillChips nodes={nodes} ink={ink} />}
       </Field>
       <Field label={mixedStroke ? "Stroke · mixed" : "Stroke"}>
-        <MixedHexField value={first.stroke === "transparent" ? "#3fc6ff" : first.stroke} mixed={mixedStrokeColor} ariaLabel="selection stroke" onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true); }} />
+        <MixedHexField value={first.stroke === "transparent" ? "#3fc6ff" : first.stroke} mixed={mixedStrokeColor} ariaLabel="selection stroke" onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { stroke: hex, strokeWidth: Math.max(first.strokeWidth, 1) }, true); }} onPointerDown={() => useDesign.getState().setStrokeColorDragging(true)} onPointerUp={() => useDesign.getState().setStrokeColorDragging(false)} />
         <div className="mt-1.5 flex items-center gap-2">
           <span className="text-[10px] text-ink-dim">{mixedStrokeWidth ? "Width · mixed" : "Width"}</span>
           <NumField className="field w-16 font-mono" value={first.strokeWidth} mixed={mixedStrokeWidth} min={0} max={64} aria-label="selection stroke width" onDraft={(n) => { if (n == null || !Number.isFinite(n)) return; updateNodes(ids, { strokeWidth: Math.max(0, n) }, false); }} onCommit={(n) => { updateNodes(ids, { strokeWidth: Math.max(0, n) }, true); }} />
