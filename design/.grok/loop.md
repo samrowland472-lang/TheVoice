@@ -1,4 +1,5 @@
 ## Done
+- 2026-11-28T03:06Z — On-canvas solid-fill colour live preview while dragging inspector colour picker: when dragging the solid fill colour swatch (single node or mixed selection), a larger phosphor-bordered colour swatch with dual-glow rings appears near the top-right of each solid-filled selected node's bounding box so the live colour change is obvious. Wired via solidColorDragging store flag from HexColorField and MixedHexField pointer events. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T02:05Z — On-canvas colour live-update while dragging inspector colour picker: when dragging the stop colour swatch in the inspector, the matching on-canvas phosphor colour preview swatch (linear and radial) grows larger with brighter dual-glow rings so the live colour change is obvious. Stop fill itself already updates live. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T01:05Z — On-canvas stop colour preview highlight: when a gradient stop is hovered or focused in the inspector (including the colour swatch and hex field), a small phosphor-bordered colour swatch appears next to the on-canvas stop (opposite the percent chip) for both linear and radial fills. HexColorField now accepts onFocus/onBlur so focusing the swatch itself drives the highlight. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-27T23:05Z — Inspector stop colour swatch affordance for mixed gradient selections: denser colour picker (h-6 w-8) and hex field in each stop row of uniform mixed gradients. Active (hovered or reorder-dragged) stop swatch and field gain phosphor border, dual-glow, and scale-110 so the colour control reads as the live affordance. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -34,7 +35,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Denser mixed-selection stop colour controls or on-canvas solid-fill colour live preview while dragging
+- Denser mixed-selection stop colour controls or on-canvas stroke colour live preview while dragging
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)
@@ -75,7 +76,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- Denser mixed-selection stop colour controls or on-canvas solid-fill colour live preview while dragging
+- Denser mixed-selection stop colour controls or on-canvas stroke colour live preview while dragging
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

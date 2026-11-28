@@ -177,6 +177,7 @@ export default function CanvasStage() {
   const gradientHoverKey = useDesign((s) => s.gradientHoverKey);
   const gradientHoverStop = useDesign((s) => s.gradientHoverStop);
   const gradientColorDraggingStop = useDesign((s) => s.gradientColorDraggingStop);
+  const solidColorDragging = useDesign((s) => s.solidColorDragging);
   const radiusScrubId = useDesign((s) => s.radiusScrubId);
   const shadowBlurScrubId = useDesign((s) => s.shadowBlurScrubId);
   const rotationScrubId = useDesign((s) => s.rotationScrubId);
@@ -434,6 +435,9 @@ export default function CanvasStage() {
     const focusedStop = drag.current?.type === "gradient-stop" ? { id: drag.current.id, index: drag.current.stopIndex } : null;
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop, gradientHoverStop, gradientColorDraggingStop);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop, gradientHoverStop, gradientColorDraggingStop);
+    if (solidColorDragging) {
+      drawSolidColorPreview(ctx, doc.nodes, selection, viewport, dpr);
+    }
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -843,7 +847,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -918,6 +922,9 @@ export default function CanvasStage() {
     const focusedStop = drag.current?.type === "gradient-stop" ? { id: drag.current.id, index: drag.current.stopIndex } : null;
     drawGradientAngleHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop, gradientHoverStop, gradientColorDraggingStop);
     drawGradientRadialHandle(ctx, doc.nodes, selection, viewport, dpr, gradientHoverKey, focusedStop, gradientHoverStop, gradientColorDraggingStop);
+    if (solidColorDragging) {
+      drawSolidColorPreview(ctx, doc.nodes, selection, viewport, dpr);
+    }
     if (strokeGhost) {
       ctx.save();
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1293,7 +1300,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeGhost]);
 
   function onDoubleClick(e: React.MouseEvent) {
     if (!doc) return;
@@ -5204,6 +5211,74 @@ function drawHeadScaleScrubChips(
   );
 }
 
+
+
+/** On-canvas solid-fill colour live preview while dragging the inspector colour picker.
+ *  Draws a larger phosphor-bordered swatch with dual glow near the top-right of each
+ *  solid-filled selected node's bounding box so the live colour is obvious. */
+function drawSolidColorPreview(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  const selected = nodes.filter(
+    (n) => selection.includes(n.id) && n.visible && typeof n.fill === "string" && n.fill !== "transparent",
+  );
+  if (!selected.length) return;
+
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+
+  for (const n of selected) {
+    const color = n.fill as string;
+    // Position near top-right corner of the node bounds, offset outward
+    const px = n.x + n.w + 8 / zoom;
+    const py = n.y - 6 / zoom;
+    const pw = 22 / zoom;
+    const ph = 14 / zoom;
+
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 2.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, pw, ph, 1.6 / zoom);
+    } else {
+      ctx.rect(px, py, pw, ph);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    // Dual outer phosphor glow rings (brighter while dragging)
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 3.6 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 2.4 / zoom, py - 2.4 / zoom, pw + 4.8 / zoom, ph + 4.8 / zoom, 2.2 / zoom);
+    } else {
+      ctx.rect(px - 2.4 / zoom, py - 2.4 / zoom, pw + 4.8 / zoom, ph + 4.8 / zoom);
+    }
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 5.5 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 4.2 / zoom, py - 4.2 / zoom, pw + 8.4 / zoom, ph + 8.4 / zoom, 2.8 / zoom);
+    } else {
+      ctx.rect(px - 4.2 / zoom, py - 4.2 / zoom, pw + 8.4 / zoom, ph + 8.4 / zoom);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
 
 function drawSelection(
   ctx: CanvasRenderingContext2D,

@@ -65,11 +65,15 @@ function MixedHexField({
   mixed,
   ariaLabel,
   onCommit,
+  onPointerDown,
+  onPointerUp,
 }: {
   value: string;
   mixed: boolean;
   ariaLabel: string;
   onCommit: (hex: string) => void;
+  onPointerDown?: () => void;
+  onPointerUp?: () => void;
 }) {
   const hex = value.startsWith("#") ? value : "#000000";
   return (
@@ -80,6 +84,10 @@ function MixedHexField({
         value={hex === "transparent" ? "#3fc6ff" : hex}
         aria-label={mixed ? `${ariaLabel} mixed` : ariaLabel}
         onChange={(e) => onCommit(e.target.value)}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onLostPointerCapture={onPointerUp}
       />
       <input
         className="field font-mono flex-1"
@@ -218,6 +226,8 @@ export function MixedInk({ nodes, ink }: { nodes: DesignNode[]; ink: string }) {
           mixed={mixedFill}
           ariaLabel="selection fill"
           onCommit={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }}
+          onPointerDown={() => useDesign.getState().setSolidColorDragging(true)}
+          onPointerUp={() => useDesign.getState().setSolidColorDragging(false)}
         />
         <BrandSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />
         <RecentSwatches onPick={(hex) => { rememberColor(hex); updateNodes(ids, { fill: hex }, true); }} />

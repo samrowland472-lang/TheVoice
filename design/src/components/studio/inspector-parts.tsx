@@ -193,6 +193,8 @@ export function FillEditor({ node }: { node: DesignNode }) {
                 rememberColor(hex);
                 updateNodes([node.id], { fill: hex }, true);
               }}
+              onPointerDown={() => useDesign.getState().setSolidColorDragging(true)}
+              onPointerUp={() => useDesign.getState().setSolidColorDragging(false)}
             />
           </div>
           <NumField
