@@ -183,6 +183,7 @@ export default function CanvasStage() {
   const radiusScrubId = useDesign((s) => s.radiusScrubId);
   const shadowBlurScrubId = useDesign((s) => s.shadowBlurScrubId);
   const rotationScrubId = useDesign((s) => s.rotationScrubId);
+  const sizeScrubId = useDesign((s) => s.sizeScrubId);
   const shadowOxScrubId = useDesign((s) => s.shadowOxScrubId);
   const shadowOyScrubId = useDesign((s) => s.shadowOyScrubId);
   const shadowSpreadScrubId = useDesign((s) => s.shadowSpreadScrubId);
@@ -404,6 +405,7 @@ export default function CanvasStage() {
     drawRadiusScrubChips(ctx, doc.nodes, radiusScrubId, selection, viewport, dpr);
     drawShadowBlurScrubChips(ctx, doc.nodes, shadowBlurScrubId, selection, viewport, dpr);
     drawRotationScrubChips(ctx, doc.nodes, rotationScrubId, selection, viewport, dpr);
+    drawSizeScrubPlate(ctx, doc.nodes, sizeScrubId, selection, viewport, dpr);
     drawShadowOxScrubChips(ctx, doc.nodes, shadowOxScrubId, selection, viewport, dpr);
     drawShadowOyScrubChips(ctx, doc.nodes, shadowOyScrubId, selection, viewport, dpr);
     drawShadowSpreadScrubChips(ctx, doc.nodes, shadowSpreadScrubId, selection, viewport, dpr);
@@ -855,7 +857,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, shadowColorDragging, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, sizeScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, shadowColorDragging, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -897,6 +899,7 @@ export default function CanvasStage() {
     drawRadiusScrubChips(ctx, doc.nodes, radiusScrubId, selection, viewport, dpr);
     drawShadowBlurScrubChips(ctx, doc.nodes, shadowBlurScrubId, selection, viewport, dpr);
     drawRotationScrubChips(ctx, doc.nodes, rotationScrubId, selection, viewport, dpr);
+    drawSizeScrubPlate(ctx, doc.nodes, sizeScrubId, selection, viewport, dpr);
     drawShadowOxScrubChips(ctx, doc.nodes, shadowOxScrubId, selection, viewport, dpr);
     drawShadowOyScrubChips(ctx, doc.nodes, shadowOyScrubId, selection, viewport, dpr);
     drawShadowSpreadScrubChips(ctx, doc.nodes, shadowSpreadScrubId, selection, viewport, dpr);
@@ -1314,7 +1317,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, shadowColorDragging, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, sizeScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, shadowColorDragging, strokeGhost]);
 
   function onDoubleClick(e: React.MouseEvent) {
     if (!doc) return;
@@ -4259,6 +4262,127 @@ function drawLiveScrubChips(
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
     drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+  }
+  ctx.restore();
+}
+
+
+function drawSizeScrubPlate(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  scrubId: string | null,
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible)
+    : nodes.filter((n) => n.id === scrubId && n.visible);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+
+    // Small dimension chip near top-right
+    const label = `${Math.round(n.w)}×${Math.round(n.h)}`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas scale live preview plate near bottom-right:
+    // aspect-correct box glyph + W × H readout so the size change is obvious.
+    const plateLabel = `${Math.round(n.w)} × ${Math.round(n.h)}`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyph = 10 / zoom;
+    const plateW = ptw + glyph + 22 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 7 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Small aspect-correct box glyph
+    const gx = px + 6 / zoom;
+    const gy = py + (plateH - glyph) / 2;
+    const aspect = n.w / Math.max(1, n.h);
+    let gw = glyph;
+    let gh = glyph;
+    if (aspect > 1) gh = glyph / aspect;
+    else gw = glyph * aspect;
+    const ox = gx + (glyph - gw) / 2;
+    const oy = gy + (glyph - gh) / 2;
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.3 / zoom;
+    ctx.strokeRect(ox, oy, gw, gh);
+    ctx.fillStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.fillRect(ox, oy, gw, gh);
+
+    // Dimension text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyph + 6 / zoom, py + plateH / 2);
+
+    ctx.restore();
   }
   ctx.restore();
 }

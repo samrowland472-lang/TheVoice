@@ -41,6 +41,7 @@ import { MixedPathDash } from "./mixed-path-dash";
 import { MixedGeometry } from "./mixed-geometry";
 import { BooleanButtons } from "./boolean-buttons";
 import { NumField } from "./num-field";
+import { ScaleScrub } from "./scale-scrub";
 import { InspectorPrint } from "./inspector-print";
 
 const EDGES: AlignEdge[] = ["left", "center", "right", "top", "middle", "bottom"];
@@ -63,6 +64,7 @@ function useAlign() {
 function useDistribute() {
   return useSyncExternalStore(subscribeDistributePreview, getDistributePreview, getDistributePreview);
 }
+
 
 export function Inspector() {
   const doc = useDesign((s) => s.doc);
@@ -299,8 +301,8 @@ export function Inspector() {
                 <div className="grid grid-cols-2 gap-2">
                   <Field label="X"><NumField value={node.x} onCommit={(v) => updateNodes([node.id], { x: v })} aria-label="x" /></Field>
                   <Field label="Y"><NumField value={node.y} onCommit={(v) => updateNodes([node.id], { y: v })} aria-label="y" /></Field>
-                  <Field label="W"><NumField value={node.w} onCommit={(v) => updateNodes([node.id], { w: Math.max(1, v) })} aria-label="w" /></Field>
-                  <Field label="H"><NumField value={node.h} onCommit={(v) => updateNodes([node.id], { h: Math.max(1, v) })} aria-label="h" /></Field>
+                  <Field label="W"><NumField value={node.w} onCommit={(v) => { updateNodes([node.id], { w: Math.max(1, v) }); useDesign.getState().setSizeScrubId(null); }} onFocus={() => useDesign.getState().setSizeScrubId(node.id)} aria-label="w" /></Field>
+                  <Field label="H"><NumField value={node.h} onCommit={(v) => { updateNodes([node.id], { h: Math.max(1, v) }); useDesign.getState().setSizeScrubId(null); }} onFocus={() => useDesign.getState().setSizeScrubId(node.id)} aria-label="h" /></Field>
                 </div>
                 <Field label={`Rotate ${Math.round(node.rotation)}°`}>
                   <input
@@ -319,6 +321,7 @@ export function Inspector() {
                     onLostPointerCapture={() => useDesign.getState().setRotationScrubId(null)}
                   />
                 </Field>
+                <ScaleScrub nodes={[node]} />
               </Section>
 
               <Section title="Appearance">

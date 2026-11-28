@@ -4,6 +4,7 @@ import type { DesignNode } from "@/lib/design/types";
 import { cn } from "@/lib/utils";
 import { Field } from "./inspector-parts";
 import { NumField } from "./num-field";
+import { ScaleScrub } from "./scale-scrub";
 
 function ghostRadius(radius: number | null) {
   useDesign.getState().setStrokeGhost(radius == null ? null : { radius });
@@ -31,6 +32,7 @@ export function MixedGeometry({ nodes }: { nodes: DesignNode[] }) {
         Mixed rotation and radius write onto every selected layer. A chip stamps that
         layer’s angle or corner.
       </p>
+      <ScaleScrub nodes={nodes} />
       <Field label={mixedRotation ? "Rotate · mixed" : `Rotate ${Math.round(first.rotation)}°`}>
         <div className="flex items-center gap-2">
           <input
