@@ -1,4 +1,5 @@
 ## Done
+- 2026-11-28T08:05Z — On-canvas rotation live preview while scrubbing: larger phosphor-bordered plate with dual-glow rings, degree readout, and small radial needle indicator appears near the bottom-right of each selected node while dragging the Rotate field (single or mixed). Complements the existing small top-right chip and phosphor edge. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T07:04Z — On-canvas blend-mode live preview: larger phosphor-bordered plate with dual-glow rings and the mode name (Normal / Multiply / …) appears near the bottom-right of each selected node while hovering or focusing mixed blend chips/legend or the blend select (single or mixed). Complements the existing small top-right chip. Inspector selects also flash the plate briefly on change. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T06:04Z — On-canvas opacity live preview while scrubbing: larger phosphor-bordered swatch with checkerboard + fill at current opacity and dual-glow rings appears near the bottom-left of each selected node while dragging the opacity slider (single or mixed). Complements the existing percent chip (top-right) and phosphor edge. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T05:05Z — On-canvas shadow colour live preview while dragging inspector colour picker: when dragging the shadow colour swatch (single node or mixed selection), a larger phosphor-bordered colour swatch with dual-glow rings, thin inner outline, and soft drop-shadow hint appears near the bottom-left of each shadowed selected node so the live shadow colour is obvious and distinct from the solid-fill (top-right) and stroke (bottom-right) chips. Wired via shadowColorDragging store flag from HexColorField pointer events. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -39,6 +40,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
+- On-canvas scale live preview plate (similar radial or box indicator) while scrubbing width/height or scale fields
 - Denser mixed-selection shadow secondary controls (blur/offset/spread layout or chips)
 
 ## Backlog

@@ -4271,7 +4271,120 @@ function drawRotationScrubChips(
   vp: Viewport,
   dpr: number,
 ) {
-  drawLiveScrubChips(ctx, nodes, scrubId, selection, vp, dpr, () => true, (n) => `Rotate ${Math.round(n.rotation)}°`);
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible)
+    : nodes.filter((n) => n.id === scrubId && n.visible);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+
+    // Small percent/degree chip near top-right
+    const label = `Rotate ${Math.round(n.rotation)}°`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas rotation live preview plate near bottom-right:
+    // degree readout + small radial indicator arc/line so the angle change is obvious.
+    const deg = Math.round(n.rotation);
+    const plateLabel = `${deg}°`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyphR = 7 / zoom;
+    const plateW = ptw + glyphR * 2 + 18 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 6.5 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Small radial indicator: circle + needle at current angle
+    const gx = px + 8 / zoom + glyphR;
+    const gy = py + plateH / 2;
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.1 / zoom;
+    ctx.beginPath();
+    ctx.arc(gx, gy, glyphR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const rad = (deg * Math.PI) / 180;
+    const nx = gx + Math.cos(rad - Math.PI / 2) * (glyphR - 1.2 / zoom);
+    const ny = gy + Math.sin(rad - Math.PI / 2) * (glyphR - 1.2 / zoom);
+    ctx.lineWidth = 1.6 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(nx, ny);
+    ctx.stroke();
+
+    // Degree text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyphR + 4 / zoom, gy);
+
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawShadowOxScrubChips(
