@@ -179,6 +179,7 @@ export default function CanvasStage() {
   const gradientColorDraggingStop = useDesign((s) => s.gradientColorDraggingStop);
   const solidColorDragging = useDesign((s) => s.solidColorDragging);
   const strokeColorDragging = useDesign((s) => s.strokeColorDragging);
+  const shadowColorDragging = useDesign((s) => s.shadowColorDragging);
   const radiusScrubId = useDesign((s) => s.radiusScrubId);
   const shadowBlurScrubId = useDesign((s) => s.shadowBlurScrubId);
   const rotationScrubId = useDesign((s) => s.rotationScrubId);
@@ -441,6 +442,9 @@ export default function CanvasStage() {
     }
     if (strokeColorDragging) {
       drawStrokeColorPreview(ctx, doc.nodes, selection, viewport, dpr);
+    }
+    if (shadowColorDragging) {
+      drawShadowColorPreview(ctx, doc.nodes, selection, viewport, dpr);
     }
     if (strokeGhost) {
       ctx.save();
@@ -851,7 +855,7 @@ export default function CanvasStage() {
       ctx.fillText(text, lx, ly);
       ctx.restore();
     }
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, knifeHover, knifeResidual, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, distCursorLabel, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, shadowColorDragging, strokeGhost]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -931,6 +935,9 @@ export default function CanvasStage() {
     }
     if (strokeColorDragging) {
       drawStrokeColorPreview(ctx, doc.nodes, selection, viewport, dpr);
+    }
+    if (shadowColorDragging) {
+      drawShadowColorPreview(ctx, doc.nodes, selection, viewport, dpr);
     }
     if (strokeGhost) {
       ctx.save();
@@ -1307,7 +1314,7 @@ export default function CanvasStage() {
     });
     ro.observe(wrap);
     return () => ro.disconnect();
-  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, strokeGhost]);
+  }, [doc, selection, viewport, pathEditHit, pathPointSelection, marquee, knifeStroke, scaleFlip, pathPointAlignPreview, pathPointNumericPreview, pathPointHandleNumericPreview, showTangentLengths, rotateAngle, lengthHover, rotateHover, scaleHover, distHover, flipHover, alignHover, distributePreview, flushPulse, flushPulseLag, flushPulseRotate, flushPulseSlow, flushPulseTrail, opacityScrubId, axisScrubTag, axisHoverTag, filterHoverKey, typeHoverKey, cropHoverKey, radiusScrubId, shadowBlurScrubId, rotationScrubId, shadowOxScrubId, shadowOyScrubId, shadowSpreadScrubId, strokeWidthScrubId, strokeDashScrubId, strokeDashOffsetScrubId, miterLimitScrubId, gradientAngleScrubId, radialR0ScrubId, radialCentreScrubId, radialFocalScrubId, sidesScrubId, headScaleScrubId, pathDashHoverKey, gradientHoverKey, gradientHoverStop, gradientColorDraggingStop, solidColorDragging, strokeColorDragging, shadowColorDragging, strokeGhost]);
 
   function onDoubleClick(e: React.MouseEvent) {
     if (!doc) return;
@@ -5335,6 +5342,94 @@ function drawStrokeColorPreview(
       ctx.roundRect(px + 2.4 / zoom, py + 2.4 / zoom, pw - 4.8 / zoom, ph - 4.8 / zoom, 0.8 / zoom);
     } else {
       ctx.rect(px + 2.4 / zoom, py + 2.4 / zoom, pw - 4.8 / zoom, ph - 4.8 / zoom);
+    }
+    ctx.stroke();
+
+    // Dual outer phosphor glow rings (brighter while dragging)
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 3.6 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 2.4 / zoom, py - 2.4 / zoom, pw + 4.8 / zoom, ph + 4.8 / zoom, 2.2 / zoom);
+    } else {
+      ctx.rect(px - 2.4 / zoom, py - 2.4 / zoom, pw + 4.8 / zoom, ph + 4.8 / zoom);
+    }
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 5.5 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 4.2 / zoom, py - 4.2 / zoom, pw + 8.4 / zoom, ph + 8.4 / zoom, 2.8 / zoom);
+    } else {
+      ctx.rect(px - 4.2 / zoom, py - 4.2 / zoom, pw + 8.4 / zoom, ph + 8.4 / zoom);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+
+/** On-canvas shadow colour live preview while dragging the inspector colour picker.
+ *  Draws a larger phosphor-bordered swatch with dual glow and a soft drop-shadow
+ *  hint near the bottom-left of each shadowed selected node so the live shadow
+ *  colour is obvious and distinct from the solid-fill (top-right) and stroke
+ *  (bottom-right) chips. */
+function drawShadowColorPreview(
+  ctx: CanvasRenderingContext2D,
+  nodes: DesignNode[],
+  selection: string[],
+  vp: Viewport,
+  dpr: number,
+) {
+  const selected = nodes.filter(
+    (n) => selection.includes(n.id) && n.visible && n.shadow && n.shadow.color && n.shadow.color !== "transparent",
+  );
+  if (!selected.length) return;
+
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+
+  for (const n of selected) {
+    const color = n.shadow!.color;
+    // Position near bottom-left of the node bounds so it sits apart from fill/stroke chips
+    const px = n.x - 30 / zoom;
+    const py = n.y + n.h + 4 / zoom;
+    const pw = 22 / zoom;
+    const ph = 14 / zoom;
+
+    ctx.save();
+    // Soft drop-shadow hint under the swatch itself
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 6 / zoom;
+    ctx.shadowOffsetX = 2 / zoom;
+    ctx.shadowOffsetY = 2 / zoom;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 2.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, pw, ph, 1.6 / zoom);
+    } else {
+      ctx.rect(px, py, pw, ph);
+    }
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.stroke();
+
+    // Thin inner outline to read as shadow (not solid fill)
+    ctx.strokeStyle = "rgba(8,12,16,0.4)";
+    ctx.lineWidth = 1.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px + 2.8 / zoom, py + 2.8 / zoom, pw - 5.6 / zoom, ph - 5.6 / zoom, 0.6 / zoom);
+    } else {
+      ctx.rect(px + 2.8 / zoom, py + 2.8 / zoom, pw - 5.6 / zoom, ph - 5.6 / zoom);
     }
     ctx.stroke();
 

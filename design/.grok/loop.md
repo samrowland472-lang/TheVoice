@@ -1,4 +1,5 @@
 ## Done
+- 2026-11-28T05:05Z — On-canvas shadow colour live preview while dragging inspector colour picker: when dragging the shadow colour swatch (single node or mixed selection), a larger phosphor-bordered colour swatch with dual-glow rings, thin inner outline, and soft drop-shadow hint appears near the bottom-left of each shadowed selected node so the live shadow colour is obvious and distinct from the solid-fill (top-right) and stroke (bottom-right) chips. Wired via shadowColorDragging store flag from HexColorField pointer events. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T04:10Z — On-canvas stroke colour live preview while dragging inspector colour picker: when dragging the stroke colour swatch (single node or mixed selection), a larger phosphor-bordered colour swatch with dual-glow rings and a thin inner outline appears near the bottom-right of each stroked selected node so the live stroke colour is obvious and distinct from the solid-fill chip. Wired via strokeColorDragging store flag from HexColorField and MixedHexField pointer events. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T03:06Z — On-canvas solid-fill colour live preview while dragging inspector colour picker: when dragging the solid fill colour swatch (single node or mixed selection), a larger phosphor-bordered colour swatch with dual-glow rings appears near the top-right of each solid-filled selected node's bounding box so the live colour change is obvious. Wired via solidColorDragging store flag from HexColorField and MixedHexField pointer events. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T02:05Z — On-canvas colour live-update while dragging inspector colour picker: when dragging the stop colour swatch in the inspector, the matching on-canvas phosphor colour preview swatch (linear and radial) grows larger with brighter dual-glow rings so the live colour change is obvious. Stop fill itself already updates live. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -36,7 +37,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- On-canvas shadow colour live preview while dragging, or denser mixed-selection stop colour controls
+- On-canvas opacity live preview while scrubbing, or denser mixed-selection shadow secondary controls
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)
@@ -77,7 +78,7 @@
 - 2026-11-25T05:09Z — On-canvas linear gradient length / offset handle.
 
 ## Next recommended
-- On-canvas shadow colour live preview while dragging, or denser mixed-selection stop colour controls
+- On-canvas opacity live preview while scrubbing, or denser mixed-selection shadow secondary controls
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)

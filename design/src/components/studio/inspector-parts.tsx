@@ -1477,6 +1477,8 @@ export function ShadowEditor({ nodes }: { nodes: DesignNode[] }) {
                 rememberColor(hex);
                 stampAll((cur) => stampShadowColor(cur, hex), true);
               }}
+              onPointerDown={() => useDesign.getState().setShadowColorDragging(true)}
+              onPointerUp={() => useDesign.getState().setShadowColorDragging(false)}
             />
           </Field>
           <Field label={mixedBlur ? "Blur \u00b7 mixed" : `Blur ${ghost.blur}`}>
