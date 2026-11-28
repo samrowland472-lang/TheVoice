@@ -61,6 +61,8 @@ export function HexColorField({
   emphasized = false,
   onFocus,
   onBlur,
+  onPointerDown,
+  onPointerUp,
 }: {
   value: string;
   onChange: (hex: string) => void;
@@ -69,6 +71,8 @@ export function HexColorField({
   emphasized?: boolean;
   onFocus?: () => void;
   onBlur?: () => void;
+  onPointerDown?: () => void;
+  onPointerUp?: () => void;
 }) {
   const safe = value && value !== "transparent" && value.startsWith("#") ? value : "#d9f5e3";
   const [draft, setDraft] = useState(safe);
@@ -101,6 +105,10 @@ export function HexColorField({
         onChange={(e) => onChange(e.target.value)}
         onFocus={onFocus}
         onBlur={onBlur}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onLostPointerCapture={onPointerUp}
         aria-label={`${label} colour`}
       />
       <input
@@ -652,6 +660,8 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   value={stop.color}
                   onFocus={() => useDesign.getState().setGradientHoverStop(i)}
                   onBlur={() => { if (reorderDrag !== i) useDesign.getState().setGradientHoverStop(null); }}
+                  onPointerDown={() => useDesign.getState().setGradientColorDraggingStop(i)}
+                  onPointerUp={() => useDesign.getState().setGradientColorDraggingStop(null)}
                   onChange={(hex) => {
                     rememberColor(hex);
                     const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));
