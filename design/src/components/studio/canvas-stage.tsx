@@ -3763,6 +3763,7 @@ function drawOpacityScrubEdge(
     ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
     ctx.lineWidth = 1.5 / zoom;
     ctx.strokeRect(x, y, w, h);
+
     // Live percent chip near top-right of the node
     const pct = Math.round((n.opacity ?? 1) * 100);
     const label = `${pct}%`;
@@ -3774,6 +3775,64 @@ function drawOpacityScrubEdge(
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
     drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger live opacity preview swatch near bottom-left: checkerboard + fill at current opacity
+    // so the transparency change is obvious while scrubbing (distinct from colour chips).
+    const fillColor = typeof n.fill === "string" && n.fill !== "transparent" ? n.fill : "#3fc6ff";
+    const swX = n.x - 34 / zoom;
+    const swY = n.y + n.h + 4 / zoom;
+    const swW = 26 / zoom;
+    const swH = 16 / zoom;
+
+    ctx.save();
+    // Checkerboard background to show transparency
+    const tile = 4 / zoom;
+    ctx.fillStyle = "#1a1f24";
+    ctx.fillRect(swX, swY, swW, swH);
+    ctx.fillStyle = "#2a3138";
+    for (let tx = 0; tx < swW; tx += tile * 2) {
+      for (let ty = 0; ty < swH; ty += tile * 2) {
+        ctx.fillRect(swX + tx, swY + ty, tile, tile);
+        ctx.fillRect(swX + tx + tile, swY + ty + tile, tile, tile);
+      }
+    }
+    // Overlay fill colour at current opacity
+    ctx.globalAlpha = n.opacity ?? 1;
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(swX, swY, swW, swH);
+    ctx.globalAlpha = 1;
+
+    // Phosphor border + dual-glow rings (matches colour preview language)
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 2.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(swX, swY, swW, swH, 1.6 / zoom);
+    } else {
+      ctx.rect(swX, swY, swW, swH);
+    }
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 3.6 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(swX - 2.4 / zoom, swY - 2.4 / zoom, swW + 4.8 / zoom, swH + 4.8 / zoom, 2.2 / zoom);
+    } else {
+      ctx.rect(swX - 2.4 / zoom, swY - 2.4 / zoom, swW + 4.8 / zoom, swH + 4.8 / zoom);
+    }
+    ctx.stroke();
+
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 5.5 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(swX - 4.2 / zoom, swY - 4.2 / zoom, swW + 8.4 / zoom, swH + 8.4 / zoom, 2.8 / zoom);
+    } else {
+      ctx.rect(swX - 4.2 / zoom, swY - 4.2 / zoom, swW + 8.4 / zoom, swH + 8.4 / zoom);
+    }
+    ctx.stroke();
+    ctx.restore();
   }
   ctx.restore();
 }
