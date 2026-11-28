@@ -4161,8 +4161,10 @@ function drawRadiusScrubChips(
     ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
     ctx.lineWidth = 1.5 / zoom;
     ctx.strokeRect(x, y, w, h);
-    // Live radius chip near top-right
-    const label = `Radius ${Math.round(n.radius)}`;
+
+    // Small chip near top-right
+    const r = Math.round(n.radius);
+    const label = `Radius ${r}`;
     ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
@@ -4171,6 +4173,77 @@ function drawRadiusScrubChips(
     const cx = x + w - chipW;
     const cy = y - 2 / zoom;
     drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas radius live preview plate near bottom-right:
+    // rounded-corner glyph + readout.
+    const plateLabel = `${r}`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyph = 12 / zoom;
+    const plateW = ptw + glyph + 18 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 7 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Rounded-corner glyph
+    const gx = px + 5 / zoom;
+    const gy = py + (plateH - glyph) / 2;
+    const rr = Math.max(1 / zoom, Math.min(glyph / 2, r * 0.15 / zoom));
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = 1.3 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(gx, gy, glyph, glyph, rr);
+    } else {
+      ctx.rect(gx, gy, glyph, glyph);
+    }
+    ctx.stroke();
+
+    // Radius text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyph + 3 / zoom, py + plateH / 2);
+
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -4579,16 +4652,113 @@ function drawStrokeWidthScrubChips(
   vp: Viewport,
   dpr: number,
 ) {
-  drawLiveScrubChips(
-    ctx,
-    nodes,
-    scrubId,
-    selection,
-    vp,
-    dpr,
-    (n) => "strokeWidth" in n && typeof (n as { strokeWidth?: number }).strokeWidth === "number",
-    (n) => `Width ${Math.round(((n as { strokeWidth?: number }).strokeWidth) ?? 0)}`,
-  );
+  if (!scrubId) return;
+  const multi = selection.length > 1 && selection.includes(scrubId);
+  const targets = multi
+    ? nodes.filter((n) => selection.includes(n.id) && n.visible && "strokeWidth" in n)
+    : nodes.filter((n) => n.id === scrubId && n.visible && "strokeWidth" in n);
+  if (!targets.length) return;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.translate(vp.x, vp.y);
+  ctx.scale(vp.zoom, vp.zoom);
+  const zoom = vp.zoom;
+  for (const n of targets) {
+    const pad = 4 / zoom;
+    const x = n.x - pad;
+    const y = n.y - pad;
+    const w = n.w + pad * 2;
+    const h = n.h + pad * 2;
+    // Transient phosphor edge
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.35)";
+    ctx.lineWidth = 6 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.strokeStyle = "rgba(63, 198, 255, 0.85)";
+    ctx.lineWidth = 1.5 / zoom;
+    ctx.strokeRect(x, y, w, h);
+
+    // Small chip near top-right
+    const sw = Math.round((n as { strokeWidth?: number }).strokeWidth ?? 0);
+    const label = `Width ${sw}`;
+    ctx.font = `${Math.max(9, 11 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    const tw = ctx.measureText(label).width;
+    const chipW = tw + 8 / zoom;
+    const cx = x + w - chipW;
+    const cy = y - 2 / zoom;
+    drawPhosphorValueChip(ctx, label, cx, cy, zoom);
+
+    // Larger on-canvas stroke-width live preview plate near bottom-right:
+    // thick line glyph scaled to current width + readout.
+    const plateLabel = `${sw}`;
+    ctx.font = `${Math.max(11, 14 / zoom)}px "IBM Plex Mono", ui-monospace, monospace`;
+    const ptw = ctx.measureText(plateLabel).width;
+    const glyphW = 18 / zoom;
+    const plateW = ptw + glyphW + 20 / zoom;
+    const plateH = 22 / zoom;
+    const px = n.x + n.w + 6 / zoom;
+    const py = n.y + n.h - plateH / 2;
+
+    ctx.save();
+    // Dual-glow rings
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 4.2 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom, 4 / zoom);
+    } else {
+      ctx.rect(px - 3 / zoom, py - 3 / zoom, plateW + 6 / zoom, plateH + 6 / zoom);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 0.22;
+    ctx.lineWidth = 7 / zoom;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom, 5 / zoom);
+    } else {
+      ctx.rect(px - 5.5 / zoom, py - 5.5 / zoom, plateW + 11 / zoom, plateH + 11 / zoom);
+    }
+    ctx.stroke();
+
+    // Plate fill
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(10, 14, 16, 0.92)";
+    ctx.beginPath();
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(px, py, plateW, plateH, 3 / zoom);
+    } else {
+      ctx.rect(px, py, plateW, plateH);
+    }
+    ctx.fill();
+
+    // Crisp phosphor border
+    ctx.strokeStyle = "#a8f0ff";
+    ctx.lineWidth = 1.4 / zoom;
+    ctx.stroke();
+
+    // Thick line glyph representing stroke width
+    const gx = px + 6 / zoom;
+    const gy = py + plateH / 2;
+    const lineH = Math.max(1.2 / zoom, Math.min(8 / zoom, sw * 0.35 / zoom));
+    ctx.strokeStyle = "#3fc6ff";
+    ctx.lineWidth = lineH;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.lineTo(gx + glyphW - 4 / zoom, gy);
+    ctx.stroke();
+
+    // Width text
+    ctx.fillStyle = "#e8f7ff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(plateLabel, gx + glyphW + 2 / zoom, gy);
+
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawStrokeDashScrubChips(

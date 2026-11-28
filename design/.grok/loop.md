@@ -1,4 +1,5 @@
 ## Done
+- 2026-11-28T10:05Z — On-canvas stroke-width and corner-radius live preview plates while scrubbing: larger phosphor-bordered plates with dual-glow rings, thickness/rounded-corner glyphs, and numeric readouts appear near the bottom-right of each selected node while dragging the Stroke Width or Radius fields (single or mixed). Complements the existing small top-right chips and phosphor edge. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T09:05Z — On-canvas scale live preview plate while scrubbing: larger phosphor-bordered plate with dual-glow rings, aspect-correct box glyph, and W × H readout appears near the bottom-right of each selected node while dragging the new Scale range (single or mixed, scales from center) or focusing the W/H fields. Complements the existing small top-right dimension chip and phosphor edge. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T08:05Z — On-canvas rotation live preview while scrubbing: larger phosphor-bordered plate with dual-glow rings, degree readout, and small radial needle indicator appears near the bottom-right of each selected node while dragging the Rotate field (single or mixed). Complements the existing small top-right chip and phosphor edge. Typecheck, build, smoke clean (hub content visible, canvas present).
 - 2026-11-28T07:04Z — On-canvas blend-mode live preview: larger phosphor-bordered plate with dual-glow rings and the mode name (Normal / Multiply / …) appears near the bottom-right of each selected node while hovering or focusing mixed blend chips/legend or the blend select (single or mixed). Complements the existing small top-right chip. Inspector selects also flash the plate briefly on change. Typecheck, build, smoke clean (hub content visible, canvas present).
@@ -42,7 +43,7 @@
 
 ## Next recommended
 - Denser mixed-selection shadow secondary controls (blur/offset/spread layout or chips)
-- On-canvas live preview for other numeric fields (radius, stroke width) with similar plates
+- On-canvas live preview plates for stroke dash / dash offset / miter limit
 
 ## Backlog
 24. Reorder gradient stops by dragging past each other (done this pass)
