@@ -59,12 +59,16 @@ export function HexColorField({
   label = "Colour",
   dense = false,
   emphasized = false,
+  onFocus,
+  onBlur,
 }: {
   value: string;
   onChange: (hex: string) => void;
   label?: string;
   dense?: boolean;
   emphasized?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const safe = value && value !== "transparent" && value.startsWith("#") ? value : "#d9f5e3";
   const [draft, setDraft] = useState(safe);
@@ -95,6 +99,8 @@ export function HexColorField({
         )}
         value={safe.length === 7 ? safe : "#d9f5e3"}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
+        onBlur={onBlur}
         aria-label={`${label} colour`}
       />
       <input
@@ -106,7 +112,8 @@ export function HexColorField({
         )}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
+        onFocus={onFocus}
+        onBlur={(e) => { commit(); onBlur?.(); }}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
@@ -639,8 +646,12 @@ export function FillEditor({ node }: { node: DesignNode }) {
                   </svg>
                 </button>
                 <HexColorField
+                  dense
+                  emphasized={active}
                   label={`Stop ${i + 1}`}
                   value={stop.color}
+                  onFocus={() => useDesign.getState().setGradientHoverStop(i)}
+                  onBlur={() => { if (reorderDrag !== i) useDesign.getState().setGradientHoverStop(null); }}
                   onChange={(hex) => {
                     rememberColor(hex);
                     const stops = fill.stops.map((s, j) => (j === i ? { ...s, color: hex } : s));

@@ -4535,6 +4535,36 @@ function drawGradientAngleHandle(
         const cx = st.x + px * off;
         const cy = st.y + py * off;
         chipDraws.push({ label, cx, cy, emphasize });
+        // Colour preview highlight when this stop is focused/hovered from inspector
+        if (emphasize) {
+          const previewOff = 22 / zoom;
+          const pvx = st.x - px * previewOff;
+          const pvy = st.y - py * previewOff;
+          const pw = 12 / zoom;
+          const ph = 8 / zoom;
+          ctx.save();
+          ctx.fillStyle = st.color;
+          ctx.strokeStyle = "#3fc6ff";
+          ctx.lineWidth = 1.4 / zoom;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(pvx - pw / 2, pvy - ph / 2, pw, ph, 1.5 / zoom);
+          } else {
+            ctx.rect(pvx - pw / 2, pvy - ph / 2, pw, ph);
+          }
+          ctx.fill();
+          ctx.stroke();
+          ctx.globalAlpha = 0.35;
+          ctx.lineWidth = 2.4 / zoom;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(pvx - pw / 2 - 1.6 / zoom, pvy - ph / 2 - 1.6 / zoom, pw + 3.2 / zoom, ph + 3.2 / zoom, 2 / zoom);
+          } else {
+            ctx.rect(pvx - pw / 2 - 1.6 / zoom, pvy - ph / 2 - 1.6 / zoom, pw + 3.2 / zoom, ph + 3.2 / zoom);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
       }
       // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
       for (const c of chipDraws.filter((c) => !c.emphasize)) {
@@ -4809,6 +4839,36 @@ function drawGradientRadialHandle(
         const cx = st.x - sw.uy * off;
         const cy = st.y + sw.ux * off;
         chipDraws.push({ label, cx, cy, emphasize });
+        // Colour preview highlight when this stop is focused/hovered from inspector
+        if (emphasize) {
+          const previewOff = 22 / zoom;
+          const pvx = st.x + sw.uy * previewOff;
+          const pvy = st.y - sw.ux * previewOff;
+          const pw = 12 / zoom;
+          const ph = 8 / zoom;
+          ctx.save();
+          ctx.fillStyle = st.color;
+          ctx.strokeStyle = "#3fc6ff";
+          ctx.lineWidth = 1.4 / zoom;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(pvx - pw / 2, pvy - ph / 2, pw, ph, 1.5 / zoom);
+          } else {
+            ctx.rect(pvx - pw / 2, pvy - ph / 2, pw, ph);
+          }
+          ctx.fill();
+          ctx.stroke();
+          ctx.globalAlpha = 0.35;
+          ctx.lineWidth = 2.4 / zoom;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(pvx - pw / 2 - 1.6 / zoom, pvy - ph / 2 - 1.6 / zoom, pw + 3.2 / zoom, ph + 3.2 / zoom, 2 / zoom);
+          } else {
+            ctx.rect(pvx - pw / 2 - 1.6 / zoom, pvy - ph / 2 - 1.6 / zoom, pw + 3.2 / zoom, ph + 3.2 / zoom);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
       }
       // Draw non-emphasized chips first, then emphasized last (stronger dual-glow on top)
       for (const c of chipDraws.filter((c) => !c.emphasize)) {
